@@ -321,8 +321,15 @@ function showLogoutModal() {
 
 // Verify user is on the correct coach page (HS coach page)
 // College coaches should be redirected to collegecoach folder
+// Skip redirect if viewing another user's profile (has username parameter)
 async function verifyCoachType() {
     try {
+        // Skip verification if viewing another user's profile
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('username')) {
+            return; // Don't redirect when viewing someone else's profile
+        }
+
         const response = await API.get('/auth/me');
         if (response.user && response.profile) {
             const collegeDivision = response.profile.college_division;

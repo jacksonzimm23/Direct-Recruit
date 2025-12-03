@@ -154,11 +154,22 @@ class SearchComponent {
         resultsContainer.querySelectorAll('.search-result-item').forEach(item => {
             item.addEventListener('click', () => {
                 const username = item.dataset.username;
+                const role = item.dataset.role; // 'player' or 'coach'
+                const isCollege = item.dataset.isCollege === 'true';
 
-                // Navigate to the current user's my-profile page with the username parameter
-                // The my-profile.js will handle displaying the correct profile data
-                // This keeps the user in their own folder so navigation works correctly
-                window.location.href = `tabs/my-profile.html?username=${username}`;
+                // Determine the correct folder based on the profile being viewed
+                // This ensures we load the correct my-profile page with appropriate styling
+                let targetFolder;
+                if (role === 'player') {
+                    targetFolder = isCollege ? 'collegeplayer' : 'hsplayer';
+                } else {
+                    targetFolder = isCollege ? 'collegecoach' : 'hscoach';
+                }
+
+                // Navigate to the appropriate profile folder for the user being viewed
+                // Use absolute path from site root to ensure correct navigation
+                // regardless of whether we're on mainpage or in tabs/ subfolder
+                window.location.href = `/frontend/${targetFolder}/tabs/my-profile.html?username=${username}`;
             });
         });
     }
@@ -170,8 +181,11 @@ class SearchComponent {
         if (player.high_school) subtitle.push(player.high_school);
         if (player.graduation_year) subtitle.push(`'${String(player.graduation_year).slice(-2)}`);
 
+        // Determine if this is a college player (has college_division or player_status indicates transfer portal)
+        const isCollegePlayer = player.college_division && player.college_division.trim() !== '';
+
         return `
-            <div class="search-result-item" data-username="${player.username || ''}" data-role="player">
+            <div class="search-result-item" data-username="${player.username || ''}" data-role="player" data-is-college="${isCollegePlayer}">
                 <img src="${imageUrl}" alt="${player.first_name} ${player.last_name}" class="result-avatar">
                 <div class="result-info">
                     <div class="result-name">${player.first_name} ${player.last_name}</div>
@@ -189,8 +203,11 @@ class SearchComponent {
         if (coach.position_title) subtitle.push(coach.position_title);
         if (coach.college_name) subtitle.push(coach.college_name);
 
+        // Determine if this is a college coach (has college_division)
+        const isCollegeCoach = coach.college_division && coach.college_division.trim() !== '';
+
         return `
-            <div class="search-result-item" data-username="${coach.username || ''}" data-role="coach">
+            <div class="search-result-item" data-username="${coach.username || ''}" data-role="coach" data-is-college="${isCollegeCoach}">
                 <img src="${imageUrl}" alt="${coach.first_name} ${coach.last_name}" class="result-avatar">
                 <div class="result-info">
                     <div class="result-name">${coach.first_name} ${coach.last_name}</div>

@@ -47,10 +47,307 @@ async function loadCurrentUser() {
         if (response.user) {
             currentUserId = response.user.id;
             isCollegeCoach = response.user.is_college_coach || false;
+
+            // Update navbar links to match logged-in user's folder (not the viewed profile's folder)
+            updateNavbarForLoggedInUser(response.user.role, response.profile);
         }
     } catch (error) {
         console.error('Failed to load current user:', error);
     }
+}
+
+// Rebuild the entire navbar to match the logged-in user's profile type
+// This ensures the navbar stays consistent when viewing other profiles
+function updateNavbarForLoggedInUser(role, profile) {
+    // Determine the correct folder for the logged-in user
+    let userFolder;
+    let isCollege = false;
+
+    if (role === 'player') {
+        isCollege = profile && profile.college_division && profile.college_division.trim() !== '';
+        userFolder = isCollege ? 'collegeplayer' : 'hsplayer';
+    } else if (role === 'coach') {
+        isCollege = profile && profile.college_division && profile.college_division.trim() !== '';
+        userFolder = isCollege ? 'collegecoach' : 'hscoach';
+    } else {
+        return; // Unknown role, don't modify
+    }
+
+    const mainPage = role === 'player' ? 'mainpage-player.html' : 'mainpage-coach.html';
+
+    // Rebuild the sidebar nav with the correct items for the logged-in user
+    const sidebarNav = document.querySelector('.sidebar-nav');
+    if (sidebarNav) {
+        let navHTML = '';
+
+        if (role === 'player') {
+            // Player nav items (same for HS and college players)
+            navHTML = `
+                <a href="/frontend/${userFolder}/${mainPage}" class="nav-item" id="feedNavItem">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                        <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                    </svg>
+                    <span>Feed</span>
+                </a>
+                <a href="/frontend/${userFolder}/tabs/discover-players.html" class="nav-item">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <path d="m21 21-4.35-4.35"></path>
+                    </svg>
+                    <span>Discover</span>
+                </a>
+                <a href="/frontend/${userFolder}/tabs/my-profile.html" class="nav-item active" id="profileNavItem">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                    <span>My Profile</span>
+                </a>
+                <a href="/frontend/${userFolder}/tabs/messages.html" class="nav-item">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                    <span>Messages</span>
+                </a>
+                <a href="/frontend/${userFolder}/tabs/notifications.html" class="nav-item">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                    </svg>
+                    <span>Notifications</span>
+                </a>
+                <a href="/frontend/${userFolder}/tabs/settings.html" class="nav-item">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                    </svg>
+                    <span>Settings</span>
+                </a>
+            `;
+        } else if (role === 'coach') {
+            // Coach nav items - different for HS vs college coaches
+            navHTML = `
+                <a href="/frontend/${userFolder}/${mainPage}" class="nav-item" id="feedNavItem">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                        <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                    </svg>
+                    <span>Feed</span>
+                </a>
+                <a href="/frontend/${userFolder}/tabs/discover-players.html" class="nav-item">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <path d="m21 21-4.35-4.35"></path>
+                    </svg>
+                    <span>Discover Players</span>
+                </a>
+                <a href="/frontend/${userFolder}/tabs/my-profile.html" class="nav-item active" id="profileNavItem">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                    <span>My Profile</span>
+                </a>
+                <a href="/frontend/${userFolder}/tabs/messages.html" class="nav-item">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                    <span>Messages</span>
+                </a>
+                <a href="/frontend/${userFolder}/tabs/notifications.html" class="nav-item">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                    </svg>
+                    <span>Notifications</span>
+                </a>
+                ${isCollege ? `
+                <a href="/frontend/${userFolder}/tabs/recruiting-board.html" class="nav-item" id="recruitingBoardNav">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="9" y1="3" x2="9" y2="21"></line>
+                        <line x1="15" y1="3" x2="15" y2="21"></line>
+                        <line x1="3" y1="9" x2="21" y2="9"></line>
+                        <line x1="3" y1="15" x2="21" y2="15"></line>
+                    </svg>
+                    <span>Recruiting Board</span>
+                </a>
+                <a href="/frontend/${userFolder}/tabs/transfer-portal.html" class="nav-item" id="transferPortalNav">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <path d="M8 12h8"></path>
+                        <path d="M12 8v8"></path>
+                        <circle cx="12" cy="12" r="3"></circle>
+                    </svg>
+                    <span>Transfer Portal</span>
+                </a>
+                ` : ''}
+                <a href="/frontend/${userFolder}/tabs/settings.html" class="nav-item">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                    </svg>
+                    <span>Settings</span>
+                </a>
+            `;
+        }
+
+        sidebarNav.innerHTML = navHTML;
+    }
+
+    // Update sidebar footer with logged-in user's info (just update text content, preserve structure)
+    if (profile) {
+        // Update name
+        const userName = document.querySelector('.sidebar-footer .user-name');
+        if (userName) {
+            userName.textContent = `${profile.first_name} ${profile.last_name}`;
+        }
+
+        // Update role/info based on user type
+        const userRole = document.querySelector('.sidebar-footer .user-role');
+        if (userRole) {
+            if (role === 'player') {
+                const parts = [];
+                if (profile.position) parts.push(profile.position);
+                if (profile.height) parts.push(`${Math.floor(profile.height / 12)}'${profile.height % 12}"`);
+                if (profile.weight) parts.push(`${profile.weight} lbs`);
+                if (profile.state) parts.push(profile.state);
+                userRole.textContent = parts.join(' • ') || 'Player';
+            } else if (role === 'coach') {
+                const parts = [];
+                if (profile.college_name) parts.push(profile.college_name);
+                if (profile.college_division) parts.push(profile.college_division);
+                userRole.textContent = parts.join(' • ') || 'Coach';
+            }
+        }
+
+        // Update avatar if available
+        if (profile.profile_image_url) {
+            const avatarElement = document.querySelector('.sidebar-footer .user-avatar-circle');
+            if (avatarElement) {
+                avatarElement.innerHTML = `<img src="${profile.profile_image_url}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
+            }
+        }
+    }
+
+    // Setup user menu dropdown functionality
+    setupUserMenuDropdown(userFolder);
+}
+
+// Setup the user menu dropdown with proper event listeners
+function setupUserMenuDropdown(userFolder) {
+    const userMenu = document.querySelector('.user-menu');
+    if (!userMenu) return;
+
+    // Remove existing listener by cloning and replacing
+    const newUserMenu = userMenu.cloneNode(true);
+    userMenu.parentNode.replaceChild(newUserMenu, userMenu);
+
+    newUserMenu.addEventListener('click', function(e) {
+        e.stopPropagation();
+
+        // Check if dropdown already exists
+        let dropdown = document.querySelector('.user-menu-dropdown');
+        if (dropdown) {
+            dropdown.remove();
+            return;
+        }
+
+        // Create dropdown
+        dropdown = document.createElement('div');
+        dropdown.className = 'user-menu-dropdown';
+        dropdown.innerHTML = `
+            <a href="/frontend/${userFolder}/tabs/my-profile.html" class="dropdown-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+                My Profile
+            </a>
+            <a href="/frontend/${userFolder}/tabs/settings.html" class="dropdown-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="3"></circle>
+                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                </svg>
+                Settings
+            </a>
+            <div class="dropdown-divider"></div>
+            <a href="#" class="dropdown-item logout-item" id="logoutBtn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                    <polyline points="16 17 21 12 16 7"></polyline>
+                    <line x1="21" y1="12" x2="9" y2="12"></line>
+                </svg>
+                Logout
+            </a>
+        `;
+
+        // Position dropdown above the user menu
+        newUserMenu.appendChild(dropdown);
+
+        // Add logout handler
+        const logoutBtn = dropdown.querySelector('#logoutBtn');
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                dropdown.remove();
+                showLogoutModal(userFolder);
+            });
+        }
+
+        // Close dropdown when clicking outside
+        const closeDropdown = (event) => {
+            if (!newUserMenu.contains(event.target)) {
+                dropdown.remove();
+                document.removeEventListener('click', closeDropdown);
+            }
+        };
+        setTimeout(() => document.addEventListener('click', closeDropdown), 0);
+    });
+}
+
+// Show logout confirmation modal
+function showLogoutModal(userFolder) {
+    // Create modal overlay
+    const modalOverlay = document.createElement('div');
+    modalOverlay.className = 'logout-modal-overlay';
+    modalOverlay.innerHTML = `
+        <div class="logout-modal">
+            <h3>Logout</h3>
+            <p>Are you sure you want to logout?</p>
+            <div class="logout-modal-buttons">
+                <button class="btn-cancel" id="cancelLogout">Cancel</button>
+                <button class="btn-confirm" id="confirmLogout">Logout</button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modalOverlay);
+
+    // Handle cancel
+    document.getElementById('cancelLogout').addEventListener('click', () => {
+        modalOverlay.remove();
+    });
+
+    // Handle confirm logout
+    document.getElementById('confirmLogout').addEventListener('click', async () => {
+        try {
+            await API.post('/auth/logout');
+        } catch (error) {
+            console.error('Logout error:', error);
+        }
+        localStorage.removeItem('token');
+        window.location.href = '/frontend/shared/login.html';
+    });
+
+    // Close on overlay click
+    modalOverlay.addEventListener('click', (e) => {
+        if (e.target === modalOverlay) {
+            modalOverlay.remove();
+        }
+    });
 }
 
 async function loadOwnProfile() {
@@ -262,7 +559,7 @@ function updateContactInfoSection(profile) {
     if (profile.email) {
         contactHTML += `
             <div class="contact-item">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
                     <polyline points="22,6 12,13 2,6"></polyline>
                 </svg>
@@ -275,7 +572,7 @@ function updateContactInfoSection(profile) {
         const formattedPhone = formatPhoneNumber(profile.phone);
         contactHTML += `
             <div class="contact-item">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
                 </svg>
                 <span>${formattedPhone}</span>
@@ -322,14 +619,14 @@ function updateProfileActions() {
         // Show edit and share buttons
         actionsContainer.innerHTML = `
             <button class="btn-edit-profile show-button" id="editProfileBtn">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                     <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                 </svg>
                 Edit Profile
             </button>
             <button class="btn-share-profile show-button">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <circle cx="18" cy="5" r="3"></circle>
                     <circle cx="6" cy="12" r="3"></circle>
                     <circle cx="18" cy="19" r="3"></circle>
@@ -364,7 +661,7 @@ function updateProfileActions() {
         // Show back button, follow and message buttons
         actionsContainer.innerHTML = `
             <button class="btn-back" id="backBtn">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M19 12H5M12 19l-7-7 7-7"></path>
                 </svg>
                 Back

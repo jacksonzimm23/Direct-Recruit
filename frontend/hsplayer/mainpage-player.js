@@ -325,8 +325,15 @@ async function updateSidebarFooter() {
 
 // Verify user is on the correct player page (HS player page)
 // College players should be redirected to collegeplayer folder
+// Skip redirect if viewing another user's profile (has username parameter)
 async function verifyPlayerType() {
     try {
+        // Skip verification if viewing another user's profile
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('username')) {
+            return; // Don't redirect when viewing someone else's profile
+        }
+
         const response = await API.get('/auth/me');
         if (response.user && response.profile) {
             const collegeDivision = response.profile.college_division;
