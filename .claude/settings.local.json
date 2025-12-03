@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(psql:*)",
+      "Bash(set PGPASSWORD=Bailey12@Abri2363:*)",
+      "Bash(node -e:*)",
+      "Bash(fc /b \"frontend\\hscoach\\mainpage-coach.html\" \"frontend\\collegecoach\\mainpage-coach.html\")",
+      "Bash(xcopy \"player\\*.*\" \"hsplayer\"\" /E /Y && xcopy \"player*.*\" \"collegeplayer\"\" /E /Y)",
+      "Bash(xcopy:*)",
+      "Bash(copy hsplayercreate-profile.html collegeplayercreate-profile.html)",
+      "Bash(del \"c:\\Users\\jacks\\OneDrive - Colorado School of Mines\\Desktop\\direct-recruit\\frontend\\hscoach\\tabs\\transfer-portal.html\" \"c:\\Users\\jacks\\OneDrive - Colorado School of Mines\\Desktop\\direct-recruit\\frontend\\hscoach\\tabs\\transfer-portal.css\" \"c:\\Users\\jacks\\OneDrive - Colorado School of Mines\\Desktop\\direct-recruit\\frontend\\hscoach\\tabs\\transfer-portal.js\")",
+      "Bash(copy \"c:\\Users\\jacks\\OneDrive - Colorado School of Mines\\Desktop\\direct-recruit\\frontend\\hsplayer\\tabs\\my-profile.js\" \"c:\\Users\\jacks\\OneDrive - Colorado School of Mines\\Desktop\\direct-recruit\\frontend\\profiles\\my-profile.js\")",
+      "Bash(copy:*)",
+      "Bash(rm:*)",
+      "Bash(git init:*)",
+      "Bash(git add:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

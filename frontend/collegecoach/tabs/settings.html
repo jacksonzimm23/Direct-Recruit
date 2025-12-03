@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings - Direct Recruit</title>
+    <link rel="stylesheet" href="../../landingpage/styles.css">
+    <link rel="stylesheet" href="../mainpage-coach.css">
+    <link rel="stylesheet" href="settings.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+</head>
+<body class="dashboard-body">
+    <!-- Sidebar Toggle Button -->
+    <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle Sidebar">
+        <svg class="toggle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="3" y1="12" x2="21" y2="12"></line>
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <line x1="3" y1="18" x2="21" y2="18"></line>
+        </svg>
+    </button>
+
+
+    <!-- Main Container -->
+    <div class="dashboard-container no-right-sidebar" id="dashboardContainer">
+        <!-- Left Sidebar Navigation -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">
+                    <img src="https://res.cloudinary.com/dzmsj6nwv/image/upload/v1762928148/LogoPNG3_pofqrr.png" alt="Direct Recruit Logo" class="logo-icon">
+                    <div class="logo-text">
+                        <span class="logo-title">Direct Recruit</span>
+                        <span class="logo-subtitle">GET RECRUITED · THE RIGHT WAY</span>
+                    </div>
+                </div>
+            </div>
+
+            <nav class="sidebar-nav">
+                <a href="../mainpage-coach.html" class="nav-item">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                        <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                    </svg>
+                    <span>Feed</span>
+                </a>
+
+                <a href="discover-players.html" class="nav-item">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <path d="m21 21-4.35-4.35"></path>
+                    </svg>
+                    <span>Discover Players</span>
+                </a>
+
+                <a href="my-profile.html" class="nav-item">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                    <span>My Profile</span>
+                </a>
+
+                <a href="messages.html" class="nav-item">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                    <span>Messages</span>
+                    <span class="notification-badge">5</span>
+                </a>
+
+                <a href="notifications.html" class="nav-item">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                    </svg>
+                    <span>Notifications</span>
+                </a>
+
+                <a href="recruiting-board.html" class="nav-item" id="recruitingBoardNav" style="display: none;">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="9" y1="3" x2="9" y2="21"></line>
+                        <line x1="15" y1="3" x2="15" y2="21"></line>
+                        <line x1="3" y1="9" x2="21" y2="9"></line>
+                        <line x1="3" y1="15" x2="21" y2="15"></line>
+                    </svg>
+                    <span>Recruiting Board</span>
+                </a>
+
+                <a href="transfer-portal.html" class="nav-item" id="transferPortalNav" style="display: none;">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <path d="M8 12h8"></path>
+                        <path d="M12 8v8"></path>
+                        <circle cx="12" cy="12" r="3"></circle>
+                    </svg>
+                    <span>Transfer Portal</span>
+                </a>
+
+                <a href="settings.html" class="nav-item active">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                    </svg>
+                    <span>Settings</span>
+                </a>
+            </nav>
+
+            <!-- Sidebar Footer -->
+            <div class="sidebar-footer">
+                <div class="user-menu">
+                    <div class="user-avatar-circle">
+                        <svg viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="12" cy="7" r="4"></circle>
+                        </svg>
+                    </div>
+                    <div class="user-info">
+                        <div class="user-name"></div>
+                        <div class="user-role"></div>
+                    </div>
+                    <svg class="more-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="1"></circle>
+                        <circle cx="12" cy="5" r="1"></circle>
+                        <circle cx="12" cy="19" r="1"></circle>
+                    </svg>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content settings-content">
+            <!-- Settings Header -->
+            <div class="settings-header">
+                <h1 class="settings-title">Settings</h1>
+                <p class="settings-subtitle">Manage your account preferences and privacy settings</p>
+            </div>
+
+            <!-- Settings Navigation -->
+            <div class="settings-nav">
+                <button class="settings-nav-btn active" data-section="account">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                    Account
+                </button>
+                <button class="settings-nav-btn" data-section="privacy">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                    </svg>
+                    Privacy
+                </button>
+                <button class="settings-nav-btn" data-section="notifications">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                    </svg>
+                    Notifications
+                </button>
+                <button class="settings-nav-btn" data-section="visibility">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                        <circle cx="12" cy="12" r="3"></circle>
+                    </svg>
+                    Profile Visibility
+                </button>
+                <button class="settings-nav-btn" data-section="security">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                    </svg>
+                    Security
+                </button>
+            </div>
+
+            <!-- Settings Sections -->
+            <div class="settings-sections">
+                <!-- Account Section -->
+                <section class="settings-section active" id="account">
+                    <h2 class="section-heading">Account Information</h2>
+
+                    <div class="settings-card">
+                        <h3 class="settings-card-title">Personal Details</h3>
+                        <div class="settings-form">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="firstName">First Name</label>
+                                    <input type="text" id="firstName" value="Mike" class="form-input">
+                                </div>
+                                <div class="form-group">
+                                    <label for="lastName">Last Name</label>
+                                    <input type="text" id="lastName" value="Johnson" class="form-input">
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="email">Email Address</label>
+                                <input type="email" id="email" value="coach.johnson@university.edu" class="form-input">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="phone">Phone Number</label>
+                                <input type="tel" id="phone" value="(614) 555-0199" class="form-input">
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="university">University</label>
+                                    <input type="text" id="university" value="Ohio State University" class="form-input">
+                                </div>
+                                <div class="form-group">
+                                    <label for="coachTitle">Title</label>
+                                    <input type="text" id="coachTitle" value="Head Coach" class="form-input">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="settings-card">
+                        <h3 class="settings-card-title">Email Preferences</h3>
+                        <div class="settings-toggles">
+                            <div class="toggle-item">
+                                <div class="toggle-info">
+                                    <div class="toggle-label">Marketing Emails</div>
+                                    <div class="toggle-description">Receive updates about new features and recruiting tips</div>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" checked>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+
+                            <div class="toggle-item">
+                                <div class="toggle-info">
+                                    <div class="toggle-label">Weekly Summary</div>
+                                    <div class="toggle-description">Get a weekly summary of your recruiting activity</div>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" checked>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+
+                            <div class="toggle-item">
+                                <div class="toggle-info">
+                                    <div class="toggle-label">Recruiting News</div>
+                                    <div class="toggle-description">Stay updated on college recruiting news and deadlines</div>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Privacy Section -->
+                <section class="settings-section" id="privacy">
+                    <h2 class="section-heading">Privacy Controls</h2>
+
+                    <div class="settings-card">
+                        <h3 class="settings-card-title">Who Can View Your Profile</h3>
+                        <div class="settings-form">
+                            <div class="form-group">
+                                <label for="profileVisibility">Profile Visibility</label>
+                                <select id="profileVisibility" class="form-select">
+                                    <option value="everyone">Everyone</option>
+                                    <option value="verified-players" selected>Verified Players Only</option>
+                                    <option value="connections">My Connections</option>
+                                    <option value="private">Private</option>
+                                </select>
+                                <small class="form-hint">Control who can see your full profile information</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="settings-card">
+                        <h3 class="settings-card-title">Who Can Contact You</h3>
+                        <div class="settings-form">
+                            <div class="form-group">
+                                <label for="messagePermissions">Message Permissions</label>
+                                <select id="messagePermissions" class="form-select">
+                                    <option value="everyone">Everyone</option>
+                                    <option value="verified-only" selected>Verified Players Only</option>
+                                    <option value="connections">Connections Only</option>
+                                    <option value="none">No One</option>
+                                </select>
+                                <small class="form-hint">Choose who can send you direct messages</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="settings-card">
+                        <h3 class="settings-card-title">Data Privacy</h3>
+                        <div class="settings-toggles">
+                            <div class="toggle-item">
+                                <div class="toggle-info">
+                                    <div class="toggle-label">Show Profile in Search Results</div>
+                                    <div class="toggle-description">Allow players to discover your profile through search</div>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" checked>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+
+                            <div class="toggle-item">
+                                <div class="toggle-info">
+                                    <div class="toggle-label">Display Contact Information</div>
+                                    <div class="toggle-description">Show email and phone on your public profile</div>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+
+                            <div class="toggle-item">
+                                <div class="toggle-info">
+                                    <div class="toggle-label">Analytics Tracking</div>
+                                    <div class="toggle-description">Help us improve Direct Recruit with usage data</div>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" checked>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Notifications Section -->
+                <section class="settings-section" id="notifications">
+                    <h2 class="section-heading">Notification Preferences</h2>
+
+                    <div class="settings-card">
+                        <h3 class="settings-card-title">Email Notifications</h3>
+                        <div class="settings-toggles">
+                            <div class="toggle-item">
+                                <div class="toggle-info">
+                                    <div class="toggle-label">New Messages</div>
+                                    <div class="toggle-description">Get notified when you receive a new message</div>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" checked>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+
+                            <div class="toggle-item">
+                                <div class="toggle-info">
+                                    <div class="toggle-label">Profile Views</div>
+                                    <div class="toggle-description">Know when players view your profile</div>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" checked>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+
+                            <div class="toggle-item">
+                                <div class="toggle-info">
+                                    <div class="toggle-label">Player Interest</div>
+                                    <div class="toggle-description">Alert when a player shows interest in your program</div>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" checked>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+
+                            <div class="toggle-item">
+                                <div class="toggle-info">
+                                    <div class="toggle-label">Connection Requests</div>
+                                    <div class="toggle-description">Notification for new connection requests</div>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" checked>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="settings-card">
+                        <h3 class="settings-card-title">Push Notifications</h3>
+                        <div class="settings-toggles">
+                            <div class="toggle-item">
+                                <div class="toggle-info">
+                                    <div class="toggle-label">Enable Push Notifications</div>
+                                    <div class="toggle-description">Receive real-time notifications on your device</div>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+
+                            <div class="toggle-item">
+                                <div class="toggle-info">
+                                    <div class="toggle-label">Sound Alerts</div>
+                                    <div class="toggle-description">Play sound for important notifications</div>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" checked>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Profile Visibility Section -->
+                <section class="settings-section" id="visibility">
+                    <h2 class="section-heading">Profile Visibility Settings</h2>
+
+                    <div class="settings-card">
+                        <h3 class="settings-card-title">Public Information</h3>
+                        <div class="settings-toggles">
+                            <div class="toggle-item">
+                                <div class="toggle-info">
+                                    <div class="toggle-label">Program Information</div>
+                                    <div class="toggle-description">Display your program details and achievements publicly</div>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" checked>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+
+                            <div class="toggle-item">
+                                <div class="toggle-info">
+                                    <div class="toggle-label">Recruiting Needs</div>
+                                    <div class="toggle-description">Show positions and player types you're recruiting</div>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" checked>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+
+                            <div class="toggle-item">
+                                <div class="toggle-info">
+                                    <div class="toggle-label">Coaching History</div>
+                                    <div class="toggle-description">Allow public access to your coaching history</div>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" checked>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+
+                            <div class="toggle-item">
+                                <div class="toggle-info">
+                                    <div class="toggle-label">Social Media Links</div>
+                                    <div class="toggle-description">Display links to your social media accounts</div>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="settings-card">
+                        <h3 class="settings-card-title">Activity Visibility</h3>
+                        <div class="settings-toggles">
+                            <div class="toggle-item">
+                                <div class="toggle-info">
+                                    <div class="toggle-label">Show Online Status</div>
+                                    <div class="toggle-description">Let others see when you're active</div>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" checked>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+
+                            <div class="toggle-item">
+                                <div class="toggle-info">
+                                    <div class="toggle-label">Activity Feed</div>
+                                    <div class="toggle-description">Share your updates with your network</div>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" checked>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Security Section -->
+                <section class="settings-section" id="security">
+                    <h2 class="section-heading">Security Settings</h2>
+
+                    <div class="settings-card">
+                        <h3 class="settings-card-title">Change Password</h3>
+                        <div class="settings-form">
+                            <div class="form-group">
+                                <label for="currentPassword">Current Password</label>
+                                <input type="password" id="currentPassword" placeholder="Enter current password" class="form-input">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="newPassword">New Password</label>
+                                <input type="password" id="newPassword" placeholder="Enter new password" class="form-input">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="confirmPassword">Confirm New Password</label>
+                                <input type="password" id="confirmPassword" placeholder="Confirm new password" class="form-input">
+                            </div>
+
+                            <button class="btn-secondary">Update Password</button>
+                        </div>
+                    </div>
+
+                    <div class="settings-card">
+                        <h3 class="settings-card-title">Two-Factor Authentication</h3>
+                        <div class="settings-toggles">
+                            <div class="toggle-item">
+                                <div class="toggle-info">
+                                    <div class="toggle-label">Enable 2FA</div>
+                                    <div class="toggle-description">Add an extra layer of security to your account</div>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="settings-card">
+                        <h3 class="settings-card-title">Active Sessions</h3>
+                        <div class="session-list">
+                            <div class="session-item">
+                                <div class="session-info">
+                                    <div class="session-device">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                                            <line x1="8" y1="21" x2="16" y2="21"></line>
+                                            <line x1="12" y1="17" x2="12" y2="21"></line>
+                                        </svg>
+                                        <div>
+                                            <div class="session-name">Windows PC - Chrome</div>
+                                            <div class="session-location">Columbus, OH • Current session</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <span class="session-badge">Active</span>
+                            </div>
+
+                            <div class="session-item">
+                                <div class="session-info">
+                                    <div class="session-device">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
+                                            <line x1="12" y1="18" x2="12.01" y2="18"></line>
+                                        </svg>
+                                        <div>
+                                            <div class="session-name">iPhone 13 - Safari</div>
+                                            <div class="session-location">Columbus, OH • 2 days ago</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <button class="btn-session-revoke">Revoke</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="settings-card danger-zone">
+                        <h3 class="settings-card-title">Danger Zone</h3>
+                        <div class="danger-content">
+                            <div class="danger-info">
+                                <div class="danger-label">Delete Account</div>
+                                <div class="danger-description">Permanently delete your account and all associated data. This action cannot be undone.</div>
+                            </div>
+                            <button class="btn-danger" id="deleteAccountBtn">Delete Account</button>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Save Changes Button -->
+            <div class="settings-footer">
+                <button class="btn-save-changes" id="saveChangesBtn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                        <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                        <polyline points="7 3 7 8 15 8"></polyline>
+                    </svg>
+                    Save Changes
+                </button>
+                <button class="btn-discard" id="discardBtn">Discard</button>
+            </div>
+        </main>
+    </div>
+
+    <script src="../../shared/api.js"></script>
+    <script src="../mainpage-coach.js?v=4"></script>
+    <script src="settings.js"></script>
+</body>
+</html>

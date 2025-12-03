@@ -1,0 +1,189 @@
+.search-container {
+    position: relative;
+    width: 100%;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.search-box {
+    position: relative;
+    display: flex;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 0.75rem 1rem;
+    backdrop-filter: blur(10px);
+    border: 2px solid transparent;
+    transition: all 0.3s;
+}
+
+.search-box:focus-within {
+    border-color: var(--cerulean);
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.search-icon {
+    color: rgba(255, 255, 255, 0.6);
+    margin-right: 0.75rem;
+    flex-shrink: 0;
+}
+
+.search-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--white);
+    font-size: 1rem;
+    padding: 0 0 0 0.5rem;
+}
+
+.search-input::placeholder {
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.clear-search {
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.6);
+    cursor: pointer;
+    padding: 0.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s;
+}
+
+.clear-search:hover {
+    color: var(--white);
+}
+
+.search-results-container {
+    position: absolute;
+    top: calc(100% + 0.5rem);
+    left: 0;
+    right: 0;
+    background: rgba(3, 64, 120, 0.98);
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(10px);
+    max-height: 500px;
+    overflow-y: auto;
+    z-index: 1000;
+}
+
+.search-results {
+    padding: 0.5rem;
+}
+
+.search-section {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.search-section h3 {
+    margin: 0;
+    font-size: 0.875rem;
+    color: var(--cerulean);
+    text-transform: uppercase;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+.search-result-item {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: background 0.2s;
+}
+
+.search-result-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.result-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-right: 1rem;
+    border: 2px solid var(--cerulean);
+}
+
+.result-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.result-name {
+    font-weight: 600;
+    color: var(--white);
+    font-size: 1rem;
+    margin-bottom: 0.125rem;
+}
+
+.result-username {
+    color: var(--cerulean);
+    font-size: 0.875rem;
+    margin-bottom: 0.125rem;
+}
+
+.result-subtitle {
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 0.813rem;
+}
+
+.result-badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.player-badge {
+    background: rgba(18, 130, 162, 0.3);
+    color: var(--cerulean);
+}
+
+.coach-badge {
+    background: rgba(10, 147, 150, 0.3);
+    color: var(--pacific-blue);
+}
+
+.search-no-results,
+.search-error {
+    text-align: center;
+    padding: 2rem;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.search-error {
+    color: #ff6b6b;
+}
+
+@media (max-width: 768px) {
+    .search-container {
+        max-width: 100%;
+    }
+
+    .search-input {
+        font-size: 0.875rem;
+    }
+
+    .search-input::placeholder {
+        font-size: 0.875rem;
+    }
+
+    .result-avatar {
+        width: 40px;
+        height: 40px;
+    }
+
+    .result-name {
+        font-size: 0.938rem;
+    }
+}

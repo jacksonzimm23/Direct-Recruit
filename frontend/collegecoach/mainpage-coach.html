@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Coach Dashboard - Direct Recruit</title>
+    <link rel="stylesheet" href="../landingpage/styles.css">
+    <link rel="stylesheet" href="mainpage-coach.css">
+    <link rel="stylesheet" href="../shared/feed.css">
+    <link rel="stylesheet" href="../shared/search.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+</head>
+<body class="dashboard-body">
+    <!-- Sidebar Toggle Button -->
+    <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle Sidebar">
+        <svg class="toggle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="3" y1="12" x2="21" y2="12"></line>
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <line x1="3" y1="18" x2="21" y2="18"></line>
+        </svg>
+    </button>
+
+    <!-- Right Sidebar Toggle Button -->
+    <button class="right-sidebar-toggle" id="rightSidebarToggle" aria-label="Toggle Right Sidebar">
+        <svg class="toggle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="3" y1="12" x2="21" y2="12"></line>
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <line x1="3" y1="18" x2="21" y2="18"></line>
+        </svg>
+    </button>
+
+    <!-- Main Container -->
+    <div class="dashboard-container" id="dashboardContainer">
+        <!-- Left Sidebar Navigation -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">
+                    <img src="https://res.cloudinary.com/dzmsj6nwv/image/upload/v1762928148/LogoPNG3_pofqrr.png" alt="Direct Recruit Logo" class="logo-icon">
+                    <div class="logo-text">
+                        <span class="logo-title">Direct Recruit</span>
+                        <span class="logo-subtitle">GET RECRUITED · THE RIGHT WAY</span>
+                    </div>
+                </div>
+            </div>
+
+            <nav class="sidebar-nav">
+                <a href="mainpage-coach.html" class="nav-item active">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                        <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                    </svg>
+                    <span>Feed</span>
+                </a>
+
+                <a href="tabs/discover-players.html" class="nav-item">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <path d="m21 21-4.35-4.35"></path>
+                    </svg>
+                    <span>Discover Players</span>
+                </a>
+
+                <a href="tabs/my-profile.html" class="nav-item">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                    <span>My Profile</span>
+                </a>
+
+                <a href="tabs/messages.html" class="nav-item">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                    <span>Messages</span>
+                    <span class="notification-badge">5</span>
+                </a>
+
+                <a href="tabs/notifications.html" class="nav-item">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                    </svg>
+                    <span>Notifications</span>
+                </a>
+
+                <a href="tabs/recruiting-board.html" class="nav-item" id="recruitingBoardNav" style="display: none;">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="9" y1="3" x2="9" y2="21"></line>
+                        <line x1="15" y1="3" x2="15" y2="21"></line>
+                        <line x1="3" y1="9" x2="21" y2="9"></line>
+                        <line x1="3" y1="15" x2="21" y2="15"></line>
+                    </svg>
+                    <span>Recruiting Board</span>
+                </a>
+
+                <a href="tabs/transfer-portal.html" class="nav-item" id="transferPortalNav" style="display: none;">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <path d="M8 12h8"></path>
+                        <path d="M12 8v8"></path>
+                        <circle cx="12" cy="12" r="3"></circle>
+                    </svg>
+                    <span>Transfer Portal</span>
+                </a>
+
+                <a href="tabs/settings.html" class="nav-item">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                    </svg>
+                    <span>Settings</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="user-menu">
+                    <div class="user-avatar-circle">
+                        <svg viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="12" cy="7" r="4"></circle>
+                        </svg>
+                    </div>
+                    <div class="user-info">
+                        <div class="user-name"></div>
+                        <div class="user-role"></div>
+                    </div>
+                    <svg class="more-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="1"></circle>
+                        <circle cx="12" cy="5" r="1"></circle>
+                        <circle cx="12" cy="19" r="1"></circle>
+                    </svg>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Feed Content -->
+        <main class="main-content">
+            <div class="content-header">
+                <h1>Feed</h1>
+                <div id="searchComponent"></div>
+            </div>
+
+            <!-- Post Creation Box -->
+            <div class="create-post-box">
+                <div class="post-avatar-circle">
+                    <svg viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                </div>
+                <div class="post-input-container">
+                    <textarea placeholder="Share recruiting updates, team news, or program highlights..." class="post-input" rows="3"></textarea>
+                    <div class="post-actions">
+                        <div class="post-options">
+                            <button class="post-option-btn" title="Add Photo/Video">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                    <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                                    <polyline points="21 15 16 10 5 21"></polyline>
+                                </svg>
+                            </button>
+                            <button class="post-option-btn" title="Add Link">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                                    <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+                                </svg>
+                            </button>
+                        </div>
+                        <button class="btn-post-submit">Post</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Feed Posts -->
+            <div class="feed-posts" id="feedPosts">
+                <!-- Sample Post 1 -->
+                <article class="post-card">
+                    <div class="post-header">
+                        <div class="post-author">
+                            <div class="author-avatar">
+                                <svg viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                    <circle cx="12" cy="7" r="4"></circle>
+                                </svg>
+                            </div>
+                            <div class="author-info">
+                                <div class="author-name">
+                                    Coach Williams
+                                    <svg class="verified-badge" viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
+                                        <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"/>
+                                    </svg>
+                                </div>
+                                <div class="author-meta coach-meta">Head Coach • State University • 2 hours ago</div>
+                            </div>
+                        </div>
+                        <button class="post-more-btn">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="1"></circle>
+                                <circle cx="12" cy="5" r="1"></circle>
+                                <circle cx="12" cy="19" r="1"></circle>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="post-content">
+                        <p>Excited to announce we have 3 scholarship spots available for the 2026 class! Looking for versatile defensive backs who can compete at the highest level. If you're a student-athlete with strong academics and elite athleticism, reach out!</p>
+                    </div>
+                    <div class="post-footer">
+                        <button class="post-action-btn">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                            </svg>
+                            <span>24</span>
+                        </button>
+                        <button class="post-action-btn">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                            </svg>
+                            <span>8</span>
+                        </button>
+                        <button class="post-action-btn">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="18" cy="5" r="3"></circle>
+                                <circle cx="6" cy="12" r="3"></circle>
+                                <circle cx="18" cy="19" r="3"></circle>
+                                <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+                                <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+                            </svg>
+                        </button>
+                    </div>
+                </article>
+
+                <!-- Sample Post 2 -->
+                <article class="post-card">
+                    <div class="post-header">
+                        <div class="post-author">
+                            <div class="author-avatar">
+                                <svg viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                    <circle cx="12" cy="7" r="4"></circle>
+                                </svg>
+                            </div>
+                            <div class="author-info">
+                                <div class="author-name">Marcus Johnson</div>
+                                <div class="author-meta player-meta">WR • 6'1" • 185 lbs • Class of 2026 • 5 hours ago</div>
+                            </div>
+                        </div>
+                        <button class="post-more-btn">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="1"></circle>
+                                <circle cx="12" cy="5" r="1"></circle>
+                                <circle cx="12" cy="19" r="1"></circle>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="post-content">
+                        <p>Just finished up at the state championship! 8 catches, 156 yards, 2 TDs. Blessed to be part of this amazing team. Looking forward to taking my talents to the next level. 🏈💯</p>
+                    </div>
+                    <div class="post-stats">
+                        <div class="stat-badge">
+                            <span class="stat-label">Season Stats:</span>
+                            <span class="stat-value">64 REC • 1,247 YDS • 15 TDs</span>
+                        </div>
+                    </div>
+                    <div class="post-footer">
+                        <button class="post-action-btn">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                            </svg>
+                            <span>127</span>
+                        </button>
+                        <button class="post-action-btn">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                            </svg>
+                            <span>34</span>
+                        </button>
+                        <button class="post-action-btn">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="18" cy="5" r="3"></circle>
+                                <circle cx="6" cy="12" r="3"></circle>
+                                <circle cx="18" cy="19" r="3"></circle>
+                                <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+                                <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+                            </svg>
+                        </button>
+                    </div>
+                </article>
+
+                <!-- Sample Post 3 -->
+                <article class="post-card">
+                    <div class="post-header">
+                        <div class="post-author">
+                            <div class="author-avatar">
+                                <svg viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                    <circle cx="12" cy="7" r="4"></circle>
+                                </svg>
+                            </div>
+                            <div class="author-info">
+                                <div class="author-name">
+                                    Coach Rodriguez
+                                    <svg class="verified-badge" viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
+                                        <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"/>
+                                    </svg>
+                                </div>
+                                <div class="author-meta coach-meta">Offensive Coordinator • Texas A&M • 1 day ago</div>
+                            </div>
+                        </div>
+                        <button class="post-more-btn">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="1"></circle>
+                                <circle cx="12" cy="5" r="1"></circle>
+                                <circle cx="12" cy="19" r="1"></circle>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="post-content">
+                        <p>Recruiting update: We're looking for 2-3 offensive linemen for our 2026 class. Must have strong academics (3.0+ GPA), great footwork, and the ability to compete in our up-tempo offense. DM me if interested!</p>
+                        <div class="post-tags">
+                            <span class="tag">#Recruiting2026</span>
+                            <span class="tag">#OffensiveLine</span>
+                            <span class="tag">#D2Football</span>
+                        </div>
+                    </div>
+                    <div class="post-footer">
+                        <button class="post-action-btn">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                            </svg>
+                            <span>45</span>
+                        </button>
+                        <button class="post-action-btn">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                            </svg>
+                            <span>16</span>
+                        </button>
+                        <button class="post-action-btn">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="18" cy="5" r="3"></circle>
+                                <circle cx="6" cy="12" r="3"></circle>
+                                <circle cx="18" cy="19" r="3"></circle>
+                                <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+                                <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+                            </svg>
+                        </button>
+                    </div>
+                </article>
+            </div>
+        </main>
+
+        <!-- Right Sidebar -->
+        <aside class="right-sidebar" id="rightSidebar">
+            <!-- Trending Topics -->
+            <div class="widget">
+                <div class="widget-title">Trending Topics</div>
+                <div class="trending-list">
+                    <div class="trending-item">
+                        <div class="trending-info">
+                            <div class="trending-topic">#Recruiting2026</div>
+                            <div class="trending-count">1,247 posts</div>
+                        </div>
+                    </div>
+                    <div class="trending-item">
+                        <div class="trending-info">
+                            <div class="trending-topic">#TransferPortal</div>
+                            <div class="trending-count">892 posts</div>
+                        </div>
+                    </div>
+                    <div class="trending-item">
+                        <div class="trending-info">
+                            <div class="trending-topic">#StateChampionship</div>
+                            <div class="trending-count">654 posts</div>
+                        </div>
+                    </div>
+                    <div class="trending-item">
+                        <div class="trending-info">
+                            <div class="trending-topic">#D1Football</div>
+                            <div class="trending-count">523 posts</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Filters -->
+            <div class="widget">
+                <div class="widget-title">Quick Filters</div>
+                <div class="filter-list">
+                    <button class="filter-btn active">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="4" y1="21" x2="4" y2="14"></line>
+                            <line x1="4" y1="10" x2="4" y2="3"></line>
+                            <line x1="12" y1="21" x2="12" y2="12"></line>
+                            <line x1="12" y1="8" x2="12" y2="3"></line>
+                            <line x1="20" y1="21" x2="20" y2="16"></line>
+                            <line x1="20" y1="12" x2="20" y2="3"></line>
+                            <line x1="1" y1="14" x2="7" y2="14"></line>
+                            <line x1="9" y1="8" x2="15" y2="8"></line>
+                            <line x1="17" y1="16" x2="23" y2="16"></line>
+                        </svg>
+                        <span>All Posts</span>
+                    </button>
+                    <button class="filter-btn">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="9" cy="7" r="4"></circle>
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                        </svg>
+                        <span>Players Only</span>
+                    </button>
+                    <button class="filter-btn">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="9" cy="7" r="4"></circle>
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                        </svg>
+                        <span>Coaches Only</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Recruiting Stats -->
+            <div class="widget">
+                <div class="widget-title">Your Recruiting Stats</div>
+                <div class="stats-list">
+                    <div class="stat-item-widget">
+                        <div class="stat-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="11" cy="11" r="8"></circle>
+                                <path d="m21 21-4.35-4.35"></path>
+                            </svg>
+                        </div>
+                        <div class="stat-details">
+                            <div class="stat-value-lg">127</div>
+                            <div class="stat-label-sm">Players Viewed</div>
+                        </div>
+                    </div>
+                    <div class="stat-item-widget">
+                        <div class="stat-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                            </svg>
+                        </div>
+                        <div class="stat-details">
+                            <div class="stat-value-lg">34</div>
+                            <div class="stat-label-sm">Active Conversations</div>
+                        </div>
+                    </div>
+                    <div class="stat-item-widget">
+                        <div class="stat-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                            </svg>
+                        </div>
+                        <div class="stat-details">
+                            <div class="stat-value-lg">18</div>
+                            <div class="stat-label-sm">Shortlisted Players</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <script src="../shared/api.js"></script>
+    <script src="../shared/search.js"></script>
+    <script src="../shared/feed.js"></script>
+    <script src="mainpage-coach.js?v=999"></script>
+    <script>
+        // Initialize search component
+        document.addEventListener('DOMContentLoaded', () => {
+            new SearchComponent('searchComponent');
+        });
+    </script>
+</body>
+</html>

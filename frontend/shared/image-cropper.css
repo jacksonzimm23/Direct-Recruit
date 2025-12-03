@@ -1,0 +1,255 @@
+/* Image Cropper Modal Styles */
+.cropper-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.9);
+    z-index: 10000;
+    justify-content: center;
+    align-items: center;
+    animation: fadeIn 0.3s ease-out;
+}
+
+.cropper-modal.active {
+    display: flex;
+}
+
+.cropper-container {
+    background: var(--midnight-blue, #0B1A2A);
+    border-radius: 16px;
+    padding: 1.5rem;
+    max-width: 500px;
+    width: 90%;
+    max-height: 95vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    display: flex;
+    flex-direction: column;
+}
+
+.cropper-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    flex-shrink: 0;
+}
+
+.cropper-title {
+    color: white;
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+.cropper-close {
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.6);
+    cursor: pointer;
+    font-size: 2rem;
+    line-height: 1;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s;
+}
+
+.cropper-close:hover {
+    color: white;
+}
+
+.cropper-canvas-container {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1;
+    max-height: 400px;
+    background: #000;
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 1rem;
+    flex-shrink: 0;
+    cursor: move; /* Show draggable cursor */
+}
+
+.cropper-image {
+    position: absolute;
+    user-select: none;
+    -webkit-user-drag: none;
+    max-width: none;
+    max-height: none;
+    pointer-events: none; /* Allow events to pass through to container */
+}
+
+.crop-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 10;
+    /* Dark overlay - will be updated with radial gradient via JavaScript */
+    background: rgba(0, 0, 0, 0.75);
+}
+
+.crop-circle {
+    position: absolute !important;
+    border: 4px solid #1282A2 !important;
+    pointer-events: none !important;
+    z-index: 100 !important;
+
+    /* PERFECT CIRCLE */
+    border-radius: 50% !important;
+    -webkit-border-radius: 50% !important;
+    -moz-border-radius: 50% !important;
+
+    /* Transparent background to show image through it */
+    background: transparent !important;
+
+    /* Visual enhancement */
+    box-sizing: border-box !important;
+}
+
+.cropper-controls {
+    margin-bottom: 1rem;
+    flex-shrink: 0;
+}
+
+.control-group {
+    margin-bottom: 0.75rem;
+}
+
+.control-label {
+    display: block;
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 0.875rem;
+    margin-bottom: 0.5rem;
+}
+
+.control-slider {
+    width: 100%;
+    height: 6px;
+    border-radius: 3px;
+    background: rgba(255, 255, 255, 0.1);
+    outline: none;
+    -webkit-appearance: none;
+}
+
+.control-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--cerulean, #1282A2);
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.control-slider::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
+}
+
+.control-slider::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--cerulean, #1282A2);
+    cursor: pointer;
+    border: none;
+    transition: transform 0.2s;
+}
+
+.control-slider::-moz-range-thumb:hover {
+    transform: scale(1.2);
+}
+
+.cropper-actions {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: flex-end;
+    flex-shrink: 0;
+}
+
+.btn-cropper {
+    padding: 0.65rem 1.5rem;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+}
+
+.btn-cropper-cancel {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+}
+
+.btn-cropper-cancel:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.btn-cropper-confirm {
+    background: var(--cerulean, #1282A2);
+    color: white;
+}
+
+.btn-cropper-confirm:hover {
+    background: var(--pacific-blue, #2C5F8D);
+}
+
+.btn-cropper-confirm:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.cropper-hint {
+    text-align: center;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.8rem;
+    margin: 0.5rem 0;
+    flex-shrink: 0;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+/* Loading spinner for cropper */
+.cropper-loading {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    text-align: center;
+}
+
+.cropper-spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid rgba(18, 130, 162, 0.2);
+    border-top-color: var(--cerulean, #1282A2);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 1rem;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}

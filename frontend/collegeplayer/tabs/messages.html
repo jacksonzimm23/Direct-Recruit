@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Messages - Direct Recruit</title>
+    <link rel="stylesheet" href="../../landingpage/styles.css">
+    <link rel="stylesheet" href="../mainpage-player.css">
+    <link rel="stylesheet" href="messages.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+</head>
+<body class="dashboard-body">
+    <!-- Sidebar Toggle Button -->
+    <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle Sidebar">
+        <svg class="toggle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="3" y1="12" x2="21" y2="12"></line>
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <line x1="3" y1="18" x2="21" y2="18"></line>
+        </svg>
+    </button>
+
+
+    <!-- Main Container -->
+    <div class="dashboard-container no-right-sidebar" id="dashboardContainer">
+        <!-- Left Sidebar Navigation -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">
+                    <img src="https://res.cloudinary.com/dzmsj6nwv/image/upload/v1762928148/LogoPNG3_pofqrr.png" alt="Direct Recruit Logo" class="logo-icon">
+                    <div class="logo-text">
+                        <span class="logo-title">Direct Recruit</span>
+                        <span class="logo-subtitle">GET RECRUITED · THE RIGHT WAY</span>
+                    </div>
+                </div>
+            </div>
+
+            <nav class="sidebar-nav">
+                <a href="../mainpage-player.html" class="nav-item">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                        <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                    </svg>
+                    <span>Feed</span>
+                </a>
+
+                <a href="discover-players.html" class="nav-item">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                    </svg>
+                    <span>Discover Players</span>
+                </a>
+
+                <a href="my-profile.html" class="nav-item">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                    <span>My Profile</span>
+                </a>
+
+                <a href="messages.html" class="nav-item active">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                    <span>Messages</span>
+                    <span class="notification-badge">3</span>
+                </a>
+
+                <a href="notifications.html" class="nav-item">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                    </svg>
+                    <span>Notifications</span>
+                </a>
+
+                <a href="settings.html" class="nav-item">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                    </svg>
+                    <span>Settings</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="user-menu">
+                    <div class="user-avatar-circle">
+                        <svg viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="12" cy="7" r="4"></circle>
+                        </svg>
+                    </div>
+                    <div class="user-info">
+                        <div class="user-name"></div>
+                        <div class="user-role"></div>
+                    </div>
+                    <svg class="more-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="1"></circle>
+                        <circle cx="12" cy="5" r="1"></circle>
+                        <circle cx="12" cy="19" r="1"></circle>
+                    </svg>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Messages Content -->
+        <main class="main-content messages-content">
+            <div class="content-header">
+                <h1>Messages</h1>
+            </div>
+
+            <div class="messages-container">
+                <!-- Conversations Sidebar -->
+                <div class="conversations-sidebar">
+                    <div class="conversations-header">
+                        <div class="search-box-messages">
+                            <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="11" cy="11" r="8"></circle>
+                                <path d="m21 21-4.35-4.35"></path>
+                            </svg>
+                            <input type="text" placeholder="Search conversations..." class="search-input-messages" id="searchConversations">
+                        </div>
+                    </div>
+
+                    <div class="conversations-list" id="conversationsList">
+                        <!-- Conversation 1 -->
+                        <div class="conversation-item active" data-conversation-id="1">
+                            <div class="conversation-avatar">
+                                <div class="avatar-circle">
+                                    <svg viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                        <circle cx="12" cy="7" r="4"></circle>
+                                    </svg>
+                                </div>
+                                <span class="online-indicator"></span>
+                            </div>
+                            <div class="conversation-info">
+                                <div class="conversation-top">
+                                    <div class="conversation-name">Coach Martinez</div>
+                                    <div class="conversation-time">2m</div>
+                                </div>
+                                <div class="conversation-preview">
+                                    <span class="unread-dot"></span>
+                                    <span class="preview-text">That sounds great! When can we schedule...</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Conversation 2 -->
+                        <div class="conversation-item unread" data-conversation-id="2">
+                            <div class="conversation-avatar">
+                                <div class="avatar-circle">
+                                    <svg viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                        <circle cx="12" cy="7" r="4"></circle>
+                                    </svg>
+                                </div>
+                            </div>
+                            <div class="conversation-info">
+                                <div class="conversation-top">
+                                    <div class="conversation-name">Coach Anderson</div>
+                                    <div class="conversation-time">1h</div>
+                                </div>
+                                <div class="conversation-preview">
+                                    <span class="unread-dot"></span>
+                                    <span class="preview-text">I'd love to talk about your defensive skills</span>
+                                    <span class="unread-count">2</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Conversation 3 -->
+                        <div class="conversation-item unread" data-conversation-id="3">
+                            <div class="conversation-avatar">
+                                <div class="avatar-circle">
+                                    <svg viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                        <circle cx="12" cy="7" r="4"></circle>
+                                    </svg>
+                                </div>
+                            </div>
+                            <div class="conversation-info">
+                                <div class="conversation-top">
+                                    <div class="conversation-name">Jake Morrison</div>
+                                    <div class="conversation-time">3h</div>
+                                </div>
+                                <div class="conversation-preview">
+                                    <span class="unread-dot"></span>
+                                    <span class="preview-text">Did you see the game last night?</span>
+                                    <span class="unread-count">1</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Conversation 4 -->
+                        <div class="conversation-item" data-conversation-id="4">
+                            <div class="conversation-avatar">
+                                <div class="avatar-circle">
+                                    <svg viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                        <circle cx="12" cy="7" r="4"></circle>
+                                    </svg>
+                                </div>
+                            </div>
+                            <div class="conversation-info">
+                                <div class="conversation-top">
+                                    <div class="conversation-name">Coach Reynolds</div>
+                                    <div class="conversation-time">1d</div>
+                                </div>
+                                <div class="conversation-preview">
+                                    <span class="preview-text">Thanks for sending your highlight reel!</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Conversation 5 -->
+                        <div class="conversation-item" data-conversation-id="5">
+                            <div class="conversation-avatar">
+                                <div class="avatar-circle">
+                                    <svg viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                        <circle cx="12" cy="7" r="4"></circle>
+                                    </svg>
+                                </div>
+                            </div>
+                            <div class="conversation-info">
+                                <div class="conversation-top">
+                                    <div class="conversation-name">Marcus Johnson</div>
+                                    <div class="conversation-time">2d</div>
+                                </div>
+                                <div class="conversation-preview">
+                                    <span class="preview-text">You: Let's train together this weekend</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Conversation 6 -->
+                        <div class="conversation-item" data-conversation-id="6">
+                            <div class="conversation-avatar">
+                                <div class="avatar-circle">
+                                    <svg viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                        <circle cx="12" cy="7" r="4"></circle>
+                                    </svg>
+                                </div>
+                            </div>
+                            <div class="conversation-info">
+                                <div class="conversation-top">
+                                    <div class="conversation-name">Coach Williams</div>
+                                    <div class="conversation-time">3d</div>
+                                </div>
+                                <div class="conversation-preview">
+                                    <span class="preview-text">Your passing stats are impressive</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Message Thread -->
+                <div class="message-thread" id="messageThread">
+                    <div class="message-thread-header">
+                        <div class="thread-header-info">
+                            <div class="thread-avatar-circle">
+                                <svg viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                    <circle cx="12" cy="7" r="4"></circle>
+                                </svg>
+                            </div>
+                            <div class="thread-user-info">
+                                <div class="thread-user-name">Coach Martinez</div>
+                                <div class="thread-user-status">
+                                    <span class="status-dot online"></span>
+                                    <span>Active now</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="thread-actions">
+                            <button class="thread-action-btn" title="Video Call">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polygon points="23 7 16 12 23 17 23 7"></polygon>
+                                    <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
+                                </svg>
+                            </button>
+                            <button class="thread-action-btn" title="Phone Call">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+                                </svg>
+                            </button>
+                            <button class="thread-action-btn" title="More Options">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="1"></circle>
+                                    <circle cx="12" cy="5" r="1"></circle>
+                                    <circle cx="12" cy="19" r="1"></circle>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="message-thread-content" id="messageThreadContent">
+                        <div class="message-date-divider">
+                            <span>Today</span>
+                        </div>
+
+                        <!-- Received Message -->
+                        <div class="message-group received">
+                            <div class="message-avatar-circle">
+                                <svg viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                    <circle cx="12" cy="7" r="4"></circle>
+                                </svg>
+                            </div>
+                            <div class="message-content">
+                                <div class="message-bubble received">
+                                    <p>Hi John! I've been following your recent performances. Very impressive passing stats this season.</p>
+                                </div>
+                                <div class="message-time">10:32 AM</div>
+                            </div>
+                        </div>
+
+                        <!-- Received Message -->
+                        <div class="message-group received">
+                            <div class="message-avatar-circle"></div>
+                            <div class="message-content">
+                                <div class="message-bubble received">
+                                    <p>I'd love to discuss potential opportunities at Ohio State. Are you available for a call this week?</p>
+                                </div>
+                                <div class="message-time">10:33 AM</div>
+                            </div>
+                        </div>
+
+                        <!-- Sent Message -->
+                        <div class="message-group sent">
+                            <div class="message-content">
+                                <div class="message-bubble sent">
+                                    <p>Thank you so much, Coach! I really appreciate you reaching out.</p>
+                                </div>
+                                <div class="message-time">
+                                    10:45 AM
+                                    <svg class="message-status-icon read" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polyline points="20 6 9 17 4 12"></polyline>
+                                        <polyline points="16 6 5 17"></polyline>
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Sent Message -->
+                        <div class="message-group sent">
+                            <div class="message-content">
+                                <div class="message-bubble sent">
+                                    <p>I'm definitely interested in learning more about Ohio State's program. I'm free Thursday afternoon or Friday morning if that works for you?</p>
+                                </div>
+                                <div class="message-time">
+                                    10:46 AM
+                                    <svg class="message-status-icon read" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polyline points="20 6 9 17 4 12"></polyline>
+                                        <polyline points="16 6 5 17"></polyline>
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Received Message -->
+                        <div class="message-group received">
+                            <div class="message-avatar-circle">
+                                <svg viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                    <circle cx="12" cy="7" r="4"></circle>
+                                </svg>
+                            </div>
+                            <div class="message-content">
+                                <div class="message-bubble received">
+                                    <p>That sounds great! When can we schedule a call? I'd like to discuss our quarterback development program.</p>
+                                </div>
+                                <div class="message-time">11:02 AM</div>
+                            </div>
+                        </div>
+
+                        <!-- Typing Indicator -->
+                        <div class="message-group received typing-indicator" id="typingIndicator" style="display: none;">
+                            <div class="message-avatar-circle">
+                                <svg viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                    <circle cx="12" cy="7" r="4"></circle>
+                                </svg>
+                            </div>
+                            <div class="message-content">
+                                <div class="message-bubble received typing">
+                                    <div class="typing-dots">
+                                        <span></span>
+                                        <span></span>
+                                        <span></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="message-input-container">
+                        <button class="message-option-btn" title="Attach File">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
+                            </svg>
+                        </button>
+                        <button class="message-option-btn" title="Add Photo">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                                <polyline points="21 15 16 10 5 21"></polyline>
+                            </svg>
+                        </button>
+                        <div class="message-input-wrapper">
+                            <textarea class="message-input" id="messageInput" placeholder="Type a message..." rows="1"></textarea>
+                            <button class="emoji-btn" title="Add Emoji">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <path d="M8 14s1.5 2 4 2 4-2 4-2"></path>
+                                    <line x1="9" y1="9" x2="9.01" y2="9"></line>
+                                    <line x1="15" y1="9" x2="15.01" y2="9"></line>
+                                </svg>
+                            </button>
+                        </div>
+                        <button class="btn-send-message" id="sendMessageBtn">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="22" y1="2" x2="11" y2="13"></line>
+                                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="../../shared/api.js"></script>
+    <script src="../mainpage-player.js"></script>
+    <script src="messages.js"></script>
+</body>
+</html>

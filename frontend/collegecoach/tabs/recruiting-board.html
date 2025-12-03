@@ -1,0 +1,1105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recruiting Board - Direct Recruit</title>
+    <link rel="stylesheet" href="../../landingpage/styles.css">
+    <link rel="stylesheet" href="../mainpage-coach.css">
+    <link rel="stylesheet" href="recruiting-board.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+</head>
+<body class="dashboard-body">
+    <!-- Sidebar Toggle Button -->
+    <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle Sidebar">
+        <svg class="toggle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="3" y1="12" x2="21" y2="12"></line>
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <line x1="3" y1="18" x2="21" y2="18"></line>
+        </svg>
+    </button>
+
+    <!-- Main Container -->
+    <div class="dashboard-container recruiting-board-container" id="dashboardContainer">
+        <!-- Left Sidebar Navigation -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">
+                    <img src="https://res.cloudinary.com/dzmsj6nwv/image/upload/v1762928148/LogoPNG3_pofqrr.png" alt="Direct Recruit Logo" class="logo-icon">
+                    <div class="logo-text">
+                        <span class="logo-title">Direct Recruit</span>
+                        <span class="logo-subtitle">GET RECRUITED · THE RIGHT WAY</span>
+                    </div>
+                </div>
+            </div>
+
+            <nav class="sidebar-nav">
+                <a href="../mainpage-coach.html" class="nav-item">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                        <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                    </svg>
+                    <span>Feed</span>
+                </a>
+
+                <a href="discover-players.html" class="nav-item">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <path d="m21 21-4.35-4.35"></path>
+                    </svg>
+                    <span>Discover Players</span>
+                </a>
+
+                <a href="my-profile.html" class="nav-item">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                    <span>My Profile</span>
+                </a>
+
+                <a href="messages.html" class="nav-item">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                    <span>Messages</span>
+                    <span class="notification-badge">5</span>
+                </a>
+
+                <a href="notifications.html" class="nav-item">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                    </svg>
+                    <span>Notifications</span>
+                </a>
+
+                <a href="recruiting-board.html" class="nav-item active">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="9" y1="3" x2="9" y2="21"></line>
+                        <line x1="15" y1="3" x2="15" y2="21"></line>
+                        <line x1="3" y1="9" x2="21" y2="9"></line>
+                        <line x1="3" y1="15" x2="21" y2="15"></line>
+                    </svg>
+                    <span>Recruiting Board</span>
+                </a>
+
+                <a href="transfer-portal.html" class="nav-item">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <path d="M8 12h8"></path>
+                        <path d="M12 8v8"></path>
+                        <circle cx="12" cy="12" r="3"></circle>
+                    </svg>
+                    <span>Transfer Portal</span>
+                </a>
+
+                <a href="settings.html" class="nav-item">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                    </svg>
+                    <span>Settings</span>
+                </a>
+            </nav>
+
+            <!-- Sidebar Footer -->
+            <div class="sidebar-footer">
+                <div class="user-menu">
+                    <div class="user-avatar-circle">
+                        <svg viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="12" cy="7" r="4"></circle>
+                        </svg>
+                    </div>
+                    <div class="user-info">
+                        <div class="user-name"></div>
+                        <div class="user-role"></div>
+                    </div>
+                    <svg class="more-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="1"></circle>
+                        <circle cx="12" cy="5" r="1"></circle>
+                        <circle cx="12" cy="19" r="1"></circle>
+                    </svg>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content recruiting-board-main">
+            <!-- Header -->
+            <div class="content-header">
+                <div class="header-title-wrapper">
+                    <h1>Recruiting Board</h1>
+                    <div class="class-year-badge">Class of 2026</div>
+                </div>
+            </div>
+
+            <!-- Toggle Buttons -->
+            <div class="board-toggle">
+                <button class="toggle-btn active" id="offenseBtn" data-side="offense">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <path d="M8 12h8"></path>
+                    </svg>
+                    Offense
+                </button>
+                <button class="toggle-btn" id="defenseBtn" data-side="defense">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="15" y1="9" x2="9" y2="15"></line>
+                        <line x1="9" y1="9" x2="15" y2="15"></line>
+                    </svg>
+                    Defense
+                </button>
+            </div>
+
+            <!-- Football Field Container -->
+            <div class="football-field-container">
+                <!-- Offense Field -->
+                <div class="football-field" id="offenseField">
+                    <!-- Offensive Line -->
+                    <div class="position-group ol-group">
+                        <div class="position-slot" data-position="LT">
+                            <div class="position-label">LT</div>
+                            <div class="recruits-list" id="LT-list" data-position="LT">
+                                <div class="recruit-card" draggable="true" data-recruit-id="1">
+                                    <span class="recruit-rank">1</span>
+                                    <div class="recruit-info">
+                                        <div class="recruit-name">James Wilson</div>
+                                        <div class="recruit-stats">6'6" • 315 lbs</div>
+                                        <div class="recruit-school">Lincoln High School, CA</div>
+                                    </div>
+                                </div>
+                                <div class="recruit-card" draggable="true" data-recruit-id="2">
+                                    <span class="recruit-rank">2</span>
+                                    <div class="recruit-info">
+                                        <div class="recruit-name">Marcus Brown</div>
+                                        <div class="recruit-stats">6'5" • 310 lbs</div>
+                                        <div class="recruit-school">Central HS, PA</div>
+                                    </div>
+                                </div>
+                                <div class="recruit-card" draggable="true" data-recruit-id="3">
+                                    <span class="recruit-rank">3</span>
+                                    <div class="recruit-info">
+                                        <div class="recruit-name">Tyler Johnson</div>
+                                        <div class="recruit-stats">6'7" • 325 lbs</div>
+                                        <div class="recruit-school">St. Thomas Academy, MN</div>
+                                    </div>
+                                </div>
+                                <div class="recruit-card" draggable="true" data-recruit-id="4">
+                                    <span class="recruit-rank">4</span>
+                                    <div class="recruit-info">
+                                        <div class="recruit-name">Derek Smith</div>
+                                        <div class="recruit-stats">6'5" • 305 lbs</div>
+                                        <div class="recruit-school">Oak Ridge High, TN</div>
+                                    </div>
+                                </div>
+                                <div class="recruit-card" draggable="true" data-recruit-id="5">
+                                    <span class="recruit-rank">5</span>
+                                    <div class="recruit-info">
+                                        <div class="recruit-name">Chris Davis</div>
+                                        <div class="recruit-stats">6'4" • 300 lbs</div>
+                                        <div class="recruit-school">Westlake Prep, CA</div>
+                                    </div>
+                                </div>
+                                <div class="recruit-card" draggable="true" data-recruit-id="6">
+                                    <span class="recruit-rank">6</span>
+                                    <div class="recruit-info">
+                                        <div class="recruit-name">Alex Martinez</div>
+                                        <div class="recruit-stats">6'6" • 320 lbs</div>
+                                        <div class="recruit-school">Jefferson High School, OR</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="position-slot" data-position="LG">
+                            <div class="position-label">LG</div>
+                            <div class="recruits-list" id="LG-list" data-position="LG">
+                                <div class="recruit-card" draggable="true" data-recruit-id="7">
+                                    <span class="recruit-rank">1</span>
+                                    <div class="recruit-info">
+                                        <div class="recruit-name">Ryan Thompson</div>
+                                        <div class="recruit-stats">6'4" • 308 lbs</div>
+                                        <div class="recruit-school">Washington HS, OH</div>
+                                    </div>
+                                </div>
+                                <div class="recruit-card" draggable="true" data-recruit-id="8">
+                                    <span class="recruit-rank">2</span>
+                                    <div class="recruit-info">
+                                        <div class="recruit-name">Kevin Lee</div>
+                                        <div class="recruit-stats">6'5" • 318 lbs</div>
+                                        <div class="recruit-school">Riverside High, SC</div>
+                                    </div>
+                                </div>
+                                <div class="recruit-card" draggable="true" data-recruit-id="9">
+                                    <span class="recruit-rank">3</span>
+                                    <div class="recruit-info">
+                                        <div class="recruit-name">Brandon White</div>
+                                        <div class="recruit-stats">6'6" • 312 lbs</div>
+                                        <div class="recruit-school">Madison Prep, LA</div>
+                                    </div>
+                                </div>
+                                <div class="recruit-card" draggable="true" data-recruit-id="10">
+                                    <span class="recruit-rank">4</span>
+                                    <div class="recruit-info">
+                                        <div class="recruit-name">Justin Clark</div>
+                                        <div class="recruit-stats">6'4" • 305 lbs</div>
+                                        <div class="recruit-school">Trinity Catholic HS, FL</div>
+                                    </div>
+                                </div>
+                                <div class="recruit-card" draggable="true" data-recruit-id="11">
+                                    <span class="recruit-rank">5</span>
+                                    <div class="recruit-info">
+                                        <div class="recruit-name">Noah Harris</div>
+                                        <div class="recruit-stats">6'5" • 315 lbs</div>
+                                        <div class="recruit-school">Northview High, GA</div>
+                                    </div>
+                                </div>
+                                <div class="recruit-card" draggable="true" data-recruit-id="12">
+                                    <span class="recruit-rank">6</span>
+                                    <div class="recruit-info">
+                                        <div class="recruit-name">Ethan King</div>
+                                        <div class="recruit-stats">6'7" • 330 lbs</div>
+                                        <div class="recruit-school">Bishop Moore Catholic, FL</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="position-slot" data-position="C">
+                            <div class="position-label">C</div>
+                            <div class="recruits-list" id="C-list" data-position="C">
+                                <div class="recruit-card" draggable="true" data-recruit-id="13">
+                                    <span class="recruit-rank">1</span>
+                                    <div class="recruit-info">
+                                        <div class="recruit-name">Michael Anderson</div>
+                                        <div class="recruit-stats">6'4" • 302 lbs</div>
+                                        <div class="recruit-school">Eastside High School, NC</div>
+                                    </div>
+                                </div>
+                                <div class="recruit-card" draggable="true" data-recruit-id="14">
+                                    <span class="recruit-rank">2</span>
+                                    <div class="recruit-info">
+                                        <div class="recruit-name">Daniel Wright</div>
+                                        <div class="recruit-stats">6'5" • 310 lbs</div>
+                                        <div class="recruit-school">Franklin Academy, MA</div>
+                                    </div>
+                                </div>
+                                <div class="recruit-card" draggable="true" data-recruit-id="15">
+                                    <span class="recruit-rank">3</span>
+                                    <div class="recruit-info">
+                                        <div class="recruit-name">Samuel Green</div>
+                                        <div class="recruit-stats">6'6" • 315 lbs</div>
+                                        <div class="recruit-school">Highland Park HS, TX</div>
+                                    </div>
+                                </div>
+                                <div class="recruit-card" draggable="true" data-recruit-id="16">
+                                    <span class="recruit-rank">4</span>
+                                    <div class="recruit-info">
+                                        <div class="recruit-name">Joshua Taylor</div>
+                                        <div class="recruit-stats">6'4" • 305 lbs</div>
+                                        <div class="recruit-school">St. John's Prep, MA</div>
+                                    </div>
+                                </div>
+                                <div class="recruit-card" draggable="true" data-recruit-id="17">
+                                    <span class="recruit-rank">5</span>
+                                    <div class="recruit-info">
+                                        <div class="recruit-name">Andrew Miller</div>
+                                        <div class="recruit-stats">6'5" • 308 lbs</div>
+                                        <div class="recruit-school">Mountain View High, AZ</div>
+                                    </div>
+                                </div>
+                                <div class="recruit-card" draggable="true" data-recruit-id="18">
+                                    <span class="recruit-rank">6</span>
+                                    <div class="recruit-info">
+                                        <div class="recruit-name">William Moore</div>
+                                        <div class="recruit-stats">6'7" • 325 lbs</div>
+                                        <div class="recruit-school">Pine Ridge HS, FL</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="position-slot" data-position="RG">
+                            <div class="position-label">RG</div>
+                            <div class="recruits-list" id="RG-list" data-position="RG">
+                                <div class="recruit-card" draggable="true" data-recruit-id="19">
+                                    <span class="recruit-rank">1</span>
+                                    <div class="recruit-info">
+                                        <div class="recruit-name">Benjamin Jackson</div>
+                                        <div class="recruit-stats">6'5" • 320 lbs</div>
+                                        <div class="recruit-school">Lakewood High, CA</div>
+                                    </div>
+                                </div>
+                                <div class="recruit-card" draggable="true" data-recruit-id="20">
+                                    <span class="recruit-rank">2</span>
+                                    <div class="recruit-info">
+                                        <div class="recruit-name">Jacob Martin</div>
+                                        <div class="recruit-stats">6'4" • 310 lbs</div>
+                                        <div class="recruit-school">Fairview HS, CO</div>
+                                    </div>
+                                </div>
+                                <div class="recruit-card" draggable="true" data-recruit-id="21">
+                                    <span class="recruit-rank">3</span>
+                                    <div class="recruit-info">
+                                        <div class="recruit-name">Logan Garcia</div>
+                                        <div class="recruit-stats">6'6" • 318 lbs</div>
+                                        <div class="recruit-school">Summit Prep Academy, NJ</div>
+                                    </div>
+                                </div>
+                                <div class="recruit-card" draggable="true" data-recruit-id="22">
+                                    <span class="recruit-rank">4</span>
+                                    <div class="recruit-info">
+                                        <div class="recruit-name">Mason Rodriguez</div>
+                                        <div class="recruit-stats">6'5" • 312 lbs</div>
+                                        <div class="recruit-school">Garfield High School, WA</div>
+                                    </div>
+                                </div>
+                                <div class="recruit-card" draggable="true" data-recruit-id="23">
+                                    <span class="recruit-rank">5</span>
+                                    <div class="recruit-info">
+                                        <div class="recruit-name">Luke Martinez</div>
+                                        <div class="recruit-stats">6'7" • 328 lbs</div>
+                                        <div class="recruit-school">Valley Christian HS, CA</div>
+                                    </div>
+                                </div>
+                                <div class="recruit-card" draggable="true" data-recruit-id="24">
+                                    <span class="recruit-rank">6</span>
+                                    <div class="recruit-info">
+                                        <div class="recruit-name">Henry Lopez</div>
+                                        <div class="recruit-stats">6'4" • 305 lbs</div>
+                                        <div class="recruit-school">Roosevelt High, NY</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="position-slot" data-position="RT">
+                            <div class="position-label">RT</div>
+                            <div class="recruits-list" id="RT-list" data-position="RT">
+                                <div class="recruit-card" draggable="true" data-recruit-id="25">
+                                    <span class="recruit-rank">1</span>
+                                    <div class="recruit-info">
+                                        <div class="recruit-name">David Hernandez</div>
+                                        <div class="recruit-stats">6'6" • 322 lbs</div>
+                                        <div class="recruit-school">Crenshaw HS, CA</div>
+                                    </div>
+                                </div>
+                                <div class="recruit-card" draggable="true" data-recruit-id="26">
+                                    <span class="recruit-rank">2</span>
+                                    <div class="recruit-info">
+                                        <div class="recruit-name">Matthew Wilson</div>
+                                        <div class="recruit-stats">6'7" • 330 lbs</div>
+                                        <div class="recruit-school">Hoover High School, AL</div>
+                                    </div>
+                                </div>
+                                <div class="recruit-card" draggable="true" data-recruit-id="27">
+                                    <span class="recruit-rank">3</span>
+                                    <div class="recruit-info">
+                                        <div class="recruit-name">Owen Campbell</div>
+                                        <div class="recruit-stats">6'5" • 315 lbs</div>
+                                        <div class="recruit-school">Skyline High, TX</div>
+                                    </div>
+                                </div>
+                                <div class="recruit-card" draggable="true" data-recruit-id="28">
+                                    <span class="recruit-rank">4</span>
+                                    <div class="recruit-info">
+                                        <div class="recruit-name">Carter Young</div>
+                                        <div class="recruit-stats">6'4" • 308 lbs</div>
+                                        <div class="recruit-school">Brookfield Academy, WI</div>
+                                    </div>
+                                </div>
+                                <div class="recruit-card" draggable="true" data-recruit-id="29">
+                                    <span class="recruit-rank">5</span>
+                                    <div class="recruit-info">
+                                        <div class="recruit-name">Isaac Allen</div>
+                                        <div class="recruit-stats">6'6" • 318 lbs</div>
+                                        <div class="recruit-school">De La Salle High, CA</div>
+                                    </div>
+                                </div>
+                                <div class="recruit-card" draggable="true" data-recruit-id="30">
+                                    <span class="recruit-rank">6</span>
+                                    <div class="recruit-info">
+                                        <div class="recruit-name">Wyatt Scott</div>
+                                        <div class="recruit-stats">6'5" • 310 lbs</div>
+                                        <div class="recruit-school">Coronado HS, CA</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Skill Positions -->
+                    <div class="position-group position-group-centered skill-group">
+                        <div class="position-slot" data-position="QB">
+                            <div class="position-label">QB</div>
+                            <div class="recruits-list" id="QB-list" data-position="QB">
+                                <div class="recruit-card" draggable="true" data-recruit-id="31">
+                                    <span class="recruit-rank">1</span>
+                                    <div class="recruit-info">
+                                        <div class="recruit-name">Marcus Johnson</div>
+                                        <div class="recruit-stats">6'4" • 220 lbs</div>
+                                        <div class="recruit-school">Allen High School, TX</div>
+                                    </div>
+                                </div>
+                                <div class="recruit-card" draggable="true" data-recruit-id="32">
+                                    <span class="recruit-rank">2</span>
+                                    <div class="recruit-info">
+                                        <div class="recruit-name">Jason Peterson</div>
+                                        <div class="recruit-stats">6'3" • 215 lbs</div>
+                                        <div class="recruit-school">Centennial HS, NV</div>
+                                    </div>
+                                </div>
+                                <div class="recruit-card" draggable="true" data-recruit-id="33">
+                                    <span class="recruit-rank">3</span>
+                                    <div class="recruit-info">
+                                        <div class="recruit-name">Cole Bryant</div>
+                                        <div class="recruit-stats">6'5" • 225 lbs</div>
+                                        <div class="recruit-school">Cathedral Catholic, CA</div>
+                                    </div>
+                                </div>
+                                <div class="recruit-card" draggable="true" data-recruit-id="34">
+                                    <span class="recruit-rank">4</span>
+                                    <div class="recruit-info">
+                                        <div class="recruit-name">Austin Walker</div>
+                                        <div class="recruit-stats">6'2" • 210 lbs</div>
+                                        <div class="recruit-school">Mater Dei High, CA</div>
+                                    </div>
+                                </div>
+                                <div class="recruit-card" draggable="true" data-recruit-id="35">
+                                    <span class="recruit-rank">5</span>
+                                    <div class="recruit-info">
+                                        <div class="recruit-name">Cameron Hall</div>
+                                        <div class="recruit-stats">6'4" • 218 lbs</div>
+                                        <div class="recruit-school">St. Xavier HS, OH</div>
+                                    </div>
+                                </div>
+                                <div class="recruit-card" draggable="true" data-recruit-id="36">
+                                    <span class="recruit-rank">6</span>
+                                    <div class="recruit-info">
+                                        <div class="recruit-name">Eli Cooper</div>
+                                        <div class="recruit-stats">6'3" • 212 lbs</div>
+                                        <div class="recruit-school">Bosco Tech, CA</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="position-slot" data-position="RB">
+                            <div class="position-label">RB</div>
+                            <div class="recruits-list" id="RB-list" data-position="RB">
+                                <div class="recruit-card" draggable="true" data-recruit-id="37">
+                                    <span class="recruit-rank">1</span>
+                                    <div class="recruit-info">
+                                        <div class="recruit-name">Darius Williams</div>
+                                        <div class="recruit-stats">6'0" • 210 lbs</div>
+                                        <div class="recruit-school">IMG Academy, FL</div>
+                                    </div>
+                                </div>
+                                <div class="recruit-card" draggable="true" data-recruit-id="38">
+                                    <span class="recruit-rank">2</span>
+                                    <div class="recruit-info">
+                                        <div class="recruit-name">Jamal Thomas</div>
+                                        <div class="recruit-stats">5'11" • 205 lbs</div>
+                                        <div class="recruit-school">North Shore HS, TX</div>
+                                    </div>
+                                </div>
+                                <div class="recruit-card" draggable="true" data-recruit-id="39">
+                                    <span class="recruit-rank">3</span>
+                                    <div class="recruit-info">
+                                        <div class="recruit-name">Isaiah Carter</div>
+                                        <div class="recruit-stats">6'1" • 218 lbs</div>
+                                        <div class="recruit-school">Cedar Hill High, TX</div>
+                                    </div>
+                                </div>
+                                <div class="recruit-card" draggable="true" data-recruit-id="40">
+                                    <span class="recruit-rank">4</span>
+                                    <div class="recruit-info">
+                                        <div class="recruit-name">Malik Turner</div>
+                                        <div class="recruit-stats">5'10" • 200 lbs</div>
+                                        <div class="recruit-school">Duncanville HS, TX</div>
+                                    </div>
+                                </div>
+                                <div class="recruit-card" draggable="true" data-recruit-id="41">
+                                    <span class="recruit-rank">5</span>
+                                    <div class="recruit-info">
+                                        <div class="recruit-name">Terrell Phillips</div>
+                                        <div class="recruit-stats">6'0" • 208 lbs</div>
+                                        <div class="recruit-school">Venice High School, FL</div>
+                                    </div>
+                                </div>
+                                <div class="recruit-card" draggable="true" data-recruit-id="42">
+                                    <span class="recruit-rank">6</span>
+                                    <div class="recruit-info">
+                                        <div class="recruit-name">Jordan Evans</div>
+                                        <div class="recruit-stats">5'11" • 215 lbs</div>
+                                        <div class="recruit-school">Marietta High School, GA</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="position-slot" data-position="WR">
+                            <div class="position-label">WR</div>
+                            <div class="recruits-list" id="WR-list" data-position="WR">
+                                <div class="recruit-card" draggable="true" data-recruit-id="43">
+                                    <span class="recruit-rank">1</span>
+                                    <div class="recruit-info">
+                                        <div class="recruit-name">Tyler Brooks</div>
+                                        <div class="recruit-stats">6'3" • 195 lbs</div>
+                                        <div class="recruit-school">American Heritage HS, FL</div>
+                                    </div>
+                                </div>
+                                <div class="recruit-card" draggable="true" data-recruit-id="44">
+                                    <span class="recruit-rank">2</span>
+                                    <div class="recruit-info">
+                                        <div class="recruit-name">Devon Collins</div>
+                                        <div class="recruit-stats">6'2" • 190 lbs</div>
+                                        <div class="recruit-school">Servite High School, CA</div>
+                                    </div>
+                                </div>
+                                <div class="recruit-card" draggable="true" data-recruit-id="45">
+                                    <span class="recruit-rank">3</span>
+                                    <div class="recruit-info">
+                                        <div class="recruit-name">Chris Mitchell</div>
+                                        <div class="recruit-stats">6'4" • 205 lbs</div>
+                                        <div class="recruit-school">Lone Star High, TX</div>
+                                    </div>
+                                </div>
+                                <div class="recruit-card" draggable="true" data-recruit-id="46">
+                                    <span class="recruit-rank">4</span>
+                                    <div class="recruit-info">
+                                        <div class="recruit-name">Andre Hayes</div>
+                                        <div class="recruit-stats">6'1" • 188 lbs</div>
+                                        <div class="recruit-school">Polytechnic HS, CA</div>
+                                    </div>
+                                </div>
+                                <div class="recruit-card" draggable="true" data-recruit-id="47">
+                                    <span class="recruit-rank">5</span>
+                                    <div class="recruit-info">
+                                        <div class="recruit-name">Devin Parker</div>
+                                        <div class="recruit-stats">6'0" • 185 lbs</div>
+                                        <div class="recruit-school">Lake Travis High, TX</div>
+                                    </div>
+                                </div>
+                                <div class="recruit-card" draggable="true" data-recruit-id="48">
+                                    <span class="recruit-rank">6</span>
+                                    <div class="recruit-info">
+                                        <div class="recruit-name">Xavier Reed</div>
+                                        <div class="recruit-stats">6'3" • 198 lbs</div>
+                                        <div class="recruit-school">St. Ignatius HS, OH</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="position-slot" data-position="TE">
+                            <div class="position-label">TE</div>
+                            <div class="recruits-list" id="TE-list" data-position="TE">
+                                <div class="recruit-card" draggable="true" data-recruit-id="49">
+                                    <span class="recruit-rank">1</span>
+                                    <div class="recruit-info">
+                                        <div class="recruit-name">Jake Morrison</div>
+                                        <div class="recruit-stats">6'5" • 248 lbs</div>
+                                        <div class="recruit-school">Bingham High School, UT</div>
+                                    </div>
+                                </div>
+                                <div class="recruit-card" draggable="true" data-recruit-id="50">
+                                    <span class="recruit-rank">2</span>
+                                    <div class="recruit-info">
+                                        <div class="recruit-name">Connor Bailey</div>
+                                        <div class="recruit-stats">6'6" • 255 lbs</div>
+                                        <div class="recruit-school">Elder High School, OH</div>
+                                    </div>
+                                </div>
+                                <div class="recruit-card" draggable="true" data-recruit-id="51">
+                                    <span class="recruit-rank">3</span>
+                                    <div class="recruit-info">
+                                        <div class="recruit-name">Hunter Ross</div>
+                                        <div class="recruit-stats">6'4" • 242 lbs</div>
+                                        <div class="recruit-school">Hamilton HS, AZ</div>
+                                    </div>
+                                </div>
+                                <div class="recruit-card" draggable="true" data-recruit-id="52">
+                                    <span class="recruit-rank">4</span>
+                                    <div class="recruit-info">
+                                        <div class="recruit-name">Tanner Hughes</div>
+                                        <div class="recruit-stats">6'7" • 260 lbs</div>
+                                        <div class="recruit-school">Katy High School, TX</div>
+                                    </div>
+                                </div>
+                                <div class="recruit-card" draggable="true" data-recruit-id="53">
+                                    <span class="recruit-rank">5</span>
+                                    <div class="recruit-info">
+                                        <div class="recruit-name">Blake Foster</div>
+                                        <div class="recruit-stats">6'5" • 250 lbs</div>
+                                        <div class="recruit-school">Rockhurst High School, MO</div>
+                                    </div>
+                                </div>
+                                <div class="recruit-card" draggable="true" data-recruit-id="54">
+                                    <span class="recruit-rank">6</span>
+                                    <div class="recruit-info">
+                                        <div class="recruit-name">Brett Coleman</div>
+                                        <div class="recruit-stats">6'4" • 245 lbs</div>
+                                        <div class="recruit-school">Foothill HS, CA</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Defense Field -->
+                <div class="football-field hidden" id="defenseField">
+                    <!-- Front Seven -->
+                    <div class="position-group dl-group">
+                        <div class="position-slot" data-position="DE">
+                            <div class="position-label">DE</div>
+                            <div class="recruits-list" id="DE-list" data-position="DE">
+                                <div class="recruit-card" draggable="true" data-recruit-id="55">
+                                    <span class="recruit-rank">1</span>
+                                    <div class="recruit-info">
+                                        <div class="recruit-name">Brandon Jackson</div>
+                                        <div class="recruit-stats">6'5" • 265 lbs</div>
+                                        <div class="recruit-school">Buford High School, GA</div>
+                                    </div>
+                                </div>
+                                <div class="recruit-card" draggable="true" data-recruit-id="56">
+                                    <span class="recruit-rank">2</span>
+                                    <div class="recruit-info">
+                                        <div class="recruit-name">Marcus Edwards</div>
+                                        <div class="recruit-stats">6'6" • 270 lbs</div>
+                                        <div class="recruit-school">St. Frances Academy, MD</div>
+                                    </div>
+                                </div>
+                                <div class="recruit-card" draggable="true" data-recruit-id="57">
+                                    <span class="recruit-rank">3</span>
+                                    <div class="recruit-info">
+                                        <div class="recruit-name">Rashad Bennett</div>
+                                        <div class="recruit-stats">6'4" • 260 lbs</div>
+                                        <div class="recruit-school">Grayson High School, GA</div>
+                                    </div>
+                                </div>
+                                <div class="recruit-card" draggable="true" data-recruit-id="58">
+                                    <span class="recruit-rank">4</span>
+                                    <div class="recruit-info">
+                                        <div class="recruit-name">Kevin Washington</div>
+                                        <div class="recruit-stats">6'5" • 268 lbs</div>
+                                        <div class="recruit-school">South Pointe HS, SC</div>
+                                    </div>
+                                </div>
+                                <div class="recruit-card" draggable="true" data-recruit-id="59">
+                                    <span class="recruit-rank">5</span>
+                                    <div class="recruit-info">
+                                        <div class="recruit-name">Tyrell Brooks</div>
+                                        <div class="recruit-stats">6'6" • 272 lbs</div>
+                                        <div class="recruit-school">Bellflower HS, CA</div>
+                                    </div>
+                                </div>
+                                <div class="recruit-card" draggable="true" data-recruit-id="60">
+                                    <span class="recruit-rank">6</span>
+                                    <div class="recruit-info">
+                                        <div class="recruit-name">Jerome Sanders</div>
+                                        <div class="recruit-stats">6'4" • 255 lbs</div>
+                                        <div class="recruit-school">Mallard Creek HS, NC</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="position-slot" data-position="DT">
+                            <div class="position-label">DT</div>
+                            <div class="recruits-list" id="DT-list" data-position="DT">
+                                <div class="recruit-card" draggable="true" data-recruit-id="61">
+                                    <span class="recruit-rank">1</span>
+                                    <div class="recruit-info">
+                                        <div class="recruit-name">DeShawn Lewis</div>
+                                        <div class="recruit-stats">6'4" • 305 lbs</div>
+                                        <div class="recruit-school">Dutch Fork High, SC</div>
+                                    </div>
+                                </div>
+                                <div class="recruit-card" draggable="true" data-recruit-id="62">
+                                    <span class="recruit-rank">2</span>
+                                    <div class="recruit-info">
+                                        <div class="recruit-name">Anthony Pierce</div>
+                                        <div class="recruit-stats">6'3" • 298 lbs</div>
+                                        <div class="recruit-school">American Fork HS, UT</div>
+                                    </div>
+                                </div>
+                                <div class="recruit-card" draggable="true" data-recruit-id="63">
+                                    <span class="recruit-rank">3</span>
+                                    <div class="recruit-info">
+                                        <div class="recruit-name">Marcus Richardson</div>
+                                        <div class="recruit-stats">6'5" • 310 lbs</div>
+                                        <div class="recruit-school">Martin HS, TX</div>
+                                    </div>
+                                </div>
+                                <div class="recruit-card" draggable="true" data-recruit-id="64">
+                                    <span class="recruit-rank">4</span>
+                                    <div class="recruit-info">
+                                        <div class="recruit-name">Jaylon Powell</div>
+                                        <div class="recruit-stats">6'4" • 300 lbs</div>
+                                        <div class="recruit-school">DeSoto High School, TX</div>
+                                    </div>
+                                </div>
+                                <div class="recruit-card" draggable="true" data-recruit-id="65">
+                                    <span class="recruit-rank">5</span>
+                                    <div class="recruit-info">
+                                        <div class="recruit-name">Quinton Butler</div>
+                                        <div class="recruit-stats">6'3" • 295 lbs</div>
+                                        <div class="recruit-school">Narbonne HS, CA</div>
+                                    </div>
+                                </div>
+                                <div class="recruit-card" draggable="true" data-recruit-id="66">
+                                    <span class="recruit-rank">6</span>
+                                    <div class="recruit-info">
+                                        <div class="recruit-name">Terrence Long</div>
+                                        <div class="recruit-stats">6'2" • 290 lbs</div>
+                                        <div class="recruit-school">St. Peter's Prep, NJ</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="position-slot" data-position="NG">
+                            <div class="position-label">NG</div>
+                            <div class="recruits-list" id="NG-list" data-position="NG">
+                                <div class="recruit-card" draggable="true" data-recruit-id="67">
+                                    <span class="recruit-rank">1</span>
+                                    <div class="recruit-info">
+                                        <div class="recruit-name">Derrick Williams</div>
+                                        <div class="recruit-stats">6'3" • 315 lbs</div>
+                                        <div class="recruit-school">Thompson High School, AL</div>
+                                    </div>
+                                </div>
+                                <div class="recruit-card" draggable="true" data-recruit-id="68">
+                                    <span class="recruit-rank">2</span>
+                                    <div class="recruit-info">
+                                        <div class="recruit-name">Javon Thompson</div>
+                                        <div class="recruit-stats">6'2" • 310 lbs</div>
+                                        <div class="recruit-school">Westlake HS, GA</div>
+                                    </div>
+                                </div>
+                                <div class="recruit-card" draggable="true" data-recruit-id="69">
+                                    <span class="recruit-rank">3</span>
+                                    <div class="recruit-info">
+                                        <div class="recruit-name">Marcus Henderson</div>
+                                        <div class="recruit-stats">6'4" • 318 lbs</div>
+                                        <div class="recruit-school">Chaminade-Madonna, FL</div>
+                                    </div>
+                                </div>
+                                <div class="recruit-card" draggable="true" data-recruit-id="70">
+                                    <span class="recruit-rank">4</span>
+                                    <div class="recruit-info">
+                                        <div class="recruit-name">Anthony Davis</div>
+                                        <div class="recruit-stats">6'3" • 308 lbs</div>
+                                        <div class="recruit-school">St. Joseph Regional, NJ</div>
+                                    </div>
+                                </div>
+                                <div class="recruit-card" draggable="true" data-recruit-id="71">
+                                    <span class="recruit-rank">5</span>
+                                    <div class="recruit-info">
+                                        <div class="recruit-name">Darius Jackson</div>
+                                        <div class="recruit-stats">6'5" • 320 lbs</div>
+                                        <div class="recruit-school">Colquitt County HS, GA</div>
+                                    </div>
+                                </div>
+                                <div class="recruit-card" draggable="true" data-recruit-id="72">
+                                    <span class="recruit-rank">6</span>
+                                    <div class="recruit-info">
+                                        <div class="recruit-name">Brandon Moore</div>
+                                        <div class="recruit-stats">6'2" • 305 lbs</div>
+                                        <div class="recruit-school">Atascocita HS, TX</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="position-slot" data-position="OLB">
+                            <div class="position-label">OLB</div>
+                            <div class="recruits-list" id="OLB-list" data-position="OLB">
+                                <div class="recruit-card" draggable="true" data-recruit-id="73">
+                                    <span class="recruit-rank">1</span>
+                                    <div class="recruit-info">
+                                        <div class="recruit-name">Alex Thompson</div>
+                                        <div class="recruit-stats">6'3" • 240 lbs</div>
+                                        <div class="recruit-school">Collins Hill HS, GA</div>
+                                    </div>
+                                </div>
+                                <div class="recruit-card" draggable="true" data-recruit-id="74">
+                                    <span class="recruit-rank">2</span>
+                                    <div class="recruit-info">
+                                        <div class="recruit-name">Zach Morris</div>
+                                        <div class="recruit-stats">6'4" • 245 lbs</div>
+                                        <div class="recruit-school">Archbishop Hoban HS, OH</div>
+                                    </div>
+                                </div>
+                                <div class="recruit-card" draggable="true" data-recruit-id="75">
+                                    <span class="recruit-rank">3</span>
+                                    <div class="recruit-info">
+                                        <div class="recruit-name">Jordan Price</div>
+                                        <div class="recruit-stats">6'2" • 235 lbs</div>
+                                        <div class="recruit-school">Timber Creek HS, FL</div>
+                                    </div>
+                                </div>
+                                <div class="recruit-card" draggable="true" data-recruit-id="76">
+                                    <span class="recruit-rank">4</span>
+                                    <div class="recruit-info">
+                                        <div class="recruit-name">Trevor Hughes</div>
+                                        <div class="recruit-stats">6'3" • 238 lbs</div>
+                                        <div class="recruit-school">St. Bonaventure HS, CA</div>
+                                    </div>
+                                </div>
+                                <div class="recruit-card" draggable="true" data-recruit-id="77">
+                                    <span class="recruit-rank">5</span>
+                                    <div class="recruit-info">
+                                        <div class="recruit-name">Blake Russell</div>
+                                        <div class="recruit-stats">6'4" • 248 lbs</div>
+                                        <div class="recruit-school">Cherokee HS, NJ</div>
+                                    </div>
+                                </div>
+                                <div class="recruit-card" draggable="true" data-recruit-id="78">
+                                    <span class="recruit-rank">6</span>
+                                    <div class="recruit-info">
+                                        <div class="recruit-name">Shane Griffin</div>
+                                        <div class="recruit-stats">6'2" • 232 lbs</div>
+                                        <div class="recruit-school">Clearwater Central, FL</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="position-slot" data-position="ILB">
+                            <div class="position-label">ILB</div>
+                            <div class="recruits-list" id="ILB-list" data-position="ILB">
+                                <div class="recruit-card" draggable="true" data-recruit-id="79">
+                                    <span class="recruit-rank">1</span>
+                                    <div class="recruit-info">
+                                        <div class="recruit-name">Isaiah Williams</div>
+                                        <div class="recruit-stats">6'2" • 242 lbs</div>
+                                        <div class="recruit-school">St. Edward High School, OH</div>
+                                    </div>
+                                </div>
+                                <div class="recruit-card" draggable="true" data-recruit-id="80">
+                                    <span class="recruit-rank">2</span>
+                                    <div class="recruit-info">
+                                        <div class="recruit-name">Cameron Mitchell</div>
+                                        <div class="recruit-stats">6'1" • 238 lbs</div>
+                                        <div class="recruit-school">Jesuit High School, LA</div>
+                                    </div>
+                                </div>
+                                <div class="recruit-card" draggable="true" data-recruit-id="81">
+                                    <span class="recruit-rank">3</span>
+                                    <div class="recruit-info">
+                                        <div class="recruit-name">Tyler Anderson</div>
+                                        <div class="recruit-stats">6'3" • 245 lbs</div>
+                                        <div class="recruit-school">Archbishop Rummel, LA</div>
+                                    </div>
+                                </div>
+                                <div class="recruit-card" draggable="true" data-recruit-id="82">
+                                    <span class="recruit-rank">4</span>
+                                    <div class="recruit-info">
+                                        <div class="recruit-name">Marcus Greene</div>
+                                        <div class="recruit-stats">6'2" • 240 lbs</div>
+                                        <div class="recruit-school">Venice HS, FL</div>
+                                    </div>
+                                </div>
+                                <div class="recruit-card" draggable="true" data-recruit-id="83">
+                                    <span class="recruit-rank">5</span>
+                                    <div class="recruit-info">
+                                        <div class="recruit-name">James Carter</div>
+                                        <div class="recruit-stats">6'1" • 235 lbs</div>
+                                        <div class="recruit-school">Kell High School, GA</div>
+                                    </div>
+                                </div>
+                                <div class="recruit-card" draggable="true" data-recruit-id="84">
+                                    <span class="recruit-rank">6</span>
+                                    <div class="recruit-info">
+                                        <div class="recruit-name">Devon Brooks</div>
+                                        <div class="recruit-stats">6'3" • 248 lbs</div>
+                                        <div class="recruit-school">Parkland High School, PA</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Secondary -->
+                    <div class="position-group secondary-group">
+                        <div class="position-slot" data-position="FS">
+                            <div class="position-label">FS</div>
+                            <div class="recruits-list" id="FS-list" data-position="FS">
+                                <div class="recruit-card" draggable="true" data-recruit-id="85">
+                                    <span class="recruit-rank">1</span>
+                                    <div class="recruit-info">
+                                        <div class="recruit-name">Derek Williams</div>
+                                        <div class="recruit-stats">6'2" • 205 lbs</div>
+                                        <div class="recruit-school">Central High School, AL</div>
+                                    </div>
+                                </div>
+                                <div class="recruit-card" draggable="true" data-recruit-id="86">
+                                    <span class="recruit-rank">2</span>
+                                    <div class="recruit-info">
+                                        <div class="recruit-name">Malik Jenkins</div>
+                                        <div class="recruit-stats">6'1" • 200 lbs</div>
+                                        <div class="recruit-school">Lowndes High School, GA</div>
+                                    </div>
+                                </div>
+                                <div class="recruit-card" draggable="true" data-recruit-id="87">
+                                    <span class="recruit-rank">3</span>
+                                    <div class="recruit-info">
+                                        <div class="recruit-name">Travis Robinson</div>
+                                        <div class="recruit-stats">6'3" • 210 lbs</div>
+                                        <div class="recruit-school">Bishop Gorman HS, NV</div>
+                                    </div>
+                                </div>
+                                <div class="recruit-card" draggable="true" data-recruit-id="88">
+                                    <span class="recruit-rank">4</span>
+                                    <div class="recruit-info">
+                                        <div class="recruit-name">Xavier Murphy</div>
+                                        <div class="recruit-stats">6'2" • 208 lbs</div>
+                                        <div class="recruit-school">Mansfield Timberview, TX</div>
+                                    </div>
+                                </div>
+                                <div class="recruit-card" draggable="true" data-recruit-id="89">
+                                    <span class="recruit-rank">5</span>
+                                    <div class="recruit-info">
+                                        <div class="recruit-name">Cameron Scott</div>
+                                        <div class="recruit-stats">6'0" • 202 lbs</div>
+                                        <div class="recruit-school">Corner Canyon HS, UT</div>
+                                    </div>
+                                </div>
+                                <div class="recruit-card" draggable="true" data-recruit-id="90">
+                                    <span class="recruit-rank">6</span>
+                                    <div class="recruit-info">
+                                        <div class="recruit-name">Ryan Cooper</div>
+                                        <div class="recruit-stats">6'1" • 205 lbs</div>
+                                        <div class="recruit-school">St. Augustine High, CA</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="position-slot" data-position="SS">
+                            <div class="position-label">SS</div>
+                            <div class="recruits-list" id="SS-list" data-position="SS">
+                                <div class="recruit-card" draggable="true" data-recruit-id="91">
+                                    <span class="recruit-rank">1</span>
+                                    <div class="recruit-info">
+                                        <div class="recruit-name">Jamal Parker</div>
+                                        <div class="recruit-stats">6'2" • 212 lbs</div>
+                                        <div class="recruit-school">Northwestern HS</div>
+                                    </div>
+                                </div>
+                                <div class="recruit-card" draggable="true" data-recruit-id="92">
+                                    <span class="recruit-rank">2</span>
+                                    <div class="recruit-info">
+                                        <div class="recruit-name">Darius Coleman</div>
+                                        <div class="recruit-stats">6'1" • 208 lbs</div>
+                                        <div class="recruit-school">Oscar Smith HS</div>
+                                    </div>
+                                </div>
+                                <div class="recruit-card" draggable="true" data-recruit-id="93">
+                                    <span class="recruit-rank">3</span>
+                                    <div class="recruit-info">
+                                        <div class="recruit-name">Marcus Hayes</div>
+                                        <div class="recruit-stats">6'3" • 215 lbs</div>
+                                        <div class="recruit-school">De La Salle HS</div>
+                                    </div>
+                                </div>
+                                <div class="recruit-card" draggable="true" data-recruit-id="94">
+                                    <span class="recruit-rank">4</span>
+                                    <div class="recruit-info">
+                                        <div class="recruit-name">Brandon Foster</div>
+                                        <div class="recruit-stats">6'2" • 210 lbs</div>
+                                        <div class="recruit-school">Pulaski Academy</div>
+                                    </div>
+                                </div>
+                                <div class="recruit-card" draggable="true" data-recruit-id="95">
+                                    <span class="recruit-rank">5</span>
+                                    <div class="recruit-info">
+                                        <div class="recruit-name">Isaiah Turner</div>
+                                        <div class="recruit-stats">6'0" • 205 lbs</div>
+                                        <div class="recruit-school">Warren Central HS</div>
+                                    </div>
+                                </div>
+                                <div class="recruit-card" draggable="true" data-recruit-id="96">
+                                    <span class="recruit-rank">6</span>
+                                    <div class="recruit-info">
+                                        <div class="recruit-name">Tyler Bennett</div>
+                                        <div class="recruit-stats">6'1" • 207 lbs</div>
+                                        <div class="recruit-school">Lakeland HS</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="position-slot" data-position="CB">
+                            <div class="position-label">CB</div>
+                            <div class="recruits-list" id="CB-list" data-position="CB">
+                                <div class="recruit-card" draggable="true" data-recruit-id="97">
+                                    <span class="recruit-rank">1</span>
+                                    <div class="recruit-info">
+                                        <div class="recruit-name">Chris Thompson</div>
+                                        <div class="recruit-stats">6'1" • 190 lbs</div>
+                                        <div class="recruit-school">Lakota West HS</div>
+                                    </div>
+                                </div>
+                                <div class="recruit-card" draggable="true" data-recruit-id="98">
+                                    <span class="recruit-rank">2</span>
+                                    <div class="recruit-info">
+                                        <div class="recruit-name">Deion Wallace</div>
+                                        <div class="recruit-stats">6'0" • 185 lbs</div>
+                                        <div class="recruit-school">South Oak Cliff HS</div>
+                                    </div>
+                                </div>
+                                <div class="recruit-card" draggable="true" data-recruit-id="99">
+                                    <span class="recruit-rank">3</span>
+                                    <div class="recruit-info">
+                                        <div class="recruit-name">Jamal Fletcher</div>
+                                        <div class="recruit-stats">6'2" • 195 lbs</div>
+                                        <div class="recruit-school">Duncanville High</div>
+                                    </div>
+                                </div>
+                                <div class="recruit-card" draggable="true" data-recruit-id="100">
+                                    <span class="recruit-rank">4</span>
+                                    <div class="recruit-info">
+                                        <div class="recruit-name">Marcus Grant</div>
+                                        <div class="recruit-stats">5'11" • 188 lbs</div>
+                                        <div class="recruit-school">Southlake Carroll</div>
+                                    </div>
+                                </div>
+                                <div class="recruit-card" draggable="true" data-recruit-id="101">
+                                    <span class="recruit-rank">5</span>
+                                    <div class="recruit-info">
+                                        <div class="recruit-name">Kendrick James</div>
+                                        <div class="recruit-stats">6'0" • 192 lbs</div>
+                                        <div class="recruit-school">IMG Academy, FL</div>
+                                    </div>
+                                </div>
+                                <div class="recruit-card" draggable="true" data-recruit-id="102">
+                                    <span class="recruit-rank">6</span>
+                                    <div class="recruit-info">
+                                        <div class="recruit-name">Antonio Perry</div>
+                                        <div class="recruit-stats">5'10" • 182 lbs</div>
+                                        <div class="recruit-school">St. John Bosco</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="../../shared/api.js"></script>
+    <script src="../mainpage-coach.js?v=4"></script>
+    <script src="recruiting-board.js"></script>
+</body>
+</html>

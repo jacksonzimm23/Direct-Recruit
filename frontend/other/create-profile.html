@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Account - Direct Recruit</title>
+    <link rel="stylesheet" href="../landingpage/styles.css">
+    <link rel="stylesheet" href="other-profile-form.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="../landingpage/index.html" class="logo">
+                <img src="https://res.cloudinary.com/dzmsj6nwv/image/upload/v1762928148/LogoPNG3_pofqrr.png" alt="Direct Recruit Logo" class="logo-icon">
+                <div class="logo-text">
+                    <span class="logo-title">Direct Recruit</span>
+                    <span class="logo-subtitle">GET RECRUITED · THE RIGHT WAY</span>
+                </div>
+            </a>
+            <div class="nav-links">
+                <a href="../landingpage/index.html#features">Features</a>
+                <a href="../landingpage/index.html#how-it-works">How It Works</a>
+                <a href="../landingpage/index.html#about">About</a>
+            </div>
+            <div class="nav-buttons">
+                <a href="../landingpage/signin.html"><button class="btn-secondary">Sign In</button></a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Profile Form Section -->
+    <section class="profile-form-section">
+        <div class="form-container">
+            <!-- Back Button -->
+            <a href="../landingpage/get-started.html" class="back-button">
+                <svg viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd"/>
+                </svg>
+                Back to Role Selection
+            </a>
+
+            <div class="form-header">
+                <h1>Create Your Account</h1>
+                <p>Join Direct Recruit as a team page, reporter, agent, or recruiting professional.</p>
+            </div>
+
+            <form id="otherProfileForm" class="profile-form">
+                <!-- Account Information -->
+                <div class="form-section">
+                    <h2 class="section-title">Account Information</h2>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="firstName">First Name <span class="required">*</span></label>
+                            <input
+                                type="text"
+                                id="firstName"
+                                name="firstName"
+                                required
+                                placeholder="John"
+                            >
+                        </div>
+
+                        <div class="form-group">
+                            <label for="lastName">Last Name <span class="required">*</span></label>
+                            <input
+                                type="text"
+                                id="lastName"
+                                name="lastName"
+                                required
+                                placeholder="Smith"
+                            >
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="username">Username <span class="required">*</span></label>
+                        <input
+                            type="text"
+                            id="username"
+                            name="username"
+                            required
+                            placeholder="@username"
+                            pattern="^@?[a-zA-Z0-9_]{3,20}$"
+                        >
+                        <small class="form-hint">3-20 characters, letters, numbers, and underscores only</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="email">Email Address <span class="required">*</span></label>
+                        <input
+                            type="email"
+                            id="email"
+                            name="email"
+                            required
+                            placeholder="your.email@example.com"
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label for="phone">Phone Number</label>
+                        <input
+                            type="tel"
+                            id="phone"
+                            name="phone"
+                            placeholder="(555) 123-4567"
+                        >
+                        <small class="form-hint">Optional - for account recovery</small>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="password">Password <span class="required">*</span></label>
+                            <input
+                                type="password"
+                                id="password"
+                                name="password"
+                                required
+                                placeholder="Create a strong password"
+                                minlength="8"
+                            >
+                            <small class="form-hint">At least 8 characters</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="confirmPassword">Confirm Password <span class="required">*</span></label>
+                            <input
+                                type="password"
+                                id="confirmPassword"
+                                name="confirmPassword"
+                                required
+                                placeholder="Re-enter your password"
+                            >
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="dateOfBirth">Date of Birth <span class="required">*</span></label>
+                        <input
+                            type="date"
+                            id="dateOfBirth"
+                            name="dateOfBirth"
+                            required
+                        >
+                        <small class="form-hint">You must be 13 years or older</small>
+                    </div>
+                </div>
+
+                <!-- User Type -->
+                <div class="form-section">
+                    <h2 class="section-title">User Type</h2>
+
+                    <div class="form-group">
+                        <label for="userType">I am a <span class="required">*</span></label>
+                        <select id="userType" name="userType" required>
+                            <option value="">Select your role</option>
+                            <option value="team-page">Team Page Administrator</option>
+                            <option value="reporter">Sports Reporter/Journalist</option>
+                            <option value="agent">Sports Agent</option>
+                            <option value="recruiter">Recruiting Professional</option>
+                            <option value="scout">Scout</option>
+                            <option value="media">Media Professional</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group" id="organizationGroup">
+                        <label for="organization">Organization/Company</label>
+                        <input
+                            type="text"
+                            id="organization"
+                            name="organization"
+                            placeholder="Your organization or company name"
+                        >
+                        <small class="form-hint">Optional - helps build credibility</small>
+                    </div>
+                </div>
+
+                <!-- Bio -->
+                <div class="form-section">
+                    <h2 class="section-title">About You</h2>
+
+                    <div class="form-group">
+                        <label for="bio">Bio</label>
+                        <textarea
+                            id="bio"
+                            name="bio"
+                            rows="4"
+                            placeholder="Tell us a bit about yourself and what you do..."
+                            maxlength="300"
+                        ></textarea>
+                        <small class="form-hint"><span id="bioCount">0</span>/300 characters</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="location">Location</label>
+                        <input
+                            type="text"
+                            id="location"
+                            name="location"
+                            placeholder="City, State"
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label for="website">Website</label>
+                        <input
+                            type="url"
+                            id="website"
+                            name="website"
+                            placeholder="https://yourwebsite.com"
+                        >
+                    </div>
+                </div>
+
+                <!-- Terms and Privacy -->
+                <div class="form-section">
+                    <div class="checkbox-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="agreeTerms" name="agreeTerms" required>
+                            <span class="checkbox-text">
+                                I agree to the <a href="#" target="_blank">Terms of Service</a> and
+                                <a href="#" target="_blank">Privacy Policy</a> <span class="required">*</span>
+                            </span>
+                        </label>
+                    </div>
+
+                    <div class="checkbox-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="emailUpdates" name="emailUpdates">
+                            <span class="checkbox-text">
+                                Send me updates and news about Direct Recruit
+                            </span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="form-actions">
+                    <button type="submit" class="btn-submit">
+                        Create Account
+                        <svg class="btn-icon" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                        </svg>
+                    </button>
+                    <p class="form-footer">
+                        Already have an account? <a href="../landingpage/signin.html">Sign In</a>
+                    </p>
+                </div>
+            </form>
+        </div>
+    </section>
+
+    <script src="other-profile-form.js"></script>
+</body>
+</html>

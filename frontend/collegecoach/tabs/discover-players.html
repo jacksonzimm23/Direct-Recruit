@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Discover Players - Direct Recruit</title>
+    <link rel="stylesheet" href="../../landingpage/styles.css">
+    <link rel="stylesheet" href="../mainpage-coach.css">
+    <link rel="stylesheet" href="discover-players.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+</head>
+<body class="dashboard-body">
+    <!-- Sidebar Toggle Button -->
+    <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle Sidebar">
+        <svg class="toggle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="3" y1="12" x2="21" y2="12"></line>
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <line x1="3" y1="18" x2="21" y2="18"></line>
+        </svg>
+    </button>
+
+    <!-- Main Container -->
+    <div class="dashboard-container" id="dashboardContainer">
+        <!-- Left Sidebar Navigation -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">
+                    <img src="https://res.cloudinary.com/dzmsj6nwv/image/upload/v1762928148/LogoPNG3_pofqrr.png" alt="Direct Recruit Logo" class="logo-icon">
+                    <div class="logo-text">
+                        <span class="logo-title">Direct Recruit</span>
+                        <span class="logo-subtitle">GET RECRUITED · THE RIGHT WAY</span>
+                    </div>
+                </div>
+            </div>
+
+            <nav class="sidebar-nav">
+                <a href="../mainpage-coach.html" class="nav-item">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                        <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                    </svg>
+                    <span>Feed</span>
+                </a>
+
+                <a href="discover-players.html" class="nav-item active">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <path d="m21 21-4.35-4.35"></path>
+                    </svg>
+                    <span>Discover Players</span>
+                </a>
+
+                <a href="my-profile.html" class="nav-item">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                    <span>My Profile</span>
+                </a>
+
+                <a href="messages.html" class="nav-item">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                    <span>Messages</span>
+                    <span class="notification-badge">5</span>
+                </a>
+
+                <a href="notifications.html" class="nav-item">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                    </svg>
+                    <span>Notifications</span>
+                </a>
+
+                <a href="recruiting-board.html" class="nav-item" id="recruitingBoardNav" style="display: none;">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="9" y1="3" x2="9" y2="21"></line>
+                        <line x1="15" y1="3" x2="15" y2="21"></line>
+                        <line x1="3" y1="9" x2="21" y2="9"></line>
+                        <line x1="3" y1="15" x2="21" y2="15"></line>
+                    </svg>
+                    <span>Recruiting Board</span>
+                </a>
+
+                <a href="transfer-portal.html" class="nav-item" id="transferPortalNav" style="display: none;">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <path d="M8 12h8"></path>
+                        <path d="M12 8v8"></path>
+                        <circle cx="12" cy="12" r="3"></circle>
+                    </svg>
+                    <span>Transfer Portal</span>
+                </a>
+
+                <a href="settings.html" class="nav-item">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                    </svg>
+                    <span>Settings</span>
+                </a>
+            </nav>
+
+            <!-- Sidebar Footer -->
+            <div class="sidebar-footer">
+                <div class="user-menu">
+                    <div class="user-avatar-circle">
+                        <svg viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="12" cy="7" r="4"></circle>
+                        </svg>
+                    </div>
+                    <div class="user-info">
+                        <div class="user-name"></div>
+                        <div class="user-role"></div>
+                    </div>
+                    <svg class="more-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="1"></circle>
+                        <circle cx="12" cy="5" r="1"></circle>
+                        <circle cx="12" cy="19" r="1"></circle>
+                    </svg>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="content-header">
+                <h1>Discover Players</h1>
+            </div>
+
+            <!-- Advanced Filters Section -->
+            <div class="filters-container">
+                <div class="filters-header">
+                    <h2>Filter Players</h2>
+                    <button class="btn-reset-filters" id="resetFilters">Reset All</button>
+                </div>
+
+                <div class="filters-grid">
+                    <!-- Position Filter -->
+                    <div class="filter-group">
+                        <label>Position</label>
+                        <select class="filter-select" id="positionFilter">
+                            <option value="">All Positions</option>
+                            <optgroup label="Offense">
+                                <option value="QB">Quarterback (QB)</option>
+                                <option value="RB">Running Back (RB)</option>
+                                <option value="FB">Fullback (FB)</option>
+                                <option value="WR">Wide Receiver (WR)</option>
+                                <option value="TE">Tight End (TE)</option>
+                                <option value="OT">Offensive Tackle (OT)</option>
+                                <option value="OG">Offensive Guard (OG)</option>
+                                <option value="C">Center (C)</option>
+                            </optgroup>
+                            <optgroup label="Defense">
+                                <option value="DE">Defensive End (DE)</option>
+                                <option value="DT">Defensive Tackle (DT)</option>
+                                <option value="NT">Nose Tackle (NT)</option>
+                                <option value="OLB">Outside Linebacker (OLB)</option>
+                                <option value="MLB">Middle Linebacker (MLB)</option>
+                                <option value="ILB">Inside Linebacker (ILB)</option>
+                                <option value="CB">Cornerback (CB)</option>
+                                <option value="FS">Free Safety (FS)</option>
+                                <option value="SS">Strong Safety (SS)</option>
+                            </optgroup>
+                            <optgroup label="Special Teams">
+                                <option value="K">Kicker (K)</option>
+                                <option value="P">Punter (P)</option>
+                                <option value="LS">Long Snapper (LS)</option>
+                            </optgroup>
+                        </select>
+                    </div>
+
+                    <!-- Graduation Year Filter -->
+                    <div class="filter-group">
+                        <label>Graduation Year</label>
+                        <select class="filter-select" id="gradYearFilter">
+                            <option value="">All Years</option>
+                            <option value="2025">2025</option>
+                            <option value="2026">2026</option>
+                            <option value="2027">2027</option>
+                            <option value="2028">2028</option>
+                            <option value="2029">2029</option>
+                            <option value="2030">2030</option>
+                        </select>
+                    </div>
+
+                    <!-- State Filter -->
+                    <div class="filter-group">
+                        <label>State</label>
+                        <select class="filter-select" id="stateFilter">
+                            <option value="">All States</option>
+                            <option value="AL">Alabama</option>
+                            <option value="AK">Alaska</option>
+                            <option value="AZ">Arizona</option>
+                            <option value="AR">Arkansas</option>
+                            <option value="CA">California</option>
+                            <option value="CO">Colorado</option>
+                            <option value="CT">Connecticut</option>
+                            <option value="DE">Delaware</option>
+                            <option value="FL">Florida</option>
+                            <option value="GA">Georgia</option>
+                            <option value="HI">Hawaii</option>
+                            <option value="ID">Idaho</option>
+                            <option value="IL">Illinois</option>
+                            <option value="IN">Indiana</option>
+                            <option value="IA">Iowa</option>
+                            <option value="KS">Kansas</option>
+                            <option value="KY">Kentucky</option>
+                            <option value="LA">Louisiana</option>
+                            <option value="ME">Maine</option>
+                            <option value="MD">Maryland</option>
+                            <option value="MA">Massachusetts</option>
+                            <option value="MI">Michigan</option>
+                            <option value="MN">Minnesota</option>
+                            <option value="MS">Mississippi</option>
+                            <option value="MO">Missouri</option>
+                            <option value="MT">Montana</option>
+                            <option value="NE">Nebraska</option>
+                            <option value="NV">Nevada</option>
+                            <option value="NH">New Hampshire</option>
+                            <option value="NJ">New Jersey</option>
+                            <option value="NM">New Mexico</option>
+                            <option value="NY">New York</option>
+                            <option value="NC">North Carolina</option>
+                            <option value="ND">North Dakota</option>
+                            <option value="OH">Ohio</option>
+                            <option value="OK">Oklahoma</option>
+                            <option value="OR">Oregon</option>
+                            <option value="PA">Pennsylvania</option>
+                            <option value="RI">Rhode Island</option>
+                            <option value="SC">South Carolina</option>
+                            <option value="SD">South Dakota</option>
+                            <option value="TN">Tennessee</option>
+                            <option value="TX">Texas</option>
+                            <option value="UT">Utah</option>
+                            <option value="VT">Vermont</option>
+                            <option value="VA">Virginia</option>
+                            <option value="WA">Washington</option>
+                            <option value="WV">West Virginia</option>
+                            <option value="WI">Wisconsin</option>
+                            <option value="WY">Wyoming</option>
+                        </select>
+                    </div>
+
+                    <!-- Height Slider -->
+                    <div class="filter-group slider-group">
+                        <label>Height</label>
+                        <div class="slider-values">
+                            <span id="heightMin">5'0"</span>
+                            <span id="heightMax">7'0"</span>
+                        </div>
+                        <input type="range" class="filter-slider" id="heightSlider" min="60" max="84" value="60" step="1">
+                        <div class="slider-label">Minimum: <span id="heightValue">5'0"</span></div>
+                    </div>
+
+                    <!-- Weight Slider -->
+                    <div class="filter-group slider-group">
+                        <label>Weight (lbs)</label>
+                        <div class="slider-values">
+                            <span id="weightMin">150</span>
+                            <span id="weightMax">350</span>
+                        </div>
+                        <input type="range" class="filter-slider" id="weightSlider" min="150" max="350" value="150" step="5">
+                        <div class="slider-label">Minimum: <span id="weightValue">150</span> lbs</div>
+                    </div>
+
+                    <!-- GPA Slider -->
+                    <div class="filter-group slider-group">
+                        <label>GPA</label>
+                        <div class="slider-values">
+                            <span id="gpaMin">0.0</span>
+                            <span id="gpaMax">4.0</span>
+                        </div>
+                        <input type="range" class="filter-slider" id="gpaSlider" min="0" max="40" value="0" step="1">
+                        <div class="slider-label">Minimum: <span id="gpaValue">0.0</span></div>
+                    </div>
+                </div>
+
+                <div class="filter-actions">
+                    <button class="btn-apply-filters" id="applyFilters">Apply Filters</button>
+                    <div class="results-count">Showing <span id="resultsCount">24</span> players</div>
+                </div>
+            </div>
+
+            <!-- Players Grid -->
+            <div class="players-grid">
+                <!-- Player Card 1 -->
+                <div class="player-card" data-position="WR" data-state="CA" data-height="74" data-weight="195" data-gpa="38" data-grad="2026">
+                    <div class="player-card-header">
+                        <div class="player-avatar-large">
+                            <svg viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="12" cy="7" r="4"></circle>
+                            </svg>
+                        </div>
+                        <div class="player-badge">⭐ Featured</div>
+                    </div>
+                    <h3 class="player-name">Marcus Thompson</h3>
+                    <div class="player-position">Wide Receiver (WR)</div>
+                    <div class="player-stats">
+                        <div class="stat-item">
+                            <div class="stat-label">Height</div>
+                            <div class="stat-value">6'2"</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Weight</div>
+                            <div class="stat-value">195 lbs</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">GPA</div>
+                            <div class="stat-value">3.8</div>
+                        </div>
+                    </div>
+                    <div class="player-details">
+                        <div class="detail-item">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                                <circle cx="12" cy="10" r="3"></circle>
+                            </svg>
+                            Los Angeles, CA
+                        </div>
+                        <div class="detail-item">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                <line x1="16" y1="2" x2="16" y2="6"></line>
+                                <line x1="8" y1="2" x2="8" y2="6"></line>
+                                <line x1="3" y1="10" x2="21" y2="10"></line>
+                            </svg>
+                            Class of 2026
+                        </div>
+                    </div>
+                    <div class="player-highlights">
+                        <div class="highlight-item">64 REC</div>
+                        <div class="highlight-item">1,247 YDS</div>
+                        <div class="highlight-item">15 TDs</div>
+                    </div>
+                    <button class="btn-view-profile">View Profile</button>
+                </div>
+
+                <!-- Player Card 2 -->
+                <div class="player-card" data-position="QB" data-state="TX" data-height="76" data-weight="215" data-gpa="35" data-grad="2026">
+                    <div class="player-card-header">
+                        <div class="player-avatar-large">
+                            <svg viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="12" cy="7" r="4"></circle>
+                            </svg>
+                        </div>
+                    </div>
+                    <h3 class="player-name">Jake Morrison</h3>
+                    <div class="player-position">Quarterback (QB)</div>
+                    <div class="player-stats">
+                        <div class="stat-item">
+                            <div class="stat-label">Height</div>
+                            <div class="stat-value">6'4"</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Weight</div>
+                            <div class="stat-value">215 lbs</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">GPA</div>
+                            <div class="stat-value">3.5</div>
+                        </div>
+                    </div>
+                    <div class="player-details">
+                        <div class="detail-item">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                                <circle cx="12" cy="10" r="3"></circle>
+                            </svg>
+                            Dallas, TX
+                        </div>
+                        <div class="detail-item">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                <line x1="16" y1="2" x2="16" y2="6"></line>
+                                <line x1="8" y1="2" x2="8" y2="6"></line>
+                                <line x1="3" y1="10" x2="21" y2="10"></line>
+                            </svg>
+                            Class of 2026
+                        </div>
+                    </div>
+                    <div class="player-highlights">
+                        <div class="highlight-item">3,456 PASS YDS</div>
+                        <div class="highlight-item">35 TDs</div>
+                        <div class="highlight-item">68% COMP</div>
+                    </div>
+                    <button class="btn-view-profile">View Profile</button>
+                </div>
+
+                <!-- Player Card 3 - Transfer Portal -->
+                <div class="player-card transfer-portal" data-position="RB" data-state="FL" data-height="71" data-weight="210" data-gpa="32" data-grad="2025">
+                    <div class="player-card-header">
+                        <div class="player-avatar-large">
+                            <svg viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="12" cy="7" r="4"></circle>
+                            </svg>
+                        </div>
+                        <div class="transfer-portal-badge">🎯 PORTAL</div>
+                    </div>
+                    <h3 class="player-name">
+                        Darius Williams
+                        <svg class="transfer-portal-icon" viewBox="0 0 24 24" fill="currentColor">
+                            <circle cx="12" cy="12" r="10"/>
+                            <circle cx="12" cy="12" r="6" fill="var(--oxford-blue)"/>
+                            <circle cx="12" cy="12" r="2"/>
+                        </svg>
+                    </h3>
+                    <div class="player-position transfer-portal-text">Running Back (RB)</div>
+                    <div class="player-stats">
+                        <div class="stat-item">
+                            <div class="stat-label">Height</div>
+                            <div class="stat-value">6'0"</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Weight</div>
+                            <div class="stat-value">210 lbs</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Eligibility</div>
+                            <div class="stat-value">3 Years</div>
+                        </div>
+                    </div>
+                    <div class="player-details">
+                        <div class="detail-item portal-previous">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                                <circle cx="12" cy="10" r="3"></circle>
+                            </svg>
+                            Previously: Ohio State University (FBS)
+                        </div>
+                    </div>
+                    <div class="player-highlights">
+                        <div class="highlight-item">1,245 RUSH YDS</div>
+                        <div class="highlight-item">15 TDs</div>
+                        <div class="highlight-item">5.8 YPC</div>
+                    </div>
+                    <button class="btn-view-profile">View Profile</button>
+                </div>
+
+                <!-- Player Card 4 -->
+                <div class="player-card" data-position="DE" data-state="OH" data-height="78" data-weight="265" data-gpa="33" data-grad="2026">
+                    <div class="player-card-header">
+                        <div class="player-avatar-large">
+                            <svg viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="12" cy="7" r="4"></circle>
+                            </svg>
+                        </div>
+                        <div class="player-badge">⭐ Featured</div>
+                    </div>
+                    <h3 class="player-name">Brandon Jackson</h3>
+                    <div class="player-position">Defensive End (DE)</div>
+                    <div class="player-stats">
+                        <div class="stat-item">
+                            <div class="stat-label">Height</div>
+                            <div class="stat-value">6'6"</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Weight</div>
+                            <div class="stat-value">265 lbs</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">GPA</div>
+                            <div class="stat-value">3.3</div>
+                        </div>
+                    </div>
+                    <div class="player-details">
+                        <div class="detail-item">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                                <circle cx="12" cy="10" r="3"></circle>
+                            </svg>
+                            Cleveland, OH
+                        </div>
+                        <div class="detail-item">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                <line x1="16" y1="2" x2="16" y2="6"></line>
+                                <line x1="8" y1="2" x2="8" y2="6"></line>
+                                <line x1="3" y1="10" x2="21" y2="10"></line>
+                            </svg>
+                            Class of 2026
+                        </div>
+                    </div>
+                    <div class="player-highlights">
+                        <div class="highlight-item">78 TACKLES</div>
+                        <div class="highlight-item">18 SACKS</div>
+                        <div class="highlight-item">4 FF</div>
+                    </div>
+                    <button class="btn-view-profile">View Profile</button>
+                </div>
+
+                <!-- Player Card 5 -->
+                <div class="player-card" data-position="CB" data-state="GA" data-height="72" data-weight="185" data-gpa="36" data-grad="2027">
+                    <div class="player-card-header">
+                        <div class="player-avatar-large">
+                            <svg viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="12" cy="7" r="4"></circle>
+                            </svg>
+                        </div>
+                    </div>
+                    <h3 class="player-name">Jamal Davis</h3>
+                    <div class="player-position">Cornerback (CB)</div>
+                    <div class="player-stats">
+                        <div class="stat-item">
+                            <div class="stat-label">Height</div>
+                            <div class="stat-value">6'0"</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Weight</div>
+                            <div class="stat-value">185 lbs</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">GPA</div>
+                            <div class="stat-value">3.6</div>
+                        </div>
+                    </div>
+                    <div class="player-details">
+                        <div class="detail-item">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                                <circle cx="12" cy="10" r="3"></circle>
+                            </svg>
+                            Atlanta, GA
+                        </div>
+                        <div class="detail-item">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                <line x1="16" y1="2" x2="16" y2="6"></line>
+                                <line x1="8" y1="2" x2="8" y2="6"></line>
+                                <line x1="3" y1="10" x2="21" y2="10"></line>
+                            </svg>
+                            Class of 2027
+                        </div>
+                    </div>
+                    <div class="player-highlights">
+                        <div class="highlight-item">52 TACKLES</div>
+                        <div class="highlight-item">7 INT</div>
+                        <div class="highlight-item">15 PBU</div>
+                    </div>
+                    <button class="btn-view-profile">View Profile</button>
+                </div>
+
+                <!-- Player Card 6 -->
+                <div class="player-card" data-position="OT" data-state="PA" data-height="79" data-weight="310" data-gpa="34" data-grad="2026">
+                    <div class="player-card-header">
+                        <div class="player-avatar-large">
+                            <svg viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="12" cy="7" r="4"></circle>
+                            </svg>
+                        </div>
+                    </div>
+                    <h3 class="player-name">Michael Rodriguez</h3>
+                    <div class="player-position">Offensive Tackle (OT)</div>
+                    <div class="player-stats">
+                        <div class="stat-item">
+                            <div class="stat-label">Height</div>
+                            <div class="stat-value">6'7"</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Weight</div>
+                            <div class="stat-value">310 lbs</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">GPA</div>
+                            <div class="stat-value">3.4</div>
+                        </div>
+                    </div>
+                    <div class="player-details">
+                        <div class="detail-item">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                                <circle cx="12" cy="10" r="3"></circle>
+                            </svg>
+                            Pittsburgh, PA
+                        </div>
+                        <div class="detail-item">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                <line x1="16" y1="2" x2="16" y2="6"></line>
+                                <line x1="8" y1="2" x2="8" y2="6"></line>
+                                <line x1="3" y1="10" x2="21" y2="10"></line>
+                            </svg>
+                            Class of 2026
+                        </div>
+                    </div>
+                    <div class="player-highlights">
+                        <div class="highlight-item">92% PASS BLOCK</div>
+                        <div class="highlight-item">0 SACKS</div>
+                        <div class="highlight-item">All-State</div>
+                    </div>
+                    <button class="btn-view-profile">View Profile</button>
+                </div>
+            </div>
+
+            <!-- Coaches to Follow Section -->
+            <div class="coaches-section">
+                <h2 class="section-heading">Coaches to Follow</h2>
+                <div class="coaches-grid">
+                    <!-- Coach Card 1 -->
+                    <div class="coach-card">
+                        <div class="coach-card-header">
+                            <div class="coach-avatar-large">
+                                <svg viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                    <circle cx="12" cy="7" r="4"></circle>
+                                </svg>
+                            </div>
+                            <div class="coach-badge">🎓 D1</div>
+                        </div>
+                        <h3 class="coach-name">
+                            Coach Mike Stevens
+                            <svg class="verified-badge" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
+                                <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"/>
+                            </svg>
+                        </h3>
+                        <div class="coach-position">Wide Receivers Coach</div>
+                        <div class="coach-school">
+                            <div class="school-name">University of Alabama</div>
+                            <div class="school-division">Division I - FBS</div>
+                        </div>
+                        <div class="coach-recruiting">
+                            <div class="recruiting-label">Recruiting:</div>
+                            <div class="position-tags">
+                                <span class="position-tag">WR</span>
+                                <span class="position-tag">TE</span>
+                            </div>
+                        </div>
+                        <button class="btn-follow-coach">+ Follow</button>
+                    </div>
+
+                    <!-- Coach Card 2 -->
+                    <div class="coach-card">
+                        <div class="coach-card-header">
+                            <div class="coach-avatar-large">
+                                <svg viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                    <circle cx="12" cy="7" r="4"></circle>
+                                </svg>
+                            </div>
+                            <div class="coach-badge">🎓 D2</div>
+                        </div>
+                        <h3 class="coach-name">
+                            Coach Sarah Martinez
+                            <svg class="verified-badge" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
+                                <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"/>
+                            </svg>
+                        </h3>
+                        <div class="coach-position">Defensive Coordinator</div>
+                        <div class="coach-school">
+                            <div class="school-name">Grand Valley State</div>
+                            <div class="school-division">Division II</div>
+                        </div>
+                        <div class="coach-recruiting">
+                            <div class="recruiting-label">Recruiting:</div>
+                            <div class="position-tags">
+                                <span class="position-tag">CB</span>
+                                <span class="position-tag">S</span>
+                                <span class="position-tag">LB</span>
+                            </div>
+                        </div>
+                        <button class="btn-follow-coach">+ Follow</button>
+                    </div>
+
+                    <!-- Coach Card 3 -->
+                    <div class="coach-card">
+                        <div class="coach-card-header">
+                            <div class="coach-avatar-large">
+                                <svg viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                    <circle cx="12" cy="7" r="4"></circle>
+                                </svg>
+                            </div>
+                            <div class="coach-badge">🎓 D1</div>
+                        </div>
+                        <h3 class="coach-name">
+                            Coach David Johnson
+                            <svg class="verified-badge" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
+                                <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"/>
+                            </svg>
+                        </h3>
+                        <div class="coach-position">Offensive Line Coach</div>
+                        <div class="coach-school">
+                            <div class="school-name">Ohio State University</div>
+                            <div class="school-division">Division I - FBS</div>
+                        </div>
+                        <div class="coach-recruiting">
+                            <div class="recruiting-label">Recruiting:</div>
+                            <div class="position-tags">
+                                <span class="position-tag">OT</span>
+                                <span class="position-tag">OG</span>
+                                <span class="position-tag">C</span>
+                            </div>
+                        </div>
+                        <button class="btn-follow-coach">+ Follow</button>
+                    </div>
+
+                    <!-- Coach Card 4 -->
+                    <div class="coach-card">
+                        <div class="coach-card-header">
+                            <div class="coach-avatar-large">
+                                <svg viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                    <circle cx="12" cy="7" r="4"></circle>
+                                </svg>
+                            </div>
+                            <div class="coach-badge">🎓 D3</div>
+                        </div>
+                        <h3 class="coach-name">
+                            Coach Robert Taylor
+                            <svg class="verified-badge" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
+                                <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"/>
+                            </svg>
+                        </h3>
+                        <div class="coach-position">Head Coach</div>
+                        <div class="coach-school">
+                            <div class="school-name">Williams College</div>
+                            <div class="school-division">Division III</div>
+                        </div>
+                        <div class="coach-recruiting">
+                            <div class="recruiting-label">Recruiting:</div>
+                            <div class="position-tags">
+                                <span class="position-tag">QB</span>
+                                <span class="position-tag">RB</span>
+                                <span class="position-tag">WR</span>
+                            </div>
+                        </div>
+                        <button class="btn-follow-coach">+ Follow</button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="../../shared/api.js"></script>
+    <script src="../mainpage-coach.js?v=4"></script>
+    <script src="discover-players.js"></script>
+</body>
+</html>

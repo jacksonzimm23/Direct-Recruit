@@ -1,0 +1,547 @@
+/* Coach Profile Form Specific Styles */
+
+.profile-form-section {
+    min-height: 100vh;
+    padding: 8rem 2rem 4rem;
+    background: linear-gradient(135deg, var(--oxford-blue) 0%, var(--penn-blue) 50%, var(--indigo-dye) 100%);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.form-container {
+    max-width: 800px;
+    width: 100%;
+    background: rgba(254, 252, 251, 0.05);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(18, 130, 162, 0.2);
+    border-radius: 20px;
+    padding: 3rem;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+/* Back Button */
+.back-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--cerulean);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.95rem;
+    margin-bottom: 2rem;
+    transition: all 0.3s ease;
+    padding: 0.75rem 1.25rem;
+    border-radius: 8px;
+    background: rgba(18, 130, 162, 0.1);
+}
+
+.back-button:hover {
+    background: rgba(18, 130, 162, 0.2);
+    transform: translateX(-5px);
+}
+
+.back-button svg {
+    width: 20px;
+    height: 20px;
+}
+
+.form-header {
+    text-align: center;
+    margin-bottom: 3rem;
+}
+
+.form-header h1 {
+    font-size: clamp(2rem, 5vw, 2.5rem);
+    font-weight: 800;
+    color: var(--white);
+    margin-bottom: 0.75rem;
+}
+
+.form-header p {
+    font-size: 1.1rem;
+    color: rgba(254, 252, 251, 0.7);
+}
+
+/* Form Sections */
+.form-section {
+    margin-bottom: 2.5rem;
+    padding-bottom: 2.5rem;
+    border-bottom: 1px solid rgba(18, 130, 162, 0.2);
+}
+
+.form-section:last-of-type {
+    border-bottom: none;
+    margin-bottom: 2rem;
+}
+
+.section-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--cerulean);
+    margin-bottom: 1.5rem;
+}
+
+/* Form Groups */
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+}
+
+label {
+    display: block;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--white);
+    margin-bottom: 0.5rem;
+}
+
+/* School Type Buttons */
+.school-type-buttons {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-top: 0.5rem;
+}
+
+.school-type-btn {
+    padding: 1rem;
+    background: rgba(254, 252, 251, 0.05);
+    border: 2px solid rgba(18, 130, 162, 0.3);
+    border-radius: 8px;
+    color: var(--white);
+    font-size: 0.95rem;
+    font-weight: 600;
+    font-family: 'Inter', sans-serif;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.school-type-btn:hover,
+.school-type-btn:active {
+    background: rgba(18, 130, 162, 0.1);
+    border-color: var(--cerulean);
+}
+
+.school-type-btn.active {
+    background: var(--cerulean);
+    border-color: var(--cerulean);
+    color: var(--white);
+}
+
+/* Conditional Fields */
+.conditional-fields {
+    margin-top: 1.5rem;
+}
+
+.required {
+    color: var(--accent-orange);
+}
+
+.optional {
+    color: rgba(254, 252, 251, 0.5);
+    font-weight: 400;
+    font-size: 0.85rem;
+}
+
+/* Form Inputs */
+input[type="text"],
+input[type="email"],
+input[type="url"],
+select {
+    width: 100%;
+    padding: 0.9rem 1.2rem;
+    font-size: 1rem;
+    font-family: inherit;
+    background: rgba(254, 252, 251, 0.08);
+    border: 2px solid rgba(18, 130, 162, 0.3);
+    border-radius: 10px;
+    color: var(--white);
+    transition: all 0.3s ease;
+}
+
+input[type="text"]::placeholder,
+input[type="email"]::placeholder,
+input[type="url"]::placeholder {
+    color: rgba(254, 252, 251, 0.4);
+}
+
+input[type="text"]:focus,
+input[type="email"]:focus,
+input[type="url"]:focus,
+select:focus {
+    outline: none;
+    border-color: var(--cerulean);
+    background: rgba(254, 252, 251, 0.12);
+    box-shadow: 0 0 0 3px rgba(18, 130, 162, 0.1);
+}
+
+/* Select Dropdown */
+select {
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23fefcfb' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 1rem center;
+    padding-right: 3rem;
+}
+
+select option {
+    background: var(--penn-blue);
+    color: var(--white);
+    padding: 0.5rem;
+}
+
+/* Multi-Select Container */
+.multi-select-container {
+    background: rgba(254, 252, 251, 0.03);
+    border: 2px solid rgba(18, 130, 162, 0.2);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+.multi-select-group {
+    margin-bottom: 1.5rem;
+}
+
+.multi-select-group:last-child {
+    margin-bottom: 0;
+}
+
+.group-label {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--cerulean);
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid rgba(18, 130, 162, 0.2);
+}
+
+/* Checkbox Labels */
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem;
+    margin-bottom: 0.5rem;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.checkbox-label:hover {
+    background: rgba(18, 130, 162, 0.1);
+}
+
+.checkbox-label input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    margin-right: 0.75rem;
+    cursor: pointer;
+    accent-color: var(--accent-orange);
+}
+
+.checkbox-label span {
+    color: var(--white);
+    font-size: 0.95rem;
+}
+
+/* Selected Items Pills */
+.selected-items {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 1rem;
+    min-height: 40px;
+}
+
+.selected-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: var(--cerulean);
+    color: var(--white);
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    animation: pillAppear 0.3s ease;
+}
+
+@keyframes pillAppear {
+    from {
+        opacity: 0;
+        transform: scale(0.8);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.selected-pill button {
+    background: none;
+    border: none;
+    color: var(--white);
+    cursor: pointer;
+    font-size: 1.2rem;
+    line-height: 1;
+    padding: 0;
+    margin-left: 0.25rem;
+    transition: transform 0.2s ease;
+}
+
+.selected-pill button:hover {
+    transform: scale(1.2);
+}
+
+/* Form Hint */
+.form-hint {
+    display: block;
+    margin-top: 0.5rem;
+    font-size: 0.85rem;
+    color: rgba(254, 252, 251, 0.5);
+    font-style: italic;
+}
+
+/* Form Actions */
+.form-actions {
+    display: flex;
+    justify-content: center;
+    margin-top: 2rem;
+}
+
+.btn-submit {
+    padding: 1.1rem 3rem;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--white);
+    background: var(--accent-orange);
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-family: inherit;
+}
+
+.btn-submit:hover {
+    background: #ff7d4d;
+    transform: translateY(-3px);
+    box-shadow: 0 12px 30px rgba(255, 107, 53, 0.4);
+}
+
+.btn-submit:active {
+    transform: translateY(-1px);
+}
+
+.btn-submit .btn-icon {
+    width: 20px;
+    height: 20px;
+}
+
+/* Form Footer */
+.form-footer {
+    text-align: center;
+    margin-top: 2rem;
+    color: rgba(254, 252, 251, 0.7);
+    font-size: 0.95rem;
+}
+
+.form-footer a {
+    color: var(--cerulean);
+    text-decoration: none;
+    font-weight: 600;
+    transition: color 0.3s ease;
+}
+
+.form-footer a:hover {
+    color: var(--accent-orange);
+    text-decoration: underline;
+}
+
+/* Validation Styles */
+input:invalid:not(:placeholder-shown),
+select:invalid:not(:placeholder-shown) {
+    border-color: var(--accent-red);
+}
+
+input:valid:not(:placeholder-shown),
+select:valid {
+    border-color: #10b981;
+}
+
+/* Error Message */
+.error-message {
+    color: var(--accent-red);
+    font-size: 0.85rem;
+    margin-top: 0.5rem;
+    display: none;
+}
+
+input.error,
+select.error {
+    border-color: var(--accent-red);
+    background: rgba(230, 57, 70, 0.1);
+}
+
+input.error ~ .error-message,
+select.error ~ .error-message {
+    display: block;
+}
+
+/* Success Message */
+.success-message {
+    background: rgba(16, 185, 129, 0.1);
+    border: 2px solid #10b981;
+    border-radius: 10px;
+    padding: 1.5rem;
+    text-align: center;
+    margin-top: 2rem;
+    display: none;
+}
+
+.success-message.show {
+    display: block;
+    animation: slideIn 0.5s ease;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.success-message h3 {
+    color: #10b981;
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.success-message p {
+    color: rgba(254, 252, 251, 0.8);
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+    .profile-form-section {
+        padding: 7rem 2rem 3rem;
+    }
+
+    .form-container {
+        padding: 2.5rem 2rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .profile-form-section {
+        padding: 6rem 1.5rem 3rem;
+    }
+
+    .form-container {
+        padding: 2rem 1.5rem;
+    }
+
+    .form-row {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    .school-type-buttons {
+        grid-template-columns: 1fr;
+    }
+
+    .school-type-btn {
+        padding: 1.25rem;
+        font-size: 1rem;
+    }
+
+    .form-header h1 {
+        font-size: 1.75rem;
+    }
+
+    .form-header p {
+        font-size: 1rem;
+    }
+
+    .section-title {
+        font-size: 1.25rem;
+    }
+
+    .btn-submit {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .multi-select-container {
+        padding: 1rem;
+    }
+
+    .checkbox-label {
+        padding: 0.6rem;
+    }
+
+    .checkbox-label input[type="checkbox"] {
+        width: 18px;
+        height: 18px;
+    }
+
+    .back-button {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .form-container {
+        padding: 1.5rem 1rem;
+    }
+
+    input[type="text"],
+    input[type="email"],
+    input[type="url"],
+    select {
+        padding: 0.75rem 1rem;
+        font-size: 0.95rem;
+    }
+
+    .form-header h1 {
+        font-size: 1.5rem;
+    }
+
+    .section-title {
+        font-size: 1.1rem;
+    }
+
+    .selected-pill {
+        font-size: 0.85rem;
+        padding: 0.4rem 0.85rem;
+    }
+}
+
+/* Small Mobile Phones */
+@media (max-width: 375px) {
+    .form-container {
+        padding: 1.25rem 0.85rem;
+    }
+
+    .back-button {
+        font-size: 0.85rem;
+        padding: 0.6rem 1rem;
+    }
+}

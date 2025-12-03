@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Profile - Direct Recruit</title>
+    <link rel="stylesheet" href="../../landingpage/styles.css">
+    <link rel="stylesheet" href="../mainpage-player.css">
+    <link rel="stylesheet" href="my-profile.css">
+    <link rel="stylesheet" href="../../shared/image-cropper.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+</head>
+<body class="dashboard-body">
+    <!-- Sidebar Toggle Button -->
+    <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle Sidebar">
+        <svg class="toggle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="3" y1="12" x2="21" y2="12"></line>
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <line x1="3" y1="18" x2="21" y2="18"></line>
+        </svg>
+    </button>
+
+    <!-- Right Sidebar Toggle Button -->
+    <button class="right-sidebar-toggle" id="rightSidebarToggle" aria-label="Toggle Right Sidebar">
+        <svg class="toggle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="3" y1="12" x2="21" y2="12"></line>
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <line x1="3" y1="18" x2="21" y2="18"></line>
+        </svg>
+    </button>
+
+    <!-- Main Container -->
+    <div class="dashboard-container" id="dashboardContainer">
+        <!-- Left Sidebar Navigation -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">
+                    <img src="https://res.cloudinary.com/dzmsj6nwv/image/upload/v1762928148/LogoPNG3_pofqrr.png" alt="Direct Recruit Logo" class="logo-icon">
+                    <div class="logo-text">
+                        <span class="logo-title">Direct Recruit</span>
+                        <span class="logo-subtitle">GET RECRUITED · THE RIGHT WAY</span>
+                    </div>
+                </div>
+            </div>
+
+            <nav class="sidebar-nav">
+                <a href="../mainpage-player.html" class="nav-item" id="feedNavItem">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                        <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                    </svg>
+                    <span>Feed</span>
+                </a>
+
+                <a href="discover-players.html" class="nav-item">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                    </svg>
+                    <span>Discover Players</span>
+                </a>
+
+                <a href="my-profile.html" class="nav-item" id="profileNavItem">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                    <span>My Profile</span>
+                </a>
+
+                <a href="messages.html" class="nav-item">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                    <span>Messages</span>
+                    <span class="notification-badge">3</span>
+                </a>
+
+                <a href="notifications.html" class="nav-item">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                    </svg>
+                    <span>Notifications</span>
+                </a>
+
+                <a href="settings.html" class="nav-item">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                    </svg>
+                    <span>Settings</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="user-menu">
+                    <div class="user-avatar-circle">
+                        <svg viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="12" cy="7" r="4"></circle>
+                        </svg>
+                    </div>
+                    <div class="user-info">
+                        <div class="user-name"></div>
+                        <div class="user-role"></div>
+                    </div>
+                    <svg class="more-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="1"></circle>
+                        <circle cx="12" cy="5" r="1"></circle>
+                        <circle cx="12" cy="19" r="1"></circle>
+                    </svg>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content profile-content">
+            <!-- Profile Header -->
+            <div class="profile-header-simple">
+                <div class="profile-header-top">
+                    <div class="profile-avatar-container">
+                        <div class="profile-avatar-large" id="profileAvatar">
+                            <svg viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="12" cy="7" r="4"></circle>
+                            </svg>
+                        </div>
+                        <button class="btn-change-photo" id="changePhotoBtn">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                                <circle cx="12" cy="13" r="4"></circle>
+                            </svg>
+                        </button>
+                        <input type="file" id="photoUploadInput" accept="image/jpeg,image/png,image/jpg" style="display: none;">
+                    </div>
+                    <div class="profile-header-info">
+                        <h1 class="profile-name"></h1>
+                        <div class="profile-position"></div>
+                        <div class="profile-meta"></div>
+                        <div class="profile-username"></div>
+                    </div>
+                    <div class="profile-actions">
+                        <button class="btn-edit-profile" id="editProfileBtn">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                            </svg>
+                            Edit Profile
+                        </button>
+                        <button class="btn-share-profile">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="18" cy="5" r="3"></circle>
+                                <circle cx="6" cy="12" r="3"></circle>
+                                <circle cx="18" cy="19" r="3"></circle>
+                                <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+                                <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- About and Contact Info Section (between header and tabs) -->
+            <div class="profile-info-row">
+                <div class="profile-info-column">
+                    <h2 class="section-title">About</h2>
+                    <div class="info-card">
+                        <p class="bio-text">No bio provided yet.</p>
+                    </div>
+                </div>
+                <div class="profile-info-column">
+                    <h2 class="section-title">Contact Info</h2>
+                    <div class="info-card" id="contactInfoCard">
+                        <p>No contact information provided.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Profile Tabs -->
+            <div class="profile-tabs">
+                <button class="profile-tab active" data-tab="overview">Overview</button>
+                <button class="profile-tab" data-tab="stats">Stats</button>
+                <button class="profile-tab" data-tab="highlights">Highlights</button>
+                <button class="profile-tab" data-tab="academics">Academics</button>
+            </div>
+
+            <!-- Tab Content -->
+            <div class="profile-tab-content">
+                <!-- Overview Tab -->
+                <div class="tab-pane active" id="overview">
+                    <div class="profile-grid">
+                        <div class="profile-section">
+                            <h2 class="section-title">Athletic Information</h2>
+                            <div class="info-card">
+                                <div class="info-grid">
+                                    <div class="info-item">
+                                        <div class="info-label">Position</div>
+                                        <div class="info-value">Quarterback</div>
+                                    </div>
+                                    <div class="info-item">
+                                        <div class="info-label">Height</div>
+                                        <div class="info-value">6'2"</div>
+                                    </div>
+                                    <div class="info-item">
+                                        <div class="info-label">Weight</div>
+                                        <div class="info-value">195 lbs</div>
+                                    </div>
+                                    <div class="info-item">
+                                        <div class="info-label">40 Time</div>
+                                        <div class="info-value">4.7s</div>
+                                    </div>
+                                    <div class="info-item">
+                                        <div class="info-label">Jersey Number</div>
+                                        <div class="info-value">#12</div>
+                                    </div>
+                                    <div class="info-item">
+                                        <div class="info-label">Years Playing</div>
+                                        <div class="info-value">6 years</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <h2 class="section-title">Season Stats (2024)</h2>
+                            <div class="info-card">
+                                <div class="stats-grid">
+                                    <div class="stat-box">
+                                        <div class="stat-value">3,500</div>
+                                        <div class="stat-label">Passing Yards</div>
+                                    </div>
+                                    <div class="stat-box">
+                                        <div class="stat-value">32</div>
+                                        <div class="stat-label">Touchdowns</div>
+                                    </div>
+                                    <div class="stat-box">
+                                        <div class="stat-value">65%</div>
+                                        <div class="stat-label">Completion</div>
+                                    </div>
+                                    <div class="stat-box">
+                                        <div class="stat-value">8</div>
+                                        <div class="stat-label">Interceptions</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="profile-sidebar">
+                            <h2 class="section-title">School</h2>
+                            <div class="info-card">
+                                <div class="school-info">
+                                    <div class="school-name">Columbus High School</div>
+                                    <div class="school-location">Columbus, OH</div>
+                                    <div class="school-year">Class of 2026</div>
+                                </div>
+                            </div>
+
+                            <h2 class="section-title">Hudl Profile</h2>
+                            <div class="info-card">
+                                <a href="#" class="hudl-link">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                                    </svg>
+                                    View Highlights on Hudl
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stats Tab -->
+                <div class="tab-pane" id="stats">
+                    <div class="stats-section">
+                        <h2 class="section-title">Career Statistics</h2>
+                        <div class="stats-table-container">
+                            <table class="stats-table">
+                                <thead>
+                                    <tr>
+                                        <th>Season</th>
+                                        <th>Games</th>
+                                        <th>Pass Yds</th>
+                                        <th>TDs</th>
+                                        <th>INTs</th>
+                                        <th>Comp %</th>
+                                        <th>QBR</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>2024</td>
+                                        <td>12</td>
+                                        <td>3,500</td>
+                                        <td>32</td>
+                                        <td>8</td>
+                                        <td>65%</td>
+                                        <td>94.5</td>
+                                    </tr>
+                                    <tr>
+                                        <td>2023</td>
+                                        <td>11</td>
+                                        <td>2,800</td>
+                                        <td>24</td>
+                                        <td>10</td>
+                                        <td>62%</td>
+                                        <td>88.2</td>
+                                    </tr>
+                                    <tr>
+                                        <td>2022</td>
+                                        <td>10</td>
+                                        <td>2,100</td>
+                                        <td>18</td>
+                                        <td>12</td>
+                                        <td>58%</td>
+                                        <td>82.1</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Highlights Tab -->
+                <div class="tab-pane" id="highlights">
+                    <div class="highlights-section">
+                        <h2 class="section-title">Video Highlights</h2>
+                        <div class="highlights-grid">
+                            <div class="highlight-card">
+                                <div class="highlight-thumbnail">
+                                    <svg viewBox="0 0 24 24" fill="currentColor">
+                                        <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                                    </svg>
+                                </div>
+                                <div class="highlight-info">
+                                    <h3>Season Highlight Reel 2024</h3>
+                                    <p>3:45 • 1.2k views</p>
+                                </div>
+                            </div>
+                            <div class="highlight-card">
+                                <div class="highlight-thumbnail">
+                                    <svg viewBox="0 0 24 24" fill="currentColor">
+                                        <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                                    </svg>
+                                </div>
+                                <div class="highlight-info">
+                                    <h3>State Championship Game</h3>
+                                    <p>2:30 • 850 views</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Academics Tab -->
+                <div class="tab-pane" id="academics">
+                    <div class="academics-section">
+                        <h2 class="section-title">Academic Information</h2>
+                        <div class="info-card">
+                            <div class="info-grid">
+                                <div class="info-item">
+                                    <div class="info-label">GPA</div>
+                                    <div class="info-value">3.8</div>
+                                </div>
+                                <div class="info-item">
+                                    <div class="info-label">SAT Score</div>
+                                    <div class="info-value">1250</div>
+                                </div>
+                                <div class="info-item">
+                                    <div class="info-label">ACT Score</div>
+                                    <div class="info-value">28</div>
+                                </div>
+                                <div class="info-item">
+                                    <div class="info-label">Class Rank</div>
+                                    <div class="info-value">Top 15%</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Right Sidebar -->
+        <aside class="right-sidebar" id="rightSidebar">
+            <!-- Profile Stats -->
+            <div class="widget">
+                <h3 class="widget-title">Profile Stats</h3>
+                <div class="widget-content">
+                    <div class="profile-stat-item">
+                        <div class="profile-stat-label">Profile Views</div>
+                        <div class="profile-stat-value">342</div>
+                    </div>
+                    <div class="profile-stat-item">
+                        <div class="profile-stat-label">Coach Interests</div>
+                        <div class="profile-stat-value">18</div>
+                    </div>
+                    <div class="profile-stat-item">
+                        <div class="profile-stat-label">Messages</div>
+                        <div class="profile-stat-value">12</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Activity -->
+            <div class="widget">
+                <h3 class="widget-title">Recent Activity</h3>
+                <div class="widget-content">
+                    <div class="activity-item">
+                        <div class="activity-text">Profile viewed by Coach Martinez</div>
+                        <div class="activity-time">2h ago</div>
+                    </div>
+                    <div class="activity-item">
+                        <div class="activity-text">New follower: Jake Morrison</div>
+                        <div class="activity-time">1d ago</div>
+                    </div>
+                    <div class="activity-item">
+                        <div class="activity-text">Stats updated</div>
+                        <div class="activity-time">3d ago</div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <script src="../../shared/api.js"></script>
+    <!-- Edit Profile Modal -->
+    <div class="edit-profile-modal" id="editProfileModal">
+        <div class="edit-modal-overlay" id="editModalOverlay"></div>
+        <div class="edit-modal-content">
+            <div class="edit-modal-header">
+                <h2>Edit Profile</h2>
+                <button class="edit-modal-close" id="editModalClose">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="edit-modal-body">
+                <form id="editProfileForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="editFirstName">First Name</label>
+                            <input type="text" id="editFirstName" name="first_name" placeholder="Enter first name">
+                        </div>
+                        <div class="form-group">
+                            <label for="editLastName">Last Name</label>
+                            <input type="text" id="editLastName" name="last_name" placeholder="Enter last name">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="editUsername">Username</label>
+                        <input type="text" id="editUsername" name="username" placeholder="Enter username" pattern="[a-zA-Z0-9_]+" title="Only letters, numbers, and underscores allowed">
+                        <small class="form-hint" id="editUsernameHint">Choose a unique username (letters, numbers, underscore only)</small>
+                        <small class="form-error" id="editUsernameError" style="display: none; color: #ff6b6b; font-size: 0.875rem; margin-top: 0.25rem;">This username is already taken</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Position(s)</label>
+                        <p class="form-hint" style="margin-bottom: 0.75rem;">Select all positions you play</p>
+                        <div class="multi-select-container" id="editPositionsContainer">
+                            <div class="multi-select-group">
+                                <h4 class="group-label">Offense - Skill Positions</h4>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="position" value="QB">
+                                    <span>Quarterback (QB)</span>
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="position" value="RB">
+                                    <span>Running Back (RB)</span>
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="position" value="FB">
+                                    <span>Fullback (FB)</span>
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="position" value="WR">
+                                    <span>Wide Receiver (WR)</span>
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="position" value="TE">
+                                    <span>Tight End (TE)</span>
+                                </label>
+                            </div>
+
+                            <div class="multi-select-group">
+                                <h4 class="group-label">Offense - Line</h4>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="position" value="OT">
+                                    <span>Offensive Tackle (OT)</span>
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="position" value="OG">
+                                    <span>Offensive Guard (OG)</span>
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="position" value="C">
+                                    <span>Center (C)</span>
+                                </label>
+                            </div>
+
+                            <div class="multi-select-group">
+                                <h4 class="group-label">Defense - Line</h4>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="position" value="DE">
+                                    <span>Defensive End (DE)</span>
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="position" value="DT">
+                                    <span>Defensive Tackle (DT)</span>
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="position" value="NT">
+                                    <span>Nose Tackle (NT)</span>
+                                </label>
+                            </div>
+
+                            <div class="multi-select-group">
+                                <h4 class="group-label">Defense - Linebackers</h4>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="position" value="ILB">
+                                    <span>Inside Linebacker (ILB)</span>
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="position" value="OLB">
+                                    <span>Outside Linebacker (OLB)</span>
+                                </label>
+                            </div>
+
+                            <div class="multi-select-group">
+                                <h4 class="group-label">Defense - Secondary</h4>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="position" value="CB">
+                                    <span>Cornerback (CB)</span>
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="position" value="S">
+                                    <span>Safety (S)</span>
+                                </label>
+                            </div>
+
+                            <div class="multi-select-group">
+                                <h4 class="group-label">Special Teams</h4>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="position" value="K">
+                                    <span>Kicker (K)</span>
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="position" value="P">
+                                    <span>Punter (P)</span>
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="position" value="LS">
+                                    <span>Long Snapper (LS)</span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="selected-items" id="editSelectedPositions"></div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="editHeightFt">Height</label>
+                            <div class="height-inputs">
+                                <div class="height-input-group">
+                                    <input type="number" id="editHeightFt" name="heightFt" min="4" max="7" placeholder="Ft">
+                                    <span class="height-label">ft</span>
+                                </div>
+                                <div class="height-input-group">
+                                    <input type="number" id="editHeightIn" name="heightIn" min="0" max="11" placeholder="In">
+                                    <span class="height-label">in</span>
+                                </div>
+                            </div>
+                            <small class="form-hint">Enter your height (e.g., 6 ft 2 in)</small>
+                        </div>
+                        <div class="form-group">
+                            <label for="editWeight">Weight</label>
+                            <div class="weight-input-group">
+                                <input type="number" id="editWeight" name="weight" min="100" max="400" placeholder="185">
+                                <span class="weight-label">lbs</span>
+                            </div>
+                            <small class="form-hint">Enter your weight in pounds</small>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="editGraduationYear">Class (Graduation Year)</label>
+                            <input type="number" id="editGraduationYear" name="graduation_year" placeholder="e.g., 2025" min="2020" max="2035">
+                        </div>
+                        <div class="form-group">
+                            <label for="editGPA">GPA</label>
+                            <input type="number" id="editGPA" name="gpa" placeholder="e.g., 3.8" step="0.01" min="0" max="4.0">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>School Type</label>
+                        <div class="school-type-buttons">
+                            <button type="button" class="school-type-btn" id="editSchoolTypeHS" data-type="highschool">
+                                High School
+                            </button>
+                            <button type="button" class="school-type-btn" id="editSchoolTypeCollege" data-type="college">
+                                College / University
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- High School Fields -->
+                    <div id="editHighschoolFields" class="conditional-fields" style="display: none;">
+                        <div class="form-group">
+                            <label for="editHighSchool">High School Name</label>
+                            <input type="text" id="editHighSchool" name="high_school" placeholder="Enter high school name">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="editHSState">State</label>
+                            <select id="editHSState" name="hsState">
+                                <option value="">Select State</option>
+                                <option value="AL">Alabama</option>
+                                <option value="AK">Alaska</option>
+                                <option value="AZ">Arizona</option>
+                                <option value="AR">Arkansas</option>
+                                <option value="CA">California</option>
+                                <option value="CO">Colorado</option>
+                                <option value="CT">Connecticut</option>
+                                <option value="DE">Delaware</option>
+                                <option value="FL">Florida</option>
+                                <option value="GA">Georgia</option>
+                                <option value="HI">Hawaii</option>
+                                <option value="ID">Idaho</option>
+                                <option value="IL">Illinois</option>
+                                <option value="IN">Indiana</option>
+                                <option value="IA">Iowa</option>
+                                <option value="KS">Kansas</option>
+                                <option value="KY">Kentucky</option>
+                                <option value="LA">Louisiana</option>
+                                <option value="ME">Maine</option>
+                                <option value="MD">Maryland</option>
+                                <option value="MA">Massachusetts</option>
+                                <option value="MI">Michigan</option>
+                                <option value="MN">Minnesota</option>
+                                <option value="MS">Mississippi</option>
+                                <option value="MO">Missouri</option>
+                                <option value="MT">Montana</option>
+                                <option value="NE">Nebraska</option>
+                                <option value="NV">Nevada</option>
+                                <option value="NH">New Hampshire</option>
+                                <option value="NJ">New Jersey</option>
+                                <option value="NM">New Mexico</option>
+                                <option value="NY">New York</option>
+                                <option value="NC">North Carolina</option>
+                                <option value="ND">North Dakota</option>
+                                <option value="OH">Ohio</option>
+                                <option value="OK">Oklahoma</option>
+                                <option value="OR">Oregon</option>
+                                <option value="PA">Pennsylvania</option>
+                                <option value="RI">Rhode Island</option>
+                                <option value="SC">South Carolina</option>
+                                <option value="SD">South Dakota</option>
+                                <option value="TN">Tennessee</option>
+                                <option value="TX">Texas</option>
+                                <option value="UT">Utah</option>
+                                <option value="VT">Vermont</option>
+                                <option value="VA">Virginia</option>
+                                <option value="WA">Washington</option>
+                                <option value="WV">West Virginia</option>
+                                <option value="WI">Wisconsin</option>
+                                <option value="WY">Wyoming</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- College Fields -->
+                    <div id="editCollegeFields" class="conditional-fields" style="display: none;">
+                        <div class="form-group">
+                            <label for="editCollegeName">College/University Name</label>
+                            <input type="text" id="editCollegeName" name="college_name" placeholder="University of Colorado">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="editCollegeState">State</label>
+                            <select id="editCollegeState" name="collegeState">
+                                <option value="">Select State</option>
+                                <option value="AL">Alabama</option>
+                                <option value="AK">Alaska</option>
+                                <option value="AZ">Arizona</option>
+                                <option value="AR">Arkansas</option>
+                                <option value="CA">California</option>
+                                <option value="CO">Colorado</option>
+                                <option value="CT">Connecticut</option>
+                                <option value="DE">Delaware</option>
+                                <option value="FL">Florida</option>
+                                <option value="GA">Georgia</option>
+                                <option value="HI">Hawaii</option>
+                                <option value="ID">Idaho</option>
+                                <option value="IL">Illinois</option>
+                                <option value="IN">Indiana</option>
+                                <option value="IA">Iowa</option>
+                                <option value="KS">Kansas</option>
+                                <option value="KY">Kentucky</option>
+                                <option value="LA">Louisiana</option>
+                                <option value="ME">Maine</option>
+                                <option value="MD">Maryland</option>
+                                <option value="MA">Massachusetts</option>
+                                <option value="MI">Michigan</option>
+                                <option value="MN">Minnesota</option>
+                                <option value="MS">Mississippi</option>
+                                <option value="MO">Missouri</option>
+                                <option value="MT">Montana</option>
+                                <option value="NE">Nebraska</option>
+                                <option value="NV">Nevada</option>
+                                <option value="NH">New Hampshire</option>
+                                <option value="NJ">New Jersey</option>
+                                <option value="NM">New Mexico</option>
+                                <option value="NY">New York</option>
+                                <option value="NC">North Carolina</option>
+                                <option value="ND">North Dakota</option>
+                                <option value="OH">Ohio</option>
+                                <option value="OK">Oklahoma</option>
+                                <option value="OR">Oregon</option>
+                                <option value="PA">Pennsylvania</option>
+                                <option value="RI">Rhode Island</option>
+                                <option value="SC">South Carolina</option>
+                                <option value="SD">South Dakota</option>
+                                <option value="TN">Tennessee</option>
+                                <option value="TX">Texas</option>
+                                <option value="UT">Utah</option>
+                                <option value="VT">Vermont</option>
+                                <option value="VA">Virginia</option>
+                                <option value="WA">Washington</option>
+                                <option value="WV">West Virginia</option>
+                                <option value="WI">Wisconsin</option>
+                                <option value="WY">Wyoming</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="editDivision">Division</label>
+                            <select id="editDivision" name="college_division">
+                                <option value="">Select Division</option>
+                                <option value="FBS">FBS</option>
+                                <option value="FCS">FCS</option>
+                                <option value="D2">Division II</option>
+                                <option value="D3">Division III</option>
+                                <option value="NAIA">NAIA</option>
+                                <option value="JUCO">JUCO</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <div class="label-with-counter">
+                            <label for="editBio">About (Optional)</label>
+                            <span class="char-counter" id="bioCharCounter">0/150</span>
+                        </div>
+                        <textarea id="editBio" name="bio" rows="4" maxlength="150" placeholder="Tell coaches about yourself..."></textarea>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="editEmail">Contact Email (Optional)</label>
+                            <input type="email" id="editEmail" name="email" placeholder="you@email.com">
+                        </div>
+                        <div class="form-group">
+                            <label for="editPhone">Phone Number (Optional)</label>
+                            <input type="tel" id="editPhone" name="phone" placeholder="(555) 555-5555">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="edit-modal-footer">
+                <button class="btn-modal-cancel" id="btnModalCancel">Cancel</button>
+                <button class="btn-modal-save" id="btnModalSave">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="../../shared/image-cropper.js"></script>
+    <script src="../mainpage-player.js"></script>
+    <script src="my-profile.js"></script>
+</body>
+</html>

@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transfer Portal - Direct Recruit</title>
+    <link rel="stylesheet" href="../../landingpage/styles.css">
+    <link rel="stylesheet" href="../mainpage-coach.css">
+    <link rel="stylesheet" href="transfer-portal.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+</head>
+<body class="dashboard-body">
+    <!-- Sidebar Toggle Button -->
+    <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle Sidebar">
+        <svg class="toggle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="3" y1="12" x2="21" y2="12"></line>
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <line x1="3" y1="18" x2="21" y2="18"></line>
+        </svg>
+    </button>
+
+    <!-- Main Container -->
+    <div class="dashboard-container" id="dashboardContainer">
+        <!-- Left Sidebar Navigation -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">
+                    <img src="https://res.cloudinary.com/dzmsj6nwv/image/upload/v1762928148/LogoPNG3_pofqrr.png" alt="Direct Recruit Logo" class="logo-icon">
+                    <div class="logo-text">
+                        <span class="logo-title">Direct Recruit</span>
+                        <span class="logo-subtitle">GET RECRUITED · THE RIGHT WAY</span>
+                    </div>
+                </div>
+            </div>
+
+            <nav class="sidebar-nav">
+                <a href="../mainpage-coach.html" class="nav-item">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                        <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                    </svg>
+                    <span>Feed</span>
+                </a>
+
+                <a href="discover-players.html" class="nav-item">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <path d="m21 21-4.35-4.35"></path>
+                    </svg>
+                    <span>Discover Players</span>
+                </a>
+
+                <a href="my-profile.html" class="nav-item">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                    <span>My Profile</span>
+                </a>
+
+                <a href="messages.html" class="nav-item">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                    <span>Messages</span>
+                    <span class="notification-badge">5</span>
+                </a>
+
+                <a href="notifications.html" class="nav-item">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                    </svg>
+                    <span>Notifications</span>
+                </a>
+
+                <a href="recruiting-board.html" class="nav-item">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="9" y1="3" x2="9" y2="21"></line>
+                        <line x1="15" y1="3" x2="15" y2="21"></line>
+                        <line x1="3" y1="9" x2="21" y2="9"></line>
+                        <line x1="3" y1="15" x2="21" y2="15"></line>
+                    </svg>
+                    <span>Recruiting Board</span>
+                </a>
+
+                <a href="transfer-portal.html" class="nav-item active">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <path d="M8 12h8"></path>
+                        <path d="M12 8v8"></path>
+                        <circle cx="12" cy="12" r="3"></circle>
+                    </svg>
+                    <span>Transfer Portal</span>
+                </a>
+
+                <a href="settings.html" class="nav-item">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                    </svg>
+                    <span>Settings</span>
+                </a>
+            </nav>
+
+            <!-- Sidebar Footer -->
+            <div class="sidebar-footer">
+                <div class="user-menu">
+                    <div class="user-avatar-circle">
+                        <svg viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="12" cy="7" r="4"></circle>
+                        </svg>
+                    </div>
+                    <div class="user-info">
+                        <div class="user-name"></div>
+                        <div class="user-role"></div>
+                    </div>
+                    <svg class="more-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="1"></circle>
+                        <circle cx="12" cy="5" r="1"></circle>
+                        <circle cx="12" cy="19" r="1"></circle>
+                    </svg>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="content-header">
+                <h1>Transfer Portal</h1>
+            </div>
+
+            <!-- Advanced Filters Section -->
+            <div class="filters-container">
+                <div class="filters-header">
+                    <h2>Filter Players</h2>
+                    <button class="btn-reset-filters" id="resetFilters">Reset All</button>
+                </div>
+
+                <div class="filters-grid">
+                    <!-- Position Filter -->
+                    <div class="filter-group">
+                        <label>Position</label>
+                        <select class="filter-select" id="positionFilter">
+                            <option value="">All Positions</option>
+                            <optgroup label="Offense">
+                                <option value="QB">Quarterback (QB)</option>
+                                <option value="RB">Running Back (RB)</option>
+                                <option value="FB">Fullback (FB)</option>
+                                <option value="WR">Wide Receiver (WR)</option>
+                                <option value="TE">Tight End (TE)</option>
+                                <option value="OT">Offensive Tackle (OT)</option>
+                                <option value="OG">Offensive Guard (OG)</option>
+                                <option value="C">Center (C)</option>
+                            </optgroup>
+                            <optgroup label="Defense">
+                                <option value="DE">Defensive End (DE)</option>
+                                <option value="DT">Defensive Tackle (DT)</option>
+                                <option value="NT">Nose Tackle (NT)</option>
+                                <option value="OLB">Outside Linebacker (OLB)</option>
+                                <option value="MLB">Middle Linebacker (MLB)</option>
+                                <option value="ILB">Inside Linebacker (ILB)</option>
+                                <option value="CB">Cornerback (CB)</option>
+                                <option value="FS">Free Safety (FS)</option>
+                                <option value="SS">Strong Safety (SS)</option>
+                            </optgroup>
+                            <optgroup label="Special Teams">
+                                <option value="K">Kicker (K)</option>
+                                <option value="P">Punter (P)</option>
+                                <option value="LS">Long Snapper (LS)</option>
+                            </optgroup>
+                        </select>
+                    </div>
+
+                    <!-- Years of Eligibility Filter -->
+                    <div class="filter-group">
+                        <label>Years of Eligibility</label>
+                        <select class="filter-select" id="eligibilityFilter">
+                            <option value="">All Years</option>
+                            <option value="4">4 Years</option>
+                            <option value="3">3 Years</option>
+                            <option value="2">2 Years</option>
+                            <option value="1">1 Year</option>
+                        </select>
+                    </div>
+
+                    <!-- Previous Level Filter -->
+                    <div class="filter-group">
+                        <label>Previous Level</label>
+                        <select class="filter-select" id="levelFilter">
+                            <option value="">All Levels</option>
+                            <option value="FBS">FBS</option>
+                            <option value="FCS">FCS</option>
+                            <option value="D2">Division II</option>
+                            <option value="D3">Division III</option>
+                            <option value="NAIA">NAIA</option>
+                            <option value="JUCO">Junior College</option>
+                        </select>
+                    </div>
+
+                    <!-- Height Slider -->
+                    <div class="filter-group slider-group">
+                        <label>Height</label>
+                        <div class="slider-values">
+                            <span id="heightMin">5'0"</span>
+                            <span id="heightMax">7'0"</span>
+                        </div>
+                        <input type="range" class="filter-slider" id="heightSlider" min="60" max="84" value="60" step="1">
+                        <div class="slider-label">Minimum: <span id="heightValue">5'0"</span></div>
+                    </div>
+
+                    <!-- Weight Slider -->
+                    <div class="filter-group slider-group">
+                        <label>Weight (lbs)</label>
+                        <div class="slider-values">
+                            <span id="weightMin">150</span>
+                            <span id="weightMax">350</span>
+                        </div>
+                        <input type="range" class="filter-slider" id="weightSlider" min="150" max="350" value="150" step="5">
+                        <div class="slider-label">Minimum: <span id="weightValue">150</span> lbs</div>
+                    </div>
+
+                    <!-- GPA Slider -->
+                    <div class="filter-group slider-group">
+                        <label>GPA</label>
+                        <div class="slider-values">
+                            <span id="gpaMin">0.0</span>
+                            <span id="gpaMax">4.0</span>
+                        </div>
+                        <input type="range" class="filter-slider" id="gpaSlider" min="0" max="40" value="0" step="1">
+                        <div class="slider-label">Minimum: <span id="gpaValue">0.0</span></div>
+                    </div>
+                </div>
+
+                <div class="filter-actions">
+                    <button class="btn-apply-filters" id="applyFilters">Apply Filters</button>
+                    <div class="results-count">Showing <span id="resultsCount">9</span> players</div>
+                </div>
+            </div>
+
+            <!-- Players Grid -->
+            <div class="players-grid">
+                <!-- Portal Player 1 -->
+                <div class="player-card transfer-portal" data-position="RB" data-eligibility="3" data-level="FBS" data-height="72" data-weight="210" data-gpa="35">
+                    <div class="player-card-header">
+                        <div class="player-avatar-large">
+                            <svg viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="12" cy="7" r="4"></circle>
+                            </svg>
+                        </div>
+                        <div class="transfer-portal-badge">🎯 PORTAL</div>
+                    </div>
+                    <h3 class="player-name">
+                        Darius Williams
+                        <svg class="transfer-portal-icon" viewBox="0 0 24 24" fill="currentColor">
+                            <circle cx="12" cy="12" r="10"/>
+                            <circle cx="12" cy="12" r="6" fill="var(--oxford-blue)"/>
+                            <circle cx="12" cy="12" r="2"/>
+                        </svg>
+                    </h3>
+                    <div class="player-position transfer-portal-text">Running Back (RB)</div>
+                    <div class="player-stats">
+                        <div class="stat-item">
+                            <div class="stat-label">Height</div>
+                            <div class="stat-value">6'0"</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Weight</div>
+                            <div class="stat-value">210 lbs</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Eligibility</div>
+                            <div class="stat-value">3 Years</div>
+                        </div>
+                    </div>
+                    <div class="player-details">
+                        <div class="detail-item portal-previous">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                                <circle cx="12" cy="10" r="3"></circle>
+                            </svg>
+                            Previously: Ohio State University (FBS)
+                        </div>
+                    </div>
+                    <div class="player-highlights">
+                        <div class="highlight-item">1,245 RUSH YDS</div>
+                        <div class="highlight-item">15 TDs</div>
+                        <div class="highlight-item">5.8 YPC</div>
+                    </div>
+                    <button class="btn-view-profile">View Profile</button>
+                </div>
+
+                <!-- Portal Player 2 -->
+                <div class="player-card transfer-portal" data-position="WR" data-eligibility="2" data-level="FBS" data-height="74" data-weight="195" data-gpa="32">
+                    <div class="player-card-header">
+                        <div class="player-avatar-large">
+                            <svg viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="12" cy="7" r="4"></circle>
+                            </svg>
+                        </div>
+                        <div class="transfer-portal-badge">🎯 PORTAL</div>
+                    </div>
+                    <h3 class="player-name">
+                        Marcus Thompson
+                        <svg class="transfer-portal-icon" viewBox="0 0 24 24" fill="currentColor">
+                            <circle cx="12" cy="12" r="10"/>
+                            <circle cx="12" cy="12" r="6" fill="var(--oxford-blue)"/>
+                            <circle cx="12" cy="12" r="2"/>
+                        </svg>
+                    </h3>
+                    <div class="player-position transfer-portal-text">Wide Receiver (WR)</div>
+                    <div class="player-stats">
+                        <div class="stat-item">
+                            <div class="stat-label">Height</div>
+                            <div class="stat-value">6'3"</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Weight</div>
+                            <div class="stat-value">195 lbs</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Eligibility</div>
+                            <div class="stat-value">2 Years</div>
+                        </div>
+                    </div>
+                    <div class="player-details">
+                        <div class="detail-item portal-previous">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                                <circle cx="12" cy="10" r="3"></circle>
+                            </svg>
+                            Previously: Penn State University (FBS)
+                        </div>
+                    </div>
+                    <div class="player-highlights">
+                        <div class="highlight-item">68 REC</div>
+                        <div class="highlight-item">952 YDS</div>
+                        <div class="highlight-item">8 TDs</div>
+                    </div>
+                    <button class="btn-view-profile">View Profile</button>
+                </div>
+
+                <!-- Portal Player 3 -->
+                <div class="player-card transfer-portal" data-position="QB" data-eligibility="1" data-level="FBS" data-height="75" data-weight="215" data-gpa="38">
+                    <div class="player-card-header">
+                        <div class="player-avatar-large">
+                            <svg viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="12" cy="7" r="4"></circle>
+                            </svg>
+                        </div>
+                        <div class="transfer-portal-badge">🎯 PORTAL</div>
+                    </div>
+                    <h3 class="player-name">
+                        Jake Sullivan
+                        <svg class="transfer-portal-icon" viewBox="0 0 24 24" fill="currentColor">
+                            <circle cx="12" cy="12" r="10"/>
+                            <circle cx="12" cy="12" r="6" fill="var(--oxford-blue)"/>
+                            <circle cx="12" cy="12" r="2"/>
+                        </svg>
+                    </h3>
+                    <div class="player-position transfer-portal-text">Quarterback (QB)</div>
+                    <div class="player-stats">
+                        <div class="stat-item">
+                            <div class="stat-label">Height</div>
+                            <div class="stat-value">6'4"</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Weight</div>
+                            <div class="stat-value">225 lbs</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Eligibility</div>
+                            <div class="stat-value">1 Year</div>
+                        </div>
+                    </div>
+                    <div class="player-details">
+                        <div class="detail-item portal-previous">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                                <circle cx="12" cy="10" r="3"></circle>
+                            </svg>
+                            Previously: USC (FBS)
+                        </div>
+                    </div>
+                    <div class="player-highlights">
+                        <div class="highlight-item">2,845 PASS YDS</div>
+                        <div class="highlight-item">22 TDs</div>
+                        <div class="highlight-item">65% COMP</div>
+                    </div>
+                    <button class="btn-view-profile">View Profile</button>
+                </div>
+
+                <!-- Portal Player 4 -->
+                <div class="player-card transfer-portal" data-position="MLB" data-eligibility="4" data-level="FCS" data-height="73" data-weight="245" data-gpa="33">
+                    <div class="player-card-header">
+                        <div class="player-avatar-large">
+                            <svg viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="12" cy="7" r="4"></circle>
+                            </svg>
+                        </div>
+                        <div class="transfer-portal-badge">🎯 PORTAL</div>
+                    </div>
+                    <h3 class="player-name">
+                        Isaiah Mitchell
+                        <svg class="transfer-portal-icon" viewBox="0 0 24 24" fill="currentColor">
+                            <circle cx="12" cy="12" r="10"/>
+                            <circle cx="12" cy="12" r="6" fill="var(--oxford-blue)"/>
+                            <circle cx="12" cy="12" r="2"/>
+                        </svg>
+                    </h3>
+                    <div class="player-position transfer-portal-text">Middle Linebacker (MLB)</div>
+                    <div class="player-stats">
+                        <div class="stat-item">
+                            <div class="stat-label">Height</div>
+                            <div class="stat-value">6'2"</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Weight</div>
+                            <div class="stat-value">235 lbs</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Eligibility</div>
+                            <div class="stat-value">4 Years</div>
+                        </div>
+                    </div>
+                    <div class="player-details">
+                        <div class="detail-item portal-previous">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                                <circle cx="12" cy="10" r="3"></circle>
+                            </svg>
+                            Previously: North Dakota State (FCS)
+                        </div>
+                    </div>
+                    <div class="player-highlights">
+                        <div class="highlight-item">102 TACKLES</div>
+                        <div class="highlight-item">8 SACKS</div>
+                        <div class="highlight-item">3 FF</div>
+                    </div>
+                    <button class="btn-view-profile">View Profile</button>
+                </div>
+
+                <!-- Portal Player 5 -->
+                <div class="player-card transfer-portal" data-position="OT" data-eligibility="2" data-level="FBS" data-height="78" data-weight="315" data-gpa="30">
+                    <div class="player-card-header">
+                        <div class="player-avatar-large">
+                            <svg viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="12" cy="7" r="4"></circle>
+                            </svg>
+                        </div>
+                        <div class="transfer-portal-badge">🎯 PORTAL</div>
+                    </div>
+                    <h3 class="player-name">
+                        Brandon Carter
+                        <svg class="transfer-portal-icon" viewBox="0 0 24 24" fill="currentColor">
+                            <circle cx="12" cy="12" r="10"/>
+                            <circle cx="12" cy="12" r="6" fill="var(--oxford-blue)"/>
+                            <circle cx="12" cy="12" r="2"/>
+                        </svg>
+                    </h3>
+                    <div class="player-position transfer-portal-text">Offensive Tackle (OT)</div>
+                    <div class="player-stats">
+                        <div class="stat-item">
+                            <div class="stat-label">Height</div>
+                            <div class="stat-value">6'6"</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Weight</div>
+                            <div class="stat-value">315 lbs</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Eligibility</div>
+                            <div class="stat-value">2 Years</div>
+                        </div>
+                    </div>
+                    <div class="player-details">
+                        <div class="detail-item portal-previous">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                                <circle cx="12" cy="10" r="3"></circle>
+                            </svg>
+                            Previously: Alabama (FBS)
+                        </div>
+                    </div>
+                    <div class="player-highlights">
+                        <div class="highlight-item">28 STARTS</div>
+                        <div class="highlight-item">0 SACKS</div>
+                        <div class="highlight-item">All-SEC</div>
+                    </div>
+                    <button class="btn-view-profile">View Profile</button>
+                </div>
+
+                <!-- Portal Player 6 -->
+                <div class="player-card transfer-portal" data-position="CB" data-eligibility="3" data-level="FBS" data-height="71" data-weight="190" data-gpa="34">
+                    <div class="player-card-header">
+                        <div class="player-avatar-large">
+                            <svg viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="12" cy="7" r="4"></circle>
+                            </svg>
+                        </div>
+                        <div class="transfer-portal-badge">🎯 PORTAL</div>
+                    </div>
+                    <h3 class="player-name">
+                        Jamal Henderson
+                        <svg class="transfer-portal-icon" viewBox="0 0 24 24" fill="currentColor">
+                            <circle cx="12" cy="12" r="10"/>
+                            <circle cx="12" cy="12" r="6" fill="var(--oxford-blue)"/>
+                            <circle cx="12" cy="12" r="2"/>
+                        </svg>
+                    </h3>
+                    <div class="player-position transfer-portal-text">Cornerback (CB)</div>
+                    <div class="player-stats">
+                        <div class="stat-item">
+                            <div class="stat-label">Height</div>
+                            <div class="stat-value">6'1"</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Weight</div>
+                            <div class="stat-value">190 lbs</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Eligibility</div>
+                            <div class="stat-value">3 Years</div>
+                        </div>
+                    </div>
+                    <div class="player-details">
+                        <div class="detail-item portal-previous">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                                <circle cx="12" cy="10" r="3"></circle>
+                            </svg>
+                            Previously: Georgia (FBS)
+                        </div>
+                    </div>
+                    <div class="player-highlights">
+                        <div class="highlight-item">45 TACKLES</div>
+                        <div class="highlight-item">4 INT</div>
+                        <div class="highlight-item">12 PBU</div>
+                    </div>
+                    <button class="btn-view-profile">View Profile</button>
+                </div>
+
+                <!-- Portal Player 7 -->
+                <div class="player-card transfer-portal" data-position="TE" data-eligibility="3" data-level="D2" data-height="76" data-weight="255" data-gpa="31">
+                    <div class="player-card-header">
+                        <div class="player-avatar-large">
+                            <svg viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="12" cy="7" r="4"></circle>
+                            </svg>
+                        </div>
+                        <div class="transfer-portal-badge">🎯 PORTAL</div>
+                    </div>
+                    <h3 class="player-name">
+                        Connor Hayes
+                        <svg class="transfer-portal-icon" viewBox="0 0 24 24" fill="currentColor">
+                            <circle cx="12" cy="12" r="10"/>
+                            <circle cx="12" cy="12" r="6" fill="var(--oxford-blue)"/>
+                            <circle cx="12" cy="12" r="2"/>
+                        </svg>
+                    </h3>
+                    <div class="player-position transfer-portal-text">Tight End (TE)</div>
+                    <div class="player-stats">
+                        <div class="stat-item">
+                            <div class="stat-label">Height</div>
+                            <div class="stat-value">6'5"</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Weight</div>
+                            <div class="stat-value">250 lbs</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Eligibility</div>
+                            <div class="stat-value">3 Years</div>
+                        </div>
+                    </div>
+                    <div class="player-details">
+                        <div class="detail-item portal-previous">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                                <circle cx="12" cy="10" r="3"></circle>
+                            </svg>
+                            Previously: Grand Valley State (D2)
+                        </div>
+                    </div>
+                    <div class="player-highlights">
+                        <div class="highlight-item">38 REC</div>
+                        <div class="highlight-item">542 YDS</div>
+                        <div class="highlight-item">6 TDs</div>
+                    </div>
+                    <button class="btn-view-profile">View Profile</button>
+                </div>
+
+                <!-- Portal Player 8 -->
+                <div class="player-card transfer-portal" data-position="DE" data-eligibility="2" data-level="FCS" data-height="77" data-weight="275" data-gpa="29">
+                    <div class="player-card-header">
+                        <div class="player-avatar-large">
+                            <svg viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="12" cy="7" r="4"></circle>
+                            </svg>
+                        </div>
+                        <div class="transfer-portal-badge">🎯 PORTAL</div>
+                    </div>
+                    <h3 class="player-name">
+                        Tyrone Walker
+                        <svg class="transfer-portal-icon" viewBox="0 0 24 24" fill="currentColor">
+                            <circle cx="12" cy="12" r="10"/>
+                            <circle cx="12" cy="12" r="6" fill="var(--oxford-blue)"/>
+                            <circle cx="12" cy="12" r="2"/>
+                        </svg>
+                    </h3>
+                    <div class="player-position transfer-portal-text">Defensive End (DE)</div>
+                    <div class="player-stats">
+                        <div class="stat-item">
+                            <div class="stat-label">Height</div>
+                            <div class="stat-value">6'5"</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Weight</div>
+                            <div class="stat-value">270 lbs</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Eligibility</div>
+                            <div class="stat-value">2 Years</div>
+                        </div>
+                    </div>
+                    <div class="player-details">
+                        <div class="detail-item portal-previous">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                                <circle cx="12" cy="10" r="3"></circle>
+                            </svg>
+                            Previously: James Madison University (FCS)
+                        </div>
+                    </div>
+                    <div class="player-highlights">
+                        <div class="highlight-item">68 TACKLES</div>
+                        <div class="highlight-item">12 SACKS</div>
+                        <div class="highlight-item">5 FF</div>
+                    </div>
+                    <button class="btn-view-profile">View Profile</button>
+                </div>
+
+                <!-- Portal Player 9 -->
+                <div class="player-card transfer-portal" data-position="SS" data-eligibility="4" data-level="D3" data-height="72" data-weight="205" data-gpa="36">
+                    <div class="player-card-header">
+                        <div class="player-avatar-large">
+                            <svg viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="12" cy="7" r="4"></circle>
+                            </svg>
+                        </div>
+                        <div class="transfer-portal-badge">🎯 PORTAL</div>
+                    </div>
+                    <h3 class="player-name">
+                        Jordan Collins
+                        <svg class="transfer-portal-icon" viewBox="0 0 24 24" fill="currentColor">
+                            <circle cx="12" cy="12" r="10"/>
+                            <circle cx="12" cy="12" r="6" fill="var(--oxford-blue)"/>
+                            <circle cx="12" cy="12" r="2"/>
+                        </svg>
+                    </h3>
+                    <div class="player-position transfer-portal-text">Strong Safety (SS)</div>
+                    <div class="player-stats">
+                        <div class="stat-item">
+                            <div class="stat-label">Height</div>
+                            <div class="stat-value">6'1"</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Weight</div>
+                            <div class="stat-value">205 lbs</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Eligibility</div>
+                            <div class="stat-value">4 Years</div>
+                        </div>
+                    </div>
+                    <div class="player-details">
+                        <div class="detail-item portal-previous">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                                <circle cx="12" cy="10" r="3"></circle>
+                            </svg>
+                            Previously: Mount Union College (D3)
+                        </div>
+                    </div>
+                    <div class="player-highlights">
+                        <div class="highlight-item">92 TACKLES</div>
+                        <div class="highlight-item">6 INT</div>
+                        <div class="highlight-item">8 PBU</div>
+                    </div>
+                    <button class="btn-view-profile">View Profile</button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="../../shared/api.js"></script>
+    <script src="../mainpage-coach.js?v=4"></script>
+    <script src="transfer-portal.js"></script>
+</body>
+</html>

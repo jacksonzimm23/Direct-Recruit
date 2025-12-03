@@ -1,0 +1,77 @@
+### Health Check
+GET http://localhost:5000/health
+
+### Register Player
+POST http://localhost:5000/api/auth/register
+Content-Type: application/json
+
+{
+  "email": "player2@example.com",
+  "password": "password123",
+  "role": "player"
+}
+
+### Register Coach
+POST http://localhost:5000/api/auth/register
+Content-Type: application/json
+
+{
+  "email": "coach2@example.com",
+  "password": "password123",
+  "role": "coach"
+}
+
+### Login
+POST http://localhost:5000/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "player1@example.com",
+  "password": "password123"
+}
+
+### Get Current User (replace TOKEN with actual token from login)
+GET http://localhost:5000/api/auth/me
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiIyMmU5ODRhNy1lZTNlLTRjYTgtOTUwNS1hOTRjZGEwZWNlZDciLCJyb2xlIjoicGxheWVyIiwiaWF0IjoxNzYzNDQ0NTQ2LCJleHAiOjE3NjQwNDkzNDZ9.V4hrb9qNVFGUJUZXOllHZ-KW6fSh0LNockpPV7sZj90
+
+### Create Player Profile (replace TOKEN)
+POST http://localhost:5000/api/profile/player
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiIyMmU5ODRhNy1lZTNlLTRjYTgtOTUwNS1hOTRjZGEwZWNlZDciLCJyb2xlIjoicGxheWVyIiwiaWF0IjoxNzYzNDQ0NTQ2LCJleHAiOjE3NjQwNDkzNDZ9.V4hrb9qNVFGUJUZXOllHZ-KW6fSh0LNockpPV7sZj90
+
+{
+  "first_name": "John",
+  "last_name": "Doe",
+  "high_school": "Lincoln High School",
+  "graduation_year": 2025,
+  "city": "Denver",
+  "state": "Colorado",
+  "position": "QB",
+  "height": 74,
+  "weight": 205,
+  "gpa": 3.8,
+  "sat_score": 1350,
+  "bio": "Starting QB with strong arm and leadership skills",
+  "player_status": "senior"
+}
+
+### Create Coach Profile (replace TOKEN)
+POST http://localhost:5000/api/profile/coach
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiIxZmUwN2MxMS03ZWY1LTQ3ODEtOWRhNS1mZDkwZTA3MTQxYzQiLCJyb2xlIjoiY29hY2giLCJpYXQiOjE3NjM0NDQ2ODYsImV4cCI6MTc2NDA0OTQ4Nn0.A391XmwM2YYEGOfOJjdKhiea-ZRpsF6l894Bnb9E4Mo
+
+{
+  "first_name": "Mike",
+  "last_name": "Smith",
+  "college_name": "Colorado State University",
+  "college_division": "FBS",
+  "position_title": "Offensive Coordinator",
+  "city": "Fort Collins",
+  "state": "Colorado",
+  "phone": "555-0123",
+  "bio": "15 years coaching experience at D1 level"
+}
+
+### Search Players
+GET http://localhost:5000/api/profile/search/players?position=QB&state=Colorado
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiIyMmU5ODRhNy1lZTNlLTRjYTgtOTUwNS1hOTRjZGEwZWNlZDciLCJyb2xlIjoicGxheWVyIiwiaWF0IjoxNzYzNDQ0NTQ2LCJleHAiOjE3NjQwNDkzNDZ9.V4hrb9qNVFGUJUZXOllHZ-KW6fSh0LNockpPV7sZj90

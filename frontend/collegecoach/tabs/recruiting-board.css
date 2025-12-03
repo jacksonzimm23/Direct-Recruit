@@ -1,0 +1,300 @@
+/* Recruiting Board Styles - Inherits from Coach Dashboard */
+@import url('../mainpage-coach.css');
+
+/* Override container for recruiting board full width */
+.recruiting-board-container {
+    grid-template-columns: 280px 1fr;
+}
+
+.recruiting-board-container.sidebar-hidden {
+    grid-template-columns: 0px 1fr;
+}
+
+/* Main Content Area */
+.main-content {
+    padding: 2rem;
+    max-width: 100%;
+}
+
+/* Center content when sidebar is hidden */
+.recruiting-board-container.sidebar-hidden .main-content {
+    margin: 0 auto;
+    max-width: 1400px;
+}
+
+/* Page Header */
+.board-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.board-title {
+    font-size: 1.75rem;
+    font-weight: 800;
+    color: var(--white);
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.class-badge {
+    background: var(--accent-orange);
+    color: var(--white);
+    padding: 0.4rem 0.9rem;
+    border-radius: 50px;
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+/* Toggle Buttons */
+.board-toggle {
+    display: flex;
+    gap: 0.5rem;
+    background: rgba(18, 130, 162, 0.1);
+    padding: 0.35rem;
+    border-radius: 50px;
+    border: 1px solid rgba(18, 130, 162, 0.3);
+}
+
+.toggle-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.6rem 1.25rem;
+    background: transparent;
+    border: none;
+    border-radius: 50px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.6);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.toggle-btn svg {
+    width: 18px;
+    height: 18px;
+}
+
+.toggle-btn:hover {
+    color: var(--white);
+}
+
+.toggle-btn.active {
+    background: var(--accent-orange);
+    color: var(--white);
+}
+
+/* Football Field Container */
+.football-field {
+    background: rgba(18, 130, 162, 0.05);
+    border: 1px solid rgba(18, 130, 162, 0.2);
+    border-radius: 16px;
+    padding: 1.5rem;
+    overflow-x: auto;
+}
+
+.football-field.hidden {
+    display: none;
+}
+
+/* Position Groups */
+.position-group {
+    display: flex;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+}
+
+.position-group:last-child {
+    margin-bottom: 0;
+}
+
+.position-group-centered {
+    display: flex;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+    justify-content: center;
+}
+
+.secondary-group {
+    justify-content: center;
+}
+
+/* Position Slot */
+.position-slot {
+    flex: 1;
+    min-width: 140px;
+    max-width: 180px;
+}
+
+.position-label {
+    background: var(--cerulean);
+    color: var(--white);
+    padding: 0.5rem 0.75rem;
+    border-radius: 8px;
+    text-align: center;
+    font-weight: 800;
+    font-size: 0.85rem;
+    margin-bottom: 0.75rem;
+    border: 1px solid rgba(18, 130, 162, 0.4);
+}
+
+/* Recruits List */
+.recruits-list {
+    background: rgba(11, 37, 69, 0.3);
+    border: 1px dashed rgba(18, 130, 162, 0.3);
+    border-radius: 8px;
+    padding: 0.5rem;
+    min-height: 280px;
+    max-height: 280px;
+    overflow-y: auto;
+}
+
+.recruits-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.recruits-list::-webkit-scrollbar-track {
+    background: rgba(11, 37, 69, 0.3);
+    border-radius: 3px;
+}
+
+.recruits-list::-webkit-scrollbar-thumb {
+    background: rgba(18, 130, 162, 0.4);
+    border-radius: 3px;
+}
+
+.recruits-list::-webkit-scrollbar-thumb:hover {
+    background: rgba(18, 130, 162, 0.6);
+}
+
+.recruits-list.drag-over {
+    background: rgba(255, 107, 53, 0.1);
+    border-color: var(--accent-orange);
+}
+
+/* Recruit Card */
+.recruit-card {
+    background: rgba(18, 130, 162, 0.15);
+    border: 1px solid rgba(18, 130, 162, 0.3);
+    border-radius: 8px;
+    padding: 0.6rem;
+    margin-bottom: 0.5rem;
+    cursor: move;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+.recruit-card:last-child {
+    margin-bottom: 0;
+}
+
+.recruit-card:hover {
+    background: rgba(18, 130, 162, 0.25);
+    border-color: var(--cerulean);
+    transform: translateX(3px);
+}
+
+.recruit-card.dragging {
+    opacity: 0.4;
+    transform: scale(0.98);
+}
+
+.recruit-rank {
+    background: var(--accent-orange);
+    color: var(--white);
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 0.75rem;
+    flex-shrink: 0;
+}
+
+.recruit-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+
+.recruit-name {
+    font-weight: 700;
+    color: var(--white);
+    font-size: 0.85rem;
+    line-height: 1.2;
+}
+
+.recruit-stats {
+    font-weight: 500;
+    color: var(--cerulean);
+    font-size: 0.7rem;
+    line-height: 1.2;
+}
+
+.recruit-school {
+    font-weight: 500;
+    color: var(--cerulean);
+    font-size: 0.65rem;
+    line-height: 1.2;
+}
+
+/* Responsive Design */
+@media (max-width: 1400px) {
+    .position-slot {
+        min-width: 130px;
+        max-width: 160px;
+    }
+
+    .recruits-list {
+        min-height: 260px;
+        max-height: 260px;
+    }
+
+    .recruit-card {
+        padding: 0.5rem;
+    }
+}
+
+@media (max-width: 1200px) {
+    .main-content {
+        padding: 1.5rem;
+    }
+
+    .position-group {
+        gap: 0.6rem;
+    }
+
+    .position-slot {
+        min-width: 120px;
+        max-width: 140px;
+    }
+}
+
+@media (max-width: 768px) {
+    .recruiting-board-container {
+        grid-template-columns: 1fr !important;
+    }
+
+    .board-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .position-group {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+    }
+
+    .position-slot {
+        min-width: 140px;
+    }
+}
