@@ -59,7 +59,7 @@
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                     </svg>
-                    <span>Discover Players</span>
+                    <span>Discover</span>
                 </a>
 
                 <a href="my-profile.html" class="nav-item" id="profileNavItem">
@@ -163,6 +163,10 @@
                         <div class="profile-position"></div>
                         <div class="profile-meta"></div>
                         <div class="profile-username"></div>
+                        <div class="profile-follow-stats">
+                            <span class="follow-stat"><span class="follow-count" id="followersCount">0</span> Followers</span>
+                            <span class="follow-stat"><span class="follow-count" id="followingCount">0</span> Following</span>
+                        </div>
                     </div>
                     <div class="profile-actions">
                         <button class="btn-edit-profile" id="editProfileBtn">
@@ -204,6 +208,7 @@
             <!-- Profile Tabs -->
             <div class="profile-tabs">
                 <button class="profile-tab active" data-tab="overview">Overview</button>
+                <button class="profile-tab" data-tab="posts">Posts</button>
                 <button class="profile-tab" data-tab="recruiting" id="recruitingTab" style="display: none;">Recruiting</button>
             </div>
 
@@ -211,79 +216,74 @@
             <div class="profile-tab-content">
                 <!-- Overview Tab -->
                 <div class="tab-pane active" id="overview">
-                    <div class="profile-grid">
+                    <div class="overview-grid">
+                        <!-- School Information -->
                         <div class="profile-section">
-                            <h2 class="section-title">Athletic Information</h2>
+                            <h2 class="section-title">School Information</h2>
                             <div class="info-card">
                                 <div class="info-grid">
                                     <div class="info-item">
-                                        <div class="info-label">Position</div>
-                                        <div class="info-value">Quarterback</div>
+                                        <div class="info-label">School</div>
+                                        <div class="info-value" id="schoolNameValue">-</div>
                                     </div>
                                     <div class="info-item">
-                                        <div class="info-label">Height</div>
-                                        <div class="info-value">6'2"</div>
+                                        <div class="info-label">State</div>
+                                        <div class="info-value" id="schoolStateValue">-</div>
                                     </div>
                                     <div class="info-item">
-                                        <div class="info-label">Weight</div>
-                                        <div class="info-value">195 lbs</div>
+                                        <div class="info-label">Division</div>
+                                        <div class="info-value" id="divisionValue">-</div>
                                     </div>
                                     <div class="info-item">
-                                        <div class="info-label">40 Time</div>
-                                        <div class="info-value">4.7s</div>
+                                        <div class="info-label">Conference</div>
+                                        <div class="info-value" id="conferenceValue">-</div>
                                     </div>
                                     <div class="info-item">
-                                        <div class="info-label">Jersey Number</div>
-                                        <div class="info-value">#12</div>
-                                    </div>
-                                    <div class="info-item">
-                                        <div class="info-label">Years Playing</div>
-                                        <div class="info-value">6 years</div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <h2 class="section-title">Season Stats (2024)</h2>
-                            <div class="info-card">
-                                <div class="stats-grid">
-                                    <div class="stat-box">
-                                        <div class="stat-value">3,500</div>
-                                        <div class="stat-label">Passing Yards</div>
-                                    </div>
-                                    <div class="stat-box">
-                                        <div class="stat-value">32</div>
-                                        <div class="stat-label">Touchdowns</div>
-                                    </div>
-                                    <div class="stat-box">
-                                        <div class="stat-value">65%</div>
-                                        <div class="stat-label">Completion</div>
-                                    </div>
-                                    <div class="stat-box">
-                                        <div class="stat-value">8</div>
-                                        <div class="stat-label">Interceptions</div>
+                                        <div class="info-label">Record (2024)</div>
+                                        <div class="info-value" id="recordValue">-</div>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="profile-sidebar">
-                            <h2 class="section-title">School</h2>
+                        <!-- Program Achievements -->
+                        <div class="profile-section">
+                            <h2 class="section-title">Program Achievements</h2>
                             <div class="info-card">
-                                <div class="school-info">
-                                    <div class="school-name">Columbus High School</div>
-                                    <div class="school-location">Columbus, OH</div>
-                                    <div class="school-year">Class of 2026</div>
+                                <div class="achievements-list" id="achievementsList">
+                                    <p class="no-data-message">No achievements added yet.</p>
                                 </div>
                             </div>
+                        </div>
 
-                            <h2 class="section-title">Hudl Profile</h2>
+                        <!-- Coaching Experience -->
+                        <div class="profile-section">
+                            <h2 class="section-title">Coaching Experience</h2>
                             <div class="info-card">
-                                <a href="#" class="hudl-link">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <polygon points="5 3 19 12 5 21 5 3"></polygon>
-                                    </svg>
-                                    View Highlights on Hudl
-                                </a>
+                                <div class="experience-list" id="experienceList">
+                                    <p class="no-data-message">No coaching experience added yet.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Coaching Philosophy -->
+                        <div class="profile-section">
+                            <h2 class="section-title">Coaching Philosophy</h2>
+                            <div class="info-card">
+                                <div class="philosophy-content" id="philosophyContent">
+                                    <p class="no-data-message">No coaching philosophy added yet.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Posts Tab -->
+                <div class="tab-pane" id="posts">
+                    <div class="posts-section">
+                        <div class="posts-list" id="profilePostsList">
+                            <div class="no-posts-message">
+                                <p>No posts yet.</p>
                             </div>
                         </div>
                     </div>
@@ -661,6 +661,44 @@
                             <label for="editPhone">Phone Number (Optional)</label>
                             <input type="tel" id="editPhone" name="phone" placeholder="(555) 555-5555">
                         </div>
+                    </div>
+
+                    <!-- Overview Fields -->
+                    <h3 class="form-section-title">Program Information</h3>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="editConference">Conference</label>
+                            <input type="text" id="editConference" name="conference" placeholder="e.g., Big 12, SEC, RMAC">
+                        </div>
+                        <div class="form-group">
+                            <label for="editRecord">Record (2024)</label>
+                            <input type="text" id="editRecord" name="record" placeholder="e.g., 10-2" maxlength="10">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <div class="label-with-counter">
+                            <label for="editAchievements">Program Achievements (Optional)</label>
+                            <span class="char-counter" id="achievementsCharCounter">0/1000</span>
+                        </div>
+                        <textarea id="editAchievements" name="achievements" rows="4" maxlength="1000" placeholder="List program achievements, championships, bowl games, notable accomplishments..."></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <div class="label-with-counter">
+                            <label for="editExperience">Coaching Experience (Optional)</label>
+                            <span class="char-counter" id="experienceCharCounter">0/1000</span>
+                        </div>
+                        <textarea id="editExperience" name="experience" rows="4" maxlength="1000" placeholder="List your coaching history, positions held, schools worked at..."></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <div class="label-with-counter">
+                            <label for="editPhilosophy">Coaching Philosophy (Optional)</label>
+                            <span class="char-counter" id="philosophyCharCounter">0/1000</span>
+                        </div>
+                        <textarea id="editPhilosophy" name="philosophy" rows="4" maxlength="1000" placeholder="Describe your coaching philosophy, approach to player development, team culture..."></textarea>
                     </div>
                 </form>
             </div>

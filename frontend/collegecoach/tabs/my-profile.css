@@ -243,6 +243,23 @@
     line-height: 1.6;
 }
 
+.profile-follow-stats {
+    display: flex;
+    gap: 1.25rem;
+    margin-top: 0.5rem;
+}
+
+.follow-stat {
+    color: rgba(254, 252, 251, 0.7);
+    font-size: 0.95rem;
+    font-weight: 500;
+}
+
+.follow-count {
+    color: rgba(254, 252, 251, 0.7);
+    font-weight: 700;
+}
+
 .profile-actions {
     display: flex;
     gap: 1rem;
@@ -1201,4 +1218,82 @@
     .group-label {
         font-size: 0.85rem;
     }
+}
+
+/* About and Contact Info section titles */
+.profile-info-row .section-title {
+    color: white;
+}
+
+/* Overview 2x2 Grid Layout */
+.overview-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 2rem;
+}
+
+.overview-grid .profile-section {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.overview-grid .profile-section .section-title {
+    margin-top: 0;
+    color: white;
+}
+
+.overview-grid .profile-section .info-card {
+    flex: 1;
+    margin-bottom: 0;
+    overflow: hidden;
+    min-width: 0;
+}
+
+.no-data-message {
+    color: rgba(254, 252, 251, 0.5);
+    font-style: italic;
+}
+
+@media (max-width: 900px) {
+    .overview-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Form Section Title */
+.form-section-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--cerulean);
+    margin: 1.5rem 0 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid rgba(18, 130, 162, 0.2);
+}
+
+.form-section-title:first-child {
+    margin-top: 0;
+}
+
+/* Overview content display styles */
+.achievements-list,
+.experience-list,
+.philosophy-content {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    word-break: break-word;
+    line-height: 1.6;
+    color: rgba(254, 252, 251, 0.85);
+    max-width: 100%;
+    overflow: hidden;
+}
+
+.achievements-list p,
+.experience-list p,
+.philosophy-content p {
+    margin: 0;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    word-break: break-word;
 }

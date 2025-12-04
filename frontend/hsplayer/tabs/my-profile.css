@@ -248,6 +248,23 @@
     margin-top: 0.5rem;
 }
 
+.profile-follow-stats {
+    display: flex;
+    gap: 1.25rem;
+    margin-top: 0.5rem;
+}
+
+.follow-stat {
+    color: rgba(254, 252, 251, 0.7);
+    font-size: 0.95rem;
+    font-weight: 500;
+}
+
+.follow-count {
+    color: rgba(254, 252, 251, 0.7);
+    font-weight: 700;
+}
+
 .profile-actions {
     display: flex;
     gap: 1rem;
@@ -3343,4 +3360,206 @@
     .highlight-type-options {
         flex-direction: column;
     }
+}
+
+/* ============================================
+   ACADEMICS TAB STYLES
+   ============================================ */
+
+/* Academics Header */
+.academics-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.academics-header .section-title {
+    margin: 0;
+}
+
+/* Academics Grid - 3 columns for GPA, SAT, ACT */
+.academics-grid {
+    grid-template-columns: repeat(3, 1fr);
+}
+
+@media (max-width: 768px) {
+    .academics-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .academics-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .btn-edit-academics {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+/* Edit Academics Button */
+.btn-edit-academics {
+    display: none;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.25rem;
+    background: var(--cerulean);
+    border: none;
+    border-radius: 8px;
+    color: var(--white);
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: 'Inter', sans-serif;
+}
+
+.btn-edit-academics:hover {
+    background: var(--accent-orange);
+    transform: translateY(-2px);
+}
+
+.btn-edit-academics svg {
+    width: 18px;
+    height: 18px;
+}
+
+.btn-edit-academics.show-button {
+    display: flex;
+}
+
+/* Edit Academics Modal */
+.edit-academics-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 10000;
+}
+
+.edit-academics-modal.active {
+    display: block;
+}
+
+.edit-academics-modal-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(4px);
+}
+
+.edit-academics-modal-content {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: var(--oxford-blue);
+    border: 2px solid rgba(18, 130, 162, 0.3);
+    border-radius: 16px;
+    width: 90%;
+    max-width: 500px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+.edit-academics-modal-header {
+    padding: 1.5rem 2rem;
+    border-bottom: 2px solid rgba(18, 130, 162, 0.2);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.edit-academics-modal-header h2 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--white);
+    margin: 0;
+}
+
+.edit-academics-modal-close {
+    background: none;
+    border: none;
+    color: var(--white);
+    cursor: pointer;
+    padding: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    transition: background 0.2s;
+}
+
+.edit-academics-modal-close:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.edit-academics-modal-close svg {
+    width: 24px;
+    height: 24px;
+}
+
+.edit-academics-modal-body {
+    padding: 2rem;
+    color: var(--white);
+}
+
+#editAcademicsForm {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+#editAcademicsForm .form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    color: var(--white);
+}
+
+#editAcademicsForm .form-group input {
+    width: 100%;
+    padding: 0.85rem 1rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(18, 130, 162, 0.3);
+    border-radius: 8px;
+    color: var(--white);
+    font-size: 1rem;
+    font-family: 'Inter', sans-serif;
+    transition: all 0.2s;
+}
+
+#editAcademicsForm .form-group input:focus {
+    outline: none;
+    border-color: var(--cerulean);
+    background: rgba(255, 255, 255, 0.08);
+}
+
+#editAcademicsForm .form-group input::placeholder {
+    color: rgba(255, 255, 255, 0.4);
+}
+
+#editAcademicsForm .form-hint {
+    display: block;
+    margin-top: 0.5rem;
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.edit-academics-modal-footer {
+    padding: 1.5rem 2rem;
+    border-top: 2px solid rgba(18, 130, 162, 0.2);
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
 }

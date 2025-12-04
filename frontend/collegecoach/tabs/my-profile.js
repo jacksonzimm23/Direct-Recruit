@@ -5,6 +5,7 @@ let currentUserId = null;
 let viewingUserId = null;
 let isOwnProfile = true;
 let isCollegeCoach = false;
+let loggedInUserFolder = null; // Track the logged-in user's folder for navigation
 
 // Format phone number as (XXX) XXX-XXXX
 function formatPhoneNumber(phone) {
@@ -21,6 +22,12 @@ function formatPhoneNumber(phone) {
 }
 
 document.addEventListener('DOMContentLoaded', async function() {
+    // Hide sidebar footer initially to prevent flash of old content
+    const sidebarFooter = document.querySelector('.sidebar-footer');
+    if (sidebarFooter) {
+        sidebarFooter.style.opacity = '0';
+    }
+
     // Get username from URL if viewing someone else's profile
     const urlParams = new URLSearchParams(window.location.search);
     const username = urlParams.get('username');
@@ -73,6 +80,9 @@ function updateNavbarForLoggedInUser(role, profile) {
         return; // Unknown role, don't modify
     }
 
+    // Save to global for use in setupUI navigation handlers
+    loggedInUserFolder = userFolder;
+
     const mainPage = role === 'player' ? 'mainpage-player.html' : 'mainpage-coach.html';
 
     // Rebuild the sidebar nav with the correct items for the logged-in user
@@ -83,7 +93,7 @@ function updateNavbarForLoggedInUser(role, profile) {
         if (role === 'player') {
             // Player nav items (same for HS and college players)
             navHTML = `
-                <a href="/frontend/${userFolder}/${mainPage}" class="nav-item" id="feedNavItem">
+                <a href="/frontend/${userFolder}/${mainPage}" class="nav-item active" id="feedNavItem">
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
                         <polyline points="9 22 9 12 15 12 15 22"></polyline>
@@ -92,12 +102,11 @@ function updateNavbarForLoggedInUser(role, profile) {
                 </a>
                 <a href="/frontend/${userFolder}/tabs/discover-players.html" class="nav-item">
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="11" cy="11" r="8"></circle>
-                        <path d="m21 21-4.35-4.35"></path>
+                        <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                     </svg>
                     <span>Discover</span>
                 </a>
-                <a href="/frontend/${userFolder}/tabs/my-profile.html" class="nav-item active" id="profileNavItem">
+                <a href="/frontend/${userFolder}/tabs/my-profile.html" class="nav-item" id="profileNavItem">
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
                         <circle cx="12" cy="7" r="4"></circle>
@@ -128,7 +137,7 @@ function updateNavbarForLoggedInUser(role, profile) {
         } else if (role === 'coach') {
             // Coach nav items - different for HS vs college coaches
             navHTML = `
-                <a href="/frontend/${userFolder}/${mainPage}" class="nav-item" id="feedNavItem">
+                <a href="/frontend/${userFolder}/${mainPage}" class="nav-item active" id="feedNavItem">
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
                         <polyline points="9 22 9 12 15 12 15 22"></polyline>
@@ -137,12 +146,11 @@ function updateNavbarForLoggedInUser(role, profile) {
                 </a>
                 <a href="/frontend/${userFolder}/tabs/discover-players.html" class="nav-item">
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="11" cy="11" r="8"></circle>
-                        <path d="m21 21-4.35-4.35"></path>
+                        <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                     </svg>
-                    <span>Discover Players</span>
+                    <span>Discover</span>
                 </a>
-                <a href="/frontend/${userFolder}/tabs/my-profile.html" class="nav-item active" id="profileNavItem">
+                <a href="/frontend/${userFolder}/tabs/my-profile.html" class="nav-item" id="profileNavItem">
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
                         <circle cx="12" cy="7" r="4"></circle>
@@ -197,28 +205,46 @@ function updateNavbarForLoggedInUser(role, profile) {
     }
 
     // Update sidebar footer with logged-in user's info (just update text content, preserve structure)
+    // Apply inline styles to ensure consistent appearance regardless of which page's CSS is loaded
     if (profile) {
+        // Define color based on logged-in user's role (players = cerulean/blue, coaches = orange)
+        const userRoleColor = role === 'player' ? '#1282a2' : '#e07a5f';
+
         // Update name
         const userName = document.querySelector('.sidebar-footer .user-name');
         if (userName) {
             userName.textContent = `${profile.first_name} ${profile.last_name}`;
         }
 
-        // Update role/info based on user type
+        // Update role/info based on logged-in user's specific profile type (userFolder)
         const userRole = document.querySelector('.sidebar-footer .user-role');
         if (userRole) {
-            if (role === 'player') {
-                const parts = [];
+            // Apply inline color style to override any page CSS
+            userRole.style.color = userRoleColor;
+
+            const parts = [];
+            if (userFolder === 'hsplayer') {
+                // HS Player: position • height • weight lbs • state
                 if (profile.position) parts.push(profile.position);
-                if (profile.height) parts.push(`${Math.floor(profile.height / 12)}'${profile.height % 12}"`);
+                if (profile.height) parts.push(profile.height);
                 if (profile.weight) parts.push(`${profile.weight} lbs`);
                 if (profile.state) parts.push(profile.state);
                 userRole.textContent = parts.join(' • ') || 'Player';
-            } else if (role === 'coach') {
-                const parts = [];
+            } else if (userFolder === 'collegeplayer') {
+                // College Player: position • high_school
+                if (profile.position) parts.push(profile.position);
+                if (profile.high_school) parts.push(profile.high_school);
+                userRole.textContent = parts.join(' • ') || 'Player';
+            } else if (userFolder === 'hscoach') {
+                // HS Coach: college_name, state (comma separator)
+                if (profile.college_name) parts.push(profile.college_name);
+                if (profile.state) parts.push(profile.state);
+                userRole.textContent = parts.join(', ') || 'HS Coach';
+            } else if (userFolder === 'collegecoach') {
+                // College Coach: college_name • division
                 if (profile.college_name) parts.push(profile.college_name);
                 if (profile.college_division) parts.push(profile.college_division);
-                userRole.textContent = parts.join(' • ') || 'Coach';
+                userRole.textContent = parts.join(' • ') || 'College Coach';
             }
         }
 
@@ -228,6 +254,13 @@ function updateNavbarForLoggedInUser(role, profile) {
             if (avatarElement) {
                 avatarElement.innerHTML = `<img src="${profile.profile_image_url}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
             }
+        }
+
+        // Show sidebar footer now that content is loaded
+        const sidebarFooter = document.querySelector('.sidebar-footer');
+        if (sidebarFooter) {
+            sidebarFooter.style.opacity = '1';
+            sidebarFooter.style.transition = 'opacity 0.2s ease';
         }
     }
 
@@ -240,112 +273,160 @@ function setupUserMenuDropdown(userFolder) {
     const userMenu = document.querySelector('.user-menu');
     if (!userMenu) return;
 
-    // Remove existing listener by cloning and replacing
+    // Remove existing listener by cloning and replacing (to avoid duplicate listeners)
     const newUserMenu = userMenu.cloneNode(true);
     userMenu.parentNode.replaceChild(newUserMenu, userMenu);
+
+    // Mark as initialized so mainpage JS doesn't override
+    newUserMenu.setAttribute('data-dropdown-initialized', 'true');
 
     newUserMenu.addEventListener('click', function(e) {
         e.stopPropagation();
 
-        // Check if dropdown already exists
-        let dropdown = document.querySelector('.user-menu-dropdown');
-        if (dropdown) {
-            dropdown.remove();
+        // Remove existing menu if any
+        const existingMenu = document.querySelector('.user-dropdown-menu');
+        if (existingMenu) {
+            existingMenu.remove();
             return;
         }
 
-        // Create dropdown
-        dropdown = document.createElement('div');
-        dropdown.className = 'user-menu-dropdown';
+        // Create dropdown menu with inline styles for consistency across all pages
+        const dropdown = document.createElement('div');
+        dropdown.className = 'user-dropdown-menu';
+
+        // Apply inline styles to ensure consistent appearance
+        dropdown.style.cssText = `
+            background: rgba(10, 17, 40, 0.98);
+            border: 1px solid rgba(18, 130, 162, 0.3);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+            z-index: 1001;
+            backdrop-filter: blur(10px);
+        `;
+
         dropdown.innerHTML = `
-            <a href="/frontend/${userFolder}/tabs/my-profile.html" class="dropdown-item">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <div class="dropdown-item" data-action="profile" style="display: flex; align-items: center; gap: 0.75rem; padding: 0.85rem 1rem; color: white; cursor: pointer; font-size: 0.95rem; font-weight: 600;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#1282a2" stroke-width="2" style="width: 20px; height: 20px; flex-shrink: 0;">
                     <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
                     <circle cx="12" cy="7" r="4"></circle>
                 </svg>
-                My Profile
-            </a>
-            <a href="/frontend/${userFolder}/tabs/settings.html" class="dropdown-item">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <span>My Profile</span>
+            </div>
+            <div class="dropdown-item" data-action="settings" style="display: flex; align-items: center; gap: 0.75rem; padding: 0.85rem 1rem; color: white; cursor: pointer; font-size: 0.95rem; font-weight: 600;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#1282a2" stroke-width="2" style="width: 20px; height: 20px; flex-shrink: 0;">
                     <circle cx="12" cy="12" r="3"></circle>
                     <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
                 </svg>
-                Settings
-            </a>
-            <div class="dropdown-divider"></div>
-            <a href="#" class="dropdown-item logout-item" id="logoutBtn">
+                <span>Settings</span>
+            </div>
+            <div style="height: 1px; background: rgba(18, 130, 162, 0.2); margin: 0.25rem 0;"></div>
+            <div class="dropdown-item" data-action="logout" style="display: flex; align-items: center; gap: 0.75rem; padding: 0.85rem 1rem; color: #ff6b6b; cursor: pointer; font-size: 0.95rem; font-weight: 600;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#ff6b6b" stroke-width="2" style="width: 20px; height: 20px; flex-shrink: 0;">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                    <polyline points="16 17 21 12 16 7"></polyline>
+                    <line x1="21" y1="12" x2="9" y2="12"></line>
+                </svg>
+                <span>Logout</span>
+            </div>
+        `;
+
+        // Position dropdown
+        const rect = newUserMenu.getBoundingClientRect();
+        dropdown.style.position = 'fixed';
+        dropdown.style.bottom = (window.innerHeight - rect.top + 10) + 'px';
+        dropdown.style.left = rect.left + 'px';
+        dropdown.style.width = rect.width + 'px';
+
+        document.body.appendChild(dropdown);
+
+        // Add hover effects via JS since inline styles can't handle :hover
+        dropdown.querySelectorAll('.dropdown-item').forEach(item => {
+            item.addEventListener('mouseenter', function() {
+                if (this.dataset.action === 'logout') {
+                    this.style.background = 'rgba(255, 107, 107, 0.1)';
+                } else {
+                    this.style.background = 'rgba(18, 130, 162, 0.15)';
+                }
+            });
+            item.addEventListener('mouseleave', function() {
+                this.style.background = 'transparent';
+            });
+        });
+
+        // Handle dropdown item clicks
+        dropdown.querySelectorAll('.dropdown-item').forEach(item => {
+            item.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const action = this.dataset.action;
+
+                if (action === 'logout') {
+                    dropdown.remove();
+                    showLogoutModal(userFolder);
+                } else if (action === 'profile') {
+                    window.location.href = `/frontend/${userFolder}/tabs/my-profile.html`;
+                } else if (action === 'settings') {
+                    window.location.href = `/frontend/${userFolder}/tabs/settings.html`;
+                }
+
+                dropdown.remove();
+            });
+        });
+    });
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function(e) {
+        const dropdown = document.querySelector('.user-dropdown-menu');
+        const currentUserMenu = document.querySelector('.user-menu');
+        if (dropdown && !dropdown.contains(e.target) && currentUserMenu && !currentUserMenu.contains(e.target)) {
+            dropdown.remove();
+        }
+    });
+}
+
+// Logout modal function
+function showLogoutModal(userFolder) {
+    // Create modal overlay
+    const modal = document.createElement('div');
+    modal.className = 'logout-modal-overlay';
+    modal.innerHTML = `
+        <div class="logout-modal">
+            <div class="logout-modal-icon">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
                     <polyline points="16 17 21 12 16 7"></polyline>
                     <line x1="21" y1="12" x2="9" y2="12"></line>
                 </svg>
-                Logout
-            </a>
-        `;
-
-        // Position dropdown above the user menu
-        newUserMenu.appendChild(dropdown);
-
-        // Add logout handler
-        const logoutBtn = dropdown.querySelector('#logoutBtn');
-        if (logoutBtn) {
-            logoutBtn.addEventListener('click', function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                dropdown.remove();
-                showLogoutModal(userFolder);
-            });
-        }
-
-        // Close dropdown when clicking outside
-        const closeDropdown = (event) => {
-            if (!newUserMenu.contains(event.target)) {
-                dropdown.remove();
-                document.removeEventListener('click', closeDropdown);
-            }
-        };
-        setTimeout(() => document.addEventListener('click', closeDropdown), 0);
-    });
-}
-
-// Show logout confirmation modal
-function showLogoutModal(userFolder) {
-    // Create modal overlay
-    const modalOverlay = document.createElement('div');
-    modalOverlay.className = 'logout-modal-overlay';
-    modalOverlay.innerHTML = `
-        <div class="logout-modal">
-            <h3>Logout</h3>
-            <p>Are you sure you want to logout?</p>
-            <div class="logout-modal-buttons">
-                <button class="btn-cancel" id="cancelLogout">Cancel</button>
-                <button class="btn-confirm" id="confirmLogout">Logout</button>
+            </div>
+            <h2 class="logout-modal-title">Logout</h2>
+            <p class="logout-modal-text">Are you sure you want to logout?</p>
+            <div class="logout-modal-actions">
+                <button class="logout-modal-btn logout-modal-btn-cancel" id="logoutCancel">Cancel</button>
+                <button class="logout-modal-btn logout-modal-btn-confirm" id="logoutConfirm">Logout</button>
             </div>
         </div>
     `;
 
-    document.body.appendChild(modalOverlay);
+    document.body.appendChild(modal);
 
     // Handle cancel
-    document.getElementById('cancelLogout').addEventListener('click', () => {
-        modalOverlay.remove();
+    document.getElementById('logoutCancel').addEventListener('click', () => {
+        modal.remove();
     });
 
-    // Handle confirm logout
-    document.getElementById('confirmLogout').addEventListener('click', async () => {
-        try {
-            await API.post('/auth/logout');
-        } catch (error) {
-            console.error('Logout error:', error);
-        }
+    // Handle confirm
+    document.getElementById('logoutConfirm').addEventListener('click', () => {
+        // Clear authentication
         localStorage.removeItem('token');
-        window.location.href = '/frontend/shared/login.html';
+        localStorage.removeItem('user');
+        // Redirect to landing page
+        window.location.href = '/frontend/landingpage/index.html';
     });
 
     // Close on overlay click
-    modalOverlay.addEventListener('click', (e) => {
-        if (e.target === modalOverlay) {
-            modalOverlay.remove();
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            modal.remove();
         }
     });
 }
@@ -435,6 +516,30 @@ function displayProfile(profile, type) {
 
     // Show profile content now that data is loaded
     document.querySelector('.profile-content').classList.add('profile-loaded');
+
+    // Load follower/following counts from database
+    loadFollowCounts(profile.user_id);
+}
+
+// Load and display follower/following counts from the database
+async function loadFollowCounts(userId) {
+    try {
+        const response = await followAPI.getCounts(userId);
+        if (response) {
+            const followersCountEl = document.getElementById('followersCount');
+            const followingCountEl = document.getElementById('followingCount');
+
+            if (followersCountEl) {
+                followersCountEl.textContent = response.followers_count || 0;
+            }
+            if (followingCountEl) {
+                followingCountEl.textContent = response.following_count || 0;
+            }
+        }
+    } catch (error) {
+        console.error('Error loading follow counts:', error);
+        // Keep showing 0 as fallback
+    }
 }
 
 function displayPlayerProfile(profile) {
@@ -531,6 +636,9 @@ function displayCoachProfile(profile) {
 
     // Update contact info
     updateContactInfo(profile);
+
+    // Update overview tab data
+    displayOverviewData(profile);
 }
 
 function updateInfoItem(label, value) {
@@ -708,6 +816,9 @@ async function setupFollowButton() {
                     followBtn.textContent = 'Following';
                     followBtn.classList.add('following');
                 }
+
+                // Update the follower count display after follow/unfollow
+                loadFollowCounts(viewingUserId);
             } catch (error) {
                 console.error('Error toggling follow:', error);
                 alert('Failed to update follow status');
@@ -868,8 +979,13 @@ function setupUI() {
 
             if (currentUsername || !isOwnProfile) {
                 e.preventDefault();
-                // Clear URL parameters and reload
-                window.location.href = 'my-profile.html';
+                // Navigate to logged-in user's profile using absolute path
+                if (loggedInUserFolder) {
+                    window.location.href = `/frontend/${loggedInUserFolder}/tabs/my-profile.html`;
+                } else {
+                    // Fallback to relative path if folder not set
+                    window.location.href = 'my-profile.html';
+                }
             }
         });
     }
@@ -1230,6 +1346,45 @@ function populateEditForm() {
     }
     if (emailField) emailField.value = currentProfile.email || '';
     if (phoneField) phoneField.value = formatPhoneNumber(currentProfile.phone || '');
+
+    // Populate overview fields
+    const conferenceField = document.getElementById('editConference');
+    const recordField = document.getElementById('editRecord');
+    const achievementsField = document.getElementById('editAchievements');
+    const experienceField = document.getElementById('editExperience');
+    const philosophyField = document.getElementById('editPhilosophy');
+
+    if (conferenceField) conferenceField.value = currentProfile.conference || '';
+    if (recordField) recordField.value = currentProfile.record || '';
+    if (achievementsField) {
+        achievementsField.value = currentProfile.achievements || '';
+        updateCharCounter('achievements', 1000);
+    }
+    if (experienceField) {
+        experienceField.value = currentProfile.experience || '';
+        updateCharCounter('experience', 1000);
+    }
+    if (philosophyField) {
+        philosophyField.value = currentProfile.philosophy || '';
+        updateCharCounter('philosophy', 1000);
+    }
+}
+
+// Generic character counter update function
+function updateCharCounter(fieldName, maxLength) {
+    const field = document.getElementById(`edit${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)}`);
+    const counter = document.getElementById(`${fieldName}CharCounter`);
+
+    if (field && counter) {
+        const currentLength = field.value.length;
+        counter.textContent = `${currentLength}/${maxLength}`;
+
+        if (currentLength >= maxLength) {
+            counter.classList.add('limit-reached');
+        } else {
+            counter.classList.remove('limit-reached');
+        }
+    }
 }
 
 function hideEditProfileModal() {
@@ -1302,7 +1457,13 @@ async function saveProfileChanges() {
             position_title: editSelectedCoachingPositions.join('/'), // Join multiple positions with slash
             bio: document.getElementById('editBio').value.trim(),
             email: document.getElementById('editEmail').value.trim(),
-            phone: document.getElementById('editPhone').value.trim()
+            phone: document.getElementById('editPhone').value.trim(),
+            // Overview fields
+            conference: document.getElementById('editConference').value.trim(),
+            record: document.getElementById('editRecord').value.trim(),
+            achievements: document.getElementById('editAchievements').value.trim(),
+            experience: document.getElementById('editExperience').value.trim(),
+            philosophy: document.getElementById('editPhilosophy').value.trim()
         };
 
         if (isCollegeCoach) {
@@ -1487,6 +1648,29 @@ function setupEditProfileModal() {
         updateBioCounter();
     }
 
+    // Handle overview field character counters
+    const overviewTextareas = [
+        { id: 'editAchievements', counterId: 'achievementsCharCounter', maxLength: 1000 },
+        { id: 'editExperience', counterId: 'experienceCharCounter', maxLength: 1000 },
+        { id: 'editPhilosophy', counterId: 'philosophyCharCounter', maxLength: 1000 }
+    ];
+
+    overviewTextareas.forEach(({ id, counterId, maxLength }) => {
+        const textarea = document.getElementById(id);
+        const counter = document.getElementById(counterId);
+        if (textarea && counter) {
+            textarea.addEventListener('input', () => {
+                const currentLength = textarea.value.length;
+                counter.textContent = `${currentLength}/${maxLength}`;
+                if (currentLength >= maxLength) {
+                    counter.classList.add('limit-reached');
+                } else {
+                    counter.classList.remove('limit-reached');
+                }
+            });
+        }
+    });
+
     // Handle phone number formatting
     const phoneInput = document.getElementById('editPhone');
     if (phoneInput) {
@@ -1532,6 +1716,62 @@ function setupEditProfileModal() {
             }, 500);
         });
     }
+}
+
+// ==========================================
+// OVERVIEW DISPLAY FUNCTIONS
+// ==========================================
+
+function displayOverviewData(profile) {
+    // Update School Information
+    const schoolNameValue = document.getElementById('schoolNameValue');
+    const schoolStateValue = document.getElementById('schoolStateValue');
+    const divisionValue = document.getElementById('divisionValue');
+    const conferenceValue = document.getElementById('conferenceValue');
+    const recordValue = document.getElementById('recordValue');
+
+    if (schoolNameValue) schoolNameValue.textContent = profile.college_name || '-';
+    if (schoolStateValue) schoolStateValue.textContent = profile.state || '-';
+    if (divisionValue) divisionValue.textContent = profile.college_division || '-';
+    if (conferenceValue) conferenceValue.textContent = profile.conference || '-';
+    if (recordValue) recordValue.textContent = profile.record || '-';
+
+    // Update Program Achievements
+    const achievementsList = document.getElementById('achievementsList');
+    if (achievementsList) {
+        if (profile.achievements && profile.achievements.trim()) {
+            achievementsList.innerHTML = `<p>${escapeHtml(profile.achievements)}</p>`;
+        } else {
+            achievementsList.innerHTML = '<p class="no-data-message">No achievements added yet.</p>';
+        }
+    }
+
+    // Update Coaching Experience
+    const experienceList = document.getElementById('experienceList');
+    if (experienceList) {
+        if (profile.experience && profile.experience.trim()) {
+            experienceList.innerHTML = `<p>${escapeHtml(profile.experience)}</p>`;
+        } else {
+            experienceList.innerHTML = '<p class="no-data-message">No coaching experience added yet.</p>';
+        }
+    }
+
+    // Update Coaching Philosophy
+    const philosophyContent = document.getElementById('philosophyContent');
+    if (philosophyContent) {
+        if (profile.philosophy && profile.philosophy.trim()) {
+            philosophyContent.innerHTML = `<p>${escapeHtml(profile.philosophy)}</p>`;
+        } else {
+            philosophyContent.innerHTML = '<p class="no-data-message">No coaching philosophy added yet.</p>';
+        }
+    }
+}
+
+// Helper function to escape HTML
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
 }
 
 console.log('My Profile page loaded (dynamic version)');

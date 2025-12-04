@@ -5,25 +5,45 @@
     grid-column: 2 / -1 !important;
 }
 
-/* Discover Sections */
-.discover-section {
-    margin-bottom: 3rem;
+/* Content Header */
+.content-header {
+    padding: 1.5rem 1.5rem 0.5rem;
 }
 
-.section-header {
-    padding: 2rem 1.5rem 1rem;
-}
-
-.section-title-main {
+.content-header h1 {
     font-size: 1.8rem;
     font-weight: 900;
+    margin-bottom: 0;
+}
+
+/* Discover Sections */
+.discover-section {
+    margin-bottom: 2rem;
+}
+
+.section-title-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 1.5rem 1.5rem;
+}
+
+.section-title-sub {
+    font-size: 1.1rem;
+    font-weight: 700;
     color: var(--white);
-    margin-bottom: 0.5rem;
+    margin: 0;
+}
+
+.section-bullet {
+    color: rgba(254, 252, 251, 0.5);
+    font-size: 0.8rem;
 }
 
 .section-subtitle {
     font-size: 1rem;
     color: rgba(254, 252, 251, 0.7);
+    margin: 0;
 }
 
 /* Filters Section */
@@ -428,11 +448,11 @@
         padding: 1rem;
     }
 
-    .section-header {
-        padding: 1.5rem 1rem 0.5rem;
+    .content-header {
+        padding: 1rem;
     }
 
-    .section-title-main {
+    .content-header h1 {
         font-size: 1.5rem;
     }
 }

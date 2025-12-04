@@ -97,7 +97,8 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     // User menu
     const userMenu = document.querySelector('.user-menu');
-    if (userMenu) {
+    // Skip if already initialized by my-profile.js (which sets up proper navigation)
+    if (userMenu && !userMenu.hasAttribute('data-dropdown-initialized')) {
         userMenu.addEventListener('click', function(e) {
             e.stopPropagation();
 
@@ -169,7 +170,8 @@ document.addEventListener('DOMContentLoaded', async function() {
         // Close dropdown when clicking outside
         document.addEventListener('click', function(e) {
             const dropdown = document.querySelector('.user-dropdown-menu');
-            if (dropdown && !dropdown.contains(e.target) && !userMenu.contains(e.target)) {
+            const currentUserMenu = document.querySelector('.user-menu');
+            if (dropdown && !dropdown.contains(e.target) && currentUserMenu && !currentUserMenu.contains(e.target)) {
                 dropdown.remove();
             }
         });

@@ -248,6 +248,23 @@
     margin-top: 0.5rem;
 }
 
+.profile-follow-stats {
+    display: flex;
+    gap: 1.25rem;
+    margin-top: 0.5rem;
+}
+
+.follow-stat {
+    color: rgba(254, 252, 251, 0.7);
+    font-size: 0.95rem;
+    font-weight: 500;
+}
+
+.follow-count {
+    color: rgba(254, 252, 251, 0.7);
+    font-weight: 700;
+}
+
 .profile-actions {
     display: flex;
     gap: 1rem;

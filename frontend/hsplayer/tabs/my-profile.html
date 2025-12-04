@@ -58,7 +58,7 @@
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                     </svg>
-                    <span>Discover Players</span>
+                    <span>Discover</span>
                 </a>
 
                 <a href="my-profile.html" class="nav-item" id="profileNavItem">
@@ -140,6 +140,10 @@
                         <div class="profile-position"></div>
                         <div class="profile-meta"></div>
                         <div class="profile-username"></div>
+                        <div class="profile-follow-stats">
+                            <span class="follow-stat"><span class="follow-count" id="followersCount">0</span> Followers</span>
+                            <span class="follow-stat"><span class="follow-count" id="followingCount">0</span> Following</span>
+                        </div>
                     </div>
                     <div class="profile-actions">
                         <button class="btn-edit-profile" id="editProfileBtn">
@@ -355,24 +359,29 @@
                 <!-- Academics Tab -->
                 <div class="tab-pane" id="academics">
                     <div class="academics-section">
-                        <h2 class="section-title">Academic Information</h2>
+                        <div class="academics-header">
+                            <h2 class="section-title">Academic Information</h2>
+                            <button class="btn-edit-academics" id="editAcademicsBtn">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                </svg>
+                                Edit
+                            </button>
+                        </div>
                         <div class="info-card">
-                            <div class="info-grid">
+                            <div class="info-grid academics-grid">
                                 <div class="info-item">
                                     <div class="info-label">GPA</div>
-                                    <div class="info-value">3.8</div>
+                                    <div class="info-value" id="academicsGPA">--</div>
                                 </div>
                                 <div class="info-item">
                                     <div class="info-label">SAT Score</div>
-                                    <div class="info-value">1250</div>
+                                    <div class="info-value" id="academicsSAT">--</div>
                                 </div>
                                 <div class="info-item">
                                     <div class="info-label">ACT Score</div>
-                                    <div class="info-value">28</div>
-                                </div>
-                                <div class="info-item">
-                                    <div class="info-label">Class Rank</div>
-                                    <div class="info-value">Top 15%</div>
+                                    <div class="info-value" id="academicsACT">--</div>
                                 </div>
                             </div>
                         </div>
@@ -1203,6 +1212,45 @@
             <div class="confirm-modal-actions">
                 <button class="btn-confirm-cancel" id="btnHighlightConfirmCancel">Cancel</button>
                 <button class="btn-confirm-delete" id="btnHighlightConfirmDelete">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Academics Modal -->
+    <div class="edit-academics-modal" id="editAcademicsModal">
+        <div class="edit-academics-modal-overlay" id="editAcademicsModalOverlay"></div>
+        <div class="edit-academics-modal-content">
+            <div class="edit-academics-modal-header">
+                <h2>Edit Academic Information</h2>
+                <button class="edit-academics-modal-close" id="editAcademicsModalClose">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="edit-academics-modal-body">
+                <form id="editAcademicsForm">
+                    <div class="form-group">
+                        <label for="editAcademicsGPA">GPA</label>
+                        <input type="number" id="editAcademicsGPA" name="gpa" placeholder="e.g., 3.8" step="0.01" min="0" max="5.0">
+                        <small class="form-hint">Enter your GPA (0.00 - 5.00 scale)</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="editAcademicsSAT">SAT Score</label>
+                        <input type="number" id="editAcademicsSAT" name="sat_score" placeholder="e.g., 1250" min="400" max="1600">
+                        <small class="form-hint">Enter your SAT score (400 - 1600)</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="editAcademicsACT">ACT Score</label>
+                        <input type="number" id="editAcademicsACT" name="act_score" placeholder="e.g., 28" min="1" max="36">
+                        <small class="form-hint">Enter your ACT score (1 - 36)</small>
+                    </div>
+                </form>
+            </div>
+            <div class="edit-academics-modal-footer">
+                <button class="btn-modal-cancel" id="btnEditAcademicsCancel">Cancel</button>
+                <button class="btn-modal-save" id="btnEditAcademicsSave">Save Changes</button>
             </div>
         </div>
     </div>

@@ -6,6 +6,7 @@ let viewingUserId = null;
 let isOwnProfile = true;
 let isCollegeCoach = false;
 let currentProfileType = 'player'; // Track whether viewing a player or coach profile
+let loggedInUserFolder = null; // Track the logged-in user's folder for navigation
 let editSelectedPositions = []; // Track selected positions in edit modal
 
 // Format phone number as (XXX) XXX-XXXX
@@ -39,6 +40,12 @@ function formatHeight(height) {
 }
 
 document.addEventListener('DOMContentLoaded', async function() {
+    // Hide sidebar footer initially to prevent flash of old content
+    const sidebarFooter = document.querySelector('.sidebar-footer');
+    if (sidebarFooter) {
+        sidebarFooter.style.opacity = '0';
+    }
+
     // Get username from URL if viewing someone else's profile
     const urlParams = new URLSearchParams(window.location.search);
     const username = urlParams.get('username');
@@ -88,6 +95,9 @@ function updateNavbarForLoggedInUser(role, profile) {
         return; // Unknown role, don't modify
     }
 
+    // Save to global for use in setupUI navigation handlers
+    loggedInUserFolder = userFolder;
+
     const mainPage = role === 'player' ? 'mainpage-player.html' : 'mainpage-coach.html';
 
     // Rebuild the sidebar nav with the correct items for the logged-in user
@@ -98,7 +108,7 @@ function updateNavbarForLoggedInUser(role, profile) {
         if (role === 'player') {
             // Player nav items (same for HS and college players)
             navHTML = `
-                <a href="/frontend/${userFolder}/${mainPage}" class="nav-item" id="feedNavItem">
+                <a href="/frontend/${userFolder}/${mainPage}" class="nav-item active" id="feedNavItem">
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
                         <polyline points="9 22 9 12 15 12 15 22"></polyline>
@@ -107,12 +117,11 @@ function updateNavbarForLoggedInUser(role, profile) {
                 </a>
                 <a href="/frontend/${userFolder}/tabs/discover-players.html" class="nav-item">
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="11" cy="11" r="8"></circle>
-                        <path d="m21 21-4.35-4.35"></path>
+                        <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                     </svg>
                     <span>Discover</span>
                 </a>
-                <a href="/frontend/${userFolder}/tabs/my-profile.html" class="nav-item active" id="profileNavItem">
+                <a href="/frontend/${userFolder}/tabs/my-profile.html" class="nav-item" id="profileNavItem">
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
                         <circle cx="12" cy="7" r="4"></circle>
@@ -143,7 +152,7 @@ function updateNavbarForLoggedInUser(role, profile) {
         } else if (role === 'coach') {
             // Coach nav items - different for HS vs college coaches
             navHTML = `
-                <a href="/frontend/${userFolder}/${mainPage}" class="nav-item" id="feedNavItem">
+                <a href="/frontend/${userFolder}/${mainPage}" class="nav-item active" id="feedNavItem">
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
                         <polyline points="9 22 9 12 15 12 15 22"></polyline>
@@ -152,12 +161,11 @@ function updateNavbarForLoggedInUser(role, profile) {
                 </a>
                 <a href="/frontend/${userFolder}/tabs/discover-players.html" class="nav-item">
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="11" cy="11" r="8"></circle>
-                        <path d="m21 21-4.35-4.35"></path>
+                        <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                     </svg>
-                    <span>Discover Players</span>
+                    <span>Discover</span>
                 </a>
-                <a href="/frontend/${userFolder}/tabs/my-profile.html" class="nav-item active" id="profileNavItem">
+                <a href="/frontend/${userFolder}/tabs/my-profile.html" class="nav-item" id="profileNavItem">
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
                         <circle cx="12" cy="7" r="4"></circle>
@@ -212,28 +220,46 @@ function updateNavbarForLoggedInUser(role, profile) {
     }
 
     // Update sidebar footer with logged-in user's info (just update text content, preserve structure)
+    // Apply inline styles to ensure consistent appearance regardless of which page's CSS is loaded
     if (profile) {
+        // Define color based on logged-in user's role (players = cerulean/blue, coaches = orange)
+        const userRoleColor = role === 'player' ? '#1282a2' : '#e07a5f';
+
         // Update name
         const userName = document.querySelector('.sidebar-footer .user-name');
         if (userName) {
             userName.textContent = `${profile.first_name} ${profile.last_name}`;
         }
 
-        // Update role/info based on user type
+        // Update role/info based on logged-in user's specific profile type (userFolder)
         const userRole = document.querySelector('.sidebar-footer .user-role');
         if (userRole) {
-            if (role === 'player') {
-                const parts = [];
+            // Apply inline color style to override any page CSS
+            userRole.style.color = userRoleColor;
+
+            const parts = [];
+            if (userFolder === 'hsplayer') {
+                // HS Player: position • height • weight lbs • state
                 if (profile.position) parts.push(profile.position);
-                if (profile.height) parts.push(`${Math.floor(profile.height / 12)}'${profile.height % 12}"`);
+                if (profile.height) parts.push(profile.height);
                 if (profile.weight) parts.push(`${profile.weight} lbs`);
                 if (profile.state) parts.push(profile.state);
                 userRole.textContent = parts.join(' • ') || 'Player';
-            } else if (role === 'coach') {
-                const parts = [];
+            } else if (userFolder === 'collegeplayer') {
+                // College Player: position • high_school
+                if (profile.position) parts.push(profile.position);
+                if (profile.high_school) parts.push(profile.high_school);
+                userRole.textContent = parts.join(' • ') || 'Player';
+            } else if (userFolder === 'hscoach') {
+                // HS Coach: college_name, state (comma separator)
+                if (profile.college_name) parts.push(profile.college_name);
+                if (profile.state) parts.push(profile.state);
+                userRole.textContent = parts.join(', ') || 'HS Coach';
+            } else if (userFolder === 'collegecoach') {
+                // College Coach: college_name • division
                 if (profile.college_name) parts.push(profile.college_name);
                 if (profile.college_division) parts.push(profile.college_division);
-                userRole.textContent = parts.join(' • ') || 'Coach';
+                userRole.textContent = parts.join(' • ') || 'College Coach';
             }
         }
 
@@ -243,6 +269,13 @@ function updateNavbarForLoggedInUser(role, profile) {
             if (avatarElement) {
                 avatarElement.innerHTML = `<img src="${profile.profile_image_url}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
             }
+        }
+
+        // Show sidebar footer now that content is loaded
+        const sidebarFooter = document.querySelector('.sidebar-footer');
+        if (sidebarFooter) {
+            sidebarFooter.style.opacity = '1';
+            sidebarFooter.style.transition = 'opacity 0.2s ease';
         }
     }
 
@@ -259,6 +292,9 @@ function setupUserMenuDropdown(userFolder) {
     const newUserMenu = userMenu.cloneNode(true);
     userMenu.parentNode.replaceChild(newUserMenu, userMenu);
 
+    // Mark as initialized so mainpage JS doesn't override
+    newUserMenu.setAttribute('data-dropdown-initialized', 'true');
+
     newUserMenu.addEventListener('click', function(e) {
         e.stopPropagation();
 
@@ -269,27 +305,39 @@ function setupUserMenuDropdown(userFolder) {
             return;
         }
 
-        // Create dropdown menu
+        // Create dropdown menu with inline styles for consistency across all pages
         const dropdown = document.createElement('div');
         dropdown.className = 'user-dropdown-menu';
+
+        // Apply inline styles to ensure consistent appearance
+        dropdown.style.cssText = `
+            background: rgba(10, 17, 40, 0.98);
+            border: 1px solid rgba(18, 130, 162, 0.3);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+            z-index: 1001;
+            backdrop-filter: blur(10px);
+        `;
+
         dropdown.innerHTML = `
-            <div class="dropdown-item" data-action="profile">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <div class="dropdown-item" data-action="profile" style="display: flex; align-items: center; gap: 0.75rem; padding: 0.85rem 1rem; color: white; cursor: pointer; font-size: 0.95rem; font-weight: 600;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#1282a2" stroke-width="2" style="width: 20px; height: 20px; flex-shrink: 0;">
                     <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
                     <circle cx="12" cy="7" r="4"></circle>
                 </svg>
                 <span>My Profile</span>
             </div>
-            <div class="dropdown-item" data-action="settings">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <div class="dropdown-item" data-action="settings" style="display: flex; align-items: center; gap: 0.75rem; padding: 0.85rem 1rem; color: white; cursor: pointer; font-size: 0.95rem; font-weight: 600;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#1282a2" stroke-width="2" style="width: 20px; height: 20px; flex-shrink: 0;">
                     <circle cx="12" cy="12" r="3"></circle>
                     <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
                 </svg>
                 <span>Settings</span>
             </div>
-            <div class="dropdown-divider"></div>
-            <div class="dropdown-item dropdown-item-danger" data-action="logout">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <div style="height: 1px; background: rgba(18, 130, 162, 0.2); margin: 0.25rem 0;"></div>
+            <div class="dropdown-item" data-action="logout" style="display: flex; align-items: center; gap: 0.75rem; padding: 0.85rem 1rem; color: #ff6b6b; cursor: pointer; font-size: 0.95rem; font-weight: 600;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#ff6b6b" stroke-width="2" style="width: 20px; height: 20px; flex-shrink: 0;">
                     <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
                     <polyline points="16 17 21 12 16 7"></polyline>
                     <line x1="21" y1="12" x2="9" y2="12"></line>
@@ -306,6 +354,20 @@ function setupUserMenuDropdown(userFolder) {
         dropdown.style.width = rect.width + 'px';
 
         document.body.appendChild(dropdown);
+
+        // Add hover effects via JS since inline styles can't handle :hover
+        dropdown.querySelectorAll('.dropdown-item').forEach(item => {
+            item.addEventListener('mouseenter', function() {
+                if (this.dataset.action === 'logout') {
+                    this.style.background = 'rgba(255, 107, 107, 0.1)';
+                } else {
+                    this.style.background = 'rgba(18, 130, 162, 0.15)';
+                }
+            });
+            item.addEventListener('mouseleave', function() {
+                this.style.background = 'transparent';
+            });
+        });
 
         // Handle dropdown item clicks
         dropdown.querySelectorAll('.dropdown-item').forEach(item => {
@@ -484,6 +546,30 @@ function displayProfile(profile, type) {
     // Load offers from database (for player profiles)
     if (type === 'player') {
         loadOffers();
+    }
+
+    // Load follower/following counts from database
+    loadFollowCounts(profile.user_id);
+}
+
+// Load and display follower/following counts from the database
+async function loadFollowCounts(userId) {
+    try {
+        const response = await followAPI.getCounts(userId);
+        if (response) {
+            const followersCountEl = document.getElementById('followersCount');
+            const followingCountEl = document.getElementById('followingCount');
+
+            if (followersCountEl) {
+                followersCountEl.textContent = response.followers_count || 0;
+            }
+            if (followingCountEl) {
+                followingCountEl.textContent = response.following_count || 0;
+            }
+        }
+    } catch (error) {
+        console.error('Error loading follow counts:', error);
+        // Keep showing 0 as fallback
     }
 }
 
@@ -792,6 +878,9 @@ async function setupFollowButton() {
                     followBtn.textContent = 'Following';
                     followBtn.classList.add('following');
                 }
+
+                // Update the follower count display after follow/unfollow
+                loadFollowCounts(viewingUserId);
             } catch (error) {
                 console.error('Error toggling follow:', error);
                 alert('Failed to update follow status');
@@ -888,6 +977,11 @@ function setupUI() {
             if (academicsTab) academicsTab.style.display = 'none';
             if (academicsPane) academicsPane.style.display = 'none';
         }
+
+        // Update academics display with profile data
+        if (typeof updateAcademicsDisplay === 'function') {
+            updateAcademicsDisplay(currentProfile);
+        }
     }
 
     tabs.forEach(tab => {
@@ -946,8 +1040,13 @@ function setupUI() {
 
             if (currentUsername || !isOwnProfile) {
                 e.preventDefault();
-                // Clear URL parameters and reload
-                window.location.href = 'my-profile.html';
+                // Navigate to logged-in user's profile using absolute path
+                if (loggedInUserFolder) {
+                    window.location.href = `/frontend/${loggedInUserFolder}/tabs/my-profile.html`;
+                } else {
+                    // Fallback to relative path if folder not set
+                    window.location.href = 'my-profile.html';
+                }
             }
         });
     }
@@ -1400,6 +1499,11 @@ async function saveProfileChanges() {
 
             // Refresh the profile display
             displayProfile(currentProfile, 'player');
+
+            // Update academics display if GPA was changed
+            if (typeof updateAcademicsDisplay === 'function') {
+                updateAcademicsDisplay(currentProfile);
+            }
 
             // Show success message
             showSuccessMessage('Profile updated successfully!');
@@ -4250,6 +4354,134 @@ document.addEventListener('DOMContentLoaded', () => {
     setupDeleteHighlightConfirmModal();
     // Load highlights after a delay to ensure profile is loaded
     setTimeout(loadHighlights, 600);
+});
+
+// ============================================
+// ACADEMICS TAB FUNCTIONALITY
+// ============================================
+
+function updateAcademicsDisplay(profile) {
+    const gpaEl = document.getElementById('academicsGPA');
+    const satEl = document.getElementById('academicsSAT');
+    const actEl = document.getElementById('academicsACT');
+
+    // Handle GPA - could be string or number from database
+    if (gpaEl) {
+        if (profile.gpa !== null && profile.gpa !== undefined && profile.gpa !== '') {
+            const gpaNum = parseFloat(profile.gpa);
+            gpaEl.textContent = isNaN(gpaNum) ? '--' : gpaNum.toFixed(2);
+        } else {
+            gpaEl.textContent = '--';
+        }
+    }
+    if (satEl) satEl.textContent = profile.sat_score || '--';
+    if (actEl) actEl.textContent = profile.act_score || '--';
+}
+
+function showEditAcademicsModal() {
+    const modal = document.getElementById('editAcademicsModal');
+    if (!modal || !currentProfile) return;
+
+    // Populate form with current values
+    document.getElementById('editAcademicsGPA').value = currentProfile.gpa || '';
+    document.getElementById('editAcademicsSAT').value = currentProfile.sat_score || '';
+    document.getElementById('editAcademicsACT').value = currentProfile.act_score || '';
+
+    modal.classList.add('active');
+    document.body.style.overflow = 'hidden';
+}
+
+function hideEditAcademicsModal() {
+    const modal = document.getElementById('editAcademicsModal');
+    if (modal) {
+        modal.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+}
+
+async function saveAcademicsChanges() {
+    const gpa = document.getElementById('editAcademicsGPA').value;
+    const satScore = document.getElementById('editAcademicsSAT').value;
+    const actScore = document.getElementById('editAcademicsACT').value;
+
+    // Validate inputs
+    if (gpa && (parseFloat(gpa) < 0 || parseFloat(gpa) > 5)) {
+        alert('GPA must be between 0 and 5');
+        return;
+    }
+    if (satScore && (parseInt(satScore) < 400 || parseInt(satScore) > 1600)) {
+        alert('SAT score must be between 400 and 1600');
+        return;
+    }
+    if (actScore && (parseInt(actScore) < 1 || parseInt(actScore) > 36)) {
+        alert('ACT score must be between 1 and 36');
+        return;
+    }
+
+    const academicsData = {
+        gpa: gpa ? parseFloat(gpa) : null,
+        sat_score: satScore ? parseInt(satScore) : null,
+        act_score: actScore ? parseInt(actScore) : null
+    };
+
+    try {
+        const response = await API.put('/profile', academicsData);
+        if (response.success || response.profile) {
+            // Update currentProfile with new values
+            currentProfile.gpa = academicsData.gpa;
+            currentProfile.sat_score = academicsData.sat_score;
+            currentProfile.act_score = academicsData.act_score;
+
+            // Update academics tab display
+            updateAcademicsDisplay(currentProfile);
+
+            // Update profile header display (shows GPA in meta info)
+            displayProfile(currentProfile, 'player');
+
+            // Close modal
+            hideEditAcademicsModal();
+        } else {
+            alert(response.message || 'Failed to save academic information');
+        }
+    } catch (error) {
+        console.error('Error saving academics:', error);
+        alert('Failed to save academic information. Please try again.');
+    }
+}
+
+function setupAcademicsModal() {
+    const editAcademicsBtn = document.getElementById('editAcademicsBtn');
+    const modal = document.getElementById('editAcademicsModal');
+    const overlay = document.getElementById('editAcademicsModalOverlay');
+    const closeBtn = document.getElementById('editAcademicsModalClose');
+    const cancelBtn = document.getElementById('btnEditAcademicsCancel');
+    const saveBtn = document.getElementById('btnEditAcademicsSave');
+
+    // Show edit button only for own profile
+    if (editAcademicsBtn && isOwnProfile) {
+        editAcademicsBtn.classList.add('show-button');
+        editAcademicsBtn.addEventListener('click', showEditAcademicsModal);
+    }
+
+    // Close modal handlers
+    if (overlay) overlay.addEventListener('click', hideEditAcademicsModal);
+    if (closeBtn) closeBtn.addEventListener('click', hideEditAcademicsModal);
+    if (cancelBtn) cancelBtn.addEventListener('click', hideEditAcademicsModal);
+
+    // Save button handler
+    if (saveBtn) saveBtn.addEventListener('click', saveAcademicsChanges);
+}
+
+// Initialize academics when DOM is loaded
+document.addEventListener('DOMContentLoaded', () => {
+    // Setup academics modal after a short delay to ensure profile is loaded
+    setTimeout(() => {
+        setupAcademicsModal();
+        // Update academics display with current profile data
+        if (currentProfile) {
+            updateAcademicsDisplay(currentProfile);
+        }
+    }, 500);
 });
 
 console.log('My Profile page loaded (dynamic version)');
