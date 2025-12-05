@@ -85,6 +85,12 @@ function updateNavbarForLoggedInUser(role, profile) {
 
     const mainPage = role === 'player' ? 'mainpage-player.html' : 'mainpage-coach.html';
 
+    // Check if we came from discover page
+    const urlParams = new URLSearchParams(window.location.search);
+    const fromPage = urlParams.get('from');
+    const feedActive = fromPage === 'discover' ? '' : 'active';
+    const discoverActive = fromPage === 'discover' ? 'active' : '';
+
     // Rebuild the sidebar nav with the correct items for the logged-in user
     const sidebarNav = document.querySelector('.sidebar-nav');
     if (sidebarNav) {
@@ -93,14 +99,14 @@ function updateNavbarForLoggedInUser(role, profile) {
         if (role === 'player') {
             // Player nav items (same for HS and college players)
             navHTML = `
-                <a href="/frontend/${userFolder}/${mainPage}" class="nav-item active" id="feedNavItem">
+                <a href="/frontend/${userFolder}/${mainPage}" class="nav-item ${feedActive}" id="feedNavItem">
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
                         <polyline points="9 22 9 12 15 12 15 22"></polyline>
                     </svg>
                     <span>Feed</span>
                 </a>
-                <a href="/frontend/${userFolder}/tabs/discover-players.html" class="nav-item">
+                <a href="/frontend/${userFolder}/tabs/discover-players.html" class="nav-item ${discoverActive}">
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                     </svg>
@@ -137,14 +143,14 @@ function updateNavbarForLoggedInUser(role, profile) {
         } else if (role === 'coach') {
             // Coach nav items - different for HS vs college coaches
             navHTML = `
-                <a href="/frontend/${userFolder}/${mainPage}" class="nav-item active" id="feedNavItem">
+                <a href="/frontend/${userFolder}/${mainPage}" class="nav-item ${feedActive}" id="feedNavItem">
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
                         <polyline points="9 22 9 12 15 12 15 22"></polyline>
                     </svg>
                     <span>Feed</span>
                 </a>
-                <a href="/frontend/${userFolder}/tabs/discover-players.html" class="nav-item">
+                <a href="/frontend/${userFolder}/tabs/discover-players.html" class="nav-item ${discoverActive}">
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                     </svg>
@@ -834,14 +840,26 @@ function updateActiveNavItem() {
     const profileNavItem = document.getElementById('profileNavItem');
 
     if (feedNavItem && profileNavItem) {
+        // Check if we came from discover page
+        const urlParams = new URLSearchParams(window.location.search);
+        const fromPage = urlParams.get('from');
+        const discoverNavItem = document.querySelector('.nav-item[href*="discover"]');
+
         if (isOwnProfile) {
             // Viewing own profile - highlight My Profile
             feedNavItem.classList.remove('active');
             profileNavItem.classList.add('active');
+            if (discoverNavItem) discoverNavItem.classList.remove('active');
+        } else if (fromPage === 'discover' && discoverNavItem) {
+            // Came from discover page - highlight Discover
+            profileNavItem.classList.remove('active');
+            feedNavItem.classList.remove('active');
+            discoverNavItem.classList.add('active');
         } else {
-            // Viewing someone else's profile - highlight Feed
+            // Viewing someone else's profile from elsewhere - highlight Feed
             profileNavItem.classList.remove('active');
             feedNavItem.classList.add('active');
+            if (discoverNavItem) discoverNavItem.classList.remove('active');
         }
     }
 }
@@ -1141,28 +1159,38 @@ function showError(message) {
 }
 
 function displayRecruitingInfo(profile) {
-    // Display recruiting positions
+    // Display recruiting positions from cc_pos field
     const positionsContainer = document.getElementById('recruitingPositions');
     if (positionsContainer) {
-        if (profile.recruiting_positions && profile.recruiting_positions.length > 0) {
-            positionsContainer.innerHTML = profile.recruiting_positions
-                .map(pos => `<span class="recruiting-tag">${pos}</span>`)
-                .join('');
+        if (profile.cc_pos && profile.cc_pos.trim() !== '') {
+            if (profile.cc_pos.toLowerCase() === 'all positions') {
+                positionsContainer.innerHTML = '<span class="recruiting-position-tag">All Positions</span>';
+            } else {
+                // Split by comma and display each position as a tag
+                const positions = profile.cc_pos.split(',').map(p => p.trim()).filter(p => p);
+                positionsContainer.innerHTML = positions
+                    .map(pos => `<span class="recruiting-position-tag">${pos}</span>`)
+                    .join('');
+            }
         } else {
-            positionsContainer.innerHTML = '<span class="recruiting-tag">All Positions</span>';
+            positionsContainer.innerHTML = '<span class="recruiting-position-tag">All Positions</span>';
         }
     }
 
-    // Display recruiting states
-    const statesContainer = document.getElementById('recruitingStates');
-    if (statesContainer) {
-        if (profile.recruiting_states && profile.recruiting_states.length > 0) {
-            statesContainer.innerHTML = profile.recruiting_states
-                .map(state => `<span class="recruiting-tag">${state}</span>`)
-                .join('');
+    // Display recruiting areas from cc_areas field
+    const areasContainer = document.getElementById('recruitingAreas');
+    if (areasContainer) {
+        if (profile.cc_areas && profile.cc_areas.trim() !== '') {
+            areasContainer.innerHTML = `<p>${escapeHtml(profile.cc_areas)}</p>`;
         } else {
-            statesContainer.innerHTML = '<span class="recruiting-tag">Nationwide</span>';
+            areasContainer.innerHTML = '<p>Nationwide</p>';
         }
+    }
+
+    // Show/hide edit button based on ownership
+    const editRecruitingBtn = document.getElementById('editRecruitingBtn');
+    if (editRecruitingBtn && isOwnProfile) {
+        editRecruitingBtn.classList.add('show-button');
     }
 }
 
@@ -1775,3 +1803,298 @@ function escapeHtml(text) {
 }
 
 console.log('My Profile page loaded (dynamic version)');
+
+// Followers/Following Modal Functions
+function setupFollowListModal() {
+    const followersLink = document.getElementById('followersLink');
+    const followingLink = document.getElementById('followingLink');
+    const modal = document.getElementById('followListModal');
+    const modalOverlay = document.getElementById('followListModalOverlay');
+    const modalClose = document.getElementById('followListModalClose');
+
+    if (followersLink) {
+        followersLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            openFollowListModal('followers');
+        });
+    }
+
+    if (followingLink) {
+        followingLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            openFollowListModal('following');
+        });
+    }
+
+    if (modalOverlay) {
+        modalOverlay.addEventListener('click', closeFollowListModal);
+    }
+
+    if (modalClose) {
+        modalClose.addEventListener('click', closeFollowListModal);
+    }
+}
+
+async function openFollowListModal(type) {
+    const modal = document.getElementById('followListModal');
+    const modalTitle = document.getElementById('followListModalTitle');
+    const modalBody = document.getElementById('followListModalBody');
+
+    if (!modal || !modalTitle || !modalBody) return;
+
+    // Set title
+    modalTitle.textContent = type === 'followers' ? 'Followers' : 'Following';
+
+    // Show loading state
+    modalBody.innerHTML = '<div class="follow-list-loading">Loading...</div>';
+
+    // Show modal
+    modal.classList.add('active');
+
+    // Determine which user's followers/following to load
+    const userId = viewingUserId || currentUserId;
+
+    try {
+        let users = [];
+        if (type === 'followers') {
+            const response = await followAPI.getFollowers(userId);
+            users = response.followers || response || [];
+        } else {
+            const response = await followAPI.getFollowing(userId);
+            users = response.following || response || [];
+        }
+
+        if (users.length === 0) {
+            modalBody.innerHTML = `<div class="follow-list-empty">No ${type} yet</div>`;
+            return;
+        }
+
+        // Render the list
+        modalBody.innerHTML = users.map(user => `
+            <div class="follow-list-item" data-user-id="${user.id}" data-role="${user.role}">
+                <div class="follow-list-avatar">
+                    ${user.profile_image_url
+                        ? `<img src="${user.profile_image_url}" alt="${user.first_name}">`
+                        : `<svg viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="12" cy="7" r="4"></circle>
+                           </svg>`
+                    }
+                </div>
+                <div class="follow-list-info">
+                    <div class="follow-list-name">${user.first_name} ${user.last_name}</div>
+                    <div class="follow-list-role">${user.role}</div>
+                </div>
+            </div>
+        `).join('');
+
+        // Add click handlers to navigate to profiles
+        modalBody.querySelectorAll('.follow-list-item').forEach(item => {
+            item.addEventListener('click', async () => {
+                const userId = item.dataset.userId;
+                const role = item.dataset.role;
+
+                // Fetch the user's username to navigate to their profile
+                try {
+                    let profileResponse;
+                    if (role === 'player') {
+                        profileResponse = await API.get(`/profile/player/${userId}`);
+                    } else {
+                        profileResponse = await API.get(`/profile/coach/${userId}`);
+                    }
+
+                    if (profileResponse.profile && profileResponse.profile.username) {
+                        closeFollowListModal();
+                        window.location.href = `my-profile.html?username=${profileResponse.profile.username}`;
+                    }
+                } catch (error) {
+                    console.error('Error fetching profile:', error);
+                }
+            });
+        });
+
+    } catch (error) {
+        console.error('Error loading follow list:', error);
+        modalBody.innerHTML = '<div class="follow-list-empty">Failed to load</div>';
+    }
+}
+
+function closeFollowListModal() {
+    const modal = document.getElementById('followListModal');
+    if (modal) {
+        modal.classList.remove('active');
+    }
+}
+
+// Initialize the follow list modal when DOM is ready
+document.addEventListener('DOMContentLoaded', setupFollowListModal);
+
+// ==========================================
+// EDIT RECRUITING MODAL FUNCTIONS
+// ==========================================
+
+function setupEditRecruitingModal() {
+    const editRecruitingBtn = document.getElementById('editRecruitingBtn');
+    const modal = document.getElementById('editRecruitingModal');
+    const overlay = document.getElementById('editRecruitingModalOverlay');
+    const closeBtn = document.getElementById('editRecruitingModalClose');
+    const cancelBtn = document.getElementById('btnRecruitingCancel');
+    const saveBtn = document.getElementById('btnRecruitingSave');
+    const allPositionsCheckbox = document.getElementById('recruitAllPositions');
+    const positionsContainer = document.getElementById('recruitingPositionsContainer');
+
+    // Open modal
+    if (editRecruitingBtn) {
+        editRecruitingBtn.addEventListener('click', () => {
+            populateRecruitingForm();
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        });
+    }
+
+    // Close modal handlers
+    if (overlay) {
+        overlay.addEventListener('click', hideRecruitingModal);
+    }
+    if (closeBtn) {
+        closeBtn.addEventListener('click', hideRecruitingModal);
+    }
+    if (cancelBtn) {
+        cancelBtn.addEventListener('click', hideRecruitingModal);
+    }
+
+    // Close on Escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && modal && modal.classList.contains('active')) {
+            hideRecruitingModal();
+        }
+    });
+
+    // All Positions toggle behavior
+    if (allPositionsCheckbox && positionsContainer) {
+        allPositionsCheckbox.addEventListener('change', function() {
+            if (this.checked) {
+                // Disable and uncheck all individual position checkboxes
+                positionsContainer.classList.add('disabled');
+                const checkboxes = positionsContainer.querySelectorAll('input[name="ccPosition"]');
+                checkboxes.forEach(cb => {
+                    cb.checked = false;
+                });
+            } else {
+                // Enable individual position checkboxes
+                positionsContainer.classList.remove('disabled');
+            }
+        });
+    }
+
+    // Save button
+    if (saveBtn) {
+        saveBtn.addEventListener('click', saveRecruitingChanges);
+    }
+}
+
+function hideRecruitingModal() {
+    const modal = document.getElementById('editRecruitingModal');
+    if (modal) {
+        modal.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+}
+
+function populateRecruitingForm() {
+    if (!currentProfile) return;
+
+    const allPositionsCheckbox = document.getElementById('recruitAllPositions');
+    const positionsContainer = document.getElementById('recruitingPositionsContainer');
+    const areasInput = document.getElementById('recruitingAreasInput');
+
+    // Reset all checkboxes
+    const positionCheckboxes = document.querySelectorAll('input[name="ccPosition"]');
+    positionCheckboxes.forEach(cb => cb.checked = false);
+
+    // Check if "All Positions" or populate individual positions
+    if (!currentProfile.cc_pos || currentProfile.cc_pos.trim() === '' || currentProfile.cc_pos.toLowerCase() === 'all positions') {
+        // All Positions selected
+        if (allPositionsCheckbox) {
+            allPositionsCheckbox.checked = true;
+            positionsContainer.classList.add('disabled');
+        }
+    } else {
+        // Individual positions selected
+        if (allPositionsCheckbox) {
+            allPositionsCheckbox.checked = false;
+            positionsContainer.classList.remove('disabled');
+        }
+
+        // Parse comma-separated positions and check the corresponding checkboxes
+        const selectedPositions = currentProfile.cc_pos.split(',').map(p => p.trim());
+        positionCheckboxes.forEach(cb => {
+            if (selectedPositions.includes(cb.value)) {
+                cb.checked = true;
+            }
+        });
+    }
+
+    // Populate recruiting areas
+    if (areasInput) {
+        areasInput.value = currentProfile.cc_areas || '';
+    }
+}
+
+async function saveRecruitingChanges() {
+    const saveBtn = document.getElementById('btnRecruitingSave');
+    const originalText = saveBtn.textContent;
+
+    try {
+        saveBtn.textContent = 'Saving...';
+        saveBtn.disabled = true;
+
+        const allPositionsCheckbox = document.getElementById('recruitAllPositions');
+        const areasInput = document.getElementById('recruitingAreasInput');
+
+        let cc_pos = '';
+
+        if (allPositionsCheckbox && allPositionsCheckbox.checked) {
+            cc_pos = 'All Positions';
+        } else {
+            // Get all checked position checkboxes
+            const checkedPositions = document.querySelectorAll('input[name="ccPosition"]:checked');
+            const positions = Array.from(checkedPositions).map(cb => cb.value);
+            cc_pos = positions.join(',');
+        }
+
+        const cc_areas = areasInput ? areasInput.value.trim() : '';
+
+        // Send update request
+        const response = await API.put('/profile', {
+            cc_pos: cc_pos,
+            cc_areas: cc_areas
+        });
+
+        if (response.success || response.profile) {
+            // Update currentProfile
+            currentProfile.cc_pos = cc_pos;
+            currentProfile.cc_areas = cc_areas;
+
+            // Refresh the recruiting display
+            displayRecruitingInfo(currentProfile);
+
+            // Close modal
+            hideRecruitingModal();
+
+            // Show success message
+            showSuccessMessage('Recruiting information updated successfully!');
+        } else {
+            throw new Error(response.message || 'Failed to update recruiting information');
+        }
+    } catch (error) {
+        console.error('Error saving recruiting info:', error);
+        alert('Failed to save recruiting information: ' + error.message);
+    } finally {
+        saveBtn.textContent = originalText;
+        saveBtn.disabled = false;
+    }
+}
+
+// Initialize recruiting modal when DOM is ready
+document.addEventListener('DOMContentLoaded', setupEditRecruitingModal);

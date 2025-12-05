@@ -251,6 +251,9 @@ document.addEventListener('DOMContentLoaded', async function() {
             profileData.gpa = parseFloat(document.getElementById('gpa').value) || null;
             // College players have a division - this differentiates them from HS players
             profileData.college_division = document.getElementById('division').value;
+            profileData.conference = document.getElementById('conference').value || null;
+            profileData.number = document.getElementById('jerseyNumber').value ? parseInt(document.getElementById('jerseyNumber').value) : null;
+            profileData.eligibility = document.getElementById('eligibility').value ? parseInt(document.getElementById('eligibility').value) : null;
 
             // Step 3: Create or Update profile
             await profileAPI.createPlayerProfile(profileData);
@@ -324,6 +327,15 @@ async function loadExistingProfile() {
                 }
                 if (profile.college_division) {
                     document.getElementById('division').value = profile.college_division;
+                }
+                if (profile.conference) {
+                    document.getElementById('conference').value = profile.conference;
+                }
+                if (profile.number) {
+                    document.getElementById('jerseyNumber').value = profile.number;
+                }
+                if (profile.eligibility) {
+                    document.getElementById('eligibility').value = profile.eligibility;
                 }
                 if (profile.graduation_year) {
                     document.getElementById('collegeGradYear').value = profile.graduation_year;

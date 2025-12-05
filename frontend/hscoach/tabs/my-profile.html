@@ -162,8 +162,8 @@
                         <div class="profile-meta"></div>
                         <div class="profile-username"></div>
                         <div class="profile-follow-stats">
-                            <span class="follow-stat"><span class="follow-count" id="followersCount">0</span> Followers</span>
-                            <span class="follow-stat"><span class="follow-count" id="followingCount">0</span> Following</span>
+                            <a href="#" class="follow-stat-link" id="followersLink"><span class="follow-count" id="followersCount">0</span> Followers</a>
+                            <a href="#" class="follow-stat-link" id="followingLink"><span class="follow-count" id="followingCount">0</span> Following</a>
                         </div>
                     </div>
                     <div class="profile-actions">
@@ -694,6 +694,25 @@
             <div class="edit-modal-footer">
                 <button class="btn-modal-cancel" id="btnModalCancel">Cancel</button>
                 <button class="btn-modal-save" id="btnModalSave">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Followers/Following Modal -->
+    <div class="follow-list-modal" id="followListModal">
+        <div class="follow-list-modal-overlay" id="followListModalOverlay"></div>
+        <div class="follow-list-modal-content">
+            <div class="follow-list-modal-header">
+                <h2 id="followListModalTitle">Followers</h2>
+                <button class="follow-list-modal-close" id="followListModalClose">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="follow-list-modal-body" id="followListModalBody">
+                <div class="follow-list-loading">Loading...</div>
             </div>
         </div>
     </div>

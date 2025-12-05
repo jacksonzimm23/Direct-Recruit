@@ -1771,3 +1771,128 @@ async function validateUsername(username, isFinalCheck = false) {
 }
 
 console.log('My Profile page loaded (dynamic version)');
+
+// Followers/Following Modal Functions
+function setupFollowListModal() {
+    const followersLink = document.getElementById('followersLink');
+    const followingLink = document.getElementById('followingLink');
+    const modal = document.getElementById('followListModal');
+    const modalOverlay = document.getElementById('followListModalOverlay');
+    const modalClose = document.getElementById('followListModalClose');
+
+    if (followersLink) {
+        followersLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            openFollowListModal('followers');
+        });
+    }
+
+    if (followingLink) {
+        followingLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            openFollowListModal('following');
+        });
+    }
+
+    if (modalOverlay) {
+        modalOverlay.addEventListener('click', closeFollowListModal);
+    }
+
+    if (modalClose) {
+        modalClose.addEventListener('click', closeFollowListModal);
+    }
+}
+
+async function openFollowListModal(type) {
+    const modal = document.getElementById('followListModal');
+    const modalTitle = document.getElementById('followListModalTitle');
+    const modalBody = document.getElementById('followListModalBody');
+
+    if (!modal || !modalTitle || !modalBody) return;
+
+    // Set title
+    modalTitle.textContent = type === 'followers' ? 'Followers' : 'Following';
+
+    // Show loading state
+    modalBody.innerHTML = '<div class="follow-list-loading">Loading...</div>';
+
+    // Show modal
+    modal.classList.add('active');
+
+    // Determine which user's followers/following to load
+    const userId = viewingUserId || currentUserId;
+
+    try {
+        let users = [];
+        if (type === 'followers') {
+            const response = await followAPI.getFollowers(userId);
+            users = response.followers || response || [];
+        } else {
+            const response = await followAPI.getFollowing(userId);
+            users = response.following || response || [];
+        }
+
+        if (users.length === 0) {
+            modalBody.innerHTML = `<div class="follow-list-empty">No ${type} yet</div>`;
+            return;
+        }
+
+        // Render the list
+        modalBody.innerHTML = users.map(user => `
+            <div class="follow-list-item" data-user-id="${user.id}" data-role="${user.role}">
+                <div class="follow-list-avatar">
+                    ${user.profile_image_url
+                        ? `<img src="${user.profile_image_url}" alt="${user.first_name}">`
+                        : `<svg viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="12" cy="7" r="4"></circle>
+                           </svg>`
+                    }
+                </div>
+                <div class="follow-list-info">
+                    <div class="follow-list-name">${user.first_name} ${user.last_name}</div>
+                    <div class="follow-list-role">${user.role}</div>
+                </div>
+            </div>
+        `).join('');
+
+        // Add click handlers to navigate to profiles
+        modalBody.querySelectorAll('.follow-list-item').forEach(item => {
+            item.addEventListener('click', async () => {
+                const userId = item.dataset.userId;
+                const role = item.dataset.role;
+
+                // Fetch the user's username to navigate to their profile
+                try {
+                    let profileResponse;
+                    if (role === 'player') {
+                        profileResponse = await API.get(`/profile/player/${userId}`);
+                    } else {
+                        profileResponse = await API.get(`/profile/coach/${userId}`);
+                    }
+
+                    if (profileResponse.profile && profileResponse.profile.username) {
+                        closeFollowListModal();
+                        window.location.href = `my-profile.html?username=${profileResponse.profile.username}`;
+                    }
+                } catch (error) {
+                    console.error('Error fetching profile:', error);
+                }
+            });
+        });
+
+    } catch (error) {
+        console.error('Error loading follow list:', error);
+        modalBody.innerHTML = '<div class="follow-list-empty">Failed to load</div>';
+    }
+}
+
+function closeFollowListModal() {
+    const modal = document.getElementById('followListModal');
+    if (modal) {
+        modal.classList.remove('active');
+    }
+}
+
+// Initialize the follow list modal when DOM is ready
+document.addEventListener('DOMContentLoaded', setupFollowListModal);

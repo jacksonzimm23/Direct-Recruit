@@ -526,6 +526,15 @@ function displayProfile(profile, type) {
     // Update Contact Info section between header and tabs
     updateContactInfoSection(profile);
 
+    // Update Current Team Info section in Overview tab
+    updateCurrentTeamInfo(profile);
+
+    // Update Career Achievements section in Overview tab
+    updateCareerAchievements(profile);
+
+    // Update Social Media section in Overview tab
+    updateSocialMedia(profile);
+
     // Update profile image if available
     if (profile.profile_image_url) {
         const avatarElement = document.querySelector('.profile-avatar-large');
@@ -641,9 +650,6 @@ function displayPlayerProfile(profile) {
     updateInfoItem('Height', formatHeight(profile.height));
     updateInfoItem('Weight', profile.weight ? (String(profile.weight).includes('lbs') ? profile.weight : `${profile.weight} lbs`) : null);
 
-    // Update contact info in sidebar
-    updateContactInfo(profile);
-
     // Update school info
     updateSchoolInfo(profile);
 }
@@ -676,9 +682,6 @@ function displayCoachProfile(profile) {
     updateInfoItem('Title', profile.position_title);
     updateInfoItem('College', profile.college_name);
     updateInfoItem('Division', profile.college_division);
-
-    // Update contact info
-    updateContactInfo(profile);
 }
 
 function updateInfoItem(label, value) {
@@ -695,42 +698,6 @@ function updateInfoItem(label, value) {
             }
         }
     });
-}
-
-function updateContactInfo(profile) {
-    const contactInfoCard = document.querySelector('.profile-sidebar .info-card');
-    if (!contactInfoCard) return;
-
-    let contactHTML = '';
-
-    if (profile.email) {
-        contactHTML += `
-            <div class="contact-item">
-                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
-                    <polyline points="22,6 12,13 2,6"></polyline>
-                </svg>
-                <span>${profile.email}</span>
-            </div>
-        `;
-    }
-
-    if (profile.phone) {
-        contactHTML += `
-            <div class="contact-item">
-                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
-                </svg>
-                <span>${profile.phone}</span>
-            </div>
-        `;
-    }
-
-    if (contactHTML) {
-        contactInfoCard.innerHTML = contactHTML;
-    } else {
-        contactInfoCard.innerHTML = '<p>No contact information provided.</p>';
-    }
 }
 
 // Update the Contact Info section between header and tabs
@@ -768,6 +735,115 @@ function updateContactInfoSection(profile) {
         contactInfoCard.innerHTML = contactHTML;
     } else {
         contactInfoCard.innerHTML = '<p>No contact information provided.</p>';
+    }
+}
+
+// Update the Current Team Info section in Overview tab
+function updateCurrentTeamInfo(profile) {
+    const schoolEl = document.getElementById('teamSchool');
+    const stateEl = document.getElementById('teamState');
+    const divisionEl = document.getElementById('teamDivision');
+    const conferenceEl = document.getElementById('teamConference');
+    const positionEl = document.getElementById('teamPosition');
+    const numberEl = document.getElementById('teamNumber');
+    const eligibilityEl = document.getElementById('teamEligibility');
+
+    if (schoolEl) schoolEl.textContent = profile.high_school || '-';
+    if (stateEl) stateEl.textContent = profile.state || '-';
+    if (divisionEl) divisionEl.textContent = profile.college_division || '-';
+    if (conferenceEl) conferenceEl.textContent = profile.conference || '-';
+
+    // Handle position - can be array or slash-separated string
+    if (positionEl) {
+        if (profile.position) {
+            const positionDisplay = Array.isArray(profile.position)
+                ? profile.position.join('/')
+                : profile.position;
+            positionEl.textContent = positionDisplay;
+        } else {
+            positionEl.textContent = '-';
+        }
+    }
+
+    if (numberEl) numberEl.textContent = profile.number ? `#${profile.number}` : '-';
+    if (eligibilityEl) eligibilityEl.textContent = profile.eligibility ? `${profile.eligibility} year${profile.eligibility !== 1 ? 's' : ''}` : '-';
+}
+
+// Update the Career Achievements section in Overview tab
+function updateCareerAchievements(profile) {
+    const achievementsCard = document.getElementById('careerAchievementsCard');
+    if (!achievementsCard) return;
+
+    if (profile.achievements && profile.achievements.trim()) {
+        achievementsCard.innerHTML = `<p class="achievements-text">${profile.achievements}</p>`;
+    } else {
+        achievementsCard.innerHTML = '<p class="empty-state-text">No achievements added yet.</p>';
+    }
+}
+
+// Update the Social Media section in Overview tab
+function updateSocialMedia(profile) {
+    const socialMediaCard = document.getElementById('socialMediaCard');
+    if (!socialMediaCard) return;
+
+    // Parse socials from JSON if stored as string
+    let socials = {};
+    if (profile.socials) {
+        try {
+            socials = typeof profile.socials === 'string'
+                ? JSON.parse(profile.socials)
+                : profile.socials;
+        } catch (e) {
+            console.log('Could not parse socials:', e);
+        }
+    }
+
+    const hasHudl = socials.hudl && socials.hudl.trim();
+    const hasInstagram = socials.instagram && socials.instagram.trim();
+
+    if (hasHudl || hasInstagram) {
+        let html = '<div class="social-media-links">';
+
+        if (hasHudl) {
+            html += `
+                <a href="${socials.hudl}" target="_blank" rel="noopener noreferrer" class="social-media-link">
+                    <div class="social-icon hudl">
+                        <svg viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                        </svg>
+                    </div>
+                    <span class="link-text">Hudl Profile</span>
+                    <svg class="external-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px; opacity: 0.5;">
+                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                        <polyline points="15 3 21 3 21 9"></polyline>
+                        <line x1="10" y1="14" x2="21" y2="3"></line>
+                    </svg>
+                </a>
+            `;
+        }
+
+        if (hasInstagram) {
+            html += `
+                <a href="${socials.instagram}" target="_blank" rel="noopener noreferrer" class="social-media-link">
+                    <div class="social-icon instagram">
+                        <svg viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+                        </svg>
+                    </div>
+                    <span class="link-text">Instagram</span>
+                    <svg class="external-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px; opacity: 0.5;">
+                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                        <polyline points="15 3 21 3 21 9"></polyline>
+                        <line x1="10" y1="14" x2="21" y2="3"></line>
+                    </svg>
+                </a>
+            `;
+        }
+
+        html += '</div>';
+        socialMediaCard.innerHTML = html;
+    } else {
+        socialMediaCard.innerHTML = '<p class="empty-state-text">No social media links added yet.</p>';
     }
 }
 
@@ -941,38 +1017,6 @@ function setupUI() {
     // Tab switching
     const tabs = document.querySelectorAll('.profile-tab');
     const tabPanes = document.querySelectorAll('.tab-pane');
-
-    // Control tab visibility based on profile type
-    const statsTab = document.querySelector('.profile-tab[data-tab="stats"]');
-    const highlightsTab = document.querySelector('.profile-tab[data-tab="highlights"]');
-    const academicsTab = document.querySelector('.profile-tab[data-tab="academics"]');
-    const statsPane = document.getElementById('stats');
-    const highlightsPane = document.getElementById('highlights');
-    const academicsPane = document.getElementById('academics');
-
-    if (currentProfileType === 'coach') {
-        // Hide ALL player-specific tabs when viewing a coach profile
-        if (statsTab) statsTab.style.display = 'none';
-        if (highlightsTab) highlightsTab.style.display = 'none';
-        if (academicsTab) academicsTab.style.display = 'none';
-        if (statsPane) statsPane.style.display = 'none';
-        if (highlightsPane) highlightsPane.style.display = 'none';
-        if (academicsPane) academicsPane.style.display = 'none';
-    } else if (currentProfileType === 'player') {
-        // For player profiles, show all tabs
-        if (statsTab) statsTab.style.display = '';
-        if (highlightsTab) highlightsTab.style.display = '';
-        if (academicsTab) academicsTab.style.display = '';
-        if (statsPane) statsPane.style.display = '';
-        if (highlightsPane) highlightsPane.style.display = '';
-        if (academicsPane) academicsPane.style.display = '';
-
-        // But hide academics from non-college-coaches when viewing others' profiles
-        if (!isOwnProfile && !isCollegeCoach) {
-            if (academicsTab) academicsTab.style.display = 'none';
-            if (academicsPane) academicsPane.style.display = 'none';
-        }
-    }
 
     tabs.forEach(tab => {
         tab.addEventListener('click', function() {
@@ -1283,10 +1327,16 @@ function populateEditForm() {
         const collegeName = document.getElementById('editCollegeName');
         const collegeState = document.getElementById('editCollegeState');
         const division = document.getElementById('editDivision');
+        const conference = document.getElementById('editConference');
+        const jerseyNumber = document.getElementById('editJerseyNumber');
+        const eligibility = document.getElementById('editEligibility');
 
         if (collegeName) collegeName.value = currentProfile.high_school || ''; // Using high_school field for college name
         if (collegeState) collegeState.value = currentProfile.state || '';
         if (division) division.value = currentProfile.college_division || '';
+        if (conference) conference.value = currentProfile.conference || '';
+        if (jerseyNumber) jerseyNumber.value = currentProfile.number || '';
+        if (eligibility) eligibility.value = currentProfile.eligibility || '';
     } else {
         // Show high school fields and set active button
         if (schoolTypeHS) schoolTypeHS.classList.add('active');
@@ -1319,6 +1369,36 @@ function populateEditForm() {
     }
     if (email) email.value = currentProfile.email || '';
     if (phone) phone.value = formatPhoneNumber(currentProfile.phone) || '';
+
+    // Populate achievements
+    const achievements = document.getElementById('editAchievements');
+    if (achievements) {
+        achievements.value = currentProfile.achievements || '';
+        // Update character counter
+        const achievementsCounter = document.getElementById('achievementsCharCounter');
+        if (achievementsCounter) {
+            const currentLength = achievements.value.length;
+            achievementsCounter.textContent = `${currentLength}/500`;
+            achievementsCounter.classList.toggle('limit-reached', currentLength >= 500);
+        }
+    }
+
+    // Populate social media links - parse from JSON if stored as JSON string
+    let socials = {};
+    if (currentProfile.socials) {
+        try {
+            socials = typeof currentProfile.socials === 'string'
+                ? JSON.parse(currentProfile.socials)
+                : currentProfile.socials;
+        } catch (e) {
+            console.log('Could not parse socials:', e);
+        }
+    }
+
+    const hudlLink = document.getElementById('editHudlLink');
+    const instagramLink = document.getElementById('editInstagramLink');
+    if (hudlLink) hudlLink.value = socials.hudl || '';
+    if (instagramLink) instagramLink.value = socials.instagram || '';
 
     // Clear all position checkboxes first
     const positionCheckboxes = document.querySelectorAll('#editPositionsContainer input[name="position"]');
@@ -1449,6 +1529,14 @@ async function saveProfileChanges() {
         const schoolTypeCollege = document.getElementById('editSchoolTypeCollege');
         const isCollegePlayer = schoolTypeCollege && schoolTypeCollege.classList.contains('active');
 
+        // Build social media links object
+        const hudlLink = document.getElementById('editHudlLink').value.trim();
+        const instagramLink = document.getElementById('editInstagramLink').value.trim();
+        const socialsObj = {};
+        if (hudlLink) socialsObj.hudl = hudlLink;
+        if (instagramLink) socialsObj.instagram = instagramLink;
+        const socialsJson = Object.keys(socialsObj).length > 0 ? JSON.stringify(socialsObj) : null;
+
         // Get form data - save positions as slash-separated string
         const formData = {
             first_name: document.getElementById('editFirstName').value,
@@ -1461,7 +1549,9 @@ async function saveProfileChanges() {
             gpa: document.getElementById('editGPA').value ? parseFloat(document.getElementById('editGPA').value) : null,
             bio: document.getElementById('editBio').value,
             email: document.getElementById('editEmail').value,
-            phone: phoneDigits
+            phone: phoneDigits,
+            achievements: document.getElementById('editAchievements').value || null,
+            socials: socialsJson
         };
 
         // Add school fields based on type
@@ -1469,10 +1559,16 @@ async function saveProfileChanges() {
             formData.high_school = document.getElementById('editCollegeName').value;
             formData.state = document.getElementById('editCollegeState').value;
             formData.college_division = document.getElementById('editDivision').value;
+            formData.conference = document.getElementById('editConference').value || null;
+            formData.number = document.getElementById('editJerseyNumber').value ? parseInt(document.getElementById('editJerseyNumber').value) : null;
+            formData.eligibility = document.getElementById('editEligibility').value ? parseInt(document.getElementById('editEligibility').value) : null;
         } else {
             formData.high_school = document.getElementById('editHighSchool').value;
             formData.state = document.getElementById('editHSState').value;
             formData.college_division = null; // Clear college division for HS players
+            formData.conference = null;
+            formData.number = null;
+            formData.eligibility = null;
         }
 
         // Send update request
@@ -1678,6 +1774,23 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // Handle achievements character counter
+    const achievementsInput = document.getElementById('editAchievements');
+    const achievementsCounter = document.getElementById('achievementsCharCounter');
+    if (achievementsInput && achievementsCounter) {
+        achievementsInput.addEventListener('input', function() {
+            const currentLength = this.value.length;
+            achievementsCounter.textContent = `${currentLength}/500`;
+
+            // Add/remove limit-reached class
+            if (currentLength >= 500) {
+                achievementsCounter.classList.add('limit-reached');
+            } else {
+                achievementsCounter.classList.remove('limit-reached');
+            }
+        });
+    }
+
     // Handle phone number auto-formatting
     const phoneInput = document.getElementById('editPhone');
     if (phoneInput) {
@@ -1713,3 +1826,128 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 console.log('My Profile page loaded (dynamic version)');
+
+// Followers/Following Modal Functions
+function setupFollowListModal() {
+    const followersLink = document.getElementById('followersLink');
+    const followingLink = document.getElementById('followingLink');
+    const modal = document.getElementById('followListModal');
+    const modalOverlay = document.getElementById('followListModalOverlay');
+    const modalClose = document.getElementById('followListModalClose');
+
+    if (followersLink) {
+        followersLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            openFollowListModal('followers');
+        });
+    }
+
+    if (followingLink) {
+        followingLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            openFollowListModal('following');
+        });
+    }
+
+    if (modalOverlay) {
+        modalOverlay.addEventListener('click', closeFollowListModal);
+    }
+
+    if (modalClose) {
+        modalClose.addEventListener('click', closeFollowListModal);
+    }
+}
+
+async function openFollowListModal(type) {
+    const modal = document.getElementById('followListModal');
+    const modalTitle = document.getElementById('followListModalTitle');
+    const modalBody = document.getElementById('followListModalBody');
+
+    if (!modal || !modalTitle || !modalBody) return;
+
+    // Set title
+    modalTitle.textContent = type === 'followers' ? 'Followers' : 'Following';
+
+    // Show loading state
+    modalBody.innerHTML = '<div class="follow-list-loading">Loading...</div>';
+
+    // Show modal
+    modal.classList.add('active');
+
+    // Determine which user's followers/following to load
+    const userId = viewingUserId || currentUserId;
+
+    try {
+        let users = [];
+        if (type === 'followers') {
+            const response = await followAPI.getFollowers(userId);
+            users = response.followers || response || [];
+        } else {
+            const response = await followAPI.getFollowing(userId);
+            users = response.following || response || [];
+        }
+
+        if (users.length === 0) {
+            modalBody.innerHTML = `<div class="follow-list-empty">No ${type} yet</div>`;
+            return;
+        }
+
+        // Render the list
+        modalBody.innerHTML = users.map(user => `
+            <div class="follow-list-item" data-user-id="${user.id}" data-role="${user.role}">
+                <div class="follow-list-avatar">
+                    ${user.profile_image_url
+                        ? `<img src="${user.profile_image_url}" alt="${user.first_name}">`
+                        : `<svg viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="12" cy="7" r="4"></circle>
+                           </svg>`
+                    }
+                </div>
+                <div class="follow-list-info">
+                    <div class="follow-list-name">${user.first_name} ${user.last_name}</div>
+                    <div class="follow-list-role">${user.role}</div>
+                </div>
+            </div>
+        `).join('');
+
+        // Add click handlers to navigate to profiles
+        modalBody.querySelectorAll('.follow-list-item').forEach(item => {
+            item.addEventListener('click', async () => {
+                const userId = item.dataset.userId;
+                const role = item.dataset.role;
+
+                // Fetch the user's username to navigate to their profile
+                try {
+                    let profileResponse;
+                    if (role === 'player') {
+                        profileResponse = await API.get(`/profile/player/${userId}`);
+                    } else {
+                        profileResponse = await API.get(`/profile/coach/${userId}`);
+                    }
+
+                    if (profileResponse.profile && profileResponse.profile.username) {
+                        closeFollowListModal();
+                        window.location.href = `my-profile.html?username=${profileResponse.profile.username}`;
+                    }
+                } catch (error) {
+                    console.error('Error fetching profile:', error);
+                }
+            });
+        });
+
+    } catch (error) {
+        console.error('Error loading follow list:', error);
+        modalBody.innerHTML = '<div class="follow-list-empty">Failed to load</div>';
+    }
+}
+
+function closeFollowListModal() {
+    const modal = document.getElementById('followListModal');
+    if (modal) {
+        modal.classList.remove('active');
+    }
+}
+
+// Initialize the follow list modal when DOM is ready
+document.addEventListener('DOMContentLoaded', setupFollowListModal);

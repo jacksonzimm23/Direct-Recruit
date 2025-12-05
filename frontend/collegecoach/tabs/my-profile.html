@@ -164,8 +164,8 @@
                         <div class="profile-meta"></div>
                         <div class="profile-username"></div>
                         <div class="profile-follow-stats">
-                            <span class="follow-stat"><span class="follow-count" id="followersCount">0</span> Followers</span>
-                            <span class="follow-stat"><span class="follow-count" id="followingCount">0</span> Following</span>
+                            <a href="#" class="follow-stat-link" id="followersLink"><span class="follow-count" id="followersCount">0</span> Followers</a>
+                            <a href="#" class="follow-stat-link" id="followingLink"><span class="follow-count" id="followingCount">0</span> Following</a>
                         </div>
                     </div>
                     <div class="profile-actions">
@@ -292,19 +292,28 @@
                 <!-- Recruiting Tab -->
                 <div class="tab-pane" id="recruiting" style="display: none;">
                     <div class="recruiting-section">
-                        <h2 class="section-title">Recruiting Information</h2>
+                        <div class="recruiting-header">
+                            <h2 class="section-title">Recruiting Information</h2>
+                            <button class="btn-edit-recruiting" id="editRecruitingBtn">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                </svg>
+                                Edit
+                            </button>
+                        </div>
 
                         <div class="info-card">
                             <h3 class="subsection-title">Positions Recruiting</h3>
-                            <div id="recruitingPositions" class="recruiting-tags">
-                                <span class="recruiting-tag">Loading...</span>
+                            <div id="recruitingPositions" class="recruiting-positions-display">
+                                <span class="recruiting-position-tag">Loading...</span>
                             </div>
                         </div>
 
                         <div class="info-card">
                             <h3 class="subsection-title">Recruiting Areas</h3>
-                            <div id="recruitingStates" class="recruiting-tags">
-                                <span class="recruiting-tag">Loading...</span>
+                            <div id="recruitingAreas" class="recruiting-areas-text">
+                                <p>Loading...</p>
                             </div>
                         </div>
                     </div>
@@ -705,6 +714,167 @@
             <div class="edit-modal-footer">
                 <button class="btn-modal-cancel" id="btnModalCancel">Cancel</button>
                 <button class="btn-modal-save" id="btnModalSave">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Followers/Following Modal -->
+    <div class="follow-list-modal" id="followListModal">
+        <div class="follow-list-modal-overlay" id="followListModalOverlay"></div>
+        <div class="follow-list-modal-content">
+            <div class="follow-list-modal-header">
+                <h2 id="followListModalTitle">Followers</h2>
+                <button class="follow-list-modal-close" id="followListModalClose">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="follow-list-modal-body" id="followListModalBody">
+                <div class="follow-list-loading">Loading...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Recruiting Modal -->
+    <div class="edit-recruiting-modal" id="editRecruitingModal">
+        <div class="edit-recruiting-modal-overlay" id="editRecruitingModalOverlay"></div>
+        <div class="edit-recruiting-modal-content">
+            <div class="edit-recruiting-modal-header">
+                <h2>Edit Recruiting Information</h2>
+                <button class="edit-recruiting-modal-close" id="editRecruitingModalClose">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="edit-recruiting-modal-body">
+                <form id="editRecruitingForm">
+                    <!-- Positions Recruiting -->
+                    <div class="form-group">
+                        <label>Position(s) Recruiting</label>
+                        <p class="form-hint" style="margin-bottom: 0.75rem;">Select all positions you are recruiting</p>
+
+                        <!-- All Positions Toggle -->
+                        <div class="all-positions-toggle">
+                            <label class="checkbox-label all-positions-checkbox">
+                                <input type="checkbox" id="recruitAllPositions" name="recruitAllPositions">
+                                <span>All Positions</span>
+                            </label>
+                        </div>
+
+                        <div class="multi-select-container" id="recruitingPositionsContainer">
+                            <div class="multi-select-group">
+                                <h4 class="group-label">Offense - Skill Positions</h4>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="ccPosition" value="QB">
+                                    <span>Quarterback (QB)</span>
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="ccPosition" value="RB">
+                                    <span>Running Back (RB)</span>
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="ccPosition" value="FB">
+                                    <span>Fullback (FB)</span>
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="ccPosition" value="WR">
+                                    <span>Wide Receiver (WR)</span>
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="ccPosition" value="TE">
+                                    <span>Tight End (TE)</span>
+                                </label>
+                            </div>
+
+                            <div class="multi-select-group">
+                                <h4 class="group-label">Offense - Line</h4>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="ccPosition" value="OT">
+                                    <span>Offensive Tackle (OT)</span>
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="ccPosition" value="OG">
+                                    <span>Offensive Guard (OG)</span>
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="ccPosition" value="C">
+                                    <span>Center (C)</span>
+                                </label>
+                            </div>
+
+                            <div class="multi-select-group">
+                                <h4 class="group-label">Defense - Line</h4>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="ccPosition" value="DE">
+                                    <span>Defensive End (DE)</span>
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="ccPosition" value="DT">
+                                    <span>Defensive Tackle (DT)</span>
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="ccPosition" value="NT">
+                                    <span>Nose Tackle (NT)</span>
+                                </label>
+                            </div>
+
+                            <div class="multi-select-group">
+                                <h4 class="group-label">Defense - Linebackers</h4>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="ccPosition" value="ILB">
+                                    <span>Inside Linebacker (ILB)</span>
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="ccPosition" value="OLB">
+                                    <span>Outside Linebacker (OLB)</span>
+                                </label>
+                            </div>
+
+                            <div class="multi-select-group">
+                                <h4 class="group-label">Defense - Secondary</h4>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="ccPosition" value="CB">
+                                    <span>Cornerback (CB)</span>
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="ccPosition" value="S">
+                                    <span>Safety (S)</span>
+                                </label>
+                            </div>
+
+                            <div class="multi-select-group">
+                                <h4 class="group-label">Special Teams</h4>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="ccPosition" value="K">
+                                    <span>Kicker (K)</span>
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="ccPosition" value="P">
+                                    <span>Punter (P)</span>
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="ccPosition" value="LS">
+                                    <span>Long Snapper (LS)</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Recruiting Areas -->
+                    <div class="form-group">
+                        <label for="recruitingAreasInput">Recruiting Areas</label>
+                        <textarea id="recruitingAreasInput" name="cc_areas" rows="4" placeholder="e.g., Texas, California, Florida, Nationwide..."></textarea>
+                        <small class="form-hint">Enter the states or regions you recruit from</small>
+                    </div>
+                </form>
+            </div>
+            <div class="edit-recruiting-modal-footer">
+                <button class="btn-modal-cancel" id="btnRecruitingCancel">Cancel</button>
+                <button class="btn-modal-save" id="btnRecruitingSave">Save Changes</button>
             </div>
         </div>
     </div>
