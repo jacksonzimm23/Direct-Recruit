@@ -161,6 +161,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             profileData.college_name = document.getElementById('collegeName').value;
             profileData.state = document.getElementById('collegeState').value;
             profileData.college_division = document.getElementById('division').value;
+            profileData.conference = document.getElementById('conference').value;
 
             // Step 3: Create or Update profile
             await profileAPI.createCoachProfile(profileData);
@@ -338,6 +339,9 @@ async function loadExistingProfile() {
                 }
                 if (profile.college_division) {
                     document.getElementById('division').value = profile.college_division;
+                }
+                if (profile.conference) {
+                    document.getElementById('conference').value = profile.conference;
                 }
 
                 // Pre-fill position checkboxes

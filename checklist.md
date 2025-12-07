@@ -31,4 +31,8 @@ POSTS TAB BACKEND
 HIGHTLIGHTS BACKEND
 TRANSFER PORTAL PLAYER 
 
--edit buttons when viewing other players
+
+
+Currently working on: Messages tab, messaging logic currently works, fix some of the little stuff:
+- unread messages counter on all tab pages 
+- view profile button 

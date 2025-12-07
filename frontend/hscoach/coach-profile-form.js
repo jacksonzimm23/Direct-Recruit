@@ -162,6 +162,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             profileData.high_school = document.getElementById('highSchoolName').value;
             profileData.state = document.getElementById('hsState').value;
             profileData.college_division = 'High School';
+            profileData.conference = document.getElementById('conference').value;
 
             // Step 3: Create or Update profile
             await profileAPI.createCoachProfile(profileData);
@@ -336,6 +337,9 @@ async function loadExistingProfile() {
                 }
                 if (profile.state) {
                     document.getElementById('hsState').value = profile.state;
+                }
+                if (profile.conference) {
+                    document.getElementById('conference').value = profile.conference;
                 }
 
                 // Pre-fill position checkboxes

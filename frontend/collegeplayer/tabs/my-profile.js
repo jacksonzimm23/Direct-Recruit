@@ -921,7 +921,22 @@ function updateProfileActions() {
 
         // Setup follow button
         setupFollowButton();
+
+        // Setup message button
+        setupMessageButton();
     }
+}
+
+function setupMessageButton() {
+    const messageBtn = document.getElementById('messageBtn');
+    if (!messageBtn || !viewingUserId) return;
+
+    messageBtn.addEventListener('click', () => {
+        // Navigate to messages page with the userId to start/open conversation
+        // Determine the correct folder for navigation based on logged-in user
+        const folder = loggedInUserFolder || 'collegeplayer';
+        window.location.href = `/frontend/${folder}/tabs/messages.html?userId=${viewingUserId}`;
+    });
 }
 
 async function setupFollowButton() {

@@ -4,17 +4,17 @@ class CoachProfile {
   static async create(userId, profileData) {
     const {
       first_name, last_name, username, college_name, college_division,
-      position_title, city, state, phone, bio
+      position_title, city, state, phone, bio, conference
     } = profileData;
 
     const result = await pool.query(
       `INSERT INTO coach_profiles
       (user_id, first_name, last_name, username, college_name, college_division,
-       position_title, city, state, phone, bio)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+       position_title, city, state, phone, bio, conference)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
       RETURNING *`,
       [userId, first_name, last_name, username, college_name, college_division,
-       position_title, city, state, phone, bio]
+       position_title, city, state, phone, bio, conference]
     );
     return result.rows[0];
   }

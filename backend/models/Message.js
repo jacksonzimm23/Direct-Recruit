@@ -100,15 +100,16 @@ class Message {
               )) FILTER (WHERE u.id != $1) as participants,
               (SELECT content FROM messages WHERE conversation_id = c.id ORDER BY created_at DESC LIMIT 1) as last_message,
               (SELECT created_at FROM messages WHERE conversation_id = c.id ORDER BY created_at DESC LIMIT 1) as last_message_time,
-              (SELECT COUNT(*) FROM messages WHERE conversation_id = c.id AND sender_id != $1 AND read = false) as unread_count
+              (SELECT sender_id FROM messages WHERE conversation_id = c.id ORDER BY created_at DESC LIMIT 1) as last_message_sender_id,
+              cp_user.last_read_at
        FROM conversations c
-       JOIN conversation_participants cp_user ON c.id = cp_user.conversation_id
+       JOIN conversation_participants cp_user ON c.id = cp_user.conversation_id AND cp_user.user_id = $1
        JOIN conversation_participants cp_other ON c.id = cp_other.conversation_id
        JOIN users u ON cp_other.user_id = u.id
        LEFT JOIN player_profiles pp ON u.id = pp.user_id
        LEFT JOIN coach_profiles cp ON u.id = cp.user_id
        WHERE cp_user.user_id = $1
-       GROUP BY c.id
+       GROUP BY c.id, cp_user.last_read_at
        ORDER BY c.updated_at DESC
        LIMIT $2 OFFSET $3`,
       [userId, limit, offset]
@@ -116,9 +117,11 @@ class Message {
     return result.rows;
   }
 
-  static async markAsRead(conversationId, userId) {
+  static async markConversationAsRead(conversationId, userId) {
     await pool.query(
-      'UPDATE messages SET read = true WHERE conversation_id = $1 AND sender_id != $2 AND read = false',
+      `UPDATE conversation_participants
+       SET last_read_at = CURRENT_TIMESTAMP
+       WHERE conversation_id = $1 AND user_id = $2`,
       [conversationId, userId]
     );
   }

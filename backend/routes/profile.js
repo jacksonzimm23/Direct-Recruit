@@ -87,7 +87,9 @@ router.get('/player/:userId', authMiddleware, async (req, res) => {
     if (!profile) {
       return res.status(404).json({ error: 'Profile not found' });
     }
-    res.json({ profile });
+    // Get username from users table
+    const user = await User.findById(req.params.userId);
+    res.json({ profile: { ...profile, username: user?.username } });
   } catch (error) {
     console.error('Get player profile error:', error);
     res.status(500).json({ error: 'Failed to fetch profile' });
@@ -101,7 +103,9 @@ router.get('/coach/:userId', authMiddleware, async (req, res) => {
     if (!profile) {
       return res.status(404).json({ error: 'Profile not found' });
     }
-    res.json({ profile });
+    // Get username from users table
+    const user = await User.findById(req.params.userId);
+    res.json({ profile: { ...profile, username: user?.username } });
   } catch (error) {
     console.error('Get coach profile error:', error);
     res.status(500).json({ error: 'Failed to fetch profile' });

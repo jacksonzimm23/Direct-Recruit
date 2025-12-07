@@ -57,7 +57,9 @@ router.get('/conversations/:conversationId', authMiddleware, async (req, res) =>
     const offset = parseInt(req.query.offset) || 0;
 
     const messages = await Message.getConversationMessages(conversationId, limit, offset);
-    await Message.markAsRead(conversationId, req.userId);
+
+    // Mark conversation as read when user opens it
+    await Message.markConversationAsRead(conversationId, req.userId);
 
     res.json({ messages, count: messages.length });
   } catch (error) {
@@ -94,24 +96,6 @@ router.post('/conversations/:conversationId/messages', authMiddleware, messageLi
   } catch (error) {
     console.error('Send message error:', error);
     res.status(500).json({ error: 'Failed to send message' });
-  }
-});
-
-// Mark conversation as read
-router.post('/conversations/:conversationId/read', authMiddleware, async (req, res) => {
-  try {
-    const { conversationId } = req.params;
-
-    const isParticipant = await Message.isParticipant(conversationId, req.userId);
-    if (!isParticipant) {
-      return res.status(403).json({ error: 'Not a participant in this conversation' });
-    }
-
-    await Message.markAsRead(conversationId, req.userId);
-    res.json({ message: 'Marked as read' });
-  } catch (error) {
-    console.error('Mark read error:', error);
-    res.status(500).json({ error: 'Failed to mark as read' });
   }
 });
 
