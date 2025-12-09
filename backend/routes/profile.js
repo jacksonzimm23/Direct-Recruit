@@ -3,6 +3,7 @@ const router = express.Router();
 const PlayerProfile = require('../models/PlayerProfile');
 const CoachProfile = require('../models/CoachProfile');
 const User = require('../models/User');
+const ProfileView = require('../models/ProfileView');
 const { authMiddleware, requireRole } = require('../middleware/auth');
 const { validatePlayerProfile, validateCoachProfile, handleValidationErrors } = require('../middleware/validation');
 
@@ -87,9 +88,8 @@ router.get('/player/:userId', authMiddleware, async (req, res) => {
     if (!profile) {
       return res.status(404).json({ error: 'Profile not found' });
     }
-    // Get username from users table
-    const user = await User.findById(req.params.userId);
-    res.json({ profile: { ...profile, username: user?.username } });
+    // Profile already contains username from player_profiles table (SELECT *)
+    res.json({ profile });
   } catch (error) {
     console.error('Get player profile error:', error);
     res.status(500).json({ error: 'Failed to fetch profile' });
@@ -103,9 +103,8 @@ router.get('/coach/:userId', authMiddleware, async (req, res) => {
     if (!profile) {
       return res.status(404).json({ error: 'Profile not found' });
     }
-    // Get username from users table
-    const user = await User.findById(req.params.userId);
-    res.json({ profile: { ...profile, username: user?.username } });
+    // Profile already contains username from coach_profiles table (SELECT *)
+    res.json({ profile });
   } catch (error) {
     console.error('Get coach profile error:', error);
     res.status(500).json({ error: 'Failed to fetch profile' });
@@ -213,6 +212,68 @@ router.get('/username/:username', authMiddleware, async (req, res) => {
   } catch (error) {
     console.error('Get profile by username error:', error);
     res.status(500).json({ error: 'Failed to fetch profile' });
+  }
+});
+
+// Record a profile view (for HS players only)
+router.post('/view/:userId', authMiddleware, async (req, res) => {
+  try {
+    const viewedPlayerId = req.params.userId;
+    const viewerId = req.userId;
+
+    // Check if the viewed user is an HS player (no college_division)
+    const playerProfile = await PlayerProfile.findByUserId(viewedPlayerId);
+    if (!playerProfile) {
+      return res.status(404).json({ error: 'Player profile not found' });
+    }
+
+    // Only track views for HS players (those without college_division)
+    if (playerProfile.college_division && playerProfile.college_division.trim() !== '') {
+      return res.json({ success: true, isNewView: false, message: 'View tracking only for HS players' });
+    }
+
+    const isNewView = await ProfileView.recordView(viewedPlayerId, viewerId);
+
+    res.json({
+      success: true,
+      isNewView,
+      viewCount: await ProfileView.getViewCount(viewedPlayerId)
+    });
+  } catch (error) {
+    console.error('Record profile view error:', error);
+    res.status(500).json({ error: 'Failed to record profile view' });
+  }
+});
+
+// Get profile view count for a player
+router.get('/views/:userId', authMiddleware, async (req, res) => {
+  try {
+    const playerId = req.params.userId;
+    const viewCount = await ProfileView.getViewCount(playerId);
+
+    res.json({ viewCount });
+  } catch (error) {
+    console.error('Get view count error:', error);
+    res.status(500).json({ error: 'Failed to get view count' });
+  }
+});
+
+// Get list of viewers for a player's profile
+router.get('/viewers/:userId', authMiddleware, async (req, res) => {
+  try {
+    const playerId = req.params.userId;
+
+    // Only allow the profile owner to see their viewers
+    if (req.userId !== playerId) {
+      return res.status(403).json({ error: 'Not authorized to view this information' });
+    }
+
+    const viewers = await ProfileView.getViewers(playerId);
+
+    res.json({ viewers });
+  } catch (error) {
+    console.error('Get viewers error:', error);
+    res.status(500).json({ error: 'Failed to get viewers' });
   }
 });
 

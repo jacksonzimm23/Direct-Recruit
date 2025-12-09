@@ -69,7 +69,7 @@
                     <span>My Profile</span>
                 </a>
 
-                <a href="messages.html" class="nav-item">
+                <a href="messages.html" class="nav-item" id="messagesNavItem">
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
                     </svg>
@@ -393,40 +393,13 @@
         <!-- Right Sidebar -->
         <aside class="right-sidebar" id="rightSidebar">
             <!-- Profile Stats -->
-            <div class="widget">
+            <div class="widget" id="profileStatsWidget">
                 <h3 class="widget-title">Profile Stats</h3>
                 <div class="widget-content">
-                    <div class="profile-stat-item">
+                    <a href="#" class="profile-stat-item profile-stat-clickable" id="profileViewsLink">
                         <div class="profile-stat-label">Profile Views</div>
-                        <div class="profile-stat-value">342</div>
-                    </div>
-                    <div class="profile-stat-item">
-                        <div class="profile-stat-label">Coach Interests</div>
-                        <div class="profile-stat-value">18</div>
-                    </div>
-                    <div class="profile-stat-item">
-                        <div class="profile-stat-label">Messages</div>
-                        <div class="profile-stat-value">12</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Recent Activity -->
-            <div class="widget">
-                <h3 class="widget-title">Recent Activity</h3>
-                <div class="widget-content">
-                    <div class="activity-item">
-                        <div class="activity-text">Profile viewed by Coach Martinez</div>
-                        <div class="activity-time">2h ago</div>
-                    </div>
-                    <div class="activity-item">
-                        <div class="activity-text">New follower: Jake Morrison</div>
-                        <div class="activity-time">1d ago</div>
-                    </div>
-                    <div class="activity-item">
-                        <div class="activity-text">Stats updated</div>
-                        <div class="activity-time">3d ago</div>
-                    </div>
+                        <div class="profile-stat-value" id="profileViewsCount">0</div>
+                    </a>
                 </div>
             </div>
         </aside>
@@ -1269,6 +1242,25 @@
                 </button>
             </div>
             <div class="follow-list-modal-body" id="followListModalBody">
+                <div class="follow-list-loading">Loading...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Profile Viewers Modal -->
+    <div class="follow-list-modal" id="profileViewersModal">
+        <div class="follow-list-modal-overlay" id="profileViewersModalOverlay"></div>
+        <div class="follow-list-modal-content">
+            <div class="follow-list-modal-header">
+                <h2>Profile Viewers</h2>
+                <button class="follow-list-modal-close" id="profileViewersModalClose">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="follow-list-modal-body" id="profileViewersModalBody">
                 <div class="follow-list-loading">Loading...</div>
             </div>
         </div>

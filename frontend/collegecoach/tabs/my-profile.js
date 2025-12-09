@@ -85,11 +85,27 @@ function updateNavbarForLoggedInUser(role, profile) {
 
     const mainPage = role === 'player' ? 'mainpage-player.html' : 'mainpage-coach.html';
 
-    // Check if we came from discover page
+    // Determine which nav item should be active based on context
     const urlParams = new URLSearchParams(window.location.search);
     const fromPage = urlParams.get('from');
-    const feedActive = fromPage === 'discover' ? '' : 'active';
-    const discoverActive = fromPage === 'discover' ? 'active' : '';
+
+    // Determine active states - only one should be active
+    let feedActive = '';
+    let discoverActive = '';
+    let profileActive = '';
+    let messagesActive = '';
+
+    if (isOwnProfile) {
+        profileActive = 'active';
+    } else if (fromPage === 'messages') {
+        messagesActive = 'active';
+    } else if (fromPage === 'discover') {
+        discoverActive = 'active';
+    } else if (fromPage === 'profile') {
+        profileActive = 'active';
+    } else {
+        feedActive = 'active';
+    }
 
     // Rebuild the sidebar nav with the correct items for the logged-in user
     const sidebarNav = document.querySelector('.sidebar-nav');
@@ -112,14 +128,14 @@ function updateNavbarForLoggedInUser(role, profile) {
                     </svg>
                     <span>Discover</span>
                 </a>
-                <a href="/frontend/${userFolder}/tabs/my-profile.html" class="nav-item" id="profileNavItem">
+                <a href="/frontend/${userFolder}/tabs/my-profile.html" class="nav-item ${profileActive}" id="profileNavItem">
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
                         <circle cx="12" cy="7" r="4"></circle>
                     </svg>
                     <span>My Profile</span>
                 </a>
-                <a href="/frontend/${userFolder}/tabs/messages.html" class="nav-item">
+                <a href="/frontend/${userFolder}/tabs/messages.html" class="nav-item ${messagesActive}" id="messagesNavItem">
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
                     </svg>
@@ -156,14 +172,14 @@ function updateNavbarForLoggedInUser(role, profile) {
                     </svg>
                     <span>Discover</span>
                 </a>
-                <a href="/frontend/${userFolder}/tabs/my-profile.html" class="nav-item" id="profileNavItem">
+                <a href="/frontend/${userFolder}/tabs/my-profile.html" class="nav-item ${profileActive}" id="profileNavItem">
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
                         <circle cx="12" cy="7" r="4"></circle>
                     </svg>
                     <span>My Profile</span>
                 </a>
-                <a href="/frontend/${userFolder}/tabs/messages.html" class="nav-item">
+                <a href="/frontend/${userFolder}/tabs/messages.html" class="nav-item ${messagesActive}" id="messagesNavItem">
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
                     </svg>
@@ -852,28 +868,35 @@ async function setupFollowButton() {
 function updateActiveNavItem() {
     const feedNavItem = document.getElementById('feedNavItem');
     const profileNavItem = document.getElementById('profileNavItem');
+    const messagesNavItem = document.getElementById('messagesNavItem');
+    const discoverNavItem = document.querySelector('.nav-item[href*="discover"]');
 
     if (feedNavItem && profileNavItem) {
-        // Check if we came from discover page
+        // Check if we came from another page
         const urlParams = new URLSearchParams(window.location.search);
         const fromPage = urlParams.get('from');
-        const discoverNavItem = document.querySelector('.nav-item[href*="discover"]');
+
+        // Remove active from all first
+        feedNavItem.classList.remove('active');
+        profileNavItem.classList.remove('active');
+        if (discoverNavItem) discoverNavItem.classList.remove('active');
+        if (messagesNavItem) messagesNavItem.classList.remove('active');
 
         if (isOwnProfile) {
             // Viewing own profile - highlight My Profile
-            feedNavItem.classList.remove('active');
             profileNavItem.classList.add('active');
-            if (discoverNavItem) discoverNavItem.classList.remove('active');
+        } else if (fromPage === 'messages' && messagesNavItem) {
+            // Came from messages page - highlight Messages
+            messagesNavItem.classList.add('active');
         } else if (fromPage === 'discover' && discoverNavItem) {
             // Came from discover page - highlight Discover
-            profileNavItem.classList.remove('active');
-            feedNavItem.classList.remove('active');
             discoverNavItem.classList.add('active');
+        } else if (fromPage === 'profile' && profileNavItem) {
+            // Came from another profile (followers/following modal) - highlight My Profile
+            profileNavItem.classList.add('active');
         } else {
-            // Viewing someone else's profile from elsewhere - highlight Feed
-            profileNavItem.classList.remove('active');
+            // Viewing someone else's profile (from feed) - highlight Feed
             feedNavItem.classList.add('active');
-            if (discoverNavItem) discoverNavItem.classList.remove('active');
         }
     }
 }
@@ -1905,21 +1928,39 @@ async function openFollowListModal(type) {
         // Add click handlers to navigate to profiles
         modalBody.querySelectorAll('.follow-list-item').forEach(item => {
             item.addEventListener('click', async () => {
-                const userId = item.dataset.userId;
+                const visitorUserId = item.dataset.userId;
                 const role = item.dataset.role;
 
                 // Fetch the user's username to navigate to their profile
                 try {
                     let profileResponse;
                     if (role === 'player') {
-                        profileResponse = await API.get(`/profile/player/${userId}`);
+                        profileResponse = await API.get(`/profile/player/${visitorUserId}`);
                     } else {
-                        profileResponse = await API.get(`/profile/coach/${userId}`);
+                        profileResponse = await API.get(`/profile/coach/${visitorUserId}`);
                     }
 
                     if (profileResponse.profile && profileResponse.profile.username) {
                         closeFollowListModal();
-                        window.location.href = `my-profile.html?username=${profileResponse.profile.username}`;
+                        // Navigate to the appropriate profile page based on role and type
+                        const profile = profileResponse.profile;
+                        if (role === 'coach') {
+                            const isCollegeCoach = profile.college_division &&
+                                ['FBS', 'FCS', 'D2', 'D3', 'NAIA', 'NJCAA'].includes(profile.college_division);
+                            if (isCollegeCoach) {
+                                window.location.href = `my-profile.html?username=${profile.username}&from=profile`;
+                            } else {
+                                window.location.href = `../../hscoach/tabs/my-profile.html?username=${profile.username}&from=profile`;
+                            }
+                        } else {
+                            const isCollegePlayer = profile.college_division &&
+                                ['FBS', 'FCS', 'D2', 'D3', 'NAIA', 'NJCAA'].includes(profile.college_division);
+                            if (isCollegePlayer) {
+                                window.location.href = `../../collegeplayer/tabs/my-profile.html?username=${profile.username}&from=profile`;
+                            } else {
+                                window.location.href = `../../hsplayer/tabs/my-profile.html?username=${profile.username}&from=profile`;
+                            }
+                        }
                     }
                 } catch (error) {
                     console.error('Error fetching profile:', error);

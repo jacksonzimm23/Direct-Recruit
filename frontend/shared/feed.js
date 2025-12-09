@@ -1,5 +1,5 @@
-// Feed System - Dynamic Post Loading and Creation
-// This file handles all feed-related functionality for both player and coach dashboards
+// Feed System - Option 4: Two-Section Feed (Following + Discover)
+// This file handles all feed-related functionality for all profile dashboards
 
 class FeedManager {
     constructor() {
@@ -8,24 +8,19 @@ class FeedManager {
         this.postInput = document.querySelector('textarea.post-input');
         this.currentUserId = null;
         this.currentUserData = null;
+        this.currentFeedType = 'following'; // 'following' or 'discover'
+        this.followingOffset = 0;
+        this.discoverOffset = 0;
+        this.isLoading = false;
 
         this.init();
     }
 
     async init() {
-        // Get current user info
         await this.loadCurrentUser();
-
-        // Load initial feed
-        await this.loadFeed();
-
-        // Set up event listeners
         this.setupEventListeners();
-
-        // Debug: Log elements to verify they were found
-        console.log('Feed initialized');
-        console.log('Post button:', this.createPostBtn);
-        console.log('Post input:', this.postInput);
+        await this.loadFeed();
+        console.log('Feed initialized with Option 4: Two-Section Feed');
     }
 
     async loadCurrentUser() {
@@ -36,67 +31,31 @@ class FeedManager {
                 return;
             }
 
-            // Decode JWT to get user ID (simple decode, not validation)
             const payload = JSON.parse(atob(token.split('.')[1]));
             this.currentUserId = payload.userId;
-
-            // Store for later use
             this.currentUserData = {
                 userId: payload.userId,
                 role: payload.role
             };
 
-            // Update sidebar footer with user info
-            await this.updateSidebarFooter();
+            // Update create post avatar
+            await this.updateCreatePostAvatar();
         } catch (error) {
             console.error('Error loading user:', error);
-            window.location.href = '../landingpage/signin.html';
         }
     }
 
-    async updateSidebarFooter() {
+    async updateCreatePostAvatar() {
         try {
             const response = await API.get('/auth/me');
-            if (response.user && response.profile) {
-                const profile = response.profile;
-                const userRole = response.user.role;
-
-                // Update name
-                const userName = document.querySelector('.sidebar-footer .user-name');
-                if (userName) {
-                    userName.textContent = `${profile.first_name} ${profile.last_name}`;
-                }
-
-                // Update role/info line
-                const userRoleElement = document.querySelector('.sidebar-footer .user-role');
-                if (userRoleElement) {
-                    const parts = [];
-
-                    if (userRole === 'player') {
-                        // Player: Position, Height, Weight, State
-                        if (profile.position) parts.push(profile.position);
-                        if (profile.height) parts.push(profile.height);
-                        if (profile.weight) parts.push(`${profile.weight} lbs`);
-                        if (profile.state) parts.push(profile.state);
-                    } else if (userRole === 'coach') {
-                        // Coach: School name, State
-                        if (profile.college_name) parts.push(profile.college_name);
-                        if (profile.state) parts.push(profile.state);
-                    }
-
-                    userRoleElement.textContent = parts.join(', ') || (userRole === 'player' ? 'Player' : 'Coach');
-                }
-
-                // Update avatar if available
-                if (profile.profile_image_url) {
-                    const avatarElement = document.querySelector('.sidebar-footer .user-avatar-circle');
-                    if (avatarElement) {
-                        avatarElement.innerHTML = `<img src="${profile.profile_image_url}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
-                    }
+            if (response.profile?.profile_image_url) {
+                const avatar = document.querySelector('.create-post-box .post-avatar-circle');
+                if (avatar) {
+                    avatar.innerHTML = `<img src="${response.profile.profile_image_url}" alt="Your avatar" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
                 }
             }
         } catch (error) {
-            console.error('Error updating sidebar footer:', error);
+            console.error('Error updating avatar:', error);
         }
     }
 
@@ -106,41 +65,60 @@ class FeedManager {
             this.createPostBtn.addEventListener('click', () => this.createPost());
         }
 
-        // Allow Enter + Shift to submit
+        // Enter to submit (Shift+Enter for new line)
         if (this.postInput) {
             this.postInput.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter' && e.shiftKey) {
+                if (e.key === 'Enter' && !e.shiftKey) {
                     e.preventDefault();
                     this.createPost();
                 }
             });
-        }
 
-        // Post button in sidebar
-        const sidebarPostBtn = document.querySelector('.btn-post');
-        if (sidebarPostBtn) {
-            sidebarPostBtn.addEventListener('click', () => {
-                this.postInput?.focus();
-                this.postInput?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            // Auto-resize textarea
+            this.postInput.addEventListener('input', () => {
+                this.postInput.style.height = 'auto';
+                this.postInput.style.height = this.postInput.scrollHeight + 'px';
             });
         }
+
+        // Feed tab switching
+        document.addEventListener('click', (e) => {
+            if (e.target.closest('.feed-tab')) {
+                const tab = e.target.closest('.feed-tab');
+                const feedType = tab.dataset.feed;
+                if (feedType && feedType !== this.currentFeedType) {
+                    this.switchFeedTab(feedType);
+                }
+            }
+        });
+
+        // Infinite scroll
+        window.addEventListener('scroll', () => {
+            if (this.isLoading) return;
+            if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 500) {
+                this.loadMorePosts();
+            }
+        });
     }
 
     async loadFeed() {
+        this.showLoading();
+
         try {
-            // Show loading spinner
-            this.showLoading();
+            // Load feeds and user's reposts
+            const [followingResponse, discoverResponse, repostsResponse] = await Promise.all([
+                postsAPI.getFollowingFeed(10, 0),
+                postsAPI.getDiscoverFeed(10, 0),
+                postsAPI.getMyReposts(5, 0)
+            ]);
 
-            const response = await postsAPI.getFeed();
-
-            // Hide loading spinner
             this.hideLoading();
+            this.renderTwoSectionFeed(
+                followingResponse.posts || [],
+                discoverResponse.posts || [],
+                repostsResponse.posts || []
+            );
 
-            if (response.posts && response.posts.length > 0) {
-                this.renderPosts(response.posts);
-            } else {
-                this.showEmptyState();
-            }
         } catch (error) {
             console.error('Error loading feed:', error);
             this.hideLoading();
@@ -148,80 +126,244 @@ class FeedManager {
         }
     }
 
-    renderPosts(posts) {
+    renderTwoSectionFeed(followingPosts, discoverPosts, repostedPosts = []) {
         this.feedContainer.innerHTML = '';
 
-        posts.forEach(post => {
-            const postElement = this.createPostElement(post);
-            this.feedContainer.appendChild(postElement);
+        // Feed tabs
+        const tabsHtml = `
+            <div class="feed-tabs">
+                <button class="feed-tab ${this.currentFeedType === 'following' ? 'active' : ''}" data-feed="following">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="9" cy="7" r="4"></circle>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                    </svg>
+                    Your Network
+                </button>
+                <button class="feed-tab ${this.currentFeedType === 'discover' ? 'active' : ''}" data-feed="discover">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon>
+                    </svg>
+                    Discover
+                </button>
+            </div>
+        `;
+        this.feedContainer.innerHTML = tabsHtml;
+
+        // Create sections container
+        const sectionsContainer = document.createElement('div');
+        sectionsContainer.className = 'feed-sections';
+        this.feedContainer.appendChild(sectionsContainer);
+
+        // Following section
+        const followingSection = document.createElement('div');
+        followingSection.className = `feed-section ${this.currentFeedType === 'following' ? 'active' : ''}`;
+        followingSection.id = 'following-section';
+
+        // Add reposts and quote posts at top of following section
+        if (repostedPosts.length > 0) {
+            // Filter out reposts that are already in the following posts to avoid duplicates
+            const followingPostIds = new Set(followingPosts.map(p => p.id));
+            const uniqueReposts = repostedPosts.filter(p => !followingPostIds.has(p.original_post_id || p.id));
+
+            uniqueReposts.forEach(post => {
+                if (post.share_type === 'quote') {
+                    // Render quote post with user's comment and embedded original
+                    const postEl = this.createQuotePostElement(post);
+                    followingSection.appendChild(postEl);
+                } else {
+                    // Simple repost - show "You reposted" indicator
+                    const postEl = this.createPostElement(post, true);
+                    followingSection.appendChild(postEl);
+                }
+            });
+        }
+
+        if (followingPosts.length > 0) {
+            followingPosts.forEach(post => {
+                followingSection.appendChild(this.createPostElement(post));
+            });
+        } else if (repostedPosts.length === 0) {
+            // Only show empty message if no reposts either
+            followingSection.innerHTML = `
+                <div class="empty-section">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="9" cy="7" r="4"></circle>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                    </svg>
+                    <h3>No posts from your network</h3>
+                    <p>Follow coaches and players to see their updates here!</p>
+                </div>
+            `;
+        }
+        sectionsContainer.appendChild(followingSection);
+
+        // Discover section
+        const discoverSection = document.createElement('div');
+        discoverSection.className = `feed-section ${this.currentFeedType === 'discover' ? 'active' : ''}`;
+        discoverSection.id = 'discover-section';
+
+        if (discoverPosts.length > 0) {
+            discoverPosts.forEach(post => {
+                discoverSection.appendChild(this.createPostElement(post));
+            });
+        } else {
+            discoverSection.innerHTML = `
+                <div class="empty-section">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon>
+                    </svg>
+                    <h3>No posts to discover</h3>
+                    <p>Check back later for new content!</p>
+                </div>
+            `;
+        }
+        sectionsContainer.appendChild(discoverSection);
+    }
+
+    switchFeedTab(feedType) {
+        this.currentFeedType = feedType;
+
+        // Update tabs
+        document.querySelectorAll('.feed-tab').forEach(tab => {
+            tab.classList.toggle('active', tab.dataset.feed === feedType);
+        });
+
+        // Update sections
+        document.querySelectorAll('.feed-section').forEach(section => {
+            section.classList.toggle('active', section.id === `${feedType}-section`);
         });
     }
 
-    createPostElement(post) {
+    createPostElement(post, showRepostIndicator = false) {
         const article = document.createElement('article');
         article.className = 'post-card';
         article.dataset.postId = post.id;
+        article.dataset.userReposted = post.user_reposted ? 'true' : 'false';
 
         const timeAgo = this.getTimeAgo(post.created_at);
         const isLiked = post.user_liked || false;
+        const isSaved = post.user_saved || false;
+        const isReposted = post.user_reposted || false;
+        const isOwnPost = post.user_id === this.currentUserId;
+        const authorName = `${post.author_first_name || ''} ${post.author_last_name || ''}`.trim() || 'Unknown User';
+
+        // Repost indicator HTML
+        const repostIndicator = showRepostIndicator ? `
+            <div class="repost-indicator">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                    <polyline points="17 1 21 5 17 9"></polyline>
+                    <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
+                    <polyline points="7 23 3 19 7 15"></polyline>
+                    <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
+                </svg>
+                <span>You reposted</span>
+            </div>
+        ` : '';
+
+        // Build meta info based on role
+        let metaInfo = '';
+        if (post.author_role === 'player') {
+            const parts = [];
+            if (post.author_position) parts.push(post.author_position);
+            if (post.author_school) parts.push(post.author_school);
+            // Show division for college players, grad year for HS players
+            if (post.author_division) {
+                parts.push(post.author_division);
+            } else if (post.author_grad_year) {
+                parts.push(`Class of ${post.author_grad_year}`);
+            }
+            parts.push(timeAgo);
+            metaInfo = parts.join(' • ');
+        } else {
+            const parts = [];
+            if (post.author_position) parts.push(post.author_position);
+            if (post.author_school) parts.push(post.author_school);
+            if (post.author_division) parts.push(post.author_division);
+            parts.push(timeAgo);
+            metaInfo = parts.join(' • ');
+        }
+
+        // Build media HTML
+        let mediaHtml = '';
+        if (post.media_urls && post.media_urls.length > 0) {
+            if (post.media_type === 'video') {
+                mediaHtml = `
+                    <div class="post-media">
+                        <video controls src="${post.media_urls[0]}"></video>
+                    </div>
+                `;
+            } else {
+                const imageCount = post.media_urls.length;
+                mediaHtml = `
+                    <div class="post-media post-media-${Math.min(imageCount, 4)}">
+                        ${post.media_urls.slice(0, 4).map((url, i) => `
+                            <img src="${url}" alt="Post media ${i + 1}" onclick="feedManager.openMediaViewer('${url}')">
+                        `).join('')}
+                        ${imageCount > 4 ? `<div class="media-overflow">+${imageCount - 4}</div>` : ''}
+                    </div>
+                `;
+            }
+        }
 
         article.innerHTML = `
+            ${repostIndicator}
             <div class="post-header">
-                <div class="post-avatar-circle">
-                    ${post.profile_image_url ?
-                        `<img src="${post.profile_image_url}" alt="${post.author_name}">` :
-                        `<svg viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                            <circle cx="12" cy="7" r="4"></circle>
-                        </svg>`
-                    }
-                </div>
-                <div class="post-user-info">
-                    <div class="post-user-name">
-                        ${post.author_name || 'Unknown User'}
-                        ${post.author_verified ? `
-                            <svg class="verified-badge" viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
-                                <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"/>
-                            </svg>
-                        ` : ''}
-                    </div>
-                    <div class="post-meta ${post.author_role === 'coach' ? 'coach-meta' : 'player-meta'}">
-                        ${post.author_role === 'player' ?
-                            `${post.author_position || ''} ${post.author_school || ''} • ${timeAgo}` :
-                            `${post.author_title || 'Coach'} • ${post.author_school || ''} • ${timeAgo}`
+                <a href="#" class="post-avatar-link" onclick="feedManager.goToProfile('${post.author_username || post.user_id}', '${post.author_role}'); return false;">
+                    <div class="post-avatar-circle">
+                        ${post.author_image ?
+                            `<img src="${post.author_image}" alt="${authorName}">` :
+                            `<svg viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="12" cy="7" r="4"></circle>
+                            </svg>`
                         }
                     </div>
+                </a>
+                <div class="post-user-info">
+                    <a href="#" class="post-user-name" onclick="feedManager.goToProfile('${post.author_username || post.user_id}', '${post.author_role}'); return false;">
+                        ${authorName}
+                        ${post.author_verified ? `
+                            <svg class="verified-badge" viewBox="0 0 24 24" fill="#1DA1F2">
+                                <path d="M22.5 12.5c0-1.58-.875-2.95-2.148-3.6.154-.435.238-.905.238-1.4 0-2.21-1.71-3.998-3.818-3.998-.47 0-.92.084-1.336.25C14.818 2.415 13.51 1.5 12 1.5s-2.816.917-3.437 2.25c-.415-.165-.866-.25-1.336-.25-2.11 0-3.818 1.79-3.818 4 0 .494.083.964.237 1.4-1.272.65-2.147 2.018-2.147 3.6 0 1.495.782 2.798 1.942 3.486-.02.17-.032.34-.032.514 0 2.21 1.708 4 3.818 4 .47 0 .92-.086 1.335-.25.62 1.334 1.926 2.25 3.437 2.25 1.512 0 2.818-.916 3.437-2.25.415.163.865.248 1.336.248 2.11 0 3.818-1.79 3.818-4 0-.174-.012-.344-.033-.513 1.158-.687 1.943-1.99 1.943-3.484zm-6.616-3.334l-4.334 6.5c-.145.217-.382.334-.625.334-.143 0-.288-.04-.416-.126l-.115-.094-2.415-2.415c-.293-.293-.293-.768 0-1.06s.768-.294 1.06 0l1.77 1.767 3.825-5.74c.23-.345.696-.436 1.04-.207.346.23.44.696.21 1.04z"/>
+                            </svg>
+                        ` : ''}
+                    </a>
+                    <div class="post-meta ${post.author_role === 'coach' ? 'coach-meta' : 'player-meta'}">
+                        ${metaInfo}
+                    </div>
                 </div>
-                ${post.user_id === this.currentUserId ? `
-                    <button class="post-more-btn" onclick="feedManager.deletePost('${post.id}')">
+                <div class="post-header-actions">
+                    ${!isOwnPost && !post.is_following ? `
+                        <button class="btn-follow-small" onclick="feedManager.followUser('${post.user_id}', this)">Follow</button>
+                    ` : ''}
+                    <button class="post-more-btn" onclick="feedManager.showPostMenu('${post.id}', ${isOwnPost}, event)">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <circle cx="12" cy="12" r="1"></circle>
                             <circle cx="19" cy="12" r="1"></circle>
                             <circle cx="5" cy="12" r="1"></circle>
                         </svg>
                     </button>
-                ` : ''}
+                </div>
             </div>
             <div class="post-content">
-                <p>${this.escapeHtml(post.content)}</p>
-                ${post.media_url ? `
-                    <div class="post-image">
-                        <img src="${post.media_url}" alt="Post media">
-                    </div>
-                ` : ''}
+                <p>${this.formatContent(post.content)}</p>
+                ${mediaHtml}
             </div>
             <div class="post-stats">
-                <span>${post.likes_count || 0} ${post.likes_count === 1 ? 'like' : 'likes'}</span>
-                ${post.comments_count > 0 ?
-                    `<span class="comments-link" onclick="feedManager.toggleComments('${post.id}')" style="cursor: pointer; color: var(--cerulean);">${post.comments_count} ${post.comments_count === 1 ? 'comment' : 'comments'}</span>` :
-                    `<span>${post.comments_count || 0} ${post.comments_count === 1 ? 'comment' : 'comments'}</span>`
-                }
+                <span class="likes-count" onclick="feedManager.showLikes('${post.id}')">${post.likes_count || 0} ${post.likes_count === 1 ? 'like' : 'likes'}</span>
+                <span class="comments-count" onclick="feedManager.toggleComments('${post.id}')">${post.comments_count || 0} ${post.comments_count === 1 ? 'comment' : 'comments'}</span>
+                <span class="post-shares-count" onclick="feedManager.showShares('${post.id}')">${post.shares_count || 0} ${(post.shares_count || 0) === 1 ? 'share' : 'shares'}</span>
             </div>
             <div class="post-actions-bar">
                 <button class="post-action-btn ${isLiked ? 'liked' : ''}" onclick="feedManager.toggleLike('${post.id}', this)">
                     <svg viewBox="0 0 24 24" fill="${isLiked ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2">
-                        <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path>
+                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
                     </svg>
                     <span>${isLiked ? 'Liked' : 'Like'}</span>
                 </button>
@@ -231,32 +373,239 @@ class FeedManager {
                     </svg>
                     <span>Comment</span>
                 </button>
-                <button class="post-action-btn">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path>
-                        <polyline points="16 6 12 2 8 6"></polyline>
-                        <line x1="12" y1="2" x2="12" y2="15"></line>
+                <button class="post-action-btn ${isSaved ? 'saved' : ''}" onclick="feedManager.toggleSave('${post.id}', this)">
+                    <svg viewBox="0 0 24 24" fill="${isSaved ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2">
+                        <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
                     </svg>
-                    <span>Share</span>
+                    <span>${isSaved ? 'Saved' : 'Save'}</span>
+                </button>
+                <button class="post-action-btn ${isReposted ? 'reposted' : ''}" onclick="feedManager.sharePost('${post.id}', event)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="17 1 21 5 17 9"></polyline>
+                        <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
+                        <polyline points="7 23 3 19 7 15"></polyline>
+                        <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
+                    </svg>
+                    <span class="shares-count">${isReposted ? 'Reposted' : ((post.shares_count || 0) + ' ' + ((post.shares_count || 0) === 1 ? 'share' : 'shares'))}</span>
                 </button>
             </div>
-            <div class="post-comments" id="comments-${post.id}" style="display: none;">
-                <!-- Comments will be loaded here -->
+            <div class="post-comments-section" id="comments-${post.id}" style="display: none;">
+                <div class="comments-list"></div>
+                <div class="comment-input-container">
+                    <input type="text" placeholder="Write a comment..." class="comment-input" id="comment-input-${post.id}" onkeypress="if(event.key==='Enter') feedManager.addComment('${post.id}')">
+                    <button onclick="feedManager.addComment('${post.id}')">Post</button>
+                </div>
             </div>
         `;
 
         return article;
     }
 
+    // Create a quote post element (user's comment with embedded original post)
+    createQuotePostElement(post) {
+        const article = document.createElement('article');
+        article.className = 'post-card quote-post-card';
+        article.dataset.postId = post.id;
+        article.dataset.originalPostId = post.original_post_id;
+
+        const timeAgo = this.getTimeAgo(post.reposted_at || post.created_at);
+        const quoterName = `${post.quoter_first_name || ''} ${post.quoter_last_name || ''}`.trim() || 'You';
+        const originalAuthorName = `${post.author_first_name || ''} ${post.author_last_name || ''}`.trim() || 'Unknown User';
+        const originalTimeAgo = this.getTimeAgo(post.original_created_at);
+
+        article.innerHTML = `
+            <div class="repost-indicator quote-indicator">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                </svg>
+                <span>You quote posted</span>
+            </div>
+            <div class="post-header">
+                <div class="post-avatar-circle">
+                    ${post.quoter_image ?
+                        `<img src="${post.quoter_image}" alt="${quoterName}">` :
+                        `<svg viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="12" cy="7" r="4"></circle>
+                        </svg>`
+                    }
+                </div>
+                <div class="post-user-info">
+                    <div class="post-user-name">${quoterName}</div>
+                    <div class="post-meta">${timeAgo}</div>
+                </div>
+                <div class="post-header-actions">
+                    <button class="post-more-btn" onclick="feedManager.showQuotePostMenu('${post.id}', event)">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="1"></circle>
+                            <circle cx="19" cy="12" r="1"></circle>
+                            <circle cx="5" cy="12" r="1"></circle>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <div class="post-content">
+                <p>${this.formatContent(post.quote_content)}</p>
+            </div>
+            <div class="quoted-post-embed">
+                <div class="quoted-post-header">
+                    <div class="quoted-post-avatar">
+                        ${post.author_image ?
+                            `<img src="${post.author_image}" alt="${originalAuthorName}">` :
+                            `<svg viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="12" cy="7" r="4"></circle>
+                            </svg>`
+                        }
+                    </div>
+                    <div class="quoted-post-info">
+                        <span class="quoted-post-author">${originalAuthorName}</span>
+                        <span class="quoted-post-time">${originalTimeAgo}</span>
+                    </div>
+                </div>
+                <div class="quoted-post-content">
+                    ${this.formatContent(post.original_content || post.content)}
+                </div>
+            </div>
+            <div class="post-stats">
+                <span class="likes-count" onclick="feedManager.showLikes('${post.original_post_id}')">${post.likes_count || 0} ${post.likes_count === 1 ? 'like' : 'likes'}</span>
+                <span class="comments-count">${post.comments_count || 0} ${post.comments_count === 1 ? 'comment' : 'comments'}</span>
+                <span class="post-shares-count" onclick="feedManager.showShares('${post.original_post_id}')">${post.shares_count || 0} ${(post.shares_count || 0) === 1 ? 'share' : 'shares'}</span>
+            </div>
+            <div class="post-actions-bar">
+                <button class="post-action-btn" onclick="feedManager.toggleLike('${post.original_post_id}', this)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                    </svg>
+                    <span>Like</span>
+                </button>
+                <button class="post-action-btn" onclick="feedManager.toggleComments('${post.original_post_id}')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                    <span>Comment</span>
+                </button>
+                <button class="post-action-btn" onclick="feedManager.sharePost('${post.original_post_id}', event)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="17 1 21 5 17 9"></polyline>
+                        <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
+                        <polyline points="7 23 3 19 7 15"></polyline>
+                        <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
+                    </svg>
+                    <span>Share</span>
+                </button>
+            </div>
+        `;
+
+        return article;
+    }
+
+    // Menu for quote posts (delete quote)
+    showQuotePostMenu(shareId, event) {
+        event.stopPropagation();
+
+        // Remove existing menu
+        const existing = document.querySelector('.post-dropdown-menu');
+        if (existing) existing.remove();
+
+        const menu = document.createElement('div');
+        menu.className = 'post-dropdown-menu';
+        menu.innerHTML = `
+            <div class="dropdown-item dropdown-item-danger" onclick="feedManager.deleteQuotePost('${shareId}')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="3 6 5 6 21 6"></polyline>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                </svg>
+                Delete Quote Post
+            </div>
+        `;
+
+        document.body.appendChild(menu);
+
+        // Position menu
+        const btn = event.target.closest('.post-more-btn');
+        const rect = btn.getBoundingClientRect();
+        menu.style.top = rect.bottom + 5 + 'px';
+        menu.style.right = window.innerWidth - rect.right + 'px';
+
+        // Close on outside click
+        setTimeout(() => {
+            document.addEventListener('click', function closeMenu() {
+                menu.remove();
+                document.removeEventListener('click', closeMenu);
+            });
+        }, 0);
+    }
+
+    async deleteQuotePost(shareId) {
+        // Close menu
+        document.querySelector('.post-dropdown-menu')?.remove();
+
+        // Create delete confirmation modal
+        const modal = document.createElement('div');
+        modal.className = 'feed-modal-overlay';
+        modal.id = 'delete-quote-modal';
+        modal.innerHTML = `
+            <div class="feed-modal">
+                <div class="delete-modal">
+                    <div class="delete-modal-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="3 6 5 6 21 6"></polyline>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                        </svg>
+                    </div>
+                    <h3>Delete Quote Post</h3>
+                    <p>Are you sure you want to delete this quote post?</p>
+                    <div class="delete-modal-actions">
+                        <button class="delete-modal-btn delete-modal-btn-cancel" onclick="feedManager.closeModal('delete-quote-modal')">Cancel</button>
+                        <button class="delete-modal-btn delete-modal-btn-delete" onclick="feedManager.confirmDeleteQuote('${shareId}')">Delete</button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                this.closeModal('delete-quote-modal');
+            }
+        });
+    }
+
+    async confirmDeleteQuote(shareId) {
+        try {
+            await postsAPI.unsharePost(shareId);
+            document.querySelector(`[data-post-id="${shareId}"]`)?.remove();
+            this.closeModal('delete-quote-modal');
+            this.showToast('Quote post deleted', 'success');
+        } catch (error) {
+            console.error('Error deleting quote post:', error);
+            this.showToast('Failed to delete quote post', 'error');
+        }
+    }
+
+    formatContent(content) {
+        if (!content) return '';
+        // Escape HTML
+        let formatted = this.escapeHtml(content);
+        // Convert newlines to <br>
+        formatted = formatted.replace(/\n/g, '<br>');
+        // Make URLs clickable
+        formatted = formatted.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>');
+        // Make hashtags clickable
+        formatted = formatted.replace(/#(\w+)/g, '<span class="hashtag">#$1</span>');
+        // Make mentions clickable
+        formatted = formatted.replace(/@(\w+)/g, '<span class="mention">@$1</span>');
+        return formatted;
+    }
+
+    // ==================== POST ACTIONS ====================
+
     async createPost() {
         const content = this.postInput?.value.trim();
-
-        console.log('Create post clicked');
-        console.log('Post input element:', this.postInput);
-        console.log('Post content:', content);
-
         if (!content) {
-            alert('Please write something before posting!');
+            this.showToast('Please write something before posting!', 'error');
             return;
         }
 
@@ -264,110 +613,139 @@ class FeedManager {
             this.createPostBtn.disabled = true;
             this.createPostBtn.textContent = 'Posting...';
 
-            const postData = {
-                content: content
-            };
+            // Check if this is a quote post
+            const quotedPostId = this.postInput.dataset.quotedPost;
 
-            console.log('Sending post data:', postData);
-            const response = await postsAPI.createPost(postData);
-            console.log('Post created successfully:', response);
+            if (quotedPostId) {
+                // Create a quote post (share with quote content)
+                await postsAPI.sharePost(quotedPostId, 'quote', content);
+                this.showToast('Quote posted!', 'success');
 
-            // Clear input
+                // Clean up quote preview
+                this.cancelQuote();
+            } else {
+                // Regular post
+                await postsAPI.createPost({ content });
+                this.showToast('Post created!', 'success');
+            }
+
             this.postInput.value = '';
-
-            // Reload feed to show new post
+            this.postInput.style.height = 'auto';
             await this.loadFeed();
-
-            // Scroll to top to see new post
             window.scrollTo({ top: 0, behavior: 'smooth' });
 
         } catch (error) {
             console.error('Error creating post:', error);
-            alert('Failed to create post. Please try again.');
+            this.showToast('Failed to create post', 'error');
         } finally {
             this.createPostBtn.disabled = false;
             this.createPostBtn.textContent = 'Post';
         }
     }
 
-    async toggleLike(postId, buttonElement) {
+    async toggleLike(postId, button) {
+        const isLiked = button.classList.contains('liked');
+        const svg = button.querySelector('svg');
+        const span = button.querySelector('span');
+        const statsEl = button.closest('.post-card').querySelector('.likes-count');
+
         try {
-            console.log('Toggle like clicked for post:', postId);
-            console.log('Button element:', buttonElement);
-
-            const isLiked = buttonElement.classList.contains('liked');
-            console.log('Is currently liked:', isLiked);
-
             if (isLiked) {
-                console.log('Unliking post...');
-                const result = await postsAPI.unlikePost(postId);
-                console.log('Unlike result:', result);
+                await postsAPI.unlikePost(postId);
+                button.classList.remove('liked');
+                svg.setAttribute('fill', 'none');
+                span.textContent = 'Like';
+                // Update count
+                const count = parseInt(statsEl.textContent) - 1;
+                statsEl.textContent = `${count} ${count === 1 ? 'like' : 'likes'}`;
             } else {
-                console.log('Liking post...');
-                const result = await postsAPI.likePost(postId);
-                console.log('Like result:', result);
+                await postsAPI.likePost(postId);
+                button.classList.add('liked');
+                svg.setAttribute('fill', 'currentColor');
+                span.textContent = 'Liked';
+                // Update count
+                const count = parseInt(statsEl.textContent) + 1;
+                statsEl.textContent = `${count} ${count === 1 ? 'like' : 'likes'}`;
             }
-
-            console.log('Like toggled successfully, reloading feed...');
-            // Reload feed to update counts
-            await this.loadFeed();
-            console.log('Feed reloaded');
-
         } catch (error) {
             console.error('Error toggling like:', error);
-            alert('Failed to update like. Please try again.');
+            this.showToast('Failed to update like', 'error');
+        }
+    }
+
+    async toggleSave(postId, button) {
+        const isSaved = button.classList.contains('saved');
+        const svg = button.querySelector('svg');
+        const span = button.querySelector('span');
+
+        try {
+            if (isSaved) {
+                await postsAPI.unsavePost(postId);
+                button.classList.remove('saved');
+                svg.setAttribute('fill', 'none');
+                span.textContent = 'Save';
+                this.showToast('Post removed from saved', 'success');
+            } else {
+                await postsAPI.savePost(postId);
+                button.classList.add('saved');
+                svg.setAttribute('fill', 'currentColor');
+                span.textContent = 'Saved';
+                this.showToast('Post saved!', 'success');
+            }
+        } catch (error) {
+            console.error('Error toggling save:', error);
+            this.showToast('Failed to update save', 'error');
         }
     }
 
     async toggleComments(postId) {
-        const commentsSection = document.getElementById(`comments-${postId}`);
-
-        if (commentsSection.style.display === 'none') {
-            // Load and show comments
+        const section = document.getElementById(`comments-${postId}`);
+        if (section.style.display === 'none') {
             await this.loadComments(postId);
-            commentsSection.style.display = 'block';
+            section.style.display = 'block';
+            section.querySelector('.comment-input').focus();
         } else {
-            // Hide comments
-            commentsSection.style.display = 'none';
+            section.style.display = 'none';
         }
     }
 
     async loadComments(postId) {
         try {
             const response = await postsAPI.getComments(postId);
-            console.log('Comments response:', response);
-            const commentsSection = document.getElementById(`comments-${postId}`);
+            const listEl = document.querySelector(`#comments-${postId} .comments-list`);
 
             if (response.comments && response.comments.length > 0) {
-                commentsSection.innerHTML = `
-                    <div class="comments-list">
-                        ${response.comments.map(comment => {
-                            console.log('Processing comment:', comment);
-                            const authorName = `${comment.author_first_name || ''} ${comment.author_last_name || ''}`.trim() || 'Unknown User';
-                            const commentContent = comment.content || '';
-                            console.log('Comment content:', commentContent);
-                            return `
-                                <div class="comment">
-                                    <div class="comment-author">${authorName}</div>
-                                    <div class="comment-content">${this.escapeHtml(commentContent)}</div>
-                                    <div class="comment-time">${this.getTimeAgo(comment.created_at)}</div>
-                                </div>
-                            `;
-                        }).join('')}
+                const isOwnComment = (userId) => userId === this.currentUserId;
+                listEl.innerHTML = response.comments.map(comment => `
+                    <div class="comment" data-comment-id="${comment.id}">
+                        <div class="comment-avatar">
+                            ${comment.author_image ?
+                                `<img src="${comment.author_image}" alt="">` :
+                                `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>`
+                            }
+                        </div>
+                        <div class="comment-body">
+                            <div class="comment-header">
+                                <span class="comment-author">${comment.author_first_name || ''} ${comment.author_last_name || ''}</span>
+                                <span class="comment-time">${this.getTimeAgo(comment.created_at)}</span>
+                            </div>
+                            <div class="comment-content">${this.escapeHtml(comment.content)}</div>
+                            <div class="comment-actions">
+                                <button class="comment-like-btn ${comment.user_liked ? 'liked' : ''}" data-liked="${comment.user_liked ? 'true' : 'false'}" onclick="feedManager.toggleCommentLike('${comment.id}', this)">
+                                    <svg viewBox="0 0 24 24" fill="${comment.user_liked ? '#e74c3c' : 'none'}" stroke="${comment.user_liked ? '#e74c3c' : 'currentColor'}" stroke-width="2" width="14" height="14">
+                                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                                    </svg>
+                                    <span class="comment-like-count">${comment.likes_count || 0}</span>
+                                </button>
+                                <button onclick="feedManager.replyToComment('${postId}', '${comment.id}', '${comment.author_first_name || ''} ${comment.author_last_name || ''}')">Reply</button>
+                                <button onclick="feedManager.repostComment('${postId}', '${comment.id}')">Repost</button>
+                                ${comment.user_id === this.currentUserId ? `<button class="comment-delete-btn" onclick="feedManager.deleteComment('${postId}', '${comment.id}')">Delete</button>` : ''}
+                            </div>
+                        </div>
                     </div>
-                    <div class="comment-input-container">
-                        <input type="text" placeholder="Write a comment..." class="comment-input" id="comment-input-${postId}">
-                        <button onclick="feedManager.addComment('${postId}')">Post</button>
-                    </div>
-                `;
+                `).join('');
             } else {
-                commentsSection.innerHTML = `
-                    <div class="no-comments">No comments yet. Be the first to comment!</div>
-                    <div class="comment-input-container">
-                        <input type="text" placeholder="Write a comment..." class="comment-input" id="comment-input-${postId}">
-                        <button onclick="feedManager.addComment('${postId}')">Post</button>
-                    </div>
-                `;
+                listEl.innerHTML = '<div class="no-comments">No comments yet. Be the first!</div>';
             }
         } catch (error) {
             console.error('Error loading comments:', error);
@@ -377,30 +755,468 @@ class FeedManager {
     async addComment(postId) {
         const input = document.getElementById(`comment-input-${postId}`);
         const content = input?.value.trim();
-
         if (!content) return;
 
         try {
-            await postsAPI.addComment(postId, content);
+            // Check if replying to a comment
+            const parentCommentId = input.dataset.replyTo || null;
+            await postsAPI.addComment(postId, content, parentCommentId);
+            input.value = '';
+            input.placeholder = 'Write a comment...';
+            delete input.dataset.replyTo;
+
+            // Hide reply indicator if present
+            const replyIndicator = document.getElementById(`reply-indicator-${postId}`);
+            if (replyIndicator) replyIndicator.remove();
+
             await this.loadComments(postId);
-            await this.loadFeed(); // Reload to update comment counts
+
+            // Update comment count
+            const statsEl = document.querySelector(`[data-post-id="${postId}"] .comments-count`);
+            if (statsEl) {
+                const count = parseInt(statsEl.textContent) + 1;
+                statsEl.textContent = `${count} ${count === 1 ? 'comment' : 'comments'}`;
+            }
         } catch (error) {
             console.error('Error adding comment:', error);
-            alert('Failed to add comment. Please try again.');
+            this.showToast('Failed to add comment', 'error');
         }
     }
 
-    async deletePost(postId) {
-        if (!confirm('Are you sure you want to delete this post?')) {
+    async deleteComment(postId, commentId) {
+        // Create delete confirmation modal
+        const modal = document.createElement('div');
+        modal.className = 'feed-modal-overlay';
+        modal.id = 'delete-comment-modal';
+        modal.innerHTML = `
+            <div class="feed-modal">
+                <div class="delete-modal">
+                    <div class="delete-modal-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="3 6 5 6 21 6"></polyline>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                        </svg>
+                    </div>
+                    <h3>Delete Comment</h3>
+                    <p>Are you sure you want to delete this comment?</p>
+                    <div class="delete-modal-actions">
+                        <button class="delete-modal-btn delete-modal-btn-cancel" onclick="feedManager.closeModal('delete-comment-modal')">Cancel</button>
+                        <button class="delete-modal-btn delete-modal-btn-delete" onclick="feedManager.confirmDeleteComment('${postId}', '${commentId}')">Delete</button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        // Close on overlay click
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                this.closeModal('delete-comment-modal');
+            }
+        });
+    }
+
+    async confirmDeleteComment(postId, commentId) {
+        try {
+            await postsAPI.deleteComment(postId, commentId);
+
+            // Remove comment from DOM
+            const commentEl = document.querySelector(`[data-comment-id="${commentId}"]`);
+            if (commentEl) commentEl.remove();
+
+            // Update comment count
+            const statsEl = document.querySelector(`[data-post-id="${postId}"] .comments-count`);
+            if (statsEl) {
+                const count = Math.max(0, parseInt(statsEl.textContent) - 1);
+                statsEl.textContent = `${count} ${count === 1 ? 'comment' : 'comments'}`;
+            }
+
+            this.closeModal('delete-comment-modal');
+            this.showToast('Comment deleted', 'success');
+        } catch (error) {
+            console.error('Error deleting comment:', error);
+            this.showToast('Failed to delete comment', 'error');
+        }
+    }
+
+    repostComment(postId, commentId) {
+        // Create a repost modal or redirect to create post with quoted comment
+        this.showToast('Repost feature coming soon!', 'info');
+    }
+
+    async sharePost(postId, event) {
+        event?.stopPropagation();
+
+        // Remove existing share menu
+        const existing = document.querySelector('.share-menu');
+        if (existing) existing.remove();
+
+        // Check if user has already reposted
+        const postCard = document.querySelector(`[data-post-id="${postId}"]`);
+        const isReposted = postCard?.dataset.userReposted === 'true';
+
+        // Create share menu
+        const menu = document.createElement('div');
+        menu.className = 'share-menu post-dropdown-menu';
+        menu.innerHTML = `
+            <div class="dropdown-item ${isReposted ? 'dropdown-item-danger' : ''}" onclick="feedManager.repostPost('${postId}')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                    <polyline points="17 1 21 5 17 9"></polyline>
+                    <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
+                    <polyline points="7 23 3 19 7 15"></polyline>
+                    <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
+                </svg>
+                ${isReposted ? 'Undo Repost' : 'Repost'}
+            </div>
+            <div class="dropdown-item" onclick="feedManager.quotePost('${postId}')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                </svg>
+                Quote Post
+            </div>
+            <div class="dropdown-item" onclick="feedManager.copyPostLink('${postId}')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                    <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                    <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+                </svg>
+                Copy Link
+            </div>
+        `;
+
+        // Position menu near the share button using absolute positioning
+        const btn = event?.target?.closest('.post-action-btn');
+        if (btn) {
+            // Append to the post card for proper scroll behavior
+            const postCard = btn.closest('.post-card');
+            if (postCard) {
+                postCard.style.position = 'relative';
+                menu.style.position = 'absolute';
+                menu.style.bottom = '60px';
+                menu.style.right = '0';
+                postCard.appendChild(menu);
+            } else {
+                document.body.appendChild(menu);
+                const rect = btn.getBoundingClientRect();
+                menu.style.position = 'fixed';
+                menu.style.top = rect.bottom + 5 + 'px';
+                menu.style.left = rect.left + 'px';
+            }
+        } else {
+            document.body.appendChild(menu);
+        }
+
+        // Close on outside click
+        setTimeout(() => {
+            document.addEventListener('click', function closeMenu(e) {
+                if (!menu.contains(e.target)) {
+                    menu.remove();
+                    document.removeEventListener('click', closeMenu);
+                }
+            });
+        }, 0);
+    }
+
+    async repostPost(postId) {
+        const postCard = document.querySelector(`[data-post-id="${postId}"]`);
+        const isReposted = postCard?.dataset.userReposted === 'true';
+        const shareBtn = postCard?.querySelector('.post-action-btn:last-of-type');
+        const btnStatsEl = shareBtn?.querySelector('.shares-count');
+        const postStatsEl = postCard?.querySelector('.post-shares-count');
+
+        try {
+            document.querySelector('.share-menu')?.remove();
+
+            if (isReposted) {
+                // Undo repost
+                await postsAPI.unrepostPost(postId);
+                postCard.dataset.userReposted = 'false';
+                if (shareBtn) shareBtn.classList.remove('reposted');
+
+                // Update button text
+                if (btnStatsEl) {
+                    const currentCount = parseInt(postStatsEl?.textContent) || 0;
+                    const newCount = Math.max(0, currentCount - 1);
+                    btnStatsEl.textContent = `${newCount} ${newCount === 1 ? 'share' : 'shares'}`;
+                }
+
+                // Update post stats
+                if (postStatsEl) {
+                    const currentCount = parseInt(postStatsEl.textContent) || 0;
+                    const newCount = Math.max(0, currentCount - 1);
+                    postStatsEl.textContent = `${newCount} ${newCount === 1 ? 'share' : 'shares'}`;
+                }
+
+                this.showToast('Repost removed', 'success');
+            } else {
+                // Repost
+                const result = await postsAPI.sharePost(postId, 'repost');
+
+                // Handle case where already reposted (shouldn't happen but just in case)
+                if (result.already_reposted) {
+                    this.showToast('Already reposted', 'info');
+                    postCard.dataset.userReposted = 'true';
+                    if (shareBtn) shareBtn.classList.add('reposted');
+                    if (btnStatsEl) btnStatsEl.textContent = 'Reposted';
+                    return;
+                }
+
+                postCard.dataset.userReposted = 'true';
+                if (shareBtn) shareBtn.classList.add('reposted');
+                if (btnStatsEl) btnStatsEl.textContent = 'Reposted';
+
+                // Update post stats counter
+                if (postStatsEl) {
+                    const currentCount = parseInt(postStatsEl.textContent) || 0;
+                    const newCount = currentCount + 1;
+                    postStatsEl.textContent = `${newCount} ${newCount === 1 ? 'share' : 'shares'}`;
+                }
+
+                this.showToast('Reposted!', 'success');
+            }
+        } catch (error) {
+            console.error('Error toggling repost:', error);
+            this.showToast('Failed to update repost', 'error');
+        }
+    }
+
+    async quotePost(postId) {
+        document.querySelector('.share-menu')?.remove();
+
+        // Get the post data from the post card
+        const postCard = document.querySelector(`[data-post-id="${postId}"]`);
+        if (!postCard) {
+            this.showToast('Post not found', 'error');
             return;
         }
 
+        // Extract post info
+        const authorName = postCard.querySelector('.post-user-name')?.textContent.trim() || 'Unknown User';
+        const postContent = postCard.querySelector('.post-content p')?.textContent.trim() || '';
+        const authorImage = postCard.querySelector('.post-avatar-circle img')?.src;
+
+        // Focus on create post box and add reference to quoted post
+        const postInput = document.querySelector('.post-input');
+        const createPostBox = document.querySelector('.create-post-box');
+
+        if (postInput && createPostBox) {
+            // Scroll to post creation
+            createPostBox.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+            // Store the quoted post ID
+            postInput.dataset.quotedPost = postId;
+            postInput.placeholder = 'Add your thoughts to share this post...';
+
+            // Remove existing preview if any
+            const existingPreview = document.getElementById('quote-post-preview');
+            if (existingPreview) existingPreview.remove();
+
+            // Create quote preview
+            const preview = document.createElement('div');
+            preview.id = 'quote-post-preview';
+            preview.className = 'quote-post-preview';
+            preview.innerHTML = `
+                <div class="quote-post-preview-header">
+                    <span>Quoting Post</span>
+                    <button class="quote-post-preview-close" onclick="feedManager.cancelQuote()">&times;</button>
+                </div>
+                <div class="quote-post-preview-content">
+                    <div class="quote-post-preview-avatar">
+                        ${authorImage ?
+                            `<img src="${authorImage}" alt="${authorName}">` :
+                            `<svg viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="12" cy="7" r="4"></circle>
+                            </svg>`
+                        }
+                    </div>
+                    <div class="quote-post-preview-body">
+                        <div class="quote-post-preview-author">${this.escapeHtml(authorName)}</div>
+                        <div class="quote-post-preview-text">${this.escapeHtml(postContent.substring(0, 200))}${postContent.length > 200 ? '...' : ''}</div>
+                    </div>
+                </div>
+            `;
+
+            // Insert preview after the textarea, before the post actions row
+            const textarea = createPostBox.querySelector('.post-input');
+            if (textarea) {
+                textarea.parentElement.insertBefore(preview, textarea.nextSibling);
+            } else {
+                createPostBox.appendChild(preview);
+            }
+
+            // Focus on input
+            setTimeout(() => postInput.focus(), 300);
+        }
+    }
+
+    cancelQuote() {
+        const preview = document.getElementById('quote-post-preview');
+        if (preview) preview.remove();
+
+        const postInput = document.querySelector('.post-input');
+        if (postInput) {
+            delete postInput.dataset.quotedPost;
+            postInput.placeholder = "What's on your mind?";
+        }
+    }
+
+    async copyPostLink(postId) {
+        try {
+            const url = `${window.location.origin}/post/${postId}`;
+            await navigator.clipboard.writeText(url);
+            this.showToast('Link copied!', 'success');
+            document.querySelector('.share-menu')?.remove();
+        } catch (error) {
+            console.error('Error copying link:', error);
+            this.showToast('Failed to copy link', 'error');
+        }
+    }
+
+    async followUser(userId, button) {
+        try {
+            await followAPI.follow(userId);
+            button.textContent = 'Following';
+            button.classList.add('following');
+            button.onclick = () => this.unfollowUser(userId, button);
+            this.showToast('Followed!', 'success');
+        } catch (error) {
+            console.error('Error following:', error);
+            this.showToast('Failed to follow', 'error');
+        }
+    }
+
+    async unfollowUser(userId, button) {
+        try {
+            await followAPI.unfollow(userId);
+            button.textContent = 'Follow';
+            button.classList.remove('following');
+            button.onclick = () => this.followUser(userId, button);
+        } catch (error) {
+            console.error('Error unfollowing:', error);
+        }
+    }
+
+    showPostMenu(postId, isOwner, event) {
+        event.stopPropagation();
+
+        // Remove existing menu
+        const existing = document.querySelector('.post-dropdown-menu');
+        if (existing) existing.remove();
+
+        const menu = document.createElement('div');
+        menu.className = 'post-dropdown-menu';
+        menu.innerHTML = `
+            ${isOwner ? `
+                <div class="dropdown-item" onclick="feedManager.editPost('${postId}')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                    </svg>
+                    Edit Post
+                </div>
+                <div class="dropdown-item" onclick="feedManager.pinPost('${postId}')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="12" y1="17" x2="12" y2="22"></line>
+                        <path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V17z"></path>
+                    </svg>
+                    Pin Post
+                </div>
+                <div class="dropdown-item dropdown-item-danger" onclick="feedManager.deletePost('${postId}')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    </svg>
+                    Delete Post
+                </div>
+            ` : `
+                <div class="dropdown-item" onclick="feedManager.reportPost('${postId}')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
+                        <line x1="4" y1="22" x2="4" y2="15"></line>
+                    </svg>
+                    Report Post
+                </div>
+            `}
+        `;
+
+        document.body.appendChild(menu);
+
+        // Position menu
+        const btn = event.target.closest('.post-more-btn');
+        const rect = btn.getBoundingClientRect();
+        menu.style.top = rect.bottom + 5 + 'px';
+        menu.style.right = window.innerWidth - rect.right + 'px';
+
+        // Close on outside click
+        setTimeout(() => {
+            document.addEventListener('click', function closeMenu() {
+                menu.remove();
+                document.removeEventListener('click', closeMenu);
+            });
+        }, 0);
+    }
+
+    async deletePost(postId) {
+        if (!confirm('Are you sure you want to delete this post?')) return;
+
         try {
             await postsAPI.deletePost(postId);
-            await this.loadFeed();
+            document.querySelector(`[data-post-id="${postId}"]`).remove();
+            this.showToast('Post deleted', 'success');
         } catch (error) {
             console.error('Error deleting post:', error);
-            alert('Failed to delete post. Please try again.');
+            this.showToast('Failed to delete post', 'error');
+        }
+    }
+
+    goToProfile(identifier, role) {
+        // Determine the correct profile URL based on current page location and user role
+        const currentPath = window.location.pathname;
+        let baseUrl = '';
+
+        if (currentPath.includes('/hsplayer/')) {
+            baseUrl = role === 'coach' ? '../hscoach/tabs/my-profile.html' : '../hsplayer/tabs/my-profile.html';
+        } else if (currentPath.includes('/hscoach/')) {
+            baseUrl = role === 'coach' ? '../hscoach/tabs/my-profile.html' : '../hsplayer/tabs/my-profile.html';
+        } else if (currentPath.includes('/collegeplayer/')) {
+            baseUrl = role === 'coach' ? '../collegecoach/tabs/my-profile.html' : '../collegeplayer/tabs/my-profile.html';
+        } else if (currentPath.includes('/collegecoach/')) {
+            baseUrl = role === 'coach' ? '../collegecoach/tabs/my-profile.html' : '../collegeplayer/tabs/my-profile.html';
+        }
+
+        window.location.href = `${baseUrl}?username=${identifier}`;
+    }
+
+    // ==================== UTILITY ====================
+
+    async loadMorePosts() {
+        if (this.isLoading) return;
+        this.isLoading = true;
+
+        try {
+            const section = document.getElementById(`${this.currentFeedType}-section`);
+            let posts;
+
+            if (this.currentFeedType === 'following') {
+                this.followingOffset += 10;
+                const response = await postsAPI.getFollowingFeed(10, this.followingOffset);
+                posts = response.posts;
+            } else {
+                this.discoverOffset += 10;
+                const response = await postsAPI.getDiscoverFeed(10, this.discoverOffset);
+                posts = response.posts;
+            }
+
+            if (posts && posts.length > 0) {
+                posts.forEach(post => {
+                    section.appendChild(this.createPostElement(post));
+                });
+            }
+        } catch (error) {
+            console.error('Error loading more posts:', error);
+        } finally {
+            this.isLoading = false;
         }
     }
 
@@ -408,37 +1224,44 @@ class FeedManager {
         this.feedContainer.innerHTML = `
             <div class="loading-spinner">
                 <div class="spinner"></div>
-                <p>Loading posts...</p>
+                <p>Loading feed...</p>
             </div>
         `;
     }
 
     hideLoading() {
         const spinner = this.feedContainer.querySelector('.loading-spinner');
-        if (spinner) {
-            spinner.remove();
-        }
-    }
-
-    showEmptyState() {
-        this.feedContainer.innerHTML = `
-            <div class="empty-state">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-                </svg>
-                <h3>No posts yet</h3>
-                <p>Be the first to share an update!</p>
-            </div>
-        `;
+        if (spinner) spinner.remove();
     }
 
     showError(message) {
         this.feedContainer.innerHTML = `
             <div class="error-state">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                </svg>
                 <p>${message}</p>
                 <button onclick="feedManager.loadFeed()">Retry</button>
             </div>
         `;
+    }
+
+    showToast(message, type = 'info') {
+        const existing = document.querySelector('.toast');
+        if (existing) existing.remove();
+
+        const toast = document.createElement('div');
+        toast.className = `toast toast-${type}`;
+        toast.textContent = message;
+        document.body.appendChild(toast);
+
+        setTimeout(() => toast.classList.add('show'), 10);
+        setTimeout(() => {
+            toast.classList.remove('show');
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
     }
 
     getTimeAgo(timestamp) {
@@ -447,21 +1270,473 @@ class FeedManager {
         const seconds = Math.floor((now - postTime) / 1000);
 
         if (seconds < 60) return 'Just now';
-        if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
-        if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
-        if (seconds < 604800) return `${Math.floor(seconds / 86400)}d ago`;
+        if (seconds < 3600) return `${Math.floor(seconds / 60)}m`;
+        if (seconds < 86400) return `${Math.floor(seconds / 3600)}h`;
+        if (seconds < 604800) return `${Math.floor(seconds / 86400)}d`;
         return postTime.toLocaleDateString();
     }
 
     escapeHtml(text) {
+        if (!text) return '';
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;
+    }
+
+    openMediaViewer(url) {
+        // Simple lightbox for images
+        const viewer = document.createElement('div');
+        viewer.className = 'media-viewer';
+        viewer.innerHTML = `
+            <div class="media-viewer-backdrop" onclick="this.parentElement.remove()"></div>
+            <img src="${url}" alt="Full size">
+            <button class="media-viewer-close" onclick="this.parentElement.remove()">&times;</button>
+        `;
+        document.body.appendChild(viewer);
+    }
+
+    async toggleCommentLike(commentId, button) {
+        const isLiked = button.dataset.liked === 'true';
+        const svg = button.querySelector('svg');
+        const countSpan = button.querySelector('.comment-like-count');
+        let count = parseInt(countSpan.textContent) || 0;
+
+        try {
+            if (isLiked) {
+                // Unlike
+                await postsAPI.unlikeComment(commentId);
+                button.dataset.liked = 'false';
+                button.classList.remove('liked');
+                svg.setAttribute('fill', 'none');
+                svg.setAttribute('stroke', 'currentColor');
+                count = Math.max(0, count - 1);
+            } else {
+                // Like
+                await postsAPI.likeComment(commentId);
+                button.dataset.liked = 'true';
+                button.classList.add('liked');
+                svg.setAttribute('fill', '#e74c3c');
+                svg.setAttribute('stroke', '#e74c3c');
+                count += 1;
+            }
+            countSpan.textContent = count;
+        } catch (error) {
+            console.error('Error toggling comment like:', error);
+        }
+    }
+
+    replyToComment(postId, commentId, authorName = '') {
+        const input = document.getElementById(`comment-input-${postId}`);
+        if (input) {
+            input.focus();
+            input.placeholder = `Replying to ${authorName}...`;
+            input.dataset.replyTo = commentId;
+
+            // Show reply indicator
+            const container = input.parentElement;
+            let indicator = document.getElementById(`reply-indicator-${postId}`);
+            if (!indicator) {
+                indicator = document.createElement('div');
+                indicator.id = `reply-indicator-${postId}`;
+                indicator.className = 'reply-indicator';
+                container.insertBefore(indicator, input);
+            }
+            indicator.innerHTML = `
+                <span>Replying to ${authorName}</span>
+                <button onclick="feedManager.cancelReply('${postId}')">&times;</button>
+            `;
+        }
+    }
+
+    cancelReply(postId) {
+        const input = document.getElementById(`comment-input-${postId}`);
+        if (input) {
+            input.placeholder = 'Write a comment...';
+            delete input.dataset.replyTo;
+        }
+        const indicator = document.getElementById(`reply-indicator-${postId}`);
+        if (indicator) indicator.remove();
+    }
+
+    async editPost(postId) {
+        // Close post menu
+        document.querySelector('.post-dropdown-menu')?.remove();
+
+        // Get current post content
+        const postCard = document.querySelector(`[data-post-id="${postId}"]`);
+        const currentContent = postCard?.querySelector('.post-content p')?.innerText || '';
+
+        // Create edit modal
+        const modal = document.createElement('div');
+        modal.className = 'feed-modal-overlay';
+        modal.id = 'edit-post-modal';
+        modal.innerHTML = `
+            <div class="feed-modal edit-modal">
+                <div class="feed-modal-header">
+                    <h3>Edit Post</h3>
+                    <button class="feed-modal-close" onclick="feedManager.closeModal('edit-post-modal')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
+                </div>
+                <div class="feed-modal-body">
+                    <textarea class="edit-post-textarea" id="edit-post-content" placeholder="What's on your mind?">${this.escapeHtml(currentContent)}</textarea>
+                    <div class="edit-modal-actions">
+                        <button class="edit-modal-btn edit-modal-btn-cancel" onclick="feedManager.closeModal('edit-post-modal')">Cancel</button>
+                        <button class="edit-modal-btn edit-modal-btn-save" id="save-edit-btn" onclick="feedManager.saveEditPost('${postId}')">Save Changes</button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        // Focus on textarea
+        setTimeout(() => {
+            const textarea = document.getElementById('edit-post-content');
+            textarea.focus();
+            textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+        }, 100);
+
+        // Close on overlay click
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                this.closeModal('edit-post-modal');
+            }
+        });
+    }
+
+    async saveEditPost(postId) {
+        const content = document.getElementById('edit-post-content')?.value.trim();
+        if (!content) {
+            this.showToast('Post content cannot be empty', 'error');
+            return;
+        }
+
+        const saveBtn = document.getElementById('save-edit-btn');
+        if (saveBtn) {
+            saveBtn.disabled = true;
+            saveBtn.textContent = 'Saving...';
+        }
+
+        try {
+            await postsAPI.updatePost(postId, { content });
+
+            // Update the post content in the DOM
+            const postCard = document.querySelector(`[data-post-id="${postId}"]`);
+            const contentEl = postCard?.querySelector('.post-content p');
+            if (contentEl) {
+                contentEl.innerHTML = this.formatContent(content);
+            }
+
+            this.closeModal('edit-post-modal');
+            this.showToast('Post updated!', 'success');
+        } catch (error) {
+            console.error('Error updating post:', error);
+            this.showToast('Failed to update post', 'error');
+            if (saveBtn) {
+                saveBtn.disabled = false;
+                saveBtn.textContent = 'Save Changes';
+            }
+        }
+    }
+
+    async deletePost(postId) {
+        // Close post menu
+        document.querySelector('.post-dropdown-menu')?.remove();
+
+        // Create delete confirmation modal
+        const modal = document.createElement('div');
+        modal.className = 'feed-modal-overlay';
+        modal.id = 'delete-post-modal';
+        modal.innerHTML = `
+            <div class="feed-modal">
+                <div class="delete-modal">
+                    <div class="delete-modal-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="3 6 5 6 21 6"></polyline>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                            <line x1="10" y1="11" x2="10" y2="17"></line>
+                            <line x1="14" y1="11" x2="14" y2="17"></line>
+                        </svg>
+                    </div>
+                    <h3>Delete Post</h3>
+                    <p>Are you sure you want to delete this post? This action cannot be undone.</p>
+                    <div class="delete-modal-actions">
+                        <button class="delete-modal-btn delete-modal-btn-cancel" onclick="feedManager.closeModal('delete-post-modal')">Cancel</button>
+                        <button class="delete-modal-btn delete-modal-btn-delete" onclick="feedManager.confirmDeletePost('${postId}')">Delete</button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        // Close on overlay click
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                this.closeModal('delete-post-modal');
+            }
+        });
+    }
+
+    async confirmDeletePost(postId) {
+        try {
+            await postsAPI.deletePost(postId);
+            document.querySelector(`[data-post-id="${postId}"]`)?.remove();
+            this.closeModal('delete-post-modal');
+            this.showToast('Post deleted', 'success');
+        } catch (error) {
+            console.error('Error deleting post:', error);
+            this.showToast('Failed to delete post', 'error');
+        }
+    }
+
+    async showShares(postId) {
+        // Create shares modal
+        const modal = document.createElement('div');
+        modal.className = 'feed-modal-overlay';
+        modal.id = 'shares-modal';
+        modal.innerHTML = `
+            <div class="feed-modal">
+                <div class="feed-modal-header">
+                    <h3>Shares</h3>
+                    <button class="feed-modal-close" onclick="feedManager.closeModal('shares-modal')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
+                </div>
+                <div class="feed-modal-body">
+                    <div class="loading-spinner" style="padding: 2rem;">
+                        <div class="spinner"></div>
+                        <p>Loading shares...</p>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        // Close on overlay click
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                this.closeModal('shares-modal');
+            }
+        });
+
+        try {
+            const data = await postsAPI.getShares(postId);
+            const modalBody = modal.querySelector('.feed-modal-body');
+
+            if (data.all.length === 0) {
+                modalBody.innerHTML = `
+                    <div class="shares-empty">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="17 1 21 5 17 9"></polyline>
+                            <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
+                            <polyline points="7 23 3 19 7 15"></polyline>
+                            <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
+                        </svg>
+                        <p>No one has shared this post yet</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Render tabs and share lists
+            modalBody.innerHTML = `
+                <div class="shares-tabs">
+                    <button class="shares-tab active" data-type="all">
+                        All <span class="shares-tab-count">${data.all.length}</span>
+                    </button>
+                    <button class="shares-tab" data-type="reposts">
+                        Reposts <span class="shares-tab-count">${data.repost_count}</span>
+                    </button>
+                    <button class="shares-tab" data-type="quotes">
+                        Quotes <span class="shares-tab-count">${data.quote_count}</span>
+                    </button>
+                </div>
+                <div class="shares-list" id="shares-list-content">
+                    ${this.renderSharesList(data.all)}
+                </div>
+            `;
+
+            // Tab switching
+            modalBody.querySelectorAll('.shares-tab').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    modalBody.querySelectorAll('.shares-tab').forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+
+                    const type = tab.dataset.type;
+                    let listToShow = data.all;
+                    if (type === 'reposts') listToShow = data.reposts;
+                    if (type === 'quotes') listToShow = data.quotes;
+
+                    document.getElementById('shares-list-content').innerHTML = this.renderSharesList(listToShow);
+                });
+            });
+
+        } catch (error) {
+            console.error('Error loading shares:', error);
+            const modalBody = modal.querySelector('.feed-modal-body');
+            modalBody.innerHTML = `
+                <div class="shares-empty">
+                    <p>Failed to load shares</p>
+                </div>
+            `;
+        }
+    }
+
+    renderSharesList(shares) {
+        if (shares.length === 0) {
+            return `
+                <div class="shares-empty">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="17 1 21 5 17 9"></polyline>
+                        <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
+                        <polyline points="7 23 3 19 7 15"></polyline>
+                        <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
+                    </svg>
+                    <p>No shares in this category</p>
+                </div>
+            `;
+        }
+
+        return shares.map(share => `
+            <div class="share-item" onclick="feedManager.goToProfile('${share.username || share.user_id}', '${share.role}'); feedManager.closeModal('shares-modal');">
+                <div class="share-item-avatar">
+                    ${share.profile_image_url ?
+                        `<img src="${share.profile_image_url}" alt="${share.first_name}">` :
+                        `<svg viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="12" cy="7" r="4"></circle>
+                        </svg>`
+                    }
+                </div>
+                <div class="share-item-info">
+                    <div class="share-item-name">${share.first_name || ''} ${share.last_name || ''}</div>
+                    <div class="share-item-meta">
+                        ${share.position ? share.position + ' • ' : ''}${share.school || ''}
+                        ${share.share_type === 'quote' ? ' • Quote' : ' • Repost'}
+                    </div>
+                    ${share.share_type === 'quote' && share.quote_content ? `
+                        <div class="share-item-quote">"${this.escapeHtml(share.quote_content.substring(0, 100))}${share.quote_content.length > 100 ? '...' : ''}"</div>
+                    ` : ''}
+                </div>
+            </div>
+        `).join('');
+    }
+
+    async showLikes(postId) {
+        // Create likes modal
+        const modal = document.createElement('div');
+        modal.className = 'feed-modal-overlay';
+        modal.id = 'likes-modal';
+        modal.innerHTML = `
+            <div class="feed-modal">
+                <div class="feed-modal-header">
+                    <h3>Likes</h3>
+                    <button class="feed-modal-close" onclick="feedManager.closeModal('likes-modal')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
+                </div>
+                <div class="feed-modal-body">
+                    <div class="loading-spinner" style="padding: 2rem;">
+                        <div class="spinner"></div>
+                        <p>Loading likes...</p>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        // Close on overlay click
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                this.closeModal('likes-modal');
+            }
+        });
+
+        try {
+            const data = await postsAPI.getLikes(postId);
+            const modalBody = modal.querySelector('.feed-modal-body');
+
+            if (!data.likes || data.likes.length === 0) {
+                modalBody.innerHTML = `
+                    <div class="shares-empty">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                        </svg>
+                        <p>No likes yet</p>
+                    </div>
+                `;
+                return;
+            }
+
+            modalBody.innerHTML = `
+                <div class="shares-list">
+                    ${data.likes.map(like => `
+                        <div class="share-item" onclick="feedManager.goToProfile('${like.username || like.id}', '${like.role}'); feedManager.closeModal('likes-modal');">
+                            <div class="share-item-avatar">
+                                ${like.profile_image_url ?
+                                    `<img src="${like.profile_image_url}" alt="${like.first_name}">` :
+                                    `<svg viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                        <circle cx="12" cy="7" r="4"></circle>
+                                    </svg>`
+                                }
+                            </div>
+                            <div class="share-item-info">
+                                <div class="share-item-name">${like.first_name || ''} ${like.last_name || ''}</div>
+                                <div class="share-item-meta">${like.role === 'coach' ? 'Coach' : 'Player'}</div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+
+        } catch (error) {
+            console.error('Error loading likes:', error);
+            const modalBody = modal.querySelector('.feed-modal-body');
+            modalBody.innerHTML = `
+                <div class="shares-empty">
+                    <p>Failed to load likes</p>
+                </div>
+            `;
+        }
+    }
+
+    closeModal(modalId) {
+        const modal = document.getElementById(modalId);
+        if (modal) modal.remove();
+    }
+
+    pinPost(postId) {
+        postsAPI.pinPost(postId).then(() => {
+            this.showToast('Post pinned to your profile!', 'success');
+        }).catch(() => {
+            this.showToast('Failed to pin post', 'error');
+        });
+    }
+
+    reportPost(postId) {
+        this.showToast('Report feature coming soon!', 'info');
     }
 }
 
 // Initialize feed manager when DOM is loaded
 let feedManager;
 document.addEventListener('DOMContentLoaded', () => {
-    feedManager = new FeedManager();
+    // Only initialize if we're on a page with feed container
+    if (document.getElementById('feedPosts')) {
+        feedManager = new FeedManager();
+    }
 });

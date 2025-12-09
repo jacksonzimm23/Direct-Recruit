@@ -4,6 +4,17 @@ let currentUserId = null;
 let currentConversationId = null;
 let conversations = [];
 let pollingInterval = null;
+let currentAttachment = null; // Store current attachment {type: 'image'|'file', file: File, preview: string}
+
+// Common emojis for the picker
+const emojis = [
+    '😀', '😁', '😂', '🤣', '😃', '😄', '😅', '😆', '😉', '😊',
+    '😋', '😎', '😍', '🥰', '😘', '😗', '😙', '😚', '🙂', '🤗',
+    '🤔', '😐', '😑', '😶', '🙄', '😏', '😣', '😥', '😮', '🤐',
+    '😯', '😪', '😫', '😴', '😌', '😛', '😜', '😝', '🤤', '😒',
+    '👍', '👎', '👏', '🙌', '🤝', '💪', '🙏', '❤️', '🔥', '⭐',
+    '🏈', '🏀', '⚽', '🎯', '🏆', '🥇', '💯', '✅', '🎉', '👋'
+];
 
 document.addEventListener('DOMContentLoaded', async function() {
     // Sidebar toggle is handled by mainpage-player.js
@@ -25,6 +36,16 @@ document.addEventListener('DOMContentLoaded', async function() {
         await openOrCreateConversation(targetUserId);
         // Clean up URL
         window.history.replaceState({}, document.title, window.location.pathname);
+    }
+
+    // Check if returning from viewing a profile - restore the conversation
+    const returnConversationId = sessionStorage.getItem('messagesReturnConversationId');
+    if (returnConversationId) {
+        sessionStorage.removeItem('messagesReturnConversationId');
+        // Wait a moment for conversations to be loaded, then select the conversation
+        setTimeout(() => {
+            selectConversation(returnConversationId);
+        }, 100);
     }
 
     setupEventListeners();
@@ -148,6 +169,12 @@ async function selectConversation(conversationId) {
 
     currentConversationId = conversationId;
 
+    // Show thread header and input container
+    const threadHeader = document.getElementById('messageThreadHeader');
+    const inputContainer = document.getElementById('messageInputContainer');
+    if (threadHeader) threadHeader.style.display = 'flex';
+    if (inputContainer) inputContainer.style.display = 'flex';
+
     // Load messages
     await loadMessages(conversationId);
 
@@ -225,16 +252,60 @@ function renderMessages(messages) {
 
 function updateThreadHeader(participant) {
     const threadUserName = document.querySelector('.thread-user-name');
-    const threadUserStatus = document.querySelector('.thread-user-status');
+    const threadUserRole = document.querySelector('.thread-user-role');
     const threadAvatarCircle = document.querySelector('.thread-avatar-circle');
 
     if (threadUserName) {
         threadUserName.textContent = `${participant.first_name || 'Unknown'} ${participant.last_name || ''}`;
     }
 
-    if (threadUserStatus) {
-        const roleText = participant.role === 'coach' ? 'Coach' : 'Player';
-        threadUserStatus.innerHTML = `<span>${roleText}</span>`;
+    if (threadUserRole) {
+        // Build role info string similar to sidebar footer
+        const parts = [];
+
+        if (participant.role === 'player') {
+            // Check if college player or HS player based on college_division
+            const isCollegePlayer = participant.college_division &&
+                ['FBS', 'FCS', 'D2', 'D3', 'NAIA', 'NJCAA'].includes(participant.college_division);
+
+            if (isCollegePlayer) {
+                // College Player: Position, College Name (stored in high_school), Division
+                if (participant.position) parts.push(participant.position);
+                if (participant.high_school) parts.push(participant.high_school);
+                if (participant.college_division) {
+                    const division = participant.college_division;
+                    if (division === 'FBS' || division === 'FCS') {
+                        parts.push(`D1 ${division}`);
+                    } else {
+                        parts.push(division);
+                    }
+                }
+            } else {
+                // HS Player: Position, High School, Graduation Year
+                if (participant.position) parts.push(participant.position);
+                if (participant.high_school) parts.push(participant.high_school);
+                if (participant.graduation_year) parts.push(`Class of ${participant.graduation_year}`);
+            }
+            threadUserRole.classList.remove('coach');
+        } else if (participant.role === 'coach') {
+            // Coach: Position Title (acronym), College, Division
+            if (participant.position_title) {
+                parts.push(getPositionAcronym(participant.position_title));
+            }
+            if (participant.college_name) parts.push(participant.college_name);
+            if (participant.college_division) {
+                // Format FBS/FCS as D1 FBS/D1 FCS
+                const division = participant.college_division;
+                if (division === 'FBS' || division === 'FCS') {
+                    parts.push(`D1 ${division}`);
+                } else {
+                    parts.push(division);
+                }
+            }
+            threadUserRole.classList.add('coach');
+        }
+
+        threadUserRole.textContent = parts.join(' • ') || (participant.role === 'coach' ? 'Coach' : 'Player');
     }
 
     if (threadAvatarCircle && participant.profile_image) {
@@ -329,8 +400,6 @@ function setupEventListeners() {
                 const conv = conversations.find(c => c.id === currentConversationId);
                 if (conv && conv.participants && conv.participants[0]) {
                     const participant = conv.participants[0];
-                    // Navigate to profile using participant info
-                    // We need to fetch their username first
                     navigateToProfile(participant.id, participant.role);
                 }
             }
@@ -382,6 +451,42 @@ function setupEventListeners() {
             if (messageThread) messageThread.classList.remove('active');
         }
     });
+
+    // File attachment button
+    const attachFileBtn = document.getElementById('attachFileBtn');
+    const fileInput = document.getElementById('fileInput');
+    if (attachFileBtn && fileInput) {
+        attachFileBtn.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', handleFileSelect);
+    }
+
+    // Image attachment button
+    const attachImageBtn = document.getElementById('attachImageBtn');
+    const imageInput = document.getElementById('imageInput');
+    if (attachImageBtn && imageInput) {
+        attachImageBtn.addEventListener('click', () => imageInput.click());
+        imageInput.addEventListener('change', handleImageSelect);
+    }
+
+    // Emoji button
+    const emojiBtn = document.getElementById('emojiBtn');
+    const emojiPicker = document.getElementById('emojiPicker');
+    if (emojiBtn && emojiPicker) {
+        // Initialize emoji picker
+        initEmojiPicker();
+
+        emojiBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            toggleEmojiPicker();
+        });
+
+        // Close emoji picker when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!emojiPicker.contains(e.target) && e.target !== emojiBtn) {
+                emojiPicker.style.display = 'none';
+            }
+        });
+    }
 }
 
 function filterConversations(searchTerm) {
@@ -517,7 +622,28 @@ async function navigateToProfile(userId, role) {
         const response = await API.get(endpoint);
 
         if (response.profile && response.profile.username) {
-            window.location.href = `my-profile.html?username=${response.profile.username}`;
+            // Store conversation context for when user comes back
+            sessionStorage.setItem('messagesReturnConversationId', currentConversationId);
+
+            // Navigate to the appropriate profile page based on role
+            // For coaches, go to their coach profile page
+            // For players, stay in current player profile page
+            if (role === 'coach') {
+                // Determine if coach is college or hs based on their profile
+                const isCollegeCoach = response.profile.college_division &&
+                    ['FBS', 'FCS', 'D2', 'D3', 'NAIA', 'NJCAA'].includes(response.profile.college_division);
+                const coachFolder = isCollegeCoach ? 'collegecoach' : 'hscoach';
+                window.location.href = `../../${coachFolder}/tabs/my-profile.html?username=${response.profile.username}&from=messages`;
+            } else {
+                // For players, determine if college or hs
+                const isCollegePlayer = response.profile.college_division &&
+                    ['FBS', 'FCS', 'D2', 'D3', 'NAIA', 'NJCAA'].includes(response.profile.college_division);
+                if (isCollegePlayer) {
+                    window.location.href = `../../collegeplayer/tabs/my-profile.html?username=${response.profile.username}&from=messages`;
+                } else {
+                    window.location.href = `my-profile.html?username=${response.profile.username}&from=messages`;
+                }
+            }
         }
     } catch (error) {
         console.error('Failed to get profile:', error);
@@ -528,3 +654,193 @@ async function navigateToProfile(userId, role) {
 window.addEventListener('beforeunload', function() {
     stopPolling();
 });
+
+// ============ Emoji Picker Functions ============
+
+function initEmojiPicker() {
+    const emojiPicker = document.getElementById('emojiPicker');
+    if (!emojiPicker) return;
+
+    emojiPicker.innerHTML = emojis.map(emoji =>
+        `<span class="emoji-item" data-emoji="${emoji}">${emoji}</span>`
+    ).join('');
+
+    // Add click handlers for each emoji
+    emojiPicker.querySelectorAll('.emoji-item').forEach(item => {
+        item.addEventListener('click', () => {
+            insertEmoji(item.dataset.emoji);
+        });
+    });
+}
+
+function toggleEmojiPicker() {
+    const emojiPicker = document.getElementById('emojiPicker');
+    if (emojiPicker) {
+        emojiPicker.style.display = emojiPicker.style.display === 'none' ? 'grid' : 'none';
+    }
+}
+
+function insertEmoji(emoji) {
+    const messageInput = document.getElementById('messageInput');
+    if (messageInput) {
+        const start = messageInput.selectionStart;
+        const end = messageInput.selectionEnd;
+        const text = messageInput.value;
+        messageInput.value = text.substring(0, start) + emoji + text.substring(end);
+        messageInput.selectionStart = messageInput.selectionEnd = start + emoji.length;
+        messageInput.focus();
+    }
+
+    // Close picker after selection
+    const emojiPicker = document.getElementById('emojiPicker');
+    if (emojiPicker) emojiPicker.style.display = 'none';
+}
+
+// ============ File Attachment Functions ============
+
+function handleFileSelect(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Check file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+        alert('File size must be less than 10MB');
+        e.target.value = '';
+        return;
+    }
+
+    currentAttachment = {
+        type: 'file',
+        file: file,
+        name: file.name
+    };
+
+    showAttachmentPreview();
+}
+
+function handleImageSelect(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Check file size (max 5MB for images)
+    if (file.size > 5 * 1024 * 1024) {
+        alert('Image size must be less than 5MB');
+        e.target.value = '';
+        return;
+    }
+
+    // Create preview
+    const reader = new FileReader();
+    reader.onload = function(event) {
+        currentAttachment = {
+            type: 'image',
+            file: file,
+            preview: event.target.result,
+            name: file.name
+        };
+        showAttachmentPreview();
+    };
+    reader.readAsDataURL(file);
+}
+
+function showAttachmentPreview() {
+    const preview = document.getElementById('attachmentPreview');
+    if (!preview || !currentAttachment) return;
+
+    if (currentAttachment.type === 'image') {
+        preview.innerHTML = `
+            <div class="preview-item image-preview">
+                <img src="${currentAttachment.preview}" alt="Preview">
+                <button class="remove-attachment" onclick="removeAttachment()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+        `;
+    } else {
+        // File preview
+        const fileIcon = getFileIcon(currentAttachment.name);
+        preview.innerHTML = `
+            <div class="preview-item file-preview">
+                <div class="file-icon">${fileIcon}</div>
+                <span class="file-name">${truncateFileName(currentAttachment.name)}</span>
+                <button class="remove-attachment" onclick="removeAttachment()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+        `;
+    }
+
+    preview.style.display = 'flex';
+}
+
+function removeAttachment() {
+    currentAttachment = null;
+    const preview = document.getElementById('attachmentPreview');
+    if (preview) {
+        preview.innerHTML = '';
+        preview.style.display = 'none';
+    }
+    // Clear file inputs
+    const fileInput = document.getElementById('fileInput');
+    const imageInput = document.getElementById('imageInput');
+    if (fileInput) fileInput.value = '';
+    if (imageInput) imageInput.value = '';
+}
+
+function getFileIcon(filename) {
+    const ext = filename.split('.').pop().toLowerCase();
+    const icons = {
+        pdf: '📄',
+        doc: '📝',
+        docx: '📝',
+        txt: '📃',
+        zip: '📦',
+        default: '📎'
+    };
+    return icons[ext] || icons.default;
+}
+
+function truncateFileName(name, maxLength = 20) {
+    if (name.length <= maxLength) return name;
+    const ext = name.split('.').pop();
+    const baseName = name.substring(0, name.length - ext.length - 1);
+    return baseName.substring(0, maxLength - ext.length - 4) + '...' + ext;
+}
+
+// Convert coach position titles to acronyms
+function getPositionAcronym(title) {
+    const acronyms = {
+        'Head Coach': 'HC',
+        'Offensive Coordinator': 'OC',
+        'Defensive Coordinator': 'DC',
+        'Special Teams Coordinator': 'STC',
+        'Quarterbacks Coach': 'QBs',
+        'Running Backs Coach': 'RBs',
+        'Wide Receivers Coach': 'WRs',
+        'Tight Ends Coach': 'TEs',
+        'Offensive Line Coach': 'OL',
+        'Defensive Line Coach': 'DL',
+        'Linebackers Coach': 'LBs',
+        'Defensive Backs Coach': 'DBs',
+        'Safeties Coach': 'SAFs',
+        'Cornerbacks Coach': 'CBs',
+        'Strength Coach': 'S&C',
+        'Recruiting Coordinator': 'RC',
+        'Assistant Coach': 'Asst',
+        'Graduate Assistant': 'GA',
+        'Quality Control': 'QC'
+    };
+
+    // Handle combined titles with "/"
+    if (title.includes('/')) {
+        return title.split('/').map(part => acronyms[part.trim()] || part.trim()).join('/');
+    }
+
+    return acronyms[title] || title;
+}

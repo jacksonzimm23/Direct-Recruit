@@ -96,7 +96,17 @@ class Message {
                 'first_name', COALESCE(pp.first_name, cp.first_name),
                 'last_name', COALESCE(pp.last_name, cp.last_name),
                 'profile_image', COALESCE(pp.profile_image_url, cp.profile_image_url),
-                'role', u.role
+                'role', u.role,
+                'position', pp.position,
+                'height', pp.height,
+                'weight', pp.weight,
+                'state', COALESCE(pp.state, cp.state),
+                'high_school', pp.high_school,
+                'graduation_year', pp.graduation_year,
+                'college_name', cp.college_name,
+                'position_title', cp.position_title,
+                'college_division', COALESCE(pp.college_division, cp.college_division),
+                'player_status', pp.player_status
               )) FILTER (WHERE u.id != $1) as participants,
               (SELECT content FROM messages WHERE conversation_id = c.id ORDER BY created_at DESC LIMIT 1) as last_message,
               (SELECT created_at FROM messages WHERE conversation_id = c.id ORDER BY created_at DESC LIMIT 1) as last_message_time,

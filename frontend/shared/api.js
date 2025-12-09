@@ -188,14 +188,43 @@ const postsAPI = {
         });
     },
 
+    getPost: async (postId) => {
+        return await apiRequest(`/posts/${postId}`);
+    },
+
+    updatePost: async (postId, postData) => {
+        return await apiRequest(`/posts/${postId}`, {
+            method: 'PUT',
+            body: JSON.stringify(postData)
+        });
+    },
+
+    deletePost: async (postId) => {
+        return await apiRequest(`/posts/${postId}`, { method: 'DELETE' });
+    },
+
+    // Feed endpoints (Option 4: Two-Section Feed)
     getFeed: async (limit = 20, offset = 0) => {
         return await apiRequest(`/posts/feed?limit=${limit}&offset=${offset}`);
+    },
+
+    getCombinedFeed: async (limit = 20, offset = 0) => {
+        return await apiRequest(`/posts/feed/combined?limit=${limit}&offset=${offset}`);
+    },
+
+    getFollowingFeed: async (limit = 20, offset = 0) => {
+        return await apiRequest(`/posts/feed/following?limit=${limit}&offset=${offset}`);
+    },
+
+    getDiscoverFeed: async (limit = 20, offset = 0) => {
+        return await apiRequest(`/posts/feed/discover?limit=${limit}&offset=${offset}`);
     },
 
     getUserPosts: async (userId, limit = 20, offset = 0) => {
         return await apiRequest(`/posts/user/${userId}?limit=${limit}&offset=${offset}`);
     },
 
+    // Likes
     likePost: async (postId) => {
         return await apiRequest(`/posts/${postId}/like`, { method: 'POST' });
     },
@@ -204,15 +233,88 @@ const postsAPI = {
         return await apiRequest(`/posts/${postId}/like`, { method: 'DELETE' });
     },
 
-    addComment: async (postId, content) => {
+    getLikes: async (postId, limit = 50, offset = 0) => {
+        return await apiRequest(`/posts/${postId}/likes?limit=${limit}&offset=${offset}`);
+    },
+
+    getShares: async (postId, limit = 50, offset = 0) => {
+        return await apiRequest(`/posts/${postId}/shares?limit=${limit}&offset=${offset}`);
+    },
+
+    // Comments
+    addComment: async (postId, content, parentCommentId = null) => {
+        const body = { content };
+        if (parentCommentId) {
+            body.parent_comment_id = parentCommentId;
+        }
         return await apiRequest(`/posts/${postId}/comments`, {
             method: 'POST',
-            body: JSON.stringify({ content })
+            body: JSON.stringify(body)
         });
     },
 
     getComments: async (postId, limit = 50, offset = 0) => {
         return await apiRequest(`/posts/${postId}/comments?limit=${limit}&offset=${offset}`);
+    },
+
+    getCommentReplies: async (commentId, limit = 20, offset = 0) => {
+        return await apiRequest(`/posts/comments/${commentId}/replies?limit=${limit}&offset=${offset}`);
+    },
+
+    deleteComment: async (postId, commentId) => {
+        return await apiRequest(`/posts/${postId}/comments/${commentId}`, { method: 'DELETE' });
+    },
+
+    // Comment likes
+    likeComment: async (commentId) => {
+        return await apiRequest(`/posts/comments/${commentId}/like`, { method: 'POST' });
+    },
+
+    unlikeComment: async (commentId) => {
+        return await apiRequest(`/posts/comments/${commentId}/like`, { method: 'DELETE' });
+    },
+
+    // Saves (Bookmarks)
+    savePost: async (postId) => {
+        return await apiRequest(`/posts/${postId}/save`, { method: 'POST' });
+    },
+
+    unsavePost: async (postId) => {
+        return await apiRequest(`/posts/${postId}/save`, { method: 'DELETE' });
+    },
+
+    getSavedPosts: async (limit = 20, offset = 0) => {
+        return await apiRequest(`/posts/saved/list?limit=${limit}&offset=${offset}`);
+    },
+
+    getMyReposts: async (limit = 10, offset = 0) => {
+        return await apiRequest(`/posts/reposts/mine?limit=${limit}&offset=${offset}`);
+    },
+
+    // Shares
+    sharePost: async (postId, shareType = 'repost', quoteContent = null) => {
+        return await apiRequest(`/posts/${postId}/share`, {
+            method: 'POST',
+            body: JSON.stringify({ share_type: shareType, quote_content: quoteContent })
+        });
+    },
+
+    unsharePost: async (shareId) => {
+        return await apiRequest(`/posts/shares/${shareId}`, { method: 'DELETE' });
+    },
+
+    // Unrepost by post ID (for toggle behavior)
+    unrepostPost: async (postId) => {
+        return await apiRequest(`/posts/${postId}/repost`, { method: 'DELETE' });
+    },
+
+    // Pin
+    pinPost: async (postId) => {
+        return await apiRequest(`/posts/${postId}/pin`, { method: 'POST' });
+    },
+
+    unpinPost: async (postId) => {
+        return await apiRequest(`/posts/${postId}/pin`, { method: 'DELETE' });
     }
 };
 

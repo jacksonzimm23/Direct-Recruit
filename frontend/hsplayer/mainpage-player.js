@@ -47,15 +47,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     // const postSubmitBtn = document.querySelector('.btn-post-submit');
     // Event listener moved to shared/feed.js for dynamic feed functionality
 
-    // Post action buttons
-    const postActionBtns = document.querySelectorAll('.post-action-btn');
-    postActionBtns.forEach(btn => {
-        btn.addEventListener('click', function() {
-            const action = this.querySelector('span').textContent;
-            console.log('Post action:', action);
-            alert(`${action} functionality will be connected to your backend.`);
-        });
-    });
+    // Post action buttons - handled by shared/feed.js for dynamic posts
 
     // Follow buttons
     const followBtns = document.querySelectorAll('.btn-follow');

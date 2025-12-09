@@ -267,6 +267,16 @@
     color: var(--white);
 }
 
+.thread-user-role {
+    font-size: 0.8rem;
+    color: var(--cerulean);
+    font-weight: 700;
+}
+
+.thread-user-role.coach {
+    color: var(--accent-orange);
+}
+
 .thread-user-status {
     display: flex;
     align-items: center;

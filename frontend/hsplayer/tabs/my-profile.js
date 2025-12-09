@@ -100,6 +100,28 @@ function updateNavbarForLoggedInUser(role, profile) {
 
     const mainPage = role === 'player' ? 'mainpage-player.html' : 'mainpage-coach.html';
 
+    // Determine which nav item should be active based on context
+    const urlParams = new URLSearchParams(window.location.search);
+    const fromPage = urlParams.get('from');
+
+    // Determine active states - only one should be active
+    let feedActive = '';
+    let discoverActive = '';
+    let profileActive = '';
+    let messagesActive = '';
+
+    if (isOwnProfile) {
+        profileActive = 'active';
+    } else if (fromPage === 'messages') {
+        messagesActive = 'active';
+    } else if (fromPage === 'discover') {
+        discoverActive = 'active';
+    } else if (fromPage === 'profile') {
+        profileActive = 'active';
+    } else {
+        feedActive = 'active';
+    }
+
     // Rebuild the sidebar nav with the correct items for the logged-in user
     const sidebarNav = document.querySelector('.sidebar-nav');
     if (sidebarNav) {
@@ -108,27 +130,27 @@ function updateNavbarForLoggedInUser(role, profile) {
         if (role === 'player') {
             // Player nav items (same for HS and college players)
             navHTML = `
-                <a href="/frontend/${userFolder}/${mainPage}" class="nav-item active" id="feedNavItem">
+                <a href="/frontend/${userFolder}/${mainPage}" class="nav-item ${feedActive}" id="feedNavItem">
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
                         <polyline points="9 22 9 12 15 12 15 22"></polyline>
                     </svg>
                     <span>Feed</span>
                 </a>
-                <a href="/frontend/${userFolder}/tabs/discover-players.html" class="nav-item">
+                <a href="/frontend/${userFolder}/tabs/discover-players.html" class="nav-item ${discoverActive}">
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                     </svg>
                     <span>Discover</span>
                 </a>
-                <a href="/frontend/${userFolder}/tabs/my-profile.html" class="nav-item" id="profileNavItem">
+                <a href="/frontend/${userFolder}/tabs/my-profile.html" class="nav-item ${profileActive}" id="profileNavItem">
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
                         <circle cx="12" cy="7" r="4"></circle>
                     </svg>
                     <span>My Profile</span>
                 </a>
-                <a href="/frontend/${userFolder}/tabs/messages.html" class="nav-item">
+                <a href="/frontend/${userFolder}/tabs/messages.html" class="nav-item ${messagesActive}" id="messagesNavItem">
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
                     </svg>
@@ -152,27 +174,27 @@ function updateNavbarForLoggedInUser(role, profile) {
         } else if (role === 'coach') {
             // Coach nav items - different for HS vs college coaches
             navHTML = `
-                <a href="/frontend/${userFolder}/${mainPage}" class="nav-item active" id="feedNavItem">
+                <a href="/frontend/${userFolder}/${mainPage}" class="nav-item ${feedActive}" id="feedNavItem">
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
                         <polyline points="9 22 9 12 15 12 15 22"></polyline>
                     </svg>
                     <span>Feed</span>
                 </a>
-                <a href="/frontend/${userFolder}/tabs/discover-players.html" class="nav-item">
+                <a href="/frontend/${userFolder}/tabs/discover-players.html" class="nav-item ${discoverActive}">
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                     </svg>
                     <span>Discover</span>
                 </a>
-                <a href="/frontend/${userFolder}/tabs/my-profile.html" class="nav-item" id="profileNavItem">
+                <a href="/frontend/${userFolder}/tabs/my-profile.html" class="nav-item ${profileActive}" id="profileNavItem">
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
                         <circle cx="12" cy="7" r="4"></circle>
                     </svg>
                     <span>My Profile</span>
                 </a>
-                <a href="/frontend/${userFolder}/tabs/messages.html" class="nav-item">
+                <a href="/frontend/${userFolder}/tabs/messages.html" class="nav-item ${messagesActive}" id="messagesNavItem">
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
                     </svg>
@@ -454,6 +476,9 @@ async function loadOwnProfile() {
             viewingUserId = response.user.id;
             isOwnProfile = true;
             displayProfile(response.profile, response.user.role);
+
+            // Load profile view count for own profile
+            loadProfileViewCount();
         } else {
             showIncompleteProfile();
         }
@@ -471,6 +496,16 @@ async function loadProfileByUsername(username) {
             viewingUserId = response.profile.user_id;
             isOwnProfile = currentUserId === viewingUserId;
             displayProfile(response.profile, response.type);
+
+            // Record profile view if viewing someone else's HS player profile
+            if (!isOwnProfile && response.type === 'player') {
+                recordProfileView(viewingUserId);
+            }
+
+            // Load profile view count if viewing own profile
+            if (isOwnProfile) {
+                loadProfileViewCount();
+            }
         } else {
             showError('Profile not found');
         }
@@ -481,6 +516,7 @@ async function loadProfileByUsername(username) {
 }
 
 function displayProfile(profile, type) {
+    console.log('displayProfile called with type:', type);
     // Store the profile type globally
     currentProfileType = type;
 
@@ -908,15 +944,34 @@ async function setupFollowButton() {
 function updateActiveNavItem() {
     const feedNavItem = document.getElementById('feedNavItem');
     const profileNavItem = document.getElementById('profileNavItem');
+    const messagesNavItem = document.getElementById('messagesNavItem');
+    const discoverNavItem = document.querySelector('.nav-item[href*="discover"]');
+
+    // Check if we came from another page
+    const urlParams = new URLSearchParams(window.location.search);
+    const fromPage = urlParams.get('from');
 
     if (feedNavItem && profileNavItem) {
+        // Remove active from all first
+        feedNavItem.classList.remove('active');
+        profileNavItem.classList.remove('active');
+        if (messagesNavItem) messagesNavItem.classList.remove('active');
+        if (discoverNavItem) discoverNavItem.classList.remove('active');
+
         if (isOwnProfile) {
             // Viewing own profile - highlight My Profile
-            feedNavItem.classList.remove('active');
+            profileNavItem.classList.add('active');
+        } else if (fromPage === 'messages' && messagesNavItem) {
+            // Came from messages page - highlight Messages
+            messagesNavItem.classList.add('active');
+        } else if (fromPage === 'discover' && discoverNavItem) {
+            // Came from discover page - highlight Discover
+            discoverNavItem.classList.add('active');
+        } else if (fromPage === 'profile' && profileNavItem) {
+            // Came from another profile (followers/following modal) - highlight My Profile
             profileNavItem.classList.add('active');
         } else {
-            // Viewing someone else's profile - highlight Feed
-            profileNavItem.classList.remove('active');
+            // Viewing someone else's profile (from feed) - highlight Feed
             feedNavItem.classList.add('active');
         }
     }
@@ -4594,21 +4649,36 @@ async function openFollowListModal(type) {
         // Add click handlers to navigate to profiles
         modalBody.querySelectorAll('.follow-list-item').forEach(item => {
             item.addEventListener('click', async () => {
-                const userId = item.dataset.userId;
+                const visitorUserId = item.dataset.userId;
                 const role = item.dataset.role;
 
                 // Fetch the user's username to navigate to their profile
                 try {
                     let profileResponse;
                     if (role === 'player') {
-                        profileResponse = await API.get(`/profile/player/${userId}`);
+                        profileResponse = await API.get(`/profile/player/${visitorUserId}`);
                     } else {
-                        profileResponse = await API.get(`/profile/coach/${userId}`);
+                        profileResponse = await API.get(`/profile/coach/${visitorUserId}`);
                     }
 
                     if (profileResponse.profile && profileResponse.profile.username) {
                         closeFollowListModal();
-                        window.location.href = `my-profile.html?username=${profileResponse.profile.username}`;
+                        // Navigate to the appropriate profile page based on role and type
+                        const profile = profileResponse.profile;
+                        if (role === 'coach') {
+                            const isCollegeCoach = profile.college_division &&
+                                ['FBS', 'FCS', 'D2', 'D3', 'NAIA', 'NJCAA'].includes(profile.college_division);
+                            const coachFolder = isCollegeCoach ? 'collegecoach' : 'hscoach';
+                            window.location.href = `../../${coachFolder}/tabs/my-profile.html?username=${profile.username}&from=profile`;
+                        } else {
+                            const isCollegePlayer = profile.college_division &&
+                                ['FBS', 'FCS', 'D2', 'D3', 'NAIA', 'NJCAA'].includes(profile.college_division);
+                            if (isCollegePlayer) {
+                                window.location.href = `../../collegeplayer/tabs/my-profile.html?username=${profile.username}&from=profile`;
+                            } else {
+                                window.location.href = `my-profile.html?username=${profile.username}&from=profile`;
+                            }
+                        }
                     }
                 } catch (error) {
                     console.error('Error fetching profile:', error);
@@ -4631,3 +4701,160 @@ function closeFollowListModal() {
 
 // Initialize the follow list modal when DOM is ready
 document.addEventListener('DOMContentLoaded', setupFollowListModal);
+
+// ==================== Profile Views Functions ====================
+
+// Record a profile view when viewing another user's profile
+async function recordProfileView(viewedUserId) {
+    try {
+        await API.post(`/profile/view/${viewedUserId}`);
+    } catch (error) {
+        console.error('Error recording profile view:', error);
+    }
+}
+
+// Fetch and display profile view count
+async function loadProfileViewCount() {
+    const viewCountElement = document.getElementById('profileViewsCount');
+    const profileStatsWidget = document.getElementById('profileStatsWidget');
+
+    if (!viewCountElement || !profileStatsWidget) return;
+
+    // Only show profile stats for own profile and if it's a player profile (not coach)
+    if (!isOwnProfile || currentProfileType !== 'player') {
+        profileStatsWidget.style.display = 'none';
+        return;
+    }
+
+    // Check if this is an HS player (no college_division)
+    if (currentProfile && currentProfile.college_division && currentProfile.college_division.trim() !== '') {
+        profileStatsWidget.style.display = 'none';
+        return;
+    }
+
+    profileStatsWidget.style.display = 'block';
+
+    try {
+        const response = await API.get(`/profile/views/${currentUserId}`);
+        viewCountElement.textContent = response.viewCount || 0;
+    } catch (error) {
+        console.error('Error loading profile view count:', error);
+        viewCountElement.textContent = '0';
+    }
+}
+
+// Setup the profile viewers modal
+function setupProfileViewersModal() {
+    const profileViewsLink = document.getElementById('profileViewsLink');
+    const modal = document.getElementById('profileViewersModal');
+    const modalOverlay = document.getElementById('profileViewersModalOverlay');
+    const modalClose = document.getElementById('profileViewersModalClose');
+
+    if (profileViewsLink) {
+        profileViewsLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            // Only open modal if viewing own profile
+            if (isOwnProfile) {
+                openProfileViewersModal();
+            }
+        });
+    }
+
+    if (modalOverlay) {
+        modalOverlay.addEventListener('click', closeProfileViewersModal);
+    }
+
+    if (modalClose) {
+        modalClose.addEventListener('click', closeProfileViewersModal);
+    }
+}
+
+async function openProfileViewersModal() {
+    const modal = document.getElementById('profileViewersModal');
+    const modalBody = document.getElementById('profileViewersModalBody');
+
+    if (!modal || !modalBody) return;
+
+    // Show loading state
+    modalBody.innerHTML = '<div class="follow-list-loading">Loading...</div>';
+
+    // Show modal
+    modal.classList.add('active');
+
+    try {
+        const response = await API.get(`/profile/viewers/${currentUserId}`);
+        const viewers = response.viewers || [];
+
+        if (viewers.length === 0) {
+            modalBody.innerHTML = '<div class="follow-list-empty">No profile views yet</div>';
+            return;
+        }
+
+        // Render the list
+        modalBody.innerHTML = viewers.map(viewer => {
+            const displayName = `${viewer.first_name || ''} ${viewer.last_name || ''}`.trim() || 'Unknown';
+            const roleDisplay = viewer.role === 'coach' ? 'Coach' : 'Player';
+            const subtitle = viewer.role === 'coach'
+                ? (viewer.school_or_college || '')
+                : (viewer.position_or_title || '');
+
+            return `
+                <div class="follow-list-item" data-username="${viewer.username || ''}" data-role="${viewer.role}" data-division="${viewer.college_division || ''}">
+                    <div class="follow-list-avatar">
+                        ${viewer.profile_image_url
+                            ? `<img src="${viewer.profile_image_url}" alt="${displayName}">`
+                            : `<svg viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="12" cy="7" r="4"></circle>
+                               </svg>`
+                        }
+                    </div>
+                    <div class="follow-list-info">
+                        <div class="follow-list-name">${displayName}</div>
+                        <div class="follow-list-role">${roleDisplay}${subtitle ? ' - ' + subtitle : ''}</div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        // Add click handlers to navigate to profiles
+        modalBody.querySelectorAll('.follow-list-item').forEach(item => {
+            item.addEventListener('click', () => {
+                const username = item.dataset.username;
+                const role = item.dataset.role;
+                const division = item.dataset.division;
+                if (username) {
+                    closeProfileViewersModal();
+                    // Navigate to the appropriate profile page based on role and type
+                    const collegeDivisions = ['FBS', 'FCS', 'D2', 'D3', 'NAIA', 'NJCAA'];
+                    if (role === 'coach') {
+                        const isCollegeCoach = division && collegeDivisions.includes(division);
+                        const coachFolder = isCollegeCoach ? 'collegecoach' : 'hscoach';
+                        window.location.href = `../../${coachFolder}/tabs/my-profile.html?username=${username}&from=profile`;
+                    } else {
+                        const isCollegePlayer = division && collegeDivisions.includes(division);
+                        if (isCollegePlayer) {
+                            window.location.href = `../../collegeplayer/tabs/my-profile.html?username=${username}&from=profile`;
+                        } else {
+                            window.location.href = `my-profile.html?username=${username}&from=profile`;
+                        }
+                    }
+                }
+            });
+        });
+
+    } catch (error) {
+        console.error('Error loading profile viewers:', error);
+        modalBody.innerHTML = '<div class="follow-list-empty">Failed to load viewers</div>';
+    }
+}
+
+function closeProfileViewersModal() {
+    const modal = document.getElementById('profileViewersModal');
+    if (modal) {
+        modal.classList.remove('active');
+    }
+}
+
+// Initialize profile viewers modal when DOM is ready
+document.addEventListener('DOMContentLoaded', setupProfileViewersModal);
