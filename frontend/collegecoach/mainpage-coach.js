@@ -11,6 +11,11 @@ document.addEventListener('DOMContentLoaded', async function() {
     // Update sidebar footer with coach info (will fetch fresh data from API)
     await updateSidebarFooter();
 
+    // Update unread messages badge
+    await updateUnreadMessagesBadge();
+    // Refresh unread count every 30 seconds
+    setInterval(updateUnreadMessagesBadge, 30000);
+
     // Show/hide recruiting-specific nav items for college coaches only
     await setupCollegeCoachNav();
 
@@ -365,6 +370,25 @@ async function setupCollegeCoachNav() {
         }
     } catch (error) {
         console.error('Error setting up college coach nav:', error);
+    }
+}
+
+// Update unread messages badge in sidebar
+async function updateUnreadMessagesBadge() {
+    try {
+        const response = await API.get('/messages/unread-count');
+        const badge = document.querySelector('.nav-item[href*="messages"] .notification-badge');
+
+        if (badge && response.unreadCount !== undefined) {
+            if (response.unreadCount > 0) {
+                badge.textContent = response.unreadCount > 99 ? '99+' : response.unreadCount;
+                badge.style.display = 'flex';
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+    } catch (error) {
+        console.error('Error updating unread messages badge:', error);
     }
 }
 

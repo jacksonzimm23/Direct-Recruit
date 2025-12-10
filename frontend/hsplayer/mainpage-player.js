@@ -8,6 +8,11 @@ document.addEventListener('DOMContentLoaded', async function() {
     // Update sidebar footer with user info
     await updateSidebarFooter();
 
+    // Update unread messages badge
+    await updateUnreadMessagesBadge();
+    // Refresh unread count every 30 seconds
+    setInterval(updateUnreadMessagesBadge, 30000);
+
     // Sidebar Toggle Functionality
     const sidebarToggle = document.getElementById('sidebarToggle');
     const rightSidebarToggle = document.getElementById('rightSidebarToggle');
@@ -289,11 +294,10 @@ async function updateSidebarFooter() {
                 const parts = [];
 
                 if (userRole === 'player') {
-                    // Player: Position, Height, Weight, State
+                    // Player: Position, High School, Class of Graduation Year
                     if (profile.position) parts.push(profile.position);
-                    if (profile.height) parts.push(profile.height);
-                    if (profile.weight) parts.push(`${profile.weight} lbs`);
-                    if (profile.state) parts.push(profile.state);
+                    if (profile.high_school) parts.push(profile.high_school);
+                    if (profile.graduation_year) parts.push(`Class of ${profile.graduation_year}`);
                 } else if (userRole === 'coach') {
                     // Coach: Position Title, College, State
                     if (profile.position_title) parts.push(profile.position_title);
@@ -344,5 +348,24 @@ async function verifyPlayerType() {
         }
     } catch (error) {
         console.error('Error verifying player type:', error);
+    }
+}
+
+// Update unread messages badge in sidebar
+async function updateUnreadMessagesBadge() {
+    try {
+        const response = await API.get('/messages/unread-count');
+        const badge = document.querySelector('.nav-item[href*="messages"] .notification-badge');
+
+        if (badge && response.unreadCount !== undefined) {
+            if (response.unreadCount > 0) {
+                badge.textContent = response.unreadCount > 99 ? '99+' : response.unreadCount;
+                badge.style.display = 'flex';
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+    } catch (error) {
+        console.error('Error updating unread messages badge:', error);
     }
 }

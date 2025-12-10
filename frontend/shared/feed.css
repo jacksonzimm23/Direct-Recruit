@@ -158,6 +158,7 @@
     font-size: 0.8125rem;
     color: rgba(255, 255, 255, 0.5);
     margin-top: 0.125rem;
+    font-weight: 700;
 }
 
 .post-meta.coach-meta {
@@ -632,6 +633,21 @@
     font-weight: 600;
     color: var(--white);
     font-size: 0.875rem;
+}
+
+/* Clickable profile elements */
+.clickable-profile {
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+
+.clickable-profile:hover {
+    opacity: 0.8;
+}
+
+.comment-author.clickable-profile:hover {
+    text-decoration: underline;
+    color: var(--cerulean);
 }
 
 .comment-time {

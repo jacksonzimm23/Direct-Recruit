@@ -81,16 +81,22 @@ function updateNavbarForLoggedInUser(role, profile) {
     const mainPage = role === 'player' ? 'mainpage-player.html' : 'mainpage-coach.html';
 
     // Determine which nav item should be active based on context
+    // Note: Don't use isOwnProfile here - it's not set yet when this function runs
+    // The active state will be finalized by updateActiveNavItem() after profile loads
     const urlParams = new URLSearchParams(window.location.search);
     const fromPage = urlParams.get('from');
+    const hasUsername = urlParams.get('username');
 
     // Determine active states - only one should be active
+    // If viewing own profile (no username param), highlight My Profile
+    // Otherwise, use the 'from' parameter to determine which tab came from
     let feedActive = '';
     let discoverActive = '';
     let profileActive = '';
     let messagesActive = '';
 
-    if (isOwnProfile) {
+    if (!hasUsername) {
+        // Viewing own profile
         profileActive = 'active';
     } else if (fromPage === 'messages') {
         messagesActive = 'active';
@@ -98,7 +104,10 @@ function updateNavbarForLoggedInUser(role, profile) {
         discoverActive = 'active';
     } else if (fromPage === 'profile') {
         profileActive = 'active';
+    } else if (fromPage === 'feed') {
+        feedActive = 'active';
     } else {
+        // Default to feed for viewing someone else's profile
         feedActive = 'active';
     }
 
@@ -135,6 +144,7 @@ function updateNavbarForLoggedInUser(role, profile) {
                         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
                     </svg>
                     <span>Messages</span>
+                    <span class="notification-badge" style="display: none;"></span>
                 </a>
                 <a href="/frontend/${userFolder}/tabs/notifications.html" class="nav-item">
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -179,6 +189,7 @@ function updateNavbarForLoggedInUser(role, profile) {
                         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
                     </svg>
                     <span>Messages</span>
+                    <span class="notification-badge" style="display: none;"></span>
                 </a>
                 <a href="/frontend/${userFolder}/tabs/notifications.html" class="nav-item">
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -219,6 +230,11 @@ function updateNavbarForLoggedInUser(role, profile) {
         }
 
         sidebarNav.innerHTML = navHTML;
+
+        // Update unread messages badge after navbar is rebuilt
+        if (typeof updateUnreadMessagesBadge === 'function') {
+            updateUnreadMessagesBadge();
+        }
     }
 
     // Update sidebar footer with logged-in user's info (just update text content, preserve structure)
@@ -241,16 +257,24 @@ function updateNavbarForLoggedInUser(role, profile) {
 
             const parts = [];
             if (userFolder === 'hsplayer') {
-                // HS Player: position • height • weight lbs • state
-                if (profile.position) parts.push(profile.position);
-                if (profile.height) parts.push(profile.height);
-                if (profile.weight) parts.push(`${profile.weight} lbs`);
-                if (profile.state) parts.push(profile.state);
-                userRole.textContent = parts.join(' • ') || 'Player';
-            } else if (userFolder === 'collegeplayer') {
-                // College Player: position • high_school
+                // HS Player: position • high_school • Class of graduation_year
                 if (profile.position) parts.push(profile.position);
                 if (profile.high_school) parts.push(profile.high_school);
+                if (profile.graduation_year) parts.push(`Class of ${profile.graduation_year}`);
+                userRole.textContent = parts.join(' • ') || 'Player';
+            } else if (userFolder === 'collegeplayer') {
+                // College Player: position • high_school • division
+                if (profile.position) parts.push(profile.position);
+                if (profile.high_school) parts.push(profile.high_school);
+                if (profile.college_division) {
+                    // Add "D1" prefix for FBS/FCS divisions
+                    const div = profile.college_division;
+                    if (div === 'FBS' || div === 'FCS') {
+                        parts.push(`D1 ${div}`);
+                    } else {
+                        parts.push(div);
+                    }
+                }
                 userRole.textContent = parts.join(' • ') || 'Player';
             } else if (userFolder === 'hscoach') {
                 // HS Coach: college_name, state (comma separator)
@@ -940,18 +964,19 @@ function updateActiveNavItem() {
     const messagesNavItem = document.getElementById('messagesNavItem');
     const discoverNavItem = document.querySelector('.nav-item[href*="discover"]');
 
-    if (feedNavItem && profileNavItem) {
-        // Check if we came from another page
-        const urlParams = new URLSearchParams(window.location.search);
-        const fromPage = urlParams.get('from');
+    // Check if we came from another page
+    const urlParams = new URLSearchParams(window.location.search);
+    const fromPage = urlParams.get('from');
+    const hasUsername = urlParams.get('username');
 
+    if (feedNavItem && profileNavItem) {
         // Remove active from all first
         feedNavItem.classList.remove('active');
         profileNavItem.classList.remove('active');
         if (messagesNavItem) messagesNavItem.classList.remove('active');
         if (discoverNavItem) discoverNavItem.classList.remove('active');
 
-        if (isOwnProfile) {
+        if (!hasUsername || isOwnProfile) {
             // Viewing own profile - highlight My Profile
             profileNavItem.classList.add('active');
         } else if (fromPage === 'messages' && messagesNavItem) {
@@ -963,8 +988,11 @@ function updateActiveNavItem() {
         } else if (fromPage === 'profile' && profileNavItem) {
             // Came from another profile (followers/following modal) - highlight My Profile
             profileNavItem.classList.add('active');
+        } else if (fromPage === 'feed') {
+            // Came from feed page - highlight Feed
+            feedNavItem.classList.add('active');
         } else {
-            // Viewing someone else's profile (from feed) - highlight Feed
+            // Default: Viewing someone else's profile (from feed) - highlight Feed
             feedNavItem.classList.add('active');
         }
     }

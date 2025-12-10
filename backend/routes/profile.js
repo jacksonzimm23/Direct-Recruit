@@ -128,6 +128,29 @@ router.get('/search/players', authMiddleware, async (req, res) => {
   }
 });
 
+// Discover HS Players (for college coaches) - only players without college_division
+router.get('/discover/hsplayers', authMiddleware, async (req, res) => {
+  try {
+    const filters = {
+      position: req.query.position,
+      graduation_year: req.query.graduation_year,
+      state: req.query.state,
+      min_height: req.query.min_height,
+      min_weight: req.query.min_weight,
+      min_gpa: req.query.min_gpa,
+      searchTerm: req.query.q
+    };
+    const limit = parseInt(req.query.limit) || 9;
+    const offset = parseInt(req.query.offset) || 0;
+
+    const result = await PlayerProfile.searchHSPlayers(filters, limit, offset);
+    res.json({ players: result.players, hasMore: result.hasMore });
+  } catch (error) {
+    console.error('Discover HS players error:', error);
+    res.status(500).json({ error: 'Failed to fetch HS players' });
+  }
+});
+
 // Search Coaches
 router.get('/search/coaches', authMiddleware, async (req, res) => {
   try {

@@ -221,6 +221,8 @@
     display: flex;
     flex-direction: column;
     height: 100%;
+    min-height: 0;
+    overflow: hidden;
 }
 
 .message-thread-header {
@@ -328,10 +330,12 @@
 .message-thread-content {
     flex: 1;
     overflow-y: auto;
+    overflow-x: hidden;
     padding: 1.5rem;
     display: flex;
     flex-direction: column;
     gap: 1rem;
+    min-height: 0;
 }
 
 .message-thread-content::-webkit-scrollbar {

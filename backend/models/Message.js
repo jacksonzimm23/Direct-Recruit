@@ -143,6 +143,27 @@ class Message {
     );
     return result.rows.length > 0;
   }
+
+  static async getUnreadCount(userId) {
+    // Count conversations where:
+    // 1. User is a participant
+    // 2. There's at least one message
+    // 3. Last message was NOT sent by this user
+    // 4. Last message time is newer than user's last_read_at (or last_read_at is null)
+    const result = await pool.query(
+      `SELECT COUNT(DISTINCT c.id) as unread_count
+       FROM conversations c
+       JOIN conversation_participants cp ON c.id = cp.conversation_id AND cp.user_id = $1
+       WHERE EXISTS (
+         SELECT 1 FROM messages m
+         WHERE m.conversation_id = c.id
+         AND m.sender_id != $1
+         AND (cp.last_read_at IS NULL OR m.created_at > cp.last_read_at)
+       )`,
+      [userId]
+    );
+    return parseInt(result.rows[0].unread_count) || 0;
+  }
 }
 
 module.exports = Message;

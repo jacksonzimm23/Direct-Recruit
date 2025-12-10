@@ -159,11 +159,13 @@ function renderConversationsList() {
 }
 
 async function selectConversation(conversationId) {
-    // Update UI
+    // Update UI - remove active from all, add to selected, and remove unread class from selected
     document.querySelectorAll('.conversation-item').forEach(item => {
         item.classList.remove('active');
         if (item.dataset.conversationId === conversationId) {
             item.classList.add('active');
+            // Remove unread class since we're opening this conversation (it will be marked as read)
+            item.classList.remove('unread');
         }
     });
 
@@ -175,8 +177,13 @@ async function selectConversation(conversationId) {
     if (threadHeader) threadHeader.style.display = 'flex';
     if (inputContainer) inputContainer.style.display = 'flex';
 
-    // Load messages
+    // Load messages (this also marks the conversation as read on the backend)
     await loadMessages(conversationId);
+
+    // Update the unread messages badge in the sidebar nav
+    if (typeof updateUnreadMessagesBadge === 'function') {
+        updateUnreadMessagesBadge();
+    }
 
     // Update thread header
     const conv = conversations.find(c => c.id === conversationId);
@@ -657,6 +664,25 @@ async function navigateToProfile(userId, role) {
 window.addEventListener('beforeunload', function() {
     stopPolling();
 });
+
+// Update unread messages badge in sidebar nav
+async function updateUnreadMessagesBadge() {
+    try {
+        const response = await API.get('/messages/unread-count');
+        const badge = document.querySelector('.nav-item[href*="messages"] .notification-badge');
+
+        if (badge && response.unreadCount !== undefined) {
+            if (response.unreadCount > 0) {
+                badge.textContent = response.unreadCount > 99 ? '99+' : response.unreadCount;
+                badge.style.display = 'flex';
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+    } catch (error) {
+        console.error('Error updating unread messages badge:', error);
+    }
+}
 
 // ============ Emoji Picker Functions ============
 

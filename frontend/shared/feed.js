@@ -718,7 +718,7 @@ class FeedManager {
                 const isOwnComment = (userId) => userId === this.currentUserId;
                 listEl.innerHTML = response.comments.map(comment => `
                     <div class="comment" data-comment-id="${comment.id}">
-                        <div class="comment-avatar">
+                        <div class="comment-avatar clickable-profile" onclick="feedManager.goToProfile('${comment.author_username || comment.user_id}', '${comment.author_role || 'player'}')">
                             ${comment.author_image ?
                                 `<img src="${comment.author_image}" alt="">` :
                                 `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>`
@@ -726,7 +726,7 @@ class FeedManager {
                         </div>
                         <div class="comment-body">
                             <div class="comment-header">
-                                <span class="comment-author">${comment.author_first_name || ''} ${comment.author_last_name || ''}</span>
+                                <span class="comment-author clickable-profile" onclick="feedManager.goToProfile('${comment.author_username || comment.user_id}', '${comment.author_role || 'player'}')">${comment.author_first_name || ''} ${comment.author_last_name || ''}</span>
                                 <span class="comment-time">${this.getTimeAgo(comment.created_at)}</span>
                             </div>
                             <div class="comment-content">${this.escapeHtml(comment.content)}</div>
@@ -1170,22 +1170,64 @@ class FeedManager {
         }
     }
 
-    goToProfile(identifier, role) {
-        // Determine the correct profile URL based on current page location and user role
-        const currentPath = window.location.pathname;
-        let baseUrl = '';
+    async goToProfile(identifier, role, collegeDivision = null) {
+        // Fetch profile data if we need to determine college vs HS
+        const collegeDivisions = ['FBS', 'FCS', 'D2', 'D3', 'NAIA', 'NJCAA'];
 
-        if (currentPath.includes('/hsplayer/')) {
-            baseUrl = role === 'coach' ? '../hscoach/tabs/my-profile.html' : '../hsplayer/tabs/my-profile.html';
-        } else if (currentPath.includes('/hscoach/')) {
-            baseUrl = role === 'coach' ? '../hscoach/tabs/my-profile.html' : '../hsplayer/tabs/my-profile.html';
-        } else if (currentPath.includes('/collegeplayer/')) {
-            baseUrl = role === 'coach' ? '../collegecoach/tabs/my-profile.html' : '../collegeplayer/tabs/my-profile.html';
-        } else if (currentPath.includes('/collegecoach/')) {
-            baseUrl = role === 'coach' ? '../collegecoach/tabs/my-profile.html' : '../collegeplayer/tabs/my-profile.html';
+        // Check if identifier is a UUID (user_id) vs a username
+        const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(identifier);
+
+        try {
+            let username = identifier;
+
+            // If we don't have college_division info, fetch the profile
+            if (collegeDivision === null) {
+                let endpoint;
+                if (isUUID) {
+                    // Use userId endpoint
+                    endpoint = role === 'coach' ? `/profile/coach/${identifier}` : `/profile/player/${identifier}`;
+                } else {
+                    // Use username endpoint
+                    endpoint = role === 'coach' ? `/profile/coach/username/${identifier}` : `/profile/player/username/${identifier}`;
+                }
+                const response = await API.get(endpoint);
+                if (response.profile) {
+                    collegeDivision = response.profile.college_division || '';
+                    // Get the username from the profile for navigation
+                    username = response.profile.username || identifier;
+                }
+            }
+
+            const isCollege = collegeDivision && collegeDivisions.includes(collegeDivision);
+            let targetFolder = '';
+
+            if (role === 'coach') {
+                targetFolder = isCollege ? 'collegecoach' : 'hscoach';
+            } else {
+                targetFolder = isCollege ? 'collegeplayer' : 'hsplayer';
+            }
+
+            // Navigate to the profile with from=feed parameter
+            window.location.href = `/frontend/${targetFolder}/tabs/my-profile.html?username=${username}&from=feed`;
+        } catch (error) {
+            console.error('Error navigating to profile:', error);
+            // Fallback: use current path to determine base URL
+            // The feed is on mainpage which is NOT in /tabs/, so we need to navigate to tabs/my-profile.html
+            const currentPath = window.location.pathname;
+            let baseUrl = '';
+
+            if (currentPath.includes('/hsplayer/')) {
+                baseUrl = role === 'coach' ? '../hscoach/tabs/my-profile.html' : 'tabs/my-profile.html';
+            } else if (currentPath.includes('/hscoach/')) {
+                baseUrl = role === 'coach' ? 'tabs/my-profile.html' : '../hsplayer/tabs/my-profile.html';
+            } else if (currentPath.includes('/collegecoach/')) {
+                baseUrl = role === 'coach' ? 'tabs/my-profile.html' : '../collegeplayer/tabs/my-profile.html';
+            } else if (currentPath.includes('/collegeplayer/')) {
+                baseUrl = role === 'coach' ? '../collegecoach/tabs/my-profile.html' : 'tabs/my-profile.html';
+            }
+
+            window.location.href = `${baseUrl}?username=${identifier}&from=feed`;
         }
-
-        window.location.href = `${baseUrl}?username=${identifier}`;
     }
 
     // ==================== UTILITY ====================

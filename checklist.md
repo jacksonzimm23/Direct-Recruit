@@ -35,16 +35,12 @@ TRANSFER PORTAL PLAYER
 
 Currently working on: Messages tab, messaging logic currently works, fix some of the little stuff:
 - unread messages counter on all tab pages 
-- view profile button (feed still highlighted)
 
 My profile:
-- profile pictures 
-- following/followers viewing profile format is off
-- Rightside nav bar view profiles format
+- profile pictures '
 
-Sidebar Footers:
-- add level to collegeplayer
-- change hsplayer to match feed page and messages 
+Tranfer portal:
+- welcome to portal journey; steps to be added to portal
 
 
 Feed

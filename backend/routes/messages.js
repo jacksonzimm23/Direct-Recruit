@@ -5,6 +5,17 @@ const { authMiddleware } = require('../middleware/auth');
 const { body, validationResult } = require('express-validator');
 const { messageLimiter } = require('../middleware/rateLimit');
 
+// Get unread message count
+router.get('/unread-count', authMiddleware, async (req, res) => {
+  try {
+    const count = await Message.getUnreadCount(req.userId);
+    res.json({ unreadCount: count });
+  } catch (error) {
+    console.error('Get unread count error:', error);
+    res.status(500).json({ error: 'Failed to fetch unread count' });
+  }
+});
+
 // Get user's conversations
 router.get('/conversations', authMiddleware, async (req, res) => {
   try {

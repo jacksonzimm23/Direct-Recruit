@@ -84,6 +84,65 @@ class PlayerProfile {
     const result = await pool.query('SELECT pp.*, u.email, u.role FROM player_profiles pp JOIN users u ON pp.user_id = u.id WHERE pp.username = $1', [username]);
     return result.rows[0];
   }
+
+  // Search HS Players only (those without college_division)
+  static async searchHSPlayers(filters, limit = 9, offset = 0) {
+    let query = `SELECT pp.*, u.email FROM player_profiles pp
+                 JOIN users u ON pp.user_id = u.id
+                 WHERE u.is_active = true
+                 AND (pp.college_division IS NULL OR pp.college_division = '')`;
+    const values = [];
+    let paramCount = 1;
+
+    if (filters.position) {
+      // Position can contain multiple values like "WR, RB" - check if the filter value is contained
+      query += ` AND pp.position ILIKE $${paramCount}`;
+      values.push(`%${filters.position}%`);
+      paramCount++;
+    }
+    if (filters.graduation_year) {
+      query += ` AND pp.graduation_year = $${paramCount}`;
+      values.push(filters.graduation_year);
+      paramCount++;
+    }
+    if (filters.state) {
+      query += ` AND pp.state = $${paramCount}`;
+      values.push(filters.state);
+      paramCount++;
+    }
+    if (filters.min_height) {
+      query += ` AND pp.height >= $${paramCount}`;
+      values.push(filters.min_height);
+      paramCount++;
+    }
+    if (filters.min_weight) {
+      query += ` AND pp.weight >= $${paramCount}`;
+      values.push(filters.min_weight);
+      paramCount++;
+    }
+    if (filters.min_gpa) {
+      query += ` AND pp.gpa >= $${paramCount}`;
+      values.push(filters.min_gpa);
+      paramCount++;
+    }
+    if (filters.searchTerm) {
+      query += ` AND (pp.first_name ILIKE $${paramCount} OR pp.last_name ILIKE $${paramCount} OR pp.username ILIKE $${paramCount})`;
+      values.push(`%${filters.searchTerm}%`);
+      paramCount++;
+    }
+
+    // Add limit + 1 to check if there are more results
+    query += ` ORDER BY pp.created_at DESC LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
+    values.push(limit + 1, offset);
+
+    const result = await pool.query(query, values);
+
+    // Check if there are more results
+    const hasMore = result.rows.length > limit;
+    const players = hasMore ? result.rows.slice(0, limit) : result.rows;
+
+    return { players, hasMore };
+  }
 }
 
 module.exports = PlayerProfile;
