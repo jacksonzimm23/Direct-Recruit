@@ -27,7 +27,7 @@ const authLimiter = rateLimit({
     prefix: 'rl:auth:'
   }),
   windowMs: 15 * 60 * 1000,
-  max: 50, // Increased for testing - 50 attempts per 15 minutes
+  max: 200, // Increased for development - 200 attempts per 15 minutes
   message: 'Too many authentication attempts, please try again later',
   standardHeaders: true,
   legacyHeaders: false,

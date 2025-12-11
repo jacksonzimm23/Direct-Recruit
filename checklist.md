@@ -33,14 +33,17 @@ TRANSFER PORTAL PLAYER
 
 
 
-Currently working on: Messages tab, messaging logic currently works, fix some of the little stuff:
-- unread messages counter on all tab pages 
+Currently working on: TRANSFER PORTAL, create button to join portal, copy hsplayer format and change to red / all transfer functions
+
+
+
+HSPLAYER: get rid of recruiting on coach card, add to transfer portal page for transferplayers
 
 My profile:
 - profile pictures '
 
 Tranfer portal:
-- welcome to portal journey; steps to be added to portal
+- welcome to portal journey; steps to be added to portal, add career stats to portal popup, viewing profiles from messages and my profile wrong
 
 
 Feed

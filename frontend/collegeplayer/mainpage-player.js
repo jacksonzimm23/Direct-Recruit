@@ -331,6 +331,7 @@ async function updateSidebarFooter() {
 
 // Verify user is on the correct player page (College player page)
 // HS players should be redirected to hsplayer folder
+// Transfer players should be redirected to transferplayer folder
 // Skip redirect if viewing another user's profile (has username parameter)
 async function verifyPlayerType() {
     try {
@@ -342,8 +343,16 @@ async function verifyPlayerType() {
 
         const response = await API.get('/auth/me');
         if (response.user && response.profile) {
+            // Check if user is a transfer player first - they should go to transferplayer folder
+            const isTransferPlayer = response.user.is_transfer_player;
+            if (isTransferPlayer) {
+                console.log('Transfer player detected on college page, redirecting to transfer portal...');
+                window.location.href = '../transferplayer/mainpage-player.html';
+                return;
+            }
+
             const collegeDivision = response.profile.college_division;
-            const collegeDivisions = ['FBS', 'FCS', 'D2', 'D3', 'NAIA', 'NJCAA'];
+            const collegeDivisions = ['FBS', 'FCS', 'D2', 'D3', 'NAIA', 'NJCAA', 'D1 FBS', 'D1 FCS', 'JUCO'];
 
             // If user is NOT a college player (no division), redirect to hsplayer folder
             const isCollegePlayer = collegeDivision && collegeDivisions.includes(collegeDivision);

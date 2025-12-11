@@ -20,7 +20,8 @@
       "Bash(git push:*)",
       "Bash(xargs cat:*)",
       "Bash(fc:*)",
-      "Bash(cmd /c copy:*)"
+      "Bash(cmd /c copy:*)",
+      "Bash(cmd /c xcopy:*)"
     ],
     "deny": [],
     "ask": []

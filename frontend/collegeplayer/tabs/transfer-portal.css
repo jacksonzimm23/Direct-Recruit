@@ -1,0 +1,826 @@
+/* Transfer Portal Page Styles */
+
+/* Override main-content to span full width (no right sidebar) */
+.main-content {
+    grid-column: 2 / -1 !important;
+}
+
+.transfer-portal-content {
+    padding: 0 !important;
+}
+
+/* Welcome Section */
+.portal-welcome-section {
+    text-align: center;
+    padding: 2.5rem 2rem;
+    border-bottom: 1px solid rgba(220, 38, 38, 0.15);
+}
+
+.portal-icon {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 1.5rem;
+    background: rgba(220, 38, 38, 0.15);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #dc2626;
+    animation: portalPulse 2s ease-in-out infinite;
+}
+
+@keyframes portalPulse {
+    0%, 100% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.4);
+    }
+    50% {
+        transform: scale(1.05);
+        box-shadow: 0 0 20px 10px rgba(220, 38, 38, 0.1);
+    }
+}
+
+.portal-icon svg {
+    width: 40px;
+    height: 40px;
+}
+
+.portal-welcome-title {
+    font-size: 1.75rem;
+    font-weight: 800;
+    color: var(--white);
+    margin-bottom: 0.75rem;
+}
+
+.portal-welcome-subtitle {
+    font-size: 1rem;
+    color: rgba(254, 252, 251, 0.7);
+    line-height: 1.6;
+    max-width: 500px;
+    margin: 0 auto;
+}
+
+/* Eligibility Notice */
+.eligibility-notice {
+    background: rgba(220, 38, 38, 0.1);
+    border: 1px solid rgba(220, 38, 38, 0.3);
+    border-radius: 12px;
+    padding: 1rem 1.25rem;
+    margin: 1.5rem 2rem 0;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+}
+
+.eligibility-notice svg {
+    width: 22px;
+    height: 22px;
+    color: #dc2626;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.eligibility-notice p {
+    font-size: 0.9rem;
+    color: rgba(254, 252, 251, 0.9);
+    line-height: 1.5;
+    margin: 0;
+}
+
+.eligibility-notice strong {
+    color: #dc2626;
+}
+
+/* Checklist Section */
+.portal-checklist-section {
+    padding: 2rem;
+}
+
+.checklist-header {
+    margin-bottom: 1.5rem;
+}
+
+.checklist-title {
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: var(--white);
+    margin-bottom: 0.5rem;
+}
+
+.checklist-subtitle {
+    font-size: 0.9rem;
+    color: rgba(254, 252, 251, 0.6);
+}
+
+/* Checklist Items */
+.checklist-items {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.checklist-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 1.25rem;
+    background: rgba(220, 38, 38, 0.05);
+    border: 1px solid rgba(220, 38, 38, 0.15);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.checklist-item:hover {
+    background: rgba(220, 38, 38, 0.1);
+    border-color: rgba(220, 38, 38, 0.3);
+}
+
+.checklist-item.completed {
+    background: rgba(34, 197, 94, 0.08);
+    border-color: rgba(34, 197, 94, 0.3);
+}
+
+.checklist-checkbox {
+    width: 28px;
+    height: 28px;
+    border: 2px solid rgba(220, 38, 38, 0.4);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: all 0.2s ease;
+    background: transparent;
+}
+
+.checklist-item.completed .checklist-checkbox {
+    background: #22c55e;
+    border-color: #22c55e;
+}
+
+.checklist-checkbox svg {
+    width: 16px;
+    height: 16px;
+    color: white;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.checklist-item.completed .checklist-checkbox svg {
+    opacity: 1;
+}
+
+.checklist-item-content {
+    flex: 1;
+}
+
+.checklist-item-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--white);
+    margin-bottom: 0.25rem;
+}
+
+.checklist-item.completed .checklist-item-title {
+    color: #22c55e;
+}
+
+.checklist-item-description {
+    font-size: 0.85rem;
+    color: rgba(254, 252, 251, 0.6);
+    line-height: 1.4;
+}
+
+/* Progress Indicator */
+.checklist-progress {
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid rgba(220, 38, 38, 0.15);
+}
+
+.progress-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+}
+
+.progress-label {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: rgba(254, 252, 251, 0.7);
+}
+
+.progress-count {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #dc2626;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 8px;
+    background: rgba(220, 38, 38, 0.15);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #dc2626, #22c55e);
+    border-radius: 4px;
+    transition: width 0.3s ease;
+}
+
+/* Enter Portal Section */
+.portal-action-section {
+    padding: 2rem;
+    text-align: center;
+    border-top: 1px solid rgba(220, 38, 38, 0.15);
+}
+
+.btn-enter-portal {
+    background: linear-gradient(135deg, #dc2626, #b91c1c);
+    color: white;
+    border: none;
+    padding: 1rem 2.5rem;
+    border-radius: 12px;
+    font-size: 1.1rem;
+    font-weight: 800;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-family: 'Inter', sans-serif;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+    box-shadow: 0 4px 15px rgba(220, 38, 38, 0.3);
+}
+
+.btn-enter-portal:hover {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(220, 38, 38, 0.4);
+}
+
+.btn-enter-portal:active {
+    transform: translateY(0);
+}
+
+.btn-enter-portal:disabled {
+    background: linear-gradient(135deg, #6b7280, #4b5563);
+    cursor: not-allowed;
+    opacity: 0.5;
+    box-shadow: none;
+}
+
+.btn-enter-portal:disabled:hover {
+    transform: none;
+    box-shadow: none;
+}
+
+.btn-enter-portal svg {
+    width: 22px;
+    height: 22px;
+}
+
+.portal-warning-text {
+    margin-top: 1rem;
+    font-size: 0.85rem;
+    color: #dc2626;
+}
+
+/* Confirmation Modal */
+.portal-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 1rem;
+    animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.portal-modal {
+    background: linear-gradient(180deg, #1a1f2e 0%, #141824 100%);
+    border: 1px solid rgba(220, 38, 38, 0.3);
+    border-radius: 16px;
+    width: 100%;
+    max-width: 450px;
+    padding: 2rem;
+    position: relative;
+    animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.modal-close-btn {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: transparent;
+    border: none;
+    color: rgba(254, 252, 251, 0.5);
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+.modal-close-btn:hover {
+    background: rgba(254, 252, 251, 0.1);
+    color: var(--white);
+}
+
+.modal-close-btn svg {
+    width: 20px;
+    height: 20px;
+}
+
+.modal-icon {
+    width: 70px;
+    height: 70px;
+    margin: 0 auto 1.5rem;
+    background: rgba(220, 38, 38, 0.15);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #dc2626;
+}
+
+.modal-icon svg {
+    width: 36px;
+    height: 36px;
+}
+
+.modal-title {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--white);
+    text-align: center;
+    margin-bottom: 0.75rem;
+}
+
+.modal-message {
+    font-size: 1rem;
+    color: rgba(254, 252, 251, 0.7);
+    text-align: center;
+    line-height: 1.6;
+    margin-bottom: 1.5rem;
+}
+
+.modal-warning {
+    background: rgba(220, 38, 38, 0.1);
+    border: 1px solid rgba(220, 38, 38, 0.3);
+    border-radius: 10px;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+}
+
+.modal-warning svg {
+    width: 20px;
+    height: 20px;
+    color: #dc2626;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.modal-warning p {
+    font-size: 0.9rem;
+    color: rgba(254, 252, 251, 0.9);
+    line-height: 1.5;
+    margin: 0;
+}
+
+.modal-actions {
+    display: flex;
+    gap: 1rem;
+}
+
+.btn-modal-cancel {
+    flex: 1;
+    background: rgba(254, 252, 251, 0.1);
+    color: var(--white);
+    border: 1px solid rgba(254, 252, 251, 0.2);
+    padding: 0.875rem 1.5rem;
+    border-radius: 10px;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: 'Inter', sans-serif;
+}
+
+.btn-modal-cancel:hover {
+    background: rgba(254, 252, 251, 0.15);
+    border-color: rgba(254, 252, 251, 0.3);
+}
+
+.btn-modal-confirm {
+    flex: 1;
+    background: linear-gradient(135deg, #dc2626, #b91c1c);
+    color: white;
+    border: none;
+    padding: 0.875rem 1.5rem;
+    border-radius: 10px;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: 'Inter', sans-serif;
+}
+
+.btn-modal-confirm:hover {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+}
+
+.btn-modal-confirm:disabled {
+    background: linear-gradient(135deg, #6b7280, #4b5563);
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+.btn-modal-confirm:disabled:hover {
+    background: linear-gradient(135deg, #6b7280, #4b5563);
+}
+
+/* Info Form Modal Styles */
+.info-form-modal {
+    max-width: 750px;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.info-form-modal .modal-icon {
+    width: 60px;
+    height: 60px;
+    margin-bottom: 1rem;
+}
+
+.info-form-modal .modal-icon svg {
+    width: 30px;
+    height: 30px;
+}
+
+.info-form-modal .modal-title {
+    margin-bottom: 0.5rem;
+}
+
+.info-form-modal .modal-message {
+    margin-bottom: 1.5rem;
+}
+
+.transfer-info-form {
+    text-align: left;
+    margin-bottom: 1.5rem;
+}
+
+.transfer-info-form .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.transfer-info-form .form-group {
+    margin-bottom: 1rem;
+}
+
+.transfer-info-form label {
+    display: block;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--white);
+    margin-bottom: 0.5rem;
+}
+
+.transfer-info-form .required {
+    color: #dc2626;
+}
+
+.transfer-info-form .form-hint {
+    font-size: 0.8rem;
+    color: rgba(254, 252, 251, 0.5);
+    margin-bottom: 0.5rem;
+}
+
+.transfer-info-form input[type="text"],
+.transfer-info-form input[type="number"],
+.transfer-info-form select {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background: rgba(220, 38, 38, 0.05);
+    border: 1px solid rgba(220, 38, 38, 0.3);
+    border-radius: 8px;
+    color: var(--white);
+    font-size: 0.95rem;
+    font-family: 'Inter', sans-serif;
+    transition: all 0.2s ease;
+    box-sizing: border-box;
+}
+
+.transfer-info-form input[type="text"]:focus,
+.transfer-info-form input[type="number"]:focus,
+.transfer-info-form select:focus {
+    outline: none;
+    border-color: #dc2626;
+    background: rgba(220, 38, 38, 0.1);
+    box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.15);
+}
+
+.transfer-info-form input::placeholder {
+    color: rgba(254, 252, 251, 0.4);
+}
+
+.transfer-info-form select {
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23dc2626' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 1rem center;
+    padding-right: 2.5rem;
+}
+
+.transfer-info-form select option {
+    background: #1a1f2e;
+    color: var(--white);
+}
+
+/* Height Inputs */
+.transfer-info-form .height-inputs {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.transfer-info-form .height-inputs input {
+    width: 70px;
+    text-align: center;
+}
+
+.transfer-info-form .height-separator {
+    color: #dc2626;
+    font-weight: 700;
+    font-size: 1.2rem;
+}
+
+/* Multi-select Container (Position Selection) */
+.multi-select-container {
+    max-height: 300px;
+    overflow-y: auto;
+    padding: 1.25rem;
+    background: rgba(254, 252, 251, 0.03);
+    border: 2px solid rgba(220, 38, 38, 0.2);
+    border-radius: 10px;
+    -webkit-overflow-scrolling: touch;
+}
+
+.multi-select-group {
+    margin-bottom: 1.25rem;
+}
+
+.multi-select-group:last-child {
+    margin-bottom: 0;
+}
+
+.group-label {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #dc2626;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid rgba(220, 38, 38, 0.2);
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    background: rgba(254, 252, 251, 0.03);
+    border: 1px solid rgba(220, 38, 38, 0.2);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 0.95rem;
+    margin-bottom: 0.5rem;
+}
+
+.checkbox-label:last-child {
+    margin-bottom: 0;
+}
+
+.checkbox-label:hover,
+.checkbox-label:active {
+    background: rgba(220, 38, 38, 0.08);
+    border-color: #dc2626;
+}
+
+.checkbox-label input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    accent-color: #dc2626;
+    flex-shrink: 0;
+}
+
+.checkbox-label span {
+    color: var(--white);
+    flex: 1;
+}
+
+.checkbox-label input[type="checkbox"]:checked + span {
+    color: #dc2626;
+    font-weight: 600;
+}
+
+/* Selected Items Pills */
+.selected-items {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 1rem;
+    min-height: 2rem;
+}
+
+.selected-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    background: rgba(220, 38, 38, 0.15);
+    border: 1px solid rgba(220, 38, 38, 0.3);
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #dc2626;
+}
+
+.selected-item .remove-item {
+    background: none;
+    border: none;
+    color: #dc2626;
+    font-size: 1.1rem;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+    opacity: 0.7;
+    transition: opacity 0.2s ease;
+}
+
+.selected-item .remove-item:hover {
+    opacity: 1;
+}
+
+.position-error {
+    color: #dc2626;
+    font-size: 0.85rem;
+    margin-top: 0.5rem;
+}
+
+/* Modal action buttons with icons */
+.btn-modal-cancel,
+.btn-modal-confirm {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Responsive for info form */
+@media (max-width: 600px) {
+    .info-form-modal {
+        max-width: 95%;
+        padding: 1.5rem;
+    }
+
+    .transfer-info-form .form-row {
+        grid-template-columns: 1fr;
+    }
+
+    .multi-select-container {
+        max-height: 250px;
+        padding: 1rem;
+    }
+
+    .checkbox-label {
+        padding: 0.875rem;
+        font-size: 0.9rem;
+    }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .portal-welcome-section {
+        padding: 2rem 1.5rem;
+    }
+
+    .portal-welcome-title {
+        font-size: 1.5rem;
+    }
+
+    .eligibility-notice {
+        margin: 1.5rem 1.5rem 0;
+    }
+
+    .portal-checklist-section {
+        padding: 1.5rem;
+    }
+
+    .portal-action-section {
+        padding: 1.5rem;
+    }
+
+    .checklist-item {
+        padding: 1rem;
+    }
+
+    .btn-enter-portal {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .modal-actions {
+        flex-direction: column;
+    }
+}
+
+@media (max-width: 480px) {
+    .portal-welcome-section {
+        padding: 1.5rem 1rem;
+    }
+
+    .portal-icon {
+        width: 64px;
+        height: 64px;
+    }
+
+    .portal-icon svg {
+        width: 32px;
+        height: 32px;
+    }
+
+    .portal-welcome-title {
+        font-size: 1.25rem;
+    }
+
+    .eligibility-notice {
+        margin: 1rem 1rem 0;
+        padding: 0.875rem 1rem;
+    }
+
+    .portal-checklist-section {
+        padding: 1rem;
+    }
+
+    .checklist-title {
+        font-size: 1.1rem;
+    }
+
+    .checklist-item {
+        padding: 0.875rem;
+        gap: 0.75rem;
+    }
+
+    .checklist-checkbox {
+        width: 24px;
+        height: 24px;
+    }
+
+    .checklist-item-title {
+        font-size: 0.95rem;
+    }
+
+    .portal-action-section {
+        padding: 1.5rem 1rem;
+    }
+
+    .btn-enter-portal {
+        padding: 0.875rem 1.5rem;
+        font-size: 1rem;
+    }
+}

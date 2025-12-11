@@ -68,11 +68,44 @@ async function loadCurrentUser() {
                 userName.textContent = `${response.profile.first_name} ${response.profile.last_name}`;
             }
             if (userRole && response.profile) {
+                const profile = response.profile;
+                const user = response.user;
                 const parts = [];
-                if (response.profile.position) parts.push(response.profile.position);
-                if (response.profile.high_school) parts.push(response.profile.high_school);
-                if (response.profile.graduation_year) parts.push(`Class of ${response.profile.graduation_year}`);
-                userRole.textContent = parts.join(' • ') || 'Player';
+
+                // Check if logged-in user is a transfer player
+                if (user.is_transfer_player) {
+                    // Transfer Player: position • height • weight • YOE
+                    if (profile.position) parts.push(profile.position);
+
+                    if (profile.height) {
+                        if (typeof profile.height === 'string' && (profile.height.includes("'") || profile.height.includes('"'))) {
+                            parts.push(profile.height);
+                        } else {
+                            const totalInches = parseInt(profile.height);
+                            const feet = Math.floor(totalInches / 12);
+                            const inches = totalInches % 12;
+                            parts.push(`${feet}'${inches}"`);
+                        }
+                    }
+
+                    if (profile.weight) {
+                        parts.push(`${profile.weight} lbs`);
+                    }
+
+                    if (profile.eligibility) {
+                        const yearText = profile.eligibility === 1 ? 'year' : 'years';
+                        parts.push(`YOE: ${profile.eligibility} ${yearText}`);
+                    }
+
+                    userRole.textContent = parts.join(' • ') || 'Transfer Player';
+                    userRole.style.color = '#b91c1c';
+                } else {
+                    // Default format for HS players
+                    if (profile.position) parts.push(profile.position);
+                    if (profile.high_school) parts.push(profile.high_school);
+                    if (profile.graduation_year) parts.push(`Class of ${profile.graduation_year}`);
+                    userRole.textContent = parts.join(' • ') || 'Player';
+                }
             }
 
             // Update avatar if available
@@ -643,10 +676,14 @@ async function navigateToProfile(userId, role) {
                 const coachFolder = isCollegeCoach ? 'collegecoach' : 'hscoach';
                 window.location.href = `../../${coachFolder}/tabs/my-profile.html?username=${response.profile.username}&from=messages`;
             } else {
-                // For players, determine if college or hs
+                // For players, check if transfer player first, then college or hs
+                const isTransferPlayer = response.profile.transfer === 'y';
                 const isCollegePlayer = response.profile.college_division &&
                     ['FBS', 'FCS', 'D2', 'D3', 'NAIA', 'NJCAA'].includes(response.profile.college_division);
-                if (isCollegePlayer) {
+
+                if (isTransferPlayer) {
+                    window.location.href = `../../transferplayer/tabs/my-profile.html?username=${response.profile.username}&from=messages`;
+                } else if (isCollegePlayer) {
                     window.location.href = `../../collegeplayer/tabs/my-profile.html?username=${response.profile.username}&from=messages`;
                 } else {
                     window.location.href = `my-profile.html?username=${response.profile.username}&from=messages`;

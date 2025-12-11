@@ -1,0 +1,249 @@
+/* Transfer Portal Page Styles - Transfer Player Welcome */
+
+/* Override main-content to span full width (no right sidebar) */
+.main-content {
+    grid-column: 2 / -1 !important;
+}
+
+.transfer-portal-content {
+    padding: 0 !important;
+}
+
+/* Red accent color for transfer portal nav item */
+.nav-item-portal {
+    color: #dc2626 !important;
+}
+
+.nav-item-portal .nav-icon {
+    color: #dc2626 !important;
+}
+
+.nav-item-portal.active {
+    background: rgba(220, 38, 38, 0.15) !important;
+    border-left: 3px solid #dc2626 !important;
+}
+
+.nav-item-portal:hover {
+    background: rgba(220, 38, 38, 0.1) !important;
+}
+
+/* Welcome Section - Success State */
+.portal-welcome-section {
+    text-align: center;
+    padding: 3rem 2rem;
+    border-bottom: 1px solid rgba(220, 38, 38, 0.15);
+}
+
+.portal-welcome-success {
+    background: linear-gradient(180deg, rgba(220, 38, 38, 0.05) 0%, transparent 100%);
+}
+
+.portal-icon {
+    width: 100px;
+    height: 100px;
+    margin: 0 auto 1.5rem;
+    background: rgba(220, 38, 38, 0.15);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #dc2626;
+    animation: portalPulse 2s ease-in-out infinite;
+}
+
+.portal-icon svg {
+    width: 50px;
+    height: 50px;
+}
+
+@keyframes portalPulse {
+    0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.4); }
+    50% { transform: scale(1.05); box-shadow: 0 0 20px 10px rgba(220, 38, 38, 0.1); }
+}
+
+.portal-welcome-title {
+    font-size: 2rem;
+    font-weight: 800;
+    color: var(--white);
+    margin-bottom: 0.75rem;
+}
+
+.portal-welcome-subtitle {
+    font-size: 1.1rem;
+    color: rgba(254, 252, 251, 0.7);
+    line-height: 1.6;
+    max-width: 600px;
+    margin: 0 auto 2rem;
+}
+
+/* Status Badge */
+.portal-status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    background: linear-gradient(135deg, #dc2626, #b91c1c);
+    border-radius: 30px;
+    color: white;
+    font-weight: 700;
+    font-size: 0.95rem;
+    box-shadow: 0 4px 15px rgba(220, 38, 38, 0.3);
+}
+
+.portal-status-badge svg {
+    width: 18px;
+    height: 18px;
+}
+
+/* Info Cards Section */
+.portal-info-section {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+    padding: 2rem;
+}
+
+.portal-info-card {
+    background: rgba(220, 38, 38, 0.05);
+    border: 1px solid rgba(220, 38, 38, 0.15);
+    border-radius: 16px;
+    padding: 1.5rem;
+    transition: all 0.3s ease;
+}
+
+.portal-info-card:hover {
+    border-color: rgba(220, 38, 38, 0.3);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(220, 38, 38, 0.1);
+}
+
+.portal-info-icon {
+    width: 50px;
+    height: 50px;
+    background: rgba(220, 38, 38, 0.15);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #dc2626;
+    margin-bottom: 1rem;
+}
+
+.portal-info-icon svg {
+    width: 24px;
+    height: 24px;
+}
+
+.portal-info-card h3 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--white);
+    margin-bottom: 0.5rem;
+}
+
+.portal-info-card p {
+    font-size: 0.9rem;
+    color: rgba(254, 252, 251, 0.6);
+    line-height: 1.5;
+}
+
+/* Quick Actions Section */
+.portal-actions-section {
+    padding: 2rem;
+    border-top: 1px solid rgba(220, 38, 38, 0.15);
+}
+
+.portal-section-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--white);
+    margin-bottom: 1.5rem;
+}
+
+.portal-quick-actions {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.portal-action-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem 1.5rem;
+    background: rgba(220, 38, 38, 0.1);
+    border: 1px solid rgba(220, 38, 38, 0.2);
+    border-radius: 12px;
+    color: var(--white);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.95rem;
+    transition: all 0.2s ease;
+}
+
+.portal-action-btn:hover {
+    background: rgba(220, 38, 38, 0.2);
+    border-color: #dc2626;
+    transform: translateY(-2px);
+}
+
+.portal-action-btn svg {
+    width: 20px;
+    height: 20px;
+    color: #dc2626;
+}
+
+/* Responsive Design */
+@media (max-width: 992px) {
+    .portal-info-section {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .portal-welcome-section {
+        padding: 2rem 1.5rem;
+    }
+
+    .portal-welcome-title {
+        font-size: 1.5rem;
+    }
+
+    .portal-info-section {
+        grid-template-columns: 1fr;
+        padding: 1.5rem;
+    }
+
+    .portal-actions-section {
+        padding: 1.5rem;
+    }
+
+    .portal-quick-actions {
+        flex-direction: column;
+    }
+
+    .portal-action-btn {
+        justify-content: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .portal-icon {
+        width: 80px;
+        height: 80px;
+    }
+
+    .portal-icon svg {
+        width: 40px;
+        height: 40px;
+    }
+
+    .portal-welcome-title {
+        font-size: 1.25rem;
+    }
+
+    .portal-status-badge {
+        padding: 0.625rem 1.25rem;
+        font-size: 0.85rem;
+    }
+}

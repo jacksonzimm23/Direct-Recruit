@@ -75,9 +75,12 @@ router.get('/me', authMiddleware, async (req, res) => {
   try {
     let profile = null;
     let isCollegeCoach = false;
+    let isTransferPlayer = false;
 
     if (req.user.role === 'player') {
       profile = await PlayerProfile.findByUserId(req.userId);
+      // Check if player is in transfer portal (transfer = 'y')
+      isTransferPlayer = profile && profile.transfer === 'y';
     } else if (req.user.role === 'coach') {
       profile = await CoachProfile.findByUserId(req.userId);
       // A coach is considered a college coach if they have a college_division
@@ -92,7 +95,8 @@ router.get('/me', authMiddleware, async (req, res) => {
         role: req.user.role,
         profile_completed: req.user.profile_completed,
         email_verified: req.user.email_verified,
-        is_college_coach: isCollegeCoach
+        is_college_coach: isCollegeCoach,
+        is_transfer_player: isTransferPlayer
       },
       profile
     });

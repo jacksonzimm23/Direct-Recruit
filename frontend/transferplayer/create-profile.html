@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Player Profile - Direct Recruit</title>
+    <link rel="stylesheet" href="../landingpage/styles.css">
+    <link rel="stylesheet" href="profile-form.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="../landingpage/index.html" class="logo">
+                <img src="https://res.cloudinary.com/dzmsj6nwv/image/upload/v1762928148/LogoPNG3_pofqrr.png" alt="Direct Recruit Logo" class="logo-icon">
+                <div class="logo-text">
+                    <span class="logo-title">Direct Recruit</span>
+                    <span class="logo-subtitle">GET RECRUITED · THE RIGHT WAY</span>
+                </div>
+            </a>
+            <div class="nav-links">
+                <a href="../landingpage/index.html#features">Features</a>
+                <a href="../landingpage/index.html#how-it-works">How It Works</a>
+                <a href="../landingpage/index.html#about">About</a>
+            </div>
+            <div class="nav-buttons">
+                <a href="#"><button class="btn-secondary">Sign In</button></a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Player Profile Form Section -->
+    <section class="profile-form-section">
+        <div class="form-container">
+            <!-- Back Button -->
+            <a href="../landingpage/get-started.html" class="back-button">
+                <svg viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd"/>
+                </svg>
+                Back to Role Selection
+            </a>
+
+            <div class="form-header">
+                <h1>Create Your Player Profile</h1>
+                <p>Showcase your talent and connect directly with college coaches.</p>
+            </div>
+
+            <form id="playerProfileForm" class="profile-form">
+                <!-- Personal Information -->
+                <div class="form-section">
+                    <h2 class="section-title">Personal Information</h2>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="firstName">First Name <span class="required">*</span></label>
+                            <input
+                                type="text"
+                                id="firstName"
+                                name="firstName"
+                                required
+                                placeholder="John"
+                            >
+                        </div>
+
+                        <div class="form-group">
+                            <label for="lastName">Last Name <span class="required">*</span></label>
+                            <input
+                                type="text"
+                                id="lastName"
+                                name="lastName"
+                                required
+                                placeholder="Smith"
+                            >
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="username">Username <span class="required">*</span></label>
+                        <input
+                            type="text"
+                            id="username"
+                            name="username"
+                            required
+                            pattern="[a-zA-Z0-9_]+"
+                            title="Only letters, numbers, and underscores allowed"
+                            placeholder="johnsmith_26"
+                        >
+                        <small class="form-hint" id="usernameHint">Choose a unique username (letters, numbers, underscore only)</small>
+                        <small class="form-error" id="usernameError" style="display: none; color: #ff6b6b; font-size: 0.875rem; margin-top: 0.25rem;">This username is already taken</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="email">Email <span class="required">*</span></label>
+                        <input
+                            type="email"
+                            id="email"
+                            name="email"
+                            required
+                            placeholder="john.smith@email.com"
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label for="password">Password <span class="required">*</span></label>
+                        <input
+                            type="password"
+                            id="password"
+                            name="password"
+                            required
+                            minlength="8"
+                            placeholder="Create a strong password"
+                        >
+                        <small class="form-hint password-requirements">
+                            Must be at least 8 characters long and contain: uppercase letter, lowercase letter, number, and special character (!@#$%^&*)
+                        </small>
+                        <div id="passwordStrength" class="password-strength" style="display: none;"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="confirmPassword">Confirm Password <span class="required">*</span></label>
+                        <input
+                            type="password"
+                            id="confirmPassword"
+                            name="confirmPassword"
+                            required
+                            minlength="8"
+                            placeholder="Re-enter password"
+                        >
+                        <div id="passwordMatch" class="password-match" style="display: none;"></div>
+                    </div>
+                </div>
+
+                <!-- School Information -->
+                <div class="form-section">
+                    <h2 class="section-title">High School Information</h2>
+                    <input type="hidden" id="schoolType" name="schoolType" value="highschool">
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="highSchoolName">High School Name <span class="required">*</span></label>
+                            <input
+                                type="text"
+                                id="highSchoolName"
+                                name="highSchoolName"
+                                required
+                                placeholder="Lincoln High School"
+                            >
+                        </div>
+
+                        <div class="form-group">
+                            <label for="hsState">State <span class="required">*</span></label>
+                            <select id="hsState" name="hsState" required>
+                                <option value="">Select State</option>
+                                <option value="AL">Alabama</option>
+                                <option value="AK">Alaska</option>
+                                <option value="AZ">Arizona</option>
+                                <option value="AR">Arkansas</option>
+                                <option value="CA">California</option>
+                                <option value="CO">Colorado</option>
+                                <option value="CT">Connecticut</option>
+                                <option value="DE">Delaware</option>
+                                <option value="FL">Florida</option>
+                                <option value="GA">Georgia</option>
+                                <option value="HI">Hawaii</option>
+                                <option value="ID">Idaho</option>
+                                <option value="IL">Illinois</option>
+                                <option value="IN">Indiana</option>
+                                <option value="IA">Iowa</option>
+                                <option value="KS">Kansas</option>
+                                <option value="KY">Kentucky</option>
+                                <option value="LA">Louisiana</option>
+                                <option value="ME">Maine</option>
+                                <option value="MD">Maryland</option>
+                                <option value="MA">Massachusetts</option>
+                                <option value="MI">Michigan</option>
+                                <option value="MN">Minnesota</option>
+                                <option value="MS">Mississippi</option>
+                                <option value="MO">Missouri</option>
+                                <option value="MT">Montana</option>
+                                <option value="NE">Nebraska</option>
+                                <option value="NV">Nevada</option>
+                                <option value="NH">New Hampshire</option>
+                                <option value="NJ">New Jersey</option>
+                                <option value="NM">New Mexico</option>
+                                <option value="NY">New York</option>
+                                <option value="NC">North Carolina</option>
+                                <option value="ND">North Dakota</option>
+                                <option value="OH">Ohio</option>
+                                <option value="OK">Oklahoma</option>
+                                <option value="OR">Oregon</option>
+                                <option value="PA">Pennsylvania</option>
+                                <option value="RI">Rhode Island</option>
+                                <option value="SC">South Carolina</option>
+                                <option value="SD">South Dakota</option>
+                                <option value="TN">Tennessee</option>
+                                <option value="TX">Texas</option>
+                                <option value="UT">Utah</option>
+                                <option value="VT">Vermont</option>
+                                <option value="VA">Virginia</option>
+                                <option value="WA">Washington</option>
+                                <option value="WV">West Virginia</option>
+                                <option value="WI">Wisconsin</option>
+                                <option value="WY">Wyoming</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="hsGradYear">Graduation Year <span class="required">*</span></label>
+                        <select id="hsGradYear" name="hsGradYear" required>
+                            <option value="">Select Year</option>
+                            <option value="2025">2025</option>
+                            <option value="2026">2026</option>
+                            <option value="2027">2027</option>
+                            <option value="2028">2028</option>
+                            <option value="2029">2029</option>
+                            <option value="2030">2030</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="gpa">GPA <span class="optional">(Optional)</span></label>
+                        <input
+                            type="number"
+                            id="gpa"
+                            name="gpa"
+                            min="0"
+                            max="4.0"
+                            step="0.01"
+                            placeholder="e.g., 3.75"
+                        >
+                        <small class="form-hint">Enter your current GPA on a 4.0 scale</small>
+                    </div>
+                </div>
+
+                <!-- Football Information -->
+                <div class="form-section">
+                    <h2 class="section-title">Football Information</h2>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="heightFt">Height <span class="required">*</span></label>
+                            <div class="height-inputs">
+                                <div class="height-input-group">
+                                    <input
+                                        type="number"
+                                        id="heightFt"
+                                        name="heightFt"
+                                        min="4"
+                                        max="7"
+                                        required
+                                        placeholder="Ft"
+                                    >
+                                    <span class="height-label">ft</span>
+                                </div>
+                                <div class="height-input-group">
+                                    <input
+                                        type="number"
+                                        id="heightIn"
+                                        name="heightIn"
+                                        min="0"
+                                        max="11"
+                                        required
+                                        placeholder="In"
+                                    >
+                                    <span class="height-label">in</span>
+                                </div>
+                            </div>
+                            <small class="form-hint">Enter your height (e.g., 6 ft 2 in)</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="weight">Weight <span class="required">*</span></label>
+                            <div class="weight-input-group">
+                                <input
+                                    type="number"
+                                    id="weight"
+                                    name="weight"
+                                    min="100"
+                                    max="400"
+                                    required
+                                    placeholder="185"
+                                >
+                                <span class="weight-label">lbs</span>
+                            </div>
+                            <small class="form-hint">Enter your weight in pounds</small>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Position(s) <span class="required">*</span></label>
+                        <p class="form-hint" style="margin-bottom: 0.75rem;">Select all positions you play</p>
+                        <div class="multi-select-container" id="positionsContainer">
+                            <div class="multi-select-group">
+                                <h4 class="group-label">Offense - Skill Positions</h4>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="position" value="QB">
+                                    <span>Quarterback (QB)</span>
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="position" value="RB">
+                                    <span>Running Back (RB)</span>
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="position" value="FB">
+                                    <span>Fullback (FB)</span>
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="position" value="WR">
+                                    <span>Wide Receiver (WR)</span>
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="position" value="TE">
+                                    <span>Tight End (TE)</span>
+                                </label>
+                            </div>
+
+                            <div class="multi-select-group">
+                                <h4 class="group-label">Offense - Line</h4>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="position" value="OT">
+                                    <span>Offensive Tackle (OT)</span>
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="position" value="OG">
+                                    <span>Offensive Guard (OG)</span>
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="position" value="C">
+                                    <span>Center (C)</span>
+                                </label>
+                            </div>
+
+                            <div class="multi-select-group">
+                                <h4 class="group-label">Defense - Line</h4>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="position" value="DE">
+                                    <span>Defensive End (DE)</span>
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="position" value="DT">
+                                    <span>Defensive Tackle (DT)</span>
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="position" value="NT">
+                                    <span>Nose Tackle (NT)</span>
+                                </label>
+                            </div>
+
+                            <div class="multi-select-group">
+                                <h4 class="group-label">Defense - Linebackers</h4>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="position" value="ILB">
+                                    <span>Inside Linebacker (ILB)</span>
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="position" value="OLB">
+                                    <span>Outside Linebacker (OLB)</span>
+                                </label>
+                            </div>
+
+                            <div class="multi-select-group">
+                                <h4 class="group-label">Defense - Secondary</h4>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="position" value="CB">
+                                    <span>Cornerback (CB)</span>
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="position" value="S">
+                                    <span>Safety (S)</span>
+                                </label>
+                            </div>
+
+                            <div class="multi-select-group">
+                                <h4 class="group-label">Special Teams</h4>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="position" value="K">
+                                    <span>Kicker (K)</span>
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="position" value="P">
+                                    <span>Punter (P)</span>
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="position" value="LS">
+                                    <span>Long Snapper (LS)</span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="selected-items" id="selectedPositions"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="hudlProfile">Hudl Profile Link <span class="optional">(Optional)</span></label>
+                        <input 
+                            type="url" 
+                            id="hudlProfile" 
+                            name="hudlProfile" 
+                            placeholder="https://www.hudl.com/profile/..."
+                        >
+                        <small class="form-hint">If you have a Hudl profile, paste the link here</small>
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="form-actions">
+                    <button type="submit" class="btn-submit">
+                        Create Player Profile
+                        <svg class="btn-icon" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                        </svg>
+                    </button>
+                </div>
+
+                <p class="form-footer">
+                    Already have an account? <a href="#">Sign In</a>
+                </p>
+            </form>
+        </div>
+    </section>
+
+    <script src="../shared/api.js"></script>
+    <script src="profile-form.js"></script>
+</body>
+</html>
