@@ -352,7 +352,7 @@ async function verifyPlayerType() {
             }
 
             const collegeDivision = response.profile.college_division;
-            const collegeDivisions = ['FBS', 'FCS', 'D2', 'D3', 'NAIA', 'NJCAA', 'D1 FBS', 'D1 FCS', 'JUCO'];
+            const collegeDivisions = ['FBS', 'FCS', 'D2', 'D3', 'NAIA', 'NJCAA', 'D1 FBS', 'D1 FCS', 'JUCO', 'Division II', 'Division III'];
 
             // If user is NOT a college player (no division), redirect to hsplayer folder
             const isCollegePlayer = collegeDivision && collegeDivisions.includes(collegeDivision);

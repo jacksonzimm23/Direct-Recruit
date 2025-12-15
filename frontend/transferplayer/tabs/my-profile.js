@@ -1727,8 +1727,9 @@ async function saveProfileChanges() {
         const phoneDigits = phoneInput.replace(/\D/g, '');
 
         // Determine which school type is active
+        // For transfer players, there's no school type toggle - they're always college players
         const schoolTypeCollege = document.getElementById('editSchoolTypeCollege');
-        const isCollegePlayer = schoolTypeCollege && schoolTypeCollege.classList.contains('active');
+        const isCollegePlayer = !schoolTypeCollege || schoolTypeCollege.classList.contains('active');
 
         // Get form data - save positions as slash-separated string
         const formData = {

@@ -51,14 +51,14 @@ DB_HOST=localhost
 DB_PORT=5432
 DB_NAME=direct_recruit
 DB_USER=postgres
-DB_PASSWORD=YOUR_POSTGRES_PASSWORD_HERE
+DB_PASSWORD=
 
 # Redis
 REDIS_HOST=localhost
 REDIS_PORT=6379
 
 # JWT - CHANGE THIS SECRET
-JWT_SECRET=YOUR_SECRET_KEY_HERE
+JWT_SECRET=
 JWT_EXPIRE=7d
 
 # File Upload
@@ -155,7 +155,7 @@ Redis connected
    ```json
    {
      "email": "testplayer@example.com",
-     "password": "<your_password>",
+     "password": "...",
      "role": "player"
    }
    ```
@@ -188,14 +188,14 @@ Redis connected
 ```bash
 curl -X POST http://localhost:5000/api/auth/register ^
   -H "Content-Type: application/json" ^
-  -d "{\"email\":\"test@example.com\",\"password\":\"<your_password>\",\"role\":\"player\"}"
+  -d "{\"email\":\"test@example.com\",\"password\":\"...\",\"role\":\"player\"}"
 ```
 
 **Login:**
 ```bash
 curl -X POST http://localhost:5000/api/auth/login ^
   -H "Content-Type: application/json" ^
-  -d "{\"email\":\"test@example.com\",\"password\":\"<your_password>\"}"
+  -d "{\"email\":\"test@example.com\",\"password\":\"...\"}"
 ```
 
 **Create Profile (replace YOUR_TOKEN):**

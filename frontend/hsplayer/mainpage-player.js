@@ -335,7 +335,7 @@ async function verifyPlayerType() {
         const response = await API.get('/auth/me');
         if (response.user && response.profile) {
             const collegeDivision = response.profile.college_division;
-            const collegeDivisions = ['FBS', 'FCS', 'D2', 'D3', 'NAIA', 'NJCAA'];
+            const collegeDivisions = ['FBS', 'FCS', 'D2', 'D3', 'NAIA', 'NJCAA', 'JUCO', 'Division II', 'Division III'];
 
             // If user is a college player (has a division), redirect to collegeplayer folder
             const isCollegePlayer = collegeDivision && collegeDivisions.includes(collegeDivision);

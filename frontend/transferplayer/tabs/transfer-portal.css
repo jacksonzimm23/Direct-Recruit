@@ -141,7 +141,7 @@
 
 .leave-portal-popup {
     position: relative;
-    background: var(--primary-bg, #1a1a1a);
+    background: var(--oxford-blue, #0a1128);
     border: 1px solid rgba(220, 38, 38, 0.3);
     border-radius: 16px;
     padding: 2rem;
@@ -177,6 +177,160 @@
 
 .leave-portal-content {
     min-height: 100px;
+}
+
+.leave-portal-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--white);
+    margin-bottom: 0.5rem;
+}
+
+.leave-portal-desc {
+    font-size: 0.95rem;
+    color: rgba(254, 252, 251, 0.7);
+    margin-bottom: 1.5rem;
+}
+
+.leave-portal-form .form-group {
+    margin-bottom: 1rem;
+}
+
+.leave-portal-form .form-group label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: rgba(254, 252, 251, 0.9);
+    margin-bottom: 0.5rem;
+}
+
+.leave-portal-form .form-group input,
+.leave-portal-form .form-group select {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(220, 38, 38, 0.3);
+    border-radius: 8px;
+    color: var(--white);
+    font-size: 0.95rem;
+}
+
+.leave-portal-form .form-group input:focus,
+.leave-portal-form .form-group select:focus {
+    outline: none;
+    border-color: #dc2626;
+    box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.2);
+}
+
+.leave-portal-form .form-group input::placeholder {
+    color: rgba(255, 255, 255, 0.4);
+}
+
+.leave-portal-form .form-group select {
+    cursor: pointer;
+}
+
+.leave-portal-form .form-group select option {
+    background: var(--oxford-blue, #0a1128);
+    color: var(--white);
+}
+
+.leave-portal-submit-btn {
+    width: 100%;
+    padding: 0.875rem 1.5rem;
+    background: linear-gradient(135deg, #dc2626, #b91c1c);
+    border: none;
+    border-radius: 8px;
+    color: white;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 0.5rem;
+    transition: all 0.2s ease;
+}
+
+.leave-portal-submit-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 15px rgba(220, 38, 38, 0.3);
+}
+
+/* Confirmation Popup */
+.confirm-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.8);
+    z-index: 1001;
+    align-items: center;
+    justify-content: center;
+}
+
+.confirm-overlay.active {
+    display: flex;
+}
+
+.confirm-popup {
+    background: var(--oxford-blue, #0a1128);
+    border: 1px solid rgba(220, 38, 38, 0.3);
+    border-radius: 12px;
+    padding: 1.5rem;
+    max-width: 400px;
+    width: 90%;
+    text-align: center;
+}
+
+.confirm-popup h3 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--white);
+    margin-bottom: 0.75rem;
+}
+
+.confirm-popup p {
+    font-size: 0.9rem;
+    color: rgba(254, 252, 251, 0.7);
+    margin-bottom: 1.5rem;
+    line-height: 1.5;
+}
+
+.confirm-buttons {
+    display: flex;
+    gap: 1rem;
+}
+
+.confirm-cancel-btn,
+.confirm-yes-btn {
+    flex: 1;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.confirm-cancel-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: var(--white);
+}
+
+.confirm-cancel-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.confirm-yes-btn {
+    background: linear-gradient(135deg, #dc2626, #b91c1c);
+    border: none;
+    color: white;
+}
+
+.confirm-yes-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 15px rgba(220, 38, 38, 0.3);
 }
 
 /* Info Cards Section */

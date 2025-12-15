@@ -1474,6 +1474,9 @@
 /* Conditional Fields */
 .conditional-fields {
     animation: fadeIn 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
 }
 
 @keyframes fadeIn {
