@@ -6,7 +6,44 @@ document.addEventListener('DOMContentLoaded', function() {
     if (urlParams.get('welcome') === 'true' || document.referrer.includes('collegeplayer')) {
         showWelcomeAnimation();
     }
+
+    // Leave Portal Popup functionality
+    initLeavePortalPopup();
 });
+
+function initLeavePortalPopup() {
+    const leaveBtn = document.getElementById('leavePortalBtn');
+    const overlay = document.getElementById('leavePortalOverlay');
+    const closeBtn = document.getElementById('leavePortalClose');
+
+    if (leaveBtn && overlay) {
+        // Open popup when button is clicked
+        leaveBtn.addEventListener('click', function() {
+            overlay.classList.add('active');
+        });
+
+        // Close popup when close button is clicked
+        if (closeBtn) {
+            closeBtn.addEventListener('click', function() {
+                overlay.classList.remove('active');
+            });
+        }
+
+        // Close popup when clicking outside
+        overlay.addEventListener('click', function(e) {
+            if (e.target === overlay) {
+                overlay.classList.remove('active');
+            }
+        });
+
+        // Close popup on Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && overlay.classList.contains('active')) {
+                overlay.classList.remove('active');
+            }
+        });
+    }
+}
 
 function showWelcomeAnimation() {
     // Add entrance animation class

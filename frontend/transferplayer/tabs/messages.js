@@ -671,13 +671,17 @@ async function navigateToProfile(userId, role) {
                 const coachFolder = isCollegeCoach ? 'collegecoach' : 'hscoach';
                 window.location.href = `../../${coachFolder}/tabs/my-profile.html?username=${response.profile.username}&from=messages`;
             } else {
-                // For players, determine if college or hs
+                // For players, check if transfer player first, then college or hs
+                const isTransferPlayer = response.profile.transfer === 'y';
                 const isCollegePlayer = response.profile.college_division &&
                     ['FBS', 'FCS', 'D2', 'D3', 'NAIA', 'NJCAA'].includes(response.profile.college_division);
-                if (isCollegePlayer) {
+
+                if (isTransferPlayer) {
+                    window.location.href = `my-profile.html?username=${response.profile.username}&from=messages`;
+                } else if (isCollegePlayer) {
                     window.location.href = `../../collegeplayer/tabs/my-profile.html?username=${response.profile.username}&from=messages`;
                 } else {
-                    window.location.href = `my-profile.html?username=${response.profile.username}&from=messages`;
+                    window.location.href = `../../hsplayer/tabs/my-profile.html?username=${response.profile.username}&from=messages`;
                 }
             }
         }

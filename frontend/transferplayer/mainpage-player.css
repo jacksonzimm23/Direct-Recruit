@@ -1157,20 +1157,28 @@
 
 /* Transfer Player Red Theme - Active Navigation */
 .nav-item.active {
-    background: rgba(220, 38, 38, 0.2);
-    color: #dc2626;
+    background: rgba(185, 28, 28, 0.2);
+    color: #b91c1c;
 }
 
 .nav-item:hover {
-    background: rgba(220, 38, 38, 0.1);
+    background: rgba(185, 28, 28, 0.1);
 }
 
-/* Transfer Portal nav item special styling - red text/icon only, no highlight */
+/* Transfer Portal nav item - always red text, but only highlighted background when active */
 .nav-item-portal {
-    color: #dc2626 !important;
+    color: #b91c1c !important;
     background: transparent !important;
 }
 
-.nav-item-portal:hover {
-    background: rgba(220, 38, 38, 0.1) !important;
+.nav-item-portal .nav-icon {
+    color: #b91c1c !important;
+}
+
+.nav-item-portal.active {
+    background: rgba(185, 28, 28, 0.2) !important;
+}
+
+.nav-item-portal:not(.active):hover {
+    background: rgba(185, 28, 28, 0.1) !important;
 }

@@ -595,13 +595,13 @@
 }
 
 .profile-tab:hover {
-    color: var(--cerulean);
-    background: rgba(18, 130, 162, 0.05);
+    color: #b91c1c;
+    background: rgba(185, 28, 28, 0.05);
 }
 
 .profile-tab.active {
-    color: var(--cerulean);
-    border-bottom-color: var(--cerulean);
+    color: #b91c1c;
+    border-bottom-color: #b91c1c;
 }
 
 /* Tab Content */
@@ -2511,6 +2511,14 @@
     padding: 2rem;
 }
 
+.no-offers-message {
+    color: rgba(254, 252, 251, 0.5);
+    font-style: italic;
+    text-align: center;
+    padding: 2rem;
+    grid-column: 1 / -1;
+}
+
 /* Multi-Position Stats Sections */
 .position-stats-section {
     margin-bottom: 1.5rem;
@@ -3762,5 +3770,35 @@
 /* Profile position line (WR/CB • 6' 1" • 185 lbs) */
 /* Using a deeper crimson red (#b91c1c) to distinguish from coach orange */
 .profile-position {
+    color: #b91c1c !important;
+}
+
+/* Nav item active state - red theme */
+.nav-item.active {
+    background: rgba(185, 28, 28, 0.2) !important;
+    color: #b91c1c !important;
+}
+
+.nav-item:hover {
+    background: rgba(185, 28, 28, 0.1) !important;
+}
+
+/* Sidebar user info - red theme */
+.sidebar-user-position {
+    color: #b91c1c !important;
+}
+
+/* Avatar border in sidebar */
+.sidebar-user-avatar {
+    border-color: #b91c1c !important;
+}
+
+/* Profile avatar border */
+.profile-avatar-large {
+    border-color: #b91c1c !important;
+}
+
+/* Follow stats links */
+.follow-stat-link:hover {
     color: #b91c1c !important;
 }

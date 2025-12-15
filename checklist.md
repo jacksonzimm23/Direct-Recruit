@@ -43,8 +43,8 @@ My profile:
 - profile pictures '
 
 Tranfer portal:
-- welcome to portal journey; steps to be added to portal, add career stats to portal popup, viewing profiles from messages and my profile wrong
-
+- welcome to portal journey; steps to be added to portal, add career stats to portal popup
+- transfer player edit profile inputs need to be changed 
 
 Feed
 - backend sort of good, COMING SOON 

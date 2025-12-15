@@ -112,7 +112,7 @@ async function loadCurrentUser() {
             isCollegeCoach = response.user.is_college_coach || false;
 
             // Update navbar links to match logged-in user's folder (not the viewed profile's folder)
-            updateNavbarForLoggedInUser(response.user.role, response.profile);
+            updateNavbarForLoggedInUser(response.user, response.profile);
         }
     } catch (error) {
         console.error('Failed to load current user:', error);
@@ -121,19 +121,33 @@ async function loadCurrentUser() {
 
 // Rebuild the entire navbar to match the logged-in user's profile type
 // This ensures the navbar stays consistent when viewing other profiles
-function updateNavbarForLoggedInUser(role, profile) {
+function updateNavbarForLoggedInUser(user, profile) {
     // Determine the correct folder for the logged-in user
     let userFolder;
     let isCollege = false;
+    let isTransferPlayer = false;
+    const role = user.role;
 
     if (role === 'player') {
-        isCollege = profile && profile.college_division && profile.college_division.trim() !== '';
-        userFolder = isCollege ? 'collegeplayer' : 'hsplayer';
+        // Use user.is_transfer_player for consistent transfer player detection
+        isTransferPlayer = user.is_transfer_player || false;
+        if (isTransferPlayer) {
+            userFolder = 'transferplayer';
+            isCollege = true; // Transfer players are college-level
+        } else {
+            isCollege = profile && profile.college_division && profile.college_division.trim() !== '';
+            userFolder = isCollege ? 'collegeplayer' : 'hsplayer';
+        }
     } else if (role === 'coach') {
         isCollege = profile && profile.college_division && profile.college_division.trim() !== '';
         userFolder = isCollege ? 'collegecoach' : 'hscoach';
     } else {
         return; // Unknown role, don't modify
+    }
+
+    // Add body class for transfer player viewers to apply red theme
+    if (isTransferPlayer) {
+        document.body.classList.add('transfer-player-viewer');
     }
 
     // Save to global for use in setupUI navigation handlers
@@ -215,7 +229,7 @@ function updateNavbarForLoggedInUser(role, profile) {
                     <span>Notifications</span>
                 </a>
                 ${isCollege ? `
-                <a href="/frontend/${userFolder}/tabs/transfer-portal.html" class="nav-item" id="transferPortalNav">
+                <a href="/frontend/${userFolder}/tabs/transfer-portal.html" class="nav-item${isTransferPlayer ? ' nav-item-portal' : ''}" id="transferPortalNav">
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <circle cx="12" cy="12" r="10"></circle>
                         <path d="M8 12h8"></path>
@@ -937,8 +951,12 @@ function updateProfileActions() {
     const actionsContainer = document.querySelector('.profile-actions');
     if (!actionsContainer) return;
 
-    if (isOwnProfile) {
-        // Show edit and share buttons
+    // Check if navigated to this profile (has username in URL) - always show back button in this case
+    const urlParams = new URLSearchParams(window.location.search);
+    const hasUsernameParam = urlParams.get('username');
+
+    if (isOwnProfile && !hasUsernameParam) {
+        // Show edit and share buttons (only when directly on own profile, not navigated via URL)
         actionsContainer.innerHTML = `
             <button class="btn-edit-profile show-button" id="editProfileBtn">
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -968,6 +986,58 @@ function updateProfileActions() {
             });
         } else {
             console.error('Edit button not found!');
+        }
+
+        const shareProfileBtn = document.querySelector('.btn-share-profile');
+        if (shareProfileBtn) {
+            shareProfileBtn.addEventListener('click', function() {
+                const profileUrl = `${window.location.origin}/frontend/hscoach/tabs/my-profile.html?username=${currentProfile.username}`;
+                navigator.clipboard.writeText(profileUrl).then(() => {
+                    alert('Profile link copied to clipboard!');
+                });
+            });
+        }
+    } else if (isOwnProfile && hasUsernameParam) {
+        // Own profile but navigated via URL - show back button and edit/share
+        actionsContainer.innerHTML = `
+            <button class="btn-back" id="backBtn">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M19 12H5M12 19l-7-7 7-7"></path>
+                </svg>
+                Back
+            </button>
+            <button class="btn-edit-profile show-button" id="editProfileBtn">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                </svg>
+                Edit Profile
+            </button>
+            <button class="btn-share-profile show-button">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="18" cy="5" r="3"></circle>
+                    <circle cx="6" cy="12" r="3"></circle>
+                    <circle cx="18" cy="19" r="3"></circle>
+                    <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+                    <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+                </svg>
+            </button>
+        `;
+
+        // Setup back button
+        const backBtn = document.getElementById('backBtn');
+        if (backBtn) {
+            backBtn.addEventListener('click', () => {
+                window.history.back();
+            });
+        }
+
+        // Re-attach event listeners after updating DOM
+        const editProfileBtn = document.getElementById('editProfileBtn');
+        if (editProfileBtn) {
+            editProfileBtn.addEventListener('click', function() {
+                showEditProfileModal();
+            });
         }
 
         const shareProfileBtn = document.querySelector('.btn-share-profile');

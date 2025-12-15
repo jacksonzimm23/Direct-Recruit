@@ -969,8 +969,12 @@ function updateProfileActions() {
     const actionsContainer = document.querySelector('.profile-actions');
     if (!actionsContainer) return;
 
-    if (isOwnProfile) {
-        // Show edit and share buttons
+    // Check if navigated to this profile (has username in URL) - always show back button in this case
+    const urlParams = new URLSearchParams(window.location.search);
+    const hasUsernameParam = urlParams.get('username');
+
+    if (isOwnProfile && !hasUsernameParam) {
+        // Show edit and share buttons (only when directly on own profile, not navigated via URL)
         actionsContainer.innerHTML = `
             <button class="btn-edit-profile" id="editProfileBtn">
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -989,6 +993,48 @@ function updateProfileActions() {
                 </svg>
             </button>
         `;
+
+        // Setup edit profile button
+        const editProfileBtn = document.getElementById('editProfileBtn');
+        if (editProfileBtn) {
+            editProfileBtn.addEventListener('click', function() {
+                showEditProfileModal();
+            });
+        }
+    } else if (isOwnProfile && hasUsernameParam) {
+        // Own profile but navigated via URL - show back button and edit/share
+        actionsContainer.innerHTML = `
+            <button class="btn-back" id="backBtn">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M19 12H5M12 19l-7-7 7-7"></path>
+                </svg>
+                Back
+            </button>
+            <button class="btn-edit-profile" id="editProfileBtn">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                </svg>
+                Edit Profile
+            </button>
+            <button class="btn-share-profile">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="18" cy="5" r="3"></circle>
+                    <circle cx="6" cy="12" r="3"></circle>
+                    <circle cx="18" cy="19" r="3"></circle>
+                    <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+                    <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+                </svg>
+            </button>
+        `;
+
+        // Setup back button
+        const backBtn = document.getElementById('backBtn');
+        if (backBtn) {
+            backBtn.addEventListener('click', () => {
+                window.history.back();
+            });
+        }
 
         // Setup edit profile button
         const editProfileBtn = document.getElementById('editProfileBtn');
@@ -1115,11 +1161,9 @@ function updateActiveNavItem() {
         }
     }
 
-    // Transfer Portal nav item should always show as active (red) for transfer players
-    // This indicates they are currently in the Transfer Portal
-    if (portalNavItem) {
-        portalNavItem.classList.add('active');
-    }
+    // Transfer Portal nav item text is always red via CSS (.nav-item-portal)
+    // but we only add the background highlight (active class) when on the Transfer Portal page
+    // Since we're on the my-profile page, do NOT add active class to portal nav
 }
 
 function setupUI() {
@@ -2202,7 +2246,10 @@ async function loadOffers() {
                 showMoreBtn.style.display = response.offers.length > 3 ? 'flex' : 'none';
             }
         } else {
-            // No offers - hide the "Show More" button
+            // No offers - show empty state message and hide the "Show More" button
+            if (offersGrid) {
+                offersGrid.innerHTML = '<div class="no-offers-message">No offers listed yet</div>';
+            }
             if (showMoreBtn) {
                 showMoreBtn.style.display = 'none';
             }
@@ -4819,12 +4866,16 @@ async function openFollowListModal(type) {
                             const coachFolder = isCollegeCoach ? 'collegecoach' : 'hscoach';
                             window.location.href = `../../${coachFolder}/tabs/my-profile.html?username=${profile.username}&from=profile`;
                         } else {
+                            // For players, check if transfer player first, then college or hs
+                            const isTransferPlayer = profile.transfer === 'y';
                             const isCollegePlayer = profile.college_division &&
                                 ['FBS', 'FCS', 'D2', 'D3', 'NAIA', 'NJCAA'].includes(profile.college_division);
-                            if (isCollegePlayer) {
+                            if (isTransferPlayer) {
+                                window.location.href = `my-profile.html?username=${profile.username}&from=profile`;
+                            } else if (isCollegePlayer) {
                                 window.location.href = `../../collegeplayer/tabs/my-profile.html?username=${profile.username}&from=profile`;
                             } else {
-                                window.location.href = `my-profile.html?username=${profile.username}&from=profile`;
+                                window.location.href = `../../hsplayer/tabs/my-profile.html?username=${profile.username}&from=profile`;
                             }
                         }
                     }
@@ -4943,7 +4994,7 @@ async function openProfileViewersModal() {
                 : (viewer.position_or_title || '');
 
             return `
-                <div class="follow-list-item" data-username="${viewer.username || ''}" data-role="${viewer.role}" data-division="${viewer.college_division || ''}">
+                <div class="follow-list-item" data-username="${viewer.username || ''}" data-role="${viewer.role}" data-division="${viewer.college_division || ''}" data-transfer="${viewer.transfer || ''}">
                     <div class="follow-list-avatar">
                         ${viewer.profile_image_url
                             ? `<img src="${viewer.profile_image_url}" alt="${displayName}">`
@@ -4967,6 +5018,7 @@ async function openProfileViewersModal() {
                 const username = item.dataset.username;
                 const role = item.dataset.role;
                 const division = item.dataset.division;
+                const transfer = item.dataset.transfer;
                 if (username) {
                     closeProfileViewersModal();
                     // Navigate to the appropriate profile page based on role and type
@@ -4976,11 +5028,15 @@ async function openProfileViewersModal() {
                         const coachFolder = isCollegeCoach ? 'collegecoach' : 'hscoach';
                         window.location.href = `../../${coachFolder}/tabs/my-profile.html?username=${username}&from=profile`;
                     } else {
+                        // For players, check if transfer player first, then college or hs
+                        const isTransferPlayer = transfer === 'y';
                         const isCollegePlayer = division && collegeDivisions.includes(division);
-                        if (isCollegePlayer) {
+                        if (isTransferPlayer) {
+                            window.location.href = `my-profile.html?username=${username}&from=profile`;
+                        } else if (isCollegePlayer) {
                             window.location.href = `../../collegeplayer/tabs/my-profile.html?username=${username}&from=profile`;
                         } else {
-                            window.location.href = `my-profile.html?username=${username}&from=profile`;
+                            window.location.href = `../../hsplayer/tabs/my-profile.html?username=${username}&from=profile`;
                         }
                     }
                 }

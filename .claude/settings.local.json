@@ -21,7 +21,8 @@
       "Bash(xargs cat:*)",
       "Bash(fc:*)",
       "Bash(cmd /c copy:*)",
-      "Bash(cmd /c xcopy:*)"
+      "Bash(cmd /c xcopy:*)",
+      "Bash(grep:*)"
     ],
     "deny": [],
     "ask": []

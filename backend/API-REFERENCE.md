@@ -13,7 +13,7 @@ Content-Type: application/json
 
 {
   "email": "user@example.com",
-  "password": "password123",
+  "password": "<your_password>",
   "role": "player" | "coach"
 }
 
@@ -27,7 +27,7 @@ Content-Type: application/json
 
 {
   "email": "user@example.com",
-  "password": "password123"
+  "password": "<your_password>"
 }
 
 Response: { token, user: { id, email, role, profile_completed } }
