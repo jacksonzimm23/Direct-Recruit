@@ -292,6 +292,35 @@ async function showInfoFormModal() {
                     <p class="position-error" id="positionError" style="display: none;">Please select at least one position</p>
                 </div>
 
+                <!-- Stats Note -->
+                <p class="stats-note">Enter stats for your most prevalent position only</p>
+
+                <!-- Last Season Stats Section -->
+                <div class="stats-section" id="lastSeasonStatsSection">
+                    <div class="stats-section-header">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <h4 class="stats-section-title">Last Season Stats</h4>
+                    </div>
+                    <div class="stats-inputs-container" id="lastSeasonStatsInputs">
+                        <p class="stats-no-position">Select a position to see stat fields</p>
+                    </div>
+                </div>
+
+                <!-- Career Stats Section -->
+                <div class="stats-section" id="careerStatsSection">
+                    <div class="stats-section-header">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                        </svg>
+                        <h4 class="stats-section-title">Career Stats</h4>
+                    </div>
+                    <div class="stats-inputs-container" id="careerStatsInputs">
+                        <p class="stats-no-position">Select a position to see stat fields</p>
+                    </div>
+                </div>
+
                 <div class="form-row">
                     <div class="form-group">
                         <label>Height <span class="required">*</span></label>
@@ -317,14 +346,71 @@ async function showInfoFormModal() {
                         <label for="transferPrevDivision">Previous Division <span class="required">*</span></label>
                         <select id="transferPrevDivision" name="prevDivision" required>
                             <option value="">Select Division</option>
-                            <option value="D1 FBS" ${profileData.college_division === 'D1 FBS' ? 'selected' : ''}>D1 FBS</option>
-                            <option value="D1 FCS" ${profileData.college_division === 'D1 FCS' ? 'selected' : ''}>D1 FCS</option>
+                            <option value="FBS" ${profileData.college_division === 'FBS' ? 'selected' : ''}>D1 FBS</option>
+                            <option value="FCS" ${profileData.college_division === 'FCS' ? 'selected' : ''}>D1 FCS</option>
                             <option value="D2" ${profileData.college_division === 'D2' ? 'selected' : ''}>D2</option>
                             <option value="D3" ${profileData.college_division === 'D3' ? 'selected' : ''}>D3</option>
                             <option value="NAIA" ${profileData.college_division === 'NAIA' ? 'selected' : ''}>NAIA</option>
-                            <option value="JUCO" ${profileData.college_division === 'JUCO' ? 'selected' : ''}>JUCO</option>
+                            <option value="NJCAA" ${profileData.college_division === 'NJCAA' ? 'selected' : ''}>JUCO</option>
                         </select>
                     </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="transferPrevState">Previous State <span class="required">*</span></label>
+                    <select id="transferPrevState" name="prevState" required>
+                        <option value="">Select State</option>
+                        <option value="AL" ${profileData.state === 'AL' ? 'selected' : ''}>Alabama</option>
+                        <option value="AK" ${profileData.state === 'AK' ? 'selected' : ''}>Alaska</option>
+                        <option value="AZ" ${profileData.state === 'AZ' ? 'selected' : ''}>Arizona</option>
+                        <option value="AR" ${profileData.state === 'AR' ? 'selected' : ''}>Arkansas</option>
+                        <option value="CA" ${profileData.state === 'CA' ? 'selected' : ''}>California</option>
+                        <option value="CO" ${profileData.state === 'CO' ? 'selected' : ''}>Colorado</option>
+                        <option value="CT" ${profileData.state === 'CT' ? 'selected' : ''}>Connecticut</option>
+                        <option value="DE" ${profileData.state === 'DE' ? 'selected' : ''}>Delaware</option>
+                        <option value="FL" ${profileData.state === 'FL' ? 'selected' : ''}>Florida</option>
+                        <option value="GA" ${profileData.state === 'GA' ? 'selected' : ''}>Georgia</option>
+                        <option value="HI" ${profileData.state === 'HI' ? 'selected' : ''}>Hawaii</option>
+                        <option value="ID" ${profileData.state === 'ID' ? 'selected' : ''}>Idaho</option>
+                        <option value="IL" ${profileData.state === 'IL' ? 'selected' : ''}>Illinois</option>
+                        <option value="IN" ${profileData.state === 'IN' ? 'selected' : ''}>Indiana</option>
+                        <option value="IA" ${profileData.state === 'IA' ? 'selected' : ''}>Iowa</option>
+                        <option value="KS" ${profileData.state === 'KS' ? 'selected' : ''}>Kansas</option>
+                        <option value="KY" ${profileData.state === 'KY' ? 'selected' : ''}>Kentucky</option>
+                        <option value="LA" ${profileData.state === 'LA' ? 'selected' : ''}>Louisiana</option>
+                        <option value="ME" ${profileData.state === 'ME' ? 'selected' : ''}>Maine</option>
+                        <option value="MD" ${profileData.state === 'MD' ? 'selected' : ''}>Maryland</option>
+                        <option value="MA" ${profileData.state === 'MA' ? 'selected' : ''}>Massachusetts</option>
+                        <option value="MI" ${profileData.state === 'MI' ? 'selected' : ''}>Michigan</option>
+                        <option value="MN" ${profileData.state === 'MN' ? 'selected' : ''}>Minnesota</option>
+                        <option value="MS" ${profileData.state === 'MS' ? 'selected' : ''}>Mississippi</option>
+                        <option value="MO" ${profileData.state === 'MO' ? 'selected' : ''}>Missouri</option>
+                        <option value="MT" ${profileData.state === 'MT' ? 'selected' : ''}>Montana</option>
+                        <option value="NE" ${profileData.state === 'NE' ? 'selected' : ''}>Nebraska</option>
+                        <option value="NV" ${profileData.state === 'NV' ? 'selected' : ''}>Nevada</option>
+                        <option value="NH" ${profileData.state === 'NH' ? 'selected' : ''}>New Hampshire</option>
+                        <option value="NJ" ${profileData.state === 'NJ' ? 'selected' : ''}>New Jersey</option>
+                        <option value="NM" ${profileData.state === 'NM' ? 'selected' : ''}>New Mexico</option>
+                        <option value="NY" ${profileData.state === 'NY' ? 'selected' : ''}>New York</option>
+                        <option value="NC" ${profileData.state === 'NC' ? 'selected' : ''}>North Carolina</option>
+                        <option value="ND" ${profileData.state === 'ND' ? 'selected' : ''}>North Dakota</option>
+                        <option value="OH" ${profileData.state === 'OH' ? 'selected' : ''}>Ohio</option>
+                        <option value="OK" ${profileData.state === 'OK' ? 'selected' : ''}>Oklahoma</option>
+                        <option value="OR" ${profileData.state === 'OR' ? 'selected' : ''}>Oregon</option>
+                        <option value="PA" ${profileData.state === 'PA' ? 'selected' : ''}>Pennsylvania</option>
+                        <option value="RI" ${profileData.state === 'RI' ? 'selected' : ''}>Rhode Island</option>
+                        <option value="SC" ${profileData.state === 'SC' ? 'selected' : ''}>South Carolina</option>
+                        <option value="SD" ${profileData.state === 'SD' ? 'selected' : ''}>South Dakota</option>
+                        <option value="TN" ${profileData.state === 'TN' ? 'selected' : ''}>Tennessee</option>
+                        <option value="TX" ${profileData.state === 'TX' ? 'selected' : ''}>Texas</option>
+                        <option value="UT" ${profileData.state === 'UT' ? 'selected' : ''}>Utah</option>
+                        <option value="VT" ${profileData.state === 'VT' ? 'selected' : ''}>Vermont</option>
+                        <option value="VA" ${profileData.state === 'VA' ? 'selected' : ''}>Virginia</option>
+                        <option value="WA" ${profileData.state === 'WA' ? 'selected' : ''}>Washington</option>
+                        <option value="WV" ${profileData.state === 'WV' ? 'selected' : ''}>West Virginia</option>
+                        <option value="WI" ${profileData.state === 'WI' ? 'selected' : ''}>Wisconsin</option>
+                        <option value="WY" ${profileData.state === 'WY' ? 'selected' : ''}>Wyoming</option>
+                    </select>
                 </div>
 
                 <div class="form-row">
@@ -397,6 +483,92 @@ async function showInfoFormModal() {
         return isValid;
     }
 
+    // Position stats mapping
+    const positionStatsMap = {
+        'QB': ['Total Yards (Rush + Pass)', 'Total TDs (Rush + Pass)', 'INT'],
+        'RB': ['Total Yards (Rush + Rec)', 'Receptions', 'Total TDs (Rush + Rec)'],
+        'FB': ['Total Yards (Rush + Rec)', 'Receptions', 'Total TDs (Rush + Rec)'],
+        'WR': ['Receptions', 'Reception Yards', 'Total TDs (Rush + Rec)'],
+        'TE': ['Receptions', 'Reception Yards', 'Total TDs (Rush + Rec)'],
+        'OT': null, // No stats
+        'OG': null, // No stats
+        'C': null,  // No stats
+        'LS': null, // No stats
+        'DE': ['Tackles', 'TFLs', 'Sacks'],
+        'DT': ['Tackles', 'TFLs', 'Sacks'],
+        'NT': ['Tackles', 'TFLs', 'Sacks'],
+        'ILB': ['Tackles', 'TFLs', 'Sacks'],
+        'OLB': ['Tackles', 'TFLs', 'Sacks'],
+        'CB': ['Tackles', 'PBUs', 'INTs'],
+        'S': ['Tackles', 'PBUs', 'INTs'],
+        'K': ['Made', 'Att', 'Long'],
+        'P': ['Att', 'Avg', 'I20']
+    };
+
+    // Function to get stats labels for selected positions
+    function getStatsLabelsForPositions(selectedPositions) {
+        // Get unique stat sets from all selected positions
+        const statSets = [];
+        for (const pos of selectedPositions) {
+            const stats = positionStatsMap[pos];
+            if (stats) {
+                // Check if we already have this stat set
+                const existingSet = statSets.find(set =>
+                    set.length === stats.length &&
+                    set.every((s, i) => s === stats[i])
+                );
+                if (!existingSet) {
+                    statSets.push(stats);
+                }
+            }
+        }
+
+        // If no stats for any position, return null
+        if (statSets.length === 0) {
+            return null;
+        }
+
+        // Return the first stat set (if multiple different sets, we use the first position's stats)
+        return statSets[0];
+    }
+
+    // Function to update stats sections based on selected positions
+    function updateStatsSections() {
+        const lastSeasonContainer = document.getElementById('lastSeasonStatsInputs');
+        const careerContainer = document.getElementById('careerStatsInputs');
+        const checkedPositions = Array.from(document.querySelectorAll('input[name="position"]:checked')).map(cb => cb.value);
+
+        if (checkedPositions.length === 0) {
+            lastSeasonContainer.innerHTML = '<p class="stats-no-position">Select a position to see stat fields</p>';
+            careerContainer.innerHTML = '<p class="stats-no-position">Select a position to see stat fields</p>';
+            return;
+        }
+
+        const statsLabels = getStatsLabelsForPositions(checkedPositions);
+
+        if (!statsLabels) {
+            lastSeasonContainer.innerHTML = '<p class="stats-no-stats-message">No stats tracked for selected position(s)</p>';
+            careerContainer.innerHTML = '<p class="stats-no-stats-message">No stats tracked for selected position(s)</p>';
+            return;
+        }
+
+        // Generate inputs for last season stats
+        lastSeasonContainer.innerHTML = statsLabels.map((label, index) => `
+            <div class="form-group">
+                <label for="lastSeasonStat${index + 1}">${label}</label>
+                <input type="number" id="lastSeasonStat${index + 1}" name="lastSeasonStat${index + 1}" min="0" placeholder="0">
+            </div>
+        `).join('');
+
+        // Generate inputs for career stats
+        careerContainer.innerHTML = statsLabels.map((label, index) => `
+            <div class="form-group">
+                <label for="careerStat${index + 1}">${label}</label>
+                <input type="number" id="careerStat${index + 1}" name="careerStat${index + 1}" min="0" placeholder="0">
+            </div>
+        `).join('');
+    }
+
     // Function to update selected positions pills
     function updateSelectedPositions() {
         const container = document.getElementById('selectedPositions');
@@ -423,17 +595,24 @@ async function showInfoFormModal() {
                 if (checkbox) {
                     checkbox.checked = false;
                     updateSelectedPositions();
+                    updateStatsSections();
                     validateForm();
                 }
             });
         });
+
+        // Update stats sections when positions change
+        updateStatsSections();
     }
 
     // Add input listeners for validation
     form.addEventListener('input', validateForm);
-    form.addEventListener('change', function() {
+    form.addEventListener('change', function(e) {
         validateForm();
-        updateSelectedPositions();
+        // Only update positions when a position checkbox changes, not for stats inputs
+        if (e.target.name === 'position') {
+            updateSelectedPositions();
+        }
     });
 
     // Initial validation and selected positions display
@@ -463,9 +642,28 @@ async function showInfoFormModal() {
         const weight = document.getElementById('transferWeight').value;
         const prevSchool = document.getElementById('transferPrevSchool').value.trim();
         const prevDivision = document.getElementById('transferPrevDivision').value;
+        const prevState = document.getElementById('transferPrevState').value;
         const gpa = document.getElementById('transferGPA').value;
         const eligibility = document.getElementById('transferEligibility').value;
         const positions = Array.from(document.querySelectorAll('input[name="position"]:checked')).map(cb => cb.value);
+
+        // Collect last season stats data
+        const lastSeasonStat1Val = document.getElementById('lastSeasonStat1')?.value || null;
+        const lastSeasonStat2Val = document.getElementById('lastSeasonStat2')?.value || null;
+        const lastSeasonStat3Val = document.getElementById('lastSeasonStat3')?.value || null;
+
+        // Collect career stats data
+        const careerStat1Val = document.getElementById('careerStat1')?.value || null;
+        const careerStat2Val = document.getElementById('careerStat2')?.value || null;
+        const careerStat3Val = document.getElementById('careerStat3')?.value || null;
+
+        // Parse as integers for database storage
+        const lastseasonstat1 = lastSeasonStat1Val ? parseInt(lastSeasonStat1Val) : null;
+        const lastseasonstat2 = lastSeasonStat2Val ? parseInt(lastSeasonStat2Val) : null;
+        const lastseasonstat3 = lastSeasonStat3Val ? parseInt(lastSeasonStat3Val) : null;
+        const careerstat1 = careerStat1Val ? parseInt(careerStat1Val) : null;
+        const careerstat2 = careerStat2Val ? parseInt(careerStat2Val) : null;
+        const careerstat3 = careerStat3Val ? parseInt(careerStat3Val) : null;
 
         const formData = {
             first_name: firstName,
@@ -475,9 +673,16 @@ async function showInfoFormModal() {
             weight: parseInt(weight),
             high_school: prevSchool,
             college_division: prevDivision,
+            state: prevState,
             gpa: parseFloat(gpa),
             eligibility: parseInt(eligibility),
-            transfer: 'y'
+            transfer: 'y',
+            lastseasonstat1: lastseasonstat1,
+            lastseasonstat2: lastseasonstat2,
+            lastseasonstat3: lastseasonstat3,
+            careerstat1: careerstat1,
+            careerstat2: careerstat2,
+            careerstat3: careerstat3
         };
 
         modalOverlay.remove();

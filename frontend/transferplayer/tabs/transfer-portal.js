@@ -1,6 +1,6 @@
 // Transfer Portal JavaScript - Transfer Player Welcome Page
 
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function() {
     // Check if coming from portal entry (show welcome animation)
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('welcome') === 'true' || document.referrer.includes('collegeplayer')) {
@@ -13,8 +13,8 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize leave portal form
     initLeavePortalForm();
 
-    // Populate state dropdown
-    populateStateDropdown();
+    // Populate state dropdown and pre-fill with current state
+    await populateStateDropdown();
 });
 
 function initLeavePortalPopup() {
@@ -197,27 +197,78 @@ async function submitLeavePortal(data) {
     }
 }
 
-function populateStateDropdown() {
+async function populateStateDropdown() {
     const stateSelect = document.getElementById('newState');
     if (!stateSelect) return;
 
+    // Use abbreviations for values to match database format
     const states = [
-        'Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California',
-        'Colorado', 'Connecticut', 'Delaware', 'Florida', 'Georgia',
-        'Hawaii', 'Idaho', 'Illinois', 'Indiana', 'Iowa',
-        'Kansas', 'Kentucky', 'Louisiana', 'Maine', 'Maryland',
-        'Massachusetts', 'Michigan', 'Minnesota', 'Mississippi', 'Missouri',
-        'Montana', 'Nebraska', 'Nevada', 'New Hampshire', 'New Jersey',
-        'New Mexico', 'New York', 'North Carolina', 'North Dakota', 'Ohio',
-        'Oklahoma', 'Oregon', 'Pennsylvania', 'Rhode Island', 'South Carolina',
-        'South Dakota', 'Tennessee', 'Texas', 'Utah', 'Vermont',
-        'Virginia', 'Washington', 'West Virginia', 'Wisconsin', 'Wyoming'
+        { abbr: 'AL', name: 'Alabama' },
+        { abbr: 'AK', name: 'Alaska' },
+        { abbr: 'AZ', name: 'Arizona' },
+        { abbr: 'AR', name: 'Arkansas' },
+        { abbr: 'CA', name: 'California' },
+        { abbr: 'CO', name: 'Colorado' },
+        { abbr: 'CT', name: 'Connecticut' },
+        { abbr: 'DE', name: 'Delaware' },
+        { abbr: 'FL', name: 'Florida' },
+        { abbr: 'GA', name: 'Georgia' },
+        { abbr: 'HI', name: 'Hawaii' },
+        { abbr: 'ID', name: 'Idaho' },
+        { abbr: 'IL', name: 'Illinois' },
+        { abbr: 'IN', name: 'Indiana' },
+        { abbr: 'IA', name: 'Iowa' },
+        { abbr: 'KS', name: 'Kansas' },
+        { abbr: 'KY', name: 'Kentucky' },
+        { abbr: 'LA', name: 'Louisiana' },
+        { abbr: 'ME', name: 'Maine' },
+        { abbr: 'MD', name: 'Maryland' },
+        { abbr: 'MA', name: 'Massachusetts' },
+        { abbr: 'MI', name: 'Michigan' },
+        { abbr: 'MN', name: 'Minnesota' },
+        { abbr: 'MS', name: 'Mississippi' },
+        { abbr: 'MO', name: 'Missouri' },
+        { abbr: 'MT', name: 'Montana' },
+        { abbr: 'NE', name: 'Nebraska' },
+        { abbr: 'NV', name: 'Nevada' },
+        { abbr: 'NH', name: 'New Hampshire' },
+        { abbr: 'NJ', name: 'New Jersey' },
+        { abbr: 'NM', name: 'New Mexico' },
+        { abbr: 'NY', name: 'New York' },
+        { abbr: 'NC', name: 'North Carolina' },
+        { abbr: 'ND', name: 'North Dakota' },
+        { abbr: 'OH', name: 'Ohio' },
+        { abbr: 'OK', name: 'Oklahoma' },
+        { abbr: 'OR', name: 'Oregon' },
+        { abbr: 'PA', name: 'Pennsylvania' },
+        { abbr: 'RI', name: 'Rhode Island' },
+        { abbr: 'SC', name: 'South Carolina' },
+        { abbr: 'SD', name: 'South Dakota' },
+        { abbr: 'TN', name: 'Tennessee' },
+        { abbr: 'TX', name: 'Texas' },
+        { abbr: 'UT', name: 'Utah' },
+        { abbr: 'VT', name: 'Vermont' },
+        { abbr: 'VA', name: 'Virginia' },
+        { abbr: 'WA', name: 'Washington' },
+        { abbr: 'WV', name: 'West Virginia' },
+        { abbr: 'WI', name: 'Wisconsin' },
+        { abbr: 'WY', name: 'Wyoming' }
     ];
 
     states.forEach(state => {
         const option = document.createElement('option');
-        option.value = state;
-        option.textContent = state;
+        option.value = state.abbr;
+        option.textContent = state.name;
         stateSelect.appendChild(option);
     });
+
+    // Pre-fill state from current profile if available
+    try {
+        const response = await API.get('/auth/me');
+        if (response.profile && response.profile.state) {
+            stateSelect.value = response.profile.state;
+        }
+    } catch (error) {
+        console.error('Error fetching profile for state pre-fill:', error);
+    }
 }

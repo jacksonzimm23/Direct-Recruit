@@ -415,6 +415,60 @@ const uploadAPI = {
     }
 };
 
+// Notifications API
+const notificationsAPI = {
+    // Get all notifications with optional filtering
+    getNotifications: async (type = null, limit = 50, offset = 0) => {
+        let url = `/notifications?limit=${limit}&offset=${offset}`;
+        if (type) url += `&type=${type}`;
+        return await apiRequest(url);
+    },
+
+    // Get unread count
+    getUnreadCount: async (type = null) => {
+        let url = '/notifications/unread-count';
+        if (type) url += `?type=${type}`;
+        return await apiRequest(url);
+    },
+
+    // Get counts by type
+    getCounts: async () => {
+        return await apiRequest('/notifications/counts');
+    },
+
+    // Mark single notification as read
+    markAsRead: async (notificationId) => {
+        return await apiRequest(`/notifications/${notificationId}/read`, {
+            method: 'PUT'
+        });
+    },
+
+    // Mark all notifications as read
+    markAllAsRead: async (type = null) => {
+        let url = '/notifications/read-all';
+        if (type) url += `?type=${type}`;
+        return await apiRequest(url, {
+            method: 'PUT'
+        });
+    },
+
+    // Delete single notification
+    deleteNotification: async (notificationId) => {
+        return await apiRequest(`/notifications/${notificationId}`, {
+            method: 'DELETE'
+        });
+    },
+
+    // Delete all notifications
+    deleteAll: async (type = null) => {
+        let url = '/notifications';
+        if (type) url += `?type=${type}`;
+        return await apiRequest(url, {
+            method: 'DELETE'
+        });
+    }
+};
+
 // Unified API object for convenience
 const API = {
     // Direct access to apiRequest for custom endpoints
@@ -438,6 +492,7 @@ const API = {
     posts: postsAPI,
     messages: messagesAPI,
     upload: uploadAPI,
+    notifications: notificationsAPI,
 
     // Auth helpers
     getToken,

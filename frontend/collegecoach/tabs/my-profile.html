@@ -23,14 +23,6 @@
         </svg>
     </button>
 
-    <!-- Right Sidebar Toggle Button -->
-    <button class="right-sidebar-toggle" id="rightSidebarToggle" aria-label="Toggle Right Sidebar">
-        <svg class="toggle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="3" y1="12" x2="21" y2="12"></line>
-            <line x1="3" y1="6" x2="21" y2="6"></line>
-            <line x1="3" y1="18" x2="21" y2="18"></line>
-        </svg>
-    </button>
 
     <!-- Main Container -->
     <div class="dashboard-container" id="dashboardContainer">
@@ -84,6 +76,7 @@
                         <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
                     </svg>
                     <span>Notifications</span>
+                    <span class="notification-badge" style="display: none;"></span>
                 </a>
 
                 <a href="recruiting-board.html" class="nav-item" id="recruitingBoardNav" style="display: none;">
@@ -281,11 +274,7 @@
                 <!-- Posts Tab -->
                 <div class="tab-pane" id="posts">
                     <div class="posts-section">
-                        <div class="posts-list" id="profilePostsList">
-                            <div class="no-posts-message">
-                                <p>No posts yet.</p>
-                            </div>
-                        </div>
+                        <p class="no-data-message" style="text-align: center; padding: 2rem;">Feed page coming soon!</p>
                     </div>
                 </div>
 
@@ -320,47 +309,6 @@
                 </div>
             </div>
         </main>
-
-        <!-- Right Sidebar -->
-        <aside class="right-sidebar" id="rightSidebar">
-            <!-- Profile Stats -->
-            <div class="widget">
-                <h3 class="widget-title">Profile Stats</h3>
-                <div class="widget-content">
-                    <div class="profile-stat-item">
-                        <div class="profile-stat-label">Profile Views</div>
-                        <div class="profile-stat-value">342</div>
-                    </div>
-                    <div class="profile-stat-item">
-                        <div class="profile-stat-label">Coach Interests</div>
-                        <div class="profile-stat-value">18</div>
-                    </div>
-                    <div class="profile-stat-item">
-                        <div class="profile-stat-label">Messages</div>
-                        <div class="profile-stat-value">12</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Recent Activity -->
-            <div class="widget">
-                <h3 class="widget-title">Recent Activity</h3>
-                <div class="widget-content">
-                    <div class="activity-item">
-                        <div class="activity-text">Profile viewed by Coach Martinez</div>
-                        <div class="activity-time">2h ago</div>
-                    </div>
-                    <div class="activity-item">
-                        <div class="activity-text">New follower: Jake Morrison</div>
-                        <div class="activity-time">1d ago</div>
-                    </div>
-                    <div class="activity-item">
-                        <div class="activity-text">Stats updated</div>
-                        <div class="activity-time">3d ago</div>
-                    </div>
-                </div>
-            </div>
-        </aside>
     </div>
 
     <!-- Edit Profile Modal -->

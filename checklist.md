@@ -42,9 +42,16 @@ HSPLAYER: get rid of recruiting on coach card, add to transfer portal page for t
 My profile:
 - profile pictures '
 
-Tranfer portal:
-- welcome to portal journey; steps to be added to portal, add career stats to portal popup
-- transfer player edit profile inputs need to be changed 
+HS player:
+add number in my profile
 
 Feed
 - backend sort of good, COMING SOON 
+
+College Coach
+- Recruiting board
+- Player / coach cards on discover page
+- transfer portal cards
+
+ALL
+- ADD KR PR to ALL position drop downs

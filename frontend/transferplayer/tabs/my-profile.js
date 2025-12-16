@@ -774,9 +774,10 @@ function displayPlayerProfile(profile) {
     if (metaElement) {
         const lines = [];
 
-        // Row 1: Previous School
+        // Row 1: Previous School (with state if available)
         if (profile.high_school) {
-            lines.push(`<span style="color: rgba(254, 252, 251, 0.7); font-weight: 600;">Previous School:</span> <span style="color: #b91c1c; font-weight: 600;">${profile.high_school}</span>`);
+            const schoolWithState = profile.state ? `${profile.high_school}, ${profile.state}` : profile.high_school;
+            lines.push(`<span style="color: rgba(254, 252, 251, 0.7); font-weight: 600;">Previous School:</span> <span style="color: #b91c1c; font-weight: 600;">${schoolWithState}</span>`);
         }
 
         // Row 2: Previous Division (add D1 prefix for FBS/FCS)

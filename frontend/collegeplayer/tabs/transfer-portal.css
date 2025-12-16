@@ -312,7 +312,7 @@
 }
 
 .portal-modal {
-    background: linear-gradient(180deg, #1a1f2e 0%, #141824 100%);
+    background: var(--oxford-blue, #0a1128);
     border: 1px solid rgba(220, 38, 38, 0.3);
     border-radius: 16px;
     width: 100%;
@@ -822,5 +822,122 @@
     .btn-enter-portal {
         padding: 0.875rem 1.5rem;
         font-size: 1rem;
+    }
+}
+
+/* Stats Note */
+.stats-note {
+    font-size: 0.9rem;
+    color: rgba(254, 252, 251, 0.7);
+    font-style: italic;
+    text-align: center;
+    margin: 1.25rem 0 0.5rem;
+    padding: 0.75rem;
+    background: rgba(220, 38, 38, 0.08);
+    border-radius: 8px;
+    border: 1px dashed rgba(220, 38, 38, 0.25);
+}
+
+/* Stats Sections */
+.stats-section {
+    margin-top: 1rem;
+    padding: 1.25rem;
+    background: rgba(220, 38, 38, 0.05);
+    border: 1px solid rgba(220, 38, 38, 0.2);
+    border-radius: 10px;
+}
+
+#careerStatsSection {
+    margin-bottom: 1.5rem;
+}
+
+.stats-section-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid rgba(220, 38, 38, 0.2);
+}
+
+.stats-section-header svg {
+    width: 20px;
+    height: 20px;
+    color: #dc2626;
+}
+
+.stats-section-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #dc2626;
+    margin: 0;
+}
+
+.stats-inputs-container {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+}
+
+.stats-inputs-container .form-group {
+    margin-bottom: 0;
+}
+
+.stats-inputs-container label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: rgba(254, 252, 251, 0.9);
+    margin-bottom: 0.4rem;
+    display: block;
+}
+
+.stats-inputs-container input {
+    width: 100%;
+    padding: 0.65rem 0.85rem;
+    background: rgba(220, 38, 38, 0.08);
+    border: 1px solid rgba(220, 38, 38, 0.3);
+    border-radius: 8px;
+    color: var(--white);
+    font-size: 0.95rem;
+    font-family: 'Inter', sans-serif;
+    transition: all 0.2s ease;
+    box-sizing: border-box;
+}
+
+.stats-inputs-container input:focus {
+    outline: none;
+    border-color: #dc2626;
+    background: rgba(220, 38, 38, 0.12);
+    box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.15);
+}
+
+.stats-inputs-container input::placeholder {
+    color: rgba(254, 252, 251, 0.4);
+}
+
+.stats-no-position {
+    text-align: center;
+    padding: 1rem;
+    color: rgba(254, 252, 251, 0.5);
+    font-size: 0.9rem;
+    font-style: italic;
+}
+
+.stats-no-stats-message {
+    text-align: center;
+    padding: 0.75rem;
+    color: rgba(254, 252, 251, 0.6);
+    font-size: 0.85rem;
+    background: rgba(254, 252, 251, 0.03);
+    border-radius: 6px;
+}
+
+@media (max-width: 600px) {
+    .stats-inputs-container {
+        grid-template-columns: 1fr;
+    }
+
+    .stats-section {
+        padding: 1rem;
     }
 }

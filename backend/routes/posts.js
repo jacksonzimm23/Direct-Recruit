@@ -1,9 +1,29 @@
 const express = require('express');
 const router = express.Router();
 const Post = require('../models/Post');
+const Notification = require('../models/Notification');
+const PlayerProfile = require('../models/PlayerProfile');
+const CoachProfile = require('../models/CoachProfile');
+const User = require('../models/User');
+const pool = require('../config/database');
 const { authMiddleware } = require('../middleware/auth');
 const { body, validationResult } = require('express-validator');
 const { postLimiter } = require('../middleware/rateLimit');
+
+// Helper function to get user name
+async function getUserName(userId) {
+  const user = await User.findById(userId);
+  if (!user) return 'Someone';
+
+  if (user.role === 'player') {
+    const profile = await PlayerProfile.findByUserId(userId);
+    return profile ? `${profile.first_name} ${profile.last_name}` : 'Someone';
+  } else if (user.role === 'coach') {
+    const profile = await CoachProfile.findByUserId(userId);
+    return profile ? `${profile.first_name} ${profile.last_name}` : 'Someone';
+  }
+  return 'Someone';
+}
 
 // ==================== FEED ENDPOINTS ====================
 // IMPORTANT: These must come BEFORE /:postId routes to avoid conflict
@@ -234,6 +254,20 @@ router.delete('/:postId', authMiddleware, async (req, res) => {
 router.post('/:postId/like', authMiddleware, async (req, res) => {
   try {
     const result = await Post.like(req.params.postId, req.userId);
+
+    // Create notification for the post owner
+    if (result) {
+      try {
+        const post = await Post.getById(req.params.postId, req.userId);
+        if (post && post.user_id !== req.userId) {
+          const likerName = await getUserName(req.userId);
+          await Notification.createLikeNotification(post.user_id, req.userId, likerName, req.params.postId);
+        }
+      } catch (notifError) {
+        console.error('Failed to create like notification:', notifError);
+      }
+    }
+
     res.json({ message: 'Post liked', liked: !!result });
   } catch (error) {
     console.error('Like post error:', error);
@@ -302,6 +336,18 @@ router.post('/:postId/comments', authMiddleware, [
       req.body.content,
       req.body.parent_comment_id || null
     );
+
+    // Create notification for the post owner
+    try {
+      const post = await Post.getById(req.params.postId, req.userId);
+      if (post && post.user_id !== req.userId) {
+        const commenterName = await getUserName(req.userId);
+        await Notification.createCommentNotification(post.user_id, req.userId, commenterName, req.params.postId, req.body.content);
+      }
+    } catch (notifError) {
+      console.error('Failed to create comment notification:', notifError);
+    }
+
     res.status(201).json({ message: 'Comment added', comment });
   } catch (error) {
     console.error('Add comment error:', error);

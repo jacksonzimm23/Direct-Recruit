@@ -764,6 +764,17 @@ function displayPlayerProfile(profile) {
             parts.push(weightStr.includes('lbs') ? weightStr : `${profile.weight} lbs`);
         }
 
+        // Add college division
+        if (profile.college_division) {
+            const div = profile.college_division;
+            // Add "D1" prefix for FBS/FCS divisions
+            if (div === 'FBS' || div === 'FCS') {
+                parts.push(`D1 ${div}`);
+            } else {
+                parts.push(div);
+            }
+        }
+
         positionElement.textContent = parts.length > 0 ? parts.join(' • ') : 'Position not specified';
     }
 

@@ -1,6 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const Follow = require('../models/Follow');
+const Notification = require('../models/Notification');
+const PlayerProfile = require('../models/PlayerProfile');
+const CoachProfile = require('../models/CoachProfile');
+const User = require('../models/User');
 const { authMiddleware } = require('../middleware/auth');
 
 // Follow a user
@@ -18,6 +22,26 @@ router.post('/:userId', authMiddleware, async (req, res) => {
     }
 
     await Follow.follow(req.userId, userId);
+
+    // Create notification for the followed user
+    try {
+      const followerUser = await User.findById(req.userId);
+      let followerName = 'Someone';
+
+      if (followerUser.role === 'player') {
+        const profile = await PlayerProfile.findByUserId(req.userId);
+        if (profile) followerName = `${profile.first_name} ${profile.last_name}`;
+      } else if (followerUser.role === 'coach') {
+        const profile = await CoachProfile.findByUserId(req.userId);
+        if (profile) followerName = `${profile.first_name} ${profile.last_name}`;
+      }
+
+      await Notification.createFollowNotification(userId, req.userId, followerName);
+    } catch (notifError) {
+      console.error('Failed to create follow notification:', notifError);
+      // Don't fail the follow action if notification fails
+    }
+
     res.json({ message: 'Successfully followed user' });
   } catch (error) {
     console.error('Follow error:', error);

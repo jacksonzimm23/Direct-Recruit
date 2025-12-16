@@ -1,0 +1,287 @@
+const pool = require('../config/database');
+
+class Notification {
+  // Create a new notification
+  static async create({ userId, type, title, message, relatedUserId = null, relatedEntityId = null, relatedEntityType = null }) {
+    const result = await pool.query(
+      `INSERT INTO notifications (user_id, type, title, message, related_user_id, related_entity_id, related_entity_type)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
+       RETURNING *`,
+      [userId, type, title, message, relatedUserId, relatedEntityId, relatedEntityType]
+    );
+    return result.rows[0];
+  }
+
+  // Get notifications for a user with optional filtering
+  static async getForUser(userId, { type = null, limit = 50, offset = 0 } = {}) {
+    let query = `
+      SELECT
+        n.*,
+        CASE
+          WHEN u.role = 'player' THEN pp.first_name
+          WHEN u.role = 'coach' THEN cp.first_name
+        END as related_user_first_name,
+        CASE
+          WHEN u.role = 'player' THEN pp.last_name
+          WHEN u.role = 'coach' THEN cp.last_name
+        END as related_user_last_name,
+        CASE
+          WHEN u.role = 'player' THEN pp.username
+          WHEN u.role = 'coach' THEN cp.username
+        END as related_user_username,
+        CASE
+          WHEN u.role = 'player' THEN pp.profile_image_url
+          WHEN u.role = 'coach' THEN cp.profile_image_url
+        END as related_user_profile_image,
+        CASE
+          WHEN u.role = 'player' THEN pp.position
+          WHEN u.role = 'coach' THEN cp.position_title
+        END as related_user_position,
+        CASE
+          WHEN u.role = 'player' THEN pp.high_school
+          WHEN u.role = 'coach' THEN cp.college_name
+        END as related_user_school,
+        u.role as related_user_role
+      FROM notifications n
+      LEFT JOIN users u ON n.related_user_id = u.id
+      LEFT JOIN player_profiles pp ON u.id = pp.user_id AND u.role = 'player'
+      LEFT JOIN coach_profiles cp ON u.id = cp.user_id AND u.role = 'coach'
+      WHERE n.user_id = $1
+    `;
+
+    const params = [userId];
+
+    if (type) {
+      params.push(type);
+      query += ` AND n.type = $${params.length}`;
+    }
+
+    query += ` ORDER BY n.created_at DESC LIMIT $${params.length + 1} OFFSET $${params.length + 2}`;
+    params.push(limit, offset);
+
+    const result = await pool.query(query, params);
+    return result.rows;
+  }
+
+  // Get unread count for a user
+  static async getUnreadCount(userId, type = null) {
+    let query = `SELECT COUNT(*) FROM notifications WHERE user_id = $1 AND is_read = FALSE`;
+    const params = [userId];
+
+    if (type) {
+      params.push(type);
+      query += ` AND type = $${params.length}`;
+    }
+
+    const result = await pool.query(query, params);
+    return parseInt(result.rows[0].count);
+  }
+
+  // Get counts by type for a user
+  static async getCountsByType(userId) {
+    const result = await pool.query(
+      `SELECT type, COUNT(*) as total,
+              SUM(CASE WHEN is_read = FALSE THEN 1 ELSE 0 END) as unread
+       FROM notifications
+       WHERE user_id = $1
+       GROUP BY type`,
+      [userId]
+    );
+
+    const counts = {
+      all: { total: 0, unread: 0 },
+      'profile-view': { total: 0, unread: 0 },
+      'message': { total: 0, unread: 0 },
+      'follow': { total: 0, unread: 0 },
+      'interaction': { total: 0, unread: 0 }
+    };
+
+    result.rows.forEach(row => {
+      counts[row.type] = {
+        total: parseInt(row.total),
+        unread: parseInt(row.unread)
+      };
+      counts.all.total += parseInt(row.total);
+      counts.all.unread += parseInt(row.unread);
+    });
+
+    return counts;
+  }
+
+  // Mark a single notification as read
+  static async markAsRead(notificationId, userId) {
+    const result = await pool.query(
+      `UPDATE notifications
+       SET is_read = TRUE
+       WHERE id = $1 AND user_id = $2
+       RETURNING *`,
+      [notificationId, userId]
+    );
+    return result.rows[0];
+  }
+
+  // Mark all notifications as read for a user
+  static async markAllAsRead(userId, type = null) {
+    let query = `UPDATE notifications SET is_read = TRUE WHERE user_id = $1 AND is_read = FALSE`;
+    const params = [userId];
+
+    if (type) {
+      params.push(type);
+      query += ` AND type = $${params.length}`;
+    }
+
+    query += ` RETURNING *`;
+
+    const result = await pool.query(query, params);
+    return result.rows.length;
+  }
+
+  // Delete a notification
+  static async delete(notificationId, userId) {
+    const result = await pool.query(
+      `DELETE FROM notifications
+       WHERE id = $1 AND user_id = $2
+       RETURNING *`,
+      [notificationId, userId]
+    );
+    return result.rows[0];
+  }
+
+  // Delete all notifications for a user (optional: by type)
+  static async deleteAll(userId, type = null) {
+    let query = `DELETE FROM notifications WHERE user_id = $1`;
+    const params = [userId];
+
+    if (type) {
+      params.push(type);
+      query += ` AND type = $${params.length}`;
+    }
+
+    const result = await pool.query(query, params);
+    return result.rowCount;
+  }
+
+  // Check if a notification already exists (to prevent duplicates)
+  static async exists({ userId, type, relatedUserId, relatedEntityId, withinHours = 24 }) {
+    const result = await pool.query(
+      `SELECT id FROM notifications
+       WHERE user_id = $1
+         AND type = $2
+         AND ($3::uuid IS NULL OR related_user_id = $3)
+         AND ($4::uuid IS NULL OR related_entity_id = $4)
+         AND created_at > NOW() - INTERVAL '${withinHours} hours'
+       LIMIT 1`,
+      [userId, type, relatedUserId, relatedEntityId]
+    );
+    return result.rows.length > 0;
+  }
+
+  // Create notification helper methods for specific types
+  static async createProfileViewNotification(viewedUserId, viewerUserId, viewerName, viewerSchool) {
+    // Don't notify if viewing own profile
+    if (viewedUserId === viewerUserId) return null;
+
+    // Check if notification already exists within last 24 hours
+    const exists = await this.exists({
+      userId: viewedUserId,
+      type: 'profile-view',
+      relatedUserId: viewerUserId,
+      withinHours: 24
+    });
+
+    if (exists) return null;
+
+    const schoolText = viewerSchool ? ` from ${viewerSchool}` : '';
+
+    return this.create({
+      userId: viewedUserId,
+      type: 'profile-view',
+      title: 'Profile View',
+      message: `${viewerName}${schoolText} viewed your profile`,
+      relatedUserId: viewerUserId
+    });
+  }
+
+  static async createFollowNotification(followedUserId, followerUserId, followerName) {
+    // Don't notify if following self (shouldn't happen but safety check)
+    if (followedUserId === followerUserId) return null;
+
+    return this.create({
+      userId: followedUserId,
+      type: 'follow',
+      title: 'New Follower',
+      message: `${followerName} started following you`,
+      relatedUserId: followerUserId
+    });
+  }
+
+  static async createMessageNotification(recipientUserId, senderUserId, senderName, messagePreview, conversationId) {
+    // Don't notify if messaging self
+    if (recipientUserId === senderUserId) return null;
+
+    // Check if notification exists within last 5 minutes (to avoid spam for rapid messages)
+    const exists = await this.exists({
+      userId: recipientUserId,
+      type: 'message',
+      relatedUserId: senderUserId,
+      withinHours: 0.083 // ~5 minutes
+    });
+
+    if (exists) return null;
+
+    return this.create({
+      userId: recipientUserId,
+      type: 'message',
+      title: 'New Message',
+      message: `${senderName} sent you a message`,
+      relatedUserId: senderUserId,
+      relatedEntityId: conversationId,
+      relatedEntityType: 'conversation'
+    });
+  }
+
+  static async createLikeNotification(postOwnerId, likerUserId, likerName, postId) {
+    // Don't notify if liking own post
+    if (postOwnerId === likerUserId) return null;
+
+    // Check if notification exists within last hour
+    const exists = await this.exists({
+      userId: postOwnerId,
+      type: 'interaction',
+      relatedUserId: likerUserId,
+      relatedEntityId: postId,
+      withinHours: 1
+    });
+
+    if (exists) return null;
+
+    return this.create({
+      userId: postOwnerId,
+      type: 'interaction',
+      title: 'Post Liked',
+      message: `${likerName} liked your post`,
+      relatedUserId: likerUserId,
+      relatedEntityId: postId,
+      relatedEntityType: 'post'
+    });
+  }
+
+  static async createCommentNotification(postOwnerId, commenterUserId, commenterName, postId, commentPreview) {
+    // Don't notify if commenting on own post
+    if (postOwnerId === commenterUserId) return null;
+
+    const preview = commentPreview.length > 50 ? commentPreview.substring(0, 50) + '...' : commentPreview;
+
+    return this.create({
+      userId: postOwnerId,
+      type: 'interaction',
+      title: 'New Comment',
+      message: `${commenterName} commented on your post: "${preview}"`,
+      relatedUserId: commenterUserId,
+      relatedEntityId: postId,
+      relatedEntityType: 'post'
+    });
+  }
+}
+
+module.exports = Notification;

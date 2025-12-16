@@ -1,6 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const Message = require('../models/Message');
+const Notification = require('../models/Notification');
+const PlayerProfile = require('../models/PlayerProfile');
+const CoachProfile = require('../models/CoachProfile');
+const User = require('../models/User');
+const pool = require('../config/database');
 const { authMiddleware } = require('../middleware/auth');
 const { body, validationResult } = require('express-validator');
 const { messageLimiter } = require('../middleware/rateLimit');
@@ -101,6 +106,41 @@ router.post('/conversations/:conversationId/messages', authMiddleware, messageLi
     // Socket.IO will handle real-time delivery
     if (req.app.get('io')) {
       req.app.get('io').to(conversationId).emit('new_message', message);
+    }
+
+    // Create notification for the recipient(s)
+    try {
+      // Get sender info
+      const senderUser = await User.findById(req.userId);
+      let senderName = 'Someone';
+
+      if (senderUser.role === 'player') {
+        const profile = await PlayerProfile.findByUserId(req.userId);
+        if (profile) senderName = `${profile.first_name} ${profile.last_name}`;
+      } else if (senderUser.role === 'coach') {
+        const profile = await CoachProfile.findByUserId(req.userId);
+        if (profile) senderName = `${profile.first_name} ${profile.last_name}`;
+      }
+
+      // Get other participants in the conversation
+      const participantsResult = await pool.query(
+        `SELECT user_id FROM conversation_participants WHERE conversation_id = $1 AND user_id != $2`,
+        [conversationId, req.userId]
+      );
+
+      // Create notification for each recipient
+      for (const row of participantsResult.rows) {
+        await Notification.createMessageNotification(
+          row.user_id,
+          req.userId,
+          senderName,
+          req.body.content,
+          conversationId
+        );
+      }
+    } catch (notifError) {
+      console.error('Failed to create message notification:', notifError);
+      // Don't fail the message send if notification fails
     }
 
     res.status(201).json({ message });

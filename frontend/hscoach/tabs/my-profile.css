@@ -17,15 +17,6 @@
     visibility: visible;
 }
 
-/* Right sidebar toggle button - hidden by default */
-.right-sidebar-toggle {
-    display: none;
-}
-
-/* Show toggle button when enabled by JS */
-.right-sidebar-toggle.show-toggle {
-    display: flex;
-}
 
 /* Hide edit controls by default to prevent flash when viewing others */
 .btn-edit-profile {
@@ -53,14 +44,9 @@
     display: flex;
 }
 
-/* Ensure dashboard supports right sidebar */
+/* Two-column layout (no right sidebar) */
 .dashboard-container {
-    grid-template-columns: 280px 1fr 260px;
-}
-
-/* When right sidebar is hidden */
-.dashboard-container.right-sidebar-hidden {
-    grid-template-columns: 280px 1fr 0px;
+    grid-template-columns: 280px 1fr;
 }
 
 .profile-content {

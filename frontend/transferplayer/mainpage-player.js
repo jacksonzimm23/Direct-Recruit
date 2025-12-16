@@ -13,6 +13,11 @@ document.addEventListener('DOMContentLoaded', async function() {
     // Refresh unread count every 30 seconds
     setInterval(updateUnreadMessagesBadge, 30000);
 
+    // Update unread notifications badge
+    await updateUnreadNotificationsBadge();
+    // Refresh notification count every 30 seconds
+    setInterval(updateUnreadNotificationsBadge, 30000);
+
     // Sidebar Toggle Functionality
     const sidebarToggle = document.getElementById('sidebarToggle');
     const rightSidebarToggle = document.getElementById('rightSidebarToggle');
@@ -24,6 +29,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     if (sidebarHidden) {
         dashboardContainer.classList.add('sidebar-hidden');
+        document.body.classList.add('sidebar-hidden');
     }
 
     if (rightSidebarHidden) {
@@ -34,6 +40,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     if (sidebarToggle) {
         sidebarToggle.addEventListener('click', function() {
             const isHidden = dashboardContainer.classList.toggle('sidebar-hidden');
+            document.body.classList.toggle('sidebar-hidden', isHidden);
             localStorage.setItem('playerSidebarHidden', isHidden);
         });
     }
@@ -394,5 +401,24 @@ async function updateUnreadMessagesBadge() {
         }
     } catch (error) {
         console.error('Error updating unread messages badge:', error);
+    }
+}
+
+// Update unread notifications badge in sidebar
+async function updateUnreadNotificationsBadge() {
+    try {
+        const response = await API.notifications.getUnreadCount();
+        const badge = document.querySelector('.nav-item[href*="notifications"] .notification-badge');
+
+        if (badge && response.unreadCount !== undefined) {
+            if (response.unreadCount > 0) {
+                badge.textContent = response.unreadCount > 99 ? '99+' : response.unreadCount;
+                badge.style.display = 'flex';
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+    } catch (error) {
+        console.error('Error updating unread notifications badge:', error);
     }
 }

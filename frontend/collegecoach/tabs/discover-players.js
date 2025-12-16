@@ -309,7 +309,8 @@ document.addEventListener('DOMContentLoaded', async function() {
                 const playerCard = this.closest('.player-card');
                 const username = playerCard.dataset.username;
                 if (username) {
-                    window.location.href = `my-profile.html?username=${username}`;
+                    // Link to hsplayer profile folder with from=discover to keep nav highlighted
+                    window.location.href = `../../hsplayer/tabs/my-profile.html?username=${username}&from=discover`;
                 } else {
                     alert('Profile not available. User has not set up their profile yet.');
                 }

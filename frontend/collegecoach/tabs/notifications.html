@@ -74,6 +74,7 @@
                         <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
                     </svg>
                     <span>Notifications</span>
+                    <span class="notification-badge" style="display: none;"></span>
                 </a>
 
                 <a href="recruiting-board.html" class="nav-item" id="recruitingBoardNav" style="display: none;">
@@ -106,7 +107,6 @@
                 </a>
             </nav>
 
-            <!-- Sidebar Footer -->
             <div class="sidebar-footer">
                 <div class="user-menu">
                     <div class="user-avatar-circle">
@@ -147,22 +147,14 @@
             <div class="notification-tabs">
                 <button class="notification-tab active" data-filter="all">
                     All
-                    <span class="tab-count">15</span>
-                </button>
-                <button class="notification-tab" data-filter="profile-views">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                        <circle cx="12" cy="12" r="3"></circle>
-                    </svg>
-                    Profile Views
-                    <span class="tab-count">4</span>
+                    <span class="tab-count">0</span>
                 </button>
                 <button class="notification-tab" data-filter="messages">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
                     </svg>
                     Messages
-                    <span class="tab-count">5</span>
+                    <span class="tab-count">0</span>
                 </button>
                 <button class="notification-tab" data-filter="follows">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -172,419 +164,26 @@
                         <line x1="23" y1="11" x2="17" y2="11"></line>
                     </svg>
                     Follows
-                    <span class="tab-count">3</span>
+                    <span class="tab-count">0</span>
                 </button>
                 <button class="notification-tab" data-filter="interactions">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
                     </svg>
                     Interactions
-                    <span class="tab-count">3</span>
+                    <span class="tab-count">0</span>
                 </button>
             </div>
 
-            <!-- Notifications List -->
+            <!-- Notifications List - dynamically populated by notifications.js -->
             <div class="notifications-list" id="notificationsList">
-                <!-- New Notifications Section -->
-                <div class="notifications-section">
-                    <h2 class="section-title">New</h2>
-
-                    <!-- Message Notification -->
-                    <div class="notification-card unread" data-type="messages">
-                        <div class="notification-icon message-icon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-                            </svg>
-                        </div>
-                        <div class="notification-content">
-                            <div class="notification-text">
-                                <strong>Marcus Johnson</strong> sent you a message: "Thank you for your interest in me..."
-                            </div>
-                            <div class="notification-time">2 minutes ago</div>
-                        </div>
-                        <div class="notification-actions">
-                            <button class="btn-notification-action" title="Mark as read">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <polyline points="20 6 9 17 4 12"></polyline>
-                                </svg>
-                            </button>
-                            <button class="btn-notification-delete" title="Delete">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <polyline points="3 6 5 6 21 6"></polyline>
-                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Profile View Notification -->
-                    <div class="notification-card unread" data-type="profile-views">
-                        <div class="notification-icon profile-view-icon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                                <circle cx="12" cy="12" r="3"></circle>
-                            </svg>
-                        </div>
-                        <div class="notification-content">
-                            <div class="notification-text">
-                                <strong>Tyler Brooks</strong> (WR • Class of 2026) viewed your profile
-                            </div>
-                            <div class="notification-time">10 minutes ago</div>
-                        </div>
-                        <div class="notification-actions">
-                            <button class="btn-notification-action" title="Mark as read">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <polyline points="20 6 9 17 4 12"></polyline>
-                                </svg>
-                            </button>
-                            <button class="btn-notification-delete" title="Delete">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <polyline points="3 6 5 6 21 6"></polyline>
-                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Follow Notification -->
-                    <div class="notification-card unread" data-type="follows">
-                        <div class="notification-icon follow-icon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                                <circle cx="8.5" cy="7" r="4"></circle>
-                                <line x1="20" y1="8" x2="20" y2="14"></line>
-                                <line x1="23" y1="11" x2="17" y2="11"></line>
-                            </svg>
-                        </div>
-                        <div class="notification-content">
-                            <div class="notification-text">
-                                <strong>Brandon Jackson</strong> (DE • Class of 2026) started following you
-                            </div>
-                            <div class="notification-time">45 minutes ago</div>
-                        </div>
-                        <div class="notification-actions">
-                            <button class="btn-notification-action" title="Mark as read">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <polyline points="20 6 9 17 4 12"></polyline>
-                                </svg>
-                            </button>
-                            <button class="btn-notification-delete" title="Delete">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <polyline points="3 6 5 6 21 6"></polyline>
-                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Message Notification -->
-                    <div class="notification-card unread" data-type="messages">
-                        <div class="notification-icon message-icon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-                            </svg>
-                        </div>
-                        <div class="notification-content">
-                            <div class="notification-text">
-                                <strong>Darius Williams</strong> sent you a message: "I'd like to learn more about your program..."
-                            </div>
-                            <div class="notification-time">1 hour ago</div>
-                        </div>
-                        <div class="notification-actions">
-                            <button class="btn-notification-action" title="Mark as read">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <polyline points="20 6 9 17 4 12"></polyline>
-                                </svg>
-                            </button>
-                            <button class="btn-notification-delete" title="Delete">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <polyline points="3 6 5 6 21 6"></polyline>
-                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Interaction Notification -->
-                    <div class="notification-card unread" data-type="interactions">
-                        <div class="notification-icon interaction-icon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
-                            </svg>
-                        </div>
-                        <div class="notification-content">
-                            <div class="notification-text">
-                                <strong>James Peterson</strong> and <strong>5 others</strong> liked your post
-                            </div>
-                            <div class="notification-time">2 hours ago</div>
-                        </div>
-                        <div class="notification-actions">
-                            <button class="btn-notification-action" title="Mark as read">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <polyline points="20 6 9 17 4 12"></polyline>
-                                </svg>
-                            </button>
-                            <button class="btn-notification-delete" title="Delete">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <polyline points="3 6 5 6 21 6"></polyline>
-                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Earlier Notifications Section -->
-                <div class="notifications-section">
-                    <h2 class="section-title">Earlier</h2>
-
-                    <!-- Profile View Notification (Read) -->
-                    <div class="notification-card" data-type="profile-views">
-                        <div class="notification-icon profile-view-icon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                                <circle cx="12" cy="12" r="3"></circle>
-                            </svg>
-                        </div>
-                        <div class="notification-content">
-                            <div class="notification-text">
-                                <strong>Alex Thompson</strong> (LB • Class of 2025) viewed your profile
-                            </div>
-                            <div class="notification-time">Yesterday</div>
-                        </div>
-                        <div class="notification-actions">
-                            <button class="btn-notification-delete" title="Delete">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <polyline points="3 6 5 6 21 6"></polyline>
-                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Message Notification (Read) -->
-                    <div class="notification-card" data-type="messages">
-                        <div class="notification-icon message-icon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-                            </svg>
-                        </div>
-                        <div class="notification-content">
-                            <div class="notification-text">
-                                <strong>Michael Davis</strong> sent you a message
-                            </div>
-                            <div class="notification-time">Yesterday</div>
-                        </div>
-                        <div class="notification-actions">
-                            <button class="btn-notification-delete" title="Delete">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <polyline points="3 6 5 6 21 6"></polyline>
-                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Follow Notification (Read) -->
-                    <div class="notification-card" data-type="follows">
-                        <div class="notification-icon follow-icon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                                <circle cx="8.5" cy="7" r="4"></circle>
-                                <line x1="20" y1="8" x2="20" y2="14"></line>
-                                <line x1="23" y1="11" x2="17" y2="11"></line>
-                            </svg>
-                        </div>
-                        <div class="notification-content">
-                            <div class="notification-text">
-                                <strong>Chris Thompson</strong> (CB • Class of 2026) started following you
-                            </div>
-                            <div class="notification-time">2 days ago</div>
-                        </div>
-                        <div class="notification-actions">
-                            <button class="btn-notification-delete" title="Delete">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <polyline points="3 6 5 6 21 6"></polyline>
-                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Interaction Notification (Read) -->
-                    <div class="notification-card" data-type="interactions">
-                        <div class="notification-icon interaction-icon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                                <circle cx="12" cy="12" r="3"></circle>
-                                <path d="M12 1v6M12 17v6M1 12h6M17 12h6"></path>
-                            </svg>
-                        </div>
-                        <div class="notification-content">
-                            <div class="notification-text">
-                                <strong>Derek Williams</strong> commented on your post
-                            </div>
-                            <div class="notification-time">2 days ago</div>
-                        </div>
-                        <div class="notification-actions">
-                            <button class="btn-notification-delete" title="Delete">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <polyline points="3 6 5 6 21 6"></polyline>
-                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Profile View Notification (Read) -->
-                    <div class="notification-card" data-type="profile-views">
-                        <div class="notification-icon profile-view-icon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                                <circle cx="12" cy="12" r="3"></circle>
-                            </svg>
-                        </div>
-                        <div class="notification-content">
-                            <div class="notification-text">
-                                <strong>Jordan Smith</strong> (QB • Class of 2025) viewed your profile
-                            </div>
-                            <div class="notification-time">3 days ago</div>
-                        </div>
-                        <div class="notification-actions">
-                            <button class="btn-notification-delete" title="Delete">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <polyline points="3 6 5 6 21 6"></polyline>
-                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Message Notification (Read) -->
-                    <div class="notification-card" data-type="messages">
-                        <div class="notification-icon message-icon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-                            </svg>
-                        </div>
-                        <div class="notification-content">
-                            <div class="notification-text">
-                                <strong>Kevin Martinez</strong> sent you a message
-                            </div>
-                            <div class="notification-time">3 days ago</div>
-                        </div>
-                        <div class="notification-actions">
-                            <button class="btn-notification-delete" title="Delete">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <polyline points="3 6 5 6 21 6"></polyline>
-                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Follow Notification (Read) -->
-                    <div class="notification-card" data-type="follows">
-                        <div class="notification-icon follow-icon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                                <circle cx="8.5" cy="7" r="4"></circle>
-                                <line x1="20" y1="8" x2="20" y2="14"></line>
-                                <line x1="23" y1="11" x2="17" y2="11"></line>
-                            </svg>
-                        </div>
-                        <div class="notification-content">
-                            <div class="notification-text">
-                                <strong>Ryan Anderson</strong> (DE • Class of 2027) started following you
-                            </div>
-                            <div class="notification-time">4 days ago</div>
-                        </div>
-                        <div class="notification-actions">
-                            <button class="btn-notification-delete" title="Delete">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <polyline points="3 6 5 6 21 6"></polyline>
-                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Interaction Notification (Read) -->
-                    <div class="notification-card" data-type="interactions">
-                        <div class="notification-icon interaction-icon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
-                            </svg>
-                        </div>
-                        <div class="notification-content">
-                            <div class="notification-text">
-                                <strong>Samuel Lee</strong> liked your post about recruiting tips
-                            </div>
-                            <div class="notification-time">5 days ago</div>
-                        </div>
-                        <div class="notification-actions">
-                            <button class="btn-notification-delete" title="Delete">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <polyline points="3 6 5 6 21 6"></polyline>
-                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Profile View Notification (Read) -->
-                    <div class="notification-card" data-type="profile-views">
-                        <div class="notification-icon profile-view-icon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                                <circle cx="12" cy="12" r="3"></circle>
-                            </svg>
-                        </div>
-                        <div class="notification-content">
-                            <div class="notification-text">
-                                <strong>Noah Wilson</strong> (RB • Class of 2026) viewed your profile
-                            </div>
-                            <div class="notification-time">5 days ago</div>
-                        </div>
-                        <div class="notification-actions">
-                            <button class="btn-notification-delete" title="Delete">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <polyline points="3 6 5 6 21 6"></polyline>
-                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Message Notification (Read) -->
-                    <div class="notification-card" data-type="messages">
-                        <div class="notification-icon message-icon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-                            </svg>
-                        </div>
-                        <div class="notification-content">
-                            <div class="notification-text">
-                                <strong>Ethan Parker</strong> sent you a message
-                            </div>
-                            <div class="notification-time">1 week ago</div>
-                        </div>
-                        <div class="notification-actions">
-                            <button class="btn-notification-delete" title="Delete">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <polyline points="3 6 5 6 21 6"></polyline>
-                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
-                </div>
+                <!-- Content loaded dynamically from API -->
             </div>
         </main>
     </div>
 
     <script src="../../shared/api.js"></script>
-    <script src="../mainpage-coach.js?v=4"></script>
+    <script src="../mainpage-coach.js?v=3"></script>
     <script src="notifications.js"></script>
 </body>
 </html>

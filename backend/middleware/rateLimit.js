@@ -2,6 +2,9 @@ const rateLimit = require('express-rate-limit');
 const RedisStore = require('rate-limit-redis').default;
 const redisClient = require('../config/redis');
 
+// Skip rate limiting in development for localhost
+const isDevelopment = process.env.NODE_ENV !== 'production';
+
 // General API rate limiter
 const apiLimiter = rateLimit({
   store: new RedisStore({
@@ -9,10 +12,11 @@ const apiLimiter = rateLimit({
     prefix: 'rl:api:'
   }),
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 500, // Increased for testing - 500 requests per window
+  max: isDevelopment ? 10000 : 500, // Much higher limit for development
   message: 'Too many requests, please try again later',
   standardHeaders: true,
   legacyHeaders: false,
+  skip: (req) => isDevelopment, // Skip rate limiting entirely in development
   handler: (req, res) => {
     res.status(429).json({
       error: 'Too many requests, please try again later'
@@ -27,10 +31,11 @@ const authLimiter = rateLimit({
     prefix: 'rl:auth:'
   }),
   windowMs: 15 * 60 * 1000,
-  max: 200, // Increased for development - 200 attempts per 15 minutes
+  max: isDevelopment ? 10000 : 200, // Much higher limit for development
   message: 'Too many authentication attempts, please try again later',
   standardHeaders: true,
   legacyHeaders: false,
+  skip: (req) => isDevelopment, // Skip rate limiting entirely in development
   handler: (req, res) => {
     res.status(429).json({
       error: 'Too many authentication attempts, please try again later'
