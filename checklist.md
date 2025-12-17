@@ -50,7 +50,7 @@ Feed
 
 College Coach
 - Recruiting board
-- Player / coach cards on discover page
+- Player / coach cards on discover page, hsplayer DONE, collegecoach DONE
 - transfer portal cards
 
 ALL

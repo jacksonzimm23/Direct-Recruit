@@ -5,6 +5,32 @@
     grid-column: 2 / -1 !important;
 }
 
+/* Section Title Row - Consistent header styling */
+.section-title-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 1.5rem 1.5rem;
+}
+
+.section-title-sub {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--white);
+    margin: 0;
+}
+
+.section-bullet {
+    color: rgba(254, 252, 251, 0.5);
+    font-size: 0.8rem;
+}
+
+.section-subtitle {
+    font-size: 1rem;
+    color: rgba(254, 252, 251, 0.7);
+    margin: 0;
+}
+
 /* Filters Container */
 .filters-container {
     background: rgba(254, 252, 251, 0.03);
@@ -611,6 +637,34 @@
     background: #ff7d4d;
     transform: translateY(-2px);
     box-shadow: 0 6px 15px rgba(255, 107, 53, 0.4);
+}
+
+.btn-view-profile-coach {
+    width: 100%;
+    background: var(--accent-orange);
+    color: var(--white);
+    border: none;
+    padding: 0.85rem;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-family: 'Inter', sans-serif;
+    margin-top: auto;
+}
+
+.btn-view-profile-coach:hover {
+    background: #ff7d4d;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(255, 107, 53, 0.4);
+}
+
+.no-results-message {
+    color: rgba(254, 252, 251, 0.6);
+    padding: 2rem;
+    text-align: center;
+    grid-column: 1 / -1;
 }
 
 /* Responsive Design */

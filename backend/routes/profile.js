@@ -138,7 +138,8 @@ router.get('/discover/hsplayers', authMiddleware, async (req, res) => {
       min_height: req.query.min_height,
       min_weight: req.query.min_weight,
       min_gpa: req.query.min_gpa,
-      searchTerm: req.query.q
+      searchTerm: req.query.q,
+      excludeUserId: req.userId // Exclude current user's profile
     };
     const limit = parseInt(req.query.limit) || 9;
     const offset = parseInt(req.query.offset) || 0;
@@ -148,6 +149,27 @@ router.get('/discover/hsplayers', authMiddleware, async (req, res) => {
   } catch (error) {
     console.error('Discover HS players error:', error);
     res.status(500).json({ error: 'Failed to fetch HS players' });
+  }
+});
+
+// Discover College Players - only players WITH college_division
+router.get('/discover/collegeplayers', authMiddleware, async (req, res) => {
+  try {
+    const filters = {
+      position: req.query.position,
+      college_division: req.query.college_division,
+      state: req.query.state,
+      searchTerm: req.query.q,
+      excludeUserId: req.userId // Exclude current user's profile
+    };
+    const limit = parseInt(req.query.limit) || 9;
+    const offset = parseInt(req.query.offset) || 0;
+
+    const result = await PlayerProfile.searchCollegePlayers(filters, limit, offset);
+    res.json({ players: result.players, hasMore: result.hasMore });
+  } catch (error) {
+    console.error('Discover college players error:', error);
+    res.status(500).json({ error: 'Failed to fetch college players' });
   }
 });
 

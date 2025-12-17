@@ -149,8 +149,8 @@
                         <label>Division</label>
                         <select class="filter-select" id="divisionFilter">
                             <option value="">All Divisions</option>
-                            <option value="D1">Division I (FBS)</option>
-                            <option value="D1-FCS">Division I (FCS)</option>
+                            <option value="FBS">Division I (FBS)</option>
+                            <option value="FCS">Division I (FCS)</option>
                             <option value="D2">Division II</option>
                             <option value="D3">Division III</option>
                             <option value="NAIA">NAIA</option>
@@ -174,34 +174,20 @@
 
             <!-- Connect with Players Section -->
             <div class="discover-section">
-                <h2 class="section-title-sub">Connect with Players</h2>
+                <div class="section-title-row">
+                    <h2 class="section-title-sub">Connect with Players</h2>
+                    <span class="section-bullet">•</span>
+                    <p class="section-subtitle">Network with other athletes and build connections</p>
+                </div>
 
                 <!-- Players Grid -->
-                <div class="players-grid">
-                    <!-- Player Card 1 -->
-                    <div class="player-card">
-                        <div class="player-card-header">
-                            <div class="player-avatar-large">
-                                <svg viewBox="0 0 24 24" fill="currentColor">
-                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                                    <circle cx="12" cy="7" r="4"></circle>
-                                </svg>
-                            </div>
-                        </div>
-                        <h3 class="player-name">Marcus Johnson</h3>
-                        <div class="player-position">QB • Class of 2026</div>
-                        <div class="player-details">
-                            <div class="detail-item">Columbus, OH</div>
-                            <div class="detail-item">6'2" • 195 lbs</div>
-                        </div>
-                        <button class="btn-view-profile">View Profile</button>
-                    </div>
-
+                <div class="players-grid" id="playersGrid">
+                    <!-- Player cards will be loaded dynamically -->
                 </div>
 
                 <!-- Load More Button -->
                 <div class="load-more-container">
-                    <button class="btn-load-more">Load More Players</button>
+                    <button class="btn-load-more" id="loadMorePlayersBtn">Load More Players</button>
                 </div>
             </div>
         </main>

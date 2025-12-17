@@ -94,6 +94,13 @@ class PlayerProfile {
     const values = [];
     let paramCount = 1;
 
+    // Exclude current user's profile from results
+    if (filters.excludeUserId) {
+      query += ` AND pp.user_id != $${paramCount}`;
+      values.push(filters.excludeUserId);
+      paramCount++;
+    }
+
     if (filters.position) {
       // Position can contain multiple values like "WR, RB" - check if the filter value is contained
       query += ` AND pp.position ILIKE $${paramCount}`;
@@ -111,7 +118,18 @@ class PlayerProfile {
       paramCount++;
     }
     if (filters.min_height) {
-      query += ` AND pp.height >= $${paramCount}`;
+      // Height stored as string like "6'1"" - convert to inches for comparison
+      // Extract feet and inches: CAST(SPLIT_PART(height, '''', 1) AS INTEGER) * 12 + CAST(REGEXP_REPLACE(SPLIT_PART(height, '''', 2), '[^0-9]', '', 'g') AS INTEGER)
+      query += ` AND (
+        CASE
+          WHEN pp.height ~ '^[0-9]+''[0-9]+"?$' THEN
+            CAST(SPLIT_PART(pp.height, '''', 1) AS INTEGER) * 12 +
+            CAST(NULLIF(REGEXP_REPLACE(SPLIT_PART(pp.height, '''', 2), '[^0-9]', '', 'g'), '') AS INTEGER)
+          WHEN pp.height ~ '^[0-9]+$' THEN
+            CAST(pp.height AS INTEGER)
+          ELSE 0
+        END
+      ) >= $${paramCount}`;
       values.push(filters.min_height);
       paramCount++;
     }
@@ -123,6 +141,56 @@ class PlayerProfile {
     if (filters.min_gpa) {
       query += ` AND pp.gpa >= $${paramCount}`;
       values.push(filters.min_gpa);
+      paramCount++;
+    }
+    if (filters.searchTerm) {
+      query += ` AND (pp.first_name ILIKE $${paramCount} OR pp.last_name ILIKE $${paramCount} OR pp.username ILIKE $${paramCount})`;
+      values.push(`%${filters.searchTerm}%`);
+      paramCount++;
+    }
+
+    // Add limit + 1 to check if there are more results
+    query += ` ORDER BY pp.created_at DESC LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
+    values.push(limit + 1, offset);
+
+    const result = await pool.query(query, values);
+
+    // Check if there are more results
+    const hasMore = result.rows.length > limit;
+    const players = hasMore ? result.rows.slice(0, limit) : result.rows;
+
+    return { players, hasMore };
+  }
+
+  // Search College Players only (those WITH college_division)
+  static async searchCollegePlayers(filters, limit = 9, offset = 0) {
+    let query = `SELECT pp.*, u.email FROM player_profiles pp
+                 JOIN users u ON pp.user_id = u.id
+                 WHERE u.is_active = true
+                 AND pp.college_division IS NOT NULL AND pp.college_division != ''`;
+    const values = [];
+    let paramCount = 1;
+
+    // Exclude current user's profile from results
+    if (filters.excludeUserId) {
+      query += ` AND pp.user_id != $${paramCount}`;
+      values.push(filters.excludeUserId);
+      paramCount++;
+    }
+
+    if (filters.position) {
+      query += ` AND pp.position ILIKE $${paramCount}`;
+      values.push(`%${filters.position}%`);
+      paramCount++;
+    }
+    if (filters.college_division) {
+      query += ` AND pp.college_division = $${paramCount}`;
+      values.push(filters.college_division);
+      paramCount++;
+    }
+    if (filters.state) {
+      query += ` AND pp.state = $${paramCount}`;
+      values.push(filters.state);
       paramCount++;
     }
     if (filters.searchTerm) {

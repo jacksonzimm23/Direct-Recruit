@@ -2,108 +2,366 @@
 
 document.addEventListener('DOMContentLoaded', function() {
 
-    // Filter functionality
-    const positionFilter = document.getElementById('positionFilter');
-    const classFilter = document.getElementById('classFilter');
-    const stateFilter = document.getElementById('stateFilter');
-    const ratingFilter = document.getElementById('ratingFilter');
-    const resetFiltersBtn = document.getElementById('resetFilters');
+    // ========== PLAYERS SECTION ==========
 
-    // Quick filter buttons
-    const quickFilterBtns = document.querySelectorAll('.quick-filter-btn');
+    // Pagination state for players
+    let playerOffset = 0;
+    const playerLimit = 9;
+    let hasMorePlayers = true;
+    let isLoadingPlayers = false;
 
-    quickFilterBtns.forEach(btn => {
-        btn.addEventListener('click', function() {
-            quickFilterBtns.forEach(b => b.classList.remove('active'));
-            this.classList.add('active');
+    // Load players from database (both HS and college players)
+    async function loadPlayers(append = false) {
+        const playersGrid = document.getElementById('playersGrid');
+        const loadMoreBtn = document.getElementById('loadMorePlayersBtn');
 
-            const filterType = this.textContent.trim();
-            console.log('Quick filter applied:', filterType);
-            // Apply filter logic here
-        });
-    });
+        if (isLoadingPlayers) return;
+        if (!append) {
+            playerOffset = 0;
+            hasMorePlayers = true;
+        }
+        isLoadingPlayers = true;
 
-    // Filter change handlers
-    if (positionFilter) {
-        positionFilter.addEventListener('change', function() {
-            console.log('Position filter:', this.value);
-            applyFilters();
+        if (loadMoreBtn) {
+            loadMoreBtn.textContent = 'Loading...';
+            loadMoreBtn.disabled = true;
+        }
+
+        try {
+            // Fetch both HS and college players
+            const [hsResponse, collegeResponse] = await Promise.all([
+                API.get(`/profile/discover/hsplayers?limit=${playerLimit}&offset=${playerOffset}`),
+                API.get(`/profile/discover/collegeplayers?limit=${playerLimit}&offset=${playerOffset}`)
+            ]);
+
+            const hsPlayers = (hsResponse && hsResponse.players) ? hsResponse.players : [];
+            const collegePlayers = (collegeResponse && collegeResponse.players) ? collegeResponse.players : [];
+
+            // Combine and interleave the players
+            const allPlayers = [];
+            const maxLen = Math.max(hsPlayers.length, collegePlayers.length);
+            for (let i = 0; i < maxLen; i++) {
+                if (i < hsPlayers.length) allPlayers.push({ ...hsPlayers[i], playerType: 'hs' });
+                if (i < collegePlayers.length) allPlayers.push({ ...collegePlayers[i], playerType: 'college' });
+            }
+
+            if (allPlayers.length > 0) {
+                const playerCards = allPlayers.map(player => {
+                    if (player.playerType === 'college') {
+                        return createCollegePlayerCard(player);
+                    } else {
+                        return createHSPlayerCard(player);
+                    }
+                }).join('');
+
+                if (append) {
+                    playersGrid.insertAdjacentHTML('beforeend', playerCards);
+                } else {
+                    playersGrid.innerHTML = playerCards;
+                }
+
+                // Update pagination state
+                playerOffset += playerLimit;
+                hasMorePlayers = (hsResponse && hsResponse.hasMore) || (collegeResponse && collegeResponse.hasMore);
+
+                // Add click handlers to new cards
+                attachPlayerCardListeners();
+            } else if (!append) {
+                playersGrid.innerHTML = '<p class="no-results-message">No players found.</p>';
+            }
+
+            // Update load more button visibility
+            if (loadMoreBtn) {
+                if (hasMorePlayers) {
+                    loadMoreBtn.textContent = 'Load More Players';
+                    loadMoreBtn.disabled = false;
+                    loadMoreBtn.style.display = 'inline-block';
+                } else {
+                    loadMoreBtn.style.display = 'none';
+                }
+            }
+        } catch (error) {
+            console.error('Error loading players:', error);
+            if (!append) {
+                playersGrid.innerHTML = '<p class="no-results-message">Unable to load players.</p>';
+            }
+            if (loadMoreBtn) {
+                loadMoreBtn.textContent = 'Load More Players';
+                loadMoreBtn.disabled = false;
+            }
+        }
+
+        isLoadingPlayers = false;
+    }
+
+    // Format height from database (stored as text like "5'11" or total inches)
+    function formatHeight(heightVal) {
+        if (!heightVal) return 'N/A';
+        if (typeof heightVal === 'string' && heightVal.includes("'")) {
+            return heightVal;
+        }
+        const totalInches = parseInt(heightVal);
+        if (isNaN(totalInches) || totalInches <= 0) return 'N/A';
+        const feet = Math.floor(totalInches / 12);
+        const inches = totalInches % 12;
+        return `${feet}'${inches}"`;
+    }
+
+    // Count offers from the offers string (pipe-separated)
+    function countOffers(offersString) {
+        if (!offersString || offersString.trim() === '') return 0;
+        return offersString.split('|').filter(o => o.trim() !== '').length;
+    }
+
+    // Position acronym to full name mapping
+    const positionNames = {
+        'QB': 'Quarterback (QB)',
+        'RB': 'Running Back (RB)',
+        'FB': 'Fullback (FB)',
+        'WR': 'Wide Receiver (WR)',
+        'TE': 'Tight End (TE)',
+        'OT': 'Offensive Tackle (OT)',
+        'OG': 'Offensive Guard (OG)',
+        'C': 'Center (C)',
+        'OL': 'Offensive Line (OL)',
+        'DE': 'Defensive End (DE)',
+        'DT': 'Defensive Tackle (DT)',
+        'NT': 'Nose Tackle (NT)',
+        'OLB': 'Outside Linebacker (OLB)',
+        'MLB': 'Middle Linebacker (MLB)',
+        'ILB': 'Inside Linebacker (ILB)',
+        'LB': 'Linebacker (LB)',
+        'CB': 'Cornerback (CB)',
+        'FS': 'Free Safety (FS)',
+        'SS': 'Strong Safety (SS)',
+        'S': 'Safety (S)',
+        'DB': 'Defensive Back (DB)',
+        'K': 'Kicker (K)',
+        'P': 'Punter (P)',
+        'LS': 'Long Snapper (LS)',
+        'ATH': 'Athlete (ATH)'
+    };
+
+    // Format positions as badges (handle multiple positions)
+    function formatPositions(positionString) {
+        if (!positionString) return '<span class="position-badge">Athlete (ATH)</span>';
+        const positions = positionString.split(/[,\/]/).map(p => p.trim()).filter(p => p !== '');
+        return positions.map(pos => {
+            const upperPos = pos.toUpperCase();
+            const fullName = positionNames[upperPos] || pos;
+            return `<span class="position-badge">${fullName}</span>`;
+        }).join('');
+    }
+
+    // Create HS player card HTML (matching collegecoach discover format)
+    function createHSPlayerCard(player) {
+        const displayName = `${player.first_name || ''} ${player.last_name || ''}`.trim() || 'Unknown Player';
+        const height = formatHeight(player.height);
+        const weight = player.weight ? `${player.weight} lbs` : 'N/A';
+        const gpaVal = player.gpa ? parseFloat(player.gpa) : null;
+        const gpa = gpaVal ? gpaVal.toFixed(1) : 'N/A';
+        const school = player.high_school || 'Unknown School';
+        const state = player.state || '';
+        const gradYear = player.graduation_year || 'N/A';
+        const offerCount = countOffers(player.offers);
+        const profileImage = player.profile_image_url;
+
+        return `
+            <div class="player-card" data-username="${player.username || ''}" data-player-type="hs">
+                <div class="player-card-header">
+                    <div class="player-avatar-large">
+                        ${profileImage
+                            ? `<img src="${profileImage}" alt="${displayName}" class="avatar-image">`
+                            : `<svg viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="12" cy="7" r="4"></circle>
+                            </svg>`
+                        }
+                    </div>
+                </div>
+                <h3 class="player-name">${displayName}</h3>
+                <div class="player-positions">
+                    ${formatPositions(player.position)}
+                </div>
+                <div class="player-stats">
+                    <div class="stat-item">
+                        <div class="stat-label">Height</div>
+                        <div class="stat-value">${height}</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Weight</div>
+                        <div class="stat-value">${weight}</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">GPA</div>
+                        <div class="stat-value">${gpa}</div>
+                    </div>
+                </div>
+                <div class="player-details">
+                    <div class="detail-item">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                            <path d="M9 22V12h6v10"></path>
+                        </svg>
+                        ${school}${state ? `, ${state}` : ''}
+                    </div>
+                    <div class="detail-item">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="16" y1="2" x2="16" y2="6"></line>
+                            <line x1="8" y1="2" x2="8" y2="6"></line>
+                            <line x1="3" y1="10" x2="21" y2="10"></line>
+                        </svg>
+                        Class of ${gradYear}
+                    </div>
+                    <div class="detail-item offers-detail">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                        </svg>
+                        Offers: ${offerCount}
+                    </div>
+                </div>
+                <button class="btn-view-profile">View Profile</button>
+            </div>
+        `;
+    }
+
+    // Get short division for badge (converts full text to acronym)
+    function getShortDivision(division) {
+        if (!division) return '';
+        const div = division.trim().toLowerCase();
+        // Handle acronyms (case-insensitive)
+        if (div === 'fbs' || div === 'fcs') return 'D1';
+        if (div.startsWith('d1')) return 'D1';
+        if (div === 'd2') return 'D2';
+        if (div === 'd3') return 'D3';
+        if (div === 'naia') return 'NAIA';
+        if (div === 'juco') return 'JUCO';
+        // Handle full text "Division X" format
+        if (div.includes('division')) {
+            if (div.includes('fbs') || div.includes('fcs')) return 'D1';
+            if (div.includes('iii') || div.includes('3')) return 'D3';
+            if (div.includes('ii') || div.includes('2')) return 'D2';
+            // D1 check last since 'i' is in 'ii' and 'iii'
+            return 'D1';
+        }
+        if (div.includes('junior college')) return 'JUCO';
+        return division.trim();
+    }
+
+    // Format division for display (always returns full text)
+    function formatDivisionDisplay(division) {
+        if (!division) return '';
+        const div = division.trim();
+        // If it's already full text, return as-is
+        if (div.toLowerCase().startsWith('division')) return div;
+        if (div.toLowerCase() === 'junior college') return div;
+        // Map acronyms to full text
+        const divisionMap = {
+            'FBS': 'Division I - FBS',
+            'FCS': 'Division I - FCS',
+            'D1': 'Division I',
+            'D2': 'Division II',
+            'D3': 'Division III',
+            'NAIA': 'NAIA',
+            'JUCO': 'Junior College'
+        };
+        return divisionMap[div] || div;
+    }
+
+    // Create college player card HTML (blue theme, matching coach card school/division format)
+    function createCollegePlayerCard(player) {
+        const displayName = `${player.first_name || ''} ${player.last_name || ''}`.trim() || 'Unknown Player';
+        const school = player.high_school || 'Unknown School'; // stored as high_school in player_profiles
+        const division = player.college_division || '';
+        const state = player.state || '';
+        const profileImage = player.profile_image_url;
+        const shortDivision = getShortDivision(division);
+        const divisionDisplay = formatDivisionDisplay(division);
+
+        return `
+            <div class="player-card" data-username="${player.username || ''}" data-player-type="college">
+                <div class="player-card-header">
+                    <div class="player-avatar-large">
+                        ${profileImage
+                            ? `<img src="${profileImage}" alt="${displayName}" class="avatar-image">`
+                            : `<svg viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="12" cy="7" r="4"></circle>
+                            </svg>`
+                        }
+                    </div>
+                    <div class="division-badge">🎓 ${shortDivision}</div>
+                </div>
+                <h3 class="player-name">${displayName}</h3>
+                <div class="player-positions">
+                    ${formatPositions(player.position)}
+                </div>
+                <div class="player-school-box">
+                    <div class="school-name">${school}${state ? ', ' + state : ''}</div>
+                    <div class="school-division">${divisionDisplay || 'N/A'}</div>
+                </div>
+                <button class="btn-view-profile">View Profile</button>
+            </div>
+        `;
+    }
+
+    // Attach click listeners to player cards
+    function attachPlayerCardListeners() {
+        const playerCards = document.querySelectorAll('.player-card');
+        playerCards.forEach(card => {
+            // Remove existing listeners by cloning
+            const newCard = card.cloneNode(true);
+            card.parentNode.replaceChild(newCard, card);
+
+            const viewBtn = newCard.querySelector('.btn-view-profile');
+            const playerType = newCard.dataset.playerType;
+
+            if (viewBtn) {
+                viewBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const username = newCard.dataset.username;
+                    if (username) {
+                        // Navigate to appropriate profile page based on player type
+                        if (playerType === 'college') {
+                            window.location.href = `../../collegeplayer/tabs/my-profile.html?username=${username}&from=discover`;
+                        } else {
+                            window.location.href = `../../hsplayer/tabs/my-profile.html?username=${username}&from=discover`;
+                        }
+                    } else {
+                        alert('Profile not available. User has not set up their profile yet.');
+                    }
+                });
+            }
+
+            // Make entire card clickable
+            newCard.style.cursor = 'pointer';
+            newCard.addEventListener('click', function() {
+                const username = this.dataset.username;
+                if (username) {
+                    if (playerType === 'college') {
+                        window.location.href = `../../collegeplayer/tabs/my-profile.html?username=${username}&from=discover`;
+                    } else {
+                        window.location.href = `../../hsplayer/tabs/my-profile.html?username=${username}&from=discover`;
+                    }
+                }
+            });
         });
     }
 
-    if (classFilter) {
-        classFilter.addEventListener('change', function() {
-            console.log('Class filter:', this.value);
-            applyFilters();
-        });
-    }
-
-    if (stateFilter) {
-        stateFilter.addEventListener('change', function() {
-            console.log('State filter:', this.value);
-            applyFilters();
-        });
-    }
-
-    if (ratingFilter) {
-        ratingFilter.addEventListener('change', function() {
-            console.log('Rating filter:', this.value);
-            applyFilters();
-        });
-    }
-
-    // Reset filters
-    if (resetFiltersBtn) {
-        resetFiltersBtn.addEventListener('click', function() {
-            positionFilter.value = '';
-            classFilter.value = '';
-            stateFilter.value = '';
-            ratingFilter.value = '';
-            console.log('Filters reset');
-            applyFilters();
-        });
-    }
-
-    function applyFilters() {
-        // This would connect to your backend to filter players
-        console.log('Applying filters...');
-        alert('Filter functionality will be connected to your backend.');
-    }
-
-    // View profile buttons
-    const viewProfileBtns = document.querySelectorAll('.btn-view-profile');
-    viewProfileBtns.forEach(btn => {
-        btn.addEventListener('click', function() {
-            const playerCard = this.closest('.player-card');
-            const username = playerCard.dataset.username;
-            if (username) {
-                // Navigate to my-profile page with username parameter
-                // Stay in the same folder so navigation continues to work
-                window.location.href = `my-profile.html?username=${username}`;
-            } else {
-                const playerName = playerCard.querySelector('.player-name').textContent;
-                console.log('No username for player:', playerName);
-                alert('Profile not available. User has not set up their profile yet.');
+    // Load More Players button
+    const loadMorePlayersBtn = document.getElementById('loadMorePlayersBtn');
+    if (loadMorePlayersBtn) {
+        loadMorePlayersBtn.addEventListener('click', function() {
+            if (hasMorePlayers && !isLoadingPlayers) {
+                loadPlayers(true);
             }
         });
-    });
-
-    // Load more button
-    const loadMoreBtn = document.querySelector('.btn-load-more');
-    if (loadMoreBtn) {
-        loadMoreBtn.addEventListener('click', function() {
-            console.log('Loading more players...');
-            this.textContent = 'Loading...';
-
-            // Simulate loading
-            setTimeout(() => {
-                this.textContent = 'Load More Players';
-                alert('More players loaded! This will connect to your backend.');
-            }, 1000);
-        });
     }
 
-    console.log('Discover Players page loaded');
+    // Load initial players
+    loadPlayers();
 
     // Pagination state for coaches
     let coachOffset = 0;
@@ -111,12 +369,26 @@ document.addEventListener('DOMContentLoaded', function() {
     let hasMoreCoaches = true;
     let isLoadingCoaches = false;
 
+    // Get current coach filter values
+    function getCoachFilters() {
+        const stateFilter = document.getElementById('coachStateFilter');
+        const divisionFilter = document.getElementById('divisionFilter');
+        return {
+            state: stateFilter ? stateFilter.value : '',
+            college_division: divisionFilter ? divisionFilter.value : ''
+        };
+    }
+
     // Load college coaches from database
     async function loadCollegeCoaches(append = false) {
         const coachesGrid = document.getElementById('coachesGrid');
         const loadMoreBtn = document.getElementById('loadMoreCoachesBtn');
 
-        if (isLoadingCoaches || (!append && coachOffset > 0)) return;
+        if (isLoadingCoaches) return;
+        if (!append) {
+            coachOffset = 0;
+            hasMoreCoaches = true;
+        }
         isLoadingCoaches = true;
 
         if (loadMoreBtn) {
@@ -125,8 +397,14 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         try {
-            // Fetch all college coaches with pagination
-            const response = await API.get(`/coaches/college?limit=${coachLimit}&offset=${coachOffset}`);
+            // Build query string with filters
+            const filters = getCoachFilters();
+            let queryParams = `limit=${coachLimit}&offset=${coachOffset}`;
+            if (filters.state) queryParams += `&state=${encodeURIComponent(filters.state)}`;
+            if (filters.college_division) queryParams += `&college_division=${encodeURIComponent(filters.college_division)}`;
+
+            // Fetch college coaches with filters and pagination
+            const response = await API.get(`/coaches/college?${queryParams}`);
 
             if (response && response.coaches) {
                 if (response.coaches.length > 0) {
@@ -145,24 +423,28 @@ document.addEventListener('DOMContentLoaded', function() {
                     // Add click handlers to new cards
                     attachCoachCardListeners();
                 } else if (!append) {
-                    coachesGrid.innerHTML = '<p style="color: rgba(254,252,251,0.6); padding: 2rem;">No college coaches found.</p>';
+                    coachesGrid.innerHTML = '<p class="no-results-message">No college coaches found matching your filters.</p>';
+                    hasMoreCoaches = false;
                 }
 
                 // Update load more button visibility
                 if (loadMoreBtn) {
+                    const loadMoreContainer = loadMoreBtn.parentElement;
                     if (hasMoreCoaches) {
                         loadMoreBtn.textContent = 'Load More Coaches';
                         loadMoreBtn.disabled = false;
                         loadMoreBtn.style.display = 'inline-block';
+                        if (loadMoreContainer) loadMoreContainer.style.display = 'flex';
                     } else {
                         loadMoreBtn.style.display = 'none';
+                        if (loadMoreContainer) loadMoreContainer.style.display = 'none';
                     }
                 }
             }
         } catch (error) {
             console.error('Error loading coaches:', error);
             if (!append) {
-                coachesGrid.innerHTML = '<p style="color: rgba(254,252,251,0.6); padding: 2rem;">Unable to load coaches.</p>';
+                coachesGrid.innerHTML = '<p class="no-results-message">Unable to load coaches.</p>';
             }
             if (loadMoreBtn) {
                 loadMoreBtn.textContent = 'Load More Coaches';
@@ -185,6 +467,31 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Load initial coaches on page load
     loadCollegeCoaches();
+
+    // Setup coach filter event listeners
+    const coachStateFilter = document.getElementById('coachStateFilter');
+    const divisionFilter = document.getElementById('divisionFilter');
+    const resetCoachFiltersBtn = document.getElementById('resetCoachFilters');
+
+    if (coachStateFilter) {
+        coachStateFilter.addEventListener('change', function() {
+            loadCollegeCoaches(false); // Reload from beginning with new filters
+        });
+    }
+
+    if (divisionFilter) {
+        divisionFilter.addEventListener('change', function() {
+            loadCollegeCoaches(false); // Reload from beginning with new filters
+        });
+    }
+
+    if (resetCoachFiltersBtn) {
+        resetCoachFiltersBtn.addEventListener('click', function() {
+            if (coachStateFilter) coachStateFilter.value = '';
+            if (divisionFilter) divisionFilter.value = '';
+            loadCollegeCoaches(false); // Reload with no filters
+        });
+    }
 
     // Attach click listeners to coach cards
     function attachCoachCardListeners() {
@@ -267,19 +574,6 @@ document.addEventListener('DOMContentLoaded', function() {
         return divisionMap[division] || division;
     }
 
-    // Get short division for badge
-    function getShortDivision(division) {
-        if (!division) return '';
-
-        if (division === 'FBS' || division === 'FCS') return 'D1';
-        if (division.startsWith('D1')) return 'D1';
-        if (division === 'D2') return 'D2';
-        if (division === 'D3') return 'D3';
-        if (division === 'NAIA') return 'NAIA';
-        if (division === 'JUCO') return 'JUCO';
-
-        return division;
-    }
 
     // Create coach card HTML
     function createCoachCard(coach) {
@@ -323,6 +617,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         ${recruitingTags}
                     </div>
                 </div>
+                <button class="btn-view-profile-coach">View Profile</button>
             </div>
         `;
     }
