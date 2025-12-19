@@ -173,6 +173,30 @@ router.get('/discover/collegeplayers', authMiddleware, async (req, res) => {
   }
 });
 
+// Discover Transfer Players - only players with transfer = 'y'
+router.get('/discover/transferplayers', authMiddleware, async (req, res) => {
+  try {
+    const filters = {
+      position: req.query.position,
+      eligibility: req.query.eligibility,
+      college_division: req.query.college_division,
+      min_height: req.query.min_height,
+      min_weight: req.query.min_weight,
+      min_gpa: req.query.min_gpa,
+      searchTerm: req.query.q,
+      excludeUserId: req.userId // Exclude current user's profile
+    };
+    const limit = parseInt(req.query.limit) || 9;
+    const offset = parseInt(req.query.offset) || 0;
+
+    const result = await PlayerProfile.searchTransferPlayers(filters, limit, offset);
+    res.json({ players: result.players, hasMore: result.hasMore });
+  } catch (error) {
+    console.error('Discover transfer players error:', error);
+    res.status(500).json({ error: 'Failed to fetch transfer players' });
+  }
+});
+
 // Search Coaches
 router.get('/search/coaches', authMiddleware, async (req, res) => {
   try {

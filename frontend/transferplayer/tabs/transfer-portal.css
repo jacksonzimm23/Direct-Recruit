@@ -333,6 +333,333 @@
     box-shadow: 0 4px 15px rgba(220, 38, 38, 0.3);
 }
 
+/* Card Preview Section */
+.portal-card-preview-section {
+    padding: 2rem;
+    border-bottom: 1px solid rgba(220, 38, 38, 0.15);
+}
+
+.card-preview-container {
+    display: flex;
+    gap: 2.5rem;
+    align-items: flex-start;
+}
+
+.player-card-wrapper {
+    flex-shrink: 0;
+    width: 340px;
+}
+
+.loading-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 4rem 2rem;
+    background: rgba(220, 38, 38, 0.05);
+    border: 1px solid rgba(220, 38, 38, 0.2);
+    border-radius: 16px;
+}
+
+.loading-card .loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid rgba(220, 38, 38, 0.2);
+    border-top-color: #dc2626;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 1rem;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.loading-card p {
+    font-size: 0.9rem;
+    color: rgba(254, 252, 251, 0.6);
+}
+
+.card-preview-info {
+    flex: 1;
+    padding-top: 0.5rem;
+}
+
+.card-preview-title {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--white);
+    margin-bottom: 1rem;
+}
+
+.card-preview-desc {
+    font-size: 1rem;
+    color: rgba(254, 252, 251, 0.7);
+    line-height: 1.7;
+    margin-bottom: 1.5rem;
+}
+
+.card-preview-notice {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 1rem 1.25rem;
+    background: rgba(220, 38, 38, 0.1);
+    border: 1px solid rgba(220, 38, 38, 0.2);
+    border-radius: 10px;
+    margin-bottom: 1.5rem;
+}
+
+.card-preview-notice svg {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+    color: #dc2626;
+    margin-top: 2px;
+}
+
+.card-preview-notice span {
+    font-size: 0.95rem;
+    color: rgba(254, 252, 251, 0.8);
+    line-height: 1.5;
+}
+
+.edit-profile-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.875rem 1.5rem;
+    background: linear-gradient(135deg, #dc2626, #b91c1c);
+    border: none;
+    border-radius: 10px;
+    color: white;
+    font-size: 1rem;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.edit-profile-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(220, 38, 38, 0.35);
+}
+
+.edit-profile-btn svg {
+    width: 18px;
+    height: 18px;
+}
+
+/* Preview Player Card Styles - matches collegecoach transfer portal card */
+.preview-player-card {
+    background: rgba(254, 252, 251, 0.03);
+    border: 1px solid rgba(220, 38, 38, 0.4);
+    background: rgba(220, 38, 38, 0.03);
+    border-radius: 16px;
+    padding: 1.5rem;
+    transition: all 0.3s ease;
+}
+
+.preview-player-card:hover {
+    border-color: #dc2626;
+    box-shadow: 0 8px 24px rgba(220, 38, 38, 0.2);
+}
+
+.preview-player-card .player-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+}
+
+.preview-player-card .player-avatar-large {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--cerulean, #1282a2), var(--accent-orange, #ff6b35));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--white);
+}
+
+.preview-player-card .player-avatar-large svg {
+    width: 32px;
+    height: 32px;
+}
+
+.preview-player-card .player-avatar-large .avatar-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+}
+
+.preview-player-card .transfer-portal-badge {
+    background: #dc2626;
+    color: var(--white);
+    padding: 0.35rem 0.75rem;
+    border-radius: 50px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+
+.preview-player-card .player-name {
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: var(--white);
+    margin: 0 0 0.5rem 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.preview-player-card .transfer-portal-icon {
+    width: 16px;
+    height: 16px;
+    color: #dc2626;
+    flex-shrink: 0;
+}
+
+.preview-player-card .player-positions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.preview-player-card .position-badge {
+    background: #dc2626;
+    color: var(--white);
+    padding: 0.35rem 0.75rem;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 700;
+}
+
+.preview-player-card .player-stats-box {
+    background: rgba(11, 37, 69, 0.3);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.preview-player-card .player-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    margin-bottom: 0;
+}
+
+.preview-player-card .stat-item {
+    text-align: center;
+}
+
+.preview-player-card .stat-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.5);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 0.25rem;
+}
+
+.preview-player-card .stat-value {
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: var(--white);
+}
+
+.preview-player-card .player-gpa-row {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.5rem;
+    padding-top: 0.75rem;
+    margin-top: 0.75rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.preview-player-card .gpa-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.5);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.preview-player-card .gpa-value {
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: var(--white);
+}
+
+.preview-player-card .player-details {
+    margin-bottom: 1rem;
+}
+
+.preview-player-card .detail-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.7);
+    font-weight: 500;
+}
+
+.preview-player-card .detail-item.portal-previous {
+    color: #dc2626;
+    font-weight: 600;
+}
+
+.preview-player-card .detail-item svg {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    color: #dc2626;
+}
+
+.preview-player-card .stats-section-card {
+    margin-bottom: 0.75rem;
+}
+
+.preview-player-card .stats-section-title {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.5);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 0.5rem;
+}
+
+.preview-player-card .player-highlights {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.5rem;
+}
+
+.preview-player-card .highlight-item {
+    background: rgba(220, 38, 38, 0.1);
+    border: 1px solid rgba(220, 38, 38, 0.3);
+    color: #dc2626;
+    padding: 0.4rem 0.75rem;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.preview-player-card .highlight-item .stat-title {
+    color: rgba(220, 38, 38, 0.7);
+    font-weight: 500;
+}
+
+
 /* Info Cards Section */
 .portal-info-section {
     display: grid;
@@ -435,6 +762,32 @@
 @media (max-width: 992px) {
     .portal-info-section {
         grid-template-columns: repeat(2, 1fr);
+    }
+
+    .card-preview-container {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .player-card-wrapper {
+        width: 100%;
+        max-width: 340px;
+    }
+
+    .card-preview-info {
+        text-align: center;
+    }
+
+    .card-preview-notice {
+        justify-content: center;
+    }
+
+    .edit-profile-btn {
+        display: flex;
+        justify-content: center;
+        width: 100%;
+        max-width: 250px;
+        margin: 0 auto;
     }
 }
 

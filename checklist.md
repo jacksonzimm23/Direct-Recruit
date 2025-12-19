@@ -33,25 +33,27 @@ TRANSFER PORTAL PLAYER
 
 
 
-Currently working on: TRANSFER PORTAL, create button to join portal, copy hsplayer format and change to red / all transfer functions
 
+Currently working on: recruiting board, add icon to player profiles to save to board
+- tags: name, height, weight, HS, state
+- connect backend table and columns with player info by class and position (recruiting_boards table)
+- add to recruiting board popup with class and position inputs 
+- change recruiting board by class input (in table as well)
 
+To do:
 
-HSPLAYER: get rid of recruiting on coach card, add to transfer portal page for transferplayers
+-HS PLAYER BACK FOLLOW MESSAGE BUTTONS ALIGNMENT, TRANFERPLAYER GOOD, CHECK ALL PROFILES
 
 My profile:
-- profile pictures '
-
-HS player:
-add number in my profile
+- profile pictures 
 
 Feed
 - backend sort of good, COMING SOON 
 
 College Coach
 - Recruiting board
-- Player / coach cards on discover page, hsplayer DONE, collegecoach DONE
-- transfer portal cards
 
 ALL
 - ADD KR PR to ALL position drop downs
+
+NEED TO ASK CLAUDE SECURITY, API, AND DATABASE QUESTIONS WHEN ALL DONE WITH FRONT AND BACKEND, HOW TO TURN TO MOBILE APP

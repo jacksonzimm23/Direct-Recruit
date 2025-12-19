@@ -51,8 +51,9 @@ router.post('/', authMiddleware, async (req, res) => {
     // Use current date as game date
     const now = new Date();
     const game_date = now.toISOString().split('T')[0];
-    // Use season_year from request if provided, otherwise use current year
-    const season_year = requestSeasonYear || now.getFullYear();
+    // Use season_year from request if provided (including 0 and -1), otherwise use current year
+    // 0 = career stats, -1 = last season stats for transfer players
+    const season_year = requestSeasonYear !== undefined && requestSeasonYear !== null ? requestSeasonYear : now.getFullYear();
 
     const game = await PlayerGameStats.create(req.userId, {
       game_date,

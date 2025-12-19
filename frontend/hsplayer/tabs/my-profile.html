@@ -1288,6 +1288,71 @@
         </div>
     </div>
 
+    <!-- Add to Recruiting Board Modal -->
+    <div class="recruiting-board-modal" id="recruitingBoardModal">
+        <div class="recruiting-board-modal-overlay" id="recruitingBoardModalOverlay"></div>
+        <div class="recruiting-board-modal-content">
+            <div class="recruiting-board-modal-header">
+                <h3>Add to Recruiting Board</h3>
+                <button class="modal-close-btn" id="recruitingBoardModalClose">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="recruiting-board-modal-body">
+                <div class="form-group">
+                    <label for="recruitingClassYear">Class Year</label>
+                    <select id="recruitingClassYear" name="classYear">
+                        <!-- Options populated by JS -->
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="recruitingPosition">Position</label>
+                    <select id="recruitingPosition" name="position">
+                        <option value="">Select a class year first</option>
+                    </select>
+                </div>
+            </div>
+            <div class="recruiting-board-modal-footer">
+                <button class="btn-cancel" id="recruitingBoardCancelBtn">Cancel</button>
+                <button class="btn-submit" id="recruitingBoardSubmitBtn">Add to Board</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Remove from Recruiting Board Modal -->
+    <div class="recruiting-board-modal remove-modal" id="removeRecruitingBoardModal">
+        <div class="recruiting-board-modal-overlay" id="removeRecruitingBoardModalOverlay"></div>
+        <div class="recruiting-board-modal-content">
+            <div class="recruiting-board-modal-header remove-header">
+                <div class="remove-modal-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="15" y1="9" x2="9" y2="15"></line>
+                        <line x1="9" y1="9" x2="15" y2="15"></line>
+                    </svg>
+                </div>
+                <h3>Remove from Recruiting Board</h3>
+                <button class="modal-close-btn" id="removeRecruitingBoardModalClose">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="recruiting-board-modal-body">
+                <p class="remove-confirm-text" id="removeConfirmText">Are you sure you want to remove this player from the recruiting board?</p>
+                <p class="remove-board-info" id="removeBoardInfo"></p>
+            </div>
+            <div class="recruiting-board-modal-footer">
+                <button class="btn-cancel" id="removeRecruitingBoardCancelBtn">Cancel</button>
+                <button class="btn-submit btn-remove" id="removeRecruitingBoardSubmitBtn">Remove</button>
+            </div>
+        </div>
+    </div>
+
     <script src="../../shared/image-cropper.js"></script>
     <script src="../mainpage-player.js"></script>
     <script src="my-profile.js"></script>

@@ -415,6 +415,7 @@
 
 .profile-actions {
     display: flex;
+    flex-wrap: wrap;
     gap: 1rem;
     padding-top: 2rem;
 }
@@ -545,6 +546,38 @@
     background: rgba(255, 255, 255, 0.15);
     border-color: var(--cerulean);
     transform: translateY(-2px);
+}
+
+/* Recruiting Board Button - Orange, full width spanning all other buttons */
+.btn-recruiting-board {
+    background: var(--accent-orange);
+    color: var(--white);
+    border: none;
+    padding: 0.85rem 1.5rem;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-family: 'Inter', sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    width: 100%;
+    flex-basis: 100%;
+    margin-top: 0.5rem;
+}
+
+.btn-recruiting-board:hover {
+    background: #e55a2b;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3);
+}
+
+.btn-recruiting-board svg {
+    width: 18px;
+    height: 18px;
 }
 
 /* Profile Tabs */

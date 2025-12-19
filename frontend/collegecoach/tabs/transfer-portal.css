@@ -303,6 +303,24 @@
     background: #dc2626;
 }
 
+/* Stats Box Container */
+.player-stats-box {
+    background: rgba(11, 37, 69, 0.3);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.player-stats-box .player-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    margin-bottom: 0;
+    padding: 0;
+    background: none;
+    border-radius: 0;
+}
+
 .player-stats {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -311,6 +329,31 @@
     padding: 1rem;
     background: rgba(11, 37, 69, 0.3);
     border-radius: 8px;
+}
+
+/* GPA Row - inside stats box */
+.player-gpa-row {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.5rem;
+    padding-top: 0.75rem;
+    margin-top: 0.75rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.player-gpa-row .gpa-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.5);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.player-gpa-row .gpa-value {
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: var(--white);
 }
 
 .stat-item {
@@ -366,11 +409,25 @@
     color: #dc2626;
 }
 
+/* Stats Section Card */
+.stats-section-card {
+    margin-bottom: 0.75rem;
+}
+
+.stats-section-title {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.5);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 0.5rem;
+}
+
 .player-highlights {
     display: flex;
     gap: 0.5rem;
     flex-wrap: wrap;
-    margin-bottom: 1rem;
+    margin-bottom: 0.5rem;
 }
 
 .highlight-item {
@@ -382,6 +439,24 @@
     font-size: 0.75rem;
     font-weight: 700;
     letter-spacing: 0.3px;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.highlight-item .stat-title {
+    color: rgba(255, 255, 255, 0.6);
+    font-weight: 500;
+}
+
+.player-card.transfer-portal .highlight-item {
+    background: rgba(220, 38, 38, 0.1);
+    border-color: rgba(220, 38, 38, 0.3);
+    color: #dc2626;
+}
+
+.player-card.transfer-portal .highlight-item .stat-title {
+    color: rgba(220, 38, 38, 0.7);
 }
 
 .btn-view-profile {
@@ -409,6 +484,127 @@
 
 .player-card.transfer-portal .btn-view-profile:hover {
     background: #b91c1c;
+}
+
+/* Loading State */
+.loading-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 4rem 2rem;
+    grid-column: 1 / -1;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.loading-spinner {
+    width: 50px;
+    height: 50px;
+    border: 3px solid rgba(220, 38, 38, 0.2);
+    border-top-color: #dc2626;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 1rem;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.loading-state p {
+    font-size: 1rem;
+    font-weight: 500;
+}
+
+/* Empty State */
+.empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 4rem 2rem;
+    grid-column: 1 / -1;
+    text-align: center;
+}
+
+.empty-state svg {
+    width: 64px;
+    height: 64px;
+    color: rgba(220, 38, 38, 0.4);
+    margin-bottom: 1.5rem;
+}
+
+.empty-state h3 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--white);
+    margin: 0 0 0.5rem 0;
+}
+
+.empty-state p {
+    font-size: 0.95rem;
+    color: rgba(255, 255, 255, 0.6);
+    margin: 0;
+}
+
+/* Load More Container */
+.load-more-container {
+    display: flex;
+    justify-content: center;
+    padding: 2rem 0;
+}
+
+.btn-load-more {
+    background: transparent;
+    border: 2px solid #dc2626;
+    color: #dc2626;
+    padding: 0.75rem 2.5rem;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: 'Inter', sans-serif;
+}
+
+.btn-load-more:hover:not(:disabled) {
+    background: rgba(220, 38, 38, 0.1);
+    transform: translateY(-2px);
+}
+
+.btn-load-more:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Player Positions */
+.player-positions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.position-badge {
+    background: var(--accent-orange);
+    color: var(--white);
+    padding: 0.35rem 0.75rem;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    display: inline-block;
+}
+
+.position-badge.transfer-portal-text {
+    background: #dc2626;
+}
+
+/* Avatar Image */
+.player-avatar-large .avatar-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
 }
 
 /* Responsive Design */

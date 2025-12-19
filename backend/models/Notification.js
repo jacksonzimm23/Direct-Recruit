@@ -4,8 +4,8 @@ class Notification {
   // Create a new notification
   static async create({ userId, type, title, message, relatedUserId = null, relatedEntityId = null, relatedEntityType = null }) {
     const result = await pool.query(
-      `INSERT INTO notifications (user_id, type, title, message, related_user_id, related_entity_id, related_entity_type)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)
+      `INSERT INTO notifications (user_id, type, title, message, related_user_id, related_entity_id, related_entity_type, is_read)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, FALSE)
        RETURNING *`,
       [userId, type, title, message, relatedUserId, relatedEntityId, relatedEntityType]
     );

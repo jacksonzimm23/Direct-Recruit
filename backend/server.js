@@ -16,6 +16,7 @@ const statsRoutes = require('./routes/stats');
 const highlightsRoutes = require('./routes/highlights');
 const coachesRoutes = require('./routes/coaches');
 const notificationsRoutes = require('./routes/notifications');
+const recruitingBoardRoutes = require('./routes/recruiting-board');
 const initializeSocket = require('./socket');
 const { apiLimiter } = require('./middleware/rateLimit');
 
@@ -49,6 +50,7 @@ app.use('/api/stats', statsRoutes);
 app.use('/api/highlights', highlightsRoutes);
 app.use('/api/coaches', coachesRoutes);
 app.use('/api/notifications', notificationsRoutes);
+app.use('/api/recruiting-board', recruitingBoardRoutes);
 
 // Health check
 app.get('/health', (req, res) => {

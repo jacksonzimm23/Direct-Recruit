@@ -225,6 +225,7 @@
     font-weight: 900;
     color: var(--white);
     margin-bottom: 0.5rem;
+    white-space: nowrap;
 }
 
 .profile-position {
@@ -239,6 +240,7 @@
     color: rgba(254, 252, 251, 0.7);
     font-size: 0.95rem;
     line-height: 1.6;
+    white-space: nowrap;
 }
 
 .profile-username {
@@ -434,6 +436,7 @@
 
 .profile-actions {
     display: flex;
+    flex-wrap: wrap;
     gap: 1rem;
     padding-top: 2rem;
 }
@@ -564,6 +567,51 @@
     background: rgba(255, 255, 255, 0.15);
     border-color: var(--cerulean);
     transform: translateY(-2px);
+}
+
+/* Recruiting Board Button - Orange, own row below other buttons */
+.btn-recruiting-board {
+    background: var(--accent-orange);
+    color: var(--white);
+    border: none;
+    padding: 0.85rem 1.5rem;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-family: 'Inter', sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+/* Force recruiting board button to its own row, right-aligned */
+.profile-actions:has(.btn-recruiting-board) {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.profile-actions:has(.btn-recruiting-board)::before {
+    content: '';
+    width: 100%;
+    order: 3;
+}
+
+.btn-recruiting-board {
+    order: 4;
+}
+
+.btn-recruiting-board:hover {
+    background: #e55a2b;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3);
+}
+
+.btn-recruiting-board svg {
+    width: 18px;
+    height: 18px;
 }
 
 /* Profile Tabs */
@@ -3803,4 +3851,270 @@ body.transfer-player-viewer .nav-item-portal.active {
 
 body.transfer-player-viewer .nav-item-portal:not(.active):hover {
     background: rgba(185, 28, 28, 0.1) !important;
+}
+
+/* ==================== Recruiting Board Modal ==================== */
+.recruiting-board-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1000;
+}
+
+.recruiting-board-modal.active {
+    display: block;
+}
+
+.recruiting-board-modal-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(4px);
+}
+
+.recruiting-board-modal-content {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: var(--rich-black);
+    border: 1px solid rgba(255, 107, 53, 0.3);
+    border-radius: 16px;
+    width: 90%;
+    max-width: 400px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+.recruiting-board-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid rgba(255, 107, 53, 0.2);
+}
+
+.recruiting-board-modal-header h3 {
+    color: var(--white);
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin: 0;
+}
+
+.recruiting-board-modal-header .modal-close-btn {
+    background: none;
+    border: none;
+    color: rgba(254, 252, 251, 0.6);
+    cursor: pointer;
+    padding: 0.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s ease;
+}
+
+.recruiting-board-modal-header .modal-close-btn:hover {
+    color: var(--white);
+}
+
+.recruiting-board-modal-header .modal-close-btn svg {
+    width: 24px;
+    height: 24px;
+}
+
+.recruiting-board-modal-body {
+    padding: 1.5rem;
+}
+
+.recruiting-board-modal-body .form-group {
+    margin-bottom: 1.25rem;
+}
+
+.recruiting-board-modal-body .form-group:last-child {
+    margin-bottom: 0;
+}
+
+.recruiting-board-modal-body label {
+    display: block;
+    color: rgba(254, 252, 251, 0.8);
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.recruiting-board-modal-body select {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background: rgba(18, 130, 162, 0.1);
+    border: 1px solid rgba(18, 130, 162, 0.3);
+    border-radius: 8px;
+    color: var(--white);
+    font-size: 0.95rem;
+    font-family: 'Inter', sans-serif;
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12' fill='none'%3E%3Cpath d='M2.5 4.5L6 8L9.5 4.5' stroke='%23FEFCFB' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 1rem center;
+    padding-right: 2.5rem;
+}
+
+.recruiting-board-modal-body select:hover {
+    border-color: var(--cerulean);
+}
+
+.recruiting-board-modal-body select:focus {
+    outline: none;
+    border-color: var(--accent-orange);
+    box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.1);
+}
+
+.recruiting-board-modal-body select option {
+    background: var(--oxford-blue);
+    color: var(--white);
+    padding: 0.5rem;
+}
+
+.recruiting-board-modal-footer {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+    padding: 1.25rem 1.5rem;
+    border-top: 1px solid rgba(255, 107, 53, 0.2);
+}
+
+.recruiting-board-modal-footer .btn-cancel {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--white);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: 'Inter', sans-serif;
+}
+
+.recruiting-board-modal-footer .btn-cancel:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.recruiting-board-modal-footer .btn-submit {
+    background: var(--accent-orange);
+    color: var(--white);
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: 'Inter', sans-serif;
+}
+
+.recruiting-board-modal-footer .btn-submit:hover {
+    background: #e55a2b;
+    transform: translateY(-1px);
+}
+
+.recruiting-board-modal-footer .btn-submit:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Remove from Recruiting Board Button - Red */
+.btn-recruiting-board.remove-mode {
+    background: #ef4444;
+}
+
+.btn-recruiting-board.remove-mode:hover {
+    background: #dc2626;
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+/* Remove Modal Styles */
+.recruiting-board-modal.remove-modal .recruiting-board-modal-content {
+    border-color: rgba(239, 68, 68, 0.3);
+}
+
+.recruiting-board-modal.remove-modal .recruiting-board-modal-header {
+    border-bottom-color: rgba(239, 68, 68, 0.2);
+}
+
+.recruiting-board-modal.remove-modal .recruiting-board-modal-header.remove-header {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    position: relative;
+    padding-top: 1.5rem;
+}
+
+.recruiting-board-modal.remove-modal .remove-modal-icon {
+    width: 60px;
+    height: 60px;
+    margin-bottom: 1rem;
+    background: rgba(239, 68, 68, 0.15);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.recruiting-board-modal.remove-modal .remove-modal-icon svg {
+    width: 32px;
+    height: 32px;
+    color: #ef4444;
+}
+
+.recruiting-board-modal.remove-modal .recruiting-board-modal-header h3 {
+    color: var(--white);
+}
+
+.recruiting-board-modal.remove-modal .recruiting-board-modal-header .modal-close-btn {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+}
+
+.recruiting-board-modal.remove-modal .recruiting-board-modal-body {
+    text-align: center;
+}
+
+.recruiting-board-modal.remove-modal .remove-confirm-text {
+    color: rgba(254, 252, 251, 0.8);
+    font-size: 0.95rem;
+    line-height: 1.6;
+    margin: 0 0 0.5rem;
+}
+
+.recruiting-board-modal.remove-modal .remove-confirm-text strong {
+    color: var(--white);
+    font-weight: 600;
+}
+
+.recruiting-board-modal.remove-modal .remove-board-info {
+    color: rgba(254, 252, 251, 0.5);
+    font-size: 0.85rem;
+    margin: 0;
+}
+
+.recruiting-board-modal.remove-modal .recruiting-board-modal-footer {
+    border-top-color: rgba(239, 68, 68, 0.2);
+    justify-content: center;
+}
+
+.recruiting-board-modal.remove-modal .btn-remove {
+    background: #ef4444;
+}
+
+.recruiting-board-modal.remove-modal .btn-remove:hover {
+    background: #dc2626;
 }

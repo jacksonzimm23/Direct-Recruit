@@ -327,7 +327,7 @@ function updateNavbarForLoggedInUser(user, profile) {
     // Apply inline styles to ensure consistent appearance regardless of which page's CSS is loaded
     if (profile) {
         // Define color based on logged-in user's role (players = cerulean/blue, coaches = orange)
-        const userRoleColor = role === 'player' ? '#1282a2' : '#e07a5f';
+        const userRoleColor = role === 'player' ? '#1282a2' : '#ff6b35';
 
         // Update name
         const userName = document.querySelector('.sidebar-footer .user-name');
@@ -1750,6 +1750,20 @@ async function saveProfileChanges() {
             } else {
                 // Update with the data we sent
                 Object.assign(currentProfile, formData);
+            }
+
+            // Check if coach type changed (HS to College) - redirect to appropriate folder
+            const collegeDivisions = ['FBS', 'FCS', 'D2', 'D3', 'NAIA', 'NJCAA', 'JUCO', 'Division II', 'Division III'];
+            const newCollegeDivision = formData.college_division;
+            const isNowCollegeCoach = newCollegeDivision && collegeDivisions.includes(newCollegeDivision);
+
+            if (isNowCollegeCoach) {
+                // Coach changed from HS to College - redirect to collegecoach folder
+                showSuccessMessage('Profile updated! Redirecting to college coach dashboard...');
+                setTimeout(() => {
+                    window.location.href = '../../collegecoach/mainpage-coach.html';
+                }, 1000);
+                return;
             }
 
             // Refresh the profile display

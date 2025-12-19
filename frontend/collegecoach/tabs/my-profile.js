@@ -6,6 +6,9 @@ let viewingUserId = null;
 let isOwnProfile = true;
 let isCollegeCoach = false;
 let loggedInUserFolder = null; // Track the logged-in user's folder for navigation
+let viewedProfileType = null; // Track the type of profile being viewed ('player' or 'coach')
+let isViewedProfileHSPlayer = false; // Track if viewed profile is an HS player
+let isViewedProfileTransferPlayer = false; // Track if viewed profile is a transfer player
 
 // Format phone number as (XXX) XXX-XXXX
 function formatPhoneNumber(phone) {
@@ -332,7 +335,7 @@ function updateNavbarForLoggedInUser(user, profile) {
     // Apply inline styles to ensure consistent appearance regardless of which page's CSS is loaded
     if (profile) {
         // Define color based on logged-in user's role (players = cerulean/blue, coaches = orange)
-        const userRoleColor = role === 'player' ? '#1282a2' : '#e07a5f';
+        const userRoleColor = role === 'player' ? '#1282a2' : '#ff6b35';
 
         // Update name
         const userName = document.querySelector('.sidebar-footer .user-name');
@@ -625,6 +628,20 @@ async function loadProfileByUsername(username) {
 }
 
 function displayProfile(profile, type) {
+    // Store the profile type for later use
+    viewedProfileType = type;
+
+    // Determine if viewed profile is HS player or transfer player
+    if (type === 'player') {
+        // HS player: no college_division or empty college_division
+        isViewedProfileHSPlayer = !profile.college_division || profile.college_division.trim() === '';
+        // Transfer player: has transfer === 'y'
+        isViewedProfileTransferPlayer = profile.transfer === 'y';
+    } else {
+        isViewedProfileHSPlayer = false;
+        isViewedProfileTransferPlayer = false;
+    }
+
     // Update profile name
     const nameElement = document.querySelector('.profile-name');
     if (nameElement) {
@@ -982,7 +999,11 @@ function updateProfileActions() {
         }
     } else {
         // Show back button, follow and message buttons
-        actionsContainer.innerHTML = `
+        // Check if we should show the "Add to Recruiting Board" button
+        // Only show for college coaches viewing HS players or transfer players
+        const showRecruitingBoardBtn = isCollegeCoach && (isViewedProfileHSPlayer || isViewedProfileTransferPlayer);
+
+        let buttonsHTML = `
             <button class="btn-back" id="backBtn">
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M19 12H5M12 19l-7-7 7-7"></path>
@@ -992,6 +1013,22 @@ function updateProfileActions() {
             <button class="btn-follow" id="followBtn">Follow</button>
             <button class="btn-message" id="messageBtn">Message</button>
         `;
+
+        // Add recruiting board button if applicable
+        if (showRecruitingBoardBtn) {
+            buttonsHTML += `
+            <button class="btn-recruiting-board" id="recruitingBoardBtn">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="12" y1="8" x2="12" y2="16"></line>
+                    <line x1="8" y1="12" x2="16" y2="12"></line>
+                </svg>
+                Add to Recruiting Board
+            </button>
+            `;
+        }
+
+        actionsContainer.innerHTML = buttonsHTML;
 
         // Setup back button
         const backBtn = document.getElementById('backBtn');
@@ -1006,6 +1043,11 @@ function updateProfileActions() {
 
         // Setup message button
         setupMessageButton();
+
+        // Setup recruiting board button if applicable
+        if (showRecruitingBoardBtn) {
+            setupRecruitingBoardButton();
+        }
     }
 }
 
@@ -1017,6 +1059,22 @@ function setupMessageButton() {
         // Navigate to messages page with the userId to start/open conversation
         const folder = loggedInUserFolder || 'collegecoach';
         window.location.href = `/frontend/${folder}/tabs/messages.html?userId=${viewingUserId}`;
+    });
+}
+
+function setupRecruitingBoardButton() {
+    const recruitingBoardBtn = document.getElementById('recruitingBoardBtn');
+    if (!recruitingBoardBtn || !viewingUserId || !currentProfile) return;
+
+    recruitingBoardBtn.addEventListener('click', () => {
+        // Navigate to recruiting board page with the player info as URL params
+        const playerName = `${currentProfile.first_name} ${currentProfile.last_name}`;
+        const playerPosition = currentProfile.position || '';
+        const playerUsername = currentProfile.username || '';
+        const playerId = viewingUserId;
+
+        // Navigate to recruiting board with player info
+        window.location.href = `/frontend/collegecoach/tabs/recruiting-board.html?addPlayer=true&playerId=${playerId}&playerName=${encodeURIComponent(playerName)}&playerPosition=${encodeURIComponent(playerPosition)}&playerUsername=${encodeURIComponent(playerUsername)}`;
     });
 }
 
@@ -1750,6 +1808,20 @@ async function saveProfileChanges() {
             } else {
                 // Update with the data we sent
                 Object.assign(currentProfile, formData);
+            }
+
+            // Check if coach type changed (College to HS) - redirect to appropriate folder
+            const collegeDivisions = ['FBS', 'FCS', 'D2', 'D3', 'NAIA', 'NJCAA', 'JUCO', 'Division II', 'Division III'];
+            const newCollegeDivision = formData.college_division;
+            const isStillCollegeCoach = newCollegeDivision && collegeDivisions.includes(newCollegeDivision);
+
+            if (!isStillCollegeCoach) {
+                // Coach changed from College to HS - redirect to hscoach folder
+                showSuccessMessage('Profile updated! Redirecting to high school coach dashboard...');
+                setTimeout(() => {
+                    window.location.href = '../../hscoach/mainpage-coach.html';
+                }, 1000);
+                return;
             }
 
             // Refresh the profile display

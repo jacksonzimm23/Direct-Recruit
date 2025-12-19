@@ -15,6 +15,9 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     // Populate state dropdown and pre-fill with current state
     await populateStateDropdown();
+
+    // Load and display the player's portal card preview
+    await loadPlayerCardPreview();
 });
 
 function initLeavePortalPopup() {
@@ -271,4 +274,203 @@ async function populateStateDropdown() {
     } catch (error) {
         console.error('Error fetching profile for state pre-fill:', error);
     }
+}
+
+// Load and display the player's portal card preview
+async function loadPlayerCardPreview() {
+    const cardWrapper = document.getElementById('playerCardWrapper');
+    if (!cardWrapper) return;
+
+    try {
+        const response = await API.get('/auth/me');
+        if (response.profile) {
+            const player = response.profile;
+            const cardHTML = createPreviewPlayerCard(player);
+            cardWrapper.innerHTML = cardHTML;
+        }
+    } catch (error) {
+        console.error('Error loading player card preview:', error);
+        cardWrapper.innerHTML = `
+            <div class="loading-card">
+                <p>Unable to load your card preview</p>
+            </div>
+        `;
+    }
+}
+
+// Helper function to format height
+function formatHeight(height) {
+    if (!height) return 'N/A';
+    if (typeof height === 'string' && (height.includes("'") || height.includes('"'))) {
+        return height;
+    }
+    if (typeof height === 'number' || !isNaN(parseInt(height))) {
+        const totalInches = parseInt(height);
+        const feet = Math.floor(totalInches / 12);
+        const inches = totalInches % 12;
+        return `${feet}'${inches}"`;
+    }
+    return height;
+}
+
+// Helper function to format division
+function formatDivision(division) {
+    if (!division) return '';
+    const div = division.toUpperCase();
+    if (div === 'FBS' || div === 'DIVISION I FBS') return 'FBS';
+    if (div === 'FCS' || div === 'DIVISION I FCS') return 'FCS';
+    if (div === 'D2' || div === 'DIVISION II') return 'D2';
+    if (div === 'D3' || div === 'DIVISION III') return 'D3';
+    if (div === 'NAIA') return 'NAIA';
+    if (div === 'NJCAA' || div === 'JUCO') return 'JUCO';
+    return division;
+}
+
+// Helper function to format positions
+function formatPositions(positionStr) {
+    if (!positionStr) return '';
+    const positions = positionStr.split('/').map(p => p.trim()).filter(p => p);
+    return positions.map(pos => `<span class="position-badge">${pos}</span>`).join('');
+}
+
+// Get stat labels based on position
+function getStatLabelsForPosition(position) {
+    if (!position) return null;
+    const pos = position.toUpperCase();
+
+    if (pos.includes('QB')) {
+        return ['Total Yards', 'Total TDs', 'INT'];
+    } else if (pos.includes('RB') || pos.includes('FB')) {
+        return ['Rush Yards', 'Rush TDs', 'YPC'];
+    } else if (pos.includes('WR') || pos.includes('TE')) {
+        return ['Rec Yards', 'Rec TDs', 'Receptions'];
+    } else if (pos.includes('OL') || pos.includes('OT') || pos.includes('OG') || pos.includes('C')) {
+        return ['Pancakes', 'Sacks Allowed', 'Penalties'];
+    } else if (pos.includes('DL') || pos.includes('DE') || pos.includes('DT') || pos.includes('NT')) {
+        return ['Tackles', 'Sacks', 'TFL'];
+    } else if (pos.includes('LB') || pos.includes('ILB') || pos.includes('OLB') || pos.includes('MLB')) {
+        return ['Tackles', 'Sacks', 'TFL'];
+    } else if (pos.includes('CB') || pos.includes('S') || pos.includes('DB') || pos.includes('FS') || pos.includes('SS')) {
+        return ['Tackles', 'INT', 'PBU'];
+    } else if (pos.includes('K') || pos.includes('P')) {
+        return ['FG Made', 'FG %', 'Long'];
+    } else if (pos.includes('LS')) {
+        return ['Snaps', 'Bad Snaps', 'Blocks'];
+    } else if (pos.includes('ATH')) {
+        return ['Total Yards', 'Total TDs', 'Tackles'];
+    }
+
+    return ['Stat 1', 'Stat 2', 'Stat 3'];
+}
+
+// Create the preview player card HTML (matches collegecoach transfer portal card)
+function createPreviewPlayerCard(player) {
+    const displayName = `${player.first_name || ''} ${player.last_name || ''}`.trim() || 'Unknown Player';
+    const height = formatHeight(player.height);
+    const weight = player.weight ? `${player.weight} lbs` : 'N/A';
+    const eligibility = player.eligibility ? `${player.eligibility} Year${player.eligibility > 1 ? 's' : ''}` : 'N/A';
+    const gpa = player.gpa ? parseFloat(player.gpa).toFixed(2) : 'N/A';
+    const previousSchool = player.high_school || 'Unknown School';
+    const division = formatDivision(player.college_division);
+    const profileImage = player.profile_image_url;
+
+    // Get stat labels for this player's position
+    const statLabels = getStatLabelsForPosition(player.position);
+
+    // Format stats rows
+    let lastSeasonStatsHTML = '';
+    let careerStatsHTML = '';
+
+    if (statLabels) {
+        // Last Season Stats
+        const lastStat1 = player.lastseasonstat1 !== null && player.lastseasonstat1 !== undefined ? player.lastseasonstat1 : '-';
+        const lastStat2 = player.lastseasonstat2 !== null && player.lastseasonstat2 !== undefined ? player.lastseasonstat2 : '-';
+        const lastStat3 = player.lastseasonstat3 !== null && player.lastseasonstat3 !== undefined ? player.lastseasonstat3 : '-';
+
+        lastSeasonStatsHTML = `
+            <div class="stats-section-card">
+                <div class="stats-section-title">Last Season Stats</div>
+                <div class="player-highlights">
+                    <div class="highlight-item"><span class="stat-title">${statLabels[0]}:</span> ${lastStat1}</div>
+                    <div class="highlight-item"><span class="stat-title">${statLabels[1]}:</span> ${lastStat2}</div>
+                    <div class="highlight-item"><span class="stat-title">${statLabels[2]}:</span> ${lastStat3}</div>
+                </div>
+            </div>
+        `;
+
+        // Career Stats
+        const careerStat1 = player.careerstat1 !== null && player.careerstat1 !== undefined ? player.careerstat1 : '-';
+        const careerStat2 = player.careerstat2 !== null && player.careerstat2 !== undefined ? player.careerstat2 : '-';
+        const careerStat3 = player.careerstat3 !== null && player.careerstat3 !== undefined ? player.careerstat3 : '-';
+
+        careerStatsHTML = `
+            <div class="stats-section-card">
+                <div class="stats-section-title">Career Stats</div>
+                <div class="player-highlights">
+                    <div class="highlight-item"><span class="stat-title">${statLabels[0]}:</span> ${careerStat1}</div>
+                    <div class="highlight-item"><span class="stat-title">${statLabels[1]}:</span> ${careerStat2}</div>
+                    <div class="highlight-item"><span class="stat-title">${statLabels[2]}:</span> ${careerStat3}</div>
+                </div>
+            </div>
+        `;
+    }
+
+    return `
+        <div class="preview-player-card">
+            <div class="player-card-header">
+                <div class="player-avatar-large">
+                    ${profileImage
+                        ? `<img src="${profileImage}" alt="${displayName}" class="avatar-image">`
+                        : `<svg viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="12" cy="7" r="4"></circle>
+                        </svg>`
+                    }
+                </div>
+                <div class="transfer-portal-badge">PORTAL</div>
+            </div>
+            <h3 class="player-name">
+                ${displayName}
+                <svg class="transfer-portal-icon" viewBox="0 0 24 24" fill="currentColor">
+                    <circle cx="12" cy="12" r="10"/>
+                    <circle cx="12" cy="12" r="6" fill="var(--oxford-blue)"/>
+                    <circle cx="12" cy="12" r="2"/>
+                </svg>
+            </h3>
+            <div class="player-positions">
+                ${formatPositions(player.position)}
+            </div>
+            <div class="player-stats-box">
+                <div class="player-stats">
+                    <div class="stat-item">
+                        <div class="stat-label">Height</div>
+                        <div class="stat-value">${height}</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Weight</div>
+                        <div class="stat-value">${weight}</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Eligibility</div>
+                        <div class="stat-value">${eligibility}</div>
+                    </div>
+                </div>
+                <div class="player-gpa-row">
+                    <span class="gpa-label">GPA:</span>
+                    <span class="gpa-value">${gpa}</span>
+                </div>
+            </div>
+            <div class="player-details">
+                <div class="detail-item portal-previous">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                        <circle cx="12" cy="10" r="3"></circle>
+                    </svg>
+                    Previously: ${previousSchool}${division ? ` (${division})` : ''}
+                </div>
+            </div>
+            ${lastSeasonStatsHTML}
+            ${careerStatsHTML}
+        </div>
+    `;
 }

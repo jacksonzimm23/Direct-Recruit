@@ -647,23 +647,23 @@ async function showInfoFormModal() {
         const eligibility = document.getElementById('transferEligibility').value;
         const positions = Array.from(document.querySelectorAll('input[name="position"]:checked')).map(cb => cb.value);
 
-        // Collect last season stats data
-        const lastSeasonStat1Val = document.getElementById('lastSeasonStat1')?.value || null;
-        const lastSeasonStat2Val = document.getElementById('lastSeasonStat2')?.value || null;
-        const lastSeasonStat3Val = document.getElementById('lastSeasonStat3')?.value || null;
+        // Collect last season stats data - default to 0 if empty
+        const lastSeasonStat1Val = document.getElementById('lastSeasonStat1')?.value;
+        const lastSeasonStat2Val = document.getElementById('lastSeasonStat2')?.value;
+        const lastSeasonStat3Val = document.getElementById('lastSeasonStat3')?.value;
 
-        // Collect career stats data
-        const careerStat1Val = document.getElementById('careerStat1')?.value || null;
-        const careerStat2Val = document.getElementById('careerStat2')?.value || null;
-        const careerStat3Val = document.getElementById('careerStat3')?.value || null;
+        // Collect career stats data - default to 0 if empty
+        const careerStat1Val = document.getElementById('careerStat1')?.value;
+        const careerStat2Val = document.getElementById('careerStat2')?.value;
+        const careerStat3Val = document.getElementById('careerStat3')?.value;
 
-        // Parse as integers for database storage
-        const lastseasonstat1 = lastSeasonStat1Val ? parseInt(lastSeasonStat1Val) : null;
-        const lastseasonstat2 = lastSeasonStat2Val ? parseInt(lastSeasonStat2Val) : null;
-        const lastseasonstat3 = lastSeasonStat3Val ? parseInt(lastSeasonStat3Val) : null;
-        const careerstat1 = careerStat1Val ? parseInt(careerStat1Val) : null;
-        const careerstat2 = careerStat2Val ? parseInt(careerStat2Val) : null;
-        const careerstat3 = careerStat3Val ? parseInt(careerStat3Val) : null;
+        // Parse as integers for database storage - store 0 if empty or not a valid number
+        const lastseasonstat1 = lastSeasonStat1Val && lastSeasonStat1Val.trim() !== '' ? parseInt(lastSeasonStat1Val) : 0;
+        const lastseasonstat2 = lastSeasonStat2Val && lastSeasonStat2Val.trim() !== '' ? parseInt(lastSeasonStat2Val) : 0;
+        const lastseasonstat3 = lastSeasonStat3Val && lastSeasonStat3Val.trim() !== '' ? parseInt(lastSeasonStat3Val) : 0;
+        const careerstat1 = careerStat1Val && careerStat1Val.trim() !== '' ? parseInt(careerStat1Val) : 0;
+        const careerstat2 = careerStat2Val && careerStat2Val.trim() !== '' ? parseInt(careerStat2Val) : 0;
+        const careerstat3 = careerStat3Val && careerStat3Val.trim() !== '' ? parseInt(careerStat3Val) : 0;
 
         const formData = {
             first_name: firstName,

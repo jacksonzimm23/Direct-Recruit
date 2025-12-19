@@ -8,6 +8,9 @@ let isCollegeCoach = false;
 let currentProfileType = 'player'; // Track whether viewing a player or coach profile
 let loggedInUserFolder = null; // Track the logged-in user's folder for navigation
 let editSelectedPositions = []; // Track selected positions in edit modal
+let viewedProfileType = null; // Track the type of profile being viewed ('player' or 'coach')
+let isViewedProfileHSPlayer = false; // Track if viewed profile is an HS player
+let isViewedProfileTransferPlayer = false; // Track if viewed profile is a transfer player
 
 // Format phone number as (XXX) XXX-XXXX
 function formatPhoneNumber(phone) {
@@ -348,7 +351,7 @@ function updateNavbarForLoggedInUser(user, profile) {
     // Apply inline styles to ensure consistent appearance regardless of which page's CSS is loaded
     if (profile) {
         // Define color based on logged-in user's role (players = cerulean/blue, coaches = orange)
-        const userRoleColor = role === 'player' ? '#1282a2' : '#e07a5f';
+        const userRoleColor = role === 'player' ? '#1282a2' : '#ff6b35';
 
         // Update name
         const userName = document.querySelector('.sidebar-footer .user-name');
@@ -657,6 +660,18 @@ function displayProfile(profile, type) {
     console.log('displayProfile called with type:', type);
     // Store the profile type globally
     currentProfileType = type;
+    viewedProfileType = type;
+
+    // Determine if viewed profile is HS player or transfer player
+    if (type === 'player') {
+        // HS player: no college_division or empty college_division
+        isViewedProfileHSPlayer = !profile.college_division || profile.college_division.trim() === '';
+        // Transfer player: has transfer === 'y'
+        isViewedProfileTransferPlayer = profile.transfer === 'y';
+    } else {
+        isViewedProfileHSPlayer = false;
+        isViewedProfileTransferPlayer = false;
+    }
 
     // Update profile name
     const nameElement = document.querySelector('.profile-name');
@@ -1050,7 +1065,11 @@ function updateProfileActions() {
         }
     } else {
         // Show back button, follow and message buttons
-        actionsContainer.innerHTML = `
+        // Check if we should show the "Add to Recruiting Board" button
+        // Only show for college coaches viewing HS players or transfer players
+        const showRecruitingBoardBtn = isCollegeCoach && (isViewedProfileHSPlayer || isViewedProfileTransferPlayer);
+
+        let buttonsHTML = `
             <button class="btn-back" id="backBtn">
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M19 12H5M12 19l-7-7 7-7"></path>
@@ -1060,6 +1079,22 @@ function updateProfileActions() {
             <button class="btn-follow" id="followBtn">Follow</button>
             <button class="btn-message" id="messageBtn">Message</button>
         `;
+
+        // Add recruiting board button if applicable
+        if (showRecruitingBoardBtn) {
+            buttonsHTML += `
+            <button class="btn-recruiting-board" id="recruitingBoardBtn">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="12" y1="8" x2="12" y2="16"></line>
+                    <line x1="8" y1="12" x2="16" y2="12"></line>
+                </svg>
+                Add to Recruiting Board
+            </button>
+            `;
+        }
+
+        actionsContainer.innerHTML = buttonsHTML;
 
         // Setup back button
         const backBtn = document.getElementById('backBtn');
@@ -1074,6 +1109,11 @@ function updateProfileActions() {
 
         // Setup message button
         setupMessageButton();
+
+        // Setup recruiting board button if applicable
+        if (showRecruitingBoardBtn) {
+            setupRecruitingBoardButton();
+        }
     }
 }
 
@@ -1086,6 +1126,302 @@ function setupMessageButton() {
         const folder = loggedInUserFolder || 'hsplayer';
         window.location.href = `/frontend/${folder}/tabs/messages.html?userId=${viewingUserId}`;
     });
+}
+
+// Track recruiting board status for the current player
+let playerRecruitingBoardStatus = null;
+
+async function setupRecruitingBoardButton() {
+    const recruitingBoardBtn = document.getElementById('recruitingBoardBtn');
+    if (!recruitingBoardBtn || !viewingUserId || !currentProfile) return;
+
+    // Check if player is already on the recruiting board
+    try {
+        const response = await API.get(`/recruiting-board/check/${viewingUserId}`);
+        playerRecruitingBoardStatus = response;
+
+        if (response.isOnBoard) {
+            // Player is on the board - show remove button
+            recruitingBoardBtn.classList.add('remove-mode');
+            recruitingBoardBtn.innerHTML = `
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="15" y1="9" x2="9" y2="15"></line>
+                    <line x1="9" y1="9" x2="15" y2="15"></line>
+                </svg>
+                Remove from Recruiting Board
+            `;
+
+            // Setup remove modal functionality
+            setupRemoveFromBoardButton(response.entries);
+            return;
+        }
+    } catch (error) {
+        console.error('Error checking recruiting board status:', error);
+        // Continue with add functionality if check fails
+    }
+
+    // Setup add to board functionality (default)
+    setupAddToBoardButton();
+}
+
+function setupAddToBoardButton() {
+    const recruitingBoardBtn = document.getElementById('recruitingBoardBtn');
+    if (!recruitingBoardBtn) return;
+
+    const modal = document.getElementById('recruitingBoardModal');
+    const overlay = document.getElementById('recruitingBoardModalOverlay');
+    const closeBtn = document.getElementById('recruitingBoardModalClose');
+    const cancelBtn = document.getElementById('recruitingBoardCancelBtn');
+    const submitBtn = document.getElementById('recruitingBoardSubmitBtn');
+    const classYearSelect = document.getElementById('recruitingClassYear');
+    const positionSelect = document.getElementById('recruitingPosition');
+
+    if (!modal || !classYearSelect || !positionSelect) return;
+
+    // Populate class year options (2026-2030)
+    classYearSelect.innerHTML = '<option value="">Select Class Year</option>';
+    const currentYear = new Date().getFullYear();
+    for (let year = currentYear + 1; year <= currentYear + 5; year++) {
+        const option = document.createElement('option');
+        option.value = year;
+        option.textContent = `Class of ${year}`;
+        classYearSelect.appendChild(option);
+    }
+
+    // Cache for shared position config
+    let positionConfig = null;
+
+    // Load positions into dropdown
+    function populatePositions(config) {
+        positionSelect.innerHTML = '<option value="">Select Position</option>';
+
+        const allPositions = [];
+
+        // Add offense positions
+        if (config.offensePositions) {
+            config.offensePositions.forEach(group => {
+                if (group.positions) {
+                    group.positions.forEach(pos => {
+                        allPositions.push(pos);
+                    });
+                }
+            });
+        }
+
+        // Add defense positions
+        if (config.defensePositions) {
+            config.defensePositions.forEach(group => {
+                if (group.positions) {
+                    group.positions.forEach(pos => {
+                        allPositions.push(pos);
+                    });
+                }
+            });
+        }
+
+        // Add unique positions to dropdown
+        const uniquePositions = [...new Set(allPositions)];
+        uniquePositions.forEach(pos => {
+            const option = document.createElement('option');
+            option.value = pos;
+            option.textContent = pos;
+            positionSelect.appendChild(option);
+        });
+
+        if (uniquePositions.length === 0) {
+            positionSelect.innerHTML = '<option value="">No positions configured</option>';
+        }
+    }
+
+    // Open modal on button click
+    recruitingBoardBtn.addEventListener('click', async () => {
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+
+        // Reset dropdowns
+        classYearSelect.value = '';
+        positionSelect.innerHTML = '<option value="">Loading positions...</option>';
+        submitBtn.disabled = true;
+
+        // Load shared position config (same for all class years)
+        try {
+            if (!positionConfig) {
+                positionConfig = await API.get('/recruiting-board/config');
+            }
+            populatePositions(positionConfig);
+        } catch (error) {
+            console.error('Error fetching position config:', error);
+            positionSelect.innerHTML = '<option value="">Error loading positions</option>';
+        }
+    });
+
+    // Close modal functions
+    function closeModal() {
+        modal.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+
+    if (overlay) overlay.addEventListener('click', closeModal);
+    if (closeBtn) closeBtn.addEventListener('click', closeModal);
+    if (cancelBtn) cancelBtn.addEventListener('click', closeModal);
+
+    // Enable submit when both class year and position are selected
+    function updateSubmitState() {
+        submitBtn.disabled = !classYearSelect.value || !positionSelect.value;
+    }
+
+    classYearSelect.addEventListener('change', updateSubmitState);
+    positionSelect.addEventListener('change', updateSubmitState);
+
+    // Submit handler
+    submitBtn.addEventListener('click', async () => {
+        const classYear = classYearSelect.value;
+        const position = positionSelect.value;
+
+        if (!classYear || !position) {
+            showToast('Please select both class year and position', 'error');
+            return;
+        }
+
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Adding...';
+
+        try {
+            // Determine player type based on what page we're on or profile being viewed
+            const isTransfer = isViewedProfileTransferPlayer || window.location.pathname.includes('transferplayer');
+            const playerType = isTransfer ? 'transfer' : 'hs';
+
+            // Build player data to send
+            const playerData = {
+                user_id: viewingUserId,
+                username: currentProfile.username,
+                first_name: currentProfile.first_name,
+                last_name: currentProfile.last_name,
+                height: currentProfile.height,
+                weight: currentProfile.weight,
+                high_school: currentProfile.high_school,
+                state: currentProfile.state,
+                college_division: currentProfile.college_division,
+                profile_image_url: currentProfile.profile_image_url,
+                player_type: playerType,
+                position: position
+            };
+
+            await API.post(`/recruiting-board/${classYear}/players`, playerData);
+
+            showToast(`${currentProfile.first_name} ${currentProfile.last_name} added to ${classYear} recruiting board!`, 'success');
+            closeModal();
+
+            // Update button to show remove mode now
+            const recruitingBoardBtn = document.getElementById('recruitingBoardBtn');
+            if (recruitingBoardBtn) {
+                recruitingBoardBtn.classList.add('remove-mode');
+                recruitingBoardBtn.innerHTML = `
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="15" y1="9" x2="9" y2="15"></line>
+                        <line x1="9" y1="9" x2="15" y2="15"></line>
+                    </svg>
+                    Remove from Recruiting Board
+                `;
+                // Re-setup for remove functionality
+                setupRemoveFromBoardButton([{ class_year: classYear, position: position }]);
+            }
+        } catch (error) {
+            console.error('Error adding player to board:', error);
+            showToast(error.message || 'Failed to add player to board', 'error');
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Add to Board';
+        }
+    });
+}
+
+function setupRemoveFromBoardButton(boardEntries) {
+    const recruitingBoardBtn = document.getElementById('recruitingBoardBtn');
+    if (!recruitingBoardBtn || !viewingUserId || !currentProfile) return;
+
+    const modal = document.getElementById('removeRecruitingBoardModal');
+    const overlay = document.getElementById('removeRecruitingBoardModalOverlay');
+    const closeBtn = document.getElementById('removeRecruitingBoardModalClose');
+    const cancelBtn = document.getElementById('removeRecruitingBoardCancelBtn');
+    const submitBtn = document.getElementById('removeRecruitingBoardSubmitBtn');
+    const confirmText = document.getElementById('removeConfirmText');
+    const boardInfo = document.getElementById('removeBoardInfo');
+
+    if (!modal) return;
+
+    // Remove old click listener and add new one
+    const newBtn = recruitingBoardBtn.cloneNode(true);
+    recruitingBoardBtn.parentNode.replaceChild(newBtn, recruitingBoardBtn);
+
+    // Open remove modal on button click
+    newBtn.addEventListener('click', () => {
+        const playerName = `${currentProfile.first_name} ${currentProfile.last_name}`;
+        confirmText.innerHTML = `Are you sure you want to remove <strong>${playerName}</strong> from the recruiting board?`;
+
+        // Show which boards they're on
+        if (boardEntries && boardEntries.length > 0) {
+            const boardList = boardEntries.map(e => `Class of ${e.class_year} (${e.position})`).join(', ');
+            boardInfo.textContent = `Currently on: ${boardList}`;
+        } else {
+            boardInfo.textContent = '';
+        }
+
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    });
+
+    // Close modal functions
+    function closeModal() {
+        modal.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+
+    if (overlay) overlay.addEventListener('click', closeModal);
+    if (closeBtn) closeBtn.addEventListener('click', closeModal);
+    if (cancelBtn) cancelBtn.addEventListener('click', closeModal);
+
+    // Submit handler - remove from all boards
+    if (submitBtn) {
+        submitBtn.addEventListener('click', async () => {
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Removing...';
+
+            try {
+                // Remove from all boards where this player exists
+                for (const entry of boardEntries) {
+                    await API.delete(`/recruiting-board/${entry.class_year}/players/${viewingUserId}?position=${entry.position}`);
+                }
+
+                showToast(`${currentProfile.first_name} ${currentProfile.last_name} removed from recruiting board!`, 'success');
+                closeModal();
+
+                // Update button back to add mode
+                const currentBtn = document.getElementById('recruitingBoardBtn');
+                if (currentBtn) {
+                    currentBtn.classList.remove('remove-mode');
+                    currentBtn.innerHTML = `
+                        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="12" y1="8" x2="12" y2="16"></line>
+                            <line x1="8" y1="12" x2="16" y2="12"></line>
+                        </svg>
+                        Add to Recruiting Board
+                    `;
+                    // Re-setup for add functionality
+                    setupAddToBoardButton();
+                }
+            } catch (error) {
+                console.error('Error removing player from board:', error);
+                showToast(error.message || 'Failed to remove player from board', 'error');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Remove';
+            }
+        });
+    }
 }
 
 async function setupFollowButton() {
@@ -1137,16 +1473,22 @@ function updateActiveNavItem() {
     const fromPage = urlParams.get('from');
     const hasUsername = urlParams.get('username');
 
+    const recruitingBoardNavItem = document.getElementById('recruitingBoardNav');
+
     if (feedNavItem && profileNavItem) {
         // Remove active from all first
         feedNavItem.classList.remove('active');
         profileNavItem.classList.remove('active');
         if (messagesNavItem) messagesNavItem.classList.remove('active');
         if (discoverNavItem) discoverNavItem.classList.remove('active');
+        if (recruitingBoardNavItem) recruitingBoardNavItem.classList.remove('active');
 
         if (!hasUsername || isOwnProfile) {
             // Viewing own profile - highlight My Profile
             profileNavItem.classList.add('active');
+        } else if (fromPage === 'recruiting' && recruitingBoardNavItem) {
+            // Came from recruiting board - highlight Recruiting Board
+            recruitingBoardNavItem.classList.add('active');
         } else if (fromPage === 'messages' && messagesNavItem) {
             // Came from messages page - highlight Messages
             messagesNavItem.classList.add('active');
@@ -1766,6 +2108,20 @@ async function saveProfileChanges() {
             } else {
                 // If response.profile not available, merge formData but keep database types
                 currentProfile = { ...currentProfile, ...formData };
+            }
+
+            // Check if player type changed (HS to College) - redirect to appropriate folder
+            const collegeDivisions = ['FBS', 'FCS', 'D2', 'D3', 'NAIA', 'NJCAA', 'JUCO', 'Division II', 'Division III'];
+            const newCollegeDivision = formData.college_division;
+            const isNowCollegePlayer = newCollegeDivision && collegeDivisions.includes(newCollegeDivision);
+
+            if (isNowCollegePlayer) {
+                // Player changed from HS to College - redirect to collegeplayer folder
+                showSuccessMessage('Profile updated! Redirecting to college player dashboard...');
+                setTimeout(() => {
+                    window.location.href = '../../collegeplayer/mainpage-player.html';
+                }, 1000);
+                return;
             }
 
             // Refresh the profile display
@@ -3242,7 +3598,7 @@ function displayGameStats(games, filterYear = null) {
     container.innerHTML = '';
 
     if (!games || games.length === 0) {
-        container.innerHTML = '<div class="no-stats-message">No games recorded yet. Click "Add Stats" to record your first game.</div>';
+        container.innerHTML = '<div class="no-stats-message">No games recorded yet.</div>';
         return;
     }
 
@@ -3254,7 +3610,7 @@ function displayGameStats(games, filterYear = null) {
     }
 
     if (filteredGames.length === 0) {
-        container.innerHTML = '<div class="no-stats-message">No games recorded for this season. Click "Add Stats" to record a game.</div>';
+        container.innerHTML = '<div class="no-stats-message">No games recorded for this season.</div>';
         return;
     }
 
@@ -3444,7 +3800,7 @@ function displayGameStats(games, filterYear = null) {
     }
 
     if (html === '') {
-        container.innerHTML = '<div class="no-stats-message">No games recorded yet. Click "Add Stats" to record your first game.</div>';
+        container.innerHTML = '<div class="no-stats-message">No games recorded yet.</div>';
     } else {
         container.innerHTML = html;
     }

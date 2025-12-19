@@ -348,7 +348,7 @@ function updateNavbarForLoggedInUser(user, profile) {
     // Apply inline styles to ensure consistent appearance regardless of which page's CSS is loaded
     if (profile) {
         // Define color based on logged-in user's role (players = cerulean/blue, coaches = orange)
-        const userRoleColor = role === 'player' ? '#1282a2' : '#e07a5f';
+        const userRoleColor = role === 'player' ? '#1282a2' : '#ff6b35';
 
         // Update name
         const userName = document.querySelector('.sidebar-footer .user-name');
@@ -1836,6 +1836,20 @@ async function saveProfileChanges() {
             } else {
                 // If response.profile not available, merge formData but keep database types
                 currentProfile = { ...currentProfile, ...formData };
+            }
+
+            // Check if player type changed (College to HS) - redirect to appropriate folder
+            const collegeDivisions = ['FBS', 'FCS', 'D2', 'D3', 'NAIA', 'NJCAA', 'JUCO', 'Division II', 'Division III'];
+            const newCollegeDivision = formData.college_division;
+            const isStillCollegePlayer = newCollegeDivision && collegeDivisions.includes(newCollegeDivision);
+
+            if (!isStillCollegePlayer) {
+                // Player changed from College to HS - redirect to hsplayer folder
+                showSuccessMessage('Profile updated! Redirecting to high school player dashboard...');
+                setTimeout(() => {
+                    window.location.href = '../../hsplayer/mainpage-player.html';
+                }, 1000);
+                return;
             }
 
             // Refresh the profile display

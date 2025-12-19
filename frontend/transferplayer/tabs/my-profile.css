@@ -230,6 +230,7 @@
     font-weight: 900;
     color: var(--white);
     margin-bottom: 0.5rem;
+    white-space: nowrap;
 }
 
 .profile-position {
@@ -244,6 +245,7 @@
     color: rgba(254, 252, 251, 0.7);
     font-size: 0.95rem;
     line-height: 1.6;
+    white-space: nowrap;
 }
 
 .profile-username {
@@ -439,9 +441,9 @@
 
 .profile-actions {
     display: flex;
+    flex-wrap: wrap;
     gap: 1rem;
-    align-self: flex-start;
-    margin-left: auto;
+    padding-top: 2rem;
 }
 
 .btn-edit-profile {
@@ -570,6 +572,51 @@
     background: rgba(255, 255, 255, 0.15);
     border-color: var(--cerulean);
     transform: translateY(-2px);
+}
+
+/* Recruiting Board Button - Orange, own row below other buttons */
+.btn-recruiting-board {
+    background: var(--accent-orange);
+    color: var(--white);
+    border: none;
+    padding: 0.85rem 1.5rem;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-family: 'Inter', sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+/* Force recruiting board button to its own row, right-aligned */
+.profile-actions:has(.btn-recruiting-board) {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.profile-actions:has(.btn-recruiting-board)::before {
+    content: '';
+    width: 100%;
+    order: 3;
+}
+
+.btn-recruiting-board {
+    order: 4;
+}
+
+.btn-recruiting-board:hover {
+    background: #e55a2b;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3);
+}
+
+.btn-recruiting-board svg {
+    width: 18px;
+    height: 18px;
 }
 
 /* Profile Tabs */
@@ -1068,6 +1115,68 @@
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 1rem;
+}
+
+.form-row-3 {
+    grid-template-columns: repeat(3, 1fr);
+}
+
+/* Card Stats Section */
+.card-stats-section {
+    margin: 1rem 0;
+    padding: 1rem;
+    background: rgba(18, 130, 162, 0.08);
+    border: 1px solid rgba(18, 130, 162, 0.2);
+    border-radius: 10px;
+}
+
+.card-stats-title {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--linen);
+    margin: 0 0 0.25rem 0;
+}
+
+.card-stats-section > .form-hint {
+    font-size: 0.75rem;
+    margin-bottom: 0.75rem !important;
+}
+
+.card-stats-group {
+    margin-bottom: 0.75rem;
+}
+
+.card-stats-group:last-child {
+    margin-bottom: 0;
+}
+
+.card-stats-subtitle {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--cerulean);
+    margin: 0 0 0.5rem 0;
+}
+
+/* Make card stats inputs smaller */
+.card-stats-section .form-group {
+    gap: 0.25rem;
+}
+
+.card-stats-section .form-group label {
+    font-size: 0.7rem;
+}
+
+.card-stats-section .form-group input {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+}
+
+/* Responsive: stack on smaller screens */
+@media (max-width: 600px) {
+    .card-stats-section .form-row-3 {
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 0.5rem;
+    }
 }
 
 .form-group {
@@ -2197,6 +2306,26 @@
     border-bottom: 1px solid rgba(18, 130, 162, 0.2);
 }
 
+/* Overview Stats Wrapper (for Last Season / Career in Overview tab) */
+.overview-stats-wrapper {
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid rgba(18, 130, 162, 0.15);
+}
+
+.overview-stats-wrapper:last-child {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+}
+
+.overview-stats-section-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--linen);
+    margin: 0 0 1.25rem 0;
+}
+
 /* Stats Header with Add Button */
 .stats-header {
     display: flex;
@@ -2386,6 +2515,42 @@
 .btn-select-position svg {
     width: 18px;
     height: 18px;
+}
+
+/* Stats Type Selector */
+.stats-type-selector {
+    margin-bottom: 1.5rem;
+}
+
+.stats-type-buttons {
+    display: flex;
+    gap: 0.75rem;
+}
+
+.stats-type-btn {
+    flex: 1;
+    padding: 0.875rem 1rem;
+    background: rgba(254, 252, 251, 0.05);
+    border: 2px solid rgba(18, 130, 162, 0.2);
+    border-radius: 10px;
+    color: rgba(254, 252, 251, 0.7);
+    font-size: 0.9rem;
+    font-weight: 600;
+    font-family: 'Inter', sans-serif;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.stats-type-btn:hover {
+    background: rgba(18, 130, 162, 0.1);
+    border-color: rgba(18, 130, 162, 0.4);
+    color: var(--white);
+}
+
+.stats-type-btn.active {
+    background: rgba(18, 130, 162, 0.2);
+    border-color: var(--cerulean);
+    color: var(--cerulean);
 }
 
 /* Position Dropdown */
@@ -2884,6 +3049,24 @@
     border-bottom: 1px solid rgba(18, 130, 162, 0.2);
 }
 
+/* Stats Section Wrapper (for Last Season / Career Stats sections) */
+.stats-section-wrapper {
+    margin-bottom: 2.5rem;
+}
+
+.stats-section-wrapper:last-child {
+    margin-bottom: 0;
+}
+
+.stats-section-wrapper > h2 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--linen);
+    margin: 0 0 1.25rem 0;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid rgba(18, 130, 162, 0.3);
+}
+
 /* No stats message for empty container */
 #gameStatsTablesContainer .no-stats-message,
 #careerStatsTablesContainer .no-stats-message {
@@ -2894,6 +3077,105 @@
     text-align: center;
     color: rgba(254, 252, 251, 0.5);
     font-style: italic;
+}
+
+/* Position Stats Display (Career Stats Tab) */
+.position-stats-display {
+    background: rgba(254, 252, 251, 0.03);
+    border: 1px solid rgba(18, 130, 162, 0.2);
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+    transition: all 0.2s ease;
+}
+
+.position-stats-display:hover {
+    background: rgba(18, 130, 162, 0.08);
+    border-color: rgba(18, 130, 162, 0.4);
+}
+
+.position-stats-display:last-child {
+    margin-bottom: 0;
+}
+
+.position-stats-header-display {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid rgba(18, 130, 162, 0.15);
+}
+
+.position-stats-header-display h4 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--cerulean);
+}
+
+.btn-edit-position-stats {
+    background: transparent;
+    border: 1px solid rgba(18, 130, 162, 0.3);
+    border-radius: 6px;
+    padding: 0.4rem;
+    cursor: pointer;
+    color: rgba(254, 252, 251, 0.6);
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-edit-position-stats:hover {
+    background: rgba(18, 130, 162, 0.15);
+    border-color: var(--cerulean);
+    color: var(--cerulean);
+}
+
+.btn-edit-position-stats svg {
+    width: 16px;
+    height: 16px;
+}
+
+.stats-values-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 1rem;
+}
+
+.stat-value-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 0.75rem;
+    background: rgba(18, 130, 162, 0.08);
+    border-radius: 8px;
+}
+
+.stat-value-item .stat-label {
+    font-size: 0.7rem;
+    color: rgba(254, 252, 251, 0.6);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.25rem;
+}
+
+.stat-value-item .stat-value {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--cerulean);
+}
+
+@media (max-width: 768px) {
+    .stats-values-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    .stat-value-item .stat-value {
+        font-size: 1.1rem;
+    }
 }
 
 /* Totals Row Styling */
@@ -3804,4 +4086,592 @@
 /* Follow stats links */
 .follow-stat-link:hover {
     color: #b91c1c !important;
+}
+
+/* ============================================ */
+/* Transfer Player Stats Display Styles */
+/* ============================================ */
+
+/* Stats Display Section */
+.stats-display-section {
+    background: var(--oxford-blue-light);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    border: 1px solid rgba(185, 28, 28, 0.2);
+}
+
+.stats-section-title-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.stats-section-title-row svg {
+    width: 24px;
+    height: 24px;
+    color: #dc2626;
+}
+
+.stats-section-subtitle {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--white);
+    margin: 0;
+}
+
+.stats-display-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.stats-no-data {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.9rem;
+    padding: 0.5rem 0;
+}
+
+/* Stats Item Display - Red Theme */
+.stat-display-item {
+    background: rgba(185, 28, 28, 0.15);
+    border: 1px solid rgba(185, 28, 28, 0.3);
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    min-width: 120px;
+    flex: 1;
+    max-width: 200px;
+}
+
+.stat-display-label {
+    font-size: 0.75rem;
+    color: rgba(220, 38, 38, 0.8);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 0.25rem;
+    font-weight: 500;
+}
+
+.stat-display-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--white);
+}
+
+.stats-display-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.stat-display-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+/* Overview Stats Section */
+.overview-stats-section {
+    margin-top: 2rem;
+}
+
+.overview-stats-row {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+}
+
+.overview-stats-card {
+    background: var(--oxford-blue-light);
+    border-radius: 12px;
+    padding: 1.5rem;
+    border: 1px solid rgba(185, 28, 28, 0.2);
+}
+
+.overview-stats-card-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.overview-stats-card-title svg {
+    width: 20px;
+    height: 20px;
+    color: #dc2626;
+}
+
+.overview-stats-card-title h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--white);
+    margin: 0;
+}
+
+.overview-stats-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+.overview-stat-item {
+    background: rgba(185, 28, 28, 0.15);
+    border: 1px solid rgba(185, 28, 28, 0.3);
+    border-radius: 8px;
+    padding: 0.625rem 0.875rem;
+    flex: 1;
+    min-width: 100px;
+    max-width: 150px;
+}
+
+.overview-stat-label {
+    font-size: 0.7rem;
+    color: rgba(220, 38, 38, 0.8);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 0.125rem;
+    font-weight: 500;
+}
+
+.overview-stat-value {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--white);
+    display: block;
+}
+
+.overview-stat-label {
+    display: block;
+}
+
+.overview-stat-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+}
+
+.overview-stats-container {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+}
+
+.overview-stats-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.overview-stats-header svg {
+    width: 20px;
+    height: 20px;
+    color: #dc2626;
+}
+
+.overview-stats-header h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--white);
+    margin: 0;
+}
+
+/* Stats Modal Styles */
+.stats-section-modal {
+    margin-bottom: 1.5rem;
+}
+
+.stats-section-header-modal {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid rgba(185, 28, 28, 0.3);
+}
+
+.stats-section-header-modal svg {
+    width: 20px;
+    height: 20px;
+    color: #dc2626;
+}
+
+.stats-section-title-modal {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--white);
+    margin: 0;
+}
+
+.stats-inputs-container {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.75rem;
+}
+
+.stats-inputs-container .form-group {
+    margin-bottom: 0;
+}
+
+.stats-inputs-container .form-group label {
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.7);
+    margin-bottom: 0.25rem;
+}
+
+.stats-inputs-container .form-group input {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.9rem;
+}
+
+.stats-note {
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.6);
+    margin-bottom: 1.5rem;
+    text-align: center;
+    font-style: italic;
+}
+
+.stats-no-position {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.9rem;
+    padding: 0.5rem 0;
+    grid-column: span 3;
+    text-align: center;
+}
+
+.stats-no-stats-message {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.9rem;
+    padding: 0.5rem 0;
+    grid-column: span 3;
+    text-align: center;
+}
+
+/* Stats Inputs Grid for Modal */
+.stats-inputs-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.75rem;
+}
+
+.stat-input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.stat-input-group label {
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.7);
+    font-weight: 500;
+}
+
+.stat-input-group input {
+    padding: 0.625rem 0.75rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(185, 28, 28, 0.3);
+    border-radius: 8px;
+    color: var(--white);
+    font-size: 1rem;
+    transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.stat-input-group input:focus {
+    outline: none;
+    border-color: #dc2626;
+    background: rgba(185, 28, 28, 0.1);
+}
+
+.stat-input-group input::placeholder {
+    color: rgba(255, 255, 255, 0.3);
+}
+
+/* Responsive for Stats */
+@media (max-width: 768px) {
+    .stats-inputs-container,
+    .stats-inputs-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .overview-stats-row,
+    .overview-stats-container {
+        grid-template-columns: 1fr;
+    }
+
+    .stat-display-item,
+    .overview-stat-item {
+        max-width: none;
+    }
+
+    .stats-display-grid {
+        flex-direction: column;
+    }
+}
+
+/* ==================== Recruiting Board Modal ==================== */
+.recruiting-board-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1000;
+}
+
+.recruiting-board-modal.active {
+    display: block;
+}
+
+.recruiting-board-modal-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(4px);
+}
+
+.recruiting-board-modal-content {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: var(--rich-black);
+    border: 1px solid rgba(255, 107, 53, 0.3);
+    border-radius: 16px;
+    width: 90%;
+    max-width: 400px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+.recruiting-board-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid rgba(255, 107, 53, 0.2);
+}
+
+.recruiting-board-modal-header h3 {
+    color: var(--white);
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin: 0;
+}
+
+.recruiting-board-modal-header .modal-close-btn {
+    background: none;
+    border: none;
+    color: rgba(254, 252, 251, 0.6);
+    cursor: pointer;
+    padding: 0.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s ease;
+}
+
+.recruiting-board-modal-header .modal-close-btn:hover {
+    color: var(--white);
+}
+
+.recruiting-board-modal-header .modal-close-btn svg {
+    width: 24px;
+    height: 24px;
+}
+
+.recruiting-board-modal-body {
+    padding: 1.5rem;
+}
+
+.recruiting-board-modal-body .form-group {
+    margin-bottom: 1.25rem;
+}
+
+.recruiting-board-modal-body .form-group:last-child {
+    margin-bottom: 0;
+}
+
+.recruiting-board-modal-body label {
+    display: block;
+    color: rgba(254, 252, 251, 0.8);
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.recruiting-board-modal-body select {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background: rgba(185, 28, 28, 0.1);
+    border: 1px solid rgba(185, 28, 28, 0.3);
+    border-radius: 8px;
+    color: var(--white);
+    font-size: 0.95rem;
+    font-family: 'Inter', sans-serif;
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12' fill='none'%3E%3Cpath d='M2.5 4.5L6 8L9.5 4.5' stroke='%23FEFCFB' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 1rem center;
+    padding-right: 2.5rem;
+}
+
+.recruiting-board-modal-body select:hover {
+    border-color: #b91c1c;
+}
+
+.recruiting-board-modal-body select:focus {
+    outline: none;
+    border-color: var(--accent-orange);
+    box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.1);
+}
+
+.recruiting-board-modal-body select option {
+    background: var(--oxford-blue);
+    color: var(--white);
+    padding: 0.5rem;
+}
+
+.recruiting-board-modal-footer {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+    padding: 1.25rem 1.5rem;
+    border-top: 1px solid rgba(255, 107, 53, 0.2);
+}
+
+.recruiting-board-modal-footer .btn-cancel {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--white);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: 'Inter', sans-serif;
+}
+
+.recruiting-board-modal-footer .btn-cancel:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.recruiting-board-modal-footer .btn-submit {
+    background: var(--accent-orange);
+    color: var(--white);
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: 'Inter', sans-serif;
+}
+
+.recruiting-board-modal-footer .btn-submit:hover {
+    background: #e55a2b;
+    transform: translateY(-1px);
+}
+
+.recruiting-board-modal-footer .btn-submit:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Remove from Recruiting Board Button - Red */
+.btn-recruiting-board.remove-mode {
+    background: #ef4444;
+}
+
+.btn-recruiting-board.remove-mode:hover {
+    background: #dc2626;
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+/* Remove Modal Styles */
+.recruiting-board-modal.remove-modal .recruiting-board-modal-content {
+    border-color: rgba(239, 68, 68, 0.3);
+}
+
+.recruiting-board-modal.remove-modal .recruiting-board-modal-header {
+    border-bottom-color: rgba(239, 68, 68, 0.2);
+}
+
+.recruiting-board-modal.remove-modal .recruiting-board-modal-header.remove-header {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    position: relative;
+    padding-top: 1.5rem;
+}
+
+.recruiting-board-modal.remove-modal .remove-modal-icon {
+    width: 60px;
+    height: 60px;
+    margin-bottom: 1rem;
+    background: rgba(239, 68, 68, 0.15);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.recruiting-board-modal.remove-modal .remove-modal-icon svg {
+    width: 32px;
+    height: 32px;
+    color: #ef4444;
+}
+
+.recruiting-board-modal.remove-modal .recruiting-board-modal-header h3 {
+    color: var(--white);
+}
+
+.recruiting-board-modal.remove-modal .recruiting-board-modal-header .modal-close-btn {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+}
+
+.recruiting-board-modal.remove-modal .recruiting-board-modal-body {
+    text-align: center;
+}
+
+.recruiting-board-modal.remove-modal .remove-confirm-text {
+    color: rgba(254, 252, 251, 0.8);
+    font-size: 0.95rem;
+    line-height: 1.6;
+    margin: 0 0 0.5rem;
+}
+
+.recruiting-board-modal.remove-modal .remove-confirm-text strong {
+    color: var(--white);
+    font-weight: 600;
+}
+
+.recruiting-board-modal.remove-modal .remove-board-info {
+    color: rgba(254, 252, 251, 0.5);
+    font-size: 0.85rem;
+    margin: 0;
+}
+
+.recruiting-board-modal.remove-modal .recruiting-board-modal-footer {
+    border-top-color: rgba(239, 68, 68, 0.2);
+    justify-content: center;
+}
+
+.recruiting-board-modal.remove-modal .btn-remove {
+    background: #ef4444;
+}
+
+.recruiting-board-modal.remove-modal .btn-remove:hover {
+    background: #dc2626;
 }

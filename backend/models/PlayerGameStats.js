@@ -111,6 +111,7 @@ class PlayerGameStats {
       const playerUserId = profileResult.rows[0].user_id;
 
       // Insert the game record
+      // season_year: 0 = career stats, -1 = last season stats, positive = actual year
       const gameResult = await client.query(
         `INSERT INTO player_games (player_id, game_date, season_year, opponent, result)
          VALUES ($1, $2, $3, $4, $5)
@@ -118,7 +119,7 @@ class PlayerGameStats {
         [
           playerId,
           gameData.game_date,
-          gameData.season_year || new Date(gameData.game_date).getFullYear(),
+          gameData.season_year !== undefined && gameData.season_year !== null ? gameData.season_year : new Date(gameData.game_date).getFullYear(),
           gameData.opponent || null,
           gameData.result || null
         ]
@@ -178,13 +179,14 @@ class PlayerGameStats {
       const playerUserId = verifyResult.rows[0].user_id;
 
       // Update the game record
+      // season_year: 0 = career stats, -1 = last season stats, positive = actual year
       await client.query(
         `UPDATE player_games
          SET game_date = $1, season_year = $2, opponent = $3, result = $4, updated_at = CURRENT_TIMESTAMP
          WHERE id = $5`,
         [
           gameData.game_date,
-          gameData.season_year || new Date(gameData.game_date).getFullYear(),
+          gameData.season_year !== undefined && gameData.season_year !== null ? gameData.season_year : new Date(gameData.game_date).getFullYear(),
           gameData.opponent || null,
           gameData.result || null,
           gameId

@@ -8,6 +8,9 @@ let isCollegeCoach = false;
 let currentProfileType = 'player'; // Track whether viewing a player or coach profile
 let loggedInUserFolder = null; // Track the logged-in user's folder for navigation
 let editSelectedPositions = []; // Track selected positions in edit modal
+let viewedProfileType = null; // Track the type of profile being viewed ('player' or 'coach')
+let isViewedProfileHSPlayer = false; // Track if viewed profile is an HS player
+let isViewedProfileTransferPlayer = false; // Track if viewed profile is a transfer player
 
 // Format phone number as (XXX) XXX-XXXX
 function formatPhoneNumber(phone) {
@@ -184,6 +187,7 @@ function updateNavbarForLoggedInUser(user, profile) {
     let discoverActive = '';
     let profileActive = '';
     let messagesActive = '';
+    let transferPortalActive = '';
 
     if (!hasUsername) {
         // Viewing own profile
@@ -196,6 +200,8 @@ function updateNavbarForLoggedInUser(user, profile) {
         profileActive = 'active';
     } else if (fromPage === 'feed') {
         feedActive = 'active';
+    } else if (fromPage === 'transfer-portal') {
+        transferPortalActive = 'active';
     } else {
         // Default to feed for viewing someone else's profile
         feedActive = 'active';
@@ -244,7 +250,7 @@ function updateNavbarForLoggedInUser(user, profile) {
                     <span>Notifications</span>
                 </a>
                 ${isCollege ? `
-                <a href="/frontend/${userFolder}/tabs/transfer-portal.html" class="nav-item${isTransferPlayer ? ' nav-item-portal' : ''}" id="transferPortalNav">
+                <a href="/frontend/${userFolder}/tabs/transfer-portal.html" class="nav-item${isTransferPlayer ? ' nav-item-portal' : ''}${transferPortalActive ? ' active' : ''}" id="transferPortalNav">
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <circle cx="12" cy="12" r="10"></circle>
                         <path d="M8 12h8"></path>
@@ -310,7 +316,7 @@ function updateNavbarForLoggedInUser(user, profile) {
                     </svg>
                     <span>Recruiting Board</span>
                 </a>
-                <a href="/frontend/${userFolder}/tabs/transfer-portal.html" class="nav-item" id="transferPortalNav">
+                <a href="/frontend/${userFolder}/tabs/transfer-portal.html" class="nav-item${transferPortalActive ? ' active' : ''}" id="transferPortalNav">
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <circle cx="12" cy="12" r="10"></circle>
                         <path d="M8 12h8"></path>
@@ -332,6 +338,76 @@ function updateNavbarForLoggedInUser(user, profile) {
 
         sidebarNav.innerHTML = navHTML;
 
+        // Inject a style tag to override the page CSS
+        // Use theme colors based on logged-in user's folder, not the page being viewed
+        let navActiveColor, navActiveBg, navHoverBg;
+
+        if (userFolder === 'transferplayer') {
+            // Transfer players use red theme
+            navActiveColor = '#b91c1c';
+            navActiveBg = 'rgba(185, 28, 28, 0.2)';
+            navHoverBg = 'rgba(185, 28, 28, 0.1)';
+        } else if (userFolder === 'collegecoach' || userFolder === 'hscoach') {
+            // Coaches use blue/cerulean theme
+            navActiveColor = '#1282a2';
+            navActiveBg = 'rgba(18, 130, 162, 0.2)';
+            navHoverBg = 'rgba(18, 130, 162, 0.1)';
+        } else {
+            // Other players use blue/cerulean theme
+            navActiveColor = '#1282a2';
+            navActiveBg = 'rgba(18, 130, 162, 0.2)';
+            navHoverBg = 'rgba(18, 130, 162, 0.1)';
+        }
+
+        // Remove any existing nav override style
+        const existingStyle = document.getElementById('nav-theme-override');
+        if (existingStyle) {
+            existingStyle.remove();
+        }
+
+        // Create new style tag with proper theme colors - use very high specificity
+        const styleTag = document.createElement('style');
+        styleTag.id = 'nav-theme-override';
+        styleTag.textContent = `
+            /* Reset all nav items to default state - white text */
+            .sidebar .sidebar-nav .nav-item,
+            .sidebar .sidebar-nav a.nav-item {
+                background: transparent !important;
+                color: var(--white, #ffffff) !important;
+            }
+            .sidebar .sidebar-nav .nav-item .nav-icon,
+            .sidebar .sidebar-nav a.nav-item .nav-icon {
+                color: var(--white, #ffffff) !important;
+            }
+            /* Transfer Portal nav item - always red text only for transfer players */
+            ${userFolder === 'transferplayer' ? `
+            .sidebar .sidebar-nav .nav-item.nav-item-portal,
+            .sidebar .sidebar-nav a.nav-item.nav-item-portal {
+                color: #b91c1c !important;
+            }
+            .sidebar .sidebar-nav .nav-item.nav-item-portal .nav-icon,
+            .sidebar .sidebar-nav a.nav-item.nav-item-portal .nav-icon {
+                color: #b91c1c !important;
+            }
+            ` : ''}
+            /* Hover state */
+            .sidebar .sidebar-nav .nav-item:hover,
+            .sidebar .sidebar-nav a.nav-item:hover {
+                background: ${navHoverBg} !important;
+            }
+            /* Active state - based on logged-in user's theme */
+            .sidebar .sidebar-nav .nav-item.active,
+            .sidebar .sidebar-nav a.nav-item.active {
+                background: ${navActiveBg} !important;
+                color: ${navActiveColor} !important;
+            }
+            .sidebar .sidebar-nav .nav-item.active .nav-icon,
+            .sidebar .sidebar-nav a.nav-item.active .nav-icon {
+                color: ${navActiveColor} !important;
+            }
+        `;
+        document.head.appendChild(styleTag);
+
         // Update unread messages badge after navbar is rebuilt
         if (typeof updateUnreadMessagesBadge === 'function') {
             updateUnreadMessagesBadge();
@@ -342,7 +418,7 @@ function updateNavbarForLoggedInUser(user, profile) {
     // Apply inline styles to ensure consistent appearance regardless of which page's CSS is loaded
     if (profile) {
         // Define color based on logged-in user's role (players = cerulean/blue, coaches = orange)
-        const userRoleColor = role === 'player' ? '#1282a2' : '#e07a5f';
+        const userRoleColor = role === 'player' ? '#1282a2' : '#ff6b35';
 
         // Update name
         const userName = document.querySelector('.sidebar-footer .user-name');
@@ -649,6 +725,18 @@ function displayProfile(profile, type) {
     console.log('displayProfile called with type:', type);
     // Store the profile type globally
     currentProfileType = type;
+    viewedProfileType = type;
+
+    // Determine if viewed profile is HS player or transfer player
+    if (type === 'player') {
+        // HS player: no college_division or empty college_division
+        isViewedProfileHSPlayer = !profile.college_division || profile.college_division.trim() === '';
+        // Transfer player: has transfer === 'y'
+        isViewedProfileTransferPlayer = profile.transfer === 'y';
+    } else {
+        isViewedProfileHSPlayer = false;
+        isViewedProfileTransferPlayer = false;
+    }
 
     // Update profile name
     const nameElement = document.querySelector('.profile-name');
@@ -712,6 +800,8 @@ function displayProfile(profile, type) {
     // Load offers from database (for player profiles)
     if (type === 'player') {
         loadOffers();
+        // Note: Career stats are loaded via loadCareerStats() in DOMContentLoaded
+        // which calls displayCareerStatsTable() and displayOverviewCareerStats()
     }
 
     // Load follower/following counts from database
@@ -1046,7 +1136,11 @@ function updateProfileActions() {
         }
     } else {
         // Show back button, follow and message buttons
-        actionsContainer.innerHTML = `
+        // Check if we should show the "Add to Recruiting Board" button
+        // Only show for college coaches viewing HS players or transfer players
+        const showRecruitingBoardBtn = isCollegeCoach && (isViewedProfileHSPlayer || isViewedProfileTransferPlayer);
+
+        let buttonsHTML = `
             <button class="btn-back" id="backBtn">
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M19 12H5M12 19l-7-7 7-7"></path>
@@ -1056,6 +1150,22 @@ function updateProfileActions() {
             <button class="btn-follow" id="followBtn">Follow</button>
             <button class="btn-message" id="messageBtn">Message</button>
         `;
+
+        // Add recruiting board button if applicable
+        if (showRecruitingBoardBtn) {
+            buttonsHTML += `
+            <button class="btn-recruiting-board" id="recruitingBoardBtn">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="12" y1="8" x2="12" y2="16"></line>
+                    <line x1="8" y1="12" x2="16" y2="12"></line>
+                </svg>
+                Add to Recruiting Board
+            </button>
+            `;
+        }
+
+        actionsContainer.innerHTML = buttonsHTML;
 
         // Setup back button
         const backBtn = document.getElementById('backBtn');
@@ -1070,6 +1180,11 @@ function updateProfileActions() {
 
         // Setup message button
         setupMessageButton();
+
+        // Setup recruiting board button if applicable
+        if (showRecruitingBoardBtn) {
+            setupRecruitingBoardButton();
+        }
     }
 }
 
@@ -1082,6 +1197,301 @@ function setupMessageButton() {
         const folder = loggedInUserFolder || 'transferplayer';
         window.location.href = `/frontend/${folder}/tabs/messages.html?userId=${viewingUserId}`;
     });
+}
+
+// Track recruiting board status for the current player
+let playerRecruitingBoardStatus = null;
+
+async function setupRecruitingBoardButton() {
+    const recruitingBoardBtn = document.getElementById('recruitingBoardBtn');
+    if (!recruitingBoardBtn || !viewingUserId || !currentProfile) return;
+
+    // Check if player is already on the recruiting board
+    try {
+        const response = await API.get(`/recruiting-board/check/${viewingUserId}`);
+        playerRecruitingBoardStatus = response;
+
+        if (response.isOnBoard) {
+            // Player is on the board - show remove button
+            recruitingBoardBtn.classList.add('remove-mode');
+            recruitingBoardBtn.innerHTML = `
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="15" y1="9" x2="9" y2="15"></line>
+                    <line x1="9" y1="9" x2="15" y2="15"></line>
+                </svg>
+                Remove from Recruiting Board
+            `;
+
+            // Setup remove modal functionality
+            setupRemoveFromBoardButton(response.entries);
+            return;
+        }
+    } catch (error) {
+        console.error('Error checking recruiting board status:', error);
+        // Continue with add functionality if check fails
+    }
+
+    // Setup add to board functionality (default)
+    setupAddToBoardButton();
+}
+
+function setupAddToBoardButton() {
+    const recruitingBoardBtn = document.getElementById('recruitingBoardBtn');
+    if (!recruitingBoardBtn) return;
+
+    const modal = document.getElementById('recruitingBoardModal');
+    const overlay = document.getElementById('recruitingBoardModalOverlay');
+    const closeBtn = document.getElementById('recruitingBoardModalClose');
+    const cancelBtn = document.getElementById('recruitingBoardCancelBtn');
+    const submitBtn = document.getElementById('recruitingBoardSubmitBtn');
+    const classYearSelect = document.getElementById('recruitingClassYear');
+    const positionSelect = document.getElementById('recruitingPosition');
+
+    if (!modal || !classYearSelect || !positionSelect) return;
+
+    // Populate class year options (2026-2030)
+    classYearSelect.innerHTML = '<option value="">Select Class Year</option>';
+    const currentYear = new Date().getFullYear();
+    for (let year = currentYear + 1; year <= currentYear + 5; year++) {
+        const option = document.createElement('option');
+        option.value = year;
+        option.textContent = `Class of ${year}`;
+        classYearSelect.appendChild(option);
+    }
+
+    // Cache for shared position config
+    let positionConfig = null;
+
+    // Load positions into dropdown
+    function populatePositions(config) {
+        positionSelect.innerHTML = '<option value="">Select Position</option>';
+
+        const allPositions = [];
+
+        // Add offense positions
+        if (config.offensePositions) {
+            config.offensePositions.forEach(group => {
+                if (group.positions) {
+                    group.positions.forEach(pos => {
+                        allPositions.push(pos);
+                    });
+                }
+            });
+        }
+
+        // Add defense positions
+        if (config.defensePositions) {
+            config.defensePositions.forEach(group => {
+                if (group.positions) {
+                    group.positions.forEach(pos => {
+                        allPositions.push(pos);
+                    });
+                }
+            });
+        }
+
+        // Add unique positions to dropdown
+        const uniquePositions = [...new Set(allPositions)];
+        uniquePositions.forEach(pos => {
+            const option = document.createElement('option');
+            option.value = pos;
+            option.textContent = pos;
+            positionSelect.appendChild(option);
+        });
+
+        if (uniquePositions.length === 0) {
+            positionSelect.innerHTML = '<option value="">No positions configured</option>';
+        }
+    }
+
+    // Open modal on button click
+    recruitingBoardBtn.addEventListener('click', async () => {
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+
+        // Reset dropdowns
+        classYearSelect.value = '';
+        positionSelect.innerHTML = '<option value="">Loading positions...</option>';
+        submitBtn.disabled = true;
+
+        // Load shared position config (same for all class years)
+        try {
+            if (!positionConfig) {
+                positionConfig = await API.get('/recruiting-board/config');
+            }
+            populatePositions(positionConfig);
+        } catch (error) {
+            console.error('Error fetching position config:', error);
+            positionSelect.innerHTML = '<option value="">Error loading positions</option>';
+        }
+    });
+
+    // Close modal functions
+    function closeModal() {
+        modal.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+
+    if (overlay) overlay.addEventListener('click', closeModal);
+    if (closeBtn) closeBtn.addEventListener('click', closeModal);
+    if (cancelBtn) cancelBtn.addEventListener('click', closeModal);
+
+    // Enable submit when both class year and position are selected
+    function updateSubmitState() {
+        submitBtn.disabled = !classYearSelect.value || !positionSelect.value;
+    }
+
+    classYearSelect.addEventListener('change', updateSubmitState);
+    positionSelect.addEventListener('change', updateSubmitState);
+
+    // Submit handler
+    submitBtn.addEventListener('click', async () => {
+        const classYear = classYearSelect.value;
+        const position = positionSelect.value;
+
+        if (!classYear || !position) {
+            showToast('Please select both class year and position', 'error');
+            return;
+        }
+
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Adding...';
+
+        try {
+            // Transfer players are always 'transfer' type
+            const playerType = 'transfer';
+
+            // Build player data to send
+            const playerData = {
+                user_id: viewingUserId,
+                username: currentProfile.username,
+                first_name: currentProfile.first_name,
+                last_name: currentProfile.last_name,
+                height: currentProfile.height,
+                weight: currentProfile.weight,
+                high_school: currentProfile.high_school,
+                state: currentProfile.state,
+                college_division: currentProfile.college_division,
+                profile_image_url: currentProfile.profile_image_url,
+                player_type: playerType,
+                position: position
+            };
+
+            await API.post(`/recruiting-board/${classYear}/players`, playerData);
+
+            showToast(`${currentProfile.first_name} ${currentProfile.last_name} added to ${classYear} recruiting board!`, 'success');
+            closeModal();
+
+            // Update button to show remove mode now
+            const recruitingBoardBtn = document.getElementById('recruitingBoardBtn');
+            if (recruitingBoardBtn) {
+                recruitingBoardBtn.classList.add('remove-mode');
+                recruitingBoardBtn.innerHTML = `
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="15" y1="9" x2="9" y2="15"></line>
+                        <line x1="9" y1="9" x2="15" y2="15"></line>
+                    </svg>
+                    Remove from Recruiting Board
+                `;
+                // Re-setup for remove functionality
+                setupRemoveFromBoardButton([{ class_year: classYear, position: position }]);
+            }
+        } catch (error) {
+            console.error('Error adding player to board:', error);
+            showToast(error.message || 'Failed to add player to board', 'error');
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Add to Board';
+        }
+    });
+}
+
+function setupRemoveFromBoardButton(boardEntries) {
+    const recruitingBoardBtn = document.getElementById('recruitingBoardBtn');
+    if (!recruitingBoardBtn || !viewingUserId || !currentProfile) return;
+
+    const modal = document.getElementById('removeRecruitingBoardModal');
+    const overlay = document.getElementById('removeRecruitingBoardModalOverlay');
+    const closeBtn = document.getElementById('removeRecruitingBoardModalClose');
+    const cancelBtn = document.getElementById('removeRecruitingBoardCancelBtn');
+    const submitBtn = document.getElementById('removeRecruitingBoardSubmitBtn');
+    const confirmText = document.getElementById('removeConfirmText');
+    const boardInfo = document.getElementById('removeBoardInfo');
+
+    if (!modal) return;
+
+    // Remove old click listener and add new one
+    const newBtn = recruitingBoardBtn.cloneNode(true);
+    recruitingBoardBtn.parentNode.replaceChild(newBtn, recruitingBoardBtn);
+
+    // Open remove modal on button click
+    newBtn.addEventListener('click', () => {
+        const playerName = `${currentProfile.first_name} ${currentProfile.last_name}`;
+        confirmText.innerHTML = `Are you sure you want to remove <strong>${playerName}</strong> from the recruiting board?`;
+
+        // Show which boards they're on
+        if (boardEntries && boardEntries.length > 0) {
+            const boardList = boardEntries.map(e => `Class of ${e.class_year} (${e.position})`).join(', ');
+            boardInfo.textContent = `Currently on: ${boardList}`;
+        } else {
+            boardInfo.textContent = '';
+        }
+
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    });
+
+    // Close modal functions
+    function closeModal() {
+        modal.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+
+    if (overlay) overlay.addEventListener('click', closeModal);
+    if (closeBtn) closeBtn.addEventListener('click', closeModal);
+    if (cancelBtn) cancelBtn.addEventListener('click', closeModal);
+
+    // Submit handler - remove from all boards
+    if (submitBtn) {
+        submitBtn.addEventListener('click', async () => {
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Removing...';
+
+            try {
+                // Remove from all boards where this player exists
+                for (const entry of boardEntries) {
+                    await API.delete(`/recruiting-board/${entry.class_year}/players/${viewingUserId}?position=${entry.position}`);
+                }
+
+                showToast(`${currentProfile.first_name} ${currentProfile.last_name} removed from recruiting board!`, 'success');
+                closeModal();
+
+                // Update button back to add mode
+                const currentBtn = document.getElementById('recruitingBoardBtn');
+                if (currentBtn) {
+                    currentBtn.classList.remove('remove-mode');
+                    currentBtn.innerHTML = `
+                        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="12" y1="8" x2="12" y2="16"></line>
+                            <line x1="8" y1="12" x2="16" y2="12"></line>
+                        </svg>
+                        Add to Recruiting Board
+                    `;
+                    // Re-setup for add functionality
+                    setupAddToBoardButton();
+                }
+            } catch (error) {
+                console.error('Error removing player from board:', error);
+                showToast(error.message || 'Failed to remove player from board', 'error');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Remove';
+            }
+        });
+    }
 }
 
 async function setupFollowButton() {
@@ -1127,44 +1537,47 @@ function updateActiveNavItem() {
     const profileNavItem = document.getElementById('profileNavItem');
     const messagesNavItem = document.getElementById('messagesNavItem');
     const discoverNavItem = document.querySelector('.nav-item[href*="discover"]');
-    const portalNavItem = document.querySelector('.nav-item-portal');
+    const transferPortalNavItem = document.getElementById('transferPortalNav');
+    const recruitingBoardNavItem = document.getElementById('recruitingBoardNav');
 
     // Check if we came from another page
     const urlParams = new URLSearchParams(window.location.search);
     const fromPage = urlParams.get('from');
     const hasUsername = urlParams.get('username');
 
-    if (feedNavItem && profileNavItem) {
-        // Remove active from all first
-        feedNavItem.classList.remove('active');
-        profileNavItem.classList.remove('active');
-        if (messagesNavItem) messagesNavItem.classList.remove('active');
-        if (discoverNavItem) discoverNavItem.classList.remove('active');
+    // Remove active from all first
+    if (feedNavItem) feedNavItem.classList.remove('active');
+    if (profileNavItem) profileNavItem.classList.remove('active');
+    if (messagesNavItem) messagesNavItem.classList.remove('active');
+    if (discoverNavItem) discoverNavItem.classList.remove('active');
+    if (transferPortalNavItem) transferPortalNavItem.classList.remove('active');
+    if (recruitingBoardNavItem) recruitingBoardNavItem.classList.remove('active');
 
-        if (!hasUsername || isOwnProfile) {
-            // Viewing own profile - highlight My Profile
-            profileNavItem.classList.add('active');
-        } else if (fromPage === 'messages' && messagesNavItem) {
-            // Came from messages page - highlight Messages
-            messagesNavItem.classList.add('active');
-        } else if (fromPage === 'discover' && discoverNavItem) {
-            // Came from discover page - highlight Discover
-            discoverNavItem.classList.add('active');
-        } else if (fromPage === 'profile' && profileNavItem) {
-            // Came from another profile (followers/following modal) - highlight My Profile
-            profileNavItem.classList.add('active');
-        } else if (fromPage === 'feed') {
-            // Came from feed page - highlight Feed
-            feedNavItem.classList.add('active');
-        } else {
-            // Default: Viewing someone else's profile (from feed) - highlight Feed
-            feedNavItem.classList.add('active');
-        }
+    if (!hasUsername || isOwnProfile) {
+        // Viewing own profile - highlight My Profile
+        if (profileNavItem) profileNavItem.classList.add('active');
+    } else if (fromPage === 'recruiting' && recruitingBoardNavItem) {
+        // Came from recruiting board - highlight Recruiting Board
+        recruitingBoardNavItem.classList.add('active');
+    } else if (fromPage === 'messages' && messagesNavItem) {
+        // Came from messages page - highlight Messages
+        messagesNavItem.classList.add('active');
+    } else if (fromPage === 'discover' && discoverNavItem) {
+        // Came from discover page - highlight Discover
+        discoverNavItem.classList.add('active');
+    } else if (fromPage === 'profile' && profileNavItem) {
+        // Came from another profile (followers/following modal) - highlight My Profile
+        profileNavItem.classList.add('active');
+    } else if (fromPage === 'feed' && feedNavItem) {
+        // Came from feed page - highlight Feed
+        feedNavItem.classList.add('active');
+    } else if (fromPage === 'transfer-portal' && transferPortalNavItem) {
+        // Came from transfer portal page - highlight Transfer Portal
+        transferPortalNavItem.classList.add('active');
+    } else if (feedNavItem) {
+        // Default: Viewing someone else's profile (from feed) - highlight Feed
+        feedNavItem.classList.add('active');
     }
-
-    // Transfer Portal nav item text is always red via CSS (.nav-item-portal)
-    // but we only add the background highlight (active class) when on the Transfer Portal page
-    // Since we're on the my-profile page, do NOT add active class to portal nav
 }
 
 function setupUI() {
@@ -1632,8 +2045,90 @@ function populateEditForm() {
         updateEditSelectedPositions();
     }
 
+    // Populate card stats (for transfer portal player cards)
+    const lastSeasonStat1 = document.getElementById('editLastSeasonStat1');
+    const lastSeasonStat2 = document.getElementById('editLastSeasonStat2');
+    const lastSeasonStat3 = document.getElementById('editLastSeasonStat3');
+    const careerStat1 = document.getElementById('editCareerStat1');
+    const careerStat2 = document.getElementById('editCareerStat2');
+    const careerStat3 = document.getElementById('editCareerStat3');
+
+    if (lastSeasonStat1) lastSeasonStat1.value = currentProfile.lastseasonstat1 || '';
+    if (lastSeasonStat2) lastSeasonStat2.value = currentProfile.lastseasonstat2 || '';
+    if (lastSeasonStat3) lastSeasonStat3.value = currentProfile.lastseasonstat3 || '';
+    if (careerStat1) careerStat1.value = currentProfile.careerstat1 || '';
+    if (careerStat2) careerStat2.value = currentProfile.careerstat2 || '';
+    if (careerStat3) careerStat3.value = currentProfile.careerstat3 || '';
+
+    // Update stat labels based on position
+    updateCardStatLabels(currentProfile.position);
+
     // Add visual indicator for empty fields
     markEmptyFields();
+}
+
+// Get stat labels based on position (for transfer portal player cards)
+function getStatLabelsForPosition(position) {
+    if (!position) return ['Stat 1', 'Stat 2', 'Stat 3'];
+    const pos = position.toUpperCase();
+
+    if (pos.includes('QB')) {
+        return ['Total Yards', 'Total TDs', 'INT'];
+    } else if (pos.includes('RB') || pos.includes('FB')) {
+        return ['Rush Yards', 'Rush TDs', 'YPC'];
+    } else if (pos.includes('WR') || pos.includes('TE')) {
+        return ['Rec Yards', 'Rec TDs', 'Receptions'];
+    } else if (pos.includes('OL') || pos.includes('OT') || pos.includes('OG') || pos.includes('C')) {
+        return ['Pancakes', 'Sacks Allowed', 'Penalties'];
+    } else if (pos.includes('DL') || pos.includes('DE') || pos.includes('DT') || pos.includes('NT')) {
+        return ['Tackles', 'Sacks', 'TFL'];
+    } else if (pos.includes('LB') || pos.includes('ILB') || pos.includes('OLB') || pos.includes('MLB')) {
+        return ['Tackles', 'Sacks', 'TFL'];
+    } else if (pos.includes('CB') || pos.includes('S') || pos.includes('DB') || pos.includes('FS') || pos.includes('SS')) {
+        return ['Tackles', 'INT', 'PBU'];
+    } else if (pos.includes('K') || pos.includes('P')) {
+        return ['FG Made', 'FG %', 'Long'];
+    } else if (pos.includes('LS')) {
+        return ['Snaps', 'Bad Snaps', 'Blocks'];
+    } else if (pos.includes('ATH')) {
+        return ['Total Yards', 'Total TDs', 'Tackles'];
+    }
+
+    return ['Stat 1', 'Stat 2', 'Stat 3'];
+}
+
+// Update card stat labels based on position
+function updateCardStatLabels(position) {
+    const labels = getStatLabelsForPosition(position);
+    const noPositionWarning = document.getElementById('cardStatsNoPosition');
+    const cardStatsHint = document.getElementById('cardStatsHint');
+
+    // Show/hide position warning message
+    if (!position) {
+        if (noPositionWarning) noPositionWarning.style.display = 'block';
+        if (cardStatsHint) cardStatsHint.style.display = 'none';
+    } else {
+        if (noPositionWarning) noPositionWarning.style.display = 'none';
+        if (cardStatsHint) cardStatsHint.style.display = 'block';
+    }
+
+    // Update last season stat labels
+    const labelLastSeason1 = document.getElementById('labelLastSeasonStat1');
+    const labelLastSeason2 = document.getElementById('labelLastSeasonStat2');
+    const labelLastSeason3 = document.getElementById('labelLastSeasonStat3');
+
+    if (labelLastSeason1) labelLastSeason1.textContent = labels[0];
+    if (labelLastSeason2) labelLastSeason2.textContent = labels[1];
+    if (labelLastSeason3) labelLastSeason3.textContent = labels[2];
+
+    // Update career stat labels
+    const labelCareer1 = document.getElementById('labelCareerStat1');
+    const labelCareer2 = document.getElementById('labelCareerStat2');
+    const labelCareer3 = document.getElementById('labelCareerStat3');
+
+    if (labelCareer1) labelCareer1.textContent = labels[0];
+    if (labelCareer2) labelCareer2.textContent = labels[1];
+    if (labelCareer3) labelCareer3.textContent = labels[2];
 }
 
 function markEmptyFields() {
@@ -1680,6 +2175,13 @@ function updateEditSelectedPositions() {
         `;
         container.appendChild(pill);
     });
+
+    // Update card stat labels based on first selected position
+    if (editSelectedPositions.length > 0) {
+        updateCardStatLabels(editSelectedPositions[0]);
+    } else {
+        updateCardStatLabels(null);
+    }
 
     // Add click handlers to remove buttons
     document.querySelectorAll('#editSelectedPositions .remove-item').forEach(btn => {
@@ -1757,6 +2259,14 @@ async function saveProfileChanges() {
             formData.state = document.getElementById('editHSState').value;
             formData.college_division = null; // Clear college division for HS players
         }
+
+        // Add card stats (for transfer portal player cards)
+        formData.lastseasonstat1 = document.getElementById('editLastSeasonStat1').value || null;
+        formData.lastseasonstat2 = document.getElementById('editLastSeasonStat2').value || null;
+        formData.lastseasonstat3 = document.getElementById('editLastSeasonStat3').value || null;
+        formData.careerstat1 = document.getElementById('editCareerStat1').value || null;
+        formData.careerstat2 = document.getElementById('editCareerStat2').value || null;
+        formData.careerstat3 = document.getElementById('editCareerStat3').value || null;
 
         // Send update request
         const response = await API.put('/profile', formData);
@@ -3115,8 +3625,9 @@ function removePositionStats(position) {
     }
 }
 
-// Initialize add stats modal when DOM is ready
-document.addEventListener('DOMContentLoaded', setupAddStatsModal);
+// Note: setupAddStatsModal is defined above but NOT used for transfer players.
+// Transfer players use setupTransferAddStatsModal (for career stats only, no game-by-game).
+// See initialization at the bottom of this file.
 
 // ============================================
 // LOAD AND DISPLAY GAME STATS
@@ -3247,7 +3758,7 @@ function displayGameStats(games, filterYear = null) {
     container.innerHTML = '';
 
     if (!games || games.length === 0) {
-        container.innerHTML = '<div class="no-stats-message">No games recorded yet. Click "Add Stats" to record your first game.</div>';
+        container.innerHTML = '<div class="no-stats-message">No games recorded yet.</div>';
         return;
     }
 
@@ -3259,7 +3770,7 @@ function displayGameStats(games, filterYear = null) {
     }
 
     if (filteredGames.length === 0) {
-        container.innerHTML = '<div class="no-stats-message">No games recorded for this season. Click "Add Stats" to record a game.</div>';
+        container.innerHTML = '<div class="no-stats-message">No games recorded for this season.</div>';
         return;
     }
 
@@ -3449,7 +3960,7 @@ function displayGameStats(games, filterYear = null) {
     }
 
     if (html === '') {
-        container.innerHTML = '<div class="no-stats-message">No games recorded yet. Click "Add Stats" to record your first game.</div>';
+        container.innerHTML = '<div class="no-stats-message">No games recorded yet.</div>';
     } else {
         container.innerHTML = html;
     }
@@ -4263,13 +4774,879 @@ function setupEditStatsModal() {
     }
 }
 
-// Initialize edit stats modal when DOM is ready
-document.addEventListener('DOMContentLoaded', setupEditStatsModal);
+// Note: The game stats edit modal (setupEditStatsModal above) is NOT used for transfer players.
+// Transfer players use the career stats edit modal defined later in this file.
+// See initialization in the "TRANSFER PLAYER CAREER STATS" section at the bottom.
 
-// Load game stats when profile is loaded
+// ============================================
+// TRANSFER PLAYER CAREER STATS (Position-specific like hsplayer)
+// ============================================
+
+// Note: POSITION_STATS is defined earlier in this file (around line 3093)
+// Note: selectedStatsPositions is defined earlier in this file (around line 2653)
+
+let careerStatsData = []; // Store career stats for transfer players
+let lastSeasonStatsData = []; // Store last season stats for transfer players
+let currentEditStatsPosition = null;
+let currentStatsType = 'career'; // 'career' or 'lastseason'
+
+// Setup Add Stats Modal for transfer player stats
+function setupTransferAddStatsModal() {
+    const addStatsModal = document.getElementById('addStatsModal');
+    const addStatsModalOverlay = document.getElementById('addStatsModalOverlay');
+    const addStatsModalClose = document.getElementById('addStatsModalClose');
+    const addStatsBtn = document.getElementById('addStatsBtn');
+    const btnAddStatsCancel = document.getElementById('btnAddStatsCancel');
+    const btnAddStatsSave = document.getElementById('btnAddStatsSave');
+    const btnSelectPosition = document.getElementById('btnSelectPosition');
+    const positionDropdown = document.getElementById('positionDropdown');
+    const statsPositionInput = document.getElementById('statsPositionInput');
+    const btnCareerStats = document.getElementById('btnCareerStats');
+    const btnLastSeasonStats = document.getElementById('btnLastSeasonStats');
+
+    if (!addStatsModal) return;
+
+    // Stats type toggle handlers
+    if (btnCareerStats) {
+        btnCareerStats.addEventListener('click', () => {
+            currentStatsType = 'career';
+            btnCareerStats.classList.add('active');
+            if (btnLastSeasonStats) btnLastSeasonStats.classList.remove('active');
+        });
+    }
+
+    if (btnLastSeasonStats) {
+        btnLastSeasonStats.addEventListener('click', () => {
+            currentStatsType = 'lastseason';
+            btnLastSeasonStats.classList.add('active');
+            if (btnCareerStats) btnCareerStats.classList.remove('active');
+        });
+    }
+
+    // Open Add Stats modal
+    if (addStatsBtn) {
+        addStatsBtn.addEventListener('click', () => {
+            resetStatsModal();
+            addStatsModal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        });
+    }
+
+    // Close modal functions
+    function closeAddStatsModal() {
+        addStatsModal.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+
+    if (addStatsModalOverlay) {
+        addStatsModalOverlay.addEventListener('click', closeAddStatsModal);
+    }
+    if (addStatsModalClose) {
+        addStatsModalClose.addEventListener('click', closeAddStatsModal);
+    }
+    if (btnAddStatsCancel) {
+        btnAddStatsCancel.addEventListener('click', closeAddStatsModal);
+    }
+
+    // Position selection toggle
+    if (btnSelectPosition) {
+        btnSelectPosition.addEventListener('click', () => {
+            positionDropdown.classList.toggle('active');
+        });
+    }
+
+    // Position option click handlers
+    document.querySelectorAll('#positionDropdown .position-option').forEach(option => {
+        option.addEventListener('click', () => {
+            const position = option.dataset.position;
+            if (!selectedStatsPositions.includes(position)) {
+                selectedStatsPositions.push(position);
+                option.classList.add('selected');
+                option.classList.add('added');
+                updatePositionInput();
+                addPositionStatsFields(position);
+            }
+            positionDropdown.classList.remove('active');
+        });
+    });
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.stats-position-selector') && positionDropdown) {
+            positionDropdown.classList.remove('active');
+        }
+    });
+
+    // Save stats handler
+    if (btnAddStatsSave) {
+        btnAddStatsSave.addEventListener('click', async () => {
+            await saveTransferStats();
+        });
+    }
+}
+
+function resetStatsModal() {
+    selectedStatsPositions = [];
+    currentStatsType = 'career'; // Reset to career stats
+
+    const statsPositionInput = document.getElementById('statsPositionInput');
+    const positionDropdown = document.getElementById('positionDropdown');
+    const btnCareerStats = document.getElementById('btnCareerStats');
+    const btnLastSeasonStats = document.getElementById('btnLastSeasonStats');
+
+    if (statsPositionInput) statsPositionInput.value = '';
+    if (positionDropdown) positionDropdown.classList.remove('active');
+
+    // Reset stats type buttons
+    if (btnCareerStats) btnCareerStats.classList.add('active');
+    if (btnLastSeasonStats) btnLastSeasonStats.classList.remove('active');
+
+    // Remove selected class from all position options
+    document.querySelectorAll('#positionDropdown .position-option').forEach(opt => {
+        opt.classList.remove('selected');
+        opt.classList.remove('added');
+    });
+
+    // Clear stats fields container
+    const container = document.getElementById('statsFieldsContainer');
+    if (container) container.innerHTML = '';
+}
+
+function updatePositionInput() {
+    const statsPositionInput = document.getElementById('statsPositionInput');
+    if (statsPositionInput) {
+        statsPositionInput.value = selectedStatsPositions.join(', ');
+    }
+}
+
+// Note: addPositionStatsFields and removePositionStats are defined earlier in this file (around lines 3114 and 3168)
+
+async function saveTransferStats() {
+    // Validate required fields
+    if (selectedStatsPositions.length === 0) {
+        showToast('Please select at least one position', 'error');
+        return;
+    }
+
+    // Collect stats for each position
+    const positions = {};
+    selectedStatsPositions.forEach(position => {
+        const stats = POSITION_STATS[position] || [];
+        const positionStats = {};
+
+        stats.forEach(stat => {
+            const fieldId = `stat_${position}_${stat.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase()}`;
+            const input = document.getElementById(fieldId);
+            // Convert stat name to snake_case for storage
+            const statKey = stat.toLowerCase().replace(/[^a-z0-9]/g, '_');
+            // Store 0 if empty, otherwise store the value
+            positionStats[statKey] = input && input.value !== '' ? (parseFloat(input.value) || 0) : 0;
+        });
+
+        // Always add position (even with all zeros)
+        positions[position] = positionStats;
+    });
+
+    // Disable save button while saving
+    const btnSave = document.getElementById('btnAddStatsSave');
+    if (btnSave) {
+        btnSave.disabled = true;
+        btnSave.textContent = 'Saving...';
+    }
+
+    // Determine season_year based on stats type
+    // 0 = career stats, -1 = last season stats
+    const seasonYear = currentStatsType === 'career' ? 0 : -1;
+    const opponentLabel = currentStatsType === 'career' ? 'Career Stats' : 'Last Season Stats';
+
+    try {
+        const response = await API.post('/stats', {
+            opponent: opponentLabel,
+            positions,
+            season_year: seasonYear
+        });
+
+        if (response.success) {
+            const message = currentStatsType === 'career'
+                ? 'Career stats saved successfully!'
+                : 'Last season stats saved successfully!';
+            showToast(message, 'success');
+
+            // Close modal
+            const addStatsModal = document.getElementById('addStatsModal');
+            if (addStatsModal) {
+                addStatsModal.classList.remove('active');
+                document.body.style.overflow = '';
+            }
+
+            // Reload stats
+            await loadTransferStats();
+        } else {
+            throw new Error(response.error || 'Failed to save stats');
+        }
+    } catch (error) {
+        console.error('Error saving stats:', error);
+        showToast('Failed to save stats. Please try again.', 'error');
+    } finally {
+        if (btnSave) {
+            btnSave.disabled = false;
+            btnSave.textContent = 'Save Stats';
+        }
+    }
+}
+
+// Load transfer player stats from API (both career and last season)
+async function loadTransferStats() {
+    try {
+        const response = await API.get('/stats/my-games');
+        if (response.games) {
+            const allGames = response.games;
+
+            // Parse position_stats for all games
+            allGames.forEach(game => {
+                if (typeof game.position_stats === 'string') {
+                    try {
+                        game.position_stats = JSON.parse(game.position_stats);
+                    } catch (e) {
+                        game.position_stats = [];
+                    }
+                }
+                if (!Array.isArray(game.position_stats)) {
+                    game.position_stats = [];
+                }
+            });
+
+            // Separate career stats (season_year = 0) from last season stats (season_year = -1)
+            careerStatsData = allGames.filter(g => g.season_year === 0);
+            lastSeasonStatsData = allGames.filter(g => g.season_year === -1);
+
+            // Display stats
+            displayTransferStatsTable(careerStatsData, lastSeasonStatsData);
+            displayOverviewTransferStats(careerStatsData, lastSeasonStatsData);
+        }
+    } catch (error) {
+        console.error('Error loading transfer stats:', error);
+    }
+}
+
+// Alias for backwards compatibility
+async function loadCareerStats() {
+    return loadTransferStats();
+}
+
+// Display transfer stats in the Stats tab (both career and last season)
+function displayTransferStatsTable(careerGames, lastSeasonGames) {
+    const container = document.getElementById('careerStatsTablesContainer');
+    if (!container) return;
+
+    // Clear container
+    container.innerHTML = '';
+
+    const hasCareerStats = careerGames && careerGames.length > 0;
+    const hasLastSeasonStats = lastSeasonGames && lastSeasonGames.length > 0;
+
+    if (!hasCareerStats && !hasLastSeasonStats) {
+        container.innerHTML = '<div class="no-stats-message">No statistics recorded yet.</div>';
+        return;
+    }
+
+    let html = '';
+
+    // Last Season Stats Section
+    if (hasLastSeasonStats) {
+        html += '<div class="stats-section-wrapper">';
+        html += '<h2>Last Season Stats</h2>';
+        html += buildStatsDisplay(lastSeasonGames, 'lastseason');
+        html += '</div>';
+    }
+
+    // Career Stats Section
+    if (hasCareerStats) {
+        html += '<div class="stats-section-wrapper">';
+        html += '<h2>Career Stats</h2>';
+        html += buildStatsDisplay(careerGames, 'career');
+        html += '</div>';
+    }
+
+    container.innerHTML = html;
+
+    // Add click handlers for editing stats
+    setupStatsClickHandlers();
+}
+
+function buildStatsDisplay(games, statsType) {
+    // Define position categories
+    const offensivePositions = ['QB', 'RB', 'FB', 'WR', 'TE', 'OT', 'OG', 'C'];
+    const defensivePositions = ['DE', 'DT', 'NT', 'ILB', 'OLB', 'CB', 'S'];
+    const specialPositions = ['K', 'P', 'LS'];
+
+    // Collect stats by category
+    const categorizedStats = {
+        offense: { positions: [], stats: {} },
+        defense: { positions: [], stats: {} },
+        special: { positions: [], stats: {} }
+    };
+
+    games.forEach(game => {
+        if (game.position_stats && Array.isArray(game.position_stats)) {
+            game.position_stats.forEach(ps => {
+                if (ps && ps.position && ps.stats) {
+                    const position = ps.position;
+                    let category = null;
+
+                    if (offensivePositions.includes(position)) category = 'offense';
+                    else if (defensivePositions.includes(position)) category = 'defense';
+                    else if (specialPositions.includes(position)) category = 'special';
+
+                    if (category) {
+                        if (!categorizedStats[category].positions.includes(position)) {
+                            categorizedStats[category].positions.push(position);
+                        }
+                        // Merge stats
+                        Object.entries(ps.stats).forEach(([key, value]) => {
+                            if (!categorizedStats[category].stats[key]) {
+                                categorizedStats[category].stats[key] = 0;
+                            }
+                            categorizedStats[category].stats[key] += parseFloat(value) || 0;
+                        });
+                    }
+                }
+            });
+        }
+    });
+
+    // Create stats display for each category
+    let html = '';
+
+    if (categorizedStats.offense.positions.length > 0) {
+        html += createCategoryStatsSection('Offensive Stats', categorizedStats.offense, games, statsType);
+    }
+
+    if (categorizedStats.defense.positions.length > 0) {
+        html += createCategoryStatsSection('Defensive Stats', categorizedStats.defense, games, statsType);
+    }
+
+    if (categorizedStats.special.positions.length > 0) {
+        html += createCategoryStatsSection('Special Teams Stats', categorizedStats.special, games, statsType);
+    }
+
+    return html;
+}
+
+// Alias for backwards compatibility
+function displayCareerStatsTable(games) {
+    displayTransferStatsTable(games, []);
+}
+
+function createCategoryStatsSection(title, categoryData, games, statsType = 'career') {
+    const positions = categoryData.positions;
+    if (positions.length === 0) return '';
+
+    let html = `
+        <div class="stats-category-section">
+            <h3 class="stats-category-title">${title}</h3>
+    `;
+
+    // For each position in this category, show the stats
+    positions.forEach(position => {
+        const stats = POSITION_STATS[position] || [];
+        if (stats.length === 0) return;
+
+        // Find the game entry for this position
+        let positionStats = {};
+        let gameId = null;
+        games.forEach(game => {
+            if (game.position_stats && Array.isArray(game.position_stats)) {
+                game.position_stats.forEach(ps => {
+                    if (ps && ps.position === position && ps.stats) {
+                        positionStats = ps.stats;
+                        gameId = game.game_id; // API returns game_id not id
+                    }
+                });
+            }
+        });
+
+        html += `
+            <div class="position-stats-display" data-position="${position}" data-game-id="${gameId}" data-stats-type="${statsType}">
+                <div class="position-stats-header-display">
+                    <h4>${position}</h4>
+                    <button type="button" class="btn-edit-position-stats" data-position="${position}" data-game-id="${gameId}" data-stats-type="${statsType}">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                        </svg>
+                    </button>
+                </div>
+                <div class="stats-values-grid">
+        `;
+
+        stats.forEach(stat => {
+            const statKey = stat.toLowerCase().replace(/[^a-z0-9]/g, '_');
+            const value = positionStats[statKey] !== undefined ? positionStats[statKey] : 0;
+            html += `
+                <div class="stat-value-item">
+                    <span class="stat-label">${stat}</span>
+                    <span class="stat-value">${value}</span>
+                </div>
+            `;
+        });
+
+        html += `
+                </div>
+            </div>
+        `;
+    });
+
+    html += '</div>';
+    return html;
+}
+
+function setupStatsClickHandlers() {
+    document.querySelectorAll('.btn-edit-position-stats').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const position = btn.dataset.position;
+            const gameId = btn.dataset.gameId;
+            const statsType = btn.dataset.statsType || 'career';
+            openEditStatsModal(position, gameId, statsType);
+        });
+    });
+}
+
+let currentEditStatsType = 'career'; // Track current stats type being edited
+
+function openEditStatsModal(position, gameId, statsType = 'career') {
+    const modal = document.getElementById('editStatsModal');
+    if (!modal) return;
+
+    currentEditStatsPosition = position;
+    currentEditStatsType = statsType;
+    document.getElementById('editStatsPosition').value = gameId;
+
+    // Populate the edit modal with existing stats
+    populateEditStatsModal(position, gameId, statsType);
+
+    modal.classList.add('active');
+    document.body.style.overflow = 'hidden';
+}
+
+function populateEditStatsModal(position, gameId, statsType = 'career') {
+    const container = document.getElementById('editStatsFieldsContainer');
+    if (!container) return;
+
+    const stats = POSITION_STATS[position] || [];
+
+    // Find existing stats for this position based on stats type
+    let existingStats = {};
+    const dataArray = statsType === 'lastseason' ? lastSeasonStatsData : careerStatsData;
+    dataArray.forEach(game => {
+        if (game.game_id == gameId && game.position_stats) {
+            game.position_stats.forEach(ps => {
+                if (ps && ps.position === position && ps.stats) {
+                    existingStats = ps.stats;
+                }
+            });
+        }
+    });
+
+    const statsTypeLabel = statsType === 'lastseason' ? 'Last Season' : 'Career';
+    let html = `
+        <div class="position-stats-section">
+            <div class="position-stats-header">
+                <h4>${position} ${statsTypeLabel} Stats</h4>
+            </div>
+    `;
+
+    if (stats.length === 0) {
+        html += '<p class="no-stats-message">No stats to track for this position.</p>';
+    } else {
+        html += '<div class="stats-fields-grid">';
+        stats.forEach(stat => {
+            const fieldId = `edit_stat_${position}_${stat.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase()}`;
+            const statKey = stat.toLowerCase().replace(/[^a-z0-9]/g, '_');
+            const value = existingStats[statKey] || '';
+            html += `
+                <div class="stat-field-group">
+                    <label for="${fieldId}">${stat}</label>
+                    <input type="number" id="${fieldId}" name="${fieldId}" min="0" step="any" placeholder="0" value="${value}">
+                </div>
+            `;
+        });
+        html += '</div>';
+    }
+
+    html += '</div>';
+    container.innerHTML = html;
+}
+
+function setupEditStatsModal() {
+    const editStatsModal = document.getElementById('editStatsModal');
+    const editStatsModalOverlay = document.getElementById('editStatsModalOverlay');
+    const editStatsModalClose = document.getElementById('editStatsModalClose');
+    const btnEditStatsCancel = document.getElementById('btnEditStatsCancel');
+    const btnEditStatsSave = document.getElementById('btnEditStatsSave');
+    const btnDeleteStats = document.getElementById('btnDeleteStats');
+
+    if (!editStatsModal) return;
+
+    function closeModal() {
+        editStatsModal.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+
+    if (editStatsModalOverlay) editStatsModalOverlay.addEventListener('click', closeModal);
+    if (editStatsModalClose) editStatsModalClose.addEventListener('click', closeModal);
+    if (btnEditStatsCancel) btnEditStatsCancel.addEventListener('click', closeModal);
+
+    if (btnEditStatsSave) {
+        btnEditStatsSave.addEventListener('click', async () => {
+            await saveEditedStats();
+        });
+    }
+
+    if (btnDeleteStats) {
+        btnDeleteStats.addEventListener('click', showDeleteStatsConfirm);
+    }
+
+    // Delete confirmation handlers
+    const deleteStatsConfirmOverlay = document.getElementById('deleteStatsConfirmOverlay');
+    const btnStatsConfirmCancel = document.getElementById('btnStatsConfirmCancel');
+    const btnStatsConfirmDelete = document.getElementById('btnStatsConfirmDelete');
+
+    if (deleteStatsConfirmOverlay) {
+        deleteStatsConfirmOverlay.addEventListener('click', hideDeleteStatsConfirm);
+    }
+    if (btnStatsConfirmCancel) {
+        btnStatsConfirmCancel.addEventListener('click', hideDeleteStatsConfirm);
+    }
+    if (btnStatsConfirmDelete) {
+        btnStatsConfirmDelete.addEventListener('click', confirmDeleteStats);
+    }
+}
+
+async function saveEditedStats() {
+    const gameId = document.getElementById('editStatsPosition').value;
+    const position = currentEditStatsPosition;
+    const statsType = currentEditStatsType;
+    const stats = POSITION_STATS[position] || [];
+
+    // Collect stats - store 0 for empty inputs
+    const positionStats = {};
+    stats.forEach(stat => {
+        const fieldId = `edit_stat_${position}_${stat.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase()}`;
+        const input = document.getElementById(fieldId);
+        const statKey = stat.toLowerCase().replace(/[^a-z0-9]/g, '_');
+        positionStats[statKey] = input && input.value !== '' ? (parseFloat(input.value) || 0) : 0;
+    });
+
+    const btnSave = document.getElementById('btnEditStatsSave');
+    if (btnSave) {
+        btnSave.disabled = true;
+        btnSave.textContent = 'Saving...';
+    }
+
+    try {
+        // Find existing game data based on stats type
+        const dataArray = statsType === 'lastseason' ? lastSeasonStatsData : careerStatsData;
+        const game = dataArray.find(g => g.game_id == gameId);
+        if (!game) throw new Error('Game not found');
+
+        // Update position stats
+        const positions = {};
+        if (game.position_stats && Array.isArray(game.position_stats)) {
+            game.position_stats.forEach(ps => {
+                if (ps && ps.position && ps.stats) {
+                    if (ps.position === position) {
+                        positions[ps.position] = positionStats;
+                    } else {
+                        positions[ps.position] = ps.stats;
+                    }
+                }
+            });
+        }
+
+        const response = await API.put(`/stats/${gameId}`, {
+            game_date: game.game_date,
+            season_year: game.season_year,
+            opponent: game.opponent,
+            result: game.result,
+            positions
+        });
+
+        if (response.success) {
+            showToast('Stats updated successfully!', 'success');
+
+            // Close modal
+            const editStatsModal = document.getElementById('editStatsModal');
+            if (editStatsModal) {
+                editStatsModal.classList.remove('active');
+                document.body.style.overflow = '';
+            }
+
+            // Reload stats
+            await loadCareerStats();
+        } else {
+            throw new Error(response.error || 'Failed to update stats');
+        }
+    } catch (error) {
+        console.error('Error updating stats:', error);
+        showToast('Failed to update stats. Please try again.', 'error');
+    } finally {
+        if (btnSave) {
+            btnSave.disabled = false;
+            btnSave.textContent = 'Save Changes';
+        }
+    }
+}
+
+function showDeleteStatsConfirm() {
+    const modal = document.getElementById('deleteStatsConfirmModal');
+    if (modal) modal.classList.add('active');
+}
+
+function hideDeleteStatsConfirm() {
+    const modal = document.getElementById('deleteStatsConfirmModal');
+    if (modal) modal.classList.remove('active');
+}
+
+async function confirmDeleteStats() {
+    const gameId = document.getElementById('editStatsPosition').value;
+
+    try {
+        const response = await API.delete(`/stats/${gameId}`);
+
+        if (response.success) {
+            showToast('Stats deleted successfully!', 'success');
+
+            hideDeleteStatsConfirm();
+
+            const editStatsModal = document.getElementById('editStatsModal');
+            if (editStatsModal) {
+                editStatsModal.classList.remove('active');
+                document.body.style.overflow = '';
+            }
+
+            await loadCareerStats();
+        } else {
+            throw new Error(response.error || 'Failed to delete stats');
+        }
+    } catch (error) {
+        console.error('Error deleting stats:', error);
+        showToast('Failed to delete stats. Please try again.', 'error');
+    }
+}
+
+// Display career stats in Overview tab (like hsplayer)
+function displayOverviewCareerStats(games) {
+    const container = document.getElementById('overviewCareerStatsContainer');
+    if (!container) return;
+
+    container.innerHTML = '';
+
+    if (!games || games.length === 0) {
+        container.innerHTML = `
+            <div class="overview-section">
+                <h2 class="section-title">Career Stats</h2>
+                <div class="info-card">
+                    <div class="no-stats-message">No career stats recorded yet.</div>
+                </div>
+            </div>
+        `;
+        return;
+    }
+
+    // Define position categories
+    const offensivePositions = ['QB', 'RB', 'FB', 'WR', 'TE', 'OT', 'OG', 'C'];
+    const defensivePositions = ['DE', 'DT', 'NT', 'ILB', 'OLB', 'CB', 'S'];
+    const specialPositions = ['K', 'P', 'LS'];
+
+    // Collect stats by position
+    const positionTotals = {};
+
+    games.forEach(game => {
+        if (game.position_stats && Array.isArray(game.position_stats)) {
+            game.position_stats.forEach(ps => {
+                if (ps && ps.position && ps.stats) {
+                    if (!positionTotals[ps.position]) {
+                        positionTotals[ps.position] = {};
+                    }
+                    Object.entries(ps.stats).forEach(([key, value]) => {
+                        if (!positionTotals[ps.position][key]) {
+                            positionTotals[ps.position][key] = 0;
+                        }
+                        positionTotals[ps.position][key] += parseFloat(value) || 0;
+                    });
+                }
+            });
+        }
+    });
+
+    if (Object.keys(positionTotals).length === 0) {
+        container.innerHTML = `
+            <div class="overview-section">
+                <h2 class="section-title">Career Stats</h2>
+                <div class="info-card">
+                    <div class="no-stats-message">No career stats recorded yet.</div>
+                </div>
+            </div>
+        `;
+        return;
+    }
+
+    let html = '<div class="overview-section"><h2 class="section-title">Career Stats</h2><div class="info-card">';
+
+    // Offensive Stats
+    const offPositions = Object.keys(positionTotals).filter(p => offensivePositions.includes(p));
+    if (offPositions.length > 0) {
+        html += '<div class="overview-stats-category"><h3 class="overview-stats-category-title">Offense</h3>';
+        offPositions.forEach(pos => {
+            html += createOverviewPositionStats(pos, positionTotals[pos]);
+        });
+        html += '</div>';
+    }
+
+    // Defensive Stats
+    const defPositions = Object.keys(positionTotals).filter(p => defensivePositions.includes(p));
+    if (defPositions.length > 0) {
+        html += '<div class="overview-stats-category"><h3 class="overview-stats-category-title">Defense</h3>';
+        defPositions.forEach(pos => {
+            html += createOverviewPositionStats(pos, positionTotals[pos]);
+        });
+        html += '</div>';
+    }
+
+    // Special Teams Stats
+    const specPositions = Object.keys(positionTotals).filter(p => specialPositions.includes(p));
+    if (specPositions.length > 0) {
+        html += '<div class="overview-stats-category"><h3 class="overview-stats-category-title">Special Teams</h3>';
+        specPositions.forEach(pos => {
+            html += createOverviewPositionStats(pos, positionTotals[pos]);
+        });
+        html += '</div>';
+    }
+
+    html += '</div></div>';
+    container.innerHTML = html;
+}
+
+function createOverviewPositionStats(position, stats) {
+    const posStats = POSITION_STATS[position] || [];
+    if (posStats.length === 0) return '';
+
+    let html = `<div style="margin-bottom: 1rem;"><h4 style="font-size: 0.85rem; color: var(--cerulean); margin: 0 0 0.5rem 0;">${position}</h4><div class="stats-horizontal">`;
+
+    posStats.forEach(stat => {
+        const statKey = stat.toLowerCase().replace(/[^a-z0-9]/g, '_');
+        const value = stats[statKey] !== undefined ? (Number.isInteger(stats[statKey]) ? stats[statKey] : stats[statKey].toFixed(1)) : '-';
+        html += `<div class="stat-box"><div class="stat-value">${value}</div><div class="stat-label">${stat}</div></div>`;
+    });
+
+    html += '</div></div>';
+    return html;
+}
+
+// Display both career and last season stats in Overview tab
+function displayOverviewTransferStats(careerGames, lastSeasonGames) {
+    const container = document.getElementById('overviewCareerStatsContainer');
+    if (!container) return;
+
+    container.innerHTML = '';
+
+    const hasCareerStats = careerGames && careerGames.length > 0;
+    const hasLastSeasonStats = lastSeasonGames && lastSeasonGames.length > 0;
+
+    if (!hasCareerStats && !hasLastSeasonStats) {
+        container.innerHTML = `
+            <div class="overview-section">
+                <h2 class="section-title">Stats</h2>
+                <div class="info-card">
+                    <div class="no-stats-message">No stats recorded yet.</div>
+                </div>
+            </div>
+        `;
+        return;
+    }
+
+    // Define position categories
+    const offensivePositions = ['QB', 'RB', 'FB', 'WR', 'TE', 'OT', 'OG', 'C'];
+    const defensivePositions = ['DE', 'DT', 'NT', 'ILB', 'OLB', 'CB', 'S'];
+    const specialPositions = ['K', 'P', 'LS'];
+
+    // Helper function to collect stats by position from games
+    function collectPositionTotals(games) {
+        const positionTotals = {};
+        games.forEach(game => {
+            if (game.position_stats && Array.isArray(game.position_stats)) {
+                game.position_stats.forEach(ps => {
+                    if (ps && ps.position && ps.stats) {
+                        if (!positionTotals[ps.position]) {
+                            positionTotals[ps.position] = {};
+                        }
+                        Object.entries(ps.stats).forEach(([key, value]) => {
+                            if (!positionTotals[ps.position][key]) {
+                                positionTotals[ps.position][key] = 0;
+                            }
+                            positionTotals[ps.position][key] += parseFloat(value) || 0;
+                        });
+                    }
+                });
+            }
+        });
+        return positionTotals;
+    }
+
+    // Helper function to build stats HTML for a category
+    function buildCategoryStatsHtml(positionTotals, categoryPositions, categoryTitle) {
+        const positions = Object.keys(positionTotals).filter(p => categoryPositions.includes(p));
+        if (positions.length === 0) return '';
+
+        let html = `<div class="overview-stats-category"><h3 class="overview-stats-category-title">${categoryTitle}</h3>`;
+        positions.forEach(pos => {
+            html += createOverviewPositionStats(pos, positionTotals[pos]);
+        });
+        html += '</div>';
+        return html;
+    }
+
+    // Build HTML
+    let html = '<div class="overview-section"><h2 class="section-title">Stats</h2><div class="info-card">';
+
+    // Last Season Stats
+    if (hasLastSeasonStats) {
+        const lastSeasonTotals = collectPositionTotals(lastSeasonGames);
+        if (Object.keys(lastSeasonTotals).length > 0) {
+            html += '<div class="overview-stats-wrapper"><h3 class="overview-stats-section-title">Last Season</h3>';
+            html += buildCategoryStatsHtml(lastSeasonTotals, offensivePositions, 'Offense');
+            html += buildCategoryStatsHtml(lastSeasonTotals, defensivePositions, 'Defense');
+            html += buildCategoryStatsHtml(lastSeasonTotals, specialPositions, 'Special Teams');
+            html += '</div>';
+        }
+    }
+
+    // Career Stats
+    if (hasCareerStats) {
+        const careerTotals = collectPositionTotals(careerGames);
+        if (Object.keys(careerTotals).length > 0) {
+            html += '<div class="overview-stats-wrapper"><h3 class="overview-stats-section-title">Career</h3>';
+            html += buildCategoryStatsHtml(careerTotals, offensivePositions, 'Offense');
+            html += buildCategoryStatsHtml(careerTotals, defensivePositions, 'Defense');
+            html += buildCategoryStatsHtml(careerTotals, specialPositions, 'Special Teams');
+            html += '</div>';
+        }
+    }
+
+    html += '</div></div>';
+    container.innerHTML = html;
+}
+
+// Initialize transfer stats system when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
-    // Delay slightly to ensure API is available
-    setTimeout(loadGameStats, 500);
+    setupTransferAddStatsModal();
+    setupEditStatsModal();
+
+    // Load career stats after a delay to ensure API is ready
+    setTimeout(() => {
+        loadCareerStats();
+    }, 600);
 });
 
 // ============================================
