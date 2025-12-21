@@ -248,6 +248,7 @@ function updateNavbarForLoggedInUser(user, profile) {
                         <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
                     </svg>
                     <span>Notifications</span>
+                    <span class="notification-badge" style="display: none;"></span>
                 </a>
                 ${isCollege ? `
                 <a href="/frontend/${userFolder}/tabs/transfer-portal.html" class="nav-item${isTransferPlayer ? ' nav-item-portal' : ''}" id="transferPortalNav">
@@ -304,6 +305,7 @@ function updateNavbarForLoggedInUser(user, profile) {
                         <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
                     </svg>
                     <span>Notifications</span>
+                    <span class="notification-badge" style="display: none;"></span>
                 </a>
                 ${isCollege ? `
                 <a href="/frontend/${userFolder}/tabs/recruiting-board.html" class="nav-item" id="recruitingBoardNav">
@@ -338,9 +340,83 @@ function updateNavbarForLoggedInUser(user, profile) {
 
         sidebarNav.innerHTML = navHTML;
 
+        // Inject a style tag to override the page CSS
+        // Use theme colors based on logged-in user's folder, not the page being viewed
+        let navActiveColor, navActiveBg, navHoverBg;
+
+        if (userFolder === 'transferplayer') {
+            // Transfer players use red theme
+            navActiveColor = '#b91c1c';
+            navActiveBg = 'rgba(185, 28, 28, 0.2)';
+            navHoverBg = 'rgba(185, 28, 28, 0.1)';
+        } else if (userFolder === 'collegecoach' || userFolder === 'hscoach') {
+            // Coaches use blue/cerulean theme
+            navActiveColor = '#1282a2';
+            navActiveBg = 'rgba(18, 130, 162, 0.2)';
+            navHoverBg = 'rgba(18, 130, 162, 0.1)';
+        } else {
+            // Other players use blue/cerulean theme
+            navActiveColor = '#1282a2';
+            navActiveBg = 'rgba(18, 130, 162, 0.2)';
+            navHoverBg = 'rgba(18, 130, 162, 0.1)';
+        }
+
+        // Remove any existing nav override style
+        const existingStyle = document.getElementById('nav-theme-override');
+        if (existingStyle) {
+            existingStyle.remove();
+        }
+
+        // Create new style tag with proper theme colors - use very high specificity
+        const styleTag = document.createElement('style');
+        styleTag.id = 'nav-theme-override';
+        styleTag.textContent = `
+            /* Reset all nav items to default state - white text */
+            .sidebar .sidebar-nav .nav-item,
+            .sidebar .sidebar-nav a.nav-item {
+                color: var(--white, #ffffff) !important;
+            }
+            .sidebar .sidebar-nav .nav-item .nav-icon,
+            .sidebar .sidebar-nav a.nav-item .nav-icon {
+                color: var(--white, #ffffff) !important;
+            }
+            /* Transfer Portal nav item - always red text only for transfer players */
+            ${userFolder === 'transferplayer' ? `
+            .sidebar .sidebar-nav .nav-item.nav-item-portal,
+            .sidebar .sidebar-nav a.nav-item.nav-item-portal {
+                color: #b91c1c !important;
+            }
+            .sidebar .sidebar-nav .nav-item.nav-item-portal .nav-icon,
+            .sidebar .sidebar-nav a.nav-item.nav-item-portal .nav-icon {
+                color: #b91c1c !important;
+            }
+            ` : ''}
+            /* Hover state */
+            .sidebar .sidebar-nav .nav-item:hover,
+            .sidebar .sidebar-nav a.nav-item:hover {
+                background: ${navHoverBg} !important;
+            }
+            /* Active state - based on logged-in user's theme */
+            .sidebar .sidebar-nav .nav-item.active,
+            .sidebar .sidebar-nav a.nav-item.active {
+                background: ${navActiveBg} !important;
+                color: ${navActiveColor} !important;
+                border-left: 3px solid ${navActiveColor} !important;
+            }
+            .sidebar .sidebar-nav .nav-item.active .nav-icon,
+            .sidebar .sidebar-nav a.nav-item.active .nav-icon {
+                color: ${navActiveColor} !important;
+            }
+        `;
+        document.head.appendChild(styleTag);
+
         // Update unread messages badge after navbar is rebuilt
         if (typeof updateUnreadMessagesBadge === 'function') {
             updateUnreadMessagesBadge();
+        }
+        // Update unread notifications badge after navbar is rebuilt
+        if (typeof updateUnreadNotificationsBadge === 'function') {
+            updateUnreadNotificationsBadge();
         }
     }
 
@@ -640,7 +716,7 @@ async function loadProfileByUsername(username) {
     }
 }
 
-function displayProfile(profile, type) {
+async function displayProfile(profile, type) {
     // Store the profile type globally
     currentProfileType = type;
 
@@ -648,6 +724,25 @@ function displayProfile(profile, type) {
     const nameElement = document.querySelector('.profile-name');
     if (nameElement) {
         nameElement.textContent = `${profile.first_name} ${profile.last_name}`;
+
+        // Check if this profile follows the current user and add badge
+        if (viewingUserId) {
+            try {
+                const followsMeResponse = await API.get(`/follow/${viewingUserId}/follows-me`);
+                // Remove existing badge if any
+                const existingBadge = nameElement.parentElement.querySelector('.follows-you-badge');
+                if (existingBadge) existingBadge.remove();
+
+                if (followsMeResponse.followsMe) {
+                    const badge = document.createElement('span');
+                    badge.className = 'follows-you-badge';
+                    badge.textContent = 'Follows you';
+                    nameElement.parentElement.insertBefore(badge, nameElement.nextSibling);
+                }
+            } catch (error) {
+                console.error('Error checking if user follows me:', error);
+            }
+        }
     }
 
     // NOTE: Don't update sidebar footer here - it should always show the logged-in user's info
@@ -1160,12 +1255,22 @@ async function setupFollowButton() {
     const followBtn = document.getElementById('followBtn');
     if (!followBtn || !viewingUserId) return;
 
-    // Check follow status
+    // Check follow status and if they follow us
     try {
-        const response = await API.get(`/follow/${viewingUserId}/check`);
-        const isFollowing = response.isFollowing;
+        const [followResponse, followsMeResponse] = await Promise.all([
+            API.get(`/follow/${viewingUserId}/check`),
+            API.get(`/follow/${viewingUserId}/follows-me`)
+        ]);
+        const isFollowing = followResponse.isFollowing;
+        const theyFollowMe = followsMeResponse.followsMe;
 
-        followBtn.textContent = isFollowing ? 'Following' : 'Follow';
+        // Determine button text: "Following", "Follow back", or "Follow"
+        const getButtonText = (following) => {
+            if (following) return 'Following';
+            return theyFollowMe ? 'Follow back' : 'Follow';
+        };
+
+        followBtn.textContent = getButtonText(isFollowing);
         followBtn.classList.toggle('following', isFollowing);
 
         followBtn.addEventListener('click', async () => {
@@ -1174,7 +1279,7 @@ async function setupFollowButton() {
 
                 if (currentlyFollowing) {
                     await API.delete(`/follow/${viewingUserId}`);
-                    followBtn.textContent = 'Follow';
+                    followBtn.textContent = getButtonText(false);
                     followBtn.classList.remove('following');
                 } else {
                     await API.post(`/follow/${viewingUserId}`);

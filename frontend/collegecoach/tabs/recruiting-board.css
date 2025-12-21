@@ -936,6 +936,214 @@
     background: #dc2626;
 }
 
+/* Move Modal Specific Styles */
+.recruiting-board-modal.move-modal .recruiting-board-modal-content {
+    border-color: rgba(18, 130, 162, 0.3);
+}
+
+.recruiting-board-modal.move-modal .recruiting-board-modal-header {
+    border-bottom-color: rgba(18, 130, 162, 0.2);
+}
+
+.recruiting-board-modal.move-modal .recruiting-board-modal-header.move-header {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    position: relative;
+    padding-top: 1.5rem;
+}
+
+.recruiting-board-modal.move-modal .move-modal-icon {
+    width: 60px;
+    height: 60px;
+    margin-bottom: 1rem;
+    background: rgba(18, 130, 162, 0.15);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.recruiting-board-modal.move-modal .move-modal-icon svg {
+    width: 32px;
+    height: 32px;
+    color: var(--cerulean);
+}
+
+.recruiting-board-modal.move-modal .recruiting-board-modal-header h3 {
+    color: var(--white);
+}
+
+.recruiting-board-modal.move-modal .recruiting-board-modal-header .modal-close-btn {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+}
+
+.recruiting-board-modal.move-modal .recruiting-board-modal-body {
+    text-align: left;
+}
+
+.recruiting-board-modal.move-modal .move-player-name {
+    color: rgba(254, 252, 251, 0.8);
+    font-size: 0.95rem;
+    line-height: 1.6;
+    margin: 0 0 1.25rem;
+    text-align: center;
+}
+
+.recruiting-board-modal.move-modal .move-player-name strong {
+    color: var(--white);
+    font-weight: 600;
+}
+
+.recruiting-board-modal.move-modal .form-group {
+    margin-bottom: 1rem;
+}
+
+.recruiting-board-modal.move-modal .form-group label {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: rgba(254, 252, 251, 0.8);
+    margin-bottom: 0.5rem;
+}
+
+.recruiting-board-modal.move-modal .form-group select {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background: rgba(18, 130, 162, 0.1);
+    border: 1px solid rgba(18, 130, 162, 0.3);
+    border-radius: 8px;
+    color: var(--white);
+    font-size: 0.95rem;
+    font-family: 'Inter', sans-serif;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='rgba(254,252,251,0.5)' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    background-size: 18px;
+}
+
+.recruiting-board-modal.move-modal .form-group select:hover {
+    border-color: var(--cerulean);
+}
+
+.recruiting-board-modal.move-modal .form-group select:focus {
+    outline: none;
+    border-color: var(--cerulean);
+    box-shadow: 0 0 0 3px rgba(18, 130, 162, 0.1);
+}
+
+.recruiting-board-modal.move-modal .form-group select option {
+    background: #0d1117;
+    color: #fefcfb;
+    padding: 0.5rem;
+}
+
+/* Ensure select text is visible */
+.recruiting-board-modal.move-modal .form-group select {
+    color: #fefcfb;
+}
+
+.recruiting-board-modal.move-modal .form-group select:disabled {
+    color: rgba(254, 252, 251, 0.5);
+}
+
+.recruiting-board-modal.move-modal .recruiting-board-modal-footer {
+    border-top-color: rgba(18, 130, 162, 0.2);
+    justify-content: center;
+}
+
+.recruiting-board-modal.move-modal .btn-move {
+    background: var(--cerulean);
+}
+
+.recruiting-board-modal.move-modal .btn-move:hover {
+    background: #0e9fc2;
+}
+
+.recruiting-board-modal.move-modal .btn-move:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Copy option checkbox */
+.recruiting-board-modal.move-modal .copy-option-group {
+    margin-top: 1.25rem;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(18, 130, 162, 0.2);
+}
+
+.recruiting-board-modal.move-modal .copy-checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    cursor: pointer;
+    user-select: none;
+}
+
+.recruiting-board-modal.move-modal .copy-checkbox-label input[type="checkbox"] {
+    display: none;
+}
+
+.recruiting-board-modal.move-modal .checkbox-custom {
+    width: 20px;
+    height: 20px;
+    border: 2px solid rgba(18, 130, 162, 0.5);
+    border-radius: 4px;
+    background: rgba(18, 130, 162, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.recruiting-board-modal.move-modal .copy-checkbox-label input[type="checkbox"]:checked + .checkbox-custom {
+    background: var(--cerulean);
+    border-color: var(--cerulean);
+}
+
+.recruiting-board-modal.move-modal .copy-checkbox-label input[type="checkbox"]:checked + .checkbox-custom::after {
+    content: '';
+    width: 6px;
+    height: 10px;
+    border: solid white;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+    margin-bottom: 2px;
+}
+
+.recruiting-board-modal.move-modal .checkbox-text {
+    color: rgba(254, 252, 251, 0.8);
+    font-size: 0.9rem;
+    line-height: 1.4;
+}
+
+.recruiting-board-modal.move-modal .copy-checkbox-label:hover .checkbox-custom {
+    border-color: var(--cerulean);
+}
+
+/* Copy mode styling */
+.recruiting-board-modal.move-modal.copy-mode .move-modal-icon {
+    background: rgba(34, 197, 94, 0.15);
+}
+
+.recruiting-board-modal.move-modal.copy-mode .move-modal-icon svg {
+    color: #22c55e;
+}
+
+.recruiting-board-modal.move-modal.copy-mode .btn-move {
+    background: #22c55e;
+}
+
+.recruiting-board-modal.move-modal.copy-mode .btn-move:hover {
+    background: #16a34a;
+}
+
 /* ==================== Board Instructions ==================== */
 .class-year-row {
     display: flex;
@@ -1528,6 +1736,131 @@
     cursor: not-allowed;
 }
 
+/* ==================== Create Shared Board Button ==================== */
+.btn-create-shared-board {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.6rem 1rem;
+    background: var(--accent-orange);
+    border: none;
+    border-radius: 8px;
+    color: var(--white);
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: 'Inter', sans-serif;
+}
+
+.btn-create-shared-board:hover {
+    background: #e55a2b;
+    transform: translateY(-1px);
+}
+
+.btn-create-shared-board svg {
+    width: 16px;
+    height: 16px;
+}
+
+/* ==================== Current Board Header ==================== */
+.current-board-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-left: 2rem;
+    margin-right: 2rem;
+    margin-bottom: 1rem;
+    padding: 0.75rem 1rem;
+    background: rgba(18, 130, 162, 0.1);
+    border: 1px solid rgba(18, 130, 162, 0.2);
+    border-radius: 8px;
+}
+
+.current-board-header h2 {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--white);
+    flex: 1;
+}
+
+.btn-edit-board-name,
+.btn-delete-board {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.4rem;
+    background: transparent;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-edit-board-name {
+    color: rgba(254, 252, 251, 0.5);
+}
+
+.btn-edit-board-name:hover {
+    background: rgba(18, 130, 162, 0.2);
+    color: var(--cerulean);
+}
+
+.btn-delete-board {
+    color: rgba(254, 252, 251, 0.5);
+}
+
+.btn-delete-board:hover {
+    background: rgba(239, 68, 68, 0.2);
+    color: #ef4444;
+}
+
+.btn-edit-board-name svg,
+.btn-delete-board svg {
+    width: 18px;
+    height: 18px;
+}
+
+/* ==================== Board Name Input Modal ==================== */
+.board-name-input-container {
+    margin-bottom: 0.5rem;
+}
+
+.board-name-input-container label {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: rgba(254, 252, 251, 0.8);
+    margin-bottom: 0.5rem;
+}
+
+.board-name-input {
+    width: 100%;
+    padding: 0.875rem 1rem;
+    background: rgba(18, 130, 162, 0.1);
+    border: 1px solid rgba(18, 130, 162, 0.3);
+    border-radius: 8px;
+    color: var(--white);
+    font-size: 0.95rem;
+    font-family: 'Inter', sans-serif;
+    transition: all 0.2s ease;
+}
+
+.board-name-input::placeholder {
+    color: rgba(254, 252, 251, 0.4);
+}
+
+.board-name-input:hover {
+    border-color: var(--cerulean);
+}
+
+.board-name-input:focus {
+    outline: none;
+    border-color: var(--cerulean);
+    box-shadow: 0 0 0 3px rgba(18, 130, 162, 0.1);
+}
+
 /* ==================== Board Selector Section ==================== */
 .board-selector-section {
     margin-bottom: 1rem;
@@ -1539,6 +1872,7 @@
     display: flex;
     align-items: center;
     gap: 1rem;
+    flex-wrap: wrap;
 }
 
 .board-type-dropdown {

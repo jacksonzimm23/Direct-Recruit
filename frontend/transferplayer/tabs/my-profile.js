@@ -248,6 +248,7 @@ function updateNavbarForLoggedInUser(user, profile) {
                         <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
                     </svg>
                     <span>Notifications</span>
+                    <span class="notification-badge" style="display: none;"></span>
                 </a>
                 ${isCollege ? `
                 <a href="/frontend/${userFolder}/tabs/transfer-portal.html" class="nav-item${isTransferPlayer ? ' nav-item-portal' : ''}${transferPortalActive ? ' active' : ''}" id="transferPortalNav">
@@ -304,6 +305,7 @@ function updateNavbarForLoggedInUser(user, profile) {
                         <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
                     </svg>
                     <span>Notifications</span>
+                    <span class="notification-badge" style="display: none;"></span>
                 </a>
                 ${isCollege ? `
                 <a href="/frontend/${userFolder}/tabs/recruiting-board.html" class="nav-item" id="recruitingBoardNav">
@@ -400,6 +402,7 @@ function updateNavbarForLoggedInUser(user, profile) {
             .sidebar .sidebar-nav a.nav-item.active {
                 background: ${navActiveBg} !important;
                 color: ${navActiveColor} !important;
+                border-left: 3px solid ${navActiveColor} !important;
             }
             .sidebar .sidebar-nav .nav-item.active .nav-icon,
             .sidebar .sidebar-nav a.nav-item.active .nav-icon {
@@ -411,6 +414,10 @@ function updateNavbarForLoggedInUser(user, profile) {
         // Update unread messages badge after navbar is rebuilt
         if (typeof updateUnreadMessagesBadge === 'function') {
             updateUnreadMessagesBadge();
+        }
+        // Update unread notifications badge after navbar is rebuilt
+        if (typeof updateUnreadNotificationsBadge === 'function') {
+            updateUnreadNotificationsBadge();
         }
     }
 
@@ -721,7 +728,7 @@ async function loadProfileByUsername(username) {
     }
 }
 
-function displayProfile(profile, type) {
+async function displayProfile(profile, type) {
     console.log('displayProfile called with type:', type);
     // Store the profile type globally
     currentProfileType = type;
@@ -742,6 +749,25 @@ function displayProfile(profile, type) {
     const nameElement = document.querySelector('.profile-name');
     if (nameElement) {
         nameElement.textContent = `${profile.first_name} ${profile.last_name}`;
+
+        // Check if this profile follows the current user and add badge
+        if (viewingUserId) {
+            try {
+                const followsMeResponse = await API.get(`/follow/${viewingUserId}/follows-me`);
+                // Remove existing badge if any
+                const existingBadge = nameElement.parentElement.querySelector('.follows-you-badge');
+                if (existingBadge) existingBadge.remove();
+
+                if (followsMeResponse.followsMe) {
+                    const badge = document.createElement('span');
+                    badge.className = 'follows-you-badge';
+                    badge.textContent = 'Follows you';
+                    nameElement.parentElement.insertBefore(badge, nameElement.nextSibling);
+                }
+            } catch (error) {
+                console.error('Error checking if user follows me:', error);
+            }
+        }
     }
 
     // NOTE: Don't update sidebar footer here - it should always show the logged-in user's info
@@ -885,10 +911,7 @@ function displayPlayerProfile(profile) {
             lines.push(`<span style="color: rgba(254, 252, 251, 0.7); font-weight: 600;">Years of Eligibility:</span> <span style="color: #b91c1c; font-weight: 600;">${profile.eligibility} ${yearText}</span>`);
         }
 
-        // Row 4: GPA
-        if (profile.gpa) {
-            lines.push(`<span style="color: rgba(254, 252, 251, 0.7); font-weight: 600;">GPA:</span> <span style="color: #b91c1c; font-weight: 600;">${profile.gpa}</span>`);
-        }
+        // GPA is shown in Academics section only
 
         metaElement.innerHTML = lines.join('<br>') || 'Information not provided';
     }
@@ -912,6 +935,9 @@ function displayPlayerProfile(profile) {
 
     // Update school info
     updateSchoolInfo(profile);
+
+    // Update social media section
+    updateSocialMedia(profile);
 }
 
 function displayCoachProfile(profile) {
@@ -1054,6 +1080,71 @@ function updateSchoolInfo(profile) {
             schoolClass.textContent = `Class of ${profile.graduation_year}`;
         }
     }
+}
+
+// Update the Social Media section in Overview tab
+function updateSocialMedia(profile) {
+    const socialMediaCard = document.getElementById('socialMediaCard');
+    if (!socialMediaCard) return;
+
+    // Parse socials from JSON if stored as string
+    let socials = {};
+    if (profile.socials) {
+        try {
+            socials = typeof profile.socials === 'string'
+                ? JSON.parse(profile.socials)
+                : profile.socials;
+        } catch (e) {
+            console.log('Could not parse socials:', e);
+        }
+    }
+
+    const hasHudl = socials.hudl && socials.hudl.trim();
+    const hasInstagram = socials.instagram && socials.instagram.trim();
+
+    if (!hasHudl && !hasInstagram) {
+        socialMediaCard.innerHTML = '<p class="empty-state-text">No social media links added yet.</p>';
+        return;
+    }
+
+    let html = '<div class="social-media-links">';
+
+    if (hasHudl) {
+        html += `
+            <a href="${socials.hudl}" target="_blank" rel="noopener noreferrer" class="social-link hudl-link">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="social-icon">
+                    <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                </svg>
+                <span>Hudl Profile</span>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="external-icon">
+                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                    <polyline points="15 3 21 3 21 9"></polyline>
+                    <line x1="10" y1="14" x2="21" y2="3"></line>
+                </svg>
+            </a>
+        `;
+    }
+
+    if (hasInstagram) {
+        html += `
+            <a href="${socials.instagram}" target="_blank" rel="noopener noreferrer" class="social-link instagram-link">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="social-icon">
+                    <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+                    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+                    <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+                </svg>
+                <span>Instagram</span>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="external-icon">
+                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                    <polyline points="15 3 21 3 21 9"></polyline>
+                    <line x1="10" y1="14" x2="21" y2="3"></line>
+                </svg>
+            </a>
+        `;
+    }
+
+    html += '</div>';
+    socialMediaCard.innerHTML = html;
 }
 
 function updateProfileActions() {
@@ -1245,23 +1336,27 @@ function setupAddToBoardButton() {
     const closeBtn = document.getElementById('recruitingBoardModalClose');
     const cancelBtn = document.getElementById('recruitingBoardCancelBtn');
     const submitBtn = document.getElementById('recruitingBoardSubmitBtn');
+    const boardSelect = document.getElementById('recruitingBoardSelect');
     const classYearSelect = document.getElementById('recruitingClassYear');
     const positionSelect = document.getElementById('recruitingPosition');
 
-    if (!modal || !classYearSelect || !positionSelect) return;
+    if (!modal || !boardSelect || !classYearSelect || !positionSelect) return;
+
+    // Cache for boards and position configs
+    let availableBoards = [];
+    let positionConfigs = {}; // Cache configs by board ID
 
     // Populate class year options (2026-2030)
-    classYearSelect.innerHTML = '<option value="">Select Class Year</option>';
-    const currentYear = new Date().getFullYear();
-    for (let year = currentYear + 1; year <= currentYear + 5; year++) {
-        const option = document.createElement('option');
-        option.value = year;
-        option.textContent = `Class of ${year}`;
-        classYearSelect.appendChild(option);
+    function populateClassYears() {
+        classYearSelect.innerHTML = '<option value="">Select Class Year</option>';
+        const currentYear = new Date().getFullYear();
+        for (let year = currentYear + 1; year <= currentYear + 5; year++) {
+            const option = document.createElement('option');
+            option.value = year;
+            option.textContent = `Class of ${year}`;
+            classYearSelect.appendChild(option);
+        }
     }
-
-    // Cache for shared position config
-    let positionConfig = null;
 
     // Load positions into dropdown
     function populatePositions(config) {
@@ -1305,26 +1400,123 @@ function setupAddToBoardButton() {
         }
     }
 
+    // Load available boards
+    async function loadBoards() {
+        boardSelect.innerHTML = '<option value="">Loading boards...</option>';
+        classYearSelect.innerHTML = '<option value="">Select a board first</option>';
+        positionSelect.innerHTML = '<option value="">Select a board first</option>';
+
+        try {
+            // Get personal board config
+            const personalConfig = await API.get('/recruiting-board/personal/config');
+
+            // Get shared boards
+            const sharedResponse = await API.get('/recruiting-board/shared');
+
+            availableBoards = [];
+
+            // Add personal board
+            availableBoards.push({
+                id: 'personal',
+                name: 'Personal Board',
+                type: 'personal',
+                config: personalConfig
+            });
+
+            // Add owned shared boards
+            if (sharedResponse.ownedBoards) {
+                sharedResponse.ownedBoards.forEach(board => {
+                    availableBoards.push({
+                        id: board.id,
+                        name: board.board_name,
+                        type: 'shared',
+                        config: null // Will load on selection
+                    });
+                });
+            }
+
+            // Add collaborator boards
+            if (sharedResponse.collaboratorBoards) {
+                sharedResponse.collaboratorBoards.forEach(board => {
+                    availableBoards.push({
+                        id: board.id,
+                        name: `${board.board_name} (${board.owner_first_name} ${board.owner_last_name})`,
+                        type: 'shared',
+                        config: null
+                    });
+                });
+            }
+
+            // Populate board dropdown
+            boardSelect.innerHTML = '<option value="">Select a Board</option>';
+            availableBoards.forEach((board, index) => {
+                const option = document.createElement('option');
+                option.value = index;
+                option.textContent = board.name;
+                boardSelect.appendChild(option);
+            });
+
+        } catch (error) {
+            console.error('Error loading boards:', error);
+            boardSelect.innerHTML = '<option value="">Error loading boards</option>';
+        }
+    }
+
+    // Handle board selection change
+    boardSelect.addEventListener('change', async () => {
+        const selectedIndex = boardSelect.value;
+
+        if (!selectedIndex) {
+            classYearSelect.innerHTML = '<option value="">Select a board first</option>';
+            positionSelect.innerHTML = '<option value="">Select a board first</option>';
+            updateSubmitState();
+            return;
+        }
+
+        const selectedBoard = availableBoards[parseInt(selectedIndex)];
+
+        // Populate class years
+        populateClassYears();
+
+        // Load position config for selected board
+        positionSelect.innerHTML = '<option value="">Loading positions...</option>';
+
+        try {
+            let config;
+            if (selectedBoard.type === 'personal') {
+                config = selectedBoard.config || await API.get('/recruiting-board/personal/config');
+            } else {
+                // Load shared board config
+                if (positionConfigs[selectedBoard.id]) {
+                    config = positionConfigs[selectedBoard.id];
+                } else {
+                    const boardData = await API.get(`/recruiting-board/shared/${selectedBoard.id}`);
+                    config = {
+                        offensePositions: boardData.offensePositions,
+                        defensePositions: boardData.defensePositions
+                    };
+                    positionConfigs[selectedBoard.id] = config;
+                }
+            }
+            populatePositions(config);
+        } catch (error) {
+            console.error('Error loading board config:', error);
+            positionSelect.innerHTML = '<option value="">Error loading positions</option>';
+        }
+
+        updateSubmitState();
+    });
+
     // Open modal on button click
     recruitingBoardBtn.addEventListener('click', async () => {
         modal.classList.add('active');
         document.body.style.overflow = 'hidden';
 
         // Reset dropdowns
-        classYearSelect.value = '';
-        positionSelect.innerHTML = '<option value="">Loading positions...</option>';
         submitBtn.disabled = true;
 
-        // Load shared position config (same for all class years)
-        try {
-            if (!positionConfig) {
-                positionConfig = await API.get('/recruiting-board/config');
-            }
-            populatePositions(positionConfig);
-        } catch (error) {
-            console.error('Error fetching position config:', error);
-            positionSelect.innerHTML = '<option value="">Error loading positions</option>';
-        }
+        // Load available boards
+        await loadBoards();
     });
 
     // Close modal functions
@@ -1337,9 +1529,9 @@ function setupAddToBoardButton() {
     if (closeBtn) closeBtn.addEventListener('click', closeModal);
     if (cancelBtn) cancelBtn.addEventListener('click', closeModal);
 
-    // Enable submit when both class year and position are selected
+    // Enable submit when all three selections are made
     function updateSubmitState() {
-        submitBtn.disabled = !classYearSelect.value || !positionSelect.value;
+        submitBtn.disabled = !boardSelect.value || !classYearSelect.value || !positionSelect.value;
     }
 
     classYearSelect.addEventListener('change', updateSubmitState);
@@ -1347,13 +1539,16 @@ function setupAddToBoardButton() {
 
     // Submit handler
     submitBtn.addEventListener('click', async () => {
+        const selectedBoardIndex = boardSelect.value;
         const classYear = classYearSelect.value;
         const position = positionSelect.value;
 
-        if (!classYear || !position) {
-            showToast('Please select both class year and position', 'error');
+        if (!selectedBoardIndex || !classYear || !position) {
+            showToast('Please select board, class year, and position', 'error');
             return;
         }
+
+        const selectedBoard = availableBoards[parseInt(selectedBoardIndex)];
 
         submitBtn.disabled = true;
         submitBtn.textContent = 'Adding...';
@@ -1378,9 +1573,15 @@ function setupAddToBoardButton() {
                 position: position
             };
 
-            await API.post(`/recruiting-board/${classYear}/players`, playerData);
+            // Use correct API route based on board type
+            if (selectedBoard.type === 'personal') {
+                await API.post(`/recruiting-board/personal/${classYear}/players`, playerData);
+            } else {
+                await API.post(`/recruiting-board/shared/${selectedBoard.id}/${classYear}/players`, playerData);
+            }
 
-            showToast(`${currentProfile.first_name} ${currentProfile.last_name} added to ${classYear} recruiting board!`, 'success');
+            const boardName = selectedBoard.name;
+            showToast(`${currentProfile.first_name} ${currentProfile.last_name} added to ${boardName} (${classYear})!`, 'success');
             closeModal();
 
             // Update button to show remove mode now
@@ -1396,7 +1597,12 @@ function setupAddToBoardButton() {
                     Remove from Recruiting Board
                 `;
                 // Re-setup for remove functionality
-                setupRemoveFromBoardButton([{ class_year: classYear, position: position }]);
+                setupRemoveFromBoardButton([{
+                    class_year: classYear,
+                    position: position,
+                    board_type: selectedBoard.type,
+                    board_id: selectedBoard.id
+                }]);
             }
         } catch (error) {
             console.error('Error adding player to board:', error);
@@ -1419,6 +1625,8 @@ function setupRemoveFromBoardButton(boardEntries) {
     const submitBtn = document.getElementById('removeRecruitingBoardSubmitBtn');
     const confirmText = document.getElementById('removeConfirmText');
     const boardInfo = document.getElementById('removeBoardInfo');
+    const boardSelect = document.getElementById('removeBoardSelect');
+    const boardSelectionContainer = document.getElementById('removeBoardSelection');
 
     if (!modal) return;
 
@@ -1426,22 +1634,78 @@ function setupRemoveFromBoardButton(boardEntries) {
     const newBtn = recruitingBoardBtn.cloneNode(true);
     recruitingBoardBtn.parentNode.replaceChild(newBtn, recruitingBoardBtn);
 
+    // Populate board selector
+    function populateBoardSelector() {
+        if (!boardSelect) return;
+
+        boardSelect.innerHTML = '';
+
+        // Add "All Boards" option if more than one board
+        if (boardEntries.length > 1) {
+            const allOption = document.createElement('option');
+            allOption.value = 'all';
+            allOption.textContent = `All Boards (${boardEntries.length})`;
+            boardSelect.appendChild(allOption);
+        }
+
+        // Add individual board options
+        boardEntries.forEach((entry, index) => {
+            const option = document.createElement('option');
+            option.value = index.toString();
+            const boardName = entry.board_name || (entry.board_type === 'personal' ? 'Personal Board' : 'Shared Board');
+            option.textContent = `${boardName} - Class of ${entry.class_year} (${entry.position})`;
+            boardSelect.appendChild(option);
+        });
+
+        // If only one entry, select it and hide the "All" option context
+        if (boardEntries.length === 1) {
+            boardSelect.value = '0';
+        }
+    }
+
+    // Update board info based on selection
+    function updateBoardInfo() {
+        if (!boardSelect || !boardInfo) return;
+
+        const selectedValue = boardSelect.value;
+
+        if (selectedValue === 'all') {
+            const boardList = boardEntries.map(e => {
+                const boardName = e.board_name || (e.board_type === 'personal' ? 'Personal Board' : 'Shared Board');
+                return `${boardName} - Class of ${e.class_year} (${e.position})`;
+            }).join('\n');
+            boardInfo.innerHTML = `<strong>Will remove from:</strong><br>${boardList.replace(/\n/g, '<br>')}`;
+        } else {
+            const entry = boardEntries[parseInt(selectedValue)];
+            if (entry) {
+                const boardName = entry.board_name || (entry.board_type === 'personal' ? 'Personal Board' : 'Shared Board');
+                boardInfo.innerHTML = `<strong>Will remove from:</strong> ${boardName} - Class of ${entry.class_year} (${entry.position})`;
+            }
+        }
+    }
+
     // Open remove modal on button click
     newBtn.addEventListener('click', () => {
         const playerName = `${currentProfile.first_name} ${currentProfile.last_name}`;
-        confirmText.innerHTML = `Are you sure you want to remove <strong>${playerName}</strong> from the recruiting board?`;
+        confirmText.innerHTML = `Remove <strong>${playerName}</strong> from recruiting board?`;
 
-        // Show which boards they're on
-        if (boardEntries && boardEntries.length > 0) {
-            const boardList = boardEntries.map(e => `Class of ${e.class_year} (${e.position})`).join(', ');
-            boardInfo.textContent = `Currently on: ${boardList}`;
-        } else {
-            boardInfo.textContent = '';
+        // Populate and show the board selector
+        populateBoardSelector();
+        updateBoardInfo();
+
+        // Show/hide selector based on number of entries
+        if (boardSelectionContainer) {
+            boardSelectionContainer.style.display = boardEntries.length > 0 ? 'block' : 'none';
         }
 
         modal.classList.add('active');
         document.body.style.overflow = 'hidden';
     });
+
+    // Handle board selection change
+    if (boardSelect) {
+        boardSelect.addEventListener('change', updateBoardInfo);
+    }
 
     // Close modal functions
     function closeModal() {
@@ -1453,35 +1717,63 @@ function setupRemoveFromBoardButton(boardEntries) {
     if (closeBtn) closeBtn.addEventListener('click', closeModal);
     if (cancelBtn) cancelBtn.addEventListener('click', closeModal);
 
-    // Submit handler - remove from all boards
+    // Submit handler - remove from selected board(s)
     if (submitBtn) {
         submitBtn.addEventListener('click', async () => {
             submitBtn.disabled = true;
             submitBtn.textContent = 'Removing...';
 
             try {
-                // Remove from all boards where this player exists
-                for (const entry of boardEntries) {
-                    await API.delete(`/recruiting-board/${entry.class_year}/players/${viewingUserId}?position=${entry.position}`);
+                const selectedValue = boardSelect ? boardSelect.value : 'all';
+                let entriesToRemove = [];
+
+                if (selectedValue === 'all') {
+                    entriesToRemove = boardEntries;
+                } else {
+                    const index = parseInt(selectedValue);
+                    if (boardEntries[index]) {
+                        entriesToRemove = [boardEntries[index]];
+                    }
                 }
 
-                showToast(`${currentProfile.first_name} ${currentProfile.last_name} removed from recruiting board!`, 'success');
+                // Remove from selected boards
+                for (const entry of entriesToRemove) {
+                    if (entry.board_type === 'shared' && entry.board_id) {
+                        await API.delete(`/recruiting-board/shared/${entry.board_id}/${entry.class_year}/players/${viewingUserId}?position=${entry.position}`);
+                    } else {
+                        await API.delete(`/recruiting-board/personal/${entry.class_year}/players/${viewingUserId}?position=${entry.position}`);
+                    }
+                }
+
+                const removedCount = entriesToRemove.length;
+                const message = removedCount === 1
+                    ? `${currentProfile.first_name} ${currentProfile.last_name} removed from board!`
+                    : `${currentProfile.first_name} ${currentProfile.last_name} removed from ${removedCount} boards!`;
+                showToast(message, 'success');
                 closeModal();
 
-                // Update button back to add mode
-                const currentBtn = document.getElementById('recruitingBoardBtn');
-                if (currentBtn) {
-                    currentBtn.classList.remove('remove-mode');
-                    currentBtn.innerHTML = `
-                        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                            <line x1="12" y1="8" x2="12" y2="16"></line>
-                            <line x1="8" y1="12" x2="16" y2="12"></line>
-                        </svg>
-                        Add to Recruiting Board
-                    `;
-                    // Re-setup for add functionality
-                    setupAddToBoardButton();
+                // Check if player is still on any boards
+                const remainingEntries = boardEntries.filter(e => !entriesToRemove.includes(e));
+
+                if (remainingEntries.length === 0) {
+                    // Update button back to add mode
+                    const currentBtn = document.getElementById('recruitingBoardBtn');
+                    if (currentBtn) {
+                        currentBtn.classList.remove('remove-mode');
+                        currentBtn.innerHTML = `
+                            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                <line x1="12" y1="8" x2="12" y2="16"></line>
+                                <line x1="8" y1="12" x2="16" y2="12"></line>
+                            </svg>
+                            Add to Recruiting Board
+                        `;
+                        // Re-setup for add functionality
+                        setupAddToBoardButton();
+                    }
+                } else {
+                    // Update the boardEntries and re-setup remove button with remaining entries
+                    setupRemoveFromBoardButton(remainingEntries);
                 }
             } catch (error) {
                 console.error('Error removing player from board:', error);
@@ -1498,12 +1790,22 @@ async function setupFollowButton() {
     const followBtn = document.getElementById('followBtn');
     if (!followBtn || !viewingUserId) return;
 
-    // Check follow status
+    // Check follow status and if they follow us
     try {
-        const response = await API.get(`/follow/${viewingUserId}/check`);
-        const isFollowing = response.isFollowing;
+        const [followResponse, followsMeResponse] = await Promise.all([
+            API.get(`/follow/${viewingUserId}/check`),
+            API.get(`/follow/${viewingUserId}/follows-me`)
+        ]);
+        const isFollowing = followResponse.isFollowing;
+        const theyFollowMe = followsMeResponse.followsMe;
 
-        followBtn.textContent = isFollowing ? 'Following' : 'Follow';
+        // Determine button text: "Following", "Follow back", or "Follow"
+        const getButtonText = (following) => {
+            if (following) return 'Following';
+            return theyFollowMe ? 'Follow back' : 'Follow';
+        };
+
+        followBtn.textContent = getButtonText(isFollowing);
         followBtn.classList.toggle('following', isFollowing);
 
         followBtn.addEventListener('click', async () => {
@@ -1512,7 +1814,7 @@ async function setupFollowButton() {
 
                 if (currentlyFollowing) {
                     await API.delete(`/follow/${viewingUserId}`);
-                    followBtn.textContent = 'Follow';
+                    followBtn.textContent = getButtonText(false);
                     followBtn.classList.remove('following');
                 } else {
                     await API.post(`/follow/${viewingUserId}`);
@@ -2015,6 +2317,25 @@ function populateEditForm() {
     if (email) email.value = currentProfile.email || '';
     if (phone) phone.value = formatPhoneNumber(currentProfile.phone) || '';
 
+    // Populate social media fields
+    const hudlLink = document.getElementById('editHudlLink');
+    const instagramLink = document.getElementById('editInstagramLink');
+
+    // Parse socials from JSON if stored as string
+    let socials = {};
+    if (currentProfile.socials) {
+        try {
+            socials = typeof currentProfile.socials === 'string'
+                ? JSON.parse(currentProfile.socials)
+                : currentProfile.socials;
+        } catch (e) {
+            console.log('Could not parse socials:', e);
+        }
+    }
+
+    if (hudlLink) hudlLink.value = socials.hudl || '';
+    if (instagramLink) instagramLink.value = socials.instagram || '';
+
     // Clear all position checkboxes first
     const positionCheckboxes = document.querySelectorAll('#editPositionsContainer input[name="position"]');
     positionCheckboxes.forEach(checkbox => checkbox.checked = false);
@@ -2267,6 +2588,15 @@ async function saveProfileChanges() {
         formData.careerstat1 = document.getElementById('editCareerStat1').value || null;
         formData.careerstat2 = document.getElementById('editCareerStat2').value || null;
         formData.careerstat3 = document.getElementById('editCareerStat3').value || null;
+
+        // Add social media links
+        const hudlLink = document.getElementById('editHudlLink');
+        const instagramLink = document.getElementById('editInstagramLink');
+        const socialsObj = {
+            hudl: hudlLink ? hudlLink.value.trim() : '',
+            instagram: instagramLink ? instagramLink.value.trim() : ''
+        };
+        formData.socials = JSON.stringify(socialsObj);
 
         // Send update request
         const response = await API.put('/profile', formData);
@@ -5735,25 +6065,90 @@ function setupHighlightsModal() {
         });
     }
 
+    // Helper function to show validation error
+    function showHighlightError(message) {
+        const errorContainer = document.getElementById('highlightValidationErrors');
+        const errorText = document.getElementById('highlightErrorText');
+        if (errorContainer && errorText) {
+            errorText.textContent = message;
+            errorContainer.style.display = 'block';
+        }
+    }
+
+    // Helper function to hide validation error
+    function hideHighlightError() {
+        const errorContainer = document.getElementById('highlightValidationErrors');
+        if (errorContainer) {
+            errorContainer.style.display = 'none';
+        }
+    }
+
+    // Helper function to update progress bar
+    function updateProgressBar(percent) {
+        const progressContainer = document.getElementById('videoUploadProgress');
+        const progressBar = document.getElementById('videoProgressBar');
+        const progressText = document.getElementById('videoProgressText');
+
+        if (progressContainer && progressBar && progressText) {
+            progressContainer.style.display = 'flex';
+            progressBar.style.width = `${percent}%`;
+            progressText.textContent = `${Math.round(percent)}%`;
+
+            // Add complete class when done
+            if (percent >= 100) {
+                progressBar.classList.add('complete');
+                progressText.textContent = 'Ready!';
+            } else {
+                progressBar.classList.remove('complete');
+            }
+        }
+    }
+
+    // Helper function to reset progress bar
+    function resetProgressBar() {
+        const progressContainer = document.getElementById('videoUploadProgress');
+        const progressBar = document.getElementById('videoProgressBar');
+        const progressText = document.getElementById('videoProgressText');
+
+        if (progressContainer && progressBar && progressText) {
+            progressContainer.style.display = 'none';
+            progressBar.style.width = '0%';
+            progressBar.classList.remove('complete');
+            progressText.textContent = '0%';
+        }
+    }
+
     // Save highlight
     if (btnHighlightSave) {
         btnHighlightSave.addEventListener('click', async () => {
             const title = highlightTitleInput?.value?.trim();
             const link = highlightLinkInputField?.value?.trim();
+            const videoFileInput = document.getElementById('highlightVideoFile');
+            const videoFile = videoFileInput?.files?.[0];
+
+            // Hide any previous errors
+            hideHighlightError();
 
             if (!title) {
-                alert('Please enter a title for your highlight');
+                showHighlightError('Please enter a title for your highlight');
                 return;
             }
 
-            if (!link) {
-                alert('Please enter a Hudl link');
+            // Check if either a Hudl link or video file is provided
+            if (!link && !videoFile) {
+                showHighlightError('Please enter a Hudl link or upload a video file');
                 return;
             }
 
-            // Validate Hudl link
-            if (!isValidHudlLink(link)) {
-                alert('Please enter a valid Hudl link (e.g., https://www.hudl.com/video/...)');
+            // Validate Hudl link if provided
+            if (link && !isValidHudlLink(link)) {
+                showHighlightError('Please enter a valid Hudl link (e.g., https://www.hudl.com/video/...)');
+                return;
+            }
+
+            // Validate video file size (100MB max)
+            if (videoFile && videoFile.size > 100 * 1024 * 1024) {
+                showHighlightError('Video file is too large. Maximum size is 100MB.');
                 return;
             }
 
@@ -5761,24 +6156,68 @@ function setupHighlightsModal() {
                 btnHighlightSave.disabled = true;
                 btnHighlightSave.textContent = 'Adding...';
 
-                const response = await API.post('/highlights', {
-                    highlight_type: currentHighlightType,
-                    title: title,
-                    hudl_link: link
-                });
+                let response;
+
+                if (videoFile) {
+                    // Upload with video file
+                    const formData = new FormData();
+                    formData.append('highlight_type', currentHighlightType);
+                    formData.append('title', title);
+                    if (link) formData.append('hudl_link', link);
+                    formData.append('video_file', videoFile);
+
+                    // Use XMLHttpRequest for progress tracking
+                    response = await new Promise((resolve, reject) => {
+                        const xhr = new XMLHttpRequest();
+
+                        xhr.upload.addEventListener('progress', (e) => {
+                            if (e.lengthComputable) {
+                                const percent = (e.loaded / e.total) * 100;
+                                updateProgressBar(percent);
+                            }
+                        });
+
+                        xhr.addEventListener('load', () => {
+                            if (xhr.status >= 200 && xhr.status < 300) {
+                                try {
+                                    resolve(JSON.parse(xhr.responseText));
+                                } catch (e) {
+                                    reject(new Error('Invalid response'));
+                                }
+                            } else {
+                                reject(new Error(xhr.statusText || 'Upload failed'));
+                            }
+                        });
+
+                        xhr.addEventListener('error', () => reject(new Error('Network error')));
+
+                        const token = localStorage.getItem('token');
+                        xhr.open('POST', `${API_BASE_URL}/highlights/upload`);
+                        xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+                        xhr.send(formData);
+                    });
+                } else {
+                    // Regular API call for Hudl link only
+                    response = await API.post('/highlights', {
+                        highlight_type: currentHighlightType,
+                        title: title,
+                        hudl_link: link
+                    });
+                }
 
                 if (response.success) {
                     closeHighlightModal();
                     loadHighlights(); // Reload highlights
                 } else {
-                    alert(response.message || 'Failed to add highlight');
+                    showHighlightError(response.message || 'Failed to add highlight');
                 }
             } catch (error) {
                 console.error('Error adding highlight:', error);
-                alert('Failed to add highlight. Please try again.');
+                showHighlightError('Failed to add highlight. Please try again.');
             } finally {
                 btnHighlightSave.disabled = false;
                 btnHighlightSave.textContent = 'Add Highlight';
+                resetProgressBar();
             }
         });
     }
@@ -5796,6 +6235,16 @@ function setupHighlightsModal() {
         addHighlightModalFooter.style.display = 'none';
         if (highlightTitleInput) highlightTitleInput.value = '';
         if (highlightLinkInputField) highlightLinkInputField.value = '';
+
+        // Reset video file input
+        const videoFileInput = document.getElementById('highlightVideoFile');
+        if (videoFileInput) videoFileInput.value = '';
+
+        // Hide validation errors
+        hideHighlightError();
+
+        // Reset progress bar
+        resetProgressBar();
     }
 
     if (addHighlightModalOverlay) {
@@ -6085,7 +6534,7 @@ async function saveAcademicsChanges() {
             // Update academics tab display
             updateAcademicsDisplay(currentProfile);
 
-            // Update profile header display (shows GPA in meta info)
+            // Refresh profile header display
             displayProfile(currentProfile, 'player');
 
             // Close modal

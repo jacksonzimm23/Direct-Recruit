@@ -120,4 +120,16 @@ router.get('/:userId/check', authMiddleware, async (req, res) => {
   }
 });
 
+// Check if another user follows the current user (reverse check)
+router.get('/:userId/follows-me', authMiddleware, async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const followsMe = await Follow.isFollowing(userId, req.userId);
+    res.json({ followsMe });
+  } catch (error) {
+    console.error('Check follows me error:', error);
+    res.status(500).json({ error: 'Failed to check follow status' });
+  }
+});
+
 module.exports = router;

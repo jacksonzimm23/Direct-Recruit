@@ -34,26 +34,24 @@ TRANSFER PORTAL PLAYER
 
 
 
-Currently working on: recruiting board, add icon to player profiles to save to board
-- tags: name, height, weight, HS, state
-- connect backend table and columns with player info by class and position (recruiting_boards table)
-- add to recruiting board popup with class and position inputs 
-- change recruiting board by class input (in table as well)
+Currently working on: follow back 
+-- Clear all follows and reset counters
+DELETE FROM follows;
+UPDATE player_profiles SET followers_count = 0, following_count = 0;
+UPDATE coach_profiles SET followers_count = 0, following_count = 0;
+
+transferplay notifications page not working (with follwos), clear notifications to help 
+transferplayer my profile highlight, not showing notifications or maybe even messages unread counter in left sidebar
 
 To do:
-
--HS PLAYER BACK FOLLOW MESSAGE BUTTONS ALIGNMENT, TRANFERPLAYER GOOD, CHECK ALL PROFILES
+- Collegecoach tabs highlighting with fancy stuff from recruiting board profile views
+- player academics tab only visisble to collegecoaches 
+- others profile 
 
 My profile:
 - profile pictures 
 
 Feed
 - backend sort of good, COMING SOON 
-
-College Coach
-- Recruiting board
-
-ALL
-- ADD KR PR to ALL position drop downs
 
 NEED TO ASK CLAUDE SECURITY, API, AND DATABASE QUESTIONS WHEN ALL DONE WITH FRONT AND BACKEND, HOW TO TURN TO MOBILE APP

@@ -16,7 +16,14 @@ document.addEventListener('DOMContentLoaded', async function() {
     // Track if board has unsaved changes
     let hasUnsavedChanges = false;
     let saveTimeout = null;
-    let positionsLoaded = false; // Track if positions have been rendered
+    let positionsLoaded = false;
+
+    // Board state
+    let currentBoardType = 'personal'; // 'personal' or board ID
+    let currentBoardId = null;
+    let currentBoardRole = null; // 'owner' or 'collaborator'
+    let ownedSharedBoards = [];
+    let collaboratorBoards = [];
 
     // Populate class year dropdown (2026-2030)
     const classYearSelect = document.getElementById('classYearSelect');
@@ -30,44 +37,190 @@ document.addEventListener('DOMContentLoaded', async function() {
         classYearSelect.appendChild(option);
     }
 
-    // Load shared position configuration (only called once on page load)
-    async function loadPositionConfig() {
+    // ==================== Board Loading Functions ====================
+
+    // Initialize personal board and load shared boards list
+    async function initializeBoards() {
         try {
-            const configData = await API.get('/recruiting-board/config');
-            renderBoard(configData.offensePositions || DEFAULT_OFFENSE_POSITIONS,
-                       configData.defensePositions || DEFAULT_DEFENSE_POSITIONS);
-            positionsLoaded = true;
+            // Initialize personal board
+            await API.get('/recruiting-board/personal/init');
+
+            // Get shared boards
+            const sharedBoardsRes = await API.get('/recruiting-board/shared');
+            ownedSharedBoards = sharedBoardsRes.ownedBoards || [];
+            collaboratorBoards = sharedBoardsRes.collaboratorBoards || [];
+
+            // Update board selector dropdown
+            updateBoardSelector();
+
+            // Check for last viewed board in localStorage
+            const lastViewedBoard = localStorage.getItem('lastViewedRecruitingBoard');
+            const boardTypeSelect = document.getElementById('boardTypeSelect');
+
+            // Check if last viewed board is valid (exists in the dropdown)
+            let boardToLoad = 'personal';
+            if (lastViewedBoard && lastViewedBoard !== 'personal') {
+                // Check if the board still exists (user might have been removed or board deleted)
+                const boardExists = ownedSharedBoards.some(b => b.id === lastViewedBoard) ||
+                                   collaboratorBoards.some(b => b.id === lastViewedBoard);
+                if (boardExists) {
+                    boardToLoad = lastViewedBoard;
+                }
+            }
+
+            // Set the dropdown value
+            if (boardTypeSelect) {
+                boardTypeSelect.value = boardToLoad;
+            }
+
+            // Load the appropriate board
+            if (boardToLoad === 'personal') {
+                await loadPersonalBoard(classYearSelect.value);
+            } else {
+                await loadSharedBoard(boardToLoad, classYearSelect.value);
+            }
         } catch (error) {
-            console.error('Error loading position config:', error);
-            // Use defaults on error
-            renderBoard(DEFAULT_OFFENSE_POSITIONS, DEFAULT_DEFENSE_POSITIONS);
-            positionsLoaded = true;
+            console.error('Error initializing boards:', error);
         }
     }
 
-    // Load players for a specific class year (called when switching years)
-    async function loadPlayersForYear(classYear) {
+    // Update board selector dropdown
+    function updateBoardSelector() {
+        const boardTypeSelect = document.getElementById('boardTypeSelect');
+
+        // Clear existing options except Personal Board
+        const options = boardTypeSelect.querySelectorAll('option:not([value="personal"])');
+        options.forEach(opt => opt.remove());
+
+        // Add owned shared boards
+        ownedSharedBoards.forEach(board => {
+            const option = document.createElement('option');
+            option.value = board.id;
+            option.textContent = board.board_name;
+            option.dataset.role = 'owner';
+            boardTypeSelect.appendChild(option);
+        });
+
+        // Add boards where user is collaborator
+        collaboratorBoards.forEach(board => {
+            const option = document.createElement('option');
+            option.value = board.id;
+            option.textContent = `${board.board_name} (${board.owner_first_name} ${board.owner_last_name})`;
+            option.dataset.role = 'collaborator';
+            option.dataset.ownerId = board.owner_user_id;
+            boardTypeSelect.appendChild(option);
+        });
+    }
+
+    // Load personal board
+    async function loadPersonalBoard(classYear) {
+        currentBoardType = 'personal';
+        currentBoardId = null;
+        currentBoardRole = 'owner';
+
+        // Update UI
+        updateBoardUI();
+
+        // Load position config
+        if (!positionsLoaded) {
+            try {
+                const configData = await API.get('/recruiting-board/personal/config');
+                renderBoard(configData.offensePositions || DEFAULT_OFFENSE_POSITIONS,
+                           configData.defensePositions || DEFAULT_DEFENSE_POSITIONS);
+                positionsLoaded = true;
+            } catch (error) {
+                console.error('Error loading personal board config:', error);
+                renderBoard(DEFAULT_OFFENSE_POSITIONS, DEFAULT_DEFENSE_POSITIONS);
+                positionsLoaded = true;
+            }
+        }
+
+        // Load players for the year
+        await loadPlayersForBoard(classYear);
+    }
+
+    // Load shared board
+    async function loadSharedBoard(boardId, classYear) {
+        currentBoardType = 'shared';
+        currentBoardId = boardId;
+
         try {
-            // Clear existing players from all lists
+            // Get board details
+            const boardData = await API.get(`/recruiting-board/shared/${boardId}`);
+            currentBoardRole = boardData.userRole;
+
+            // Update UI
+            updateBoardUI(boardData);
+
+            // Render positions for this shared board
+            renderBoard(boardData.offensePositions || DEFAULT_OFFENSE_POSITIONS,
+                       boardData.defensePositions || DEFAULT_DEFENSE_POSITIONS);
+
+            // Load players for the year
+            await loadPlayersForBoard(classYear);
+        } catch (error) {
+            console.error('Error loading shared board:', error);
+            showToast('Failed to load board', 'error');
+        }
+    }
+
+    // Load players for current board
+    async function loadPlayersForBoard(classYear) {
+        try {
+            // Clear existing players
             document.querySelectorAll('.recruits-list').forEach(list => {
                 list.innerHTML = '';
             });
 
-            const playersData = await API.get(`/recruiting-board/${classYear}/players`);
+            let playersData;
+            if (currentBoardType === 'personal') {
+                playersData = await API.get(`/recruiting-board/personal/${classYear}/players`);
+            } else {
+                playersData = await API.get(`/recruiting-board/shared/${currentBoardId}/${classYear}/players`);
+            }
+
             loadPlayersIntoBoard(playersData || []);
         } catch (error) {
             console.error('Error loading players:', error);
         }
     }
 
-    // Load board configuration for a specific year
-    async function loadBoardConfiguration(classYear) {
-        if (!positionsLoaded) {
-            // First load - get positions and players
-            await loadPositionConfig();
+    // Update UI based on current board
+    function updateBoardUI(boardData = null) {
+        const currentBoardHeader = document.getElementById('currentBoardHeader');
+        const currentBoardName = document.getElementById('currentBoardName');
+        const editBoardNameBtn = document.getElementById('editBoardNameBtn');
+        const deleteBoardBtn = document.getElementById('deleteBoardBtn');
+        const inviteCollaboratorsBtn = document.getElementById('inviteCollaboratorsBtn');
+        const leaveBoardBtn = document.getElementById('leaveBoardBtn');
+        const createSharedBoardBtn = document.getElementById('createSharedBoardBtn');
+
+        if (currentBoardType === 'personal') {
+            // Personal Board
+            currentBoardHeader.style.display = 'none';
+            inviteCollaboratorsBtn.style.display = 'none';
+            leaveBoardBtn.style.display = 'none';
+            createSharedBoardBtn.style.display = 'flex';
+        } else {
+            // Shared Board
+            currentBoardHeader.style.display = 'flex';
+            currentBoardName.textContent = boardData ? boardData.board_name : 'Shared Board';
+            createSharedBoardBtn.style.display = 'flex';
+
+            if (currentBoardRole === 'owner') {
+                // Owner of shared board
+                editBoardNameBtn.style.display = 'flex';
+                deleteBoardBtn.style.display = 'flex';
+                inviteCollaboratorsBtn.style.display = 'flex';
+                leaveBoardBtn.style.display = 'none';
+            } else {
+                // Collaborator on shared board
+                editBoardNameBtn.style.display = 'none';
+                deleteBoardBtn.style.display = 'none';
+                inviteCollaboratorsBtn.style.display = 'none';
+                leaveBoardBtn.style.display = 'flex';
+            }
         }
-        // Load players for the selected year
-        await loadPlayersForYear(classYear);
     }
 
     // Load players into the board based on their positions
@@ -115,10 +268,6 @@ document.addEventListener('DOMContentLoaded', async function() {
             }
         }
 
-        // Build info lines based on player type
-        // Height • Weight on one line
-        // HS Player: high_school, state
-        // Transfer Player: high_school • college_division
         const nameLine = `${player.first_name} ${player.last_name}`;
         const physicalLine = [heightDisplay, player.weight ? `${player.weight} lbs` : ''].filter(Boolean).join(' • ');
 
@@ -144,7 +293,6 @@ document.addEventListener('DOMContentLoaded', async function() {
 
         // Add click to show context menu
         card.addEventListener('click', (e) => {
-            // Don't show menu if card is being dragged
             if (!card.classList.contains('dragging')) {
                 e.stopPropagation();
                 showPlayerContextMenu(card, player);
@@ -156,7 +304,6 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     // Show context menu for player card
     function showPlayerContextMenu(card, player) {
-        // Remove any existing context menu
         const existingMenu = document.querySelector('.player-context-menu');
         if (existingMenu) {
             existingMenu.remove();
@@ -172,6 +319,13 @@ document.addEventListener('DOMContentLoaded', async function() {
                 </svg>
                 View Profile
             </button>
+            <button class="context-menu-item move-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M5 12h14"></path>
+                    <path d="M12 5l7 7-7 7"></path>
+                </svg>
+                Move to Another Board
+            </button>
             <button class="context-menu-item delete-btn">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <polyline points="3 6 5 6 21 6"></polyline>
@@ -181,18 +335,63 @@ document.addEventListener('DOMContentLoaded', async function() {
             </button>
         `;
 
-        // Position the menu
-        const cardRect = card.getBoundingClientRect();
+        // Position the menu relative to the card
+        const positionMenu = () => {
+            const cardRect = card.getBoundingClientRect();
+            const menuHeight = menu.offsetHeight || 150; // Estimate if not yet rendered
+            const viewportHeight = window.innerHeight;
+
+            // Check if menu would go below viewport
+            let top = cardRect.bottom + 5;
+            if (top + menuHeight > viewportHeight) {
+                // Position above the card instead
+                top = cardRect.top - menuHeight - 5;
+            }
+
+            menu.style.top = `${top}px`;
+            menu.style.left = `${cardRect.left}px`;
+        };
+
         menu.style.position = 'fixed';
-        menu.style.top = `${cardRect.bottom + 5}px`;
-        menu.style.left = `${cardRect.left}px`;
         menu.style.zIndex = '1000';
 
         document.body.appendChild(menu);
+        positionMenu();
 
-        // View profile handler
+        // Update position on scroll
+        const scrollContainers = [
+            document.querySelector('.board-content'),
+            document.querySelector('.position-column'),
+            window
+        ].filter(Boolean);
+
+        const handleScroll = () => {
+            // Check if card is still visible
+            const cardRect = card.getBoundingClientRect();
+            const boardContent = document.querySelector('.board-content');
+            if (boardContent) {
+                const boardRect = boardContent.getBoundingClientRect();
+                // If card scrolled out of view, close menu
+                if (cardRect.bottom < boardRect.top || cardRect.top > boardRect.bottom) {
+                    menu.remove();
+                    scrollContainers.forEach(container => {
+                        container.removeEventListener('scroll', handleScroll);
+                    });
+                    return;
+                }
+            }
+            positionMenu();
+        };
+
+        scrollContainers.forEach(container => {
+            container.addEventListener('scroll', handleScroll, { passive: true });
+        });
+
         menu.querySelector('.view-profile-btn').addEventListener('click', () => {
             menu.remove();
+            scrollContainers.forEach(container => {
+                container.removeEventListener('scroll', handleScroll);
+            });
             const username = player.username;
             if (username) {
                 const folder = player.player_type === 'transfer' ? 'transferplayer' : 'hsplayer';
@@ -200,16 +399,28 @@ document.addEventListener('DOMContentLoaded', async function() {
             }
         });
 
-        // Delete handler
+        menu.querySelector('.move-btn').addEventListener('click', () => {
+            menu.remove();
+            scrollContainers.forEach(container => {
+                container.removeEventListener('scroll', handleScroll);
+            });
+            showMovePlayerModal(player, card);
+        });
+
         menu.querySelector('.delete-btn').addEventListener('click', () => {
             menu.remove();
+            scrollContainers.forEach(container => {
+                container.removeEventListener('scroll', handleScroll);
+            });
             showRemoveConfirmModal(player, card);
         });
 
-        // Close menu when clicking outside
         const closeMenu = (e) => {
             if (!menu.contains(e.target) && !card.contains(e.target)) {
                 menu.remove();
+                scrollContainers.forEach(container => {
+                    container.removeEventListener('scroll', handleScroll);
+                });
                 document.removeEventListener('click', closeMenu);
             }
         };
@@ -218,10 +429,8 @@ document.addEventListener('DOMContentLoaded', async function() {
         }, 0);
     }
 
-    // Track current card being removed
+    // ==================== Remove Player Modal ====================
     let cardToRemove = null;
-
-    // Setup remove modal elements
     const removeModal = document.getElementById('removeRecruitingBoardModal');
     const removeModalOverlay = document.getElementById('removeRecruitingBoardModalOverlay');
     const removeModalClose = document.getElementById('removeRecruitingBoardModalClose');
@@ -230,19 +439,16 @@ document.addEventListener('DOMContentLoaded', async function() {
     const removeConfirmText = document.getElementById('removeConfirmText');
     const removeBoardInfo = document.getElementById('removeBoardInfo');
 
-    // Close modal function
     function closeRemoveModal() {
         removeModal.classList.remove('active');
         document.body.style.overflow = '';
         cardToRemove = null;
     }
 
-    // Setup modal close handlers
     if (removeModalOverlay) removeModalOverlay.addEventListener('click', closeRemoveModal);
     if (removeModalClose) removeModalClose.addEventListener('click', closeRemoveModal);
     if (removeModalCancel) removeModalCancel.addEventListener('click', closeRemoveModal);
 
-    // Setup submit handler
     if (removeModalSubmit) {
         removeModalSubmit.addEventListener('click', async () => {
             if (!cardToRemove) return;
@@ -253,9 +459,15 @@ document.addEventListener('DOMContentLoaded', async function() {
             try {
                 const playerId = cardToRemove.dataset.playerId;
                 const position = cardToRemove.dataset.position;
-                await API.delete(`/recruiting-board/${classYearSelect.value}/players/${playerId}?position=${position}`);
+                const classYear = classYearSelect.value;
+
+                if (currentBoardType === 'personal') {
+                    await API.delete(`/recruiting-board/personal/${classYear}/players/${playerId}?position=${position}`);
+                } else {
+                    await API.delete(`/recruiting-board/shared/${currentBoardId}/${classYear}/players/${playerId}?position=${position}`);
+                }
+
                 cardToRemove.remove();
-                // Update rankings
                 const parentList = document.querySelector(`.recruits-list[data-position="${position}"]`);
                 if (parentList) {
                     updateRankings(parentList);
@@ -272,7 +484,6 @@ document.addEventListener('DOMContentLoaded', async function() {
         });
     }
 
-    // Show confirmation modal for removing a player
     function showRemoveConfirmModal(player, card) {
         const playerName = `${player.first_name} ${player.last_name}`;
         const position = card.dataset.position;
@@ -286,144 +497,541 @@ document.addEventListener('DOMContentLoaded', async function() {
         document.body.style.overflow = 'hidden';
     }
 
-    // ==================== Collaborator System ====================
+    // ==================== Move Player Modal ====================
+    let playerToMove = null;
+    let cardToMove = null;
+    let moveTargetBoards = [];
+    let movePositionConfigs = {};
+
+    const moveModal = document.getElementById('movePlayerModal');
+    const moveModalOverlay = document.getElementById('movePlayerModalOverlay');
+    const moveModalClose = document.getElementById('movePlayerModalClose');
+    const moveModalCancel = document.getElementById('movePlayerCancelBtn');
+    const moveModalSubmit = document.getElementById('movePlayerSubmitBtn');
+    const movePlayerName = document.getElementById('movePlayerName');
+    const moveTargetBoardSelect = document.getElementById('moveTargetBoard');
+    const moveTargetPositionSelect = document.getElementById('moveTargetPosition');
+    const copyInsteadOfMoveCheckbox = document.getElementById('copyInsteadOfMove');
+    const moveModalTitle = document.getElementById('moveModalTitle');
+
+    function closeMoveModal() {
+        if (moveModal) {
+            moveModal.classList.remove('active');
+            moveModal.classList.remove('copy-mode');
+            document.body.style.overflow = '';
+            playerToMove = null;
+            cardToMove = null;
+            if (copyInsteadOfMoveCheckbox) copyInsteadOfMoveCheckbox.checked = false;
+            updateMoveModalUI();
+        }
+    }
+
+    // Update UI when copy checkbox changes
+    function updateMoveModalUI() {
+        const isCopyMode = copyInsteadOfMoveCheckbox && copyInsteadOfMoveCheckbox.checked;
+        if (moveModal) {
+            if (isCopyMode) {
+                moveModal.classList.add('copy-mode');
+            } else {
+                moveModal.classList.remove('copy-mode');
+            }
+        }
+        if (moveModalTitle) {
+            moveModalTitle.textContent = isCopyMode ? 'Copy to Another Board' : 'Move to Another Board';
+        }
+        if (moveModalSubmit) {
+            moveModalSubmit.textContent = isCopyMode ? 'Copy Player' : 'Move Player';
+        }
+    }
+
+    if (copyInsteadOfMoveCheckbox) {
+        copyInsteadOfMoveCheckbox.addEventListener('change', updateMoveModalUI);
+    }
+
+    if (moveModalOverlay) moveModalOverlay.addEventListener('click', closeMoveModal);
+    if (moveModalClose) moveModalClose.addEventListener('click', closeMoveModal);
+    if (moveModalCancel) moveModalCancel.addEventListener('click', closeMoveModal);
+
+    // Populate positions dropdown based on selected board
+    async function loadMovePositions(boardId, boardType) {
+        moveTargetPositionSelect.innerHTML = '<option value="">Loading positions...</option>';
+
+        try {
+            let config;
+            if (boardType === 'personal') {
+                if (movePositionConfigs['personal']) {
+                    config = movePositionConfigs['personal'];
+                } else {
+                    config = await API.get('/recruiting-board/personal/config');
+                    movePositionConfigs['personal'] = config;
+                }
+            } else {
+                if (movePositionConfigs[boardId]) {
+                    config = movePositionConfigs[boardId];
+                } else {
+                    const boardData = await API.get(`/recruiting-board/shared/${boardId}`);
+                    config = {
+                        offensePositions: boardData.offensePositions,
+                        defensePositions: boardData.defensePositions
+                    };
+                    movePositionConfigs[boardId] = config;
+                }
+            }
+
+            // Populate positions
+            moveTargetPositionSelect.innerHTML = '<option value="">Select Position</option>';
+            const allPositions = [];
+
+            if (config.offensePositions) {
+                config.offensePositions.forEach(group => {
+                    if (group.positions) {
+                        group.positions.forEach(pos => allPositions.push(pos));
+                    }
+                });
+            }
+            if (config.defensePositions) {
+                config.defensePositions.forEach(group => {
+                    if (group.positions) {
+                        group.positions.forEach(pos => allPositions.push(pos));
+                    }
+                });
+            }
+
+            const uniquePositions = [...new Set(allPositions)];
+            uniquePositions.forEach(pos => {
+                const option = document.createElement('option');
+                option.value = pos;
+                option.textContent = pos;
+                moveTargetPositionSelect.appendChild(option);
+            });
+
+            if (uniquePositions.length === 0) {
+                moveTargetPositionSelect.innerHTML = '<option value="">No positions configured</option>';
+            }
+        } catch (error) {
+            console.error('Error loading positions for move:', error);
+            moveTargetPositionSelect.innerHTML = '<option value="">Error loading positions</option>';
+        }
+
+        updateMoveSubmitState();
+    }
+
+    // Handle board selection change
+    if (moveTargetBoardSelect) {
+        moveTargetBoardSelect.addEventListener('change', async () => {
+            const selectedValue = moveTargetBoardSelect.value;
+
+            if (!selectedValue) {
+                moveTargetPositionSelect.innerHTML = '<option value="">Select a board first</option>';
+                updateMoveSubmitState();
+                return;
+            }
+
+            const selectedBoard = moveTargetBoards.find(b => b.id === selectedValue);
+            if (selectedBoard) {
+                await loadMovePositions(selectedBoard.id, selectedBoard.type);
+            }
+        });
+    }
+
+    if (moveTargetPositionSelect) {
+        moveTargetPositionSelect.addEventListener('change', updateMoveSubmitState);
+    }
+
+    function updateMoveSubmitState() {
+        if (moveModalSubmit) {
+            moveModalSubmit.disabled = !moveTargetBoardSelect.value || !moveTargetPositionSelect.value;
+        }
+    }
+
+    // Submit move/copy player
+    if (moveModalSubmit) {
+        moveModalSubmit.addEventListener('click', async () => {
+            if (!playerToMove || !cardToMove) return;
+
+            const targetBoardId = moveTargetBoardSelect.value;
+            const targetPosition = moveTargetPositionSelect.value;
+            const targetBoard = moveTargetBoards.find(b => b.id === targetBoardId);
+            const isCopyMode = copyInsteadOfMoveCheckbox && copyInsteadOfMoveCheckbox.checked;
+
+            if (!targetBoard || !targetPosition) {
+                showToast('Please select a board and position', 'error');
+                return;
+            }
+
+            moveModalSubmit.disabled = true;
+            moveModalSubmit.textContent = isCopyMode ? 'Copying...' : 'Moving...';
+
+            try {
+                const classYear = classYearSelect.value;
+                const sourcePosition = cardToMove.dataset.position;
+                const playerId = cardToMove.dataset.playerId;
+
+                // If not copy mode, remove from current board first
+                if (!isCopyMode) {
+                    if (currentBoardType === 'personal') {
+                        await API.delete(`/recruiting-board/personal/${classYear}/players/${playerId}?position=${sourcePosition}`);
+                    } else {
+                        await API.delete(`/recruiting-board/shared/${currentBoardId}/${classYear}/players/${playerId}?position=${sourcePosition}`);
+                    }
+                }
+
+                // Build player data for target board
+                const playerData = {
+                    user_id: playerToMove.user_id,
+                    username: playerToMove.username,
+                    first_name: playerToMove.first_name,
+                    last_name: playerToMove.last_name,
+                    height: playerToMove.height,
+                    weight: playerToMove.weight,
+                    high_school: playerToMove.high_school,
+                    state: playerToMove.state,
+                    college_division: playerToMove.college_division,
+                    profile_image_url: playerToMove.profile_image_url,
+                    player_type: playerToMove.player_type,
+                    position: targetPosition
+                };
+
+                // Add to target board
+                if (targetBoard.type === 'personal') {
+                    await API.post(`/recruiting-board/personal/${classYear}/players`, playerData);
+                } else {
+                    await API.post(`/recruiting-board/shared/${targetBoard.id}/${classYear}/players`, playerData);
+                }
+
+                // If move mode (not copy), remove the card from current view
+                if (!isCopyMode) {
+                    cardToMove.remove();
+                    const parentList = document.querySelector(`.recruits-list[data-position="${sourcePosition}"]`);
+                    if (parentList) {
+                        updateRankings(parentList);
+                    }
+                    showToast(`${playerToMove.first_name} ${playerToMove.last_name} moved to ${targetBoard.name}`, 'success');
+                } else {
+                    showToast(`${playerToMove.first_name} ${playerToMove.last_name} copied to ${targetBoard.name}`, 'success');
+                }
+
+                closeMoveModal();
+            } catch (error) {
+                console.error('Error moving/copying player:', error);
+                showToast(error.message || `Failed to ${isCopyMode ? 'copy' : 'move'} player`, 'error');
+            } finally {
+                moveModalSubmit.disabled = false;
+                const isCopyModeNow = copyInsteadOfMoveCheckbox && copyInsteadOfMoveCheckbox.checked;
+                moveModalSubmit.textContent = isCopyModeNow ? 'Copy Player' : 'Move Player';
+            }
+        });
+    }
+
+    async function showMovePlayerModal(player, card) {
+        playerToMove = player;
+        cardToMove = card;
+
+        const playerFullName = `${player.first_name} ${player.last_name}`;
+        const sourcePosition = card.dataset.position;
+        const classYear = classYearSelect.value;
+
+        if (movePlayerName) {
+            movePlayerName.innerHTML = `Move <strong>${playerFullName}</strong> from ${sourcePosition} (Class of ${classYear})`;
+        }
+
+        // Load available boards (exclude current board)
+        moveTargetBoardSelect.innerHTML = '<option value="">Loading boards...</option>';
+        moveTargetPositionSelect.innerHTML = '<option value="">Select a board first</option>';
+        moveModalSubmit.disabled = true;
+
+        try {
+            // Get personal board config
+            const personalConfig = await API.get('/recruiting-board/personal/config');
+
+            // Get shared boards
+            const sharedResponse = await API.get('/recruiting-board/shared');
+
+            moveTargetBoards = [];
+
+            // Add personal board if not currently on personal board
+            if (currentBoardType !== 'personal') {
+                moveTargetBoards.push({
+                    id: 'personal',
+                    name: 'Personal Board',
+                    type: 'personal'
+                });
+            }
+
+            // Add owned shared boards (exclude current board)
+            if (sharedResponse.ownedBoards) {
+                sharedResponse.ownedBoards.forEach(board => {
+                    if (board.id !== currentBoardId) {
+                        moveTargetBoards.push({
+                            id: board.id,
+                            name: board.board_name,
+                            type: 'shared'
+                        });
+                    }
+                });
+            }
+
+            // Add collaborator boards (exclude current board)
+            if (sharedResponse.collaboratorBoards) {
+                sharedResponse.collaboratorBoards.forEach(board => {
+                    if (board.id !== currentBoardId) {
+                        moveTargetBoards.push({
+                            id: board.id,
+                            name: `${board.board_name} (${board.owner_first_name} ${board.owner_last_name})`,
+                            type: 'shared'
+                        });
+                    }
+                });
+            }
+
+            // Populate board dropdown
+            moveTargetBoardSelect.innerHTML = '<option value="">Select a Board</option>';
+            moveTargetBoards.forEach(board => {
+                const option = document.createElement('option');
+                option.value = board.id;
+                option.textContent = board.name;
+                moveTargetBoardSelect.appendChild(option);
+            });
+
+            if (moveTargetBoards.length === 0) {
+                moveTargetBoardSelect.innerHTML = '<option value="">No other boards available</option>';
+            }
+
+        } catch (error) {
+            console.error('Error loading boards for move:', error);
+            moveTargetBoardSelect.innerHTML = '<option value="">Error loading boards</option>';
+        }
+
+        moveModal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+
+    // ==================== Create Shared Board Modal ====================
+    const createSharedBoardBtn = document.getElementById('createSharedBoardBtn');
+    const createSharedBoardModal = document.getElementById('createSharedBoardModal');
+    const newBoardNameInput = document.getElementById('newBoardNameInput');
+
+    function openCreateSharedBoardModal() {
+        newBoardNameInput.value = '';
+        createSharedBoardModal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+        setTimeout(() => newBoardNameInput.focus(), 100);
+    }
+
+    function closeCreateSharedBoardModal() {
+        createSharedBoardModal.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+
+    if (createSharedBoardBtn) createSharedBoardBtn.addEventListener('click', openCreateSharedBoardModal);
+    document.getElementById('createSharedBoardModalOverlay')?.addEventListener('click', closeCreateSharedBoardModal);
+    document.getElementById('createSharedBoardModalClose')?.addEventListener('click', closeCreateSharedBoardModal);
+    document.getElementById('createSharedBoardCancelBtn')?.addEventListener('click', closeCreateSharedBoardModal);
+
+    document.getElementById('createSharedBoardSubmitBtn')?.addEventListener('click', async () => {
+        const boardName = newBoardNameInput.value.trim();
+        if (!boardName) {
+            showToast('Please enter a board name', 'error');
+            return;
+        }
+
+        const submitBtn = document.getElementById('createSharedBoardSubmitBtn');
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Creating...';
+
+        try {
+            const result = await API.post('/recruiting-board/shared', { boardName });
+            closeCreateSharedBoardModal();
+
+            // Refresh shared boards list
+            const sharedBoardsRes = await API.get('/recruiting-board/shared');
+            ownedSharedBoards = sharedBoardsRes.ownedBoards || [];
+            collaboratorBoards = sharedBoardsRes.collaboratorBoards || [];
+            updateBoardSelector();
+
+            // Switch to the new board
+            document.getElementById('boardTypeSelect').value = result.board.id;
+            await loadSharedBoard(result.board.id, classYearSelect.value);
+
+            showToast('Shared board created successfully!');
+        } catch (error) {
+            console.error('Error creating shared board:', error);
+            showToast(error.error || 'Failed to create board', 'error');
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Create Board';
+        }
+    });
+
+    // ==================== Edit Board Name Modal ====================
+    const editBoardNameModal = document.getElementById('editBoardNameModal');
+    const editBoardNameInput = document.getElementById('editBoardNameInput');
+
+    function openEditBoardNameModal() {
+        editBoardNameInput.value = document.getElementById('currentBoardName').textContent;
+        editBoardNameModal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+        setTimeout(() => editBoardNameInput.focus(), 100);
+    }
+
+    function closeEditBoardNameModal() {
+        editBoardNameModal.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+
+    document.getElementById('editBoardNameBtn')?.addEventListener('click', openEditBoardNameModal);
+    document.getElementById('editBoardNameModalOverlay')?.addEventListener('click', closeEditBoardNameModal);
+    document.getElementById('editBoardNameModalClose')?.addEventListener('click', closeEditBoardNameModal);
+    document.getElementById('editBoardNameCancelBtn')?.addEventListener('click', closeEditBoardNameModal);
+
+    document.getElementById('editBoardNameSubmitBtn')?.addEventListener('click', async () => {
+        const boardName = editBoardNameInput.value.trim();
+        if (!boardName) {
+            showToast('Please enter a board name', 'error');
+            return;
+        }
+
+        const submitBtn = document.getElementById('editBoardNameSubmitBtn');
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Saving...';
+
+        try {
+            await API.put(`/recruiting-board/shared/${currentBoardId}/name`, { boardName });
+            document.getElementById('currentBoardName').textContent = boardName;
+            closeEditBoardNameModal();
+
+            // Refresh shared boards list
+            const sharedBoardsRes = await API.get('/recruiting-board/shared');
+            ownedSharedBoards = sharedBoardsRes.ownedBoards || [];
+            collaboratorBoards = sharedBoardsRes.collaboratorBoards || [];
+            updateBoardSelector();
+
+            showToast('Board name updated!');
+        } catch (error) {
+            console.error('Error updating board name:', error);
+            showToast(error.error || 'Failed to update board name', 'error');
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Save';
+        }
+    });
+
+    // ==================== Delete Board Modal ====================
+    const deleteBoardModal = document.getElementById('deleteBoardModal');
+
+    function openDeleteBoardModal() {
+        document.getElementById('deleteBoardName').textContent = document.getElementById('currentBoardName').textContent;
+        deleteBoardModal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeDeleteBoardModal() {
+        deleteBoardModal.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+
+    document.getElementById('deleteBoardBtn')?.addEventListener('click', openDeleteBoardModal);
+    document.getElementById('deleteBoardModalOverlay')?.addEventListener('click', closeDeleteBoardModal);
+    document.getElementById('deleteBoardModalClose')?.addEventListener('click', closeDeleteBoardModal);
+    document.getElementById('deleteBoardCancelBtn')?.addEventListener('click', closeDeleteBoardModal);
+
+    document.getElementById('deleteBoardSubmitBtn')?.addEventListener('click', async () => {
+        const submitBtn = document.getElementById('deleteBoardSubmitBtn');
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Deleting...';
+
+        try {
+            await API.delete(`/recruiting-board/shared/${currentBoardId}`);
+            closeDeleteBoardModal();
+
+            // Refresh shared boards list
+            const sharedBoardsRes = await API.get('/recruiting-board/shared');
+            ownedSharedBoards = sharedBoardsRes.ownedBoards || [];
+            collaboratorBoards = sharedBoardsRes.collaboratorBoards || [];
+            updateBoardSelector();
+
+            // Switch back to personal board
+            document.getElementById('boardTypeSelect').value = 'personal';
+            await loadPersonalBoard(classYearSelect.value);
+
+            showToast('Board deleted successfully');
+        } catch (error) {
+            console.error('Error deleting board:', error);
+            showToast(error.error || 'Failed to delete board', 'error');
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Delete';
+        }
+    });
+
+    // ==================== Leave Board Modal ====================
+    const leaveBoardModal = document.getElementById('leaveBoardModal');
+    const leaveBoardBtn = document.getElementById('leaveBoardBtn');
+
+    function openLeaveBoardModal() {
+        const boardName = document.getElementById('currentBoardName').textContent;
+        document.getElementById('leaveBoardName').textContent = boardName;
+        leaveBoardModal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeLeaveBoardModal() {
+        leaveBoardModal.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+
+    if (leaveBoardBtn) leaveBoardBtn.addEventListener('click', openLeaveBoardModal);
+    document.getElementById('leaveBoardModalOverlay')?.addEventListener('click', closeLeaveBoardModal);
+    document.getElementById('leaveBoardModalClose')?.addEventListener('click', closeLeaveBoardModal);
+    document.getElementById('leaveBoardCancelBtn')?.addEventListener('click', closeLeaveBoardModal);
+
+    document.getElementById('leaveBoardSubmitBtn')?.addEventListener('click', async () => {
+        const submitBtn = document.getElementById('leaveBoardSubmitBtn');
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Leaving...';
+
+        try {
+            await API.post(`/recruiting-board/shared/${currentBoardId}/leave`);
+            closeLeaveBoardModal();
+
+            // Refresh shared boards list
+            const sharedBoardsRes = await API.get('/recruiting-board/shared');
+            ownedSharedBoards = sharedBoardsRes.ownedBoards || [];
+            collaboratorBoards = sharedBoardsRes.collaboratorBoards || [];
+            updateBoardSelector();
+
+            // Switch back to personal board
+            document.getElementById('boardTypeSelect').value = 'personal';
+            await loadPersonalBoard(classYearSelect.value);
+
+            showToast('You have left the board');
+        } catch (error) {
+            console.error('Error leaving board:', error);
+            showToast(error.error || 'Failed to leave board', 'error');
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Leave Board';
+        }
+    });
+
+    // ==================== Invite Collaborators Modal ====================
+    const inviteCollaboratorsBtn = document.getElementById('inviteCollaboratorsBtn');
     const collabModal = document.getElementById('inviteCollaboratorsModal');
-    const collabModalOverlay = document.getElementById('inviteCollaboratorsModalOverlay');
-    const collabModalClose = document.getElementById('inviteCollaboratorsModalClose');
-    const collabModalCancel = document.getElementById('inviteCollaboratorsCancelBtn');
     const collabSearchInput = document.getElementById('collabSearchInput');
     const collabSearchResults = document.getElementById('collabSearchResults');
     const collaboratorsList = document.getElementById('collaboratorsList');
-    const inviteCollaboratorsBtn = document.getElementById('inviteCollaboratorsBtn');
     const boardOwnerName = document.getElementById('boardOwnerName');
     const boardOwnerAvatar = document.getElementById('boardOwnerAvatar');
     const transferOwnershipSection = document.getElementById('transferOwnershipSection');
     const transferOwnershipSelect = document.getElementById('transferOwnershipSelect');
     const transferOwnershipBtn = document.getElementById('transferOwnershipBtn');
 
-    // Board selector elements
-    const boardTypeSelect = document.getElementById('boardTypeSelect');
-    const boardTypeContainer = document.getElementById('boardTypeContainer');
-    const leaveBoardBtn = document.getElementById('leaveBoardBtn');
-
-    // Confirmation modals
-    const inviteConfirmModal = document.getElementById('inviteConfirmModal');
-    const removeCollabModal = document.getElementById('removeCollabModal');
-    const leaveBoardModal = document.getElementById('leaveBoardModal');
-    const transferConfirmModal = document.getElementById('transferConfirmModal');
-
-    // Track board state
-    let currentBoardInfo = null;
-    let sharedBoards = [];
-    let currentBoardOwner = null; // The owner of the currently viewed board
     let searchTimeout = null;
     let selectedCoachForInvite = null;
     let selectedCollabForRemoval = null;
     let selectedCollabForTransfer = null;
+    let currentBoardData = null;
 
-    // Polling interval for real-time sync
-    let pollInterval = null;
-
-    // Initialize collaborator system
-    async function initCollaboratorSystem() {
-        try {
-            // Load board info and shared boards
-            const [boardInfoRes, sharedBoardsRes] = await Promise.all([
-                API.get('/recruiting-board/board-info'),
-                API.get('/recruiting-board/shared-boards')
-            ]);
-
-            currentBoardInfo = boardInfoRes;
-            sharedBoards = sharedBoardsRes.sharedBoards || [];
-
-            // Update board selector dropdown
-            updateBoardSelector();
-
-            // Update UI based on ownership
-            updateOwnershipUI();
-
-            // Start polling for real-time sync
-            startPolling();
-        } catch (error) {
-            console.error('Error initializing collaborator system:', error);
-        }
-    }
-
-    // Update the board selector dropdown
-    function updateBoardSelector() {
-        // Clear existing shared board options
-        const options = boardTypeSelect.querySelectorAll('option:not([value="own"])');
-        options.forEach(opt => opt.remove());
-
-        // Add shared boards
-        sharedBoards.forEach(board => {
-            const option = document.createElement('option');
-            option.value = board.owner_user_id;
-            option.textContent = `${board.owner_first_name} ${board.owner_last_name}'s Board`;
-            boardTypeSelect.appendChild(option);
-        });
-
-        // Always show the dropdown (removed the hide logic)
-        boardTypeContainer.classList.remove('hidden');
-    }
-
-    // Update UI based on whether user is owner or collaborator
-    function updateOwnershipUI() {
-        const isOwner = currentBoardInfo && currentBoardInfo.isOwner;
-        const isViewingSharedBoard = boardTypeSelect.value !== 'own';
-
-        // Show/hide invite button (only for owner viewing their own board)
-        if (inviteCollaboratorsBtn) {
-            inviteCollaboratorsBtn.style.display = isOwner && !isViewingSharedBoard ? 'flex' : 'none';
-        }
-
-        // Show/hide leave button (only when viewing a shared board)
-        if (leaveBoardBtn) {
-            leaveBoardBtn.style.display = isViewingSharedBoard ? 'flex' : 'none';
-        }
-    }
-
-    // Handle board type change
-    if (boardTypeSelect) {
-        boardTypeSelect.addEventListener('change', async function() {
-            const selectedValue = this.value;
-
-            if (selectedValue === 'own') {
-                // Switch back to own board
-                currentBoardOwner = null;
-                updateOwnershipUI();
-                await loadBoardConfiguration(classYearSelect.value);
-            } else {
-                // Switch to shared board
-                currentBoardOwner = selectedValue;
-                updateOwnershipUI();
-                // Load the shared board's configuration and players
-                await loadSharedBoardConfiguration(selectedValue, classYearSelect.value);
-            }
-        });
-    }
-
-    // Load a shared board's configuration
-    async function loadSharedBoardConfiguration(ownerUserId, classYear) {
-        try {
-            // For shared boards, we need to load from the owner's board
-            // The API will need to be enhanced to support this
-            // For now, we'll use the same endpoints but pass the owner context
-
-            // Clear existing players
-            document.querySelectorAll('.recruits-list').forEach(list => {
-                list.innerHTML = '';
-            });
-
-            // Load players (API needs to support loading by owner)
-            const playersData = await API.get(`/recruiting-board/${classYear}/players?owner=${ownerUserId}`);
-            loadPlayersIntoBoard(playersData || []);
-        } catch (error) {
-            console.error('Error loading shared board:', error);
-        }
-    }
-
-    // Close collab modal
     function closeCollabModal() {
         collabModal.classList.remove('active');
         document.body.style.overflow = '';
@@ -431,44 +1039,39 @@ document.addEventListener('DOMContentLoaded', async function() {
         if (collabSearchResults) collabSearchResults.innerHTML = '';
     }
 
-    // Open collab modal
     async function openCollabModal() {
         collabModal.classList.add('active');
         document.body.style.overflow = 'hidden';
         if (collabSearchInput) collabSearchInput.focus();
 
-        // Load fresh board info
         await loadBoardInfoForModal();
     }
 
-    // Load board info for the modal
     async function loadBoardInfoForModal() {
         try {
-            const boardInfo = await API.get('/recruiting-board/board-info');
-            currentBoardInfo = boardInfo;
+            const boardData = await API.get(`/recruiting-board/shared/${currentBoardId}`);
+            currentBoardData = boardData;
 
             // Update owner section
-            const ownerName = boardInfo.owner_first_name && boardInfo.owner_last_name
-                ? `${boardInfo.owner_first_name} ${boardInfo.owner_last_name}`
+            const ownerName = boardData.owner_first_name && boardData.owner_last_name
+                ? `${boardData.owner_first_name} ${boardData.owner_last_name}`
                 : 'You';
             if (boardOwnerName) boardOwnerName.textContent = ownerName;
 
-            // Update owner avatar if profile image exists
-            if (boardOwnerAvatar && boardInfo.owner_profile_image) {
-                boardOwnerAvatar.innerHTML = `<img src="${boardInfo.owner_profile_image}" alt="${ownerName}">`;
+            if (boardOwnerAvatar && boardData.owner_profile_image) {
+                boardOwnerAvatar.innerHTML = `<img src="${boardData.owner_profile_image}" alt="${ownerName}">`;
             }
 
-            // Render collaborators and pending invites
-            renderCollaboratorsList(boardInfo.collaborators || [], boardInfo.pendingInvites || []);
+            // Get pending invites
+            const pendingRes = await API.get(`/recruiting-board/shared/${currentBoardId}/pending-invites`);
 
-            // Update transfer ownership section
-            updateTransferOwnershipSection(boardInfo.collaborators || []);
+            renderCollaboratorsList(boardData.collaborators || [], pendingRes.pendingInvites || []);
+            updateTransferOwnershipSection(boardData.collaborators || []);
         } catch (error) {
             console.error('Error loading board info for modal:', error);
         }
     }
 
-    // Render collaborators list with pending invites
     function renderCollaboratorsList(collaborators, pendingInvites) {
         if (!collaboratorsList) return;
 
@@ -528,7 +1131,6 @@ document.addEventListener('DOMContentLoaded', async function() {
 
         collaboratorsList.innerHTML = html;
 
-        // Add event listeners to remove buttons
         collaboratorsList.querySelectorAll('.btn-remove-collab').forEach(btn => {
             btn.addEventListener('click', function() {
                 const userId = this.dataset.userId;
@@ -536,17 +1138,14 @@ document.addEventListener('DOMContentLoaded', async function() {
                 const name = this.dataset.name || 'this person';
 
                 if (isPending) {
-                    // Cancel pending invite
                     cancelPendingInvite(userId);
                 } else {
-                    // Show remove confirmation modal
                     showRemoveCollabModal(userId, name);
                 }
             });
         });
     }
 
-    // Update transfer ownership section
     function updateTransferOwnershipSection(collaborators) {
         if (!transferOwnershipSection || !transferOwnershipSelect) return;
 
@@ -557,7 +1156,6 @@ document.addEventListener('DOMContentLoaded', async function() {
 
         transferOwnershipSection.style.display = 'block';
 
-        // Clear and populate select
         transferOwnershipSelect.innerHTML = '<option value="">Select a collaborator...</option>';
         collaborators.forEach(collab => {
             const option = document.createElement('option');
@@ -567,7 +1165,6 @@ document.addEventListener('DOMContentLoaded', async function() {
         });
     }
 
-    // Search for coaches
     async function searchCoaches(query) {
         if (!query || query.length < 2) {
             collabSearchResults.innerHTML = '';
@@ -575,7 +1172,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
 
         try {
-            const response = await API.get(`/recruiting-board/search-coaches?query=${encodeURIComponent(query)}`);
+            const response = await API.get(`/recruiting-board/search-coaches?query=${encodeURIComponent(query)}&boardId=${currentBoardId}`);
             renderSearchResults(response.coaches || []);
         } catch (error) {
             console.error('Error searching coaches:', error);
@@ -583,7 +1180,6 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
     }
 
-    // Render search results
     function renderSearchResults(coaches) {
         if (!collabSearchResults) return;
 
@@ -615,7 +1211,6 @@ document.addEventListener('DOMContentLoaded', async function() {
 
         collabSearchResults.innerHTML = html;
 
-        // Add click handlers
         collabSearchResults.querySelectorAll('.collab-search-result-item').forEach(item => {
             item.querySelector('.btn-add-collab').addEventListener('click', function(e) {
                 e.stopPropagation();
@@ -626,7 +1221,9 @@ document.addEventListener('DOMContentLoaded', async function() {
         });
     }
 
-    // Show invite confirmation modal
+    // Invite confirm modal
+    const inviteConfirmModal = document.getElementById('inviteConfirmModal');
+
     function showInviteConfirmModal(userId, name) {
         selectedCoachForInvite = { userId, name };
         document.getElementById('inviteConfirmCoachName').textContent = name;
@@ -634,14 +1231,12 @@ document.addEventListener('DOMContentLoaded', async function() {
         document.body.style.overflow = 'hidden';
     }
 
-    // Close invite confirm modal
     function closeInviteConfirmModal() {
         inviteConfirmModal.classList.remove('active');
-        document.body.style.overflow = 'hidden'; // Keep hidden because collab modal is still open
+        document.body.style.overflow = 'hidden';
         selectedCoachForInvite = null;
     }
 
-    // Send invite
     async function sendInvite() {
         if (!selectedCoachForInvite) return;
 
@@ -650,13 +1245,12 @@ document.addEventListener('DOMContentLoaded', async function() {
         submitBtn.textContent = 'Sending...';
 
         try {
-            await API.post('/recruiting-board/invite', { inviteeUserId: selectedCoachForInvite.userId });
+            await API.post(`/recruiting-board/shared/${currentBoardId}/invite`, { inviteeUserId: selectedCoachForInvite.userId });
 
             closeInviteConfirmModal();
             collabSearchInput.value = '';
             collabSearchResults.innerHTML = '';
 
-            // Refresh the collaborators list
             await loadBoardInfoForModal();
 
             showToast('Invite sent successfully!');
@@ -669,10 +1263,9 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
     }
 
-    // Cancel pending invite
     async function cancelPendingInvite(userId) {
         try {
-            await API.delete(`/recruiting-board/invite/${userId}`);
+            await API.delete(`/recruiting-board/shared/${currentBoardId}/invite/${userId}`);
             await loadBoardInfoForModal();
             showToast('Invite cancelled');
         } catch (error) {
@@ -681,7 +1274,9 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
     }
 
-    // Show remove collaborator modal
+    // Remove collab modal
+    const removeCollabModal = document.getElementById('removeCollabModal');
+
     function showRemoveCollabModal(userId, name) {
         selectedCollabForRemoval = { userId, name };
         document.getElementById('removeCollabName').textContent = name;
@@ -689,14 +1284,12 @@ document.addEventListener('DOMContentLoaded', async function() {
         document.body.style.overflow = 'hidden';
     }
 
-    // Close remove collab modal
     function closeRemoveCollabModal() {
         removeCollabModal.classList.remove('active');
-        document.body.style.overflow = 'hidden'; // Keep hidden because collab modal is still open
+        document.body.style.overflow = 'hidden';
         selectedCollabForRemoval = null;
     }
 
-    // Remove collaborator
     async function removeCollaborator() {
         if (!selectedCollabForRemoval) return;
 
@@ -705,7 +1298,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         submitBtn.textContent = 'Removing...';
 
         try {
-            await API.delete(`/recruiting-board/collaborator/${selectedCollabForRemoval.userId}`);
+            await API.delete(`/recruiting-board/shared/${currentBoardId}/collaborator/${selectedCollabForRemoval.userId}`);
 
             closeRemoveCollabModal();
             await loadBoardInfoForModal();
@@ -720,61 +1313,9 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
     }
 
-    // Show leave board modal
-    function showLeaveBoardModal() {
-        const selectedBoard = sharedBoards.find(b => b.owner_user_id === boardTypeSelect.value);
-        if (selectedBoard) {
-            document.getElementById('leaveBoardOwnerName').textContent =
-                `${selectedBoard.owner_first_name} ${selectedBoard.owner_last_name}'s Board`;
-        }
-        leaveBoardModal.classList.add('active');
-        document.body.style.overflow = 'hidden';
-    }
+    // Transfer ownership modal
+    const transferConfirmModal = document.getElementById('transferConfirmModal');
 
-    // Close leave board modal
-    function closeLeaveBoardModal() {
-        leaveBoardModal.classList.remove('active');
-        document.body.style.overflow = '';
-    }
-
-    // Leave board
-    async function leaveBoard() {
-        const ownerUserId = boardTypeSelect.value;
-        if (!ownerUserId || ownerUserId === 'own') return;
-
-        const submitBtn = document.getElementById('leaveBoardSubmitBtn');
-        submitBtn.disabled = true;
-        submitBtn.textContent = 'Leaving...';
-
-        try {
-            await API.post('/recruiting-board/leave', { ownerUserId });
-
-            closeLeaveBoardModal();
-
-            // Switch back to own board
-            boardTypeSelect.value = 'own';
-            currentBoardOwner = null;
-
-            // Refresh shared boards list
-            const sharedBoardsRes = await API.get('/recruiting-board/shared-boards');
-            sharedBoards = sharedBoardsRes.sharedBoards || [];
-            updateBoardSelector();
-            updateOwnershipUI();
-
-            // Reload own board
-            await loadBoardConfiguration(classYearSelect.value);
-
-            showToast('You have left the board');
-        } catch (error) {
-            console.error('Error leaving board:', error);
-            showToast('Failed to leave board', 'error');
-        } finally {
-            submitBtn.disabled = false;
-            submitBtn.textContent = 'Leave Board';
-        }
-    }
-
-    // Show transfer ownership modal
     function showTransferConfirmModal() {
         const selectedUserId = transferOwnershipSelect.value;
         if (!selectedUserId) return;
@@ -787,14 +1328,12 @@ document.addEventListener('DOMContentLoaded', async function() {
         document.body.style.overflow = 'hidden';
     }
 
-    // Close transfer confirm modal
     function closeTransferConfirmModal() {
         transferConfirmModal.classList.remove('active');
-        document.body.style.overflow = 'hidden'; // Keep hidden because collab modal is still open
+        document.body.style.overflow = 'hidden';
         selectedCollabForTransfer = null;
     }
 
-    // Transfer ownership
     async function transferOwnership() {
         if (!selectedCollabForTransfer) return;
 
@@ -803,14 +1342,19 @@ document.addEventListener('DOMContentLoaded', async function() {
         submitBtn.textContent = 'Transferring...';
 
         try {
-            await API.post('/recruiting-board/transfer-ownership', { newOwnerUserId: selectedCollabForTransfer.userId });
+            await API.post(`/recruiting-board/shared/${currentBoardId}/transfer-ownership`, { newOwnerUserId: selectedCollabForTransfer.userId });
 
             closeTransferConfirmModal();
             closeCollabModal();
 
-            // Refresh everything
-            await initCollaboratorSystem();
-            await loadBoardConfiguration(classYearSelect.value);
+            // Refresh boards
+            const sharedBoardsRes = await API.get('/recruiting-board/shared');
+            ownedSharedBoards = sharedBoardsRes.ownedBoards || [];
+            collaboratorBoards = sharedBoardsRes.collaboratorBoards || [];
+            updateBoardSelector();
+
+            // Reload current board
+            await loadSharedBoard(currentBoardId, classYearSelect.value);
 
             showToast('Ownership transferred successfully');
         } catch (error) {
@@ -822,37 +1366,62 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
     }
 
-    // Start polling for real-time sync
-    function startPolling() {
-        // Poll every 60 seconds
-        pollInterval = setInterval(async () => {
-            try {
-                // Reload current board data
-                if (currentBoardOwner) {
-                    await loadSharedBoardConfiguration(currentBoardOwner, classYearSelect.value);
-                } else {
-                    await loadPlayersForYear(classYearSelect.value);
-                }
+    // Setup collaborators modal event listeners
+    if (inviteCollaboratorsBtn) inviteCollaboratorsBtn.addEventListener('click', openCollabModal);
+    document.getElementById('inviteCollaboratorsModalOverlay')?.addEventListener('click', closeCollabModal);
+    document.getElementById('inviteCollaboratorsModalClose')?.addEventListener('click', closeCollabModal);
+    document.getElementById('inviteCollaboratorsCancelBtn')?.addEventListener('click', closeCollabModal);
 
-                // Refresh shared boards list
-                const sharedBoardsRes = await API.get('/recruiting-board/shared-boards');
-                sharedBoards = sharedBoardsRes.sharedBoards || [];
-                updateBoardSelector();
-            } catch (error) {
-                console.error('Polling error:', error);
+    if (collabSearchInput) {
+        collabSearchInput.addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => searchCoaches(this.value), 300);
+        });
+    }
+
+    document.getElementById('inviteConfirmModalOverlay')?.addEventListener('click', closeInviteConfirmModal);
+    document.getElementById('inviteConfirmModalClose')?.addEventListener('click', closeInviteConfirmModal);
+    document.getElementById('inviteConfirmCancelBtn')?.addEventListener('click', closeInviteConfirmModal);
+    document.getElementById('inviteConfirmSubmitBtn')?.addEventListener('click', sendInvite);
+
+    document.getElementById('removeCollabModalOverlay')?.addEventListener('click', closeRemoveCollabModal);
+    document.getElementById('removeCollabModalClose')?.addEventListener('click', closeRemoveCollabModal);
+    document.getElementById('removeCollabCancelBtn')?.addEventListener('click', closeRemoveCollabModal);
+    document.getElementById('removeCollabSubmitBtn')?.addEventListener('click', removeCollaborator);
+
+    if (transferOwnershipSelect) {
+        transferOwnershipSelect.addEventListener('change', function() {
+            if (transferOwnershipBtn) {
+                transferOwnershipBtn.disabled = !this.value;
             }
-        }, 60000); // 60 seconds
+        });
+    }
+    if (transferOwnershipBtn) transferOwnershipBtn.addEventListener('click', showTransferConfirmModal);
+    document.getElementById('transferConfirmModalOverlay')?.addEventListener('click', closeTransferConfirmModal);
+    document.getElementById('transferConfirmModalClose')?.addEventListener('click', closeTransferConfirmModal);
+    document.getElementById('transferConfirmCancelBtn')?.addEventListener('click', closeTransferConfirmModal);
+    document.getElementById('transferConfirmSubmitBtn')?.addEventListener('click', transferOwnership);
+
+    // ==================== Board Selector Change Handler ====================
+    const boardTypeSelect = document.getElementById('boardTypeSelect');
+
+    if (boardTypeSelect) {
+        boardTypeSelect.addEventListener('change', async function() {
+            const selectedValue = this.value;
+            positionsLoaded = false; // Reset to reload positions for new board
+
+            // Save selected board to localStorage
+            localStorage.setItem('lastViewedRecruitingBoard', selectedValue);
+
+            if (selectedValue === 'personal') {
+                await loadPersonalBoard(classYearSelect.value);
+            } else {
+                await loadSharedBoard(selectedValue, classYearSelect.value);
+            }
+        });
     }
 
-    // Stop polling
-    function stopPolling() {
-        if (pollInterval) {
-            clearInterval(pollInterval);
-            pollInterval = null;
-        }
-    }
-
-    // Toast notification helper
+    // ==================== Toast Notification ====================
     function showToast(message, type = 'success') {
         const toast = document.createElement('div');
         toast.className = `toast-notification ${type}`;
@@ -872,7 +1441,6 @@ document.addEventListener('DOMContentLoaded', async function() {
         `;
         toast.textContent = message;
 
-        // Add animation keyframes if not present
         if (!document.getElementById('toast-styles')) {
             const style = document.createElement('style');
             style.id = 'toast-styles';
@@ -893,69 +1461,14 @@ document.addEventListener('DOMContentLoaded', async function() {
         }, 3000);
     }
 
-    // Setup collaborators modal event listeners
-    if (inviteCollaboratorsBtn) inviteCollaboratorsBtn.addEventListener('click', openCollabModal);
-    if (collabModalOverlay) collabModalOverlay.addEventListener('click', closeCollabModal);
-    if (collabModalClose) collabModalClose.addEventListener('click', closeCollabModal);
-    if (collabModalCancel) collabModalCancel.addEventListener('click', closeCollabModal);
-
-    // Search input debounce
-    if (collabSearchInput) {
-        collabSearchInput.addEventListener('input', function() {
-            clearTimeout(searchTimeout);
-            searchTimeout = setTimeout(() => searchCoaches(this.value), 300);
-        });
-    }
-
-    // Invite confirm modal listeners
-    document.getElementById('inviteConfirmModalOverlay')?.addEventListener('click', closeInviteConfirmModal);
-    document.getElementById('inviteConfirmModalClose')?.addEventListener('click', closeInviteConfirmModal);
-    document.getElementById('inviteConfirmCancelBtn')?.addEventListener('click', closeInviteConfirmModal);
-    document.getElementById('inviteConfirmSubmitBtn')?.addEventListener('click', sendInvite);
-
-    // Remove collab modal listeners
-    document.getElementById('removeCollabModalOverlay')?.addEventListener('click', closeRemoveCollabModal);
-    document.getElementById('removeCollabModalClose')?.addEventListener('click', closeRemoveCollabModal);
-    document.getElementById('removeCollabCancelBtn')?.addEventListener('click', closeRemoveCollabModal);
-    document.getElementById('removeCollabSubmitBtn')?.addEventListener('click', removeCollaborator);
-
-    // Leave board modal listeners
-    if (leaveBoardBtn) leaveBoardBtn.addEventListener('click', showLeaveBoardModal);
-    document.getElementById('leaveBoardModalOverlay')?.addEventListener('click', closeLeaveBoardModal);
-    document.getElementById('leaveBoardModalClose')?.addEventListener('click', closeLeaveBoardModal);
-    document.getElementById('leaveBoardCancelBtn')?.addEventListener('click', closeLeaveBoardModal);
-    document.getElementById('leaveBoardSubmitBtn')?.addEventListener('click', leaveBoard);
-
-    // Transfer ownership listeners
-    if (transferOwnershipSelect) {
-        transferOwnershipSelect.addEventListener('change', function() {
-            if (transferOwnershipBtn) {
-                transferOwnershipBtn.disabled = !this.value;
-            }
-        });
-    }
-    if (transferOwnershipBtn) transferOwnershipBtn.addEventListener('click', showTransferConfirmModal);
-    document.getElementById('transferConfirmModalOverlay')?.addEventListener('click', closeTransferConfirmModal);
-    document.getElementById('transferConfirmModalClose')?.addEventListener('click', closeTransferConfirmModal);
-    document.getElementById('transferConfirmCancelBtn')?.addEventListener('click', closeTransferConfirmModal);
-    document.getElementById('transferConfirmSubmitBtn')?.addEventListener('click', transferOwnership);
-
-    // Initialize collaborator system
-    initCollaboratorSystem();
-
-    // Cleanup on page unload
-    window.addEventListener('beforeunload', stopPolling);
-
-    // Render the board based on configuration
+    // ==================== Board Rendering ====================
     function renderBoard(offensePositions, defensePositions) {
         const offenseField = document.getElementById('offenseField');
         const defenseField = document.getElementById('defenseField');
 
-        // Clear existing content
         offenseField.innerHTML = '';
         defenseField.innerHTML = '';
 
-        // Render offense positions
         offensePositions.forEach(groupConfig => {
             const group = document.createElement('div');
             group.className = `position-group ${groupConfig.group}`;
@@ -968,7 +1481,6 @@ document.addEventListener('DOMContentLoaded', async function() {
             offenseField.appendChild(group);
         });
 
-        // Render defense positions
         defensePositions.forEach(groupConfig => {
             const group = document.createElement('div');
             group.className = `position-group ${groupConfig.group}`;
@@ -981,28 +1493,62 @@ document.addEventListener('DOMContentLoaded', async function() {
             defenseField.appendChild(group);
         });
 
-        // Re-initialize drag and drop for all lists
         document.querySelectorAll('.recruits-list').forEach(list => {
             initDragDropForList(list);
         });
 
-        // Initialize column drag-drop after rendering
         setTimeout(initAllColumnDragDrop, 100);
     }
 
-    // Column drag-drop helper - defined early so it's available
+    function createPositionSlotFromConfig(positionName) {
+        const slot = document.createElement('div');
+        slot.className = 'position-slot';
+        slot.dataset.position = positionName;
+
+        slot.innerHTML = `
+            <input type="text" class="position-label-input" value="${positionName}" maxlength="10" placeholder="Position">
+            <div class="recruits-list" data-position="${positionName}"></div>
+        `;
+
+        const input = slot.querySelector('.position-label-input');
+
+        input.addEventListener('change', function() {
+            const newValue = this.value.toUpperCase().trim() || 'NEW';
+            this.value = newValue;
+            slot.dataset.position = newValue;
+            slot.querySelector('.recruits-list').dataset.position = newValue;
+            scheduleSave();
+        });
+
+        input.addEventListener('blur', function() {
+            const newValue = this.value.toUpperCase().trim() || 'NEW';
+            this.value = newValue;
+            slot.dataset.position = newValue;
+            slot.querySelector('.recruits-list').dataset.position = newValue;
+            scheduleSave();
+        });
+
+        input.addEventListener('focus', function() {
+            this.select();
+        });
+
+        return slot;
+    }
+
+    // ==================== Column Drag-Drop ====================
+    let draggedColumn = null;
+    let columnSourceGroup = null;
+
     function initAllColumnDragDrop() {
         document.querySelectorAll('.position-slot').forEach(slot => {
             slot.classList.add('draggable');
             slot.draggable = true;
-            // Remove existing listeners to avoid duplicates
             slot.removeEventListener('dragstart', handleColumnDragStart);
             slot.removeEventListener('dragend', handleColumnDragEnd);
             slot.removeEventListener('dragover', handleColumnDragOver);
             slot.removeEventListener('dragenter', handleColumnDragEnter);
             slot.removeEventListener('dragleave', handleColumnDragLeave);
             slot.removeEventListener('drop', handleColumnDrop);
-            // Add fresh listeners
             slot.addEventListener('dragstart', handleColumnDragStart);
             slot.addEventListener('dragend', handleColumnDragEnd);
             slot.addEventListener('dragover', handleColumnDragOver);
@@ -1012,12 +1558,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         });
     }
 
-    // Column drag handlers - defined early
-    let draggedColumn = null;
-    let columnSourceGroup = null;
-
     function handleColumnDragStart(e) {
-        // Don't start drag if we're clicking on the input or a recruit card
         if (e.target.classList.contains('position-label-input') ||
             e.target.closest('.recruit-card')) {
             e.preventDefault();
@@ -1081,45 +1622,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         scheduleSave();
     }
 
-    // Create position slot from config
-    function createPositionSlotFromConfig(positionName) {
-        const slot = document.createElement('div');
-        slot.className = 'position-slot';
-        slot.dataset.position = positionName;
-
-        slot.innerHTML = `
-            <input type="text" class="position-label-input" value="${positionName}" maxlength="10" placeholder="Position">
-            <div class="recruits-list" data-position="${positionName}"></div>
-        `;
-
-        const input = slot.querySelector('.position-label-input');
-
-        // Update on change
-        input.addEventListener('change', function() {
-            const newValue = this.value.toUpperCase().trim() || 'NEW';
-            this.value = newValue;
-            slot.dataset.position = newValue;
-            slot.querySelector('.recruits-list').dataset.position = newValue;
-            scheduleSave();
-        });
-
-        // Save on blur (when clicking out of input)
-        input.addEventListener('blur', function() {
-            const newValue = this.value.toUpperCase().trim() || 'NEW';
-            this.value = newValue;
-            slot.dataset.position = newValue;
-            slot.querySelector('.recruits-list').dataset.position = newValue;
-            scheduleSave();
-        });
-
-        input.addEventListener('focus', function() {
-            this.select();
-        });
-
-        return slot;
-    }
-
-    // Get current board configuration from DOM
+    // ==================== Board Configuration ====================
     function getBoardConfiguration() {
         const offenseField = document.getElementById('offenseField');
         const defenseField = document.getElementById('defenseField');
@@ -1141,20 +1644,21 @@ document.addEventListener('DOMContentLoaded', async function() {
         return { offensePositions, defensePositions };
     }
 
-    // Save board configuration (saves to shared config, applies to all class years)
     async function saveBoardConfiguration() {
         const config = getBoardConfiguration();
 
         try {
-            await API.put('/recruiting-board/config', config);
+            if (currentBoardType === 'personal') {
+                await API.put('/recruiting-board/personal/config', config);
+            } else {
+                await API.put(`/recruiting-board/shared/${currentBoardId}/config`, config);
+            }
             hasUnsavedChanges = false;
-            console.log('Board configuration saved (applies to all class years)');
         } catch (error) {
             console.error('Error saving board configuration:', error);
         }
     }
 
-    // Schedule save with debounce
     function scheduleSave() {
         hasUnsavedChanges = true;
         if (saveTimeout) {
@@ -1163,17 +1667,12 @@ document.addEventListener('DOMContentLoaded', async function() {
         saveTimeout = setTimeout(saveBoardConfiguration, 500);
     }
 
-    // Handle class year change
+    // ==================== Class Year Change ====================
     classYearSelect.addEventListener('change', function() {
-        const selectedYear = this.value;
-        console.log(`Selected recruiting class: ${selectedYear}`);
-        loadBoardConfiguration(selectedYear);
+        loadPlayersForBoard(this.value);
     });
 
-    // Load initial board configuration
-    loadBoardConfiguration(classYearSelect.value);
-
-    // Toggle between offense and defense
+    // ==================== Toggle Offense/Defense ====================
     const offenseBtn = document.getElementById('offenseBtn');
     const defenseBtn = document.getElementById('defenseBtn');
     const offenseField = document.getElementById('offenseField');
@@ -1184,7 +1683,6 @@ document.addEventListener('DOMContentLoaded', async function() {
         defenseBtn.classList.remove('active');
         offenseField.classList.remove('hidden');
         defenseField.classList.add('hidden');
-        // Exit remove mode when switching tabs
         exitRemoveMode();
     });
 
@@ -1193,23 +1691,20 @@ document.addEventListener('DOMContentLoaded', async function() {
         offenseBtn.classList.remove('active');
         defenseField.classList.remove('hidden');
         offenseField.classList.add('hidden');
-        // Exit remove mode when switching tabs
         exitRemoveMode();
     });
 
-    // Position management
+    // ==================== Position Management ====================
     const addPositionBtn = document.getElementById('addPositionBtn');
     const removePositionBtn = document.getElementById('removePositionBtn');
     const removeModeIndicator = document.getElementById('removeModeIndicator');
     let isRemoveMode = false;
-    let positionCounter = 0; // For generating unique IDs
+    let positionCounter = 0;
 
-    // Get current active field
     function getActiveField() {
         return offenseField.classList.contains('hidden') ? defenseField : offenseField;
     }
 
-    // Create a new position slot (for adding new positions)
     function createPositionSlot(positionName = 'NEW') {
         positionCounter++;
         const uniqueId = `pos-${Date.now()}-${positionCounter}`;
@@ -1223,7 +1718,6 @@ document.addEventListener('DOMContentLoaded', async function() {
             <div class="recruits-list" data-position="${uniqueId}"></div>
         `;
 
-        // Add event listener to the input for updating data-position
         const input = slot.querySelector('.position-label-input');
         input.addEventListener('change', function() {
             const newValue = this.value.toUpperCase().trim() || 'NEW';
@@ -1233,7 +1727,6 @@ document.addEventListener('DOMContentLoaded', async function() {
             scheduleSave();
         });
 
-        // Save on blur
         input.addEventListener('blur', function() {
             const newValue = this.value.toUpperCase().trim() || 'NEW';
             this.value = newValue;
@@ -1242,12 +1735,10 @@ document.addEventListener('DOMContentLoaded', async function() {
             scheduleSave();
         });
 
-        // Select all text when focused
         input.addEventListener('focus', function() {
             this.select();
         });
 
-        // If in remove mode, add remove-mode class and click listener
         if (isRemoveMode) {
             slot.classList.add('remove-mode');
             slot.addEventListener('click', handlePositionRemove);
@@ -1256,11 +1747,8 @@ document.addEventListener('DOMContentLoaded', async function() {
         return slot;
     }
 
-    // Add position button click handler
     addPositionBtn.addEventListener('click', function() {
         const activeField = getActiveField();
-
-        // Get the last position group or create one if none exists
         let lastGroup = activeField.querySelector('.position-group:last-child');
 
         if (!lastGroup) {
@@ -1269,28 +1757,21 @@ document.addEventListener('DOMContentLoaded', async function() {
             activeField.appendChild(lastGroup);
         }
 
-        // Create and add new position slot
         const newSlot = createPositionSlot('NEW');
         lastGroup.appendChild(newSlot);
 
-        // Focus the input for immediate editing
         const input = newSlot.querySelector('.position-label-input');
         input.focus();
         input.select();
 
-        // Initialize drag and drop for the new recruits list
         initDragDropForList(newSlot.querySelector('.recruits-list'));
-
-        // Save after adding position
         scheduleSave();
     });
 
-    // Handle position removal
     function handlePositionRemove(e) {
         e.stopPropagation();
         const slot = e.currentTarget;
 
-        // Confirm removal if there are recruits
         const recruitsList = slot.querySelector('.recruits-list');
         const hasRecruits = recruitsList && recruitsList.children.length > 0;
 
@@ -1300,10 +1781,8 @@ document.addEventListener('DOMContentLoaded', async function() {
             }
         }
 
-        // Remove the slot
         slot.remove();
 
-        // Check if parent group is empty and remove it
         const groups = document.querySelectorAll('.position-group');
         groups.forEach(group => {
             if (group.children.length === 0) {
@@ -1311,17 +1790,14 @@ document.addEventListener('DOMContentLoaded', async function() {
             }
         });
 
-        // Save after removing position
         scheduleSave();
     }
 
-    // Enter remove mode
     function enterRemoveMode() {
         isRemoveMode = true;
         removePositionBtn.classList.add('active');
         removeModeIndicator.classList.remove('hidden');
 
-        // Add remove-mode class and click listeners to all position slots in active field
         const activeField = getActiveField();
         const slots = activeField.querySelectorAll('.position-slot');
         slots.forEach(slot => {
@@ -1330,13 +1806,11 @@ document.addEventListener('DOMContentLoaded', async function() {
         });
     }
 
-    // Exit remove mode
     function exitRemoveMode() {
         isRemoveMode = false;
         removePositionBtn.classList.remove('active');
         removeModeIndicator.classList.add('hidden');
 
-        // Remove remove-mode class and click listeners from all position slots
         const allSlots = document.querySelectorAll('.position-slot');
         allSlots.forEach(slot => {
             slot.classList.remove('remove-mode');
@@ -1344,7 +1818,6 @@ document.addEventListener('DOMContentLoaded', async function() {
         });
     }
 
-    // Remove position button click handler
     removePositionBtn.addEventListener('click', function() {
         if (isRemoveMode) {
             exitRemoveMode();
@@ -1353,7 +1826,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
     });
 
-    // Drag and drop functionality
+    // ==================== Drag and Drop for Player Cards ====================
     let draggedElement = null;
     let sourceContainer = null;
 
@@ -1365,9 +1838,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
 
     function handleDragStart(e) {
-        // Prevent column drag from triggering when dragging cards
         e.stopPropagation();
-
         draggedElement = this;
         sourceContainer = this.parentElement;
         this.classList.add('dragging');
@@ -1379,14 +1850,11 @@ document.addEventListener('DOMContentLoaded', async function() {
         cleanupDragState();
     }
 
-    // Global cleanup function to ensure drag state is always reset
     function cleanupDragState() {
-        // Remove dragging class from all recruit cards
         document.querySelectorAll('.recruit-card.dragging').forEach(card => {
             card.classList.remove('dragging');
         });
 
-        // Remove drag-over class from all lists
         document.querySelectorAll('.recruits-list').forEach(list => {
             list.classList.remove('drag-over');
         });
@@ -1395,24 +1863,17 @@ document.addEventListener('DOMContentLoaded', async function() {
         sourceContainer = null;
     }
 
-    // Add document-level listener to catch drops outside valid targets
-    // This ensures cleanup happens even if dragend doesn't fire properly
     document.addEventListener('dragend', cleanupDragState);
     document.addEventListener('drop', function(e) {
-        // If drop happens outside a valid target, still cleanup
         if (!e.target.closest('.recruits-list')) {
             cleanupDragState();
         }
     });
-
-    // Also add mouseup as a fallback cleanup
     document.addEventListener('mouseup', function() {
-        // Small delay to let dragend fire first
         setTimeout(cleanupDragState, 100);
     });
 
     function handleDragOver(e) {
-        // Only allow if we have a dragged element (player card being dragged)
         if (!draggedElement) return;
         e.preventDefault();
         e.dataTransfer.dropEffect = 'move';
@@ -1420,14 +1881,12 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
 
     function handleDragEnter(e) {
-        // Highlight any recruits-list when dragging a player card
         if (draggedElement) {
             this.classList.add('drag-over');
         }
     }
 
     function handleDragLeave(e) {
-        // Only remove class if we're actually leaving the container
         const relatedTarget = e.relatedTarget;
         if (!relatedTarget || !this.contains(relatedTarget)) {
             this.classList.remove('drag-over');
@@ -1447,21 +1906,17 @@ document.addEventListener('DOMContentLoaded', async function() {
         const playerId = draggedElement.dataset.playerId;
         const afterElement = getDragAfterElement(this, e.clientY);
 
-        // Move the element
         if (afterElement == null) {
             this.appendChild(draggedElement);
         } else {
             this.insertBefore(draggedElement, afterElement);
         }
 
-        // Update the player's position data if moved to different position
         if (targetPosition !== sourcePosition) {
             draggedElement.dataset.position = targetPosition;
-            // Save the position change to backend
             updatePlayerPosition(playerId, sourcePosition, targetPosition);
         }
 
-        // Update rankings for both source and target containers
         updateRankings(this);
         if (sourceContainer !== this) {
             updateRankings(sourceContainer);
@@ -1470,18 +1925,22 @@ document.addEventListener('DOMContentLoaded', async function() {
         return false;
     }
 
-    // Update player position in the database when dragged to a new position column
     async function updatePlayerPosition(playerId, oldPosition, newPosition) {
         try {
             const classYear = classYearSelect.value;
-            await API.put(`/recruiting-board/${classYear}/players/${playerId}/position`, {
-                oldPosition: oldPosition,
-                newPosition: newPosition
-            });
-            console.log(`Player ${playerId} moved from ${oldPosition} to ${newPosition}`);
+            if (currentBoardType === 'personal') {
+                await API.put(`/recruiting-board/personal/${classYear}/players/${playerId}/position`, {
+                    oldPosition: oldPosition,
+                    newPosition: newPosition
+                });
+            } else {
+                await API.put(`/recruiting-board/shared/${currentBoardId}/${classYear}/players/${playerId}/position`, {
+                    oldPosition: oldPosition,
+                    newPosition: newPosition
+                });
+            }
         } catch (error) {
             console.error('Error updating player position:', error);
-            // Optionally show a toast or reload the board on error
         }
     }
 
@@ -1509,5 +1968,8 @@ document.addEventListener('DOMContentLoaded', async function() {
             }
         });
     }
+
+    // ==================== Initialize ====================
+    initializeBoards();
 
 });

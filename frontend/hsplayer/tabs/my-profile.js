@@ -251,6 +251,7 @@ function updateNavbarForLoggedInUser(user, profile) {
                         <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
                     </svg>
                     <span>Notifications</span>
+                    <span class="notification-badge" style="display: none;"></span>
                 </a>
                 ${isCollege ? `
                 <a href="/frontend/${userFolder}/tabs/transfer-portal.html" class="nav-item${isTransferPlayer ? ' nav-item-portal' : ''}" id="transferPortalNav">
@@ -307,6 +308,7 @@ function updateNavbarForLoggedInUser(user, profile) {
                         <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
                     </svg>
                     <span>Notifications</span>
+                    <span class="notification-badge" style="display: none;"></span>
                 </a>
                 ${isCollege ? `
                 <a href="/frontend/${userFolder}/tabs/recruiting-board.html" class="nav-item" id="recruitingBoardNav">
@@ -341,9 +343,83 @@ function updateNavbarForLoggedInUser(user, profile) {
 
         sidebarNav.innerHTML = navHTML;
 
+        // Inject a style tag to override the page CSS
+        // Use theme colors based on logged-in user's folder, not the page being viewed
+        let navActiveColor, navActiveBg, navHoverBg;
+
+        if (userFolder === 'transferplayer') {
+            // Transfer players use red theme
+            navActiveColor = '#b91c1c';
+            navActiveBg = 'rgba(185, 28, 28, 0.2)';
+            navHoverBg = 'rgba(185, 28, 28, 0.1)';
+        } else if (userFolder === 'collegecoach' || userFolder === 'hscoach') {
+            // Coaches use blue/cerulean theme
+            navActiveColor = '#1282a2';
+            navActiveBg = 'rgba(18, 130, 162, 0.2)';
+            navHoverBg = 'rgba(18, 130, 162, 0.1)';
+        } else {
+            // Other players use blue/cerulean theme
+            navActiveColor = '#1282a2';
+            navActiveBg = 'rgba(18, 130, 162, 0.2)';
+            navHoverBg = 'rgba(18, 130, 162, 0.1)';
+        }
+
+        // Remove any existing nav override style
+        const existingStyle = document.getElementById('nav-theme-override');
+        if (existingStyle) {
+            existingStyle.remove();
+        }
+
+        // Create new style tag with proper theme colors - use very high specificity
+        const styleTag = document.createElement('style');
+        styleTag.id = 'nav-theme-override';
+        styleTag.textContent = `
+            /* Reset all nav items to default state - white text */
+            .sidebar .sidebar-nav .nav-item,
+            .sidebar .sidebar-nav a.nav-item {
+                color: var(--white, #ffffff) !important;
+            }
+            .sidebar .sidebar-nav .nav-item .nav-icon,
+            .sidebar .sidebar-nav a.nav-item .nav-icon {
+                color: var(--white, #ffffff) !important;
+            }
+            /* Transfer Portal nav item - always red text only for transfer players */
+            ${userFolder === 'transferplayer' ? `
+            .sidebar .sidebar-nav .nav-item.nav-item-portal,
+            .sidebar .sidebar-nav a.nav-item.nav-item-portal {
+                color: #b91c1c !important;
+            }
+            .sidebar .sidebar-nav .nav-item.nav-item-portal .nav-icon,
+            .sidebar .sidebar-nav a.nav-item.nav-item-portal .nav-icon {
+                color: #b91c1c !important;
+            }
+            ` : ''}
+            /* Hover state */
+            .sidebar .sidebar-nav .nav-item:hover,
+            .sidebar .sidebar-nav a.nav-item:hover {
+                background: ${navHoverBg} !important;
+            }
+            /* Active state - based on logged-in user's theme */
+            .sidebar .sidebar-nav .nav-item.active,
+            .sidebar .sidebar-nav a.nav-item.active {
+                background: ${navActiveBg} !important;
+                color: ${navActiveColor} !important;
+                border-left: 3px solid ${navActiveColor} !important;
+            }
+            .sidebar .sidebar-nav .nav-item.active .nav-icon,
+            .sidebar .sidebar-nav a.nav-item.active .nav-icon {
+                color: ${navActiveColor} !important;
+            }
+        `;
+        document.head.appendChild(styleTag);
+
         // Update unread messages badge after navbar is rebuilt
         if (typeof updateUnreadMessagesBadge === 'function') {
             updateUnreadMessagesBadge();
+        }
+        // Update unread notifications badge after navbar is rebuilt
+        if (typeof updateUnreadNotificationsBadge === 'function') {
+            updateUnreadNotificationsBadge();
         }
     }
 
@@ -656,7 +732,7 @@ async function loadProfileByUsername(username) {
     }
 }
 
-function displayProfile(profile, type) {
+async function displayProfile(profile, type) {
     console.log('displayProfile called with type:', type);
     // Store the profile type globally
     currentProfileType = type;
@@ -677,6 +753,25 @@ function displayProfile(profile, type) {
     const nameElement = document.querySelector('.profile-name');
     if (nameElement) {
         nameElement.textContent = `${profile.first_name} ${profile.last_name}`;
+
+        // Check if this profile follows the current user and add badge
+        if (viewingUserId) {
+            try {
+                const followsMeResponse = await API.get(`/follow/${viewingUserId}/follows-me`);
+                // Remove existing badge if any
+                const existingBadge = nameElement.parentElement.querySelector('.follows-you-badge');
+                if (existingBadge) existingBadge.remove();
+
+                if (followsMeResponse.followsMe) {
+                    const badge = document.createElement('span');
+                    badge.className = 'follows-you-badge';
+                    badge.textContent = 'Follows you';
+                    nameElement.parentElement.insertBefore(badge, nameElement.nextSibling);
+                }
+            } catch (error) {
+                console.error('Error checking if user follows me:', error);
+            }
+        }
     }
 
     // NOTE: Don't update sidebar footer here - it should always show the logged-in user's info
@@ -792,30 +887,27 @@ function displayPlayerProfile(profile) {
         positionElement.textContent = parts.length > 0 ? parts.join(' • ') : 'Position not specified';
     }
 
-    // Row 2 & 3: Class, GPA, School info
+    // Row 2 & 3: School info, Class (GPA is shown in Academics section only)
     const metaElement = document.querySelector('.profile-meta');
     if (metaElement) {
         const lines = [];
 
-        // Row 2: Class of YYYY • GPA (if entered)
+        // Row 2: High School Name, State OR College Name, Division
         const row2Parts = [];
-        if (profile.graduation_year) row2Parts.push(`Class of ${profile.graduation_year}`);
-        if (profile.gpa) row2Parts.push(`GPA: ${profile.gpa}`);
+        if (profile.high_school) {
+            row2Parts.push(profile.high_school);
+            if (profile.state) row2Parts.push(profile.state);
+        } else if (profile.college_name) {
+            row2Parts.push(profile.college_name);
+            if (profile.college_division) row2Parts.push(profile.college_division);
+        }
         if (row2Parts.length > 0) {
-            lines.push(row2Parts.join(' <span>•</span> '));
+            lines.push(row2Parts.join(', '));
         }
 
-        // Row 3: High School Name, State OR College Name, Division
-        const row3Parts = [];
-        if (profile.high_school) {
-            row3Parts.push(profile.high_school);
-            if (profile.state) row3Parts.push(profile.state);
-        } else if (profile.college_name) {
-            row3Parts.push(profile.college_name);
-            if (profile.college_division) row3Parts.push(profile.college_division);
-        }
-        if (row3Parts.length > 0) {
-            lines.push(row3Parts.join(', '));
+        // Row 3: Class of YYYY
+        if (profile.graduation_year) {
+            lines.push(`Class of ${profile.graduation_year}`);
         }
 
         metaElement.innerHTML = lines.join('<br>') || 'Information not provided';
@@ -840,6 +932,9 @@ function displayPlayerProfile(profile) {
 
     // Update school info
     updateSchoolInfo(profile);
+
+    // Update social media section
+    updateSocialMedia(profile);
 }
 
 function displayCoachProfile(profile) {
@@ -981,6 +1076,72 @@ function updateSchoolInfo(profile) {
         if (schoolClass && profile.graduation_year) {
             schoolClass.textContent = `Class of ${profile.graduation_year}`;
         }
+    }
+}
+
+// Update the Social Media section in Overview tab
+function updateSocialMedia(profile) {
+    const socialMediaCard = document.getElementById('socialMediaCard');
+    if (!socialMediaCard) return;
+
+    // Parse socials from JSON if stored as string
+    let socials = {};
+    if (profile.socials) {
+        try {
+            socials = typeof profile.socials === 'string'
+                ? JSON.parse(profile.socials)
+                : profile.socials;
+        } catch (e) {
+            console.log('Could not parse socials:', e);
+        }
+    }
+
+    const hasHudl = socials.hudl && socials.hudl.trim();
+    const hasInstagram = socials.instagram && socials.instagram.trim();
+
+    if (hasHudl || hasInstagram) {
+        let html = '<div class="social-media-links">';
+
+        if (hasHudl) {
+            html += `
+                <a href="${socials.hudl}" target="_blank" rel="noopener noreferrer" class="social-media-link">
+                    <div class="social-icon hudl">
+                        <svg viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                        </svg>
+                    </div>
+                    <span class="link-text">Hudl Profile</span>
+                    <svg class="external-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px; opacity: 0.5;">
+                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                        <polyline points="15 3 21 3 21 9"></polyline>
+                        <line x1="10" y1="14" x2="21" y2="3"></line>
+                    </svg>
+                </a>
+            `;
+        }
+
+        if (hasInstagram) {
+            html += `
+                <a href="${socials.instagram}" target="_blank" rel="noopener noreferrer" class="social-media-link">
+                    <div class="social-icon instagram">
+                        <svg viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+                        </svg>
+                    </div>
+                    <span class="link-text">Instagram</span>
+                    <svg class="external-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px; opacity: 0.5;">
+                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                        <polyline points="15 3 21 3 21 9"></polyline>
+                        <line x1="10" y1="14" x2="21" y2="3"></line>
+                    </svg>
+                </a>
+            `;
+        }
+
+        html += '</div>';
+        socialMediaCard.innerHTML = html;
+    } else {
+        socialMediaCard.innerHTML = '<p class="empty-state-text">No social media links added yet.</p>';
     }
 }
 
@@ -1174,23 +1335,27 @@ function setupAddToBoardButton() {
     const closeBtn = document.getElementById('recruitingBoardModalClose');
     const cancelBtn = document.getElementById('recruitingBoardCancelBtn');
     const submitBtn = document.getElementById('recruitingBoardSubmitBtn');
+    const boardSelect = document.getElementById('recruitingBoardSelect');
     const classYearSelect = document.getElementById('recruitingClassYear');
     const positionSelect = document.getElementById('recruitingPosition');
 
-    if (!modal || !classYearSelect || !positionSelect) return;
+    if (!modal || !boardSelect || !classYearSelect || !positionSelect) return;
+
+    // Cache for boards and position configs
+    let availableBoards = [];
+    let positionConfigs = {}; // Cache configs by board ID
 
     // Populate class year options (2026-2030)
-    classYearSelect.innerHTML = '<option value="">Select Class Year</option>';
-    const currentYear = new Date().getFullYear();
-    for (let year = currentYear + 1; year <= currentYear + 5; year++) {
-        const option = document.createElement('option');
-        option.value = year;
-        option.textContent = `Class of ${year}`;
-        classYearSelect.appendChild(option);
+    function populateClassYears() {
+        classYearSelect.innerHTML = '<option value="">Select Class Year</option>';
+        const currentYear = new Date().getFullYear();
+        for (let year = currentYear + 1; year <= currentYear + 5; year++) {
+            const option = document.createElement('option');
+            option.value = year;
+            option.textContent = `Class of ${year}`;
+            classYearSelect.appendChild(option);
+        }
     }
-
-    // Cache for shared position config
-    let positionConfig = null;
 
     // Load positions into dropdown
     function populatePositions(config) {
@@ -1234,26 +1399,123 @@ function setupAddToBoardButton() {
         }
     }
 
+    // Load available boards
+    async function loadBoards() {
+        boardSelect.innerHTML = '<option value="">Loading boards...</option>';
+        classYearSelect.innerHTML = '<option value="">Select a board first</option>';
+        positionSelect.innerHTML = '<option value="">Select a board first</option>';
+
+        try {
+            // Get personal board config
+            const personalConfig = await API.get('/recruiting-board/personal/config');
+
+            // Get shared boards
+            const sharedResponse = await API.get('/recruiting-board/shared');
+
+            availableBoards = [];
+
+            // Add personal board
+            availableBoards.push({
+                id: 'personal',
+                name: 'Personal Board',
+                type: 'personal',
+                config: personalConfig
+            });
+
+            // Add owned shared boards
+            if (sharedResponse.ownedBoards) {
+                sharedResponse.ownedBoards.forEach(board => {
+                    availableBoards.push({
+                        id: board.id,
+                        name: board.board_name,
+                        type: 'shared',
+                        config: null // Will load on selection
+                    });
+                });
+            }
+
+            // Add collaborator boards
+            if (sharedResponse.collaboratorBoards) {
+                sharedResponse.collaboratorBoards.forEach(board => {
+                    availableBoards.push({
+                        id: board.id,
+                        name: `${board.board_name} (${board.owner_first_name} ${board.owner_last_name})`,
+                        type: 'shared',
+                        config: null
+                    });
+                });
+            }
+
+            // Populate board dropdown
+            boardSelect.innerHTML = '<option value="">Select a Board</option>';
+            availableBoards.forEach((board, index) => {
+                const option = document.createElement('option');
+                option.value = index;
+                option.textContent = board.name;
+                boardSelect.appendChild(option);
+            });
+
+        } catch (error) {
+            console.error('Error loading boards:', error);
+            boardSelect.innerHTML = '<option value="">Error loading boards</option>';
+        }
+    }
+
+    // Handle board selection change
+    boardSelect.addEventListener('change', async () => {
+        const selectedIndex = boardSelect.value;
+
+        if (!selectedIndex) {
+            classYearSelect.innerHTML = '<option value="">Select a board first</option>';
+            positionSelect.innerHTML = '<option value="">Select a board first</option>';
+            updateSubmitState();
+            return;
+        }
+
+        const selectedBoard = availableBoards[parseInt(selectedIndex)];
+
+        // Populate class years
+        populateClassYears();
+
+        // Load position config for selected board
+        positionSelect.innerHTML = '<option value="">Loading positions...</option>';
+
+        try {
+            let config;
+            if (selectedBoard.type === 'personal') {
+                config = selectedBoard.config || await API.get('/recruiting-board/personal/config');
+            } else {
+                // Load shared board config
+                if (positionConfigs[selectedBoard.id]) {
+                    config = positionConfigs[selectedBoard.id];
+                } else {
+                    const boardData = await API.get(`/recruiting-board/shared/${selectedBoard.id}`);
+                    config = {
+                        offensePositions: boardData.offensePositions,
+                        defensePositions: boardData.defensePositions
+                    };
+                    positionConfigs[selectedBoard.id] = config;
+                }
+            }
+            populatePositions(config);
+        } catch (error) {
+            console.error('Error loading board config:', error);
+            positionSelect.innerHTML = '<option value="">Error loading positions</option>';
+        }
+
+        updateSubmitState();
+    });
+
     // Open modal on button click
     recruitingBoardBtn.addEventListener('click', async () => {
         modal.classList.add('active');
         document.body.style.overflow = 'hidden';
 
         // Reset dropdowns
-        classYearSelect.value = '';
-        positionSelect.innerHTML = '<option value="">Loading positions...</option>';
         submitBtn.disabled = true;
 
-        // Load shared position config (same for all class years)
-        try {
-            if (!positionConfig) {
-                positionConfig = await API.get('/recruiting-board/config');
-            }
-            populatePositions(positionConfig);
-        } catch (error) {
-            console.error('Error fetching position config:', error);
-            positionSelect.innerHTML = '<option value="">Error loading positions</option>';
-        }
+        // Load available boards
+        await loadBoards();
     });
 
     // Close modal functions
@@ -1266,9 +1528,9 @@ function setupAddToBoardButton() {
     if (closeBtn) closeBtn.addEventListener('click', closeModal);
     if (cancelBtn) cancelBtn.addEventListener('click', closeModal);
 
-    // Enable submit when both class year and position are selected
+    // Enable submit when all three selections are made
     function updateSubmitState() {
-        submitBtn.disabled = !classYearSelect.value || !positionSelect.value;
+        submitBtn.disabled = !boardSelect.value || !classYearSelect.value || !positionSelect.value;
     }
 
     classYearSelect.addEventListener('change', updateSubmitState);
@@ -1276,13 +1538,16 @@ function setupAddToBoardButton() {
 
     // Submit handler
     submitBtn.addEventListener('click', async () => {
+        const selectedBoardIndex = boardSelect.value;
         const classYear = classYearSelect.value;
         const position = positionSelect.value;
 
-        if (!classYear || !position) {
-            showToast('Please select both class year and position', 'error');
+        if (!selectedBoardIndex || !classYear || !position) {
+            showToast('Please select board, class year, and position', 'error');
             return;
         }
+
+        const selectedBoard = availableBoards[parseInt(selectedBoardIndex)];
 
         submitBtn.disabled = true;
         submitBtn.textContent = 'Adding...';
@@ -1308,9 +1573,15 @@ function setupAddToBoardButton() {
                 position: position
             };
 
-            await API.post(`/recruiting-board/${classYear}/players`, playerData);
+            // Use correct API route based on board type
+            if (selectedBoard.type === 'personal') {
+                await API.post(`/recruiting-board/personal/${classYear}/players`, playerData);
+            } else {
+                await API.post(`/recruiting-board/shared/${selectedBoard.id}/${classYear}/players`, playerData);
+            }
 
-            showToast(`${currentProfile.first_name} ${currentProfile.last_name} added to ${classYear} recruiting board!`, 'success');
+            const boardName = selectedBoard.name;
+            showToast(`${currentProfile.first_name} ${currentProfile.last_name} added to ${boardName} (${classYear})!`, 'success');
             closeModal();
 
             // Update button to show remove mode now
@@ -1326,7 +1597,12 @@ function setupAddToBoardButton() {
                     Remove from Recruiting Board
                 `;
                 // Re-setup for remove functionality
-                setupRemoveFromBoardButton([{ class_year: classYear, position: position }]);
+                setupRemoveFromBoardButton([{
+                    class_year: classYear,
+                    position: position,
+                    board_type: selectedBoard.type,
+                    board_id: selectedBoard.id
+                }]);
             }
         } catch (error) {
             console.error('Error adding player to board:', error);
@@ -1349,6 +1625,8 @@ function setupRemoveFromBoardButton(boardEntries) {
     const submitBtn = document.getElementById('removeRecruitingBoardSubmitBtn');
     const confirmText = document.getElementById('removeConfirmText');
     const boardInfo = document.getElementById('removeBoardInfo');
+    const boardSelect = document.getElementById('removeBoardSelect');
+    const boardSelectionContainer = document.getElementById('removeBoardSelection');
 
     if (!modal) return;
 
@@ -1356,22 +1634,78 @@ function setupRemoveFromBoardButton(boardEntries) {
     const newBtn = recruitingBoardBtn.cloneNode(true);
     recruitingBoardBtn.parentNode.replaceChild(newBtn, recruitingBoardBtn);
 
+    // Populate board selector
+    function populateBoardSelector() {
+        if (!boardSelect) return;
+
+        boardSelect.innerHTML = '';
+
+        // Add "All Boards" option if more than one board
+        if (boardEntries.length > 1) {
+            const allOption = document.createElement('option');
+            allOption.value = 'all';
+            allOption.textContent = `All Boards (${boardEntries.length})`;
+            boardSelect.appendChild(allOption);
+        }
+
+        // Add individual board options
+        boardEntries.forEach((entry, index) => {
+            const option = document.createElement('option');
+            option.value = index.toString();
+            const boardName = entry.board_name || (entry.board_type === 'personal' ? 'Personal Board' : 'Shared Board');
+            option.textContent = `${boardName} - Class of ${entry.class_year} (${entry.position})`;
+            boardSelect.appendChild(option);
+        });
+
+        // If only one entry, select it and hide the "All" option context
+        if (boardEntries.length === 1) {
+            boardSelect.value = '0';
+        }
+    }
+
+    // Update board info based on selection
+    function updateBoardInfo() {
+        if (!boardSelect || !boardInfo) return;
+
+        const selectedValue = boardSelect.value;
+
+        if (selectedValue === 'all') {
+            const boardList = boardEntries.map(e => {
+                const boardName = e.board_name || (e.board_type === 'personal' ? 'Personal Board' : 'Shared Board');
+                return `${boardName} - Class of ${e.class_year} (${e.position})`;
+            }).join('\n');
+            boardInfo.innerHTML = `<strong>Will remove from:</strong><br>${boardList.replace(/\n/g, '<br>')}`;
+        } else {
+            const entry = boardEntries[parseInt(selectedValue)];
+            if (entry) {
+                const boardName = entry.board_name || (entry.board_type === 'personal' ? 'Personal Board' : 'Shared Board');
+                boardInfo.innerHTML = `<strong>Will remove from:</strong> ${boardName} - Class of ${entry.class_year} (${entry.position})`;
+            }
+        }
+    }
+
     // Open remove modal on button click
     newBtn.addEventListener('click', () => {
         const playerName = `${currentProfile.first_name} ${currentProfile.last_name}`;
-        confirmText.innerHTML = `Are you sure you want to remove <strong>${playerName}</strong> from the recruiting board?`;
+        confirmText.innerHTML = `Remove <strong>${playerName}</strong> from recruiting board?`;
 
-        // Show which boards they're on
-        if (boardEntries && boardEntries.length > 0) {
-            const boardList = boardEntries.map(e => `Class of ${e.class_year} (${e.position})`).join(', ');
-            boardInfo.textContent = `Currently on: ${boardList}`;
-        } else {
-            boardInfo.textContent = '';
+        // Populate and show the board selector
+        populateBoardSelector();
+        updateBoardInfo();
+
+        // Show/hide selector based on number of entries
+        if (boardSelectionContainer) {
+            boardSelectionContainer.style.display = boardEntries.length > 0 ? 'block' : 'none';
         }
 
         modal.classList.add('active');
         document.body.style.overflow = 'hidden';
     });
+
+    // Handle board selection change
+    if (boardSelect) {
+        boardSelect.addEventListener('change', updateBoardInfo);
+    }
 
     // Close modal functions
     function closeModal() {
@@ -1383,35 +1717,63 @@ function setupRemoveFromBoardButton(boardEntries) {
     if (closeBtn) closeBtn.addEventListener('click', closeModal);
     if (cancelBtn) cancelBtn.addEventListener('click', closeModal);
 
-    // Submit handler - remove from all boards
+    // Submit handler - remove from selected board(s)
     if (submitBtn) {
         submitBtn.addEventListener('click', async () => {
             submitBtn.disabled = true;
             submitBtn.textContent = 'Removing...';
 
             try {
-                // Remove from all boards where this player exists
-                for (const entry of boardEntries) {
-                    await API.delete(`/recruiting-board/${entry.class_year}/players/${viewingUserId}?position=${entry.position}`);
+                const selectedValue = boardSelect ? boardSelect.value : 'all';
+                let entriesToRemove = [];
+
+                if (selectedValue === 'all') {
+                    entriesToRemove = boardEntries;
+                } else {
+                    const index = parseInt(selectedValue);
+                    if (boardEntries[index]) {
+                        entriesToRemove = [boardEntries[index]];
+                    }
                 }
 
-                showToast(`${currentProfile.first_name} ${currentProfile.last_name} removed from recruiting board!`, 'success');
+                // Remove from selected boards
+                for (const entry of entriesToRemove) {
+                    if (entry.board_type === 'shared' && entry.board_id) {
+                        await API.delete(`/recruiting-board/shared/${entry.board_id}/${entry.class_year}/players/${viewingUserId}?position=${entry.position}`);
+                    } else {
+                        await API.delete(`/recruiting-board/personal/${entry.class_year}/players/${viewingUserId}?position=${entry.position}`);
+                    }
+                }
+
+                const removedCount = entriesToRemove.length;
+                const message = removedCount === 1
+                    ? `${currentProfile.first_name} ${currentProfile.last_name} removed from board!`
+                    : `${currentProfile.first_name} ${currentProfile.last_name} removed from ${removedCount} boards!`;
+                showToast(message, 'success');
                 closeModal();
 
-                // Update button back to add mode
-                const currentBtn = document.getElementById('recruitingBoardBtn');
-                if (currentBtn) {
-                    currentBtn.classList.remove('remove-mode');
-                    currentBtn.innerHTML = `
-                        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                            <line x1="12" y1="8" x2="12" y2="16"></line>
-                            <line x1="8" y1="12" x2="16" y2="12"></line>
-                        </svg>
-                        Add to Recruiting Board
-                    `;
-                    // Re-setup for add functionality
-                    setupAddToBoardButton();
+                // Check if player is still on any boards
+                const remainingEntries = boardEntries.filter(e => !entriesToRemove.includes(e));
+
+                if (remainingEntries.length === 0) {
+                    // Update button back to add mode
+                    const currentBtn = document.getElementById('recruitingBoardBtn');
+                    if (currentBtn) {
+                        currentBtn.classList.remove('remove-mode');
+                        currentBtn.innerHTML = `
+                            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                <line x1="12" y1="8" x2="12" y2="16"></line>
+                                <line x1="8" y1="12" x2="16" y2="12"></line>
+                            </svg>
+                            Add to Recruiting Board
+                        `;
+                        // Re-setup for add functionality
+                        setupAddToBoardButton();
+                    }
+                } else {
+                    // Update the boardEntries and re-setup remove button with remaining entries
+                    setupRemoveFromBoardButton(remainingEntries);
                 }
             } catch (error) {
                 console.error('Error removing player from board:', error);
@@ -1428,12 +1790,22 @@ async function setupFollowButton() {
     const followBtn = document.getElementById('followBtn');
     if (!followBtn || !viewingUserId) return;
 
-    // Check follow status
+    // Check follow status and if they follow us
     try {
-        const response = await API.get(`/follow/${viewingUserId}/check`);
-        const isFollowing = response.isFollowing;
+        const [followResponse, followsMeResponse] = await Promise.all([
+            API.get(`/follow/${viewingUserId}/check`),
+            API.get(`/follow/${viewingUserId}/follows-me`)
+        ]);
+        const isFollowing = followResponse.isFollowing;
+        const theyFollowMe = followsMeResponse.followsMe;
 
-        followBtn.textContent = isFollowing ? 'Following' : 'Follow';
+        // Determine button text: "Following", "Follow back", or "Follow"
+        const getButtonText = (following) => {
+            if (following) return 'Following';
+            return theyFollowMe ? 'Follow back' : 'Follow';
+        };
+
+        followBtn.textContent = getButtonText(isFollowing);
         followBtn.classList.toggle('following', isFollowing);
 
         followBtn.addEventListener('click', async () => {
@@ -1442,7 +1814,7 @@ async function setupFollowButton() {
 
                 if (currentlyFollowing) {
                     await API.delete(`/follow/${viewingUserId}`);
-                    followBtn.textContent = 'Follow';
+                    followBtn.textContent = getButtonText(false);
                     followBtn.classList.remove('following');
                 } else {
                     await API.post(`/follow/${viewingUserId}`);
@@ -1943,6 +2315,25 @@ function populateEditForm() {
     if (email) email.value = currentProfile.email || '';
     if (phone) phone.value = formatPhoneNumber(currentProfile.phone) || '';
 
+    // Populate social media fields
+    const hudlLink = document.getElementById('editHudlLink');
+    const instagramLink = document.getElementById('editInstagramLink');
+
+    // Parse socials from JSON if stored as string
+    let socials = {};
+    if (currentProfile.socials) {
+        try {
+            socials = typeof currentProfile.socials === 'string'
+                ? JSON.parse(currentProfile.socials)
+                : currentProfile.socials;
+        } catch (e) {
+            console.log('Could not parse socials:', e);
+        }
+    }
+
+    if (hudlLink) hudlLink.value = socials.hudl || '';
+    if (instagramLink) instagramLink.value = socials.instagram || '';
+
     // Clear all position checkboxes first
     const positionCheckboxes = document.querySelectorAll('#editPositionsContainer input[name="position"]');
     positionCheckboxes.forEach(checkbox => checkbox.checked = false);
@@ -2097,6 +2488,15 @@ async function saveProfileChanges() {
             formData.state = document.getElementById('editHSState').value;
             formData.college_division = null; // Clear college division for HS players
         }
+
+        // Add social media links
+        const hudlLink = document.getElementById('editHudlLink');
+        const instagramLink = document.getElementById('editInstagramLink');
+        const socialsObj = {
+            hudl: hudlLink ? hudlLink.value.trim() : '',
+            instagram: instagramLink ? instagramLink.value.trim() : ''
+        };
+        formData.socials = JSON.stringify(socialsObj);
 
         // Send update request
         const response = await API.put('/profile', formData);
@@ -4709,25 +5109,90 @@ function setupHighlightsModal() {
         });
     }
 
+    // Helper function to show validation error
+    function showHighlightError(message) {
+        const errorContainer = document.getElementById('highlightValidationErrors');
+        const errorText = document.getElementById('highlightErrorText');
+        if (errorContainer && errorText) {
+            errorText.textContent = message;
+            errorContainer.style.display = 'block';
+        }
+    }
+
+    // Helper function to hide validation error
+    function hideHighlightError() {
+        const errorContainer = document.getElementById('highlightValidationErrors');
+        if (errorContainer) {
+            errorContainer.style.display = 'none';
+        }
+    }
+
+    // Helper function to update progress bar
+    function updateProgressBar(percent) {
+        const progressContainer = document.getElementById('videoUploadProgress');
+        const progressBar = document.getElementById('videoProgressBar');
+        const progressText = document.getElementById('videoProgressText');
+
+        if (progressContainer && progressBar && progressText) {
+            progressContainer.style.display = 'flex';
+            progressBar.style.width = `${percent}%`;
+            progressText.textContent = `${Math.round(percent)}%`;
+
+            // Add complete class when done
+            if (percent >= 100) {
+                progressBar.classList.add('complete');
+                progressText.textContent = 'Ready!';
+            } else {
+                progressBar.classList.remove('complete');
+            }
+        }
+    }
+
+    // Helper function to reset progress bar
+    function resetProgressBar() {
+        const progressContainer = document.getElementById('videoUploadProgress');
+        const progressBar = document.getElementById('videoProgressBar');
+        const progressText = document.getElementById('videoProgressText');
+
+        if (progressContainer && progressBar && progressText) {
+            progressContainer.style.display = 'none';
+            progressBar.style.width = '0%';
+            progressBar.classList.remove('complete');
+            progressText.textContent = '0%';
+        }
+    }
+
     // Save highlight
     if (btnHighlightSave) {
         btnHighlightSave.addEventListener('click', async () => {
             const title = highlightTitleInput?.value?.trim();
             const link = highlightLinkInputField?.value?.trim();
+            const videoFileInput = document.getElementById('highlightVideoFile');
+            const videoFile = videoFileInput?.files?.[0];
+
+            // Hide any previous errors
+            hideHighlightError();
 
             if (!title) {
-                alert('Please enter a title for your highlight');
+                showHighlightError('Please enter a title for your highlight');
                 return;
             }
 
-            if (!link) {
-                alert('Please enter a Hudl link');
+            // Check if either a Hudl link or video file is provided
+            if (!link && !videoFile) {
+                showHighlightError('Please enter a Hudl link or upload a video file');
                 return;
             }
 
-            // Validate Hudl link
-            if (!isValidHudlLink(link)) {
-                alert('Please enter a valid Hudl link (e.g., https://www.hudl.com/video/...)');
+            // Validate Hudl link if provided
+            if (link && !isValidHudlLink(link)) {
+                showHighlightError('Please enter a valid Hudl link (e.g., https://www.hudl.com/video/...)');
+                return;
+            }
+
+            // Validate video file size (100MB max)
+            if (videoFile && videoFile.size > 100 * 1024 * 1024) {
+                showHighlightError('Video file is too large. Maximum size is 100MB.');
                 return;
             }
 
@@ -4735,24 +5200,68 @@ function setupHighlightsModal() {
                 btnHighlightSave.disabled = true;
                 btnHighlightSave.textContent = 'Adding...';
 
-                const response = await API.post('/highlights', {
-                    highlight_type: currentHighlightType,
-                    title: title,
-                    hudl_link: link
-                });
+                let response;
+
+                if (videoFile) {
+                    // Upload with video file
+                    const formData = new FormData();
+                    formData.append('highlight_type', currentHighlightType);
+                    formData.append('title', title);
+                    if (link) formData.append('hudl_link', link);
+                    formData.append('video_file', videoFile);
+
+                    // Use XMLHttpRequest for progress tracking
+                    response = await new Promise((resolve, reject) => {
+                        const xhr = new XMLHttpRequest();
+
+                        xhr.upload.addEventListener('progress', (e) => {
+                            if (e.lengthComputable) {
+                                const percent = (e.loaded / e.total) * 100;
+                                updateProgressBar(percent);
+                            }
+                        });
+
+                        xhr.addEventListener('load', () => {
+                            if (xhr.status >= 200 && xhr.status < 300) {
+                                try {
+                                    resolve(JSON.parse(xhr.responseText));
+                                } catch (e) {
+                                    reject(new Error('Invalid response'));
+                                }
+                            } else {
+                                reject(new Error(xhr.statusText || 'Upload failed'));
+                            }
+                        });
+
+                        xhr.addEventListener('error', () => reject(new Error('Network error')));
+
+                        const token = localStorage.getItem('token');
+                        xhr.open('POST', `${API_BASE_URL}/highlights/upload`);
+                        xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+                        xhr.send(formData);
+                    });
+                } else {
+                    // Regular API call for Hudl link only
+                    response = await API.post('/highlights', {
+                        highlight_type: currentHighlightType,
+                        title: title,
+                        hudl_link: link
+                    });
+                }
 
                 if (response.success) {
                     closeHighlightModal();
                     loadHighlights(); // Reload highlights
                 } else {
-                    alert(response.message || 'Failed to add highlight');
+                    showHighlightError(response.message || 'Failed to add highlight');
                 }
             } catch (error) {
                 console.error('Error adding highlight:', error);
-                alert('Failed to add highlight. Please try again.');
+                showHighlightError('Failed to add highlight. Please try again.');
             } finally {
                 btnHighlightSave.disabled = false;
                 btnHighlightSave.textContent = 'Add Highlight';
+                resetProgressBar();
             }
         });
     }
@@ -4770,6 +5279,16 @@ function setupHighlightsModal() {
         addHighlightModalFooter.style.display = 'none';
         if (highlightTitleInput) highlightTitleInput.value = '';
         if (highlightLinkInputField) highlightLinkInputField.value = '';
+
+        // Reset video file input
+        const videoFileInput = document.getElementById('highlightVideoFile');
+        if (videoFileInput) videoFileInput.value = '';
+
+        // Hide validation errors
+        hideHighlightError();
+
+        // Reset progress bar
+        resetProgressBar();
     }
 
     if (addHighlightModalOverlay) {
@@ -5059,7 +5578,7 @@ async function saveAcademicsChanges() {
             // Update academics tab display
             updateAcademicsDisplay(currentProfile);
 
-            // Update profile header display (shows GPA in meta info)
+            // Refresh profile header display
             displayProfile(currentProfile, 'player');
 
             // Close modal

@@ -141,13 +141,20 @@
                 <div class="board-selector-row">
                     <div class="board-type-dropdown" id="boardTypeContainer">
                         <select id="boardTypeSelect" class="board-type-select">
-                            <option value="own">My Board</option>
+                            <option value="personal">Personal Board</option>
                             <!-- Shared boards populated dynamically -->
                         </select>
                         <svg class="dropdown-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <polyline points="6 9 12 15 18 9"></polyline>
                         </svg>
                     </div>
+                    <button class="btn-create-shared-board" id="createSharedBoardBtn">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                        Create Shared Board
+                    </button>
                     <button class="btn-leave-board" id="leaveBoardBtn" style="display: none;">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
@@ -157,6 +164,23 @@
                         Leave Board
                     </button>
                 </div>
+            </div>
+
+            <!-- Current Board Header (shows board name for shared boards) -->
+            <div class="current-board-header" id="currentBoardHeader" style="display: none;">
+                <h2 id="currentBoardName">Board Name</h2>
+                <button class="btn-edit-board-name" id="editBoardNameBtn" style="display: none;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                    </svg>
+                </button>
+                <button class="btn-delete-board" id="deleteBoardBtn" style="display: none;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    </svg>
+                </button>
             </div>
 
             <!-- Class Year Selector -->
@@ -188,7 +212,7 @@
                         <button class="toggle-btn active" id="offenseBtn" data-side="offense">Offense</button>
                         <button class="toggle-btn" id="defenseBtn" data-side="defense">Defense</button>
                     </div>
-                    <button class="btn-invite-collaborators" id="inviteCollaboratorsBtn">
+                    <button class="btn-invite-collaborators" id="inviteCollaboratorsBtn" style="display: none;">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
                             <circle cx="9" cy="7" r="4"></circle>
@@ -236,6 +260,102 @@
         </main>
     </div>
 
+    <!-- Create Shared Board Modal -->
+    <div class="recruiting-board-modal confirm-modal" id="createSharedBoardModal">
+        <div class="recruiting-board-modal-overlay" id="createSharedBoardModalOverlay"></div>
+        <div class="recruiting-board-modal-content">
+            <div class="recruiting-board-modal-header confirm-header">
+                <div class="confirm-modal-icon" style="background: rgba(255, 107, 53, 0.15);">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--accent-orange);">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="12" y1="8" x2="12" y2="16"></line>
+                        <line x1="8" y1="12" x2="16" y2="12"></line>
+                    </svg>
+                </div>
+                <h3>Create Shared Board</h3>
+                <button class="modal-close-btn" id="createSharedBoardModalClose">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="recruiting-board-modal-body">
+                <p class="confirm-text">Enter a name for your new shared recruiting board. You can invite collaborators after creating it.</p>
+                <div class="board-name-input-container">
+                    <label for="newBoardNameInput">Board Name</label>
+                    <input type="text" id="newBoardNameInput" class="board-name-input" placeholder="e.g., 2026 Recruiting Class" maxlength="100">
+                </div>
+            </div>
+            <div class="recruiting-board-modal-footer">
+                <button class="btn-cancel" id="createSharedBoardCancelBtn">Cancel</button>
+                <button class="btn-submit" id="createSharedBoardSubmitBtn" style="background: var(--accent-orange);">Create Board</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Board Name Modal -->
+    <div class="recruiting-board-modal confirm-modal" id="editBoardNameModal">
+        <div class="recruiting-board-modal-overlay" id="editBoardNameModalOverlay"></div>
+        <div class="recruiting-board-modal-content">
+            <div class="recruiting-board-modal-header confirm-header">
+                <div class="confirm-modal-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                    </svg>
+                </div>
+                <h3>Edit Board Name</h3>
+                <button class="modal-close-btn" id="editBoardNameModalClose">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="recruiting-board-modal-body">
+                <div class="board-name-input-container">
+                    <label for="editBoardNameInput">Board Name</label>
+                    <input type="text" id="editBoardNameInput" class="board-name-input" placeholder="Enter board name" maxlength="100">
+                </div>
+            </div>
+            <div class="recruiting-board-modal-footer">
+                <button class="btn-cancel" id="editBoardNameCancelBtn">Cancel</button>
+                <button class="btn-submit" id="editBoardNameSubmitBtn">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Board Confirmation Modal -->
+    <div class="recruiting-board-modal remove-modal" id="deleteBoardModal">
+        <div class="recruiting-board-modal-overlay" id="deleteBoardModalOverlay"></div>
+        <div class="recruiting-board-modal-content">
+            <div class="recruiting-board-modal-header remove-header">
+                <div class="remove-modal-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    </svg>
+                </div>
+                <h3>Delete Board</h3>
+                <button class="modal-close-btn" id="deleteBoardModalClose">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="recruiting-board-modal-body">
+                <p class="remove-confirm-text">Are you sure you want to delete this recruiting board? This action cannot be undone.</p>
+                <p class="remove-board-info" id="deleteBoardName"></p>
+            </div>
+            <div class="recruiting-board-modal-footer">
+                <button class="btn-cancel" id="deleteBoardCancelBtn">Cancel</button>
+                <button class="btn-submit btn-remove" id="deleteBoardSubmitBtn">Delete</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Remove from Recruiting Board Modal -->
     <div class="recruiting-board-modal remove-modal" id="removeRecruitingBoardModal">
         <div class="recruiting-board-modal-overlay" id="removeRecruitingBoardModalOverlay"></div>
@@ -267,6 +387,54 @@
         </div>
     </div>
 
+    <!-- Move Player Modal -->
+    <div class="recruiting-board-modal move-modal" id="movePlayerModal">
+        <div class="recruiting-board-modal-overlay" id="movePlayerModalOverlay"></div>
+        <div class="recruiting-board-modal-content">
+            <div class="recruiting-board-modal-header move-header">
+                <div class="move-modal-icon" id="moveModalIcon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M5 12h14"></path>
+                        <path d="M12 5l7 7-7 7"></path>
+                    </svg>
+                </div>
+                <h3 id="moveModalTitle">Move to Another Board</h3>
+                <button class="modal-close-btn" id="movePlayerModalClose">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="recruiting-board-modal-body">
+                <p class="move-player-name" id="movePlayerName"></p>
+                <div class="form-group">
+                    <label for="moveTargetBoard">Target Board</label>
+                    <select id="moveTargetBoard" name="targetBoard">
+                        <option value="">Select a Board</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="moveTargetPosition">Position</label>
+                    <select id="moveTargetPosition" name="targetPosition">
+                        <option value="">Select a board first</option>
+                    </select>
+                </div>
+                <div class="form-group copy-option-group">
+                    <label class="checkbox-label copy-checkbox-label">
+                        <input type="checkbox" id="copyInsteadOfMove" name="copyInsteadOfMove">
+                        <span class="checkbox-custom"></span>
+                        <span class="checkbox-text">Copy instead of move (keep player in current position)</span>
+                    </label>
+                </div>
+            </div>
+            <div class="recruiting-board-modal-footer">
+                <button class="btn-cancel" id="movePlayerCancelBtn">Cancel</button>
+                <button class="btn-submit btn-move" id="movePlayerSubmitBtn" disabled>Move Player</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Invite Collaborators Modal -->
     <div class="recruiting-board-modal collab-modal" id="inviteCollaboratorsModal">
         <div class="recruiting-board-modal-overlay" id="inviteCollaboratorsModalOverlay"></div>
@@ -289,7 +457,7 @@
                 </button>
             </div>
             <div class="recruiting-board-modal-body">
-                <p class="collab-description">Search for coaches by name or username to grant them edit access to your recruiting board.</p>
+                <p class="collab-description">Search for coaches by name or username to grant them edit access to this shared board.</p>
                 <div class="board-owner-section">
                     <h4>Board Owner</h4>
                     <div class="board-owner-info" id="boardOwnerInfo">
@@ -358,7 +526,7 @@
                 </button>
             </div>
             <div class="recruiting-board-modal-body">
-                <p class="confirm-text" id="inviteConfirmText">Are you sure you want to invite this person to collaborate on your recruiting board?</p>
+                <p class="confirm-text" id="inviteConfirmText">Are you sure you want to invite this person to collaborate on this board?</p>
                 <p class="confirm-coach-name" id="inviteConfirmCoachName"></p>
             </div>
             <div class="recruiting-board-modal-footer">
@@ -389,7 +557,7 @@
                 </button>
             </div>
             <div class="recruiting-board-modal-body">
-                <p class="remove-confirm-text" id="removeCollabConfirmText">Are you sure you want to remove this person from collaborating on your recruiting board?</p>
+                <p class="remove-confirm-text" id="removeCollabConfirmText">Are you sure you want to remove this person from collaborating on this board?</p>
                 <p class="remove-board-info" id="removeCollabName"></p>
             </div>
             <div class="recruiting-board-modal-footer">
@@ -421,7 +589,7 @@
             </div>
             <div class="recruiting-board-modal-body">
                 <p class="remove-confirm-text">Are you sure you want to leave this recruiting board? You will no longer have access to edit or view it.</p>
-                <p class="remove-board-info" id="leaveBoardOwnerName"></p>
+                <p class="remove-board-info" id="leaveBoardName"></p>
             </div>
             <div class="recruiting-board-modal-footer">
                 <button class="btn-cancel" id="leaveBoardCancelBtn">Cancel</button>

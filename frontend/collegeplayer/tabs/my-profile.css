@@ -90,6 +90,19 @@
     color: var(--white) !important;
 }
 
+/* Follows you badge */
+.follows-you-badge {
+    display: inline-block;
+    background-color: rgba(255, 255, 255, 0.15);
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.75rem;
+    font-weight: 500;
+    padding: 0.2rem 0.6rem;
+    border-radius: 4px;
+    margin-left: 0.5rem;
+    vertical-align: middle;
+}
+
 /* About and Contact Info Row (between header and tabs) */
 .profile-info-row {
     display: grid;
@@ -1664,47 +1677,11 @@
 }
 
 /* ==================== Transfer Player Viewer Red Theme ==================== */
-/* Applied when a transfer player is viewing this profile */
-body.transfer-player-viewer .nav-item.active {
-    background: rgba(185, 28, 28, 0.2) !important;
-    color: #b91c1c !important;
-}
-
-body.transfer-player-viewer .nav-item:hover {
-    background: rgba(185, 28, 28, 0.1) !important;
-}
-
+/* Applied when the logged-in user is a transfer player - red theme for sidebar user info */
 body.transfer-player-viewer .sidebar-user-position {
     color: #b91c1c !important;
 }
 
 body.transfer-player-viewer .sidebar-user-avatar {
     border-color: #b91c1c !important;
-}
-
-body.transfer-player-viewer .profile-tab.active {
-    color: #b91c1c !important;
-    border-bottom-color: #b91c1c !important;
-}
-
-body.transfer-player-viewer .profile-tab:hover {
-    color: #b91c1c !important;
-}
-
-/* Transfer Portal nav item - always red text for transfer players */
-body.transfer-player-viewer .nav-item-portal {
-    color: #b91c1c !important;
-    background: transparent !important;
-}
-
-body.transfer-player-viewer .nav-item-portal .nav-icon {
-    color: #b91c1c !important;
-}
-
-body.transfer-player-viewer .nav-item-portal.active {
-    background: rgba(185, 28, 28, 0.2) !important;
-}
-
-body.transfer-player-viewer .nav-item-portal:not(.active):hover {
-    background: rgba(185, 28, 28, 0.1) !important;
 }

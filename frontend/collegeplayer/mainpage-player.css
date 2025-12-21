@@ -201,6 +201,7 @@
 .nav-item.active {
     background: rgba(18, 130, 162, 0.2);
     color: var(--cerulean);
+    border-left: 3px solid var(--cerulean);
 }
 
 .nav-icon {

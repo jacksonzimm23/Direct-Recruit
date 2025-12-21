@@ -160,6 +160,17 @@ function renderNotifications() {
 function renderNotificationCard(notification) {
     const isUnread = !notification.is_read;
     const timeAgo = formatTimeAgo(notification.created_at);
+    // Check for all board-related notification types
+    const boardNotificationTypes = [
+        'board_invite',
+        'board_invite_sent',
+        'board_invite_accepted',
+        'board_invite_declined',
+        'board_ownership_transfer',
+        'board_collaborator_left',
+        'board_collaborator_removed'
+    ];
+    const isBoardNotification = boardNotificationTypes.includes(notification.related_entity_type);
     const isBoardInvite = notification.related_entity_type === 'board_invite';
 
     // Determine icon based on type and entity type
@@ -168,7 +179,7 @@ function renderNotificationCard(notification) {
         <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
     </svg>`;
 
-    if (isBoardInvite) {
+    if (isBoardNotification) {
         iconClass = 'board-invite-icon';
         iconSvg = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
@@ -203,13 +214,13 @@ function renderNotificationCard(notification) {
     if (isBoardInvite && isUnread) {
         actionButtons = `
             <div class="board-invite-actions">
-                <button class="btn-invite-action btn-invite-accept" data-notification-id="${notification.id}" data-owner-id="${notification.related_user_id}">
+                <button class="btn-invite-action btn-invite-accept" data-notification-id="${notification.id}" data-board-id="${notification.related_entity_id}">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <polyline points="20 6 9 17 4 12"></polyline>
                     </svg>
                     Accept
                 </button>
-                <button class="btn-invite-action btn-invite-decline" data-notification-id="${notification.id}" data-owner-id="${notification.related_user_id}">
+                <button class="btn-invite-action btn-invite-decline" data-notification-id="${notification.id}" data-board-id="${notification.related_entity_id}">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <line x1="18" y1="6" x2="6" y2="18"></line>
                         <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -301,8 +312,8 @@ function setupNotificationActions() {
         btn.addEventListener('click', function(e) {
             e.stopPropagation();
             const notificationId = this.dataset.notificationId;
-            const ownerUserId = this.dataset.ownerId;
-            showInviteAcceptModal(notificationId, ownerUserId);
+            const boardId = this.dataset.boardId;
+            showInviteAcceptModal(notificationId, boardId);
         });
     });
 
@@ -311,8 +322,8 @@ function setupNotificationActions() {
         btn.addEventListener('click', function(e) {
             e.stopPropagation();
             const notificationId = this.dataset.notificationId;
-            const ownerUserId = this.dataset.ownerId;
-            showInviteDeclineModal(notificationId, ownerUserId);
+            const boardId = this.dataset.boardId;
+            showInviteDeclineModal(notificationId, boardId);
         });
     });
 
@@ -586,8 +597,8 @@ function setupInviteActionModals() {
     document.getElementById('inviteDeclineConfirmBtn').addEventListener('click', confirmDeclineInvite);
 }
 
-function showInviteAcceptModal(notificationId, ownerUserId) {
-    pendingInviteAction = { notificationId, ownerUserId, action: 'accept' };
+function showInviteAcceptModal(notificationId, boardId) {
+    pendingInviteAction = { notificationId, boardId, action: 'accept' };
     document.getElementById('inviteAcceptModal').classList.add('active');
     document.body.style.overflow = 'hidden';
 }
@@ -598,8 +609,8 @@ function closeInviteAcceptModal() {
     pendingInviteAction = null;
 }
 
-function showInviteDeclineModal(notificationId, ownerUserId) {
-    pendingInviteAction = { notificationId, ownerUserId, action: 'decline' };
+function showInviteDeclineModal(notificationId, boardId) {
+    pendingInviteAction = { notificationId, boardId, action: 'decline' };
     document.getElementById('inviteDeclineModal').classList.add('active');
     document.body.style.overflow = 'hidden';
 }
@@ -620,7 +631,7 @@ async function confirmAcceptInvite() {
     try {
         await API.post('/recruiting-board/invite/accept', {
             notificationId: pendingInviteAction.notificationId,
-            ownerUserId: pendingInviteAction.ownerUserId
+            boardId: pendingInviteAction.boardId
         });
 
         closeInviteAcceptModal();
@@ -645,7 +656,7 @@ async function confirmDeclineInvite() {
     try {
         await API.post('/recruiting-board/invite/decline', {
             notificationId: pendingInviteAction.notificationId,
-            ownerUserId: pendingInviteAction.ownerUserId
+            boardId: pendingInviteAction.boardId
         });
 
         closeInviteDeclineModal();
@@ -710,6 +721,5 @@ document.addEventListener('keydown', function(e) {
 window.NotificationsApp = {
     markAllAsRead: markAllNotificationsAsRead,
     updateCounts: updateNotificationCounts,
-    filterNotifications: filterNotifications,
     refresh: loadNotifications
 };

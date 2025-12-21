@@ -109,6 +109,19 @@
     color: var(--white) !important;
 }
 
+/* Follows you badge */
+.follows-you-badge {
+    display: inline-block;
+    background-color: rgba(255, 255, 255, 0.15);
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.75rem;
+    font-weight: 500;
+    padding: 0.2rem 0.6rem;
+    border-radius: 4px;
+    margin-left: 0.5rem;
+    vertical-align: middle;
+}
+
 /* About and Contact Info Row (between header and tabs) */
 .profile-info-row {
     display: grid;
@@ -2679,7 +2692,8 @@
     padding: 2rem;
 }
 
-.no-offers-message {
+.no-offers-message,
+.empty-state-text {
     color: rgba(254, 252, 251, 0.5);
     font-style: italic;
     text-align: center;
@@ -4058,17 +4072,11 @@
     color: #b91c1c !important;
 }
 
-/* Nav item active state - red theme */
-.nav-item.active {
-    background: rgba(185, 28, 28, 0.2) !important;
-    color: #b91c1c !important;
-}
+/* Note: Nav highlight colors are controlled by JavaScript (nav-theme-override) */
+/* based on the logged-in user's type, not the viewed profile's type */
 
-.nav-item:hover {
-    background: rgba(185, 28, 28, 0.1) !important;
-}
-
-/* Sidebar user info - red theme */
+/* Sidebar user info - red theme (for the viewed profile's info in sidebar) */
+/* Note: The logged-in user's sidebar info colors are set by JS */
 .sidebar-user-position {
     color: #b91c1c !important;
 }
@@ -4657,10 +4665,57 @@
     font-weight: 600;
 }
 
+.recruiting-board-modal.remove-modal .remove-board-selection {
+    margin-bottom: 1rem;
+}
+
+.recruiting-board-modal.remove-modal .remove-board-selection label {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: rgba(254, 252, 251, 0.8);
+    margin-bottom: 0.5rem;
+}
+
+.recruiting-board-modal.remove-modal .remove-board-selection select {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    border-radius: 8px;
+    color: #fefcfb;
+    font-size: 0.95rem;
+    font-family: 'Inter', sans-serif;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='rgba(254,252,251,0.5)' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    background-size: 18px;
+}
+
+.recruiting-board-modal.remove-modal .remove-board-selection select:hover {
+    border-color: #ef4444;
+}
+
+.recruiting-board-modal.remove-modal .remove-board-selection select:focus {
+    outline: none;
+    border-color: #ef4444;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+.recruiting-board-modal.remove-modal .remove-board-selection select option {
+    background: #0d1117;
+    color: #fefcfb;
+    padding: 0.5rem;
+}
+
 .recruiting-board-modal.remove-modal .remove-board-info {
-    color: rgba(254, 252, 251, 0.5);
+    color: rgba(254, 252, 251, 0.6);
     font-size: 0.85rem;
     margin: 0;
+    line-height: 1.5;
 }
 
 .recruiting-board-modal.remove-modal .recruiting-board-modal-footer {
@@ -4674,4 +4729,160 @@
 
 .recruiting-board-modal.remove-modal .btn-remove:hover {
     background: #dc2626;
+}
+
+/* Social Media Links Styles */
+.social-media-links {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.social-link {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    color: var(--text-primary);
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.social-link:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateX(4px);
+}
+
+.social-link .social-icon {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+}
+
+.social-link span {
+    flex: 1;
+    font-weight: 500;
+}
+
+.social-link .external-icon {
+    width: 16px;
+    height: 16px;
+    opacity: 0.5;
+}
+
+.social-link.hudl-link .social-icon {
+    color: #ff6900;
+}
+
+.social-link.instagram-link .social-icon {
+    color: #e4405f;
+}
+
+/* Video Upload Progress Bar */
+.video-upload-progress {
+    margin-top: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.progress-bar-container {
+    flex: 1;
+    height: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.progress-bar {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #ef4444 0%, #f59e0b 50%, #22c55e 100%);
+    background-size: 200% 100%;
+    background-position: 0% 0%;
+    border-radius: 4px;
+    transition: width 0.3s ease, background-position 0.3s ease;
+}
+
+.progress-bar.complete {
+    background-position: 100% 0%;
+}
+
+.progress-text {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    min-width: 45px;
+    text-align: right;
+}
+
+/* Highlight Validation Errors */
+.highlight-validation-errors {
+    margin-top: 0.75rem;
+    padding: 0.75rem 1rem;
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    border-radius: 8px;
+}
+
+.validation-error-text {
+    color: #ef4444;
+    font-size: 0.875rem;
+    margin: 0;
+}
+
+/* Form Divider */
+.form-divider {
+    display: flex;
+    align-items: center;
+    margin: 1rem 0;
+}
+
+.form-divider::before,
+.form-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.form-divider span {
+    padding: 0 1rem;
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+/* File Input Styling */
+input[type="file"] {
+    padding: 0.75rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px dashed rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    color: var(--text-primary);
+    cursor: pointer;
+    width: 100%;
+}
+
+input[type="file"]:hover {
+    border-color: rgba(255, 255, 255, 0.3);
+    background: rgba(255, 255, 255, 0.08);
+}
+
+input[type="file"]::file-selector-button {
+    padding: 0.5rem 1rem;
+    margin-right: 1rem;
+    background: var(--primary-color);
+    border: none;
+    border-radius: 6px;
+    color: white;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+input[type="file"]::file-selector-button:hover {
+    background: var(--primary-hover);
 }

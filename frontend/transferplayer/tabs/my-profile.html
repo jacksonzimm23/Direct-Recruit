@@ -48,21 +48,8 @@
             max-width: 100% !important;
         }
         /* Prevent nav flash by hiding nav items until correct one is shown */
+        /* Note: Nav highlight colors are controlled by JavaScript based on logged-in user type */
         .nav-item { background: transparent !important; }
-        .own-profile #profileNavItem,
-        .from-recruiting #recruitingBoardNav,
-        .from-messages #messagesNavItem,
-        .from-discover .nav-item[href*="discover"],
-        .from-feed #feedNavItem,
-        .from-transfer-portal #transferPortalNav {
-            background: rgba(18, 130, 162, 0.15) !important;
-            border-left: 3px solid var(--cerulean) !important;
-        }
-        /* Default for viewing other profile with no 'from' param */
-        .viewing-other-profile:not(.from-recruiting):not(.from-messages):not(.from-discover):not(.from-feed):not(.from-transfer-portal) #feedNavItem {
-            background: rgba(18, 130, 162, 0.15) !important;
-            border-left: 3px solid var(--cerulean) !important;
-        }
     </style>
 </head>
 <body class="dashboard-body">
@@ -278,30 +265,11 @@
                             </div>
                         </div>
 
-                        <!-- Hudl Section -->
+                        <!-- Social Media Section -->
                         <div class="overview-section">
-                            <h2 class="section-title">Hudl</h2>
-                            <div class="info-card">
-                                <div class="hudl-section">
-                                    <div class="hudl-video-container">
-                                        <div class="hudl-video-placeholder" id="hudlVideoPlayer">
-                                            <svg viewBox="0 0 24 24" fill="currentColor" class="play-icon">
-                                                <polygon points="5 3 19 12 5 21 5 3"></polygon>
-                                            </svg>
-                                            <span>Click to play highlight reel</span>
-                                        </div>
-                                    </div>
-                                    <div class="hudl-profile-link">
-                                        <a href="#" class="hudl-link" id="hudlProfileLink">
-                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-                                                <polyline points="15 3 21 3 21 9"></polyline>
-                                                <line x1="10" y1="14" x2="21" y2="3"></line>
-                                            </svg>
-                                            View Full Hudl Profile
-                                        </a>
-                                    </div>
-                                </div>
+                            <h2 class="section-title">Social Media</h2>
+                            <div class="info-card" id="socialMediaCard">
+                                <p class="empty-state-text">No social media links added yet.</p>
                             </div>
                         </div>
                     </div>
@@ -762,6 +730,17 @@
                             <label for="editPhone">Phone Number (Optional)</label>
                             <input type="tel" id="editPhone" name="phone" placeholder="(555) 555-5555">
                         </div>
+
+                        <!-- Social Media Links Section -->
+                        <div class="form-section-title">Social Media Links</div>
+                        <div class="form-group">
+                            <label for="editHudlLink">Hudl Profile Link (Optional)</label>
+                            <input type="url" id="editHudlLink" name="hudl_link" placeholder="https://www.hudl.com/profile/...">
+                        </div>
+                        <div class="form-group">
+                            <label for="editInstagramLink">Instagram Profile (Optional)</label>
+                            <input type="url" id="editInstagramLink" name="instagram_link" placeholder="https://www.instagram.com/...">
+                        </div>
                     </div>
                 </form>
             </div>
@@ -1105,9 +1084,27 @@
                             <small class="form-hint">Give your highlight reel a descriptive title</small>
                         </div>
                         <div class="form-group">
-                            <label for="highlightLink">Hudl Link</label>
-                            <input type="url" id="highlightLink" name="highlight_link" placeholder="https://www.hudl.com/video/..." required>
+                            <label for="highlightLink">Hudl Link (Optional if uploading video)</label>
+                            <input type="url" id="highlightLink" name="highlight_link" placeholder="https://www.hudl.com/video/...">
                             <small class="form-hint">Paste your Hudl highlight reel link here</small>
+                        </div>
+                        <div class="form-divider">
+                            <span>OR</span>
+                        </div>
+                        <div class="form-group">
+                            <label for="highlightVideoFile">Upload Video File</label>
+                            <input type="file" id="highlightVideoFile" name="highlight_video" accept="video/*">
+                            <small class="form-hint">Upload a video file (MP4, MOV, etc.) - Max 100MB</small>
+                            <div class="video-upload-progress" id="videoUploadProgress" style="display: none;">
+                                <div class="progress-bar-container">
+                                    <div class="progress-bar" id="videoProgressBar"></div>
+                                </div>
+                                <span class="progress-text" id="videoProgressText">0%</span>
+                            </div>
+                        </div>
+                        <!-- Validation error messages -->
+                        <div class="highlight-validation-errors" id="highlightValidationErrors" style="display: none;">
+                            <p class="validation-error-text" id="highlightErrorText"></p>
                         </div>
                     </form>
                 </div>
@@ -1231,15 +1228,21 @@
             </div>
             <div class="recruiting-board-modal-body">
                 <div class="form-group">
+                    <label for="recruitingBoardSelect">Recruiting Board</label>
+                    <select id="recruitingBoardSelect" name="board">
+                        <option value="">Loading boards...</option>
+                    </select>
+                </div>
+                <div class="form-group">
                     <label for="recruitingClassYear">Class Year</label>
                     <select id="recruitingClassYear" name="classYear">
-                        <!-- Options populated by JS -->
+                        <option value="">Select a board first</option>
                     </select>
                 </div>
                 <div class="form-group">
                     <label for="recruitingPosition">Position</label>
                     <select id="recruitingPosition" name="position">
-                        <option value="">Select a class year first</option>
+                        <option value="">Select a board first</option>
                     </select>
                 </div>
             </div>
@@ -1272,6 +1275,12 @@
             </div>
             <div class="recruiting-board-modal-body">
                 <p class="remove-confirm-text" id="removeConfirmText">Are you sure you want to remove this player from the recruiting board?</p>
+                <div class="remove-board-selection" id="removeBoardSelection">
+                    <label for="removeBoardSelect">Remove from:</label>
+                    <select id="removeBoardSelect">
+                        <option value="all">All Boards</option>
+                    </select>
+                </div>
                 <p class="remove-board-info" id="removeBoardInfo"></p>
             </div>
             <div class="recruiting-board-modal-footer">
