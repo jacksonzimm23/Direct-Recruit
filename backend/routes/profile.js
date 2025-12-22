@@ -6,6 +6,31 @@ const User = require('../models/User');
 const ProfileView = require('../models/ProfileView');
 const { authMiddleware, requireRole } = require('../middleware/auth');
 const { validatePlayerProfile, validateCoachProfile, handleValidationErrors } = require('../middleware/validation');
+const { getSignedS3Url } = require('../utils/s3');
+
+// Helper function to convert S3 key to signed URL in profile
+async function addSignedUrlToProfile(profile) {
+  if (!profile) return profile;
+
+  // Check if profile_image_url is an S3 key (starts with 'profiles/')
+  if (profile.profile_image_url && profile.profile_image_url.startsWith('profiles/')) {
+    try {
+      profile.profile_image_url = await getSignedS3Url(profile.profile_image_url);
+    } catch (error) {
+      console.error('Error generating signed URL:', error);
+      profile.profile_image_url = null;
+    }
+  }
+
+  return profile;
+}
+
+// Helper function to add signed URLs to an array of profiles
+async function addSignedUrlsToProfiles(profiles) {
+  if (!profiles || !Array.isArray(profiles)) return profiles;
+
+  return await Promise.all(profiles.map(profile => addSignedUrlToProfile(profile)));
+}
 
 // Create/Update Player Profile
 router.post('/player', authMiddleware, requireRole('player'), validatePlayerProfile, handleValidationErrors, async (req, res) => {
@@ -84,11 +109,12 @@ router.post('/coach', authMiddleware, requireRole('coach'), validateCoachProfile
 // Get Player Profile
 router.get('/player/:userId', authMiddleware, async (req, res) => {
   try {
-    const profile = await PlayerProfile.findByUserId(req.params.userId);
+    let profile = await PlayerProfile.findByUserId(req.params.userId);
     if (!profile) {
       return res.status(404).json({ error: 'Profile not found' });
     }
-    // Profile already contains username from player_profiles table (SELECT *)
+    // Convert S3 key to signed URL
+    profile = await addSignedUrlToProfile(profile);
     res.json({ profile });
   } catch (error) {
     console.error('Get player profile error:', error);
@@ -99,11 +125,12 @@ router.get('/player/:userId', authMiddleware, async (req, res) => {
 // Get Coach Profile
 router.get('/coach/:userId', authMiddleware, async (req, res) => {
   try {
-    const profile = await CoachProfile.findByUserId(req.params.userId);
+    let profile = await CoachProfile.findByUserId(req.params.userId);
     if (!profile) {
       return res.status(404).json({ error: 'Profile not found' });
     }
-    // Profile already contains username from coach_profiles table (SELECT *)
+    // Convert S3 key to signed URL
+    profile = await addSignedUrlToProfile(profile);
     res.json({ profile });
   } catch (error) {
     console.error('Get coach profile error:', error);
@@ -120,7 +147,8 @@ router.get('/search/players', authMiddleware, async (req, res) => {
       state: req.query.state,
       searchTerm: req.query.q
     };
-    const players = await PlayerProfile.search(filters);
+    let players = await PlayerProfile.search(filters);
+    players = await addSignedUrlsToProfiles(players);
     res.json({ players });
   } catch (error) {
     console.error('Search players error:', error);
@@ -145,6 +173,7 @@ router.get('/discover/hsplayers', authMiddleware, async (req, res) => {
     const offset = parseInt(req.query.offset) || 0;
 
     const result = await PlayerProfile.searchHSPlayers(filters, limit, offset);
+    result.players = await addSignedUrlsToProfiles(result.players);
     res.json({ players: result.players, hasMore: result.hasMore });
   } catch (error) {
     console.error('Discover HS players error:', error);
@@ -166,6 +195,7 @@ router.get('/discover/collegeplayers', authMiddleware, async (req, res) => {
     const offset = parseInt(req.query.offset) || 0;
 
     const result = await PlayerProfile.searchCollegePlayers(filters, limit, offset);
+    result.players = await addSignedUrlsToProfiles(result.players);
     res.json({ players: result.players, hasMore: result.hasMore });
   } catch (error) {
     console.error('Discover college players error:', error);
@@ -190,6 +220,7 @@ router.get('/discover/transferplayers', authMiddleware, async (req, res) => {
     const offset = parseInt(req.query.offset) || 0;
 
     const result = await PlayerProfile.searchTransferPlayers(filters, limit, offset);
+    result.players = await addSignedUrlsToProfiles(result.players);
     res.json({ players: result.players, hasMore: result.hasMore });
   } catch (error) {
     console.error('Discover transfer players error:', error);
@@ -205,7 +236,8 @@ router.get('/search/coaches', authMiddleware, async (req, res) => {
       state: req.query.state,
       searchTerm: req.query.q
     };
-    const coaches = await CoachProfile.search(filters);
+    let coaches = await CoachProfile.search(filters);
+    coaches = await addSignedUrlsToProfiles(coaches);
     res.json({ coaches });
   } catch (error) {
     console.error('Search coaches error:', error);
@@ -223,14 +255,18 @@ router.get('/search', authMiddleware, async (req, res) => {
       return res.json({ players: [], coaches: [] });
     }
 
-    const [players, coaches] = await Promise.all([
+    let [players, coaches] = await Promise.all([
       PlayerProfile.search({ searchTerm }),
       CoachProfile.search({ searchTerm })
     ]);
 
+    // Add signed URLs to profile images
+    [players, coaches] = await Promise.all([
+      addSignedUrlsToProfiles(players),
+      addSignedUrlsToProfiles(coaches)
+    ]);
+
     console.log(`Search results: ${players.length} players, ${coaches.length} coaches`);
-    console.log('Players:', players.map(p => ({ username: p.username, name: `${p.first_name} ${p.last_name}` })));
-    console.log('Coaches:', coaches.map(c => ({ username: c.username, name: `${c.first_name} ${c.last_name}` })));
 
     res.json({ players, coaches });
   } catch (error) {
@@ -269,11 +305,13 @@ router.get('/username/:username', authMiddleware, async (req, res) => {
 
     let profile = await PlayerProfile.findByUsername(username);
     if (profile) {
+      profile = await addSignedUrlToProfile(profile);
       return res.json({ profile, type: 'player' });
     }
 
     profile = await CoachProfile.findByUsername(username);
     if (profile) {
+      profile = await addSignedUrlToProfile(profile);
       return res.json({ profile, type: 'coach' });
     }
 
@@ -337,7 +375,9 @@ router.get('/viewers/:userId', authMiddleware, async (req, res) => {
       return res.status(403).json({ error: 'Not authorized to view this information' });
     }
 
-    const viewers = await ProfileView.getViewers(playerId);
+    let viewers = await ProfileView.getViewers(playerId);
+    // Add signed URLs to viewer profile images
+    viewers = await addSignedUrlsToProfiles(viewers);
 
     res.json({ viewers });
   } catch (error) {

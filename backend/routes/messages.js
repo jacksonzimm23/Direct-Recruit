@@ -9,6 +9,24 @@ const pool = require('../config/database');
 const { authMiddleware } = require('../middleware/auth');
 const { body, validationResult } = require('express-validator');
 const { messageLimiter } = require('../middleware/rateLimit');
+const { getSignedS3Url } = require('../utils/s3');
+
+// Helper function to add signed URLs to conversations/messages with profile images
+async function addSignedUrlsToConversations(conversations) {
+  if (!conversations || !Array.isArray(conversations)) return conversations;
+
+  return await Promise.all(conversations.map(async (conv) => {
+    if (conv.other_user_profile_image && conv.other_user_profile_image.startsWith('profiles/')) {
+      try {
+        conv.other_user_profile_image = await getSignedS3Url(conv.other_user_profile_image);
+      } catch (error) {
+        console.error('Error generating signed URL:', error);
+        conv.other_user_profile_image = null;
+      }
+    }
+    return conv;
+  }));
+}
 
 // Get unread message count
 router.get('/unread-count', authMiddleware, async (req, res) => {
@@ -27,7 +45,8 @@ router.get('/conversations', authMiddleware, async (req, res) => {
     const limit = parseInt(req.query.limit) || 20;
     const offset = parseInt(req.query.offset) || 0;
 
-    const conversations = await Message.getUserConversations(req.userId, limit, offset);
+    let conversations = await Message.getUserConversations(req.userId, limit, offset);
+    conversations = await addSignedUrlsToConversations(conversations);
     res.json({ conversations, count: conversations.length });
   } catch (error) {
     console.error('Get conversations error:', error);

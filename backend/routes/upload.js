@@ -5,37 +5,81 @@ const { authMiddleware } = require('../middleware/auth');
 const PlayerProfile = require('../models/PlayerProfile');
 const CoachProfile = require('../models/CoachProfile');
 const path = require('path');
+const multer = require('multer');
+const { uploadToS3, getSignedS3Url, generateProfileImageKey, deleteFromS3 } = require('../utils/s3');
 
-// Upload profile image
-router.post('/profile-image', authMiddleware, upload.single('profile_image'), async (req, res) => {
+// Memory storage for S3 uploads (keeps file in buffer instead of disk)
+const memoryStorage = multer.memoryStorage();
+const s3Upload = multer({
+  storage: memoryStorage,
+  fileFilter: (req, file, cb) => {
+    const allowedImageTypes = /jpeg|jpg|png|gif|webp/;
+    const extname = path.extname(file.originalname).toLowerCase();
+    const mimetype = file.mimetype;
+
+    if (allowedImageTypes.test(extname.slice(1)) && mimetype.startsWith('image/')) {
+      return cb(null, true);
+    }
+    return cb(new Error('Only image files are allowed for profile pictures'));
+  },
+  limits: {
+    fileSize: parseInt(process.env.MAX_FILE_SIZE) || 5 * 1024 * 1024 // 5MB default
+  }
+});
+
+// Upload profile image to S3
+router.post('/profile-image', authMiddleware, s3Upload.single('profile_image'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: 'No file uploaded' });
     }
 
-    // Create full URL with backend server - use forward slashes for web URLs
-    const fileUrl = `http://localhost:5000/uploads/${req.userId}/${req.file.filename}`.replace(/\\/g, '/');
-    const relativePath = `/uploads/${req.userId}/${req.file.filename}`.replace(/\\/g, '/');
+    // Get current profile to check for existing image
+    let existingProfile = null;
+    if (req.user.role === 'player') {
+      existingProfile = await PlayerProfile.findByUserId(req.userId);
+    } else if (req.user.role === 'coach') {
+      existingProfile = await CoachProfile.findByUserId(req.userId);
+    }
 
-    console.log('File uploaded:', {
-      filename: req.file.filename,
-      path: req.file.path,
-      fileUrl,
-      relativePath,
-      fileExists: require('fs').existsSync(req.file.path)
+    // Delete old profile image from S3 if it exists
+    if (existingProfile && existingProfile.profile_image_url && existingProfile.profile_image_url.startsWith('profiles/')) {
+      try {
+        await deleteFromS3(existingProfile.profile_image_url);
+        console.log('Deleted old profile image:', existingProfile.profile_image_url);
+      } catch (deleteError) {
+        // Log but don't fail the upload if delete fails
+        console.error('Failed to delete old profile image:', deleteError);
+      }
+    }
+
+    // Generate S3 key for the profile image
+    const s3Key = generateProfileImageKey(req.userId, req.file.originalname);
+
+    // Upload to S3
+    await uploadToS3(req.file.buffer, s3Key, req.file.mimetype);
+
+    console.log('File uploaded to S3:', {
+      key: s3Key,
+      contentType: req.file.mimetype,
+      size: req.file.size
     });
 
-    // Update user profile with image URL
+    // Generate signed URL for immediate display
+    const signedUrl = await getSignedS3Url(s3Key);
+
+    // Update user profile with S3 key (not the full URL)
     if (req.user.role === 'player') {
-      await PlayerProfile.update(req.userId, { profile_image_url: relativePath });
+      await PlayerProfile.update(req.userId, { profile_image_url: s3Key });
     } else if (req.user.role === 'coach') {
-      await CoachProfile.update(req.userId, { profile_image_url: relativePath });
+      await CoachProfile.update(req.userId, { profile_image_url: s3Key });
     }
 
     res.json({
       message: 'Profile image uploaded successfully',
-      imageUrl: fileUrl,
-      url: fileUrl // Keep for backwards compatibility
+      imageUrl: signedUrl,
+      url: signedUrl, // Keep for backwards compatibility
+      s3Key: s3Key
     });
   } catch (error) {
     console.error('Upload profile image error:', error);

@@ -2,17 +2,37 @@ const express = require('express');
 const router = express.Router();
 const Notification = require('../models/Notification');
 const { authMiddleware } = require('../middleware/auth');
+const { getSignedS3Url } = require('../utils/s3');
+
+// Helper function to add signed URLs to notifications with profile images
+async function addSignedUrlsToNotifications(notifications) {
+  if (!notifications || !Array.isArray(notifications)) return notifications;
+
+  return await Promise.all(notifications.map(async (notification) => {
+    if (notification.actor_profile_image_url && notification.actor_profile_image_url.startsWith('profiles/')) {
+      try {
+        notification.actor_profile_image_url = await getSignedS3Url(notification.actor_profile_image_url);
+      } catch (error) {
+        console.error('Error generating signed URL:', error);
+        notification.actor_profile_image_url = null;
+      }
+    }
+    return notification;
+  }));
+}
 
 // Get notifications for current user
 router.get('/', authMiddleware, async (req, res) => {
   try {
     const { type, limit = 50, offset = 0 } = req.query;
 
-    const notifications = await Notification.getForUser(req.userId, {
+    let notifications = await Notification.getForUser(req.userId, {
       type: type || null,
       limit: parseInt(limit),
       offset: parseInt(offset)
     });
+
+    notifications = await addSignedUrlsToNotifications(notifications);
 
     res.json({ notifications, count: notifications.length });
   } catch (error) {

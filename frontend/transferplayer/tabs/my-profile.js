@@ -94,7 +94,7 @@ async function updateSidebarFooterFromAPI() {
             if (profile.profile_image_url) {
                 const avatarElement = document.querySelector('.sidebar-footer .user-avatar-circle');
                 if (avatarElement) {
-                    avatarElement.innerHTML = `<img src="${profile.profile_image_url}?t=${Date.now()}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
+                    avatarElement.innerHTML = `<img src="${profile.profile_image_url}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
                 }
             }
         }
@@ -188,6 +188,7 @@ function updateNavbarForLoggedInUser(user, profile) {
     let profileActive = '';
     let messagesActive = '';
     let transferPortalActive = '';
+    let notificationsActive = '';
 
     if (!hasUsername) {
         // Viewing own profile
@@ -202,6 +203,8 @@ function updateNavbarForLoggedInUser(user, profile) {
         feedActive = 'active';
     } else if (fromPage === 'transfer-portal') {
         transferPortalActive = 'active';
+    } else if (fromPage === 'notifications') {
+        notificationsActive = 'active';
     } else {
         // Default to feed for viewing someone else's profile
         feedActive = 'active';
@@ -242,7 +245,7 @@ function updateNavbarForLoggedInUser(user, profile) {
                     <span>Messages</span>
                     <span class="notification-badge" style="display: none;"></span>
                 </a>
-                <a href="/frontend/${userFolder}/tabs/notifications.html" class="nav-item">
+                <a href="/frontend/${userFolder}/tabs/notifications.html" class="nav-item ${notificationsActive}">
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
                         <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
@@ -299,7 +302,7 @@ function updateNavbarForLoggedInUser(user, profile) {
                     <span>Messages</span>
                     <span class="notification-badge" style="display: none;"></span>
                 </a>
-                <a href="/frontend/${userFolder}/tabs/notifications.html" class="nav-item">
+                <a href="/frontend/${userFolder}/tabs/notifications.html" class="nav-item ${notificationsActive}">
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
                         <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
@@ -1841,6 +1844,7 @@ function updateActiveNavItem() {
     const discoverNavItem = document.querySelector('.nav-item[href*="discover"]');
     const transferPortalNavItem = document.getElementById('transferPortalNav');
     const recruitingBoardNavItem = document.getElementById('recruitingBoardNav');
+    const notificationsNavItem = document.querySelector('.nav-item[href*="notifications"]');
 
     // Check if we came from another page
     const urlParams = new URLSearchParams(window.location.search);
@@ -1854,6 +1858,7 @@ function updateActiveNavItem() {
     if (discoverNavItem) discoverNavItem.classList.remove('active');
     if (transferPortalNavItem) transferPortalNavItem.classList.remove('active');
     if (recruitingBoardNavItem) recruitingBoardNavItem.classList.remove('active');
+    if (notificationsNavItem) notificationsNavItem.classList.remove('active');
 
     if (!hasUsername || isOwnProfile) {
         // Viewing own profile - highlight My Profile
@@ -1876,6 +1881,9 @@ function updateActiveNavItem() {
     } else if (fromPage === 'transfer-portal' && transferPortalNavItem) {
         // Came from transfer portal page - highlight Transfer Portal
         transferPortalNavItem.classList.add('active');
+    } else if (fromPage === 'notifications' && notificationsNavItem) {
+        // Came from notifications page - highlight Notifications
+        notificationsNavItem.classList.add('active');
     } else if (feedNavItem) {
         // Default: Viewing someone else's profile (from feed) - highlight Feed
         feedNavItem.classList.add('active');
@@ -2106,14 +2114,14 @@ async function uploadCroppedImage(file) {
             // Update profile with new image URL
             currentProfile.profile_image_url = imageUrl;
 
-            // Update avatar with timestamp to force reload
-            const imageUrlWithTimestamp = `${imageUrl}?t=${Date.now()}`;
-            avatarElement.innerHTML = `<img src="${imageUrlWithTimestamp}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
+            // Update avatar - use the URL directly (signed URLs already have cache-busting via signature)
+            // Don't add extra query params as it breaks the S3 signature
+            avatarElement.innerHTML = `<img src="${imageUrl}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
 
             // Update avatar in sidebar
             const sidebarAvatar = document.querySelector('.sidebar-footer .user-avatar-circle');
             if (sidebarAvatar) {
-                sidebarAvatar.innerHTML = `<img src="${imageUrlWithTimestamp}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
+                sidebarAvatar.innerHTML = `<img src="${imageUrl}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
             }
 
             // Show success message
@@ -2389,33 +2397,32 @@ function populateEditForm() {
 }
 
 // Get stat labels based on position (for transfer portal player cards)
+// Matches the stats shown in collegecoach transfer-portal.js
 function getStatLabelsForPosition(position) {
-    if (!position) return ['Stat 1', 'Stat 2', 'Stat 3'];
+    if (!position) return null;
     const pos = position.toUpperCase();
 
     if (pos.includes('QB')) {
         return ['Total Yards', 'Total TDs', 'INT'];
     } else if (pos.includes('RB') || pos.includes('FB')) {
-        return ['Rush Yards', 'Rush TDs', 'YPC'];
+        return ['Total Yards', 'Rec', 'Total TDs'];
     } else if (pos.includes('WR') || pos.includes('TE')) {
-        return ['Rec Yards', 'Rec TDs', 'Receptions'];
-    } else if (pos.includes('OL') || pos.includes('OT') || pos.includes('OG') || pos.includes('C')) {
-        return ['Pancakes', 'Sacks Allowed', 'Penalties'];
+        return ['Rec', 'Rec Yards', 'Total TDs'];
+    } else if (pos.includes('OL') || pos.includes('OT') || pos.includes('OG') || pos.includes('C') || pos.includes('LS')) {
+        return null; // No stats for OL and LS positions
     } else if (pos.includes('DL') || pos.includes('DE') || pos.includes('DT') || pos.includes('NT')) {
-        return ['Tackles', 'Sacks', 'TFL'];
+        return ['Tackles', 'TFLs', 'Sacks'];
     } else if (pos.includes('LB') || pos.includes('ILB') || pos.includes('OLB') || pos.includes('MLB')) {
-        return ['Tackles', 'Sacks', 'TFL'];
+        return ['Tackles', 'TFLs', 'Sacks'];
     } else if (pos.includes('CB') || pos.includes('S') || pos.includes('DB') || pos.includes('FS') || pos.includes('SS')) {
-        return ['Tackles', 'INT', 'PBU'];
-    } else if (pos.includes('K') || pos.includes('P')) {
-        return ['FG Made', 'FG %', 'Long'];
-    } else if (pos.includes('LS')) {
-        return ['Snaps', 'Bad Snaps', 'Blocks'];
-    } else if (pos.includes('ATH')) {
-        return ['Total Yards', 'Total TDs', 'Tackles'];
+        return ['Tackles', 'PBUs', 'INTs'];
+    } else if (pos.includes('K')) {
+        return ['Made', 'Att', 'Long'];
+    } else if (pos.includes('P')) {
+        return ['Att', 'Avg', 'I20'];
     }
 
-    return ['Stat 1', 'Stat 2', 'Stat 3'];
+    return null;
 }
 
 // Update card stat labels based on position
@@ -2423,14 +2430,23 @@ function updateCardStatLabels(position) {
     const labels = getStatLabelsForPosition(position);
     const noPositionWarning = document.getElementById('cardStatsNoPosition');
     const cardStatsHint = document.getElementById('cardStatsHint');
+    const cardStatsSection = document.getElementById('editCardStatsSection');
 
-    // Show/hide position warning message
+    // Show/hide position warning message and stats section
     if (!position) {
+        // No position selected - show warning
         if (noPositionWarning) noPositionWarning.style.display = 'block';
         if (cardStatsHint) cardStatsHint.style.display = 'none';
+        if (cardStatsSection) cardStatsSection.style.display = 'block';
+    } else if (!labels) {
+        // Position has no stats (OL/LS) - hide entire stats section
+        if (cardStatsSection) cardStatsSection.style.display = 'none';
+        return;
     } else {
+        // Position has stats - show section and update labels
         if (noPositionWarning) noPositionWarning.style.display = 'none';
         if (cardStatsHint) cardStatsHint.style.display = 'block';
+        if (cardStatsSection) cardStatsSection.style.display = 'block';
     }
 
     // Update last season stat labels
@@ -2438,18 +2454,22 @@ function updateCardStatLabels(position) {
     const labelLastSeason2 = document.getElementById('labelLastSeasonStat2');
     const labelLastSeason3 = document.getElementById('labelLastSeasonStat3');
 
-    if (labelLastSeason1) labelLastSeason1.textContent = labels[0];
-    if (labelLastSeason2) labelLastSeason2.textContent = labels[1];
-    if (labelLastSeason3) labelLastSeason3.textContent = labels[2];
+    if (labels) {
+        if (labelLastSeason1) labelLastSeason1.textContent = labels[0];
+        if (labelLastSeason2) labelLastSeason2.textContent = labels[1];
+        if (labelLastSeason3) labelLastSeason3.textContent = labels[2];
+    }
 
     // Update career stat labels
     const labelCareer1 = document.getElementById('labelCareerStat1');
     const labelCareer2 = document.getElementById('labelCareerStat2');
     const labelCareer3 = document.getElementById('labelCareerStat3');
 
-    if (labelCareer1) labelCareer1.textContent = labels[0];
-    if (labelCareer2) labelCareer2.textContent = labels[1];
-    if (labelCareer3) labelCareer3.textContent = labels[2];
+    if (labels) {
+        if (labelCareer1) labelCareer1.textContent = labels[0];
+        if (labelCareer2) labelCareer2.textContent = labels[1];
+        if (labelCareer3) labelCareer3.textContent = labels[2];
+    }
 }
 
 function markEmptyFields() {

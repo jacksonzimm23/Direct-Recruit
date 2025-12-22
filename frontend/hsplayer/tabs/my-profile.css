@@ -194,12 +194,20 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    overflow: hidden;
 }
 
 .profile-avatar-large svg {
     width: 60px;
     height: 60px;
     color: var(--cerulean);
+}
+
+.profile-avatar-large img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
 }
 
 .btn-change-photo {

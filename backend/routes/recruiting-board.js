@@ -4,6 +4,24 @@ const RecruitingBoard = require('../models/RecruitingBoard');
 const Notification = require('../models/Notification');
 const { authMiddleware, requireRole } = require('../middleware/auth');
 const pool = require('../config/database');
+const { getSignedS3Url } = require('../utils/s3');
+
+// Helper function to add signed URLs to profiles/players
+async function addSignedUrlsToPlayers(players) {
+  if (!players || !Array.isArray(players)) return players;
+
+  return await Promise.all(players.map(async (player) => {
+    if (player.profile_image_url && player.profile_image_url.startsWith('profiles/')) {
+      try {
+        player.profile_image_url = await getSignedS3Url(player.profile_image_url);
+      } catch (error) {
+        console.error('Error generating signed URL:', error);
+        player.profile_image_url = null;
+      }
+    }
+    return player;
+  }));
+}
 
 // ==================== Personal Board Routes ====================
 
@@ -55,7 +73,8 @@ router.put('/personal/config', authMiddleware, requireRole('coach'), async (req,
 router.get('/personal/:classYear/players', authMiddleware, requireRole('coach'), async (req, res) => {
   try {
     const { classYear } = req.params;
-    const players = await RecruitingBoard.getPlayersFromPersonalBoard(req.userId, parseInt(classYear));
+    let players = await RecruitingBoard.getPlayersFromPersonalBoard(req.userId, parseInt(classYear));
+    players = await addSignedUrlsToPlayers(players);
     res.json(players);
   } catch (error) {
     console.error('Error fetching personal board players:', error);
@@ -258,7 +277,8 @@ router.get('/shared/:boardId/:classYear/players', authMiddleware, requireRole('c
       return res.status(403).json({ error: 'You do not have access to this board' });
     }
 
-    const players = await RecruitingBoard.getPlayersFromSharedBoard(boardId, parseInt(classYear));
+    let players = await RecruitingBoard.getPlayersFromSharedBoard(boardId, parseInt(classYear));
+    players = await addSignedUrlsToPlayers(players);
     res.json(players);
   } catch (error) {
     console.error('Error fetching shared board players:', error);

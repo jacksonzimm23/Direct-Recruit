@@ -7,6 +7,24 @@ const { generateToken } = require('../utils/jwt');
 const { validateRegistration, validatePlayerProfile, validateCoachProfile, handleValidationErrors } = require('../middleware/validation');
 const { authMiddleware } = require('../middleware/auth');
 const { authLimiter } = require('../middleware/rateLimit');
+const { getSignedS3Url } = require('../utils/s3');
+
+// Helper function to convert S3 key to signed URL in profile
+async function addSignedUrlToProfile(profile) {
+  if (!profile) return profile;
+
+  // Check if profile_image_url is an S3 key (starts with 'profiles/')
+  if (profile.profile_image_url && profile.profile_image_url.startsWith('profiles/')) {
+    try {
+      profile.profile_image_url = await getSignedS3Url(profile.profile_image_url);
+    } catch (error) {
+      console.error('Error generating signed URL:', error);
+      profile.profile_image_url = null;
+    }
+  }
+
+  return profile;
+}
 
 // Register new user
 router.post('/register', authLimiter, validateRegistration, handleValidationErrors, async (req, res) => {
@@ -87,6 +105,9 @@ router.get('/me', authMiddleware, async (req, res) => {
       // High school coaches won't have a division (FBS, FCS, D2, D3, NAIA, JUCO)
       isCollegeCoach = profile && profile.college_division && profile.college_division.trim() !== '' ? true : false;
     }
+
+    // Convert S3 key to signed URL for profile image
+    profile = await addSignedUrlToProfile(profile);
 
     res.json({
       user: {

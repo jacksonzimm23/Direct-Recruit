@@ -75,7 +75,7 @@ async function updateSidebarFooterFromAPI() {
                 if (profile.profile_image_url) {
                     const avatarElement = document.querySelector('.sidebar-footer .user-avatar-circle');
                     if (avatarElement) {
-                        avatarElement.innerHTML = `<img src="${profile.profile_image_url}?t=${Date.now()}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
+                        avatarElement.innerHTML = `<img src="${profile.profile_image_url}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
                     }
                 }
             }
@@ -177,6 +177,7 @@ function updateNavbarForLoggedInUser(user, profile) {
     let discoverActive = '';
     let profileActive = '';
     let messagesActive = '';
+    let notificationsActive = '';
 
     if (!hasUsername) {
         // Viewing own profile
@@ -185,6 +186,8 @@ function updateNavbarForLoggedInUser(user, profile) {
         messagesActive = 'active';
     } else if (fromPage === 'discover') {
         discoverActive = 'active';
+    } else if (fromPage === 'notifications') {
+        notificationsActive = 'active';
     } else if (fromPage === 'profile') {
         profileActive = 'active';
     } else if (fromPage === 'feed') {
@@ -229,7 +232,7 @@ function updateNavbarForLoggedInUser(user, profile) {
                     <span>Messages</span>
                     <span class="notification-badge" style="display: none;"></span>
                 </a>
-                <a href="/frontend/${userFolder}/tabs/notifications.html" class="nav-item">
+                <a href="/frontend/${userFolder}/tabs/notifications.html" class="nav-item ${notificationsActive}">
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
                         <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
@@ -286,7 +289,7 @@ function updateNavbarForLoggedInUser(user, profile) {
                     <span>Messages</span>
                     <span class="notification-badge" style="display: none;"></span>
                 </a>
-                <a href="/frontend/${userFolder}/tabs/notifications.html" class="nav-item">
+                <a href="/frontend/${userFolder}/tabs/notifications.html" class="nav-item ${notificationsActive}">
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
                         <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
@@ -1226,6 +1229,7 @@ function updateActiveNavItem() {
     const profileNavItem = document.getElementById('profileNavItem');
     const messagesNavItem = document.getElementById('messagesNavItem');
     const discoverNavItem = document.querySelector('.nav-item[href*="discover"]');
+    const notificationsNavItem = document.querySelector('.nav-item[href*="notifications"]');
 
     // Check if we came from another page
     const urlParams = new URLSearchParams(window.location.search);
@@ -1238,6 +1242,7 @@ function updateActiveNavItem() {
         profileNavItem.classList.remove('active');
         if (discoverNavItem) discoverNavItem.classList.remove('active');
         if (messagesNavItem) messagesNavItem.classList.remove('active');
+        if (notificationsNavItem) notificationsNavItem.classList.remove('active');
 
         if (!hasUsername || isOwnProfile) {
             // Viewing own profile - highlight My Profile
@@ -1248,6 +1253,9 @@ function updateActiveNavItem() {
         } else if (fromPage === 'discover' && discoverNavItem) {
             // Came from discover page - highlight Discover
             discoverNavItem.classList.add('active');
+        } else if (fromPage === 'notifications' && notificationsNavItem) {
+            // Came from notifications page - highlight Notifications
+            notificationsNavItem.classList.add('active');
         } else if (fromPage === 'profile' && profileNavItem) {
             // Came from another profile (followers/following modal) - highlight My Profile
             profileNavItem.classList.add('active');
@@ -1464,10 +1472,9 @@ async function uploadCroppedImage(file) {
             // Update profile with new image URL
             currentProfile.profile_image_url = imageUrl;
 
-            // Update avatar with timestamp to force reload
-            const imageUrlWithTimestamp = `${imageUrl}?t=${Date.now()}`;
-            avatarElement.innerHTML = `<img src="${imageUrlWithTimestamp}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
-
+            // Update avatar - use the URL directly (signed URLs already have cache-busting via signature)
+            // Don't add extra query params as it breaks the S3 signature
+            avatarElement.innerHTML = `<img src="${imageUrl}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
 
             // Show success message
             showSuccessMessage('Profile photo updated successfully!');
