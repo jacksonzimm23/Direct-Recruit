@@ -222,6 +222,19 @@
     font-weight: 700;
 }
 
+/* Notification User Profile Link */
+.notification-user-link {
+    color: var(--cerulean);
+    font-weight: 700;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.notification-user-link:hover {
+    color: var(--accent-orange);
+    text-decoration: underline;
+}
+
 .notification-time {
     font-size: 0.85rem;
     color: rgba(254, 252, 251, 0.5);

@@ -484,7 +484,13 @@ function updateNavbarForLoggedInUser(user, profile) {
             } else if (userFolder === 'collegecoach') {
                 // College Coach: college_name • division
                 if (profile.college_name) parts.push(profile.college_name);
-                if (profile.college_division) parts.push(profile.college_division);
+                if (profile.college_division) {
+                    // Format FBS/FCS as D1 FBS/D1 FCS
+                    const divDisplay = (profile.college_division === 'FBS' || profile.college_division === 'FCS')
+                        ? `D1 ${profile.college_division}`
+                        : profile.college_division;
+                    parts.push(divDisplay);
+                }
                 userRole.textContent = parts.join(' • ') || 'College Coach';
             }
         }
@@ -878,7 +884,11 @@ function displayCoachProfile(profile) {
 
         // Add division with bullet separator if it exists
         if (profile.college_division) {
-            row2Text += ` <span>•</span> ${profile.college_division}`;
+            // Format FBS/FCS as D1 FBS/D1 FCS
+            const divisionDisplay = (profile.college_division === 'FBS' || profile.college_division === 'FCS')
+                ? `D1 ${profile.college_division}`
+                : profile.college_division;
+            row2Text += ` <span>•</span> ${divisionDisplay}`;
         }
 
         if (row2Parts.length > 0) {
@@ -906,7 +916,13 @@ function displayCoachProfile(profile) {
     // Update info items for coach
     updateInfoItem('Title', profile.position_title);
     updateInfoItem('College', profile.college_name);
-    updateInfoItem('Division', profile.college_division);
+    // Format FBS/FCS as D1 FBS/D1 FCS for division info item
+    const divisionInfoDisplay = profile.college_division
+        ? ((profile.college_division === 'FBS' || profile.college_division === 'FCS')
+            ? `D1 ${profile.college_division}`
+            : profile.college_division)
+        : null;
+    updateInfoItem('Division', divisionInfoDisplay);
 
     // Update contact info
     updateContactInfo(profile);
@@ -1914,12 +1930,25 @@ async function saveProfileChanges() {
         const response = await API.put('/profile', formData);
 
         if (response.success || response.profile) {
+            // Preserve the current signed profile image URL before updating
+            // The API returns the raw S3 key, not the signed URL needed for display
+            const currentSignedImageUrl = currentProfile.profile_image_url;
+
             // Update currentProfile
             if (response.profile) {
                 currentProfile = response.profile;
             } else {
                 // Update with the data we sent
                 Object.assign(currentProfile, formData);
+            }
+
+            // Restore the signed image URL if the API returned an unsigned S3 key
+            // (S3 keys start with 'profiles/' while signed URLs start with 'https://')
+            if (currentSignedImageUrl && currentSignedImageUrl.startsWith('https://')) {
+                // Check if the response has an unsigned S3 key or no image URL
+                if (!currentProfile.profile_image_url || currentProfile.profile_image_url.startsWith('profiles/')) {
+                    currentProfile.profile_image_url = currentSignedImageUrl;
+                }
             }
 
             // Check if coach type changed (College to HS) - redirect to appropriate folder
@@ -2178,7 +2207,15 @@ function displayOverviewData(profile) {
 
     if (schoolNameValue) schoolNameValue.textContent = profile.college_name || '-';
     if (schoolStateValue) schoolStateValue.textContent = profile.state || '-';
-    if (divisionValue) divisionValue.textContent = profile.college_division || '-';
+    // Format FBS/FCS as D1 FBS/D1 FCS
+    if (divisionValue) {
+        const divDisplay = profile.college_division
+            ? ((profile.college_division === 'FBS' || profile.college_division === 'FCS')
+                ? `D1 ${profile.college_division}`
+                : profile.college_division)
+            : '-';
+        divisionValue.textContent = divDisplay;
+    }
     if (conferenceValue) conferenceValue.textContent = profile.conference || '-';
     if (recordValue) recordValue.textContent = profile.record || '-';
 

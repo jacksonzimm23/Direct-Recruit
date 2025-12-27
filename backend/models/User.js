@@ -1,12 +1,11 @@
 const pool = require('../config/database');
-const bcrypt = require('bcrypt');
 
 class User {
-  static async create({ email, password, role }) {
-    const hashedPassword = await bcrypt.hash(password, 10);
+  // Create user (now without password - Cognito handles auth)
+  static async create({ email, role, cognitoSub }) {
     const result = await pool.query(
-      'INSERT INTO users (email, password_hash, role) VALUES ($1, $2, $3) RETURNING id, email, role, created_at',
-      [email, hashedPassword, role]
+      'INSERT INTO users (email, role, cognito_sub) VALUES ($1, $2, $3) RETURNING id, email, role, created_at',
+      [email, role, cognitoSub]
     );
     return result.rows[0];
   }
@@ -21,8 +20,13 @@ class User {
     return result.rows[0];
   }
 
-  static async verifyPassword(plainPassword, hashedPassword) {
-    return bcrypt.compare(plainPassword, hashedPassword);
+  static async findByCognitoSub(cognitoSub) {
+    const result = await pool.query('SELECT * FROM users WHERE cognito_sub = $1', [cognitoSub]);
+    return result.rows[0];
+  }
+
+  static async updateCognitoSub(userId, cognitoSub) {
+    await pool.query('UPDATE users SET cognito_sub = $1 WHERE id = $2', [cognitoSub, userId]);
   }
 
   static async updateLastLogin(userId) {
@@ -31,6 +35,10 @@ class User {
 
   static async markProfileCompleted(userId) {
     await pool.query('UPDATE users SET profile_completed = true WHERE id = $1', [userId]);
+  }
+
+  static async markEmailVerified(userId) {
+    await pool.query('UPDATE users SET email_verified = true WHERE id = $1', [userId]);
   }
 }
 

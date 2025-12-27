@@ -89,10 +89,10 @@ document.addEventListener('DOMContentLoaded', async function() {
     // Position stats mapping (same as collegeplayer transfer-portal.js)
     const positionStatsMap = {
         'QB': ['Total Yards', 'Total TDs', 'INT'],
-        'RB': ['Total Yards', 'Receptions', 'Total TDs'],
-        'FB': ['Total Yards', 'Receptions', 'Total TDs'],
-        'WR': ['Receptions', 'Rec Yards', 'Total TDs'],
-        'TE': ['Receptions', 'Rec Yards', 'Total TDs'],
+        'RB': ['Total Yards', 'Rec', 'Total TDs'],
+        'FB': ['Total Yards', 'Rec', 'Total TDs'],
+        'WR': ['Rec', 'Rec Yards', 'Total TDs'],
+        'TE': ['Rec', 'Rec Yards', 'Total TDs'],
         'OT': null,
         'OG': null,
         'C': null,

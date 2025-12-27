@@ -433,16 +433,23 @@ function populateSidebarFooter(profile) {
     if (userRole) {
         const parts = [];
         if (profile.college_name) parts.push(profile.college_name);
-        if (profile.college_division) parts.push(profile.college_division);
+        if (profile.college_division) {
+            // Format FBS/FCS as D1 FBS/D1 FCS
+            const divDisplay = (profile.college_division === 'FBS' || profile.college_division === 'FCS')
+                ? `D1 ${profile.college_division}`
+                : profile.college_division;
+            parts.push(divDisplay);
+        }
         userRole.textContent = parts.join(' • ') || 'College Coach';
     }
 
-    // Update avatar if available
-    if (profile.profile_image_url) {
-        const avatarElement = document.querySelector('.sidebar-footer .user-avatar-circle');
-        if (avatarElement) {
+    // Update avatar and show it (was hidden initially to prevent flash)
+    const avatarElement = document.querySelector('.sidebar-footer .user-avatar-circle');
+    if (avatarElement) {
+        if (profile.profile_image_url) {
             avatarElement.innerHTML = `<img src="${profile.profile_image_url}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
         }
+        avatarElement.style.visibility = 'visible';
     }
 }
 

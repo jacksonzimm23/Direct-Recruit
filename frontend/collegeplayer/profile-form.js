@@ -16,43 +16,98 @@ document.addEventListener('DOMContentLoaded', async function() {
     const passwordStrengthDiv = document.getElementById('passwordStrength');
     const passwordMatchDiv = document.getElementById('passwordMatch');
 
-    // Password strength validation
-    if (passwordInput && passwordStrengthDiv) {
+    // Password checklist validation
+    const checkLength = document.getElementById('checkLength');
+    const checkUppercase = document.getElementById('checkUppercase');
+    const checkLowercase = document.getElementById('checkLowercase');
+    const checkNumber = document.getElementById('checkNumber');
+    const checkSpecial = document.getElementById('checkSpecial');
+
+    if (passwordInput && checkLength) {
         passwordInput.addEventListener('input', function() {
             const password = this.value;
 
-            if (password.length === 0) {
-                passwordStrengthDiv.style.display = 'none';
-                return;
-            }
-
-            passwordStrengthDiv.style.display = 'block';
-
-            // Check password strength criteria
+            // Check each criteria and update checklist
+            const hasLength = password.length >= 8;
             const hasUpperCase = /[A-Z]/.test(password);
             const hasLowerCase = /[a-z]/.test(password);
             const hasNumber = /[0-9]/.test(password);
             const hasSpecialChar = /[!@#$%^&*]/.test(password);
-            const isLongEnough = password.length >= 8;
 
-            const criteriaMet = [hasUpperCase, hasLowerCase, hasNumber, hasSpecialChar, isLongEnough].filter(Boolean).length;
+            // Update checklist items
+            updateChecklistItem(checkLength, hasLength);
+            updateChecklistItem(checkUppercase, hasUpperCase);
+            updateChecklistItem(checkLowercase, hasLowerCase);
+            updateChecklistItem(checkNumber, hasNumber);
+            updateChecklistItem(checkSpecial, hasSpecialChar);
 
-            let strengthText = '';
-            let strengthClass = '';
+            // Store password validity for form submission
+            const allValid = hasLength && hasUpperCase && hasLowerCase && hasNumber && hasSpecialChar;
+            passwordInput.dataset.valid = allValid;
+        });
+    }
 
-            if (criteriaMet <= 2) {
-                strengthText = 'Weak password';
-                strengthClass = 'weak';
-            } else if (criteriaMet <= 4) {
-                strengthText = 'Medium password';
-                strengthClass = 'medium';
-            } else {
-                strengthText = 'Strong password';
-                strengthClass = 'strong';
+    function updateChecklistItem(element, isValid) {
+        if (!element) return;
+        const icon = element.querySelector('.check-icon');
+        if (isValid) {
+            element.classList.add('valid');
+            icon.innerHTML = '&#10003;'; // Checkmark
+        } else {
+            element.classList.remove('valid');
+            icon.innerHTML = '&#10005;'; // X mark
+        }
+    }
+
+    // Email availability validation
+    const emailInput = document.getElementById('email');
+    const emailError = document.getElementById('emailError');
+    const emailHint = document.getElementById('emailHint');
+    let emailCheckTimeout;
+    let isEmailAvailable = true;
+
+    if (emailInput && emailError) {
+        emailInput.addEventListener('input', function() {
+            const email = this.value.trim();
+
+            // Clear previous timeout
+            clearTimeout(emailCheckTimeout);
+
+            // Reset error state
+            emailError.style.display = 'none';
+            if (emailHint) emailHint.style.display = 'block';
+            emailInput.classList.remove('input-error', 'input-success');
+            isEmailAvailable = true;
+
+            // Only check if email is valid format
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (email.length > 0 && emailRegex.test(email)) {
+                // Debounce API call by 500ms
+                emailCheckTimeout = setTimeout(async () => {
+                    try {
+                        const response = await fetch(`http://localhost:5000/api/profile/check-email/${encodeURIComponent(email)}`);
+                        const data = await response.json();
+
+                        if (!data.available) {
+                            // Email is taken
+                            emailError.style.display = 'block';
+                            if (emailHint) emailHint.style.display = 'none';
+                            emailInput.classList.add('input-error');
+                            emailInput.classList.remove('input-success');
+                            isEmailAvailable = false;
+                        } else {
+                            // Email is available
+                            emailInput.classList.add('input-success');
+                            emailInput.classList.remove('input-error');
+                            isEmailAvailable = true;
+                        }
+                    } catch (error) {
+                        console.error('Error checking email:', error);
+                        // Assume available if check fails
+                        isEmailAvailable = true;
+                    }
+                }, 500);
             }
-
-            passwordStrengthDiv.textContent = strengthText;
-            passwordStrengthDiv.className = 'password-strength ' + strengthClass;
         });
     }
 
@@ -202,6 +257,19 @@ document.addEventListener('DOMContentLoaded', async function() {
             return;
         }
 
+        // Validate email is available (only for new profiles, not updates)
+        if (!isUpdating && !isEmailAvailable) {
+            emailInput.focus();
+            return;
+        }
+
+        // Validate password meets requirements (only for new profiles)
+        if (!isUpdating && passwordInput.dataset.valid !== 'true') {
+            alert('Please make sure your password meets all the requirements.');
+            passwordInput.focus();
+            return;
+        }
+
         submitBtn.disabled = true;
         submitBtn.textContent = isUpdating ? 'Updating Profile...' : 'Creating Account...';
 
@@ -220,6 +288,9 @@ document.addEventListener('DOMContentLoaded', async function() {
                     submitBtn.textContent = originalText;
                     return;
                 }
+
+                // Store email for verification page
+                localStorage.setItem('pendingVerificationEmail', email);
 
                 // Step 1: Register user
                 await authAPI.register(email, password, 'player');
@@ -361,10 +432,18 @@ async function loadExistingProfile() {
 function showSuccessMessage(isUpdating) {
     const successDiv = document.createElement('div');
     successDiv.className = 'success-message';
-    successDiv.innerHTML = `
-        <h3>✓ Player Profile ${isUpdating ? 'Updated' : 'Created'} Successfully!</h3>
-        <p>${isUpdating ? 'Your changes have been saved.' : 'Welcome to Direct Recruit!'} Redirecting to your dashboard...</p>
-    `;
+
+    if (isUpdating) {
+        successDiv.innerHTML = `
+            <h3>✓ Player Profile Updated Successfully!</h3>
+            <p>Your changes have been saved. Redirecting to your dashboard...</p>
+        `;
+    } else {
+        successDiv.innerHTML = `
+            <h3>✓ Account Created Successfully!</h3>
+            <p>Please verify your email to complete registration...</p>
+        `;
+    }
 
     const form = document.getElementById('playerProfileForm');
     form.parentNode.appendChild(successDiv);
@@ -376,8 +455,13 @@ function showSuccessMessage(isUpdating) {
     form.style.opacity = '0.5';
     form.style.pointerEvents = 'none';
 
-    // College players always redirect to collegeplayer mainpage
     setTimeout(() => {
-        window.location.href = 'mainpage-player.html';
+        if (isUpdating) {
+            // Updates redirect to mainpage
+            window.location.href = 'mainpage-player.html';
+        } else {
+            // New registrations redirect to email verification
+            window.location.href = 'verify-email.html';
+        }
     }, 2000);
 }

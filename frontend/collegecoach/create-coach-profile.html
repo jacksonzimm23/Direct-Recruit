@@ -101,6 +101,8 @@
                             required
                             placeholder="coach.smith@university.edu"
                         >
+                        <small class="form-hint" id="emailHint">Enter your email address</small>
+                        <small class="form-error" id="emailError" style="display: none;">An account with this email already exists</small>
                     </div>
 
                     <div class="form-group">
@@ -111,8 +113,30 @@
                             name="password"
                             required
                             minlength="8"
-                            placeholder="Minimum 8 characters"
+                            placeholder="Create a strong password"
                         >
+                        <div class="password-checklist" id="passwordChecklist">
+                            <div class="checklist-item" id="checkLength">
+                                <span class="check-icon">&#10005;</span>
+                                <span>At least 8 characters</span>
+                            </div>
+                            <div class="checklist-item" id="checkUppercase">
+                                <span class="check-icon">&#10005;</span>
+                                <span>One uppercase letter (A-Z)</span>
+                            </div>
+                            <div class="checklist-item" id="checkLowercase">
+                                <span class="check-icon">&#10005;</span>
+                                <span>One lowercase letter (a-z)</span>
+                            </div>
+                            <div class="checklist-item" id="checkNumber">
+                                <span class="check-icon">&#10005;</span>
+                                <span>One number (0-9)</span>
+                            </div>
+                            <div class="checklist-item" id="checkSpecial">
+                                <span class="check-icon">&#10005;</span>
+                                <span>One special character (!@#$%^&*)</span>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="form-group">
@@ -343,16 +367,6 @@
                         <div class="selected-items" id="selectedCoachingPositions"></div>
                     </div>
 
-                    <div class="form-group">
-                        <label for="teamBioLink">Team Website / Bio Link <span class="optional">(Optional)</span></label>
-                        <input 
-                            type="url" 
-                            id="teamBioLink" 
-                            name="teamBioLink" 
-                            placeholder="https://athletics.university.edu/football"
-                        >
-                        <small class="form-hint">Link to your team's official website or your coaching bio</small>
-                    </div>
                 </div>
 
                 <!-- Submit Button -->

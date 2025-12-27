@@ -177,7 +177,7 @@ function renderNotificationCard(notification) {
     `;
 }
 
-// Format notification message with bold name
+// Format notification message with clickable name link
 function formatNotificationMessage(notification) {
     const name = notification.related_user_first_name && notification.related_user_last_name
         ? `${notification.related_user_first_name} ${notification.related_user_last_name}`
@@ -185,10 +185,19 @@ function formatNotificationMessage(notification) {
 
     let message = notification.message || '';
 
+    // Create a clickable link if we have a username
+    // Use shared view-profile.html to route to the correct profile type
+    let nameHtml;
+    if (notification.related_user_username) {
+        nameHtml = `<a href="../../shared/view-profile.html?username=${notification.related_user_username}&from=notifications" class="notification-user-link">${name}</a>`;
+    } else {
+        nameHtml = `<strong>${name}</strong>`;
+    }
+
     if (message.startsWith(name)) {
-        message = `<strong>${name}</strong>${message.substring(name.length)}`;
+        message = `${nameHtml}${message.substring(name.length)}`;
     } else if (message.includes(name)) {
-        message = message.replace(name, `<strong>${name}</strong>`);
+        message = message.replace(name, nameHtml);
     }
 
     return message;

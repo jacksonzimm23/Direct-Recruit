@@ -533,6 +533,8 @@ document.addEventListener('DOMContentLoaded', function() {
             'linebackers coach': 'LB',
             'linebacker coach': 'LB',
             'secondary coach': 'DB',
+            'defensive backs coach': 'DB',
+            'defensive back coach': 'DB',
             'cornerbacks coach': 'CB',
             'cornerback coach': 'CB',
             'safeties coach': 'S',
@@ -542,7 +544,12 @@ document.addEventListener('DOMContentLoaded', function() {
             'assistant head coach': 'AHC',
             'associate head coach': 'AHC',
             'passing game coordinator': 'PGC',
-            'run game coordinator': 'RGC'
+            'run game coordinator': 'RGC',
+            'strength and conditioning': 'S&C',
+            'strength coach': 'S&C',
+            'graduate assistant': 'GA',
+            'director of football operations': 'DFO',
+            'director of player personnel': 'DPP'
         };
 
         // Handle multiple positions separated by commas or slashes
@@ -583,19 +590,28 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Parse cc_pos (recruiting positions) - assuming comma-separated
         let recruitingTags = '';
-        if (coach.cc_pos) {
-            const positions = coach.cc_pos.split(',').map(p => p.trim());
+        if (coach.cc_pos && coach.cc_pos.trim()) {
+            const positions = coach.cc_pos.split(',').map(p => p.trim()).filter(p => p);
             recruitingTags = positions.map(pos => `<span class="position-tag">${pos}</span>`).join('');
         }
+        // Show "All Positions" if no specific positions specified
+        if (!recruitingTags) {
+            recruitingTags = '<span class="position-tag">All Positions</span>';
+        }
+
+        const profileImage = coach.profile_image_url;
 
         return `
             <div class="coach-card" data-username="${coach.username || ''}">
                 <div class="coach-card-header">
                     <div class="coach-avatar-large">
-                        <svg viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                            <circle cx="12" cy="7" r="4"></circle>
-                        </svg>
+                        ${profileImage
+                            ? `<img src="${profileImage}" alt="${coach.first_name}" class="avatar-image">`
+                            : `<svg viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="12" cy="7" r="4"></circle>
+                            </svg>`
+                        }
                     </div>
                     <div class="coach-badge">🎓 ${shortDivision}</div>
                 </div>

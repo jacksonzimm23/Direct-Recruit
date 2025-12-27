@@ -16,6 +16,7 @@ async function addSignedUrlsToConversations(conversations) {
   if (!conversations || !Array.isArray(conversations)) return conversations;
 
   return await Promise.all(conversations.map(async (conv) => {
+    // Handle other_user_profile_image
     if (conv.other_user_profile_image && conv.other_user_profile_image.startsWith('profiles/')) {
       try {
         conv.other_user_profile_image = await getSignedS3Url(conv.other_user_profile_image);
@@ -24,6 +25,22 @@ async function addSignedUrlsToConversations(conversations) {
         conv.other_user_profile_image = null;
       }
     }
+
+    // Handle participants array profile images
+    if (conv.participants && Array.isArray(conv.participants)) {
+      conv.participants = await Promise.all(conv.participants.map(async (participant) => {
+        if (participant.profile_image && participant.profile_image.startsWith('profiles/')) {
+          try {
+            participant.profile_image = await getSignedS3Url(participant.profile_image);
+          } catch (error) {
+            console.error('Error generating signed URL for participant:', error);
+            participant.profile_image = null;
+          }
+        }
+        return participant;
+      }));
+    }
+
     return conv;
   }));
 }
@@ -166,6 +183,24 @@ router.post('/conversations/:conversationId/messages', authMiddleware, messageLi
   } catch (error) {
     console.error('Send message error:', error);
     res.status(500).json({ error: 'Failed to send message' });
+  }
+});
+
+// Hide/delete conversation for current user only
+router.delete('/conversations/:conversationId', authMiddleware, async (req, res) => {
+  try {
+    const { conversationId } = req.params;
+
+    const isParticipant = await Message.isParticipant(conversationId, req.userId);
+    if (!isParticipant) {
+      return res.status(403).json({ error: 'Not a participant in this conversation' });
+    }
+
+    await Message.hideConversation(conversationId, req.userId);
+    res.json({ success: true, message: 'Conversation hidden' });
+  } catch (error) {
+    console.error('Hide conversation error:', error);
+    res.status(500).json({ error: 'Failed to hide conversation' });
   }
 });
 

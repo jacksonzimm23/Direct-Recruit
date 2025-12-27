@@ -194,7 +194,7 @@ function renderNotificationCard(notification) {
             <div class="notification-content">
                 <p class="notification-text">
                     <strong>${notification.title || 'Notification'}</strong><br>
-                    ${notification.message}
+                    ${formatNotificationMessage(notification)}
                 </p>
                 <span class="notification-time">${timeAgo}</span>
             </div>
@@ -232,6 +232,32 @@ function formatTimeAgo(dateStr) {
     if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
 
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+// Format notification message with clickable name link
+function formatNotificationMessage(notification) {
+    const name = notification.related_user_first_name && notification.related_user_last_name
+        ? `${notification.related_user_first_name} ${notification.related_user_last_name}`
+        : 'Someone';
+
+    let message = notification.message || '';
+
+    // Create a clickable link if we have a username
+    // Use shared view-profile.html to route to the correct profile type
+    let nameHtml;
+    if (notification.related_user_username) {
+        nameHtml = `<a href="../../shared/view-profile.html?username=${notification.related_user_username}&from=notifications" class="notification-user-link">${name}</a>`;
+    } else {
+        nameHtml = `<strong>${name}</strong>`;
+    }
+
+    if (message.startsWith(name)) {
+        message = `${nameHtml}${message.substring(name.length)}`;
+    } else if (message.includes(name)) {
+        message = message.replace(name, nameHtml);
+    }
+
+    return message;
 }
 
 // Setup notification action buttons

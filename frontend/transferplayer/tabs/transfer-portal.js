@@ -326,14 +326,43 @@ function formatDivision(division) {
     return division;
 }
 
+// Position name mapping for full display names
+const positionNames = {
+    'QB': 'Quarterback (QB)',
+    'RB': 'Running Back (RB)',
+    'FB': 'Fullback (FB)',
+    'WR': 'Wide Receiver (WR)',
+    'TE': 'Tight End (TE)',
+    'OT': 'Offensive Tackle (OT)',
+    'OG': 'Offensive Guard (OG)',
+    'C': 'Center (C)',
+    'DE': 'Defensive End (DE)',
+    'DT': 'Defensive Tackle (DT)',
+    'NT': 'Nose Tackle (NT)',
+    'OLB': 'Outside Linebacker (OLB)',
+    'MLB': 'Middle Linebacker (MLB)',
+    'ILB': 'Inside Linebacker (ILB)',
+    'CB': 'Cornerback (CB)',
+    'FS': 'Free Safety (FS)',
+    'SS': 'Strong Safety (SS)',
+    'K': 'Kicker (K)',
+    'P': 'Punter (P)',
+    'LS': 'Long Snapper (LS)',
+    'ATH': 'Athlete (ATH)'
+};
+
 // Helper function to format positions
 function formatPositions(positionStr) {
     if (!positionStr) return '';
     const positions = positionStr.split('/').map(p => p.trim()).filter(p => p);
-    return positions.map(pos => `<span class="position-badge">${pos}</span>`).join('');
+    return positions.map(pos => {
+        const fullName = positionNames[pos.toUpperCase()] || pos;
+        return `<span class="position-badge">${fullName}</span>`;
+    }).join('');
 }
 
 // Get stat labels based on position
+// Matches the stats shown in collegecoach transfer-portal.js
 function getStatLabelsForPosition(position) {
     if (!position) return null;
     const pos = position.toUpperCase();
@@ -341,26 +370,24 @@ function getStatLabelsForPosition(position) {
     if (pos.includes('QB')) {
         return ['Total Yards', 'Total TDs', 'INT'];
     } else if (pos.includes('RB') || pos.includes('FB')) {
-        return ['Rush Yards', 'Rush TDs', 'YPC'];
+        return ['Total Yards', 'Rec', 'Total TDs'];
     } else if (pos.includes('WR') || pos.includes('TE')) {
-        return ['Rec Yards', 'Rec TDs', 'Receptions'];
-    } else if (pos.includes('OL') || pos.includes('OT') || pos.includes('OG') || pos.includes('C')) {
-        return ['Pancakes', 'Sacks Allowed', 'Penalties'];
+        return ['Rec', 'Rec Yards', 'Total TDs'];
+    } else if (pos.includes('OL') || pos.includes('OT') || pos.includes('OG') || pos.includes('C') || pos.includes('LS')) {
+        return null; // No stats for OL and LS positions
     } else if (pos.includes('DL') || pos.includes('DE') || pos.includes('DT') || pos.includes('NT')) {
-        return ['Tackles', 'Sacks', 'TFL'];
+        return ['Tackles', 'TFLs', 'Sacks'];
     } else if (pos.includes('LB') || pos.includes('ILB') || pos.includes('OLB') || pos.includes('MLB')) {
-        return ['Tackles', 'Sacks', 'TFL'];
+        return ['Tackles', 'TFLs', 'Sacks'];
     } else if (pos.includes('CB') || pos.includes('S') || pos.includes('DB') || pos.includes('FS') || pos.includes('SS')) {
-        return ['Tackles', 'INT', 'PBU'];
-    } else if (pos.includes('K') || pos.includes('P')) {
-        return ['FG Made', 'FG %', 'Long'];
-    } else if (pos.includes('LS')) {
-        return ['Snaps', 'Bad Snaps', 'Blocks'];
-    } else if (pos.includes('ATH')) {
-        return ['Total Yards', 'Total TDs', 'Tackles'];
+        return ['Tackles', 'PBUs', 'INTs'];
+    } else if (pos.includes('K')) {
+        return ['Made', 'Att', 'Long'];
+    } else if (pos.includes('P')) {
+        return ['Att', 'Avg', 'I20'];
     }
 
-    return ['Stat 1', 'Stat 2', 'Stat 3'];
+    return null;
 }
 
 // Create the preview player card HTML (matches collegecoach transfer portal card)

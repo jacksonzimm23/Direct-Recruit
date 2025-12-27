@@ -39,6 +39,14 @@ function formatHeight(height) {
         return `${feet}'${inches}"`;
     }
 
+    // If it's a string that's just a number (total inches as string), convert it
+    if (typeof height === 'string' && /^\d+$/.test(height)) {
+        const totalInches = parseInt(height);
+        const feet = Math.floor(totalInches / 12);
+        const inches = totalInches % 12;
+        return `${feet}'${inches}"`;
+    }
+
     return height;
 }
 
@@ -496,7 +504,13 @@ function updateNavbarForLoggedInUser(user, profile) {
             } else if (userFolder === 'collegecoach') {
                 // College Coach: college_name • division
                 if (profile.college_name) parts.push(profile.college_name);
-                if (profile.college_division) parts.push(profile.college_division);
+                if (profile.college_division) {
+                    // Format FBS/FCS as D1 FBS/D1 FCS
+                    const divDisplay = (profile.college_division === 'FBS' || profile.college_division === 'FCS')
+                        ? `D1 ${profile.college_division}`
+                        : profile.college_division;
+                    parts.push(divDisplay);
+                }
                 userRole.textContent = parts.join(' • ') || 'College Coach';
             }
         }
@@ -957,7 +971,13 @@ function displayCoachProfile(profile) {
     const metaElement = document.querySelector('.profile-meta');
     if (metaElement) {
         const parts = [];
-        if (profile.college_division) parts.push(profile.college_division);
+        if (profile.college_division) {
+            // Format FBS/FCS as D1 FBS/D1 FCS
+            const divDisplay = (profile.college_division === 'FBS' || profile.college_division === 'FCS')
+                ? `D1 ${profile.college_division}`
+                : profile.college_division;
+            parts.push(divDisplay);
+        }
         if (profile.city && profile.state) parts.push(`${profile.city}, ${profile.state}`);
         if (profile.verified) parts.push('Verified ✓');
 
@@ -2245,7 +2265,7 @@ function populateEditForm() {
     originalUsername = currentProfile.username || '';
     isEditUsernameAvailable = true; // Start as true since it's the current username
 
-    // Parse height - either from string "6'1"" or from integer (total inches)
+    // Parse height - either from string "6'1"" or from integer (total inches) or numeric string
     if (currentProfile.height) {
         let feet, inches;
         if (typeof currentProfile.height === 'string' && currentProfile.height.includes("'")) {
@@ -2257,6 +2277,11 @@ function populateEditForm() {
             // Convert from total inches
             feet = Math.floor(currentProfile.height / 12);
             inches = currentProfile.height % 12;
+        } else if (typeof currentProfile.height === 'string' && /^\d+$/.test(currentProfile.height)) {
+            // Handle numeric string (total inches as string)
+            const totalInches = parseInt(currentProfile.height);
+            feet = Math.floor(totalInches / 12);
+            inches = totalInches % 12;
         }
         document.getElementById('editHeightFt').value = feet || '';
         document.getElementById('editHeightIn').value = inches || '';
@@ -2622,12 +2647,25 @@ async function saveProfileChanges() {
         const response = await API.put('/profile', formData);
 
         if (response.success || response.profile) {
+            // Preserve the current signed profile image URL before updating
+            // The API returns the raw S3 key, not the signed URL needed for display
+            const currentSignedImageUrl = currentProfile.profile_image_url;
+
             // Update currentProfile - use response.profile which has the database formatted data
             if (response.profile) {
                 currentProfile = response.profile;
             } else {
                 // If response.profile not available, merge formData but keep database types
                 currentProfile = { ...currentProfile, ...formData };
+            }
+
+            // Restore the signed image URL if the API returned an unsigned S3 key
+            // (S3 keys start with 'profiles/' while signed URLs start with 'https://')
+            if (currentSignedImageUrl && currentSignedImageUrl.startsWith('https://')) {
+                // Check if the response has an unsigned S3 key or no image URL
+                if (!currentProfile.profile_image_url || currentProfile.profile_image_url.startsWith('profiles/')) {
+                    currentProfile.profile_image_url = currentSignedImageUrl;
+                }
             }
 
             // Refresh the profile display
@@ -3110,7 +3148,7 @@ async function loadOffers() {
         } else {
             // No offers - show empty state message and hide the "Show More" button
             if (offersGrid) {
-                offersGrid.innerHTML = '<div class="no-offers-message">No offers listed yet</div>';
+                offersGrid.innerHTML = '<div class="no-offers-message">No offers listed yet.</div>';
             }
             if (showMoreBtn) {
                 showMoreBtn.style.display = 'none';
@@ -6211,7 +6249,7 @@ function setupHighlightsModal() {
 
                         xhr.addEventListener('error', () => reject(new Error('Network error')));
 
-                        const token = localStorage.getItem('token');
+                        const token = localStorage.getItem('auth_token');
                         xhr.open('POST', `${API_BASE_URL}/highlights/upload`);
                         xhr.setRequestHeader('Authorization', `Bearer ${token}`);
                         xhr.send(formData);
@@ -6343,17 +6381,32 @@ function createHighlightCard(highlight) {
     // Escape HTML in title to prevent XSS
     const escapedTitle = title.replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
+    // Check if this is an uploaded video (has video_signed_url) or a Hudl link
+    const isUploadedVideo = highlight.video_signed_url && highlight.video_url;
+    const linkOrVideo = isUploadedVideo ? highlight.video_signed_url : highlight.hudl_link;
+    const displayUrl = isUploadedVideo ? 'Uploaded Video' : truncateUrl(highlight.hudl_link);
+
+    // For uploaded videos, show video thumbnail; for Hudl links, show play icon
+    const thumbnailContent = isUploadedVideo
+        ? `<video class="highlight-video-preview" src="${highlight.video_signed_url}" muted preload="metadata"></video>
+           <div class="highlight-play-overlay">
+               <svg viewBox="0 0 24 24" fill="currentColor">
+                   <polygon points="5 3 19 12 5 21 5 3"></polygon>
+               </svg>
+           </div>`
+        : `<svg viewBox="0 0 24 24" fill="currentColor">
+               <polygon points="5 3 19 12 5 21 5 3"></polygon>
+           </svg>`;
+
     return `
-        <div class="highlight-card" data-link="${highlight.hudl_link}">
+        <div class="highlight-card" data-link="${linkOrVideo || ''}" data-is-video="${isUploadedVideo}">
             <div class="highlight-thumbnail">
-                <svg viewBox="0 0 24 24" fill="currentColor">
-                    <polygon points="5 3 19 12 5 21 5 3"></polygon>
-                </svg>
+                ${thumbnailContent}
                 ${deleteButton}
             </div>
             <div class="highlight-info">
                 <h3>${escapedTitle}</h3>
-                <p>${truncateUrl(highlight.hudl_link)}</p>
+                <p>${displayUrl}</p>
             </div>
         </div>
     `;
@@ -6371,15 +6424,23 @@ function truncateUrl(url) {
 }
 
 function attachHighlightCardEvents(container) {
-    // Click on card to open link
+    // Click on card to open link or video modal
     container.querySelectorAll('.highlight-card').forEach(card => {
         card.addEventListener('click', (e) => {
             // Don't open link if clicking delete button
             if (e.target.closest('.highlight-delete-btn')) return;
 
             const link = card.dataset.link;
+            const isVideo = card.dataset.isVideo === 'true';
+
             if (link) {
-                window.open(link, '_blank');
+                if (isVideo) {
+                    // Open video in modal
+                    openVideoModal(link);
+                } else {
+                    // Open Hudl link in new tab
+                    window.open(link, '_blank');
+                }
             }
         });
     });
@@ -6392,6 +6453,61 @@ function attachHighlightCardEvents(container) {
             showDeleteHighlightConfirmModal(highlightId);
         });
     });
+}
+
+// Open video in fullscreen modal
+function openVideoModal(videoUrl) {
+    // Create modal if it doesn't exist
+    let modal = document.getElementById('videoPlayerModal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'videoPlayerModal';
+        modal.className = 'video-player-modal';
+        modal.innerHTML = `
+            <div class="video-player-modal-overlay"></div>
+            <div class="video-player-modal-content">
+                <button class="video-player-modal-close">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+                <video id="videoPlayerElement" controls autoplay>
+                    <source src="" type="video/mp4">
+                    Your browser does not support the video tag.
+                </video>
+            </div>
+        `;
+        document.body.appendChild(modal);
+
+        // Close modal on overlay click
+        modal.querySelector('.video-player-modal-overlay').addEventListener('click', closeVideoModal);
+        modal.querySelector('.video-player-modal-close').addEventListener('click', closeVideoModal);
+
+        // Close on escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && modal.classList.contains('active')) {
+                closeVideoModal();
+            }
+        });
+    }
+
+    // Set video source and show modal
+    const videoElement = modal.querySelector('#videoPlayerElement');
+    videoElement.src = videoUrl;
+    modal.classList.add('active');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeVideoModal() {
+    const modal = document.getElementById('videoPlayerModal');
+    if (modal) {
+        const videoElement = modal.querySelector('#videoPlayerElement');
+        videoElement.pause();
+        videoElement.src = '';
+        modal.classList.remove('active');
+        document.body.style.overflow = '';
+    }
 }
 
 // Validate Hudl link

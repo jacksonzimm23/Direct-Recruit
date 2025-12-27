@@ -1024,22 +1024,19 @@
 
 .btn-post-submit {
     padding: 0.625rem 1.5rem;
-    background: var(--orange-soda);
-    border: 2px solid var(--orange-soda);
+    background: var(--cerulean);
+    border: none;
     border-radius: 20px;
     color: white;
     font-size: 0.9375rem;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.2s;
-    box-shadow: 0 2px 8px rgba(255, 107, 53, 0.3);
 }
 
 .btn-post-submit:hover {
-    background: #e55a3a;
-    border-color: #e55a3a;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(255, 107, 53, 0.4);
+    background: var(--accent-orange);
+    transform: translateY(-2px);
 }
 
 .btn-post-submit:disabled {

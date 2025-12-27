@@ -107,16 +107,19 @@ async function loadCurrentUser() {
                 }
             }
 
-            // Update avatar if available
-            if (response.profile && response.profile.profile_image_url) {
-                const avatarElement = document.querySelector('.sidebar-footer .user-avatar-circle');
-                if (avatarElement) {
+            // Update avatar and show it (was hidden initially to prevent flash)
+            const avatarElement = document.querySelector('.sidebar-footer .user-avatar-circle');
+            if (avatarElement) {
+                if (response.profile && response.profile.profile_image_url) {
                     avatarElement.innerHTML = `<img src="${response.profile.profile_image_url}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
                 }
+                avatarElement.style.visibility = 'visible';
             }
         }
     } catch (error) {
         console.error('Failed to load current user:', error);
+        const avatarElement = document.querySelector('.sidebar-footer .user-avatar-circle');
+        if (avatarElement) avatarElement.style.visibility = 'visible';
     }
 }
 
@@ -328,10 +331,7 @@ function updateThreadHeader(participant) {
             }
             threadUserRole.classList.remove('coach');
         } else if (participant.role === 'coach') {
-            // Coach: Position Title (acronym), College, Division
-            if (participant.position_title) {
-                parts.push(getPositionAcronym(participant.position_title));
-            }
+            // Coach: College Name • Division (no position title)
             if (participant.college_name) parts.push(participant.college_name);
             if (participant.college_division) {
                 // Format FBS/FCS as D1 FBS/D1 FCS
@@ -444,6 +444,16 @@ function setupEventListeners() {
                     // We need to fetch their username first
                     navigateToProfile(participant.id, participant.role);
                 }
+            }
+        });
+    }
+
+    // Delete Conversation Button
+    const deleteConversationBtn = document.getElementById('deleteConversationBtn');
+    if (deleteConversationBtn) {
+        deleteConversationBtn.addEventListener('click', function() {
+            if (currentConversationId) {
+                showDeleteConfirmation();
             }
         });
     }
@@ -909,4 +919,70 @@ function getPositionAcronym(title) {
     }
 
     return acronyms[title] || title;
+}
+
+// ============ Delete Conversation Functions ============
+
+function showDeleteConfirmation() {
+    const overlay = document.createElement('div');
+    overlay.className = 'delete-modal-overlay';
+    overlay.innerHTML = `
+        <div class="delete-modal">
+            <h3>Delete Conversation</h3>
+            <p>Are you sure you want to delete this conversation? It will be removed from your messages but the other person will still see it.</p>
+            <div class="delete-modal-actions">
+                <button class="btn-cancel" id="cancelDeleteBtn">Cancel</button>
+                <button class="btn-delete" id="confirmDeleteBtn">Delete</button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    document.getElementById('cancelDeleteBtn').addEventListener('click', () => {
+        overlay.remove();
+    });
+
+    document.getElementById('confirmDeleteBtn').addEventListener('click', async () => {
+        await deleteConversation();
+        overlay.remove();
+    });
+
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) {
+            overlay.remove();
+        }
+    });
+}
+
+async function deleteConversation() {
+    if (!currentConversationId) return;
+
+    try {
+        await API.delete(`/messages/conversations/${currentConversationId}`);
+
+        currentConversationId = null;
+        const threadHeader = document.getElementById('messageThreadHeader');
+        const inputContainer = document.getElementById('messageInputContainer');
+        const messageThreadContent = document.getElementById('messageThreadContent');
+
+        if (threadHeader) threadHeader.style.display = 'none';
+        if (inputContainer) inputContainer.style.display = 'none';
+        if (messageThreadContent) {
+            messageThreadContent.innerHTML = `
+                <div class="empty-messages">
+                    <p>Select a conversation to view messages</p>
+                </div>
+            `;
+        }
+
+        const messageThread = document.getElementById('messageThread');
+        if (messageThread) messageThread.classList.remove('active');
+
+        await loadConversations();
+
+    } catch (error) {
+        console.error('Failed to delete conversation:', error);
+        alert('Failed to delete conversation. Please try again.');
+    }
 }

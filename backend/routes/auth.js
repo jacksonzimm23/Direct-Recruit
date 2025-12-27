@@ -8,6 +8,7 @@ const { validateRegistration, validatePlayerProfile, validateCoachProfile, handl
 const { authMiddleware } = require('../middleware/auth');
 const { authLimiter } = require('../middleware/rateLimit');
 const { getSignedS3Url } = require('../utils/s3');
+const cognito = require('../utils/cognito');
 
 // Helper function to convert S3 key to signed URL in profile
 async function addSignedUrlToProfile(profile) {
@@ -36,21 +37,98 @@ router.post('/register', authLimiter, validateRegistration, handleValidationErro
       return res.status(400).json({ error: 'Email already registered' });
     }
 
-    const user = await User.create({ email, password, role });
+    // Register user in Cognito
+    let cognitoResult;
+    try {
+      cognitoResult = await cognito.signUp(email, password, role);
+    } catch (cognitoError) {
+      if (cognitoError.name === 'UsernameExistsException') {
+        return res.status(400).json({ error: 'Email already registered' });
+      }
+      if (cognitoError.name === 'InvalidPasswordException') {
+        return res.status(400).json({ error: 'Password does not meet requirements. Must be at least 8 characters with uppercase, lowercase, numbers, and special characters.' });
+      }
+      throw cognitoError;
+    }
+
+    // Create user in local database (without password)
+    const user = await User.create({ email, role, cognitoSub: cognitoResult.userSub });
     const token = generateToken(user.id, user.role);
 
     res.status(201).json({
-      message: 'User registered successfully',
+      message: 'User registered successfully. Please check your email for verification code.',
       token,
       user: {
         id: user.id,
         email: user.email,
         role: user.role
-      }
+      },
+      requiresVerification: !cognitoResult.userConfirmed
     });
   } catch (error) {
-    console.error('Registration error:', error);
-    res.status(500).json({ error: 'Registration failed' });
+    console.error('Registration error:', error.name, error.message);
+    console.error('Full error:', error);
+    res.status(500).json({ error: 'Registration failed: ' + error.message });
+  }
+});
+
+// Verify email with code from Cognito
+router.post('/verify-email', authLimiter, async (req, res) => {
+  try {
+    const { email, code } = req.body;
+
+    if (!email || !code) {
+      return res.status(400).json({ error: 'Email and verification code are required' });
+    }
+
+    await cognito.confirmSignUp(email, code);
+
+    // Update local user record
+    const user = await User.findByEmail(email);
+    if (user) {
+      await User.markEmailVerified(user.id);
+    }
+
+    res.json({ message: 'Email verified successfully' });
+  } catch (error) {
+    console.error('Verification error:', error);
+    if (error.name === 'CodeMismatchException') {
+      return res.status(400).json({ error: 'Invalid verification code' });
+    }
+    if (error.name === 'ExpiredCodeException') {
+      return res.status(400).json({ error: 'Verification code has expired' });
+    }
+    res.status(500).json({ error: 'Verification failed' });
+  }
+});
+
+// Resend verification code
+router.post('/resend-verification', authLimiter, async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ error: 'Email is required' });
+    }
+
+    const result = await cognito.resendConfirmationCode(email);
+
+    res.json({
+      message: 'Verification code resent successfully',
+      destination: result.destination
+    });
+  } catch (error) {
+    console.error('Resend verification error:', error);
+    if (error.name === 'UserNotFoundException') {
+      return res.status(400).json({ error: 'User not found' });
+    }
+    if (error.name === 'InvalidParameterException') {
+      return res.status(400).json({ error: 'User is already verified' });
+    }
+    if (error.name === 'LimitExceededException') {
+      return res.status(429).json({ error: 'Too many requests. Please wait before trying again.' });
+    }
+    res.status(500).json({ error: 'Failed to resend verification code' });
   }
 });
 
@@ -59,14 +137,26 @@ router.post('/login', authLimiter, async (req, res) => {
   try {
     const { email, password } = req.body;
 
+    // First check if user exists in local database
     const user = await User.findByEmail(email);
     if (!user || !user.is_active) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
-    const isValidPassword = await User.verifyPassword(password, user.password_hash);
-    if (!isValidPassword) {
-      return res.status(401).json({ error: 'Invalid credentials' });
+    // Authenticate with Cognito
+    try {
+      await cognito.signIn(email, password);
+    } catch (cognitoError) {
+      if (cognitoError.name === 'NotAuthorizedException') {
+        return res.status(401).json({ error: 'Invalid credentials' });
+      }
+      if (cognitoError.name === 'UserNotConfirmedException') {
+        return res.status(401).json({ error: 'Please verify your email before logging in', requiresVerification: true });
+      }
+      if (cognitoError.name === 'UserNotFoundException') {
+        return res.status(401).json({ error: 'Invalid credentials' });
+      }
+      throw cognitoError;
     }
 
     await User.updateLastLogin(user.id);
@@ -85,6 +175,58 @@ router.post('/login', authLimiter, async (req, res) => {
   } catch (error) {
     console.error('Login error:', error);
     res.status(500).json({ error: 'Login failed' });
+  }
+});
+
+// Forgot password - initiate reset
+router.post('/forgot-password', authLimiter, async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ error: 'Email is required' });
+    }
+
+    const result = await cognito.forgotPassword(email);
+
+    res.json({
+      message: 'Password reset code sent to your email',
+      destination: result.destination
+    });
+  } catch (error) {
+    console.error('Forgot password error:', error);
+    if (error.name === 'UserNotFoundException') {
+      // Don't reveal if user exists
+      return res.json({ message: 'If an account exists with this email, a password reset code has been sent.' });
+    }
+    res.status(500).json({ error: 'Failed to initiate password reset' });
+  }
+});
+
+// Reset password with code
+router.post('/reset-password', authLimiter, async (req, res) => {
+  try {
+    const { email, code, newPassword } = req.body;
+
+    if (!email || !code || !newPassword) {
+      return res.status(400).json({ error: 'Email, code, and new password are required' });
+    }
+
+    await cognito.confirmForgotPassword(email, code, newPassword);
+
+    res.json({ message: 'Password reset successfully' });
+  } catch (error) {
+    console.error('Reset password error:', error);
+    if (error.name === 'CodeMismatchException') {
+      return res.status(400).json({ error: 'Invalid reset code' });
+    }
+    if (error.name === 'ExpiredCodeException') {
+      return res.status(400).json({ error: 'Reset code has expired' });
+    }
+    if (error.name === 'InvalidPasswordException') {
+      return res.status(400).json({ error: 'Password does not meet requirements' });
+    }
+    res.status(500).json({ error: 'Password reset failed' });
   }
 });
 

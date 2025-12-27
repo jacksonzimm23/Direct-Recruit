@@ -298,6 +298,24 @@ router.get('/check-username/:username', async (req, res) => {
   }
 });
 
+// Check email availability
+router.get('/check-email/:email', async (req, res) => {
+  try {
+    const { email } = req.params;
+
+    // Check if email exists in users table
+    const existingUser = await User.findByEmail(email);
+
+    res.json({
+      available: !existingUser,
+      email: email
+    });
+  } catch (error) {
+    console.error('Check email error:', error);
+    res.status(500).json({ error: 'Failed to check email' });
+  }
+});
+
 // Get profile by username
 router.get('/username/:username', authMiddleware, async (req, res) => {
   try {

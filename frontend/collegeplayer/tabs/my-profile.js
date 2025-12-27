@@ -497,7 +497,13 @@ function updateNavbarForLoggedInUser(user, profile) {
             } else if (userFolder === 'collegecoach') {
                 // College Coach: college_name • division
                 if (profile.college_name) parts.push(profile.college_name);
-                if (profile.college_division) parts.push(profile.college_division);
+                if (profile.college_division) {
+                    // Format FBS/FCS as D1 FBS/D1 FCS
+                    const divDisplay = (profile.college_division === 'FBS' || profile.college_division === 'FCS')
+                        ? `D1 ${profile.college_division}`
+                        : profile.college_division;
+                    parts.push(divDisplay);
+                }
                 userRole.textContent = parts.join(' • ') || 'College Coach';
             }
         }
@@ -937,7 +943,13 @@ function displayCoachProfile(profile) {
     const metaElement = document.querySelector('.profile-meta');
     if (metaElement) {
         const parts = [];
-        if (profile.college_division) parts.push(profile.college_division);
+        if (profile.college_division) {
+            // Format FBS/FCS as D1 FBS/D1 FCS
+            const divDisplay = (profile.college_division === 'FBS' || profile.college_division === 'FCS')
+                ? `D1 ${profile.college_division}`
+                : profile.college_division;
+            parts.push(divDisplay);
+        }
         if (profile.city && profile.state) parts.push(`${profile.city}, ${profile.state}`);
         if (profile.verified) parts.push('Verified ✓');
 
@@ -1943,12 +1955,25 @@ async function saveProfileChanges() {
         const response = await API.put('/profile', formData);
 
         if (response.success || response.profile) {
+            // Preserve the current signed profile image URL before updating
+            // The API returns the raw S3 key, not the signed URL needed for display
+            const currentSignedImageUrl = currentProfile.profile_image_url;
+
             // Update currentProfile - use response.profile which has the database formatted data
             if (response.profile) {
                 currentProfile = response.profile;
             } else {
                 // If response.profile not available, merge formData but keep database types
                 currentProfile = { ...currentProfile, ...formData };
+            }
+
+            // Restore the signed image URL if the API returned an unsigned S3 key
+            // (S3 keys start with 'profiles/' while signed URLs start with 'https://')
+            if (currentSignedImageUrl && currentSignedImageUrl.startsWith('https://')) {
+                // Check if the response has an unsigned S3 key or no image URL
+                if (!currentProfile.profile_image_url || currentProfile.profile_image_url.startsWith('profiles/')) {
+                    currentProfile.profile_image_url = currentSignedImageUrl;
+                }
             }
 
             // Check if player type changed (College to HS) - redirect to appropriate folder

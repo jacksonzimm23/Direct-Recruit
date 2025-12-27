@@ -408,12 +408,13 @@ function populateSidebarFooter(profile) {
         userRole.textContent = parts.join(', ') || 'HS Coach';
     }
 
-    // Update avatar if available
-    if (profile.profile_image_url) {
-        const avatarElement = document.querySelector('.sidebar-footer .user-avatar-circle');
-        if (avatarElement) {
+    // Update avatar and show it (was hidden initially to prevent flash)
+    const avatarElement = document.querySelector('.sidebar-footer .user-avatar-circle');
+    if (avatarElement) {
+        if (profile.profile_image_url) {
             avatarElement.innerHTML = `<img src="${profile.profile_image_url}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
         }
+        avatarElement.style.visibility = 'visible';
     }
 }
 

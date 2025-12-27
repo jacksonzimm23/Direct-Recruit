@@ -39,7 +39,12 @@ document.addEventListener('DOMContentLoaded', async function() {
         console.log('View Profile: Target folder:', targetFolder);
 
         // Redirect to the appropriate my-profile page with the username
-        const targetUrl = `../${targetFolder}/tabs/my-profile.html?username=${encodeURIComponent(username)}`;
+        // Preserve the 'from' parameter if present
+        const fromParam = urlParams.get('from');
+        let targetUrl = `../${targetFolder}/tabs/my-profile.html?username=${encodeURIComponent(username)}`;
+        if (fromParam) {
+            targetUrl += `&from=${encodeURIComponent(fromParam)}`;
+        }
         console.log('View Profile: Redirecting to:', targetUrl);
         window.location.replace(targetUrl);
 
@@ -71,10 +76,13 @@ function getTargetFolder(profile, type) {
 }
 
 function showError(message) {
+    const loadingContainer = document.querySelector('.loading-container');
     const loadingText = document.querySelector('.loading-text');
     const errorMessage = document.getElementById('errorMessage');
     const spinner = document.querySelector('.loading-spinner');
 
+    // Show the container for error display
+    if (loadingContainer) loadingContainer.style.display = 'block';
     if (loadingText) loadingText.style.display = 'none';
     if (spinner) spinner.style.display = 'none';
     if (errorMessage) {

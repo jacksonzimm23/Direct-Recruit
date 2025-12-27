@@ -1,0 +1,72 @@
+Gender,Sport,Position,Position Acronym,Top Recruiting Stat 1,Top Recruiting Stat 2,Top Recruiting Stat 3
+Men,Baseball,Pitcher,P,Fastball Velocity (MPH),ERA (Earned Run Average),Strikeout-to-Walk Ratio (K/BB)
+Men,Baseball,Catcher,C,Pop Time (seconds),Caught Stealing Percentage,Batting Average
+Men,Baseball,First Base,1B,Batting Average,Home Runs,Fielding Percentage
+Men,Baseball,Second Base,2B,Batting Average,Fielding Percentage,Stolen Bases
+Men,Baseball,Shortstop,SS,Fielding Percentage,Range Factor,Batting Average
+Men,Baseball,Third Base,3B,Batting Average,Fielding Percentage,RBIs
+Men,Baseball,Left Field,LF,Batting Average,Outfield Arm Strength (MPH),On-Base Percentage (OBP)
+Men,Baseball,Center Field,CF,60-Yard Dash Time,Batting Average,Outfield Range
+Men,Baseball,Right Field,RF,Outfield Arm Strength (MPH),Batting Average,Slugging Percentage
+Men,Baseball,Designated Hitter,DH,Batting Average,Home Runs,RBIs
+Men,Basketball,Point Guard,PG,Assist-to-Turnover Ratio,Points Per Game,Steal Percentage
+Men,Basketball,Shooting Guard,SG,Points Per Game,3-Point Percentage,Field Goal Percentage
+Men,Basketball,Small Forward,SF,Points Per Game,Rebounds Per Game,Field Goal Percentage
+Men,Basketball,Power Forward,PF,Rebounds Per Game,Points Per Game,Blocks Per Game
+Men,Basketball,Center,C,Rebounds Per Game,Blocks Per Game,Field Goal Percentage
+Men,Soccer,Goalkeeper,GK,Save Percentage,Goals Against Average,Clean Sheets
+Men,Soccer,Center Back,CB,Aerial Duels Won,Tackles Won,Pass Completion Percentage
+Men,Soccer,Full Back,FB/RB/LB,Tackles Won,Crosses Completed,Sprint Speed
+Men,Soccer,Defensive Midfielder,CDM/DM,Interceptions,Pass Completion Percentage,Tackles Won
+Men,Soccer,Central Midfielder,CM,Pass Completion Percentage,Assists,Distance Covered
+Men,Soccer,Attacking Midfielder,CAM/AM,Assists,Goals,Key Passes
+Men,Soccer,Winger,LW/RW,Goals,Assists,Successful Dribbles
+Men,Soccer,Striker,ST/FW,Goals,Shot Conversion Rate,Goals Per Game
+Men,Lacrosse,Attack,A,Goals,Points (Goals + Assists),Shot Percentage
+Men,Lacrosse,Midfield,M/MF,Ground Balls,Goals,Points
+Men,Lacrosse,Defense,D/DEF,Caused Turnovers,Ground Balls,Takeaway Percentage
+Men,Lacrosse,Goalie,G,Save Percentage,Goals Against Average,Clears Percentage
+Men,Lacrosse,Faceoff Specialist,FOGO,Faceoff Win Percentage,Ground Balls,Faceoffs Taken
+Men,Wrestling,125 lbs,125,Win-Loss Record,Pin Percentage,Takedown Average
+Men,Wrestling,133 lbs,133,Win-Loss Record,Pin Percentage,Takedown Average
+Men,Wrestling,141 lbs,141,Win-Loss Record,Pin Percentage,Takedown Average
+Men,Wrestling,149 lbs,149,Win-Loss Record,Pin Percentage,Takedown Average
+Men,Wrestling,157 lbs,157,Win-Loss Record,Pin Percentage,Takedown Average
+Men,Wrestling,165 lbs,165,Win-Loss Record,Pin Percentage,Takedown Average
+Men,Wrestling,174 lbs,174,Win-Loss Record,Pin Percentage,Takedown Average
+Men,Wrestling,184 lbs,184,Win-Loss Record,Pin Percentage,Takedown Average
+Men,Wrestling,197 lbs,197,Win-Loss Record,Pin Percentage,Takedown Average
+Men,Wrestling,285 lbs (Heavyweight),285/HWT,Win-Loss Record,Pin Percentage,Takedown Average
+Women,Basketball,Point Guard,PG,Assist-to-Turnover Ratio,Points Per Game,Steal Percentage
+Women,Basketball,Shooting Guard,SG,Points Per Game,3-Point Percentage,Field Goal Percentage
+Women,Basketball,Small Forward,SF,Points Per Game,Rebounds Per Game,Field Goal Percentage
+Women,Basketball,Power Forward,PF,Rebounds Per Game,Points Per Game,Blocks Per Game
+Women,Basketball,Center,C,Rebounds Per Game,Blocks Per Game,Field Goal Percentage
+Women,Soccer,Goalkeeper,GK,Save Percentage,Goals Against Average,Clean Sheets
+Women,Soccer,Center Back,CB,Aerial Duels Won,Tackles Won,Pass Completion Percentage
+Women,Soccer,Full Back,FB/RB/LB,Tackles Won,Crosses Completed,Sprint Speed
+Women,Soccer,Defensive Midfielder,CDM/DM,Interceptions,Pass Completion Percentage,Tackles Won
+Women,Soccer,Central Midfielder,CM,Pass Completion Percentage,Assists,Distance Covered
+Women,Soccer,Attacking Midfielder,CAM/AM,Assists,Goals,Key Passes
+Women,Soccer,Winger,LW/RW,Goals,Assists,Successful Dribbles
+Women,Soccer,Striker,ST/FW,Goals,Shot Conversion Rate,Goals Per Game
+Women,Volleyball,Setter,S,Assists Per Set,Setting Percentage,Digs Per Set
+Women,Volleyball,Outside Hitter,OH,Kills Per Set,Hitting Percentage,Digs Per Set
+Women,Volleyball,Middle Blocker,MB,Blocks Per Set,Hitting Percentage,Kills Per Set
+Women,Volleyball,Opposite Hitter,OPP/RS,Kills Per Set,Hitting Percentage,Blocks Per Set
+Women,Volleyball,Libero,L,Digs Per Set,Serve Receive Percentage,Passing Average
+Women,Volleyball,Defensive Specialist,DS,Digs Per Set,Serve Receive Percentage,Passing Average
+Women,Softball,Pitcher,P,ERA (Earned Run Average),Strikeouts Per Game,WHIP (Walks + Hits Per Inning)
+Women,Softball,Catcher,C,Caught Stealing Percentage,Batting Average,Pop Time
+Women,Softball,First Base,1B,Batting Average,Fielding Percentage,RBIs
+Women,Softball,Second Base,2B,Batting Average,Fielding Percentage,Stolen Bases
+Women,Softball,Shortstop,SS,Fielding Percentage,Range Factor,Batting Average
+Women,Softball,Third Base,3B,Batting Average,Fielding Percentage,RBIs
+Women,Softball,Left Field,LF,Batting Average,Outfield Arm Strength,On-Base Percentage
+Women,Softball,Center Field,CF,Speed (Home to First Time),Batting Average,Outfield Range
+Women,Softball,Right Field,RF,Outfield Arm Strength,Batting Average,Slugging Percentage
+Women,Softball,Designated Player,DP,Batting Average,Home Runs,RBIs
+Women,Lacrosse,Attack,A,Goals,Points (Goals + Assists),Draw Controls
+Women,Lacrosse,Midfield,M/MF,Ground Balls,Goals,Draw Controls
+Women,Lacrosse,Defense,D/DEF,Caused Turnovers,Ground Balls,Interceptions
+Women,Lacrosse,Goalie,G,Save Percentage,Goals Against Average,Clears Percentage

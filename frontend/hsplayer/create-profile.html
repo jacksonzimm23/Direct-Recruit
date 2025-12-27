@@ -101,6 +101,8 @@
                             required
                             placeholder="john.smith@email.com"
                         >
+                        <small class="form-hint" id="emailHint">Enter your email address</small>
+                        <small class="form-error" id="emailError" style="display: none;">An account with this email already exists</small>
                     </div>
 
                     <div class="form-group">
@@ -113,10 +115,28 @@
                             minlength="8"
                             placeholder="Create a strong password"
                         >
-                        <small class="form-hint password-requirements">
-                            Must be at least 8 characters long and contain: uppercase letter, lowercase letter, number, and special character (!@#$%^&*)
-                        </small>
-                        <div id="passwordStrength" class="password-strength" style="display: none;"></div>
+                        <div class="password-checklist" id="passwordChecklist">
+                            <div class="checklist-item" id="checkLength">
+                                <span class="check-icon">&#10005;</span>
+                                <span>At least 8 characters</span>
+                            </div>
+                            <div class="checklist-item" id="checkUppercase">
+                                <span class="check-icon">&#10005;</span>
+                                <span>One uppercase letter (A-Z)</span>
+                            </div>
+                            <div class="checklist-item" id="checkLowercase">
+                                <span class="check-icon">&#10005;</span>
+                                <span>One lowercase letter (a-z)</span>
+                            </div>
+                            <div class="checklist-item" id="checkNumber">
+                                <span class="check-icon">&#10005;</span>
+                                <span>One number (0-9)</span>
+                            </div>
+                            <div class="checklist-item" id="checkSpecial">
+                                <span class="check-icon">&#10005;</span>
+                                <span>One special character (!@#$%^&*)</span>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="form-group">
@@ -393,16 +413,6 @@
                         <div class="selected-items" id="selectedPositions"></div>
                     </div>
 
-                    <div class="form-group">
-                        <label for="hudlProfile">Hudl Profile Link <span class="optional">(Optional)</span></label>
-                        <input 
-                            type="url" 
-                            id="hudlProfile" 
-                            name="hudlProfile" 
-                            placeholder="https://www.hudl.com/profile/..."
-                        >
-                        <small class="form-hint">If you have a Hudl profile, paste the link here</small>
-                    </div>
                 </div>
 
                 <!-- Submit Button -->

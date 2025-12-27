@@ -1,10 +1,29 @@
 const express = require('express');
 const router = express.Router();
 const pool = require('../config/database');
+const { getSignedS3Url } = require('../utils/s3');
+const { authMiddleware } = require('../middleware/auth');
+
+// Helper function to add signed URLs to coach profiles
+async function addSignedUrlsToCoaches(coaches) {
+  if (!coaches || !Array.isArray(coaches)) return coaches;
+
+  return await Promise.all(coaches.map(async (coach) => {
+    if (coach.profile_image_url && coach.profile_image_url.startsWith('profiles/')) {
+      try {
+        coach.profile_image_url = await getSignedS3Url(coach.profile_image_url);
+      } catch (error) {
+        console.error('Error generating signed URL for coach:', error);
+        coach.profile_image_url = null;
+      }
+    }
+    return coach;
+  }));
+}
 
 // Get all college coaches with pagination and filters
 // College coaches have a college_division set (not null/empty)
-router.get('/college', async (req, res) => {
+router.get('/college', authMiddleware, async (req, res) => {
     try {
         const limit = parseInt(req.query.limit) || 12;
         const offset = parseInt(req.query.offset) || 0;
@@ -19,6 +38,15 @@ router.get('/college', async (req, res) => {
         const values = [];
         const countValues = [];
         let paramCount = 1;
+
+        // Exclude current user's profile
+        if (req.userId) {
+            query += ` AND user_id != $${paramCount}`;
+            countQuery += ` AND user_id != $${paramCount}`;
+            values.push(req.userId);
+            countValues.push(req.userId);
+            paramCount++;
+        }
 
         if (state) {
             query += ` AND state = $${paramCount}`;
@@ -49,8 +77,11 @@ router.get('/college', async (req, res) => {
         const total = parseInt(countResult.rows[0].count);
         const hasMore = offset + result.rows.length < total;
 
+        // Add signed URLs to profile images
+        const coachesWithSignedUrls = await addSignedUrlsToCoaches(result.rows);
+
         res.json({
-            coaches: result.rows,
+            coaches: coachesWithSignedUrls,
             total,
             hasMore,
             offset,

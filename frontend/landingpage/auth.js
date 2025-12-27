@@ -83,7 +83,12 @@ if (document.getElementById('signinForm')) {
                 }
             }
         } catch (error) {
-            alert('Login failed: ' + error.message);
+            // Show inline error message instead of alert
+            const errorEl = document.getElementById('loginError');
+            if (errorEl) {
+                errorEl.textContent = error.message || 'Invalid email or password';
+                errorEl.style.display = 'block';
+            }
             submitBtn.disabled = false;
             submitBtn.innerHTML = 'Sign In<svg class="btn-icon" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>';
         }
@@ -226,7 +231,7 @@ function showCoachTypeModal() {
                         <polyline points="9 22 9 12 15 12 15 22"></polyline>
                     </svg>
                     <span class="coach-type-title">High School Coach</span>
-                    <span class="coach-type-desc">Recruit players for your high school program</span>
+                    <span class="coach-type-desc">Connect with your high school players and network with other coaches</span>
                 </button>
                 <button class="coach-type-btn" onclick="selectRole('collegecoach')">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -371,7 +376,7 @@ function showPlayerTypeModal() {
                         <path d="M6 12v5c3 3 9 3 12 0v-5"></path>
                     </svg>
                     <span class="player-type-title">College Player</span>
-                    <span class="player-type-desc">Enter the transfer portal or explore opportunities</span>
+                    <span class="player-type-desc">Connect with other athletes or enter the transfer portal database</span>
                 </button>
             </div>
         </div>

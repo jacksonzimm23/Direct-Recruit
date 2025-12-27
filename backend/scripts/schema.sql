@@ -117,6 +117,7 @@ CREATE TABLE post_comments (
 -- Messaging system
 CREATE TABLE conversations (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    created_by UUID REFERENCES users(id) ON DELETE SET NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -127,6 +128,7 @@ CREATE TABLE conversation_participants (
     user_id UUID REFERENCES users(id) ON DELETE CASCADE,
     joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     last_read_at TIMESTAMP,
+    hidden_at TIMESTAMP DEFAULT NULL,
     UNIQUE(conversation_id, user_id)
 );
 
@@ -176,6 +178,7 @@ CREATE INDEX idx_post_likes_post_id ON post_likes(post_id);
 CREATE INDEX idx_post_comments_post_id ON post_comments(post_id);
 CREATE INDEX idx_messages_conversation_id ON messages(conversation_id);
 CREATE INDEX idx_messages_created_at ON messages(created_at);
+CREATE INDEX idx_conversations_created_by ON conversations(created_by);
 CREATE INDEX idx_player_highlights_user_id ON player_highlights(user_id);
 CREATE INDEX idx_player_highlights_type ON player_highlights(highlight_type);
 

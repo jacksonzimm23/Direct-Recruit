@@ -1,10 +1,3 @@
-My profile pages ✅
-
-TABS
-HS Coach
--overview tab ✅
--posts tab (frontend only)
-
 College Coach
 -overview tab ✅
 -posts tab (frontend only)
@@ -12,46 +5,59 @@ College Coach
 Small schools using AI to match to recruiting areas / hs pipelines
 Big schools know who the big time recruitsare , benefit more from transfer portal 
 
-HS Player ADD STARS IF APPLICABLE IN SUBHEADER FOOTER
--overview tab✅
-- discover page (all college coaches registered being displayed)✅
--posts tab (frontend only) DO ALL POSTS AFTER FEED IS CONNECTED TO BACKEND
--offers (need college logos)✅ NEED LOGOS STILL
--stats tab ✅
--highlights tab ✅
--academics tab✅
-
-College Player
--overview tab✅
--posts tab (frontend only)
-fix create a profile to ask for conference, jersey number, and eligilibility reminaing✅
-
-SIDE BARS (RIGHT)
-POSTS TAB BACKEND
-HIGHTLIGHTS BACKEND
-TRANSFER PORTAL PLAYER 
 
 
 
+Currently working on: password storing, clean up create a profile pages 
 
-Currently working on: follow back 
--- Clear all follows and reset counters
-DELETE FROM follows;
-UPDATE player_profiles SET followers_count = 0, following_count = 0;
-UPDATE coach_profiles SET followers_count = 0, following_count = 0;
-
-transferplay notifications page not working (with follwos), clear notifications to help 
-transferplayer my profile highlight, not showing notifications or maybe even messages unread counter in left sidebar
 
 To do:
-- Collegecoach tabs highlighting with fancy stuff from recruiting board profile views
-- player academics tab only visisble to collegecoaches 
+- password storing
+- make sure profile/ AWS folder appears when adding pfp
 - others profile 
-
-My profile:
-- profile pictures 
+- turn to app 
 
 Feed
-- backend sort of good, COMING SOON 
+- backend for notifications from posts and interactions
+- sidebar footer for subheaders
+- storing media 
 
 NEED TO ASK CLAUDE SECURITY, API, AND DATABASE QUESTIONS WHEN ALL DONE WITH FRONT AND BACKEND, HOW TO TURN TO MOBILE APP
+
+
+Use Amazon RDS for PostgreSQL (need to switch AWS when getting off local server)
+- security with psql stuff 
+
+
+Prompt for view profiles and keeping that page highlighted:
+
+
+Prompt: Sidebar Highlighting When Viewing Profiles From Different Pages
+Problem: When viewing someone's profile from a specific tab (like notifications, discover, messages), the originating tab should stay highlighted in the sidebar, not feed. Solution Architecture:
+Profile Links - Use the shared/view-profile.html router with a from parameter:
+
+href="../../shared/view-profile.html?username=${username}&from=notifications"
+The router determines the correct profile folder (hsplayer, collegeplayer, collegecoach, etc.) based on the viewed user's type.
+In each my-profile.js - Update THREE locations: Location 1: Add the active variable in rebuildNavbar():
+
+let notificationsActive = '';
+Location 2: Add the case in the if/else chain:
+
+} else if (fromPage === 'notifications') {
+    notificationsActive = 'active';
+}
+Location 3: Update the nav HTML template:
+
+<a href="/frontend/${userFolder}/tabs/notifications.html" class="nav-item ${notificationsActive}">
+Location 4: Update updateActiveNavItem() function - add selector and case:
+
+const notificationsNavItem = document.querySelector('.nav-item[href*="notifications"]');
+// In the remove active section:
+if (notificationsNavItem) notificationsNavItem.classList.remove('active');
+// In the if/else chain:
+} else if (fromPage === 'notifications' && notificationsNavItem) {
+    notificationsNavItem.classList.add('active');
+}
+Files to modify for each new "from" page:
+frontend/{profile}/tabs/{source-page}.js - Add link with from parameter
+frontend/{profile}/tabs/my-profile.js - Add variable, case, and update nav HTML

@@ -74,11 +74,36 @@ function generateProfileImageKey(userId, originalFilename) {
   return `profiles/${userId}/avatar-${timestamp}.${extension}`;
 }
 
+/**
+ * Generate S3 key for highlight videos
+ * @param {string} userId - The user's ID
+ * @param {string} originalFilename - The original filename
+ * @returns {string} - The S3 key
+ */
+function generateHighlightVideoKey(userId, originalFilename) {
+  const extension = originalFilename.split('.').pop().toLowerCase();
+  const timestamp = Date.now();
+  return `highlights/${userId}/video-${timestamp}.${extension}`;
+}
+
+/**
+ * Get signed URL with longer expiration for videos (6 hours)
+ * @param {string} key - The S3 object key
+ * @returns {Promise<string>} - The signed URL
+ */
+async function getSignedVideoUrl(key) {
+  if (!key) return null;
+  // Videos get 6 hour expiration since they take longer to watch
+  return getSignedS3Url(key, 21600);
+}
+
 module.exports = {
   uploadToS3,
   getSignedS3Url,
+  getSignedVideoUrl,
   deleteFromS3,
   generateProfileImageKey,
+  generateHighlightVideoKey,
   s3Client,
   BUCKET_NAME
 };

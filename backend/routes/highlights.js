@@ -1,7 +1,104 @@
 const express = require('express');
 const router = express.Router();
+const multer = require('multer');
 const pool = require('../config/database');
 const { authMiddleware } = require('../middleware/auth');
+const { uploadToS3, getSignedVideoUrl, deleteFromS3, generateHighlightVideoKey } = require('../utils/s3');
+
+// Configure multer for video uploads
+const storage = multer.memoryStorage();
+const upload = multer({
+  storage: storage,
+  limits: {
+    fileSize: 100 * 1024 * 1024 // 100MB limit for videos
+  },
+  fileFilter: (req, file, cb) => {
+    // Accept video files only
+    const allowedTypes = ['video/mp4', 'video/quicktime', 'video/x-msvideo', 'video/webm', 'video/x-m4v'];
+    if (allowedTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Invalid file type. Only MP4, MOV, AVI, WebM, and M4V videos are allowed.'), false);
+    }
+  }
+});
+
+// Helper function to add signed URLs to highlights
+async function addSignedUrlsToHighlights(highlights) {
+  return Promise.all(highlights.map(async (highlight) => {
+    if (highlight.video_url && highlight.video_url.startsWith('highlights/')) {
+      try {
+        highlight.video_signed_url = await getSignedVideoUrl(highlight.video_url);
+      } catch (error) {
+        console.error('Error generating signed URL for highlight:', error);
+        highlight.video_signed_url = null;
+      }
+    }
+    return highlight;
+  }));
+}
+
+// Upload highlight with video file (MUST be before /:userId and /:highlightId routes)
+router.post('/upload', authMiddleware, upload.single('video_file'), async (req, res) => {
+  try {
+    const { highlight_type, title, hudl_link } = req.body;
+    const videoFile = req.file;
+
+    // Validate required fields
+    if (!highlight_type || !title) {
+      return res.status(400).json({ error: 'Highlight type and title are required' });
+    }
+
+    // Validate highlight_type
+    if (!['season', 'game'].includes(highlight_type)) {
+      return res.status(400).json({ error: 'Invalid highlight type. Must be "season" or "game"' });
+    }
+
+    // Must have either video file or hudl link
+    if (!videoFile && !hudl_link) {
+      return res.status(400).json({ error: 'Either a video file or Hudl link is required' });
+    }
+
+    let videoS3Key = null;
+
+    // Upload video to S3 if provided
+    if (videoFile) {
+      const s3Key = generateHighlightVideoKey(req.userId, videoFile.originalname);
+      await uploadToS3(videoFile.buffer, s3Key, videoFile.mimetype);
+      videoS3Key = s3Key;
+    }
+
+    // Insert into database
+    const result = await pool.query(
+      `INSERT INTO player_highlights (user_id, highlight_type, title, hudl_link, video_url)
+       VALUES ($1, $2, $3, $4, $5)
+       RETURNING id, highlight_type, title, hudl_link, video_url, created_at`,
+      [req.userId, highlight_type, title, hudl_link || null, videoS3Key]
+    );
+
+    const highlight = result.rows[0];
+
+    // Generate signed URL for the video if uploaded
+    if (highlight.video_url) {
+      highlight.video_signed_url = await getSignedVideoUrl(highlight.video_url);
+    }
+
+    res.status(201).json({
+      success: true,
+      message: 'Highlight added successfully',
+      highlight: highlight
+    });
+  } catch (error) {
+    console.error('Upload highlight error:', error);
+
+    // Handle multer errors
+    if (error.message && error.message.includes('Invalid file type')) {
+      return res.status(400).json({ error: error.message });
+    }
+
+    res.status(500).json({ error: 'Failed to upload highlight' });
+  }
+});
 
 // Get all highlights for a user by user_id
 router.get('/:userId', authMiddleware, async (req, res) => {
@@ -9,16 +106,19 @@ router.get('/:userId', authMiddleware, async (req, res) => {
     const { userId } = req.params;
 
     const result = await pool.query(
-      `SELECT id, highlight_type, title, hudl_link, created_at
+      `SELECT id, highlight_type, title, hudl_link, video_url, created_at
        FROM player_highlights
        WHERE user_id = $1
        ORDER BY created_at DESC`,
       [userId]
     );
 
+    // Add signed URLs for video highlights
+    const highlightsWithUrls = await addSignedUrlsToHighlights(result.rows);
+
     res.json({
       success: true,
-      highlights: result.rows
+      highlights: highlightsWithUrls
     });
   } catch (error) {
     console.error('Get highlights error:', error);
@@ -106,9 +206,9 @@ router.delete('/:highlightId', authMiddleware, async (req, res) => {
   try {
     const { highlightId } = req.params;
 
-    // Verify ownership
+    // Verify ownership and get video_url if exists
     const checkResult = await pool.query(
-      'SELECT user_id FROM player_highlights WHERE id = $1',
+      'SELECT user_id, video_url FROM player_highlights WHERE id = $1',
       [highlightId]
     );
 
@@ -118,6 +218,17 @@ router.delete('/:highlightId', authMiddleware, async (req, res) => {
 
     if (checkResult.rows[0].user_id !== req.userId) {
       return res.status(403).json({ error: 'Not authorized to delete this highlight' });
+    }
+
+    // Delete video from S3 if it exists
+    const videoUrl = checkResult.rows[0].video_url;
+    if (videoUrl && videoUrl.startsWith('highlights/')) {
+      try {
+        await deleteFromS3(videoUrl);
+      } catch (s3Error) {
+        console.error('Error deleting video from S3:', s3Error);
+        // Continue with database deletion even if S3 delete fails
+      }
     }
 
     await pool.query('DELETE FROM player_highlights WHERE id = $1', [highlightId]);

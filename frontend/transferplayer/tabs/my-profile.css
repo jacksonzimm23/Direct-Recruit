@@ -1120,9 +1120,8 @@
 }
 
 .btn-modal-save:hover {
-    background: var(--pacific-blue);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(18, 130, 162, 0.3);
+    background: var(--accent-orange);
+    transform: translateY(-2px);
 }
 
 /* Edit Profile Form Styles */
@@ -3678,6 +3677,7 @@
     border-radius: 16px;
     width: 90%;
     max-width: 500px;
+    max-height: 90vh;
     overflow: hidden;
     display: flex;
     flex-direction: column;
@@ -3724,6 +3724,8 @@
 .add-highlight-modal-body {
     padding: 2rem;
     color: var(--white);
+    overflow-y: auto;
+    flex: 1;
 }
 
 .add-highlight-modal-footer {
@@ -3791,6 +3793,18 @@
     animation: fadeIn 0.3s ease;
 }
 
+.highlight-coach-notice {
+    padding: 0.875rem 1rem;
+    background: rgba(220, 53, 69, 0.15);
+    border: 1px solid rgba(220, 53, 69, 0.4);
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    color: #dc3545;
+    font-size: 0.875rem;
+    font-weight: 500;
+    line-height: 1.4;
+}
+
 .highlight-type-indicator {
     display: flex;
     align-items: center;
@@ -3853,6 +3867,111 @@
     color: rgba(255, 255, 255, 0.4);
 }
 
+/* Video Preview Thumbnail */
+.highlight-video-preview {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+.highlight-play-overlay {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 50px;
+    height: 50px;
+    background: rgba(0, 0, 0, 0.6);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.highlight-play-overlay svg {
+    width: 24px;
+    height: 24px;
+    color: var(--white);
+    margin-left: 3px;
+}
+
+.highlight-card:hover .highlight-play-overlay {
+    background: var(--cerulean);
+    transform: translate(-50%, -50%) scale(1.1);
+}
+
+/* Video Player Modal */
+.video-player-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 10001;
+}
+
+.video-player-modal.active {
+    display: block;
+}
+
+.video-player-modal-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.9);
+}
+
+.video-player-modal-content {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 90%;
+    max-width: 1000px;
+    max-height: 90vh;
+}
+
+.video-player-modal-content video {
+    width: 100%;
+    max-height: 80vh;
+    border-radius: 12px;
+    background: #000;
+}
+
+.video-player-modal-close {
+    position: absolute;
+    top: -50px;
+    right: 0;
+    width: 40px;
+    height: 40px;
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.2s;
+    z-index: 10;
+}
+
+.video-player-modal-close:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.video-player-modal-close svg {
+    width: 24px;
+    height: 24px;
+    color: var(--white);
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     .highlights-header {
@@ -3868,6 +3987,11 @@
 
     .highlight-type-options {
         flex-direction: column;
+    }
+
+    .video-player-modal-close {
+        top: 10px;
+        right: 10px;
     }
 }
 

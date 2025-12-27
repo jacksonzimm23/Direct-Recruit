@@ -1391,9 +1391,8 @@
 }
 
 .btn-modal-save:hover {
-    background: var(--pacific-blue);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(18, 130, 162, 0.3);
+    background: var(--accent-orange);
+    transform: translateY(-2px);
 }
 
 /* Edit Profile Form Styles */

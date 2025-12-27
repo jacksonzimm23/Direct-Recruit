@@ -9,6 +9,51 @@ const pool = require('../config/database');
 const { authMiddleware } = require('../middleware/auth');
 const { body, validationResult } = require('express-validator');
 const { postLimiter } = require('../middleware/rateLimit');
+const { getSignedS3Url } = require('../utils/s3');
+
+// Helper function to add signed URLs to posts array
+async function addSignedUrlsToPosts(posts) {
+  if (!posts || !Array.isArray(posts)) return posts;
+
+  return await Promise.all(posts.map(async (post) => {
+    // Handle author_image
+    if (post.author_image && post.author_image.startsWith('profiles/')) {
+      try {
+        post.author_image = await getSignedS3Url(post.author_image);
+      } catch (error) {
+        console.error('Error generating signed URL for author_image:', error);
+        post.author_image = null;
+      }
+    }
+    // Handle quoter_image for reposts/quotes
+    if (post.quoter_image && post.quoter_image.startsWith('profiles/')) {
+      try {
+        post.quoter_image = await getSignedS3Url(post.quoter_image);
+      } catch (error) {
+        console.error('Error generating signed URL for quoter_image:', error);
+        post.quoter_image = null;
+      }
+    }
+    return post;
+  }));
+}
+
+// Helper function to add signed URLs to likes/shares arrays
+async function addSignedUrlsToUsers(users) {
+  if (!users || !Array.isArray(users)) return users;
+
+  return await Promise.all(users.map(async (user) => {
+    if (user.profile_image_url && user.profile_image_url.startsWith('profiles/')) {
+      try {
+        user.profile_image_url = await getSignedS3Url(user.profile_image_url);
+      } catch (error) {
+        console.error('Error generating signed URL for profile_image_url:', error);
+        user.profile_image_url = null;
+      }
+    }
+    return user;
+  }));
+}
 
 // Helper function to get user name
 async function getUserName(userId) {
@@ -34,7 +79,8 @@ router.get('/feed/combined', authMiddleware, async (req, res) => {
     const limit = parseInt(req.query.limit) || 20;
     const offset = parseInt(req.query.offset) || 0;
 
-    const posts = await Post.getCombinedFeed(req.userId, limit, offset);
+    let posts = await Post.getCombinedFeed(req.userId, limit, offset);
+    posts = await addSignedUrlsToPosts(posts);
     res.json({ posts, count: posts.length });
   } catch (error) {
     console.error('Get combined feed error:', error);
@@ -48,7 +94,8 @@ router.get('/feed/following', authMiddleware, async (req, res) => {
     const limit = parseInt(req.query.limit) || 20;
     const offset = parseInt(req.query.offset) || 0;
 
-    const posts = await Post.getFollowingFeed(req.userId, limit, offset);
+    let posts = await Post.getFollowingFeed(req.userId, limit, offset);
+    posts = await addSignedUrlsToPosts(posts);
     res.json({ posts, count: posts.length });
   } catch (error) {
     console.error('Get following feed error:', error);
@@ -62,7 +109,8 @@ router.get('/feed/discover', authMiddleware, async (req, res) => {
     const limit = parseInt(req.query.limit) || 20;
     const offset = parseInt(req.query.offset) || 0;
 
-    const posts = await Post.getDiscoverFeed(req.userId, limit, offset);
+    let posts = await Post.getDiscoverFeed(req.userId, limit, offset);
+    posts = await addSignedUrlsToPosts(posts);
     res.json({ posts, count: posts.length });
   } catch (error) {
     console.error('Get discover feed error:', error);
@@ -76,7 +124,8 @@ router.get('/feed', authMiddleware, async (req, res) => {
     const limit = parseInt(req.query.limit) || 20;
     const offset = parseInt(req.query.offset) || 0;
 
-    const posts = await Post.getCombinedFeed(req.userId, limit, offset);
+    let posts = await Post.getCombinedFeed(req.userId, limit, offset);
+    posts = await addSignedUrlsToPosts(posts);
     res.json({ posts, count: posts.length });
   } catch (error) {
     console.error('Get feed error:', error);
@@ -90,7 +139,8 @@ router.get('/user/:userId', authMiddleware, async (req, res) => {
     const limit = parseInt(req.query.limit) || 20;
     const offset = parseInt(req.query.offset) || 0;
 
-    const posts = await Post.getUserPosts(req.params.userId, req.userId, limit, offset);
+    let posts = await Post.getUserPosts(req.params.userId, req.userId, limit, offset);
+    posts = await addSignedUrlsToPosts(posts);
     res.json({ posts, count: posts.length });
   } catch (error) {
     console.error('Get user posts error:', error);
@@ -104,7 +154,8 @@ router.get('/saved/list', authMiddleware, async (req, res) => {
     const limit = parseInt(req.query.limit) || 20;
     const offset = parseInt(req.query.offset) || 0;
 
-    const posts = await Post.getSavedPosts(req.userId, limit, offset);
+    let posts = await Post.getSavedPosts(req.userId, limit, offset);
+    posts = await addSignedUrlsToPosts(posts);
     res.json({ posts, count: posts.length });
   } catch (error) {
     console.error('Get saved posts error:', error);
@@ -118,7 +169,8 @@ router.get('/reposts/mine', authMiddleware, async (req, res) => {
     const limit = parseInt(req.query.limit) || 10;
     const offset = parseInt(req.query.offset) || 0;
 
-    const posts = await Post.getUserReposts(req.userId, limit, offset);
+    let posts = await Post.getUserReposts(req.userId, limit, offset);
+    posts = await addSignedUrlsToPosts(posts);
     res.json({ posts, count: posts.length });
   } catch (error) {
     console.error('Get reposts error:', error);
@@ -134,7 +186,8 @@ router.get('/comments/:commentId/replies', authMiddleware, async (req, res) => {
     const limit = parseInt(req.query.limit) || 20;
     const offset = parseInt(req.query.offset) || 0;
 
-    const replies = await Post.getCommentReplies(req.params.commentId, limit, offset);
+    let replies = await Post.getCommentReplies(req.params.commentId, limit, offset);
+    replies = await addSignedUrlsToPosts(replies); // Comments have author_image field
     res.json({ replies, count: replies.length });
   } catch (error) {
     console.error('Get replies error:', error);
@@ -295,7 +348,8 @@ router.get('/:postId/likes', authMiddleware, async (req, res) => {
     const limit = parseInt(req.query.limit) || 50;
     const offset = parseInt(req.query.offset) || 0;
 
-    const likes = await Post.getLikes(req.params.postId, limit, offset);
+    let likes = await Post.getLikes(req.params.postId, limit, offset);
+    likes = await addSignedUrlsToUsers(likes);
     res.json({ likes, count: likes.length });
   } catch (error) {
     console.error('Get likes error:', error);
@@ -310,6 +364,10 @@ router.get('/:postId/shares', authMiddleware, async (req, res) => {
     const offset = parseInt(req.query.offset) || 0;
 
     const shares = await Post.getShares(req.params.postId, limit, offset);
+    // Add signed URLs to all share arrays
+    shares.all = await addSignedUrlsToUsers(shares.all);
+    shares.reposts = await addSignedUrlsToUsers(shares.reposts);
+    shares.quotes = await addSignedUrlsToUsers(shares.quotes);
     res.json(shares);
   } catch (error) {
     console.error('Get shares error:', error);
@@ -361,7 +419,8 @@ router.get('/:postId/comments', authMiddleware, async (req, res) => {
     const limit = parseInt(req.query.limit) || 50;
     const offset = parseInt(req.query.offset) || 0;
 
-    const comments = await Post.getComments(req.params.postId, req.userId, limit, offset);
+    let comments = await Post.getComments(req.params.postId, req.userId, limit, offset);
+    comments = await addSignedUrlsToPosts(comments); // Comments have author_image field
     res.json({ comments, count: comments.length });
   } catch (error) {
     console.error('Get comments error:', error);

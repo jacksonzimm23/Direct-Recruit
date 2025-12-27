@@ -1,0 +1,304 @@
+/* Verify Email Page Styles */
+
+.verify-section {
+    min-height: 100vh;
+    padding: 8rem 2rem 4rem;
+    background: linear-gradient(135deg, var(--oxford-blue) 0%, var(--penn-blue) 50%, var(--indigo-dye) 100%);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.verify-container {
+    max-width: 480px;
+    width: 100%;
+    background: rgba(254, 252, 251, 0.05);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(18, 130, 162, 0.2);
+    border-radius: 20px;
+    padding: 3rem;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    text-align: center;
+}
+
+.verify-icon {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 1.5rem;
+    background: linear-gradient(135deg, var(--cerulean), var(--indigo-dye));
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: pulse 2s ease-in-out infinite;
+}
+
+.verify-icon svg {
+    width: 40px;
+    height: 40px;
+    color: var(--white);
+}
+
+@keyframes pulse {
+    0%, 100% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(18, 130, 162, 0.4);
+    }
+    50% {
+        transform: scale(1.05);
+        box-shadow: 0 0 0 15px rgba(18, 130, 162, 0);
+    }
+}
+
+.verify-container h1 {
+    font-size: 2rem;
+    font-weight: 800;
+    color: var(--white);
+    margin-bottom: 0.75rem;
+}
+
+.verify-subtitle {
+    font-size: 1rem;
+    color: rgba(254, 252, 251, 0.7);
+    margin-bottom: 0.25rem;
+}
+
+.verify-email {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--cerulean);
+    margin-bottom: 2rem;
+    word-break: break-all;
+}
+
+/* Code Input Boxes */
+.code-inputs {
+    display: flex;
+    justify-content: center;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+}
+
+.code-input {
+    width: 50px;
+    height: 60px;
+    text-align: center;
+    font-size: 1.5rem;
+    font-weight: 700;
+    font-family: 'Inter', monospace;
+    background: rgba(254, 252, 251, 0.08);
+    border: 2px solid rgba(18, 130, 162, 0.3);
+    border-radius: 12px;
+    color: var(--white);
+    transition: all 0.3s ease;
+    caret-color: var(--cerulean);
+}
+
+.code-input:focus {
+    outline: none;
+    border-color: var(--cerulean);
+    background: rgba(254, 252, 251, 0.12);
+    box-shadow: 0 0 0 3px rgba(18, 130, 162, 0.2);
+    transform: translateY(-2px);
+}
+
+.code-input.filled {
+    border-color: var(--cerulean);
+    background: rgba(18, 130, 162, 0.15);
+}
+
+.code-input.error {
+    border-color: #ef4444;
+    background: rgba(239, 68, 68, 0.1);
+    animation: shake 0.5s ease-in-out;
+}
+
+.code-input.success {
+    border-color: #22c55e;
+    background: rgba(34, 197, 94, 0.15);
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    20%, 60% { transform: translateX(-5px); }
+    40%, 80% { transform: translateX(5px); }
+}
+
+/* Error Message */
+.error-message {
+    color: #ef4444;
+    font-size: 0.9rem;
+    font-weight: 500;
+    min-height: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+/* Verify Button */
+.btn-verify {
+    width: 100%;
+    padding: 1rem 2rem;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--white);
+    background: var(--accent-orange);
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    font-family: inherit;
+}
+
+.btn-verify:hover:not(:disabled) {
+    background: #ff7d4d;
+    transform: translateY(-2px);
+    box-shadow: 0 10px 30px rgba(255, 107, 53, 0.4);
+}
+
+.btn-verify:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.btn-verify .btn-icon {
+    width: 20px;
+    height: 20px;
+}
+
+.btn-verify.loading {
+    pointer-events: none;
+}
+
+.btn-verify.loading::after {
+    content: '';
+    width: 20px;
+    height: 20px;
+    border: 2px solid transparent;
+    border-top-color: var(--white);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin-left: 0.5rem;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Resend Section */
+.resend-section {
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid rgba(18, 130, 162, 0.2);
+}
+
+.resend-section p {
+    color: rgba(254, 252, 251, 0.6);
+    font-size: 0.9rem;
+    margin-bottom: 0.75rem;
+}
+
+.btn-resend {
+    background: transparent;
+    border: 2px solid var(--cerulean);
+    color: var(--cerulean);
+    padding: 0.75rem 1.5rem;
+    font-size: 0.95rem;
+    font-weight: 600;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-family: inherit;
+}
+
+.btn-resend:hover:not(:disabled) {
+    background: var(--cerulean);
+    color: var(--white);
+}
+
+.btn-resend:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    border-color: rgba(18, 130, 162, 0.3);
+    color: rgba(18, 130, 162, 0.5);
+}
+
+.resend-timer {
+    color: var(--cerulean);
+    font-size: 0.85rem;
+    margin-top: 0.5rem;
+    font-weight: 500;
+}
+
+/* Help Text */
+.help-text {
+    margin-top: 2rem;
+    padding: 1rem;
+    background: rgba(18, 130, 162, 0.1);
+    border-radius: 10px;
+}
+
+.help-text p {
+    color: rgba(254, 252, 251, 0.5);
+    font-size: 0.85rem;
+    margin: 0.25rem 0;
+}
+
+/* Success State */
+.verify-container.success .verify-icon {
+    background: linear-gradient(135deg, #22c55e, #16a34a);
+    animation: none;
+}
+
+.verify-container.success .verify-icon svg {
+    stroke: none;
+    fill: var(--white);
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+    .verify-container {
+        padding: 2rem 1.5rem;
+        margin: 1rem;
+    }
+
+    .verify-container h1 {
+        font-size: 1.5rem;
+    }
+
+    .code-inputs {
+        gap: 0.5rem;
+    }
+
+    .code-input {
+        width: 42px;
+        height: 52px;
+        font-size: 1.25rem;
+    }
+
+    .verify-icon {
+        width: 60px;
+        height: 60px;
+    }
+
+    .verify-icon svg {
+        width: 30px;
+        height: 30px;
+    }
+}
+
+@media (max-width: 360px) {
+    .code-input {
+        width: 38px;
+        height: 48px;
+        font-size: 1.1rem;
+        border-radius: 8px;
+    }
+
+    .code-inputs {
+        gap: 0.35rem;
+    }
+}

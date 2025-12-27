@@ -161,9 +161,13 @@ document.addEventListener('DOMContentLoaded', async function() {
                         dropdown.remove();
                         showLogoutModal();
                     } else if (action === 'profile') {
-                        window.location.href = 'tabs/my-profile.html';
+                        // Check if we're in tabs folder or main folder
+                        const isInTabsFolder = window.location.pathname.includes('/tabs/');
+                        window.location.href = isInTabsFolder ? 'my-profile.html' : 'tabs/my-profile.html';
                     } else if (action === 'settings') {
-                        window.location.href = 'tabs/settings.html';
+                        // Check if we're in tabs folder or main folder
+                        const isInTabsFolder = window.location.pathname.includes('/tabs/');
+                        window.location.href = isInTabsFolder ? 'settings.html' : 'tabs/settings.html';
                     }
 
                     dropdown.remove();
@@ -323,12 +327,13 @@ async function updateSidebarFooter() {
                 userRoleElement.textContent = parts.join(' • ') || (userRole === 'player' ? 'Player' : 'Coach');
             }
 
-            // Update avatar if available
-            if (profile.profile_image_url) {
-                const avatarElement = document.querySelector('.sidebar-footer .user-avatar-circle');
-                if (avatarElement) {
+            // Update avatar and show it (was hidden initially to prevent flash)
+            const avatarElement = document.querySelector('.sidebar-footer .user-avatar-circle');
+            if (avatarElement) {
+                if (profile.profile_image_url) {
                     avatarElement.innerHTML = `<img src="${profile.profile_image_url}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
                 }
+                avatarElement.style.visibility = 'visible';
             }
         }
     } catch (error) {
