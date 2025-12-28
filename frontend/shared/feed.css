@@ -134,6 +134,13 @@
     min-width: 0;
 }
 
+.post-user-name-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
 .post-user-name {
     font-weight: 600;
     color: var(--white);
@@ -146,6 +153,12 @@
 
 .post-user-name:hover {
     text-decoration: underline;
+}
+
+.post-user-handle {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.875rem;
+    font-weight: 400;
 }
 
 .verified-badge {
@@ -252,14 +265,18 @@
     margin-top: 1rem;
     border-radius: 12px;
     overflow: hidden;
+    text-align: left;
 }
 
 .post-media img {
-    width: 100%;
-    max-height: 500px;
-    object-fit: cover;
+    display: inline-block;
+    width: 50%;
+    max-height: 400px;
+    object-fit: contain;
     cursor: pointer;
     transition: opacity 0.2s;
+    border-radius: 12px;
+    vertical-align: top;
 }
 
 .post-media img:hover {
@@ -267,15 +284,27 @@
 }
 
 .post-media video {
-    width: 100%;
-    max-height: 500px;
+    display: inline-block;
+    width: 50%;
+    max-height: 400px;
+    object-fit: contain;
     border-radius: 12px;
+    vertical-align: top;
 }
 
 .post-media-2 {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
+    display: flex;
     gap: 4px;
+    justify-content: flex-start;
+}
+
+.post-media-2 img,
+.post-media-2 video {
+    width: 50%;
+    max-height: 400px;
+    object-fit: contain;
+    cursor: pointer;
+    border-radius: 8px;
 }
 
 .post-media-3 {
@@ -292,8 +321,71 @@
 .post-media-4 {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    grid-template-rows: 1fr 1fr;
+    grid-template-rows: auto auto;
     gap: 4px;
+}
+
+.post-media-4 img {
+    aspect-ratio: 1;
+    object-fit: cover;
+}
+
+/* Wrapper for media with badge overlay */
+.media-wrapper {
+    position: relative;
+    display: inline-block;
+    width: 50%;
+    cursor: pointer;
+}
+
+.media-wrapper img,
+.media-wrapper video {
+    display: block;
+    width: 100%;
+    max-height: 400px;
+    object-fit: contain;
+    border-radius: 12px;
+}
+
+.media-wrapper .media-count-badge {
+    position: absolute;
+    top: 0.75rem;
+    right: 0.75rem;
+}
+
+/* Legacy gallery style - can be removed if not used */
+.post-media-gallery {
+    position: relative;
+    cursor: pointer;
+}
+
+.post-media-gallery img,
+.post-media-gallery video {
+    width: 100% !important;
+    max-height: 300px;
+    object-fit: cover;
+    border-radius: 12px;
+}
+
+.media-count-badge {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: rgba(0, 0, 0, 0.75);
+    color: white;
+    padding: 0.5rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    backdrop-filter: blur(4px);
+}
+
+.media-count-badge svg {
+    width: 16px;
+    height: 16px;
 }
 
 .media-overflow {
@@ -953,6 +1045,148 @@
     background: rgba(255, 255, 255, 0.2);
 }
 
+/* ==================== MEDIA SLIDESHOW ==================== */
+.media-slideshow {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.slideshow-backdrop {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.95);
+    cursor: pointer;
+}
+
+.slideshow-close {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    width: 44px;
+    height: 44px;
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    border-radius: 50%;
+    color: white;
+    font-size: 1.75rem;
+    cursor: pointer;
+    z-index: 3;
+    transition: background 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.slideshow-close:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.slideshow-counter {
+    position: absolute;
+    top: 1.25rem;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.6);
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    z-index: 3;
+    backdrop-filter: blur(4px);
+}
+
+.slideshow-content {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+}
+
+.slideshow-image,
+.slideshow-video {
+    max-width: 85vw;
+    max-height: 85vh;
+    object-fit: contain;
+    border-radius: 8px;
+    user-select: none;
+}
+
+.slideshow-nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 50px;
+    height: 50px;
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    border-radius: 50%;
+    color: white;
+    cursor: pointer;
+    z-index: 2;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.slideshow-nav:hover {
+    background: rgba(255, 255, 255, 0.25);
+    transform: translateY(-50%) scale(1.05);
+}
+
+.slideshow-nav svg {
+    width: 28px;
+    height: 28px;
+}
+
+.slideshow-prev {
+    left: 1.5rem;
+}
+
+.slideshow-next {
+    right: 1.5rem;
+}
+
+/* Mobile adjustments */
+@media (max-width: 768px) {
+    .slideshow-nav {
+        width: 40px;
+        height: 40px;
+    }
+
+    .slideshow-nav svg {
+        width: 22px;
+        height: 22px;
+    }
+
+    .slideshow-prev {
+        left: 0.5rem;
+    }
+
+    .slideshow-next {
+        right: 0.5rem;
+    }
+
+    .slideshow-image {
+        max-width: 95vw;
+        max-height: 80vh;
+    }
+}
+
 /* ==================== CREATE POST BOX ==================== */
 .create-post-box {
     background: rgba(255, 255, 255, 0.03);
@@ -1043,6 +1277,130 @@
     opacity: 0.6;
     cursor: not-allowed;
     transform: none;
+}
+
+/* ==================== MEDIA PREVIEW (Before Posting) ==================== */
+.media-preview-container {
+    margin: 0.75rem 0;
+    padding: 0.5rem;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+.media-preview-grid {
+    display: grid;
+    gap: 0.5rem;
+    grid-template-columns: repeat(2, 1fr);
+}
+
+/* Single image - full width, natural aspect ratio */
+.media-preview-grid:has(.media-preview-item:nth-child(1):last-child) {
+    grid-template-columns: 1fr;
+}
+
+.media-preview-grid:has(.media-preview-item:nth-child(1):last-child) .media-preview-item {
+    aspect-ratio: auto;
+    max-height: 300px;
+}
+
+.media-preview-grid:has(.media-preview-item:nth-child(1):last-child) .media-preview-item img,
+.media-preview-grid:has(.media-preview-item:nth-child(1):last-child) .media-preview-item video {
+    object-fit: contain;
+    max-height: 300px;
+    width: auto;
+    max-width: 100%;
+    margin: 0 auto;
+    display: block;
+}
+
+/* Two images - side by side */
+.media-preview-grid:has(.media-preview-item:nth-child(2):last-child) {
+    grid-template-columns: repeat(2, 1fr);
+}
+
+/* Three or four images - 2x2 grid */
+.media-preview-grid:has(.media-preview-item:nth-child(3):last-child),
+.media-preview-grid:has(.media-preview-item:nth-child(4):last-child) {
+    grid-template-columns: repeat(2, 1fr);
+}
+
+.media-preview-item {
+    position: relative;
+    aspect-ratio: 1;
+    border-radius: 8px;
+    overflow: hidden;
+    background: rgba(0, 0, 0, 0.3);
+}
+
+.media-preview-item img,
+.media-preview-item video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.media-preview-type {
+    position: absolute;
+    bottom: 0.5rem;
+    left: 0.5rem;
+    background: rgba(0, 0, 0, 0.7);
+    color: white;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.media-preview-type svg {
+    width: 14px;
+    height: 14px;
+}
+
+.media-preview-remove {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    width: 28px;
+    height: 28px;
+    background: rgba(0, 0, 0, 0.7);
+    border: none;
+    border-radius: 50%;
+    color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    opacity: 0;
+}
+
+.media-preview-item:hover .media-preview-remove {
+    opacity: 1;
+}
+
+.media-preview-remove:hover {
+    background: #e74c3c;
+    transform: scale(1.1);
+}
+
+.media-preview-remove svg {
+    width: 16px;
+    height: 16px;
+}
+
+/* Disabled state for add media button */
+.post-option-btn.disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.post-option-btn.disabled:hover {
+    background: transparent;
+    color: rgba(255, 255, 255, 0.5);
 }
 
 /* ==================== MODALS ==================== */

@@ -71,19 +71,17 @@
                 </div>
                 <div class="post-input-container">
                     <textarea placeholder="Share recruiting updates, team news, or program highlights..." class="post-input" rows="3"></textarea>
+                    <!-- Media Preview Container -->
+                    <div class="media-preview-container" id="mediaPreviewContainer" style="display: none;">
+                        <div class="media-preview-grid" id="mediaPreviewGrid"></div>
+                    </div>
                     <div class="post-actions">
                         <div class="post-options">
-                            <button class="post-option-btn" title="Add Photo/Video">
+                            <button class="post-option-btn" id="addMediaBtn" title="Add Photo/Video">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
                                     <circle cx="8.5" cy="8.5" r="1.5"></circle>
                                     <polyline points="21 15 16 10 5 21"></polyline>
-                                </svg>
-                            </button>
-                            <button class="post-option-btn" title="Add Link">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
-                                    <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
                                 </svg>
                             </button>
                         </div>
@@ -91,6 +89,8 @@
                     </div>
                 </div>
             </div>
+            <!-- Hidden file input for media uploads -->
+            <input type="file" id="postMediaInput" accept="image/jpeg,image/png,image/gif,image/webp,video/mp4,video/mov,video/avi,video/webm" multiple style="display: none;">
 
             <!-- Feed Posts - Dynamically loaded by feed.js -->
             <div class="feed-posts" id="feedPosts">

@@ -8,12 +8,12 @@ Big schools know who the big time recruitsare , benefit more from transfer porta
 
 
 
-Currently working on: password storing, clean up create a profile pages 
+Currently working on: feed backend storing in psql, media storing 
 
 
 To do:
-- password storing
-- make sure profile/ AWS folder appears when adding pfp
+- feed, feed backend 
+- settings page
 - others profile 
 - turn to app 
 
@@ -21,12 +21,15 @@ Feed
 - backend for notifications from posts and interactions
 - sidebar footer for subheaders
 - storing media 
+- verified account icons (team logo)
 
 NEED TO ASK CLAUDE SECURITY, API, AND DATABASE QUESTIONS WHEN ALL DONE WITH FRONT AND BACKEND, HOW TO TURN TO MOBILE APP
 
 
 Use Amazon RDS for PostgreSQL (need to switch AWS when getting off local server)
 - security with psql stuff 
+
+Feed: migrate to Aurora PostgreSQL
 
 
 Prompt for view profiles and keeping that page highlighted:

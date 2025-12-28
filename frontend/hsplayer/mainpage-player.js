@@ -89,13 +89,15 @@ document.addEventListener('DOMContentLoaded', async function() {
         });
     }
 
-    // Post options buttons
-    const postOptionBtns = document.querySelectorAll('.post-option-btn');
+    // Post options buttons (excluding media button which is handled by feed.js)
+    const postOptionBtns = document.querySelectorAll('.post-option-btn:not(#addMediaBtn)');
     postOptionBtns.forEach(btn => {
         btn.addEventListener('click', function() {
             const title = this.getAttribute('title');
-            console.log('Post option clicked:', title);
-            alert(`${title} functionality will be connected to your backend.`);
+            // Stats button placeholder - to be implemented
+            if (title === 'Add Stats') {
+                // Future implementation for stats
+            }
         });
     });
 

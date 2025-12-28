@@ -50,6 +50,37 @@ function formatHeight(height) {
     return height;
 }
 
+// Show share toast notification
+function showShareToast() {
+    // Remove existing toast if any
+    const existingToast = document.querySelector('.share-toast');
+    if (existingToast) {
+        existingToast.remove();
+    }
+
+    // Create toast element
+    const toast = document.createElement('div');
+    toast.className = 'share-toast';
+    toast.innerHTML = `
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="20 6 9 17 4 12"></polyline>
+        </svg>
+        Profile link copied to clipboard!
+    `;
+    document.body.appendChild(toast);
+
+    // Trigger animation
+    requestAnimationFrame(() => {
+        toast.classList.add('show');
+    });
+
+    // Remove after 3 seconds
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
+
 // Function to update sidebar footer with fresh data from API
 async function updateSidebarFooterFromAPI() {
     try {
@@ -1206,6 +1237,28 @@ function updateProfileActions() {
                 showEditProfileModal();
             });
         }
+
+        // Setup share profile button
+        const shareBtn = actionsContainer.querySelector('.btn-share-profile');
+        if (shareBtn) {
+            shareBtn.addEventListener('click', async function() {
+                const profileUrl = `${window.location.origin}/frontend/transferplayer/tabs/my-profile.html?username=${currentProfile.username}`;
+                try {
+                    await navigator.clipboard.writeText(profileUrl);
+                    showShareToast();
+                } catch (err) {
+                    const textArea = document.createElement('textarea');
+                    textArea.value = profileUrl;
+                    textArea.style.position = 'fixed';
+                    textArea.style.left = '-9999px';
+                    document.body.appendChild(textArea);
+                    textArea.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(textArea);
+                    showShareToast();
+                }
+            });
+        }
     } else if (isOwnProfile && hasUsernameParam) {
         // Own profile but navigated via URL - show back button and edit/share
         actionsContainer.innerHTML = `
@@ -1246,6 +1299,28 @@ function updateProfileActions() {
         if (editProfileBtn) {
             editProfileBtn.addEventListener('click', function() {
                 showEditProfileModal();
+            });
+        }
+
+        // Setup share profile button
+        const shareBtn = actionsContainer.querySelector('.btn-share-profile');
+        if (shareBtn) {
+            shareBtn.addEventListener('click', async function() {
+                const profileUrl = `${window.location.origin}/frontend/transferplayer/tabs/my-profile.html?username=${currentProfile.username}`;
+                try {
+                    await navigator.clipboard.writeText(profileUrl);
+                    showShareToast();
+                } catch (err) {
+                    const textArea = document.createElement('textarea');
+                    textArea.value = profileUrl;
+                    textArea.style.position = 'fixed';
+                    textArea.style.left = '-9999px';
+                    document.body.appendChild(textArea);
+                    textArea.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(textArea);
+                    showShareToast();
+                }
             });
         }
     } else {
@@ -1997,18 +2072,6 @@ function setupUI() {
             document.getElementById(tabId).classList.add('active');
         });
     });
-
-    // Share profile button
-    const shareProfileBtn = document.querySelector('.btn-share-profile');
-    if (shareProfileBtn && isOwnProfile) {
-        shareProfileBtn.classList.add('show-button');
-        shareProfileBtn.addEventListener('click', function() {
-            const profileUrl = `${window.location.origin}/frontend/player/tabs/my-profile.html?username=${currentProfile.username}`;
-            navigator.clipboard.writeText(profileUrl).then(() => {
-                alert('Profile link copied to clipboard!');
-            });
-        });
-    }
 
     // Change photo button - only allow upload on own profile
     const changePhotoBtn = document.querySelector('.btn-change-photo');

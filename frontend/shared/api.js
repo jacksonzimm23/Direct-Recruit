@@ -393,9 +393,14 @@ const uploadAPI = {
         return await response.json();
     },
 
-    uploadPostMedia: async (file) => {
+    uploadPostMedia: async (files) => {
         const formData = new FormData();
-        formData.append('media', file);
+
+        // Support both single file and array of files
+        const fileArray = Array.isArray(files) ? files : [files];
+        fileArray.forEach(file => {
+            formData.append('media', file);
+        });
 
         const token = getToken();
         const response = await fetch(`${API_BASE_URL}/upload/post-media`, {

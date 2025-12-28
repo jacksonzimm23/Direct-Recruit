@@ -34,6 +34,37 @@ async function addSignedUrlsToPosts(posts) {
         post.quoter_image = null;
       }
     }
+    // Handle media_urls array (post-media S3 keys)
+    if (post.media_urls && Array.isArray(post.media_urls) && post.media_urls.length > 0) {
+      try {
+        post.media_urls = await Promise.all(
+          post.media_urls.map(async (url) => {
+            // Only generate signed URL for S3 keys (not already signed URLs or external URLs)
+            if (url && url.startsWith('post-media/')) {
+              return await getSignedS3Url(url);
+            }
+            return url;
+          })
+        );
+      } catch (error) {
+        console.error('Error generating signed URLs for media_urls:', error);
+      }
+    }
+    // Handle original_media_urls for reposts/quotes
+    if (post.original_media_urls && Array.isArray(post.original_media_urls) && post.original_media_urls.length > 0) {
+      try {
+        post.original_media_urls = await Promise.all(
+          post.original_media_urls.map(async (url) => {
+            if (url && url.startsWith('post-media/')) {
+              return await getSignedS3Url(url);
+            }
+            return url;
+          })
+        );
+      } catch (error) {
+        console.error('Error generating signed URLs for original_media_urls:', error);
+      }
+    }
     return post;
   }));
 }

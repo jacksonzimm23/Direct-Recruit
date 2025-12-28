@@ -97,6 +97,20 @@ async function getSignedVideoUrl(key) {
   return getSignedS3Url(key, 21600);
 }
 
+/**
+ * Generate S3 key for post media (images/videos)
+ * @param {string} userId - The user's ID
+ * @param {string} originalFilename - The original filename
+ * @param {string} mediaType - 'image' or 'video'
+ * @returns {string} - The S3 key
+ */
+function generatePostMediaKey(userId, originalFilename, mediaType = 'image') {
+  const extension = originalFilename.split('.').pop().toLowerCase();
+  const timestamp = Date.now();
+  const randomId = Math.random().toString(36).substring(2, 8);
+  return `post-media/${userId}/${mediaType}-${timestamp}-${randomId}.${extension}`;
+}
+
 module.exports = {
   uploadToS3,
   getSignedS3Url,
@@ -104,6 +118,7 @@ module.exports = {
   deleteFromS3,
   generateProfileImageKey,
   generateHighlightVideoKey,
+  generatePostMediaKey,
   s3Client,
   BUCKET_NAME
 };

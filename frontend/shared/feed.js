@@ -13,6 +13,13 @@ class FeedManager {
         this.discoverOffset = 0;
         this.isLoading = false;
 
+        // Media upload state
+        this.pendingMediaFiles = [];
+        this.pendingMediaPreviews = [];
+        this.maxMediaFiles = 4;
+        this.maxFileSize = 200 * 1024 * 1024; // 200MB for videos (~5 min at 1080p)
+        this.maxImageSize = 10 * 1024 * 1024; // 10MB for images
+
         this.init();
     }
 
@@ -81,6 +88,23 @@ class FeedManager {
             });
         }
 
+        // Media upload button
+        const addMediaBtn = document.getElementById('addMediaBtn');
+        const mediaInput = document.getElementById('postMediaInput');
+
+        if (addMediaBtn && mediaInput) {
+            addMediaBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (this.pendingMediaFiles.length >= this.maxMediaFiles) {
+                    this.showToast(`Maximum ${this.maxMediaFiles} files allowed`, 'error');
+                    return;
+                }
+                mediaInput.click();
+            });
+
+            mediaInput.addEventListener('change', (e) => this.handleMediaSelect(e));
+        }
+
         // Feed tab switching
         document.addEventListener('click', (e) => {
             if (e.target.closest('.feed-tab')) {
@@ -99,6 +123,146 @@ class FeedManager {
                 this.loadMorePosts();
             }
         });
+    }
+
+    // ==================== MEDIA UPLOAD ====================
+
+    handleMediaSelect(event) {
+        const files = Array.from(event.target.files);
+        if (!files.length) return;
+
+        // Check how many more files we can add
+        const remainingSlots = this.maxMediaFiles - this.pendingMediaFiles.length;
+        if (files.length > remainingSlots) {
+            this.showToast(`Can only add ${remainingSlots} more file(s)`, 'error');
+            files.splice(remainingSlots);
+        }
+
+        // Validate and add each file
+        for (const file of files) {
+            if (!this.validateMediaFile(file)) continue;
+            this.addMediaFile(file);
+        }
+
+        // Clear the input so the same file can be selected again if removed
+        event.target.value = '';
+    }
+
+    validateMediaFile(file) {
+        const isVideo = file.type.startsWith('video/');
+        const isImage = file.type.startsWith('image/');
+
+        if (!isVideo && !isImage) {
+            this.showToast('Only images and videos are allowed', 'error');
+            return false;
+        }
+
+        // Check file size
+        const maxSize = isVideo ? this.maxFileSize : this.maxImageSize;
+        if (file.size > maxSize) {
+            const maxMB = Math.round(maxSize / (1024 * 1024));
+            this.showToast(`File too large. Maximum size: ${maxMB}MB`, 'error');
+            return false;
+        }
+
+        // Check for duplicates
+        const isDuplicate = this.pendingMediaFiles.some(
+            f => f.name === file.name && f.size === file.size
+        );
+        if (isDuplicate) {
+            this.showToast('This file is already added', 'error');
+            return false;
+        }
+
+        return true;
+    }
+
+    addMediaFile(file) {
+        const isVideo = file.type.startsWith('video/');
+
+        // Create preview URL
+        const previewUrl = URL.createObjectURL(file);
+
+        // Store file and preview
+        this.pendingMediaFiles.push(file);
+        this.pendingMediaPreviews.push({
+            url: previewUrl,
+            type: isVideo ? 'video' : 'image',
+            name: file.name
+        });
+
+        this.renderMediaPreviews();
+    }
+
+    renderMediaPreviews() {
+        const container = document.getElementById('mediaPreviewContainer');
+        const grid = document.getElementById('mediaPreviewGrid');
+
+        if (!container || !grid) return;
+
+        if (this.pendingMediaPreviews.length === 0) {
+            container.style.display = 'none';
+            grid.innerHTML = '';
+            return;
+        }
+
+        container.style.display = 'block';
+        grid.innerHTML = this.pendingMediaPreviews.map((preview, index) => `
+            <div class="media-preview-item" data-index="${index}">
+                ${preview.type === 'video' ? `
+                    <video src="${preview.url}" muted></video>
+                    <div class="media-preview-type">
+                        <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
+                            <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                        </svg>
+                    </div>
+                ` : `
+                    <img src="${preview.url}" alt="Preview">
+                `}
+                <button class="media-preview-remove" onclick="feedManager.removeMediaFile(${index})" title="Remove">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+        `).join('');
+
+        // Update media button state
+        const addMediaBtn = document.getElementById('addMediaBtn');
+        if (addMediaBtn) {
+            if (this.pendingMediaFiles.length >= this.maxMediaFiles) {
+                addMediaBtn.classList.add('disabled');
+                addMediaBtn.title = `Maximum ${this.maxMediaFiles} files`;
+            } else {
+                addMediaBtn.classList.remove('disabled');
+                addMediaBtn.title = 'Add Photo/Video';
+            }
+        }
+    }
+
+    removeMediaFile(index) {
+        // Revoke the object URL to free memory
+        if (this.pendingMediaPreviews[index]) {
+            URL.revokeObjectURL(this.pendingMediaPreviews[index].url);
+        }
+
+        // Remove from arrays
+        this.pendingMediaFiles.splice(index, 1);
+        this.pendingMediaPreviews.splice(index, 1);
+
+        this.renderMediaPreviews();
+    }
+
+    clearMediaFiles() {
+        // Revoke all object URLs
+        this.pendingMediaPreviews.forEach(preview => {
+            URL.revokeObjectURL(preview.url);
+        });
+
+        this.pendingMediaFiles = [];
+        this.pendingMediaPreviews = [];
+        this.renderMediaPreviews();
     }
 
     async loadFeed() {
@@ -292,22 +456,71 @@ class FeedManager {
         // Build media HTML
         let mediaHtml = '';
         if (post.media_urls && post.media_urls.length > 0) {
-            if (post.media_type === 'video') {
+            const mediaCount = post.media_urls.length;
+            const mediaUrlsJson = JSON.stringify(post.media_urls).replace(/'/g, "\\'").replace(/"/g, '&quot;');
+            const mediaTypesJson = JSON.stringify(post.media_types || []).replace(/'/g, "\\'").replace(/"/g, '&quot;');
+
+            // Helper to check if a URL is a video
+            const isVideoUrl = (url, index) => {
+                // Check media_types array first
+                if (post.media_types && post.media_types[index]) {
+                    return post.media_types[index] === 'video';
+                }
+                // Fallback: check media_type for single item posts
+                if (post.media_type === 'video') return true;
+                // Fallback: check URL extension
+                const videoExtensions = ['.mp4', '.mov', '.avi', '.webm'];
+                return videoExtensions.some(ext => url.toLowerCase().includes(ext));
+            };
+
+            // Helper to render media element
+            const renderMediaElement = (url, index, clickable = true) => {
+                const isVideo = isVideoUrl(url, index);
+                if (isVideo) {
+                    return `<video ${clickable ? `onclick="feedManager.openMediaSlideshow(${mediaUrlsJson}, ${index}, ${mediaTypesJson})"` : ''} src="${url}" muted></video>`;
+                } else {
+                    return `<img src="${url}" alt="Post media ${index + 1}" ${clickable ? `onclick="feedManager.openMediaSlideshow(${mediaUrlsJson}, ${index}, ${mediaTypesJson})"` : ''}>`;
+                }
+            };
+
+            // Always show first media item in single format, with slideshow for 2+ items
+            const firstIsVideo = isVideoUrl(post.media_urls[0], 0);
+
+            if (mediaCount >= 2) {
+                // 2+ media items: show first item with count badge, click opens slideshow
                 mediaHtml = `
                     <div class="post-media">
-                        <video controls src="${post.media_urls[0]}"></video>
+                        <div class="media-wrapper" onclick="feedManager.openMediaSlideshow(${mediaUrlsJson}, 0, ${mediaTypesJson})">
+                            ${firstIsVideo ?
+                                `<video src="${post.media_urls[0]}" muted></video>` :
+                                `<img src="${post.media_urls[0]}" alt="Post media">`
+                            }
+                            <div class="media-count-badge">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                    <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                                    <polyline points="21 15 16 10 5 21"></polyline>
+                                </svg>
+                                <span>1 / ${mediaCount}</span>
+                            </div>
+                        </div>
                     </div>
                 `;
             } else {
-                const imageCount = post.media_urls.length;
-                mediaHtml = `
-                    <div class="post-media post-media-${Math.min(imageCount, 4)}">
-                        ${post.media_urls.slice(0, 4).map((url, i) => `
-                            <img src="${url}" alt="Post media ${i + 1}" onclick="feedManager.openMediaViewer('${url}')">
-                        `).join('')}
-                        ${imageCount > 4 ? `<div class="media-overflow">+${imageCount - 4}</div>` : ''}
-                    </div>
-                `;
+                // Single media item
+                if (firstIsVideo) {
+                    mediaHtml = `
+                        <div class="post-media">
+                            <video controls src="${post.media_urls[0]}"></video>
+                        </div>
+                    `;
+                } else {
+                    mediaHtml = `
+                        <div class="post-media" onclick="feedManager.openMediaSlideshow(${mediaUrlsJson}, 0, ${mediaTypesJson})">
+                            <img src="${post.media_urls[0]}" alt="Post media">
+                        </div>
+                    `;
+                }
             }
         }
 
@@ -326,14 +539,17 @@ class FeedManager {
                     </div>
                 </a>
                 <div class="post-user-info">
-                    <a href="#" class="post-user-name" onclick="feedManager.goToProfile('${post.author_username || post.user_id}', '${post.author_role}'); return false;">
-                        ${authorName}
-                        ${post.author_verified ? `
-                            <svg class="verified-badge" viewBox="0 0 24 24" fill="#1DA1F2">
-                                <path d="M22.5 12.5c0-1.58-.875-2.95-2.148-3.6.154-.435.238-.905.238-1.4 0-2.21-1.71-3.998-3.818-3.998-.47 0-.92.084-1.336.25C14.818 2.415 13.51 1.5 12 1.5s-2.816.917-3.437 2.25c-.415-.165-.866-.25-1.336-.25-2.11 0-3.818 1.79-3.818 4 0 .494.083.964.237 1.4-1.272.65-2.147 2.018-2.147 3.6 0 1.495.782 2.798 1.942 3.486-.02.17-.032.34-.032.514 0 2.21 1.708 4 3.818 4 .47 0 .92-.086 1.335-.25.62 1.334 1.926 2.25 3.437 2.25 1.512 0 2.818-.916 3.437-2.25.415.163.865.248 1.336.248 2.11 0 3.818-1.79 3.818-4 0-.174-.012-.344-.033-.513 1.158-.687 1.943-1.99 1.943-3.484zm-6.616-3.334l-4.334 6.5c-.145.217-.382.334-.625.334-.143 0-.288-.04-.416-.126l-.115-.094-2.415-2.415c-.293-.293-.293-.768 0-1.06s.768-.294 1.06 0l1.77 1.767 3.825-5.74c.23-.345.696-.436 1.04-.207.346.23.44.696.21 1.04z"/>
-                            </svg>
-                        ` : ''}
-                    </a>
+                    <div class="post-user-name-row">
+                        <a href="#" class="post-user-name" onclick="feedManager.goToProfile('${post.author_username || post.user_id}', '${post.author_role}'); return false;">
+                            ${authorName}
+                            ${post.author_verified ? `
+                                <svg class="verified-badge" viewBox="0 0 24 24" fill="#1DA1F2">
+                                    <path d="M22.5 12.5c0-1.58-.875-2.95-2.148-3.6.154-.435.238-.905.238-1.4 0-2.21-1.71-3.998-3.818-3.998-.47 0-.92.084-1.336.25C14.818 2.415 13.51 1.5 12 1.5s-2.816.917-3.437 2.25c-.415-.165-.866-.25-1.336-.25-2.11 0-3.818 1.79-3.818 4 0 .494.083.964.237 1.4-1.272.65-2.147 2.018-2.147 3.6 0 1.495.782 2.798 1.942 3.486-.02.17-.032.34-.032.514 0 2.21 1.708 4 3.818 4 .47 0 .92-.086 1.335-.25.62 1.334 1.926 2.25 3.437 2.25 1.512 0 2.818-.916 3.437-2.25.415.163.865.248 1.336.248 2.11 0 3.818-1.79 3.818-4 0-.174-.012-.344-.033-.513 1.158-.687 1.943-1.99 1.943-3.484zm-6.616-3.334l-4.334 6.5c-.145.217-.382.334-.625.334-.143 0-.288-.04-.416-.126l-.115-.094-2.415-2.415c-.293-.293-.293-.768 0-1.06s.768-.294 1.06 0l1.77 1.767 3.825-5.74c.23-.345.696-.436 1.04-.207.346.23.44.696.21 1.04z"/>
+                                </svg>
+                            ` : ''}
+                        </a>
+                        ${post.author_username ? `<span class="post-user-handle">@${post.author_username}</span>` : ''}
+                    </div>
                     <div class="post-meta ${post.author_role === 'coach' ? 'coach-meta' : 'player-meta'}">
                         ${metaInfo}
                     </div>
@@ -604,14 +820,16 @@ class FeedManager {
 
     async createPost() {
         const content = this.postInput?.value.trim();
-        if (!content) {
-            this.showToast('Please write something before posting!', 'error');
+        const hasMedia = this.pendingMediaFiles.length > 0;
+
+        if (!content && !hasMedia) {
+            this.showToast('Please write something or add media before posting!', 'error');
             return;
         }
 
         try {
             this.createPostBtn.disabled = true;
-            this.createPostBtn.textContent = 'Posting...';
+            this.createPostBtn.textContent = hasMedia ? 'Uploading...' : 'Posting...';
 
             // Check if this is a quote post
             const quotedPostId = this.postInput.dataset.quotedPost;
@@ -624,13 +842,51 @@ class FeedManager {
                 // Clean up quote preview
                 this.cancelQuote();
             } else {
-                // Regular post
-                await postsAPI.createPost({ content });
+                // Regular post - check for media
+                let mediaUrls = [];
+                let mediaType = null;
+
+                if (hasMedia) {
+                    // Upload media files to S3
+                    this.createPostBtn.textContent = 'Uploading media...';
+
+                    try {
+                        const uploadResult = await uploadAPI.uploadPostMedia(this.pendingMediaFiles);
+
+                        // Extract S3 keys from upload result
+                        if (uploadResult.media && uploadResult.media.length > 0) {
+                            mediaUrls = uploadResult.media.map(m => m.s3Key);
+                            mediaType = uploadResult.media_type;
+                        } else if (uploadResult.s3Key) {
+                            // Single file fallback
+                            mediaUrls = [uploadResult.s3Key];
+                            mediaType = uploadResult.media_type;
+                        }
+                    } catch (uploadError) {
+                        console.error('Media upload failed:', uploadError);
+                        this.showToast('Failed to upload media: ' + uploadError.message, 'error');
+                        return;
+                    }
+                }
+
+                this.createPostBtn.textContent = 'Posting...';
+
+                // Create post with media
+                const postData = { content: content || '' };
+                if (mediaUrls.length > 0) {
+                    postData.media_urls = mediaUrls;
+                    postData.media_type = mediaType;
+                }
+
+                await postsAPI.createPost(postData);
                 this.showToast('Post created!', 'success');
             }
 
+            // Clear input and media
             this.postInput.value = '';
             this.postInput.style.height = 'auto';
+            this.clearMediaFiles();
+
             await this.loadFeed();
             window.scrollTo({ top: 0, behavior: 'smooth' });
 
@@ -1326,15 +1582,131 @@ class FeedManager {
     }
 
     openMediaViewer(url) {
-        // Simple lightbox for images
+        // Legacy single image viewer - redirect to slideshow
+        this.openMediaSlideshow([url], 0);
+    }
+
+    openMediaSlideshow(urls, startIndex = 0, mediaTypes = []) {
+        // Parse URLs and types if passed as string (from HTML attribute)
+        const mediaUrls = typeof urls === 'string' ? JSON.parse(urls) : urls;
+        const types = typeof mediaTypes === 'string' ? JSON.parse(mediaTypes) : mediaTypes;
+        let currentIndex = startIndex;
+
         const viewer = document.createElement('div');
-        viewer.className = 'media-viewer';
+        viewer.className = 'media-slideshow';
+
+        // Helper to check if URL is video
+        const isVideoUrl = (url, index) => {
+            if (types && types[index]) {
+                return types[index] === 'video';
+            }
+            const videoExtensions = ['.mp4', '.mov', '.avi', '.webm'];
+            return videoExtensions.some(ext => url.toLowerCase().includes(ext));
+        };
+
+        // Helper to render media element for slideshow
+        const renderMediaContent = (url, index) => {
+            if (isVideoUrl(url, index)) {
+                return `<video class="slideshow-video" src="${url}" controls autoplay></video>`;
+            }
+            return `<img class="slideshow-image" src="${url}" alt="Media">`;
+        };
+
+        const updateSlide = () => {
+            const contentContainer = viewer.querySelector('.slideshow-content');
+            const counter = viewer.querySelector('.slideshow-counter');
+            const prevBtn = viewer.querySelector('.slideshow-prev');
+            const nextBtn = viewer.querySelector('.slideshow-next');
+
+            // Pause any playing video before switching
+            const currentVideo = contentContainer.querySelector('video');
+            if (currentVideo) {
+                currentVideo.pause();
+            }
+
+            // Update media content
+            const existingMedia = contentContainer.querySelector('.slideshow-image, .slideshow-video');
+            if (existingMedia) {
+                existingMedia.remove();
+            }
+
+            // Insert new media between prev and next buttons
+            const newMedia = document.createElement('div');
+            newMedia.innerHTML = renderMediaContent(mediaUrls[currentIndex], currentIndex);
+            nextBtn.insertAdjacentElement('beforebegin', newMedia.firstChild);
+
+            counter.textContent = `${currentIndex + 1} / ${mediaUrls.length}`;
+
+            // Show/hide nav buttons based on position
+            prevBtn.style.visibility = currentIndex === 0 ? 'hidden' : 'visible';
+            nextBtn.style.visibility = currentIndex === mediaUrls.length - 1 ? 'hidden' : 'visible';
+        };
+
+        const goNext = (e) => {
+            e.stopPropagation();
+            if (currentIndex < mediaUrls.length - 1) {
+                currentIndex++;
+                updateSlide();
+            }
+        };
+
+        const goPrev = (e) => {
+            e.stopPropagation();
+            if (currentIndex > 0) {
+                currentIndex--;
+                updateSlide();
+            }
+        };
+
+        const close = () => {
+            // Pause any playing video
+            const currentVideo = viewer.querySelector('video');
+            if (currentVideo) {
+                currentVideo.pause();
+            }
+            document.removeEventListener('keydown', handleKeydown);
+            viewer.remove();
+        };
+
+        const handleKeydown = (e) => {
+            if (e.key === 'Escape') close();
+            if (e.key === 'ArrowRight' && currentIndex < mediaUrls.length - 1) {
+                currentIndex++;
+                updateSlide();
+            }
+            if (e.key === 'ArrowLeft' && currentIndex > 0) {
+                currentIndex--;
+                updateSlide();
+            }
+        };
+
         viewer.innerHTML = `
-            <div class="media-viewer-backdrop" onclick="this.parentElement.remove()"></div>
-            <img src="${url}" alt="Full size">
-            <button class="media-viewer-close" onclick="this.parentElement.remove()">&times;</button>
+            <div class="slideshow-backdrop"></div>
+            <button class="slideshow-close">&times;</button>
+            <div class="slideshow-counter">${currentIndex + 1} / ${mediaUrls.length}</div>
+            <div class="slideshow-content">
+                <button class="slideshow-nav slideshow-prev" ${currentIndex === 0 ? 'style="visibility:hidden"' : ''}>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="15 18 9 12 15 6"></polyline>
+                    </svg>
+                </button>
+                ${renderMediaContent(mediaUrls[currentIndex], currentIndex)}
+                <button class="slideshow-nav slideshow-next" ${currentIndex === mediaUrls.length - 1 ? 'style="visibility:hidden"' : ''}>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="9 18 15 12 9 6"></polyline>
+                    </svg>
+                </button>
+            </div>
         `;
+
         document.body.appendChild(viewer);
+
+        // Add event listeners
+        viewer.querySelector('.slideshow-backdrop').addEventListener('click', close);
+        viewer.querySelector('.slideshow-close').addEventListener('click', close);
+        viewer.querySelector('.slideshow-prev').addEventListener('click', goPrev);
+        viewer.querySelector('.slideshow-next').addEventListener('click', goNext);
+        document.addEventListener('keydown', handleKeydown);
     }
 
     async toggleCommentLike(commentId, button) {

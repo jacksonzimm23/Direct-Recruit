@@ -6,10 +6,12 @@ const PlayerProfile = require('../models/PlayerProfile');
 const CoachProfile = require('../models/CoachProfile');
 const path = require('path');
 const multer = require('multer');
-const { uploadToS3, getSignedS3Url, generateProfileImageKey, deleteFromS3 } = require('../utils/s3');
+const { uploadToS3, getSignedS3Url, generateProfileImageKey, generatePostMediaKey, deleteFromS3 } = require('../utils/s3');
 
 // Memory storage for S3 uploads (keeps file in buffer instead of disk)
 const memoryStorage = multer.memoryStorage();
+
+// Multer config for profile images (images only, 5MB max)
 const s3Upload = multer({
   storage: memoryStorage,
   fileFilter: (req, file, cb) => {
@@ -24,6 +26,28 @@ const s3Upload = multer({
   },
   limits: {
     fileSize: parseInt(process.env.MAX_FILE_SIZE) || 5 * 1024 * 1024 // 5MB default
+  }
+});
+
+// Multer config for post media (images and videos, 200MB max for videos up to ~5 min)
+const postMediaUpload = multer({
+  storage: memoryStorage,
+  fileFilter: (req, file, cb) => {
+    const allowedImageTypes = /jpeg|jpg|png|gif|webp/;
+    const allowedVideoTypes = /mp4|mov|avi|webm|mkv/;
+    const extname = path.extname(file.originalname).toLowerCase().slice(1);
+    const mimetype = file.mimetype;
+
+    if (allowedImageTypes.test(extname) && mimetype.startsWith('image/')) {
+      return cb(null, true);
+    }
+    if (allowedVideoTypes.test(extname) && mimetype.startsWith('video/')) {
+      return cb(null, true);
+    }
+    return cb(new Error('Only image files (jpg, png, gif, webp) and video files (mp4, mov, avi, webm) are allowed'));
+  },
+  limits: {
+    fileSize: 200 * 1024 * 1024 // 200MB max for videos (~5 min at 1080p)
   }
 });
 
@@ -112,23 +136,72 @@ router.post('/highlight-video', authMiddleware, upload.single('highlight_video')
   }
 });
 
-// Upload post media
-router.post('/post-media', authMiddleware, upload.single('media'), async (req, res) => {
+// Upload post media to S3 (supports multiple files)
+router.post('/post-media', authMiddleware, postMediaUpload.array('media', 4), async (req, res) => {
   try {
-    if (!req.file) {
-      return res.status(400).json({ error: 'No file uploaded' });
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ error: 'No files uploaded' });
     }
 
-    const fileUrl = `/uploads/${req.userId}/${req.file.filename}`;
-    const mediaType = req.file.mimetype.startsWith('video/') ? 'video' : 'image';
+    const uploadedMedia = [];
+    let overallMediaType = 'image';
+    let hasVideo = false;
+    let hasImage = false;
+
+    // Upload each file to S3
+    for (const file of req.files) {
+      const isVideo = file.mimetype.startsWith('video/');
+      const mediaType = isVideo ? 'video' : 'image';
+
+      if (isVideo) hasVideo = true;
+      else hasImage = true;
+
+      // Generate S3 key
+      const s3Key = generatePostMediaKey(req.userId, file.originalname, mediaType);
+
+      // Upload to S3
+      await uploadToS3(file.buffer, s3Key, file.mimetype);
+
+      // Generate signed URL for immediate display
+      const signedUrl = await getSignedS3Url(s3Key);
+
+      uploadedMedia.push({
+        s3Key: s3Key,
+        url: signedUrl,
+        media_type: mediaType,
+        size: file.size,
+        originalName: file.originalname
+      });
+
+      console.log('Post media uploaded to S3:', {
+        key: s3Key,
+        contentType: file.mimetype,
+        size: file.size
+      });
+    }
+
+    // Determine overall media type
+    if (hasVideo && hasImage) {
+      overallMediaType = 'mixed';
+    } else if (hasVideo) {
+      overallMediaType = 'video';
+    } else {
+      overallMediaType = 'image';
+    }
 
     res.json({
       message: 'Media uploaded successfully',
-      url: fileUrl,
-      media_type: mediaType
+      media: uploadedMedia,
+      media_type: overallMediaType,
+      // For backwards compatibility with single file uploads
+      url: uploadedMedia[0]?.url,
+      s3Key: uploadedMedia[0]?.s3Key
     });
   } catch (error) {
     console.error('Upload post media error:', error);
+    if (error.message && error.message.includes('Only image files')) {
+      return res.status(400).json({ error: error.message });
+    }
     res.status(500).json({ error: 'Failed to upload media' });
   }
 });
