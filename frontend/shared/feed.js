@@ -1,8 +1,11 @@
 // Feed System - Option 4: Two-Section Feed (Following + Discover)
 // This file handles all feed-related functionality for all profile dashboards
 
+// Global feedManager variable - declared at top to ensure it's always accessible
+var feedManager;
+
 class FeedManager {
-    constructor() {
+    constructor(skipInit = false) {
         this.feedContainer = document.getElementById('feedPosts');
         this.createPostBtn = document.querySelector('.btn-post-submit');
         this.postInput = document.querySelector('textarea.post-input');
@@ -20,7 +23,10 @@ class FeedManager {
         this.maxFileSize = 200 * 1024 * 1024; // 200MB for videos (~5 min at 1080p)
         this.maxImageSize = 10 * 1024 * 1024; // 10MB for images
 
-        this.init();
+        // Skip init for single post view pages
+        if (!skipInit) {
+            this.init();
+        }
     }
 
     async init() {
@@ -430,27 +436,100 @@ class FeedManager {
             </div>
         ` : '';
 
-        // Build meta info based on role
+        // Build meta info based on role and profile type
         let metaInfo = '';
+        let starsHtml = '';
+
+        // Add star rating prefix for HS players and transfer players with verified stars
+        if (post.author_role === 'player' && post.author_star_rating && post.author_star_rating >= 1 && post.author_star_rating <= 5) {
+            // Only show stars for HS players (no division) and transfer players
+            const isHSPlayer = !post.author_division && post.author_transfer !== 'y';
+            const isTransferPlayer = post.author_transfer === 'y';
+            if (isHSPlayer || isTransferPlayer) {
+                starsHtml = `<span class="post-meta-stars" style="color: #ffd700; font-weight: 600;">${post.author_star_rating}★</span> `;
+            }
+        }
+
         if (post.author_role === 'player') {
             const parts = [];
-            if (post.author_position) parts.push(post.author_position);
-            if (post.author_school) parts.push(post.author_school);
-            // Show division for college players, grad year for HS players
-            if (post.author_division) {
-                parts.push(post.author_division);
-            } else if (post.author_grad_year) {
-                parts.push(`Class of ${post.author_grad_year}`);
+
+            // Check if transfer player (transfer = 'y')
+            if (post.author_transfer === 'y') {
+                // Transfer Player: Position • Height • Weight • YOE
+                if (post.author_position) parts.push(post.author_position);
+
+                if (post.author_height) {
+                    // Handle height as either total inches (number) or formatted string ("6'1"")
+                    const heightStr = String(post.author_height);
+                    if (heightStr.includes("'")) {
+                        // Already formatted as feet'inches"
+                        parts.push(heightStr);
+                    } else {
+                        // Convert from total inches to feet'inches" format
+                        const totalInches = parseInt(heightStr);
+                        if (!isNaN(totalInches) && totalInches > 0) {
+                            const feet = Math.floor(totalInches / 12);
+                            const inches = totalInches % 12;
+                            parts.push(`${feet}'${inches}"`);
+                        }
+                    }
+                }
+
+                if (post.author_weight) {
+                    parts.push(`${post.author_weight} lbs`);
+                }
+
+                if (post.author_eligibility) {
+                    const yearText = post.author_eligibility === 1 ? 'year' : 'years';
+                    parts.push(`YOE: ${post.author_eligibility} ${yearText}`);
+                }
+            } else if (post.author_division) {
+                // College Player: Position • College • Division
+                if (post.author_position) parts.push(post.author_position);
+                if (post.author_school) parts.push(post.author_school);
+                // Format FBS/FCS as D1 FBS/D1 FCS
+                const div = post.author_division;
+                if (div === 'FBS' || div === 'FCS') {
+                    parts.push(`D1 ${div}`);
+                } else {
+                    parts.push(div);
+                }
+            } else {
+                // HS Player: Position • High School • Class of Year
+                if (post.author_position) parts.push(post.author_position);
+                if (post.author_school) parts.push(post.author_school);
+                if (post.author_grad_year) {
+                    parts.push(`Class of ${post.author_grad_year}`);
+                }
             }
+
             parts.push(timeAgo);
-            metaInfo = parts.join(' • ');
+            metaInfo = starsHtml + parts.join(' • ');
         } else {
+            // Coach
             const parts = [];
-            if (post.author_position) parts.push(post.author_position);
-            if (post.author_school) parts.push(post.author_school);
-            if (post.author_division) parts.push(post.author_division);
-            parts.push(timeAgo);
-            metaInfo = parts.join(' • ');
+
+            // Check if college coach (has division) or HS coach (no division)
+            if (post.author_division) {
+                // College Coach: College • Division
+                if (post.author_school) parts.push(post.author_school);
+                // Format FBS/FCS as D1 FBS/D1 FCS
+                const div = post.author_division;
+                if (div === 'FBS' || div === 'FCS') {
+                    parts.push(`D1 ${div}`);
+                } else {
+                    parts.push(div);
+                }
+                parts.push(timeAgo);
+                metaInfo = parts.join(' • ');
+            } else {
+                // HS Coach: School, State (comma-separated like sidebar)
+                if (post.author_school) parts.push(post.author_school);
+                if (post.author_state) parts.push(post.author_state);
+                // Use comma separator for HS Coach to match sidebar, then add timeAgo with bullet
+                const schoolState = parts.join(', ');
+                metaInfo = schoolState ? `${schoolState} • ${timeAgo}` : timeAgo;
+            }
         }
 
         // Build media HTML
@@ -527,7 +606,7 @@ class FeedManager {
         article.innerHTML = `
             ${repostIndicator}
             <div class="post-header">
-                <a href="#" class="post-avatar-link" onclick="feedManager.goToProfile('${post.author_username || post.user_id}', '${post.author_role}'); return false;">
+                <a href="#" class="post-avatar-link" onclick="feedManager.goToProfile('${post.author_username || post.user_id}', '${post.author_role}', null, '${post.user_id}'); return false;">
                     <div class="post-avatar-circle">
                         ${post.author_image ?
                             `<img src="${post.author_image}" alt="${authorName}">` :
@@ -540,7 +619,7 @@ class FeedManager {
                 </a>
                 <div class="post-user-info">
                     <div class="post-user-name-row">
-                        <a href="#" class="post-user-name" onclick="feedManager.goToProfile('${post.author_username || post.user_id}', '${post.author_role}'); return false;">
+                        <a href="#" class="post-user-name" onclick="feedManager.goToProfile('${post.author_username || post.user_id}', '${post.author_role}', null, '${post.user_id}'); return false;">
                             ${authorName}
                             ${post.author_verified ? `
                                 <svg class="verified-badge" viewBox="0 0 24 24" fill="#1DA1F2">
@@ -550,7 +629,7 @@ class FeedManager {
                         </a>
                         ${post.author_username ? `<span class="post-user-handle">@${post.author_username}</span>` : ''}
                     </div>
-                    <div class="post-meta ${post.author_role === 'coach' ? 'coach-meta' : 'player-meta'}">
+                    <div class="post-meta ${post.author_role === 'coach' ? 'coach-meta' : (post.author_transfer === 'y' ? 'transfer-player-meta' : 'player-meta')}">
                         ${metaInfo}
                     </div>
                 </div>
@@ -565,9 +644,14 @@ class FeedManager {
                             <circle cx="5" cy="12" r="1"></circle>
                         </svg>
                     </button>
+                    <div class="post-view-icon" data-post-id="${post.id}">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="9 18 15 12 9 6"></polyline>
+                        </svg>
+                    </div>
                 </div>
             </div>
-            <div class="post-content">
+            <div class="post-content" data-post-id="${post.id}" style="cursor: pointer;">
                 <p>${this.formatContent(post.content)}</p>
                 ${mediaHtml}
             </div>
@@ -613,6 +697,9 @@ class FeedManager {
                 </div>
             </div>
         `;
+
+        // Click handlers are managed via document-level event delegation for reliability
+        // See the event delegation code at the bottom of this file
 
         return article;
     }
@@ -744,12 +831,15 @@ class FeedManager {
         menu.style.top = rect.bottom + 5 + 'px';
         menu.style.right = window.innerWidth - rect.right + 'px';
 
-        // Close on outside click
+        // Close on outside click or scroll
         setTimeout(() => {
-            document.addEventListener('click', function closeMenu() {
+            function closeMenu() {
                 menu.remove();
                 document.removeEventListener('click', closeMenu);
-            });
+                window.removeEventListener('scroll', closeMenu, true);
+            }
+            document.addEventListener('click', closeMenu);
+            window.addEventListener('scroll', closeMenu, true);
         }, 0);
     }
 
@@ -1162,14 +1252,17 @@ class FeedManager {
             document.body.appendChild(menu);
         }
 
-        // Close on outside click
+        // Close on outside click or scroll
         setTimeout(() => {
-            document.addEventListener('click', function closeMenu(e) {
-                if (!menu.contains(e.target)) {
+            function closeMenu(e) {
+                if (e.type === 'scroll' || !menu.contains(e.target)) {
                     menu.remove();
                     document.removeEventListener('click', closeMenu);
+                    window.removeEventListener('scroll', closeMenu, true);
                 }
-            });
+            }
+            document.addEventListener('click', closeMenu);
+            window.addEventListener('scroll', closeMenu, true);
         }, 0);
     }
 
@@ -1365,33 +1458,33 @@ class FeedManager {
         menu.innerHTML = `
             ${isOwner ? `
                 <div class="dropdown-item" onclick="feedManager.editPost('${postId}')">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#1282a2" stroke-width="2">
                         <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                         <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                     </svg>
-                    Edit Post
+                    <span>Edit Post</span>
                 </div>
                 <div class="dropdown-item" onclick="feedManager.pinPost('${postId}')">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#1282a2" stroke-width="2">
                         <line x1="12" y1="17" x2="12" y2="22"></line>
                         <path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V17z"></path>
                     </svg>
-                    Pin Post
+                    <span>Pin Post</span>
                 </div>
                 <div class="dropdown-item dropdown-item-danger" onclick="feedManager.deletePost('${postId}')">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2">
                         <polyline points="3 6 5 6 21 6"></polyline>
                         <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
                     </svg>
-                    Delete Post
+                    <span>Delete Post</span>
                 </div>
             ` : `
                 <div class="dropdown-item" onclick="feedManager.reportPost('${postId}')">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#1282a2" stroke-width="2">
                         <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
                         <line x1="4" y1="22" x2="4" y2="15"></line>
                     </svg>
-                    Report Post
+                    <span>Report Post</span>
                 </div>
             `}
         `;
@@ -1404,12 +1497,15 @@ class FeedManager {
         menu.style.top = rect.bottom + 5 + 'px';
         menu.style.right = window.innerWidth - rect.right + 'px';
 
-        // Close on outside click
+        // Close on outside click or scroll
         setTimeout(() => {
-            document.addEventListener('click', function closeMenu() {
+            function closeMenu() {
                 menu.remove();
                 document.removeEventListener('click', closeMenu);
-            });
+                window.removeEventListener('scroll', closeMenu, true);
+            }
+            document.addEventListener('click', closeMenu);
+            window.addEventListener('scroll', closeMenu, true);
         }, 0);
     }
 
@@ -1426,12 +1522,29 @@ class FeedManager {
         }
     }
 
-    async goToProfile(identifier, role, collegeDivision = null) {
+    async goToProfile(identifier, role, collegeDivision = null, userId = null) {
+        // Check if clicking on own profile - just go to my-profile.html
+        const targetUserId = userId || identifier;
+        if (targetUserId === this.currentUserId) {
+            // Determine if we're in tabs folder or not
+            const currentPath = window.location.pathname;
+            if (currentPath.includes('/tabs/')) {
+                window.location.href = 'my-profile.html';
+            } else {
+                window.location.href = 'tabs/my-profile.html';
+            }
+            return;
+        }
+
         // Fetch profile data if we need to determine college vs HS
         const collegeDivisions = ['FBS', 'FCS', 'D2', 'D3', 'NAIA', 'NJCAA'];
 
         // Check if identifier is a UUID (user_id) vs a username
         const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(identifier);
+
+        // Determine current path context
+        const currentPath = window.location.pathname;
+        const isInTabsFolder = currentPath.includes('/tabs/');
 
         try {
             let username = identifier;
@@ -1468,18 +1581,43 @@ class FeedManager {
         } catch (error) {
             console.error('Error navigating to profile:', error);
             // Fallback: use current path to determine base URL
-            // The feed is on mainpage which is NOT in /tabs/, so we need to navigate to tabs/my-profile.html
-            const currentPath = window.location.pathname;
-            let baseUrl = '';
+            const currentFolder = currentPath.match(/\/(hsplayer|hscoach|collegeplayer|collegecoach|transferplayer)\//)?.[1] || 'hsplayer';
 
-            if (currentPath.includes('/hsplayer/')) {
-                baseUrl = role === 'coach' ? '../hscoach/tabs/my-profile.html' : 'tabs/my-profile.html';
-            } else if (currentPath.includes('/hscoach/')) {
-                baseUrl = role === 'coach' ? 'tabs/my-profile.html' : '../hsplayer/tabs/my-profile.html';
-            } else if (currentPath.includes('/collegecoach/')) {
-                baseUrl = role === 'coach' ? 'tabs/my-profile.html' : '../collegeplayer/tabs/my-profile.html';
-            } else if (currentPath.includes('/collegeplayer/')) {
-                baseUrl = role === 'coach' ? '../collegecoach/tabs/my-profile.html' : 'tabs/my-profile.html';
+            let baseUrl = '';
+            if (isInTabsFolder) {
+                // Already in tabs folder, use relative path without adding another tabs/
+                if (role === 'coach') {
+                    if (currentFolder.includes('coach')) {
+                        baseUrl = 'my-profile.html';
+                    } else {
+                        const targetCoach = currentFolder.includes('college') ? 'collegecoach' : 'hscoach';
+                        baseUrl = `../../${targetCoach}/tabs/my-profile.html`;
+                    }
+                } else {
+                    if (currentFolder.includes('player')) {
+                        baseUrl = 'my-profile.html';
+                    } else {
+                        const targetPlayer = currentFolder.includes('college') ? 'collegeplayer' : 'hsplayer';
+                        baseUrl = `../../${targetPlayer}/tabs/my-profile.html`;
+                    }
+                }
+            } else {
+                // On mainpage, need to go into tabs/
+                if (role === 'coach') {
+                    if (currentFolder.includes('coach')) {
+                        baseUrl = 'tabs/my-profile.html';
+                    } else {
+                        const targetCoach = currentFolder.includes('college') ? 'collegecoach' : 'hscoach';
+                        baseUrl = `../${targetCoach}/tabs/my-profile.html`;
+                    }
+                } else {
+                    if (currentFolder.includes('player')) {
+                        baseUrl = 'tabs/my-profile.html';
+                    } else {
+                        const targetPlayer = currentFolder.includes('college') ? 'collegeplayer' : 'hsplayer';
+                        baseUrl = `../${targetPlayer}/tabs/my-profile.html`;
+                    }
+                }
             }
 
             window.location.href = `${baseUrl}?username=${identifier}&from=feed`;
@@ -2144,13 +2282,88 @@ class FeedManager {
     reportPost(postId) {
         this.showToast('Report feature coming soon!', 'info');
     }
+
+    // Navigate to single post view page
+    navigateToPostView(postId, event) {
+        // Safety check - if there's no postId, don't navigate
+        if (!postId) {
+            console.warn('navigateToPostView called without postId');
+            return;
+        }
+
+        // Determine the correct path based on current location
+        const currentPath = window.location.pathname;
+        let basePath = '';
+
+        if (currentPath.includes('/hsplayer/')) {
+            basePath = currentPath.includes('/tabs/') ? '' : 'tabs/';
+        } else if (currentPath.includes('/hscoach/')) {
+            basePath = currentPath.includes('/tabs/') ? '' : 'tabs/';
+        } else if (currentPath.includes('/collegeplayer/')) {
+            basePath = currentPath.includes('/tabs/') ? '' : 'tabs/';
+        } else if (currentPath.includes('/collegecoach/')) {
+            basePath = currentPath.includes('/tabs/') ? '' : 'tabs/';
+        } else if (currentPath.includes('/transferplayer/')) {
+            basePath = currentPath.includes('/tabs/') ? '' : 'tabs/';
+        }
+
+        window.location.href = `${basePath}post-view.html?id=${postId}&ref=feed`;
+    }
 }
 
 // Initialize feed manager when DOM is loaded
-let feedManager;
 document.addEventListener('DOMContentLoaded', () => {
     // Only initialize if we're on a page with feed container
     if (document.getElementById('feedPosts')) {
         feedManager = new FeedManager();
     }
 });
+
+// Handle back/forward cache - ensure feedManager is available when page is restored from bfcache
+window.addEventListener('pageshow', (event) => {
+    if (event.persisted) {
+        // Page was restored from bfcache - always reinitialize to ensure fresh event listeners
+        if (document.getElementById('feedPosts')) {
+            feedManager = new FeedManager();
+        }
+    }
+});
+
+// Event delegation for post content clicks - using capture phase for maximum reliability
+// The capture phase fires before bubbling, ensuring we catch the event first
+document.addEventListener('click', (event) => {
+    // Handle clicks on the arrow icon first (most specific)
+    const viewIcon = event.target.closest('.post-view-icon');
+    if (viewIcon) {
+        const postId = viewIcon.dataset.postId;
+        if (postId && feedManager) {
+            event.preventDefault();
+            event.stopPropagation();
+            feedManager.navigateToPostView(postId, event);
+            return;
+        }
+    }
+
+    // Check if click is on post-content or inside it (for text area clicks)
+    const postContent = event.target.closest('.post-content');
+    if (postContent && feedManager) {
+        // Don't navigate if clicking on video, links, buttons, or images (images open slideshow)
+        const isVideo = event.target.closest('video');
+        const isLink = event.target.closest('a');
+        const isButton = event.target.closest('button');
+        const isImage = event.target.closest('img');
+        const isMediaWrapper = event.target.closest('.media-wrapper');
+        const isPostMedia = event.target.closest('.post-media');
+
+        // Allow slideshow to handle image/media clicks
+        if (isVideo || isLink || isButton || isImage || isMediaWrapper || (isPostMedia && isPostMedia.hasAttribute('onclick'))) {
+            return;
+        }
+
+        const postId = postContent.dataset.postId;
+        if (postId) {
+            event.preventDefault();
+            feedManager.navigateToPostView(postId, event);
+        }
+    }
+}, true); // Use capture phase

@@ -5,22 +5,39 @@ College Coach
 Small schools using AI to match to recruiting areas / hs pipelines
 Big schools know who the big time recruitsare , benefit more from transfer portal 
 
-
-
-
-Currently working on: feed backend storing in psql, media storing 
-
+Currently working on: psql to AWS, check .env for info 
 
 To do:
-- feed, feed backend 
+- stars modal for transferplayer 
+- right sidebar backend and show more pages
+- Tabs Headers to look the same (logo and sidebar footer location) 
 - settings page
 - others profile 
+- google sign in 
 - turn to app 
+- scroll bars 
+
+GAMEPLANS TO SUCCESS
+- Step 1: implement final prototype features (right sidebar, NIL Opportunity Match for college players)
+- Step 2: CALL ANDY! 
+    - Come up with talking points for Andy call 
+- Step 3: DO WHAT ANDY SAYS!
+- Step 4: Make 1000000 million dollars / year! 
+
+
+GEN AI IDEAS
+- transferplayer: automated bios based on copy and pasting college bio 
+- professional messaging AI bot for players to send coaches (ChatGPT for players to message coaches) ask coaches if they evaluate how they text coaches 
+- player-coach matching based on demographics, academics, location, etc. 
+- AI chatbot for platform questions
+- academic/athletic resume builder 
+- transfer portal fit analyzer 
+- recruiting experts NCSA 
+
+- COLLEGEPLAYER: NIL Opportunity Matcher 
+AI analyzes player's social following, engagement, sport, and location → recommends NIL deal types they'd qualify for and helps draft outreach pitches to brands.
 
 Feed
-- backend for notifications from posts and interactions
-- sidebar footer for subheaders
-- storing media 
 - verified account icons (team logo)
 
 NEED TO ASK CLAUDE SECURITY, API, AND DATABASE QUESTIONS WHEN ALL DONE WITH FRONT AND BACKEND, HOW TO TURN TO MOBILE APP

@@ -179,6 +179,36 @@ router.get('/user/:userId', authMiddleware, async (req, res) => {
   }
 });
 
+// Get user's replies/comments (for profile Replies tab)
+router.get('/user/:userId/replies', authMiddleware, async (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit) || 10;
+    const offset = parseInt(req.query.offset) || 0;
+
+    let replies = await Post.getUserReplies(req.params.userId, req.userId, limit, offset);
+    replies = await addSignedUrlsToPosts(replies);
+    res.json({ replies, count: replies.length });
+  } catch (error) {
+    console.error('Get user replies error:', error);
+    res.status(500).json({ error: 'Failed to fetch replies' });
+  }
+});
+
+// Get user's liked posts (for profile Likes tab)
+router.get('/user/:userId/likes', authMiddleware, async (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit) || 10;
+    const offset = parseInt(req.query.offset) || 0;
+
+    let posts = await Post.getLikedPosts(req.params.userId, req.userId, limit, offset);
+    posts = await addSignedUrlsToPosts(posts);
+    res.json({ posts, count: posts.length });
+  } catch (error) {
+    console.error('Get liked posts error:', error);
+    res.status(500).json({ error: 'Failed to fetch liked posts' });
+  }
+});
+
 // Get saved posts
 router.get('/saved/list', authMiddleware, async (req, res) => {
   try {
@@ -230,6 +260,33 @@ router.get('/comments/:commentId/replies', authMiddleware, async (req, res) => {
 router.post('/comments/:commentId/like', authMiddleware, async (req, res) => {
   try {
     const result = await Post.likeComment(req.params.commentId, req.userId);
+
+    // Create notification for the comment owner
+    if (result) {
+      try {
+        // Get the comment to find its owner and associated post
+        const commentResult = await pool.query(
+          'SELECT user_id, post_id FROM comments WHERE id = $1',
+          [req.params.commentId]
+        );
+        if (commentResult.rows.length > 0) {
+          const comment = commentResult.rows[0];
+          if (comment.user_id !== req.userId) {
+            const likerName = await getUserName(req.userId);
+            await Notification.createCommentLikeNotification(
+              comment.user_id,
+              req.userId,
+              likerName,
+              req.params.commentId,
+              comment.post_id
+            );
+          }
+        }
+      } catch (notifError) {
+        console.error('Failed to create comment like notification:', notifError);
+      }
+    }
+
     res.json({ message: 'Comment liked', liked: !!result });
   } catch (error) {
     console.error('Like comment error:', error);
@@ -293,10 +350,13 @@ router.post('/', authMiddleware, postLimiter, [
 // Get specific post
 router.get('/:postId', authMiddleware, async (req, res) => {
   try {
-    const post = await Post.getById(req.params.postId, req.userId);
+    let post = await Post.getById(req.params.postId, req.userId);
     if (!post) {
       return res.status(404).json({ error: 'Post not found' });
     }
+    // Generate signed URLs for post (wrap in array for helper function)
+    const postsWithSignedUrls = await addSignedUrlsToPosts([post]);
+    post = postsWithSignedUrls[0];
     res.json({ post });
   } catch (error) {
     console.error('Get post error:', error);
@@ -426,7 +486,7 @@ router.post('/:postId/comments', authMiddleware, [
       req.body.parent_comment_id || null
     );
 
-    // Create notification for the post owner
+    // Create notification for the post owner (for top-level comments)
     try {
       const post = await Post.getById(req.params.postId, req.userId);
       if (post && post.user_id !== req.userId) {
@@ -435,6 +495,31 @@ router.post('/:postId/comments', authMiddleware, [
       }
     } catch (notifError) {
       console.error('Failed to create comment notification:', notifError);
+    }
+
+    // Create notification for the parent comment owner (for replies)
+    if (req.body.parent_comment_id) {
+      try {
+        const parentCommentResult = await pool.query(
+          'SELECT user_id FROM comments WHERE id = $1',
+          [req.body.parent_comment_id]
+        );
+        if (parentCommentResult.rows.length > 0) {
+          const parentCommentOwnerId = parentCommentResult.rows[0].user_id;
+          if (parentCommentOwnerId !== req.userId) {
+            const replierName = await getUserName(req.userId);
+            await Notification.createCommentReplyNotification(
+              parentCommentOwnerId,
+              req.userId,
+              replierName,
+              req.params.postId,
+              req.body.content
+            );
+          }
+        }
+      } catch (notifError) {
+        console.error('Failed to create comment reply notification:', notifError);
+      }
     }
 
     res.status(201).json({ message: 'Comment added', comment });
@@ -470,6 +555,24 @@ router.delete('/:postId/comments/:commentId', authMiddleware, async (req, res) =
   } catch (error) {
     console.error('Delete comment error:', error);
     res.status(500).json({ error: 'Failed to delete comment' });
+  }
+});
+
+// Edit comment
+router.put('/:postId/comments/:commentId', authMiddleware, async (req, res) => {
+  try {
+    const { content } = req.body;
+    if (!content || !content.trim()) {
+      return res.status(400).json({ error: 'Comment content is required' });
+    }
+    const result = await Post.updateComment(req.params.commentId, req.userId, content.trim());
+    if (!result) {
+      return res.status(404).json({ error: 'Comment not found or unauthorized' });
+    }
+    res.json({ message: 'Comment updated', comment: result });
+  } catch (error) {
+    console.error('Update comment error:', error);
+    res.status(500).json({ error: 'Failed to update comment' });
   }
 });
 
@@ -518,6 +621,23 @@ router.post('/:postId/share', authMiddleware, [
         already_reposted: true,
         share_id: result.share_id
       });
+    }
+
+    // Create notification for the post owner
+    try {
+      const post = await Post.getById(req.params.postId, req.userId);
+      if (post && post.user_id !== req.userId) {
+        const sharerName = await getUserName(req.userId);
+        await Notification.createShareNotification(
+          post.user_id,
+          req.userId,
+          sharerName,
+          req.params.postId,
+          share_type
+        );
+      }
+    } catch (notifError) {
+      console.error('Failed to create share notification:', notifError);
     }
 
     res.status(201).json({ message: 'Post shared', share: result });

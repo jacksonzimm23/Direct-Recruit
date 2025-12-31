@@ -85,12 +85,41 @@
     border-radius: 12px;
     padding: 1.25rem;
     margin-bottom: 1rem;
-    border: 1px solid rgba(255, 255, 255, 0.06);
-    transition: border-color 0.2s;
+    border: 1px solid rgba(18, 130, 162, 0.2);
+    transition: all 0.2s ease;
+    cursor: pointer;
 }
 
 .post-card:hover {
-    border-color: rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(18, 130, 162, 0.4);
+    transform: translateY(-1px);
+}
+
+/* Post view icon (arrow) */
+.post-view-icon {
+    flex-shrink: 0;
+    color: rgba(254, 252, 251, 0.4);
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.25rem;
+}
+
+.post-card:hover .post-view-icon {
+    opacity: 1;
+}
+
+.post-view-icon svg {
+    width: 20px;
+    height: 20px;
+}
+
+.post-view-icon:hover {
+    color: var(--cerulean);
 }
 
 /* Post Header */
@@ -172,6 +201,14 @@
     color: rgba(255, 255, 255, 0.5);
     margin-top: 0.125rem;
     font-weight: 700;
+}
+
+.post-meta.player-meta {
+    color: var(--cerulean);
+}
+
+.post-meta.transfer-player-meta {
+    color: #b91c1c;
 }
 
 .post-meta.coach-meta {
@@ -868,13 +905,13 @@
 /* ==================== POST DROPDOWN MENU ==================== */
 .post-dropdown-menu {
     position: fixed;
-    background: #1a2332;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 12px;
-    padding: 0.5rem;
-    min-width: 180px;
-    z-index: 1000;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+    background: #1a1a1a;
+    border: 1px solid rgba(18, 130, 162, 0.3);
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    z-index: 10000;
+    min-width: 160px;
+    overflow: hidden;
 }
 
 .post-dropdown-menu .dropdown-item {
@@ -882,29 +919,29 @@
     align-items: center;
     gap: 0.75rem;
     padding: 0.75rem 1rem;
-    border-radius: 8px;
-    color: var(--white);
-    font-size: 0.875rem;
+    color: rgba(254, 252, 251, 0.9);
+    font-size: 0.9rem;
+    font-weight: 600;
     cursor: pointer;
-    transition: background 0.2s;
+    transition: all 0.15s ease;
 }
 
 .post-dropdown-menu .dropdown-item:hover {
-    background: rgba(255, 255, 255, 0.08);
+    background: rgba(18, 130, 162, 0.2);
 }
 
 .post-dropdown-menu .dropdown-item svg {
-    width: 18px;
-    height: 18px;
-    color: rgba(255, 255, 255, 0.6);
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
 }
 
 .post-dropdown-menu .dropdown-item-danger {
-    color: #e74c3c;
+    color: #ef4444;
 }
 
-.post-dropdown-menu .dropdown-item-danger svg {
-    color: #e74c3c;
+.post-dropdown-menu .dropdown-item-danger:hover {
+    background: rgba(239, 68, 68, 0.15);
 }
 
 /* ==================== LOADING & STATES ==================== */

@@ -128,13 +128,13 @@
                 <div class="profile-info-column">
                     <h2 class="section-title">About</h2>
                     <div class="info-card">
-                        <p class="bio-text">No bio provided yet.</p>
+                        <p class="bio-text empty-state">No bio provided yet.</p>
                     </div>
                 </div>
                 <div class="profile-info-column">
                     <h2 class="section-title">Contact Info</h2>
                     <div class="info-card" id="contactInfoCard">
-                        <p>No contact information provided.</p>
+                        <p class="empty-state">No contact information provided.</p>
                     </div>
                 </div>
             </div>
@@ -143,6 +143,8 @@
             <div class="profile-tabs">
                 <button class="profile-tab active" data-tab="overview">Overview</button>
                 <button class="profile-tab" data-tab="posts">Posts</button>
+                <button class="profile-tab" data-tab="replies">Replies</button>
+                <button class="profile-tab" data-tab="likes">Likes</button>
                 <button class="profile-tab" data-tab="offers">Offers</button>
                 <button class="profile-tab" data-tab="stats">Stats</button>
                 <button class="profile-tab" data-tab="highlights">Highlights</button>
@@ -194,7 +196,36 @@
                 <!-- Posts Tab -->
                 <div class="tab-pane" id="posts">
                     <div class="posts-section">
-                        <p class="no-data-message" style="text-align: center; padding: 2rem;">Feed page coming soon!</p>
+                        <div class="profile-posts-container" id="profilePostsContainer">
+                            <!-- User's posts will be loaded here -->
+                        </div>
+                        <div class="load-more-container" id="loadMorePostsContainer" style="display: none;">
+                            <button class="btn-load-more" id="loadMorePostsBtn">Load More Posts</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Replies Tab -->
+                <div class="tab-pane" id="replies">
+                    <div class="replies-section">
+                        <div class="profile-replies-container" id="profileRepliesContainer">
+                            <!-- User's replies will be loaded here -->
+                        </div>
+                        <div class="load-more-container" id="loadMoreRepliesContainer" style="display: none;">
+                            <button class="btn-load-more" id="loadMoreRepliesBtn">Load More Replies</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Likes Tab -->
+                <div class="tab-pane" id="likes">
+                    <div class="likes-section">
+                        <div class="profile-likes-container" id="profileLikesContainer">
+                            <!-- User's liked posts will be loaded here -->
+                        </div>
+                        <div class="load-more-container" id="loadMoreLikesContainer" style="display: none;">
+                            <button class="btn-load-more" id="loadMoreLikesBtn">Load More</button>
+                        </div>
                     </div>
                 </div>
 
@@ -343,6 +374,13 @@
                     </a>
                 </div>
             </div>
+            <!-- Add Stars Button -->
+            <button class="btn-add-stars-sidebar" id="addStarsBtn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                </svg>
+                Add Star Rating
+            </button>
         </aside>
     </div>
 
@@ -838,19 +876,19 @@
     </div>
 
     <!-- Season Selection Modal -->
-    <div class="season-select-modal" id="seasonSelectModal">
-        <div class="season-select-modal-overlay" id="seasonSelectModalOverlay"></div>
-        <div class="season-select-modal-content">
-            <div class="season-select-modal-header">
+    <div class="add-offer-modal" id="seasonSelectModal">
+        <div class="add-offer-modal-overlay" id="seasonSelectModalOverlay"></div>
+        <div class="add-offer-modal-content">
+            <div class="add-offer-modal-header">
                 <h2>Add Game Stats</h2>
-                <button class="season-select-modal-close" id="seasonSelectModalClose">
+                <button class="add-offer-modal-close" id="seasonSelectModalClose">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <line x1="18" y1="6" x2="6" y2="18"></line>
                         <line x1="6" y1="6" x2="18" y2="18"></line>
                     </svg>
                 </button>
             </div>
-            <div class="season-select-modal-body">
+            <div class="add-offer-modal-body season-select-modal-body">
                 <p class="season-select-prompt">How would you like to add stats?</p>
                 <div class="season-select-options">
                     <button type="button" class="season-option-btn" id="btnNewSeason">
@@ -893,19 +931,19 @@
     </div>
 
     <!-- Add Stats Modal -->
-    <div class="add-stats-modal" id="addStatsModal">
-        <div class="add-stats-modal-overlay" id="addStatsModalOverlay"></div>
-        <div class="add-stats-modal-content">
-            <div class="add-stats-modal-header">
+    <div class="add-offer-modal" id="addStatsModal">
+        <div class="add-offer-modal-overlay" id="addStatsModalOverlay"></div>
+        <div class="add-offer-modal-content add-stats-modal-content">
+            <div class="add-offer-modal-header">
                 <h2>Add Game Stats</h2>
-                <button class="add-stats-modal-close" id="addStatsModalClose">
+                <button class="add-offer-modal-close" id="addStatsModalClose">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <line x1="18" y1="6" x2="6" y2="18"></line>
                         <line x1="6" y1="6" x2="18" y2="18"></line>
                     </svg>
                 </button>
             </div>
-            <div class="add-stats-modal-body">
+            <div class="add-offer-modal-body">
                 <!-- Season Year Display -->
                 <div class="season-year-display" id="seasonYearDisplay">
                     <span class="season-label">Season:</span>
@@ -994,7 +1032,7 @@
                     <!-- Stats fields to be added later -->
                 </div>
             </div>
-            <div class="add-stats-modal-footer">
+            <div class="add-offer-modal-footer">
                 <button class="btn-modal-cancel" id="btnAddStatsCancel">Cancel</button>
                 <button class="btn-modal-save" id="btnAddStatsSave">Add Stats</button>
             </div>
@@ -1002,19 +1040,19 @@
     </div>
 
     <!-- Edit Game Stats Modal -->
-    <div class="add-stats-modal" id="editStatsModal">
-        <div class="add-stats-modal-overlay" id="editStatsModalOverlay"></div>
-        <div class="add-stats-modal-content">
-            <div class="add-stats-modal-header">
+    <div class="add-offer-modal" id="editStatsModal">
+        <div class="add-offer-modal-overlay" id="editStatsModalOverlay"></div>
+        <div class="add-offer-modal-content add-stats-modal-content">
+            <div class="add-offer-modal-header">
                 <h2>Edit Game Stats</h2>
-                <button class="add-stats-modal-close" id="editStatsModalClose">
+                <button class="add-offer-modal-close" id="editStatsModalClose">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <line x1="18" y1="6" x2="6" y2="18"></line>
                         <line x1="6" y1="6" x2="18" y2="18"></line>
                     </svg>
                 </button>
             </div>
-            <div class="add-stats-modal-body">
+            <div class="add-offer-modal-body">
                 <input type="hidden" id="editGameId" value="">
 
                 <!-- Game Info Section -->
@@ -1030,7 +1068,7 @@
                     <!-- Stats fields to be added here -->
                 </div>
             </div>
-            <div class="add-stats-modal-footer edit-stats-footer">
+            <div class="add-offer-modal-footer edit-stats-footer">
                 <button class="btn-modal-delete" id="btnDeleteGameStats">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <polyline points="3 6 5 6 21 6"></polyline>
@@ -1323,6 +1361,204 @@
             <div class="recruiting-board-modal-footer">
                 <button class="btn-cancel" id="removeRecruitingBoardCancelBtn">Cancel</button>
                 <button class="btn-submit btn-remove" id="removeRecruitingBoardSubmitBtn">Remove</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Stars Modal -->
+    <div class="add-stars-modal" id="addStarsModal">
+        <div class="add-stars-modal-overlay" id="addStarsModalOverlay"></div>
+        <div class="add-stars-modal-content">
+            <div class="add-stars-modal-header">
+                <h2>Add Star Rating</h2>
+                <button class="add-stars-modal-close" id="addStarsModalClose">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="add-stars-modal-body">
+                <!-- Step 1: Input Form -->
+                <div class="stars-step stars-step-input" id="starsStepInput">
+                    <!-- Instructions Section -->
+                    <div class="stars-instructions">
+                        <div class="instructions-text">
+                            <p>To verify your star rating:</p>
+                            <ol>
+                                <li>Select the recruiting service where you are rated</li>
+                                <li>Navigate to your profile page on that site</li>
+                                <li>Copy and paste the URL below</li>
+                            </ol>
+                            <p class="ai-note">Our AI verification will automatically verify your star rating from the provided URL.</p>
+                        </div>
+                        <div class="stars-warning">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                                <line x1="12" y1="9" x2="12" y2="13"></line>
+                                <circle cx="12" cy="17" r="1" fill="currentColor"></circle>
+                            </svg>
+                            <p><strong>Warning:</strong> Submitting another player's profile or falsifying your star rating is considered recruiting misconduct and will result in immediate account termination.</p>
+                        </div>
+                        <p class="stars-disclaimer">Star ratings displayed on Direct Recruit are user-verified from third-party recruiting services (247 Sports, On3/Rivals). Direct Recruit is not affiliated with or endorsed by these services.</p>
+                    </div>
+
+                    <!-- Source Selection -->
+                    <div class="form-group">
+                        <label for="starsSource">Recruiting Service</label>
+                        <select id="starsSource" name="stars_source">
+                            <option value="">Select a source</option>
+                            <option value="on3">On3 / Rivals</option>
+                            <option value="247sports">247 Sports</option>
+                        </select>
+                    </div>
+
+                    <!-- URL Input -->
+                    <div class="form-group">
+                        <label for="starsProfileUrl">Profile URL</label>
+                        <input type="url" id="starsProfileUrl" name="stars_profile_url" placeholder="Paste your profile URL here...">
+                        <small class="form-hint" id="starsUrlHint">Select a recruiting service first</small>
+                    </div>
+                </div>
+
+                <!-- Step 2: Loading/Verifying -->
+                <div class="stars-step stars-step-loading hidden" id="starsStepLoading">
+                    <div class="stars-loading-content">
+                        <div class="stars-loading-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                            </svg>
+                        </div>
+                        <h3>Verifying Your Star Rating</h3>
+                        <p>Our AI is analyzing your profile...</p>
+                        <div class="stars-progress-bar">
+                            <div class="stars-progress-fill" id="starsProgressFill"></div>
+                        </div>
+                        <p class="stars-progress-text" id="starsProgressText">0%</p>
+                    </div>
+                </div>
+
+                <!-- Step 3: Confirmation (Has Stars) -->
+                <div class="stars-step stars-step-confirm hidden" id="starsStepConfirm">
+                    <div class="stars-confirm-content">
+                        <h3>Does this look right?</h3>
+                        <p>We found the following star rating:</p>
+                        <div class="stars-display" id="starsDisplayConfirm">
+                            <span class="star-icon filled">★</span>
+                            <span class="star-icon filled">★</span>
+                            <span class="star-icon filled">★</span>
+                            <span class="star-icon empty">★</span>
+                            <span class="star-icon empty">★</span>
+                        </div>
+                        <p class="stars-count-text"><span id="starsCountText">3</span> Star Athlete</p>
+                        <p class="stars-source-text">Source: <span id="starsSourceText">247 Sports</span></p>
+                    </div>
+                </div>
+
+                <!-- Step 4: No Stars Found -->
+                <div class="stars-step stars-step-no-stars hidden" id="starsStepNoStars">
+                    <div class="stars-no-stars-content">
+                        <div class="stars-display no-stars">
+                            <span class="star-icon empty">★</span>
+                            <span class="star-icon empty">★</span>
+                            <span class="star-icon empty">★</span>
+                            <span class="star-icon empty">★</span>
+                            <span class="star-icon empty">★</span>
+                        </div>
+                        <h3>No Stars Yet</h3>
+                        <p>You don't have a star rating from this recruiting service yet.</p>
+                        <p class="stars-encouragement">Keep working hard to earn your stars!</p>
+                    </div>
+                </div>
+
+                <!-- Step 5: Contact Support -->
+                <div class="stars-step stars-step-support hidden" id="starsStepSupport">
+                    <div class="stars-support-content">
+                        <div class="stars-support-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                            </svg>
+                        </div>
+                        <h3>Contact Support</h3>
+                        <p>Having trouble with your star rating verification? Our team is here to help!</p>
+                        <div class="form-group">
+                            <label for="supportMessage">Describe your issue</label>
+                            <textarea id="supportMessage" rows="4" placeholder="Please describe the issue you're experiencing..."></textarea>
+                        </div>
+                        <p class="support-email-note">Or email us directly at: <strong>support@directrecruit.com</strong></p>
+                    </div>
+                </div>
+            </div>
+            <div class="add-stars-modal-footer" id="starsModalFooter">
+                <!-- Input Step Footer -->
+                <div class="stars-footer-buttons" id="starsFooterInput">
+                    <button class="btn-modal-cancel" id="btnAddStarsCancel">Cancel</button>
+                    <button class="btn-clear-stars hidden" id="btnClearStars">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="3 6 5 6 21 6"></polyline>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                        </svg>
+                        Clear Star Rating
+                    </button>
+                    <button class="btn-modal-save btn-verify" id="btnAddStarsVerify">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                        Verify
+                    </button>
+                </div>
+                <!-- Loading Step Footer (hidden) -->
+                <div class="stars-footer-buttons hidden" id="starsFooterLoading">
+                    <p class="loading-note">Please wait...</p>
+                </div>
+                <!-- Confirm Step Footer -->
+                <div class="stars-footer-buttons hidden" id="starsFooterConfirm">
+                    <button class="btn-modal-cancel btn-no" id="btnStarsNo">No, that's wrong</button>
+                    <button class="btn-modal-save btn-yes" id="btnStarsYes">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                        Yes, save it!
+                    </button>
+                </div>
+                <!-- No Stars Footer -->
+                <div class="stars-footer-buttons hidden" id="starsFooterNoStars">
+                    <button class="btn-modal-cancel" id="btnNoStarsClose">Close</button>
+                    <button class="btn-modal-save" id="btnNoStarsSave">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                        Save Result
+                    </button>
+                </div>
+                <!-- Support Footer -->
+                <div class="stars-footer-buttons hidden" id="starsFooterSupport">
+                    <button class="btn-modal-cancel" id="btnSupportBack">Back</button>
+                    <button class="btn-modal-save" id="btnSupportSend">Send Message</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Flying Stars Container (for animation) -->
+    <div class="flying-stars-container" id="flyingStarsContainer"></div>
+
+    <!-- Clear Stars Confirmation Modal -->
+    <div class="clear-stars-confirm-modal" id="clearStarsConfirmModal">
+        <div class="clear-stars-confirm-overlay" id="clearStarsConfirmOverlay"></div>
+        <div class="clear-stars-confirm-content">
+            <div class="clear-stars-confirm-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="15" y1="9" x2="9" y2="15"></line>
+                    <line x1="9" y1="9" x2="15" y2="15"></line>
+                </svg>
+            </div>
+            <h3>Clear Star Rating?</h3>
+            <p>Are you sure you want to clear your star rating? This will remove your verified star rating from your profile.</p>
+            <div class="clear-stars-confirm-buttons">
+                <button class="btn-confirm-cancel" id="btnClearStarsCancel">Cancel</button>
+                <button class="btn-confirm-clear" id="btnClearStarsConfirm">Yes, Clear It</button>
             </div>
         </div>
     </div>

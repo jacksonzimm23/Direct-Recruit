@@ -131,8 +131,8 @@ function renderNotifications() {
 // Render a single notification card
 function renderNotificationCard(notification) {
     const isUnread = !notification.is_read;
-    const typeClass = getTypeIconClass(notification.type);
-    const icon = getTypeIcon(notification.type);
+    const typeClass = getTypeIconClass(notification.type, notification.title);
+    const icon = getTypeIcon(notification.type, notification.title);
     const timeAgo = formatTimeAgo(notification.created_at);
 
     return `
@@ -191,18 +191,62 @@ function formatNotificationMessage(notification) {
     return message;
 }
 
-// Get icon class based on notification type
-function getTypeIconClass(type) {
+// Get icon class based on notification type and title
+function getTypeIconClass(type, title) {
+    // For interactions, use title to determine specific icon class
+    if (type === 'interaction' && title) {
+        if (title === 'Post Liked' || title === 'Comment Liked') {
+            return 'like-icon';
+        } else if (title === 'New Comment') {
+            return 'comment-icon';
+        } else if (title === 'Post Shared') {
+            return 'share-icon';
+        } else if (title === 'New Reply') {
+            return 'reply-icon';
+        }
+    }
+
     const classes = {
         'message': 'message-icon',
         'follow': 'follow-icon',
-        'interaction': 'interaction-icon'
+        'interaction': 'interaction-icon',
+        'profile-view': 'view-icon'
     };
     return classes[type] || 'message-icon';
 }
 
-// Get SVG icon based on notification type
-function getTypeIcon(type) {
+// Get SVG icon based on notification type and title
+function getTypeIcon(type, title) {
+    // For interactions, use title to determine specific icon
+    if (type === 'interaction' && title) {
+        if (title === 'Post Liked' || title === 'Comment Liked') {
+            // Heart icon for likes
+            return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+            </svg>`;
+        } else if (title === 'New Comment') {
+            // Comment bubble icon
+            return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+            </svg>`;
+        } else if (title === 'Post Shared') {
+            // Share/repost icon
+            return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M17 1l4 4-4 4"></path>
+                <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
+                <path d="M7 23l-4-4 4-4"></path>
+                <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
+            </svg>`;
+        } else if (title === 'New Reply') {
+            // Reply icon (arrow reply)
+            return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M9 17l-5-5 5-5"></path>
+                <path d="M4 12h16"></path>
+                <path d="M20 12v5a2 2 0 0 1-2 2H9"></path>
+            </svg>`;
+        }
+    }
+
     const icons = {
         'message': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
@@ -215,6 +259,10 @@ function getTypeIcon(type) {
         </svg>`,
         'interaction': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+        </svg>`,
+        'profile-view': `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+            <circle cx="12" cy="12" r="3"></circle>
         </svg>`
     };
     return icons[type] || icons['message'];

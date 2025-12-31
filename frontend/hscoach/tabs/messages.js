@@ -303,49 +303,95 @@ function updateThreadHeader(participant) {
     }
 
     if (threadUserRole) {
-        // Build role info string similar to sidebar footer
-        const parts = [];
+        // Build role info string matching sidebar footer format for each profile type
+        let roleText = '';
+        let starsPrefix = '';
 
         if (participant.role === 'player') {
-            // Check if college player or HS player based on college_division
-            const isCollegePlayer = participant.college_division &&
-                ['FBS', 'FCS', 'D2', 'D3', 'NAIA', 'NJCAA'].includes(participant.college_division);
+            const parts = [];
 
-            if (isCollegePlayer) {
-                // College Player: Position, College Name (stored in high_school), Division
+            // Check if transfer player
+            if (participant.transfer === 'y') {
+                // Add stars prefix for transfer players with verified stars
+                if (participant.star_rating && participant.star_rating >= 1 && participant.star_rating <= 5) {
+                    starsPrefix = `<span style="color: #ffd700; font-weight: 600;">${participant.star_rating}★</span> `;
+                }
+
+                // Transfer Player: Position • Height • Weight • YOE
                 if (participant.position) parts.push(participant.position);
-                if (participant.high_school) parts.push(participant.high_school);
-                if (participant.college_division) {
-                    const division = participant.college_division;
-                    if (division === 'FBS' || division === 'FCS') {
-                        parts.push(`D1 ${division}`);
-                    } else {
-                        parts.push(division);
+
+                if (participant.height) {
+                    const totalInches = parseInt(participant.height);
+                    if (!isNaN(totalInches)) {
+                        const feet = Math.floor(totalInches / 12);
+                        const inches = totalInches % 12;
+                        parts.push(`${feet}'${inches}"`);
                     }
                 }
-            } else {
-                // HS Player: Position, High School, Graduation Year
+
+                if (participant.weight) {
+                    parts.push(`${participant.weight} lbs`);
+                }
+
+                if (participant.eligibility) {
+                    const yearText = participant.eligibility === 1 ? 'year' : 'years';
+                    parts.push(`YOE: ${participant.eligibility} ${yearText}`);
+                }
+
+                roleText = parts.join(' • ') || 'Transfer Player';
+                threadUserRole.style.color = '#b91c1c'; // Transfer player red
+            } else if (participant.college_division && ['FBS', 'FCS', 'D2', 'D3', 'NAIA', 'NJCAA'].includes(participant.college_division)) {
+                // College Player: Position • College • Division
                 if (participant.position) parts.push(participant.position);
                 if (participant.high_school) parts.push(participant.high_school);
-                if (participant.graduation_year) parts.push(`Class of ${participant.graduation_year}`);
-            }
-            threadUserRole.classList.remove('coach');
-        } else if (participant.role === 'coach') {
-            // Coach: College Name • Division (no position title)
-            if (participant.college_name) parts.push(participant.college_name);
-            if (participant.college_division) {
-                // Format FBS/FCS as D1 FBS/D1 FCS
                 const division = participant.college_division;
                 if (division === 'FBS' || division === 'FCS') {
                     parts.push(`D1 ${division}`);
                 } else {
                     parts.push(division);
                 }
+                roleText = parts.join(' • ') || 'Player';
+                threadUserRole.style.color = '';
+            } else {
+                // Add stars prefix for HS players with verified stars
+                if (participant.star_rating && participant.star_rating >= 1 && participant.star_rating <= 5) {
+                    starsPrefix = `<span style="color: #ffd700; font-weight: 600;">${participant.star_rating}★</span> `;
+                }
+
+                // HS Player: Position • High School • Class of Year
+                if (participant.position) parts.push(participant.position);
+                if (participant.high_school) parts.push(participant.high_school);
+                if (participant.graduation_year) parts.push(`Class of ${participant.graduation_year}`);
+                roleText = parts.join(' • ') || 'Player';
+                threadUserRole.style.color = '';
+            }
+            threadUserRole.classList.remove('coach');
+        } else if (participant.role === 'coach') {
+            // Check if college coach (has division) or HS coach (no division)
+            if (participant.college_division) {
+                // College Coach: College • Division
+                const parts = [];
+                if (participant.college_name) parts.push(participant.college_name);
+                const division = participant.college_division;
+                if (division === 'FBS' || division === 'FCS') {
+                    parts.push(`D1 ${division}`);
+                } else {
+                    parts.push(division);
+                }
+                roleText = parts.join(' • ') || 'Coach';
+            } else {
+                // HS Coach: School, State (comma-separated like sidebar)
+                const parts = [];
+                if (participant.college_name) parts.push(participant.college_name);
+                if (participant.state) parts.push(participant.state);
+                roleText = parts.join(', ') || 'HS Coach';
             }
             threadUserRole.classList.add('coach');
+            threadUserRole.style.color = '';
         }
 
-        threadUserRole.textContent = parts.join(' • ') || (participant.role === 'coach' ? 'Coach' : 'Player');
+        // Use innerHTML to allow the stars span to render
+        threadUserRole.innerHTML = starsPrefix + roleText;
     }
 
     if (threadAvatarCircle && participant.profile_image) {

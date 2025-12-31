@@ -23,7 +23,8 @@
       "Bash(cmd /c copy:*)",
       "Bash(cmd /c xcopy:*)",
       "Bash(grep:*)",
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "Bash(node verify-stars.js:*)"
     ],
     "deny": [],
     "ask": []

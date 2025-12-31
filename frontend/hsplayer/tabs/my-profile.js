@@ -12,6 +12,17 @@ let viewedProfileType = null; // Track the type of profile being viewed ('player
 let isViewedProfileHSPlayer = false; // Track if viewed profile is an HS player
 let isViewedProfileTransferPlayer = false; // Track if viewed profile is a transfer player
 
+// Profile posts, replies, and likes state
+let profilePostsLoaded = false;
+let profileRepliesLoaded = false;
+let profileLikesLoaded = false;
+let profilePostsOffset = 0;
+let profileRepliesOffset = 0;
+let profileLikesOffset = 0;
+const POSTS_PER_PAGE = 10;
+const REPLIES_PER_PAGE = 10;
+const LIKES_PER_PAGE = 10;
+
 // Format phone number as (XXX) XXX-XXXX
 function formatPhoneNumber(phone) {
     if (!phone) return '';
@@ -742,6 +753,12 @@ async function loadOwnProfile() {
             isOwnProfile = true;
             displayProfile(response.profile, response.user.role);
 
+            // Show Likes tab for own profile
+            const likesTab = document.querySelector('.profile-tab[data-tab="likes"]');
+            if (likesTab) {
+                likesTab.style.display = '';
+            }
+
             // Load profile view count for own profile
             loadProfileViewCount();
         } else {
@@ -761,6 +778,12 @@ async function loadProfileByUsername(username) {
             viewingUserId = response.profile.user_id;
             isOwnProfile = currentUserId === viewingUserId;
             displayProfile(response.profile, response.type);
+
+            // Hide Likes tab if viewing someone else's profile
+            const likesTab = document.querySelector('.profile-tab[data-tab="likes"]');
+            if (likesTab) {
+                likesTab.style.display = isOwnProfile ? '' : 'none';
+            }
 
             // Record profile view if viewing someone else's HS player profile
             if (!isOwnProfile && response.type === 'player') {
@@ -852,7 +875,13 @@ async function displayProfile(profile, type) {
     // Update bio in the About section between header and tabs
     const bioText = document.querySelector('.profile-info-row .bio-text');
     if (bioText) {
-        bioText.textContent = profile.bio || 'No bio provided yet.';
+        if (profile.bio) {
+            bioText.textContent = profile.bio;
+            bioText.classList.remove('empty-state');
+        } else {
+            bioText.textContent = 'No bio provided yet.';
+            bioText.classList.add('empty-state');
+        }
     }
 
     // Update Contact Info section between header and tabs
@@ -1110,7 +1139,7 @@ function updateContactInfoSection(profile) {
     if (contactHTML) {
         contactInfoCard.innerHTML = contactHTML;
     } else {
-        contactInfoCard.innerHTML = '<p>No contact information provided.</p>';
+        contactInfoCard.innerHTML = '<p class="empty-state">No contact information provided.</p>';
     }
 }
 
@@ -2068,6 +2097,15 @@ function setupUI() {
 
             this.classList.add('active');
             document.getElementById(tabId).classList.add('active');
+
+            // Load posts, replies, or likes when those tabs are clicked
+            if (tabId === 'posts' && !profilePostsLoaded) {
+                loadProfilePosts();
+            } else if (tabId === 'replies' && !profileRepliesLoaded) {
+                loadProfileReplies();
+            } else if (tabId === 'likes' && !profileLikesLoaded) {
+                loadProfileLikes();
+            }
         });
     });
 
@@ -2125,6 +2163,10 @@ function setupUI() {
         if (addStatsBtn) addStatsBtn.classList.add('show-button');
         if (addSeasonHighlightBtn) addSeasonHighlightBtn.classList.add('show-button');
         if (addGameHighlightBtn) addGameHighlightBtn.classList.add('show-button');
+
+        // Show Add Stars button for own profile
+        const addStarsBtn = document.getElementById('addStarsBtn');
+        if (addStarsBtn) addStarsBtn.classList.add('show-button');
     }
 }
 
@@ -2546,10 +2588,10 @@ async function saveProfileChanges() {
         saveBtn.textContent = 'Saving...';
         saveBtn.disabled = true;
 
-        // Format height as feet'inches" string
+        // Convert height to total inches for storage
         const heightFt = parseInt(document.getElementById('editHeightFt').value) || 0;
         const heightIn = parseInt(document.getElementById('editHeightIn').value) || 0;
-        const heightString = (heightFt > 0 || heightIn > 0) ? `${heightFt}'${heightIn}"` : null;
+        const heightTotalInches = (heightFt > 0 || heightIn > 0) ? (heightFt * 12) + heightIn : null;
 
         // Get phone number and extract only digits for storage
         const phoneInput = document.getElementById('editPhone').value;
@@ -2565,7 +2607,7 @@ async function saveProfileChanges() {
             last_name: document.getElementById('editLastName').value,
             username: document.getElementById('editUsername').value,
             position: editSelectedPositions.join('/'), // Join multiple positions with slash (e.g., "CB/WR")
-            height: heightString, // Store as formatted string (e.g., "6'1"")
+            height: heightTotalInches, // Store as total inches (e.g., 73 for 6'1")
             weight: document.getElementById('editWeight').value ? parseInt(document.getElementById('editWeight').value) : null,
             graduation_year: document.getElementById('editGraduationYear').value ? parseInt(document.getElementById('editGraduationYear').value) : null,
             gpa: document.getElementById('editGPA').value ? parseFloat(document.getElementById('editGPA').value) : null,
@@ -3112,8 +3154,11 @@ async function loadOffers() {
             }
         } else {
             // No offers - show empty state message and hide the "Show More" button
+            if (offersGridFull) {
+                offersGridFull.innerHTML = '<div class="no-offers-message">No offers yet.</div>';
+            }
             if (offersGrid) {
-                offersGrid.innerHTML = '<div class="no-offers-message">No offers listed yet.</div>';
+                offersGrid.innerHTML = '<div class="no-offers-message">No offers yet.</div>';
             }
             if (showMoreBtn) {
                 showMoreBtn.style.display = 'none';
@@ -6115,3 +6160,2131 @@ function closeProfileViewersModal() {
 
 // Initialize profile viewers modal when DOM is ready
 document.addEventListener('DOMContentLoaded', setupProfileViewersModal);
+
+// ============================================
+// ADD STARS MODAL
+// ============================================
+
+// Star verification state
+let starsVerificationData = {
+    stars: null,
+    source: null,
+    url: null
+};
+
+// Track if player has an existing star rating
+let playerHasExistingStarRating = false;
+
+function showAddStarsModal() {
+    const modal = document.getElementById('addStarsModal');
+    if (modal) {
+        modal.classList.add('active');
+        showStarsStep('input');
+
+        // Show/hide clear button based on existing rating
+        const clearBtn = document.getElementById('btnClearStars');
+        if (clearBtn) {
+            clearBtn.classList.toggle('hidden', !playerHasExistingStarRating);
+        }
+    }
+}
+
+function hideAddStarsModal() {
+    const modal = document.getElementById('addStarsModal');
+    if (modal) {
+        modal.classList.remove('active');
+        resetAddStarsModal();
+    }
+}
+
+function showStarsStep(step) {
+    // Hide all steps
+    const steps = ['starsStepInput', 'starsStepLoading', 'starsStepConfirm', 'starsStepNoStars', 'starsStepSupport'];
+    const footers = ['starsFooterInput', 'starsFooterLoading', 'starsFooterConfirm', 'starsFooterNoStars', 'starsFooterSupport'];
+
+    steps.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.add('hidden');
+    });
+
+    footers.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.add('hidden');
+    });
+
+    // Show the target step
+    const stepMap = {
+        'input': { step: 'starsStepInput', footer: 'starsFooterInput' },
+        'loading': { step: 'starsStepLoading', footer: 'starsFooterLoading' },
+        'confirm': { step: 'starsStepConfirm', footer: 'starsFooterConfirm' },
+        'no-stars': { step: 'starsStepNoStars', footer: 'starsFooterNoStars' },
+        'support': { step: 'starsStepSupport', footer: 'starsFooterSupport' }
+    };
+
+    const target = stepMap[step];
+    if (target) {
+        const stepEl = document.getElementById(target.step);
+        const footerEl = document.getElementById(target.footer);
+        if (stepEl) stepEl.classList.remove('hidden');
+        if (footerEl) footerEl.classList.remove('hidden');
+    }
+}
+
+function updateStarsDisplay(starsCount) {
+    const displayEl = document.getElementById('starsDisplayConfirm');
+    const countText = document.getElementById('starsCountText');
+
+    if (displayEl) {
+        let starsHTML = '';
+        for (let i = 1; i <= 5; i++) {
+            if (i <= starsCount) {
+                starsHTML += '<span class="star-icon filled">★</span>';
+            } else {
+                starsHTML += '<span class="star-icon empty">★</span>';
+            }
+        }
+        displayEl.innerHTML = starsHTML;
+    }
+
+    if (countText) {
+        countText.textContent = starsCount;
+    }
+}
+
+function updateSourceDisplay(source) {
+    const sourceText = document.getElementById('starsSourceText');
+    if (sourceText) {
+        sourceText.textContent = source === '247sports' ? '247 Sports' : 'On3 / Rivals';
+    }
+}
+
+async function verifyStarRating(source, url) {
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
+        throw new Error('Please log in to verify your star rating');
+    }
+
+    const response = await fetch(`${API_BASE_URL}/stars/verify`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ source, url })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+        throw new Error(data.error || 'Verification failed');
+    }
+
+    return data;
+}
+
+async function saveStarRating(stars, source, url) {
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
+        throw new Error('Please log in to save your star rating');
+    }
+
+    const response = await fetch(`${API_BASE_URL}/stars/save`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ stars, source, url })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+        throw new Error(data.error || 'Failed to save star rating');
+    }
+
+    return data;
+}
+
+function animateProgressBar(duration, callback) {
+    const progressFill = document.getElementById('starsProgressFill');
+    const progressText = document.getElementById('starsProgressText');
+
+    let progress = 0;
+    const startTime = Date.now();
+
+    function updateProgress() {
+        const elapsed = Date.now() - startTime;
+        progress = Math.min((elapsed / duration) * 100, 100);
+
+        if (progressFill) {
+            progressFill.style.width = `${progress}%`;
+        }
+        if (progressText) {
+            progressText.textContent = `${Math.round(progress)}%`;
+        }
+
+        if (progress < 100) {
+            requestAnimationFrame(updateProgress);
+        } else {
+            if (callback) callback();
+        }
+    }
+
+    updateProgress();
+}
+
+function removeStarRatingFromProfile() {
+    // Remove star rating element from profile
+    const existingRating = document.querySelector('.profile-star-rating');
+    if (existingRating) {
+        existingRating.remove();
+    }
+
+    // Also remove from sidebar footer
+    removeStarsFromSidebarFooter();
+}
+
+function removeStarsFromSubheader() {
+    const positionStars = document.querySelector('.profile-position-stars');
+    if (positionStars) {
+        positionStars.remove();
+    }
+}
+
+function removeStarsFromSidebarFooter() {
+    const sidebarStars = document.querySelector('.sidebar-footer .sidebar-stars');
+    if (sidebarStars) {
+        sidebarStars.remove();
+    }
+}
+
+function displayStarRatingOnProfile(starsCount, animate = false) {
+    const profilePosition = document.querySelector('.profile-position');
+    if (!profilePosition) return;
+
+    // Remove existing star rating if present
+    const existingRating = document.querySelector('.profile-star-rating');
+    if (existingRating) {
+        existingRating.remove();
+    }
+
+    // Only display stars if player has 1-5 stars (not 0)
+    if (starsCount < 1 || starsCount > 5) {
+        removeStarsFromSidebarFooter();
+        return;
+    }
+
+    // Create star rating element with all 5 stars (empty initially for animation)
+    const ratingEl = document.createElement('div');
+    ratingEl.className = 'profile-star-rating';
+    ratingEl.setAttribute('data-stars', starsCount);
+
+    // All stars start empty for animation
+    for (let i = 1; i <= 5; i++) {
+        const starSpan = document.createElement('span');
+        starSpan.className = 'star empty';
+        starSpan.textContent = '★';
+        starSpan.setAttribute('data-index', i);
+        ratingEl.appendChild(starSpan);
+    }
+
+    // Insert below the profile-position (subheader)
+    profilePosition.insertAdjacentElement('afterend', ratingEl);
+
+    if (animate) {
+        // Start with empty stars animation
+        ratingEl.classList.add('animate-empty');
+    } else {
+        // No animation, just show filled stars directly
+        setTimeout(() => {
+            const stars = ratingEl.querySelectorAll('.star');
+            stars.forEach((star, index) => {
+                if (index < starsCount) {
+                    star.classList.remove('empty');
+                    star.classList.add('filled');
+                }
+                star.style.opacity = '1';
+            });
+            ratingEl.classList.add('visible');
+        }, 50);
+    }
+
+    // Also update sidebar footer (no animation)
+    updateStarsInSidebarFooter(starsCount);
+}
+
+function updateStarsInSubheader(starsCount) {
+    if (starsCount < 1 || starsCount > 5) return;
+
+    const positionEl = document.querySelector('.profile-position');
+    if (!positionEl) return;
+
+    // Remove existing stars display
+    removeStarsFromSubheader();
+
+    // Create stars display for subheader
+    const starsEl = document.createElement('span');
+    starsEl.className = 'profile-position-stars';
+    starsEl.innerHTML = `<span class="star-count">${starsCount}</span><span class="star-icon">★</span>`;
+
+    // Insert at the beginning of position line
+    positionEl.insertBefore(starsEl, positionEl.firstChild);
+}
+
+function updateStarsInSidebarFooter(starsCount) {
+    if (starsCount < 1 || starsCount > 5) return;
+
+    const sidebarFooter = document.querySelector('.sidebar-footer .user-info');
+    if (!sidebarFooter) return;
+
+    // Remove existing stars display
+    removeStarsFromSidebarFooter();
+
+    // Find the user-role element (position info line)
+    const userRole = sidebarFooter.querySelector('.user-role');
+    if (!userRole) return;
+
+    // Create stars display for sidebar - insert at beginning with margin after
+    const starsEl = document.createElement('span');
+    starsEl.className = 'sidebar-stars';
+    starsEl.innerHTML = `<span class="star-count">${starsCount}</span><span class="star-icon">★</span>`;
+    starsEl.style.color = '#ffd700';
+    starsEl.style.fontWeight = '600';
+    starsEl.style.marginRight = '0.35em';
+
+    // Insert at the beginning of user role
+    userRole.insertBefore(starsEl, userRole.firstChild);
+}
+
+function createFlyingStarsAnimation(starsCount) {
+    const container = document.getElementById('flyingStarsContainer');
+    const profileRating = document.querySelector('.profile-star-rating');
+    const modal = document.getElementById('addStarsModal');
+
+    if (!container || !profileRating) return;
+
+    // Get the modal center position for starting point
+    const modalContent = modal?.querySelector('.add-stars-modal-content');
+    const modalRect = modalContent?.getBoundingClientRect() || { left: window.innerWidth / 2, top: window.innerHeight / 2, width: 0, height: 0 };
+    const startX = modalRect.left + modalRect.width / 2;
+    const startY = modalRect.top + modalRect.height / 2;
+
+    // Get each target star position
+    const targetStars = profileRating.querySelectorAll('.star');
+
+    // Create flying stars that fly to their target positions
+    for (let i = 0; i < starsCount; i++) {
+        const targetStar = targetStars[i];
+        if (!targetStar) continue;
+
+        const targetRect = targetStar.getBoundingClientRect();
+        const endX = targetRect.left + targetRect.width / 2;
+        const endY = targetRect.top + targetRect.height / 2;
+
+        const flyingStar = document.createElement('div');
+        flyingStar.className = 'flying-star';
+        flyingStar.innerHTML = '★';
+        flyingStar.style.left = `${startX}px`;
+        flyingStar.style.top = `${startY}px`;
+        flyingStar.style.setProperty('--end-x', `${endX - startX}px`);
+        flyingStar.style.setProperty('--end-y', `${endY - startY}px`);
+        flyingStar.style.animationDelay = `${i * 0.2}s`;
+
+        // When star reaches destination, fill in the target star
+        const delay = i * 200 + 800; // animation duration + stagger
+        setTimeout(() => {
+            targetStar.classList.remove('empty');
+            targetStar.classList.add('filled', 'land');
+            targetStar.style.opacity = '1';
+        }, delay);
+
+        container.appendChild(flyingStar);
+    }
+
+    // Clean up flying stars after animation completes
+    setTimeout(() => {
+        container.innerHTML = '';
+    }, starsCount * 200 + 1500);
+}
+
+function setupAddStarsModal() {
+    // Add Stars button click handler
+    const addStarsBtn = document.getElementById('addStarsBtn');
+    if (addStarsBtn) {
+        addStarsBtn.addEventListener('click', showAddStarsModal);
+    }
+
+    // Close button
+    const closeBtn = document.getElementById('addStarsModalClose');
+    if (closeBtn) {
+        closeBtn.addEventListener('click', hideAddStarsModal);
+    }
+
+    // Cancel button
+    const cancelBtn = document.getElementById('btnAddStarsCancel');
+    if (cancelBtn) {
+        cancelBtn.addEventListener('click', hideAddStarsModal);
+    }
+
+    // Close when clicking overlay
+    const overlay = document.getElementById('addStarsModalOverlay');
+    if (overlay) {
+        overlay.addEventListener('click', hideAddStarsModal);
+    }
+
+    // Source dropdown change handler - update URL hint
+    const sourceSelect = document.getElementById('starsSource');
+    const urlInput = document.getElementById('starsProfileUrl');
+    const urlHint = document.getElementById('starsUrlHint');
+    const verifyBtn = document.getElementById('btnAddStarsVerify');
+
+    // URL validation function
+    function validateStarsUrl(source, url) {
+        if (!source || !url) return false;
+
+        if (source === '247sports') {
+            return url.includes('247sports.com') && url.includes('/player/');
+        } else if (source === 'on3') {
+            return url.includes('on3.com') && (url.includes('/db/') || url.includes('/rivals/'));
+        }
+        return false;
+    }
+
+    // Update verify button state
+    function updateVerifyButtonState() {
+        const source = sourceSelect?.value;
+        const url = urlInput?.value?.trim();
+        const isValid = validateStarsUrl(source, url);
+
+        if (verifyBtn) {
+            verifyBtn.disabled = !isValid;
+            verifyBtn.classList.toggle('disabled', !isValid);
+        }
+    }
+
+    // Initial state - disabled
+    if (verifyBtn) {
+        verifyBtn.disabled = true;
+        verifyBtn.classList.add('disabled');
+    }
+
+    if (sourceSelect && urlHint && urlInput) {
+        sourceSelect.addEventListener('change', function() {
+            const source = this.value;
+            if (source === 'on3') {
+                urlHint.textContent = 'Example: https://www.on3.com/db/player-name/ or https://www.on3.com/rivals/player-name/';
+                urlInput.placeholder = 'https://www.on3.com/db/...';
+            } else if (source === '247sports') {
+                urlHint.textContent = 'Example: https://247sports.com/player/player-name/';
+                urlInput.placeholder = 'https://247sports.com/player/...';
+            } else {
+                urlHint.textContent = 'Select a recruiting service first';
+                urlInput.placeholder = 'Paste your profile URL here...';
+            }
+            updateVerifyButtonState();
+        });
+
+        // Listen for URL input changes
+        urlInput.addEventListener('input', updateVerifyButtonState);
+        urlInput.addEventListener('paste', () => setTimeout(updateVerifyButtonState, 0));
+    }
+
+    // Verify button click handler
+    if (verifyBtn) {
+        verifyBtn.addEventListener('click', async function() {
+            const source = document.getElementById('starsSource')?.value;
+            const url = document.getElementById('starsProfileUrl')?.value?.trim();
+
+            // Double-check validation (button should already be disabled if invalid)
+            if (!validateStarsUrl(source, url)) {
+                return;
+            }
+
+            // Show loading step
+            showStarsStep('loading');
+
+            // Reset progress bar
+            const progressFill = document.getElementById('starsProgressFill');
+            const progressText = document.getElementById('starsProgressText');
+            if (progressFill) progressFill.style.width = '0%';
+            if (progressText) progressText.textContent = '0%';
+
+            // Start verification and progress animation
+            const minDuration = 5000; // Minimum 5 seconds for AI effect
+
+            let verificationResult = null;
+            let verificationError = null;
+
+            // Start the API call
+            verifyStarRating(source, url)
+                .then(result => {
+                    verificationResult = result;
+                })
+                .catch(error => {
+                    verificationError = error;
+                });
+
+            // Animate progress bar
+            animateProgressBar(minDuration, async () => {
+                // Wait a bit more if API hasn't returned yet
+                while (verificationResult === null && verificationError === null) {
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                }
+
+                if (verificationError) {
+                    alert(verificationError.message || 'Verification failed. Please try again.');
+                    showStarsStep('input');
+                    return;
+                }
+
+                // Store verification data
+                starsVerificationData = {
+                    stars: verificationResult.stars,
+                    source: source,
+                    url: url
+                };
+
+                // Show appropriate result
+                if (verificationResult.stars >= 1 && verificationResult.stars <= 5) {
+                    updateStarsDisplay(verificationResult.stars);
+                    updateSourceDisplay(source);
+                    showStarsStep('confirm');
+                } else {
+                    showStarsStep('no-stars');
+                }
+            });
+        });
+    }
+
+    // Yes button (confirm stars are correct)
+    const yesBtn = document.getElementById('btnStarsYes');
+    if (yesBtn) {
+        yesBtn.addEventListener('click', async function() {
+            try {
+                // Save the star rating
+                await saveStarRating(
+                    starsVerificationData.stars,
+                    starsVerificationData.source,
+                    starsVerificationData.url
+                );
+
+                const starCount = starsVerificationData.stars;
+
+                // Add fade-out class to modal
+                const modal = document.getElementById('addStarsModal');
+                if (modal) {
+                    modal.classList.add('fade-out');
+                }
+
+                // Step 1: Create empty stars display next to name (with animation)
+                setTimeout(() => {
+                    displayStarRatingOnProfile(starCount, true);
+                }, 200);
+
+                // Step 2: After empty stars appear, create flying stars from modal center
+                setTimeout(() => {
+                    createFlyingStarsAnimation(starCount);
+                }, 700);
+
+                // Step 3: Update button text after animation completes
+                const totalAnimTime = 700 + (starCount * 200) + 1000;
+                setTimeout(() => {
+                    const addStarsBtn = document.getElementById('addStarsBtn');
+                    if (addStarsBtn) {
+                        addStarsBtn.innerHTML = `
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                            </svg>
+                            Update Star Rating
+                        `;
+                    }
+                }, totalAnimTime);
+
+                // Hide modal after a short delay
+                setTimeout(() => {
+                    hideAddStarsModal();
+                    const modalEl = document.getElementById('addStarsModal');
+                    if (modalEl) modalEl.classList.remove('fade-out');
+                }, 600);
+
+            } catch (error) {
+                alert(error.message || 'Failed to save star rating. Please try again.');
+            }
+        });
+    }
+
+    // No button (stars are wrong)
+    const noBtn = document.getElementById('btnStarsNo');
+    if (noBtn) {
+        noBtn.addEventListener('click', function() {
+            showStarsStep('support');
+        });
+    }
+
+    // No Stars close button
+    const noStarsCloseBtn = document.getElementById('btnNoStarsClose');
+    if (noStarsCloseBtn) {
+        noStarsCloseBtn.addEventListener('click', hideAddStarsModal);
+    }
+
+    // No Stars save button (saves 0 stars to database)
+    const noStarsSaveBtn = document.getElementById('btnNoStarsSave');
+    if (noStarsSaveBtn) {
+        noStarsSaveBtn.addEventListener('click', async function() {
+            try {
+                // Save 0 stars to the database
+                await saveStarRating(
+                    0,
+                    starsVerificationData.source,
+                    starsVerificationData.url
+                );
+
+                // Remove any existing star display from profile (since they now have 0)
+                removeStarRatingFromProfile();
+
+                // Show confirmation and close
+                alert('Your profile has been verified. Keep working to earn your stars!');
+                hideAddStarsModal();
+
+                // Update button text to show they can re-verify later
+                const addStarsBtn = document.getElementById('addStarsBtn');
+                if (addStarsBtn) {
+                    addStarsBtn.innerHTML = `
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                        </svg>
+                        Update Star Rating
+                    `;
+                }
+            } catch (error) {
+                alert(error.message || 'Failed to save. Please try again.');
+            }
+        });
+    }
+
+    // Support back button
+    const supportBackBtn = document.getElementById('btnSupportBack');
+    if (supportBackBtn) {
+        supportBackBtn.addEventListener('click', function() {
+            showStarsStep('confirm');
+        });
+    }
+
+    // Support send button
+    const supportSendBtn = document.getElementById('btnSupportSend');
+    if (supportSendBtn) {
+        supportSendBtn.addEventListener('click', function() {
+            const message = document.getElementById('supportMessage')?.value?.trim();
+
+            if (!message) {
+                alert('Please describe your issue before sending');
+                return;
+            }
+
+            // For now, just show a confirmation (could integrate with backend later)
+            alert('Thank you! Our support team will review your request and get back to you soon.');
+            hideAddStarsModal();
+        });
+    }
+}
+
+function resetAddStarsModal() {
+    const sourceSelect = document.getElementById('starsSource');
+    const urlInput = document.getElementById('starsProfileUrl');
+    const urlHint = document.getElementById('starsUrlHint');
+    const supportMessage = document.getElementById('supportMessage');
+    const progressFill = document.getElementById('starsProgressFill');
+    const progressText = document.getElementById('starsProgressText');
+
+    if (sourceSelect) sourceSelect.value = '';
+    if (urlInput) urlInput.value = '';
+    if (urlHint) urlHint.textContent = 'Select a recruiting service first';
+    if (supportMessage) supportMessage.value = '';
+    if (progressFill) progressFill.style.width = '0%';
+    if (progressText) progressText.textContent = '0%';
+
+    // Reset verification data
+    starsVerificationData = { stars: null, source: null, url: null };
+
+    // Reset to input step
+    showStarsStep('input');
+}
+
+// Clear Stars Confirmation Modal functions
+function showClearStarsConfirmModal() {
+    const modal = document.getElementById('clearStarsConfirmModal');
+    if (modal) {
+        modal.classList.add('active');
+    }
+}
+
+function hideClearStarsConfirmModal() {
+    const modal = document.getElementById('clearStarsConfirmModal');
+    if (modal) {
+        modal.classList.remove('active');
+    }
+}
+
+async function clearStarRating() {
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
+        alert('Please log in to clear star rating');
+        return;
+    }
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/stars/clear`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        if (response.ok) {
+            // Clear visuals from profile
+            removeStarRatingFromProfile();
+
+            // Reset the flag
+            playerHasExistingStarRating = false;
+
+            // Change button back to "Add Star Rating"
+            const addStarsBtn = document.getElementById('addStarsBtn');
+            if (addStarsBtn) {
+                addStarsBtn.innerHTML = `
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                    </svg>
+                    Add Star Rating
+                `;
+            }
+
+            // Hide clear button
+            const clearBtn = document.getElementById('btnClearStars');
+            if (clearBtn) {
+                clearBtn.classList.add('hidden');
+            }
+
+            // Close modals
+            hideClearStarsConfirmModal();
+            hideAddStarsModal();
+        } else {
+            const data = await response.json();
+            alert(data.error || 'Failed to clear star rating');
+        }
+    } catch (error) {
+        console.error('Clear star rating error:', error);
+        alert('An error occurred while clearing the star rating');
+    }
+}
+
+function setupClearStarsModal() {
+    // Clear button in add stars modal
+    const clearBtn = document.getElementById('btnClearStars');
+    if (clearBtn) {
+        clearBtn.addEventListener('click', showClearStarsConfirmModal);
+    }
+
+    // Cancel button in confirmation modal
+    const cancelBtn = document.getElementById('btnClearStarsCancel');
+    if (cancelBtn) {
+        cancelBtn.addEventListener('click', hideClearStarsConfirmModal);
+    }
+
+    // Confirm clear button
+    const confirmBtn = document.getElementById('btnClearStarsConfirm');
+    if (confirmBtn) {
+        confirmBtn.addEventListener('click', clearStarRating);
+    }
+
+    // Close on overlay click
+    const overlay = document.getElementById('clearStarsConfirmOverlay');
+    if (overlay) {
+        overlay.addEventListener('click', hideClearStarsConfirmModal);
+    }
+}
+
+// Check for existing star rating on profile load
+async function loadExistingStarRating() {
+    const token = localStorage.getItem('auth_token');
+    if (!token) return;
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/stars/my-rating`, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            const addStarsBtn = document.getElementById('addStarsBtn');
+
+            // Check if player has verified stars (including 0)
+            if (data.stars !== null && data.stars !== undefined) {
+                // Set flag for clear button visibility
+                playerHasExistingStarRating = true;
+
+                // Display stars on profile only if 1-5
+                if (data.stars >= 1 && data.stars <= 5) {
+                    displayStarRatingOnProfile(data.stars);
+
+                    // Retry sidebar footer update since profile data may load after this
+                    // Use more attempts with shorter delay to catch the moment after profile loads
+                    retrySidebarFooterStars(data.stars, 15);
+                }
+
+                // Change button to "Update Star Rating" for re-verification
+                if (addStarsBtn) {
+                    addStarsBtn.innerHTML = `
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                        </svg>
+                        Update Star Rating
+                    `;
+                }
+            } else {
+                playerHasExistingStarRating = false;
+            }
+        }
+    } catch (error) {
+        console.error('Failed to load star rating:', error);
+    }
+}
+
+// Retry updating sidebar footer stars until the element has content
+function retrySidebarFooterStars(starsCount, attemptsLeft) {
+    if (attemptsLeft <= 0) return;
+
+    const sidebarFooter = document.querySelector('.sidebar-footer .user-info');
+    const userRole = sidebarFooter?.querySelector('.user-role');
+
+    // Check if user-role exists AND has text content (profile data has loaded)
+    // Also check it doesn't already have stars to avoid duplicates
+    const existingStars = userRole?.querySelector('.sidebar-stars');
+    if (userRole && userRole.textContent.trim().length > 0 && !existingStars) {
+        updateStarsInSidebarFooter(starsCount);
+    } else if (!existingStars) {
+        // Sidebar footer content not loaded yet, retry after delay
+        setTimeout(() => retrySidebarFooterStars(starsCount, attemptsLeft - 1), 300);
+    }
+}
+
+// Initialize Add Stars modal when DOM is ready
+document.addEventListener('DOMContentLoaded', () => {
+    setupAddStarsModal();
+    setupClearStarsModal();
+    loadExistingStarRating();
+});
+
+// ==================== PROFILE POSTS & REPLIES ====================
+
+// Helper function to format time ago
+function formatTimeAgo(dateString) {
+    const date = new Date(dateString);
+    const now = new Date();
+    const seconds = Math.floor((now - date) / 1000);
+
+    if (seconds < 60) return 'just now';
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `${minutes}m`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours}h`;
+    const days = Math.floor(hours / 24);
+    if (days < 7) return `${days}d`;
+    const weeks = Math.floor(days / 7);
+    if (weeks < 4) return `${weeks}w`;
+    const months = Math.floor(days / 30);
+    if (months < 12) return `${months}mo`;
+    const years = Math.floor(days / 365);
+    return `${years}y`;
+}
+
+// Format post content (handles mentions and hashtags)
+function formatPostContent(content) {
+    if (!content) return '';
+    // Convert @mentions to links
+    let formatted = content.replace(/@(\w+)/g, '<span class="mention">@$1</span>');
+    // Convert #hashtags to links
+    formatted = formatted.replace(/#(\w+)/g, '<span class="hashtag">#$1</span>');
+    // Convert URLs to links
+    formatted = formatted.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>');
+    return formatted;
+}
+
+// Build meta info for post author
+function buildPostMetaInfo(post) {
+    let metaInfo = '';
+    let starsHtml = '';
+
+    // Add star rating prefix for HS players and transfer players with verified stars
+    if (post.author_role === 'player' && post.author_star_rating && post.author_star_rating >= 1 && post.author_star_rating <= 5) {
+        const isHSPlayer = !post.author_division && post.author_transfer !== 'y';
+        const isTransferPlayer = post.author_transfer === 'y';
+        if (isHSPlayer || isTransferPlayer) {
+            starsHtml = `<span class="post-meta-stars" style="color: #ffd700; font-weight: 600;">${post.author_star_rating}★</span> `;
+        }
+    }
+
+    const timeAgo = formatTimeAgo(post.created_at);
+
+    if (post.author_role === 'player') {
+        const parts = [];
+        if (post.author_transfer === 'y') {
+            // Transfer Player: Position • Height • Weight • YOE
+            if (post.author_position) parts.push(post.author_position);
+
+            if (post.author_height) {
+                // Handle height as either total inches (number) or formatted string ("6'1"")
+                const heightStr = String(post.author_height);
+                if (heightStr.includes("'")) {
+                    // Already formatted as feet'inches"
+                    parts.push(heightStr);
+                } else {
+                    // Convert from total inches to feet'inches" format
+                    const totalInches = parseInt(heightStr);
+                    if (!isNaN(totalInches) && totalInches > 0) {
+                        const feet = Math.floor(totalInches / 12);
+                        const inches = totalInches % 12;
+                        parts.push(`${feet}'${inches}"`);
+                    }
+                }
+            }
+
+            if (post.author_weight) {
+                parts.push(`${post.author_weight} lbs`);
+            }
+
+            if (post.author_eligibility) {
+                const yearText = post.author_eligibility === 1 ? 'year' : 'years';
+                parts.push(`YOE: ${post.author_eligibility} ${yearText}`);
+            }
+        } else if (post.author_division) {
+            // College Player: Position • College • Division
+            if (post.author_position) parts.push(post.author_position);
+            if (post.author_school) parts.push(post.author_school);
+            const div = post.author_division;
+            if (div === 'FBS' || div === 'FCS') {
+                parts.push(`D1 ${div}`);
+            } else {
+                parts.push(div);
+            }
+        } else {
+            // HS Player: Position • High School • Class of Year
+            if (post.author_position) parts.push(post.author_position);
+            if (post.author_school) parts.push(post.author_school);
+            if (post.author_grad_year) {
+                parts.push(`Class of ${post.author_grad_year}`);
+            }
+        }
+        parts.push(timeAgo);
+        metaInfo = starsHtml + parts.join(' • ');
+    } else {
+        // Coach
+        const parts = [];
+        if (post.author_division) {
+            // College Coach: College • Division
+            if (post.author_school) parts.push(post.author_school);
+            const div = post.author_division;
+            if (div === 'FBS' || div === 'FCS') {
+                parts.push(`D1 ${div}`);
+            } else {
+                parts.push(div);
+            }
+            parts.push(timeAgo);
+            metaInfo = parts.join(' • ');
+        } else {
+            // HS Coach: School, State (comma-separated like sidebar)
+            if (post.author_school) parts.push(post.author_school);
+            if (post.author_state) parts.push(post.author_state);
+            const schoolState = parts.join(', ');
+            metaInfo = schoolState ? `${schoolState} • ${timeAgo}` : timeAgo;
+        }
+    }
+
+    return metaInfo;
+}
+
+// Create post card HTML
+function createProfilePostElement(post) {
+    const authorName = `${post.author_first_name || ''} ${post.author_last_name || ''}`.trim() || 'Unknown User';
+    const metaInfo = buildPostMetaInfo(post);
+    const isOwnPost = post.user_id === currentUserId;
+    const isPinned = post.is_pinned || false;
+
+    // Build media HTML
+    let mediaHtml = '';
+    if (post.media_urls && post.media_urls.length > 0) {
+        const mediaCount = post.media_urls.length;
+        const isVideo = post.media_type === 'video' || (post.media_urls[0] && post.media_urls[0].toLowerCase().match(/\.(mp4|mov|avi|webm)$/));
+
+        if (isVideo) {
+            mediaHtml = `
+                <div class="profile-post-media">
+                    <video controls src="${post.media_urls[0]}"></video>
+                </div>
+            `;
+        } else {
+            mediaHtml = `
+                <div class="profile-post-media">
+                    <img src="${post.media_urls[0]}" alt="Post media">
+                    ${mediaCount > 1 ? `<span class="media-count-badge"><span>1 / ${mediaCount}</span></span>` : ''}
+                </div>
+            `;
+        }
+    }
+
+    // Pinned badge HTML
+    const pinnedBadge = isPinned ? `
+        <div class="profile-post-pinned-badge">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                <line x1="12" y1="17" x2="12" y2="22"></line>
+                <path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V17z"></path>
+            </svg>
+            <span>Pinned</span>
+        </div>
+    ` : '';
+
+    // Post options menu button (only for own posts)
+    const optionsButton = isOwnPost ? `
+        <button class="profile-post-more-btn" onclick="event.stopPropagation(); showProfilePostMenu('${post.id}', ${isPinned}, event)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="1"></circle>
+                <circle cx="19" cy="12" r="1"></circle>
+                <circle cx="5" cy="12" r="1"></circle>
+            </svg>
+        </button>
+    ` : '';
+
+    return `
+        ${pinnedBadge}
+        <article class="profile-post-card${isPinned ? ' pinned' : ''}" data-post-id="${post.id}" onclick="navigateToPost('${post.id}')">
+            <div class="profile-post-header">
+                <div class="profile-post-avatar">
+                    ${post.author_image
+                        ? `<img src="${post.author_image}" alt="${authorName}">`
+                        : `<svg viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="12" cy="7" r="4"></circle>
+                          </svg>`
+                    }
+                </div>
+                <div class="profile-post-info">
+                    <div class="profile-post-author">
+                        ${authorName}
+                        ${post.author_verified ? `
+                            <svg class="verified-badge" viewBox="0 0 24 24" fill="#1DA1F2" width="16" height="16">
+                                <path d="M22.5 12.5c0-1.58-.875-2.95-2.148-3.6.154-.435.238-.905.238-1.4 0-2.21-1.71-3.998-3.818-3.998-.47 0-.92.084-1.336.25C14.818 2.415 13.51 1.5 12 1.5s-2.816.917-3.437 2.25c-.415-.165-.866-.25-1.336-.25-2.11 0-3.818 1.79-3.818 4 0 .494.083.964.237 1.4-1.272.65-2.147 2.018-2.147 3.6 0 1.495.782 2.798 1.942 3.486-.02.17-.032.34-.032.514 0 2.21 1.708 4 3.818 4 .47 0 .92-.086 1.335-.25.62 1.334 1.926 2.25 3.437 2.25 1.512 0 2.818-.916 3.437-2.25.415.163.865.248 1.336.248 2.11 0 3.818-1.79 3.818-4 0-.174-.012-.344-.033-.513 1.158-.687 1.943-1.99 1.943-3.484zm-6.616-3.334l-4.334 6.5c-.145.217-.382.334-.625.334-.143 0-.288-.04-.416-.126l-.115-.094-2.415-2.415c-.293-.293-.293-.768 0-1.06s.768-.294 1.06 0l1.77 1.767 3.825-5.74c.23-.345.696-.436 1.04-.207.346.23.44.696.21 1.04z"/>
+                            </svg>
+                        ` : ''}
+                    </div>
+                    <div class="profile-post-meta ${post.author_role === 'coach' ? 'coach-meta' : (post.author_transfer === 'y' ? 'transfer-player-meta' : '')}">${metaInfo}</div>
+                </div>
+                <div class="profile-post-header-actions">
+                    ${optionsButton}
+                    <div class="profile-post-view-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="9 18 15 12 9 6"></polyline>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+            <div class="profile-post-content">
+                <p>${formatPostContent(post.content)}</p>
+                ${mediaHtml}
+            </div>
+            <div class="profile-post-stats">
+                <span>${post.likes_count || 0} ${post.likes_count === 1 ? 'like' : 'likes'}</span>
+                <span>${post.comments_count || 0} ${post.comments_count === 1 ? 'comment' : 'comments'}</span>
+                <span>${post.shares_count || 0} ${(post.shares_count || 0) === 1 ? 'share' : 'shares'}</span>
+            </div>
+        </article>
+    `;
+}
+
+// Create reply card HTML
+function createProfileReplyElement(reply) {
+    const authorName = `${reply.author_first_name || ''} ${reply.author_last_name || ''}`.trim() || 'Unknown User';
+    const originalAuthorName = `${reply.original_author_first_name || ''} ${reply.original_author_last_name || ''}`.trim() || 'Unknown User';
+    const timeAgo = formatTimeAgo(reply.reply_created_at || reply.created_at);
+
+    // Truncate original post content for preview (50 characters max)
+    let originalContentPreview = reply.original_post_content || '';
+    if (originalContentPreview.length > 50) {
+        originalContentPreview = originalContentPreview.substring(0, 50) + '...';
+    }
+
+    // Only show menu button if viewing own profile
+    const isOwnReply = !viewingUserId || viewingUserId === currentUserId;
+
+    return `
+        <article class="profile-reply-card" data-comment-id="${reply.id}" data-post-id="${reply.original_post_id}" data-content="${escapeHtml(reply.content)}">
+            <div class="profile-reply-context">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                </svg>
+                <span>Replying to <strong>${originalAuthorName}</strong></span>
+            </div>
+            <div class="profile-reply-original" onclick="navigateToPost('${reply.original_post_id}')">
+                <p>${formatPostContent(originalContentPreview)}</p>
+            </div>
+            <div class="profile-reply-content">
+                <div class="profile-reply-header">
+                    <div class="profile-reply-avatar">
+                        ${reply.author_image
+                            ? `<img src="${reply.author_image}" alt="${authorName}">`
+                            : `<svg viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="12" cy="7" r="4"></circle>
+                              </svg>`
+                        }
+                    </div>
+                    <div class="profile-reply-info">
+                        <div class="profile-reply-author">${authorName}</div>
+                        <div class="profile-reply-time">${timeAgo}</div>
+                    </div>
+                    <div class="profile-reply-actions">
+                        ${isOwnReply ? `
+                            <button class="reply-menu-btn" onclick="event.stopPropagation(); showReplyMenu('${reply.id}', '${reply.original_post_id}', event)">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="1"></circle>
+                                    <circle cx="19" cy="12" r="1"></circle>
+                                    <circle cx="5" cy="12" r="1"></circle>
+                                </svg>
+                            </button>
+                        ` : ''}
+                        <div class="profile-reply-view-icon" onclick="navigateToPost('${reply.original_post_id}')">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="9 18 15 12 9 6"></polyline>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+                <div class="profile-reply-text" onclick="navigateToPost('${reply.original_post_id}')">
+                    <p>${formatPostContent(reply.content)}</p>
+                </div>
+                <div class="profile-reply-stats">
+                    <span>${reply.likes_count || 0} ${reply.likes_count === 1 ? 'like' : 'likes'}</span>
+                </div>
+            </div>
+        </article>
+    `;
+}
+
+// Escape HTML for safe attribute usage
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML.replace(/"/g, '&quot;');
+}
+
+// Show reply menu (edit/delete options)
+function showReplyMenu(commentId, postId, event) {
+    event.stopPropagation();
+
+    // Remove existing menu
+    const existing = document.querySelector('.reply-dropdown-menu');
+    if (existing) existing.remove();
+
+    const menu = document.createElement('div');
+    menu.className = 'reply-dropdown-menu';
+    menu.innerHTML = `
+        <div class="dropdown-item" onclick="editReply('${commentId}', '${postId}')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#1282a2" stroke-width="2">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+            </svg>
+            <span>Edit Reply</span>
+        </div>
+        <div class="dropdown-item dropdown-item-danger" onclick="deleteReply('${commentId}', '${postId}')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+            </svg>
+            <span>Delete Reply</span>
+        </div>
+    `;
+
+    document.body.appendChild(menu);
+
+    // Position menu near the button
+    const btn = event.target.closest('.reply-menu-btn');
+    const rect = btn.getBoundingClientRect();
+    menu.style.top = rect.bottom + 5 + 'px';
+    menu.style.right = window.innerWidth - rect.right + 'px';
+
+    // Close on outside click or scroll
+    setTimeout(() => {
+        function closeMenu(e) {
+            if (e.type === 'scroll' || !menu.contains(e.target)) {
+                menu.remove();
+                document.removeEventListener('click', closeMenu);
+                window.removeEventListener('scroll', closeMenu, true);
+            }
+        }
+        document.addEventListener('click', closeMenu);
+        window.addEventListener('scroll', closeMenu, true);
+    }, 0);
+}
+
+// Edit reply
+function editReply(commentId, postId) {
+    // Close menu
+    document.querySelector('.reply-dropdown-menu')?.remove();
+
+    // Find the reply card and get current content
+    const replyCard = document.querySelector(`[data-comment-id="${commentId}"]`);
+    if (!replyCard) return;
+
+    const currentContent = replyCard.dataset.content || '';
+
+    // Create edit modal
+    const modal = document.createElement('div');
+    modal.className = 'reply-edit-modal-overlay';
+    modal.id = 'edit-reply-modal';
+    modal.innerHTML = `
+        <div class="reply-edit-modal">
+            <div class="reply-edit-modal-header">
+                <h3>Edit Reply</h3>
+                <button class="reply-edit-modal-close" onclick="closeReplyModal()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="reply-edit-modal-body">
+                <textarea id="editReplyContent" placeholder="Edit your reply...">${currentContent}</textarea>
+            </div>
+            <div class="reply-edit-modal-footer">
+                <button class="btn-cancel" onclick="closeReplyModal()">Cancel</button>
+                <button class="btn-save" onclick="saveReplyEdit('${commentId}', '${postId}')">Save</button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    // Focus the textarea
+    const textarea = document.getElementById('editReplyContent');
+    textarea.focus();
+    textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+
+    // Close on overlay click
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            closeReplyModal();
+        }
+    });
+}
+
+// Save reply edit
+async function saveReplyEdit(commentId, postId) {
+    const textarea = document.getElementById('editReplyContent');
+    const content = textarea?.value.trim();
+
+    if (!content) {
+        showToast('Reply cannot be empty', 'error');
+        return;
+    }
+
+    const saveBtn = document.querySelector('.reply-edit-modal .btn-save');
+    if (saveBtn) {
+        saveBtn.disabled = true;
+        saveBtn.textContent = 'Saving...';
+    }
+
+    try {
+        await API.put(`/posts/${postId}/comments/${commentId}`, { content });
+
+        // Update the reply card content
+        const replyCard = document.querySelector(`[data-comment-id="${commentId}"]`);
+        if (replyCard) {
+            const textElement = replyCard.querySelector('.profile-reply-text p');
+            if (textElement) {
+                textElement.innerHTML = formatPostContent(content);
+            }
+            replyCard.dataset.content = content;
+        }
+
+        closeReplyModal();
+        showToast('Reply updated', 'success');
+    } catch (error) {
+        console.error('Error updating reply:', error);
+        showToast('Failed to update reply', 'error');
+        if (saveBtn) {
+            saveBtn.disabled = false;
+            saveBtn.textContent = 'Save';
+        }
+    }
+}
+
+// Close reply edit modal
+function closeReplyModal() {
+    const modal = document.getElementById('edit-reply-modal');
+    if (modal) modal.remove();
+}
+
+// Delete reply
+function deleteReply(commentId, postId) {
+    // Close menu
+    document.querySelector('.reply-dropdown-menu')?.remove();
+
+    // Create delete confirmation modal
+    const modal = document.createElement('div');
+    modal.className = 'reply-delete-modal-overlay';
+    modal.id = 'delete-reply-modal';
+    modal.innerHTML = `
+        <div class="reply-delete-modal">
+            <div class="reply-delete-modal-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="3 6 5 6 21 6"></polyline>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                </svg>
+            </div>
+            <h3>Delete Reply</h3>
+            <p>Are you sure you want to delete this reply? This action cannot be undone.</p>
+            <div class="reply-delete-modal-actions">
+                <button class="btn-cancel" onclick="closeDeleteReplyModal()">Cancel</button>
+                <button class="btn-delete" onclick="confirmDeleteReply('${commentId}', '${postId}')">Delete</button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    // Close on overlay click
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            closeDeleteReplyModal();
+        }
+    });
+}
+
+// Close delete reply modal
+function closeDeleteReplyModal() {
+    const modal = document.getElementById('delete-reply-modal');
+    if (modal) modal.remove();
+}
+
+// Confirm delete reply
+async function confirmDeleteReply(commentId, postId) {
+    const deleteBtn = document.querySelector('.reply-delete-modal .btn-delete');
+    if (deleteBtn) {
+        deleteBtn.disabled = true;
+        deleteBtn.textContent = 'Deleting...';
+    }
+
+    try {
+        await API.delete(`/posts/${postId}/comments/${commentId}`);
+
+        // Remove the reply card from the DOM
+        const replyCard = document.querySelector(`[data-comment-id="${commentId}"]`);
+        if (replyCard) {
+            replyCard.remove();
+        }
+
+        closeDeleteReplyModal();
+        showToast('Reply deleted', 'success');
+
+        // Check if no more replies
+        const container = document.getElementById('profileRepliesContainer');
+        if (container && container.children.length === 0) {
+            container.innerHTML = `
+                <div class="profile-replies-empty">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                    <p>No replies yet</p>
+                </div>
+            `;
+        }
+    } catch (error) {
+        console.error('Error deleting reply:', error);
+        showToast('Failed to delete reply', 'error');
+        if (deleteBtn) {
+            deleteBtn.disabled = false;
+            deleteBtn.textContent = 'Delete';
+        }
+    }
+}
+
+// Navigate to single post view
+function navigateToPost(postId) {
+    window.location.href = `post-view.html?id=${postId}&ref=profile`;
+}
+
+// Load profile posts
+async function loadProfilePosts(loadMore = false) {
+    const container = document.getElementById('profilePostsContainer');
+    const loadMoreContainer = document.getElementById('loadMorePostsContainer');
+    const loadMoreBtn = document.getElementById('loadMorePostsBtn');
+
+    if (!container) return;
+
+    // Determine which user's posts to load
+    const userId = viewingUserId || currentUserId;
+    if (!userId) return;
+
+    if (!loadMore) {
+        container.innerHTML = `
+            <div class="profile-posts-loading">
+                <div class="loading-spinner"></div>
+                <span>Loading posts...</span>
+            </div>
+        `;
+        profilePostsOffset = 0;
+    } else if (loadMoreBtn) {
+        loadMoreBtn.disabled = true;
+        loadMoreBtn.textContent = 'Loading...';
+    }
+
+    try {
+        const response = await API.get(`/posts/user/${userId}?limit=${POSTS_PER_PAGE}&offset=${profilePostsOffset}`);
+        const posts = response.posts || [];
+
+        if (!loadMore) {
+            container.innerHTML = '';
+        }
+
+        if (posts.length === 0 && profilePostsOffset === 0) {
+            // No posts found - keep default placeholder
+            container.innerHTML = `
+                <div class="profile-posts-empty">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                    <p>No posts yet</p>
+                </div>
+            `;
+            if (loadMoreContainer) loadMoreContainer.style.display = 'none';
+        } else {
+            // Render posts
+            posts.forEach(post => {
+                container.innerHTML += createProfilePostElement(post);
+            });
+
+            profilePostsOffset += posts.length;
+            profilePostsLoaded = true;
+
+            // Show/hide load more button
+            if (loadMoreContainer) {
+                loadMoreContainer.style.display = posts.length >= POSTS_PER_PAGE ? 'flex' : 'none';
+            }
+        }
+    } catch (error) {
+        console.error('Error loading posts:', error);
+        if (!loadMore) {
+            container.innerHTML = `
+                <div class="profile-posts-error">
+                    <p>Failed to load posts</p>
+                    <button onclick="loadProfilePosts()" class="btn-retry">Retry</button>
+                </div>
+            `;
+        }
+    } finally {
+        if (loadMoreBtn) {
+            loadMoreBtn.disabled = false;
+            loadMoreBtn.textContent = 'Load More Posts';
+        }
+    }
+}
+
+// Load profile replies
+async function loadProfileReplies(loadMore = false) {
+    const container = document.getElementById('profileRepliesContainer');
+    const loadMoreContainer = document.getElementById('loadMoreRepliesContainer');
+    const loadMoreBtn = document.getElementById('loadMoreRepliesBtn');
+
+    if (!container) return;
+
+    // Determine which user's replies to load
+    const userId = viewingUserId || currentUserId;
+    if (!userId) return;
+
+    if (!loadMore) {
+        container.innerHTML = `
+            <div class="profile-replies-loading">
+                <div class="loading-spinner"></div>
+                <span>Loading replies...</span>
+            </div>
+        `;
+        profileRepliesOffset = 0;
+    } else if (loadMoreBtn) {
+        loadMoreBtn.disabled = true;
+        loadMoreBtn.textContent = 'Loading...';
+    }
+
+    try {
+        const response = await API.get(`/posts/user/${userId}/replies?limit=${REPLIES_PER_PAGE}&offset=${profileRepliesOffset}`);
+        const replies = response.replies || [];
+
+        if (!loadMore) {
+            container.innerHTML = '';
+        }
+
+        if (replies.length === 0 && profileRepliesOffset === 0) {
+            // No replies found - keep default placeholder
+            container.innerHTML = `
+                <div class="profile-replies-empty">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                    <p>No replies yet</p>
+                </div>
+            `;
+            if (loadMoreContainer) loadMoreContainer.style.display = 'none';
+        } else {
+            // Render replies
+            replies.forEach(reply => {
+                container.innerHTML += createProfileReplyElement(reply);
+            });
+
+            profileRepliesOffset += replies.length;
+            profileRepliesLoaded = true;
+
+            // Show/hide load more button
+            if (loadMoreContainer) {
+                loadMoreContainer.style.display = replies.length >= REPLIES_PER_PAGE ? 'flex' : 'none';
+            }
+        }
+    } catch (error) {
+        console.error('Error loading replies:', error);
+        if (!loadMore) {
+            container.innerHTML = `
+                <div class="profile-replies-error">
+                    <p>Failed to load replies</p>
+                    <button onclick="loadProfileReplies()" class="btn-retry">Retry</button>
+                </div>
+            `;
+        }
+    } finally {
+        if (loadMoreBtn) {
+            loadMoreBtn.disabled = false;
+            loadMoreBtn.textContent = 'Load More Replies';
+        }
+    }
+}
+
+// Load profile liked posts
+async function loadProfileLikes(loadMore = false) {
+    const container = document.getElementById('profileLikesContainer');
+    const loadMoreContainer = document.getElementById('loadMoreLikesContainer');
+    const loadMoreBtn = document.getElementById('loadMoreLikesBtn');
+
+    if (!container) return;
+
+    // Determine which user's liked posts to load
+    const userId = viewingUserId || currentUserId;
+    if (!userId) return;
+
+    if (!loadMore) {
+        container.innerHTML = `
+            <div class="profile-likes-loading">
+                <div class="loading-spinner"></div>
+                <span>Loading liked posts...</span>
+            </div>
+        `;
+        profileLikesOffset = 0;
+    } else if (loadMoreBtn) {
+        loadMoreBtn.disabled = true;
+        loadMoreBtn.textContent = 'Loading...';
+    }
+
+    try {
+        const response = await API.get(`/posts/user/${userId}/likes?limit=${LIKES_PER_PAGE}&offset=${profileLikesOffset}`);
+        const posts = response.posts || [];
+
+        if (!loadMore) {
+            container.innerHTML = '';
+        }
+
+        if (posts.length === 0 && profileLikesOffset === 0) {
+            // No liked posts found
+            container.innerHTML = `
+                <div class="profile-likes-empty">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                    </svg>
+                    <p>No liked posts yet</p>
+                </div>
+            `;
+            if (loadMoreContainer) loadMoreContainer.style.display = 'none';
+        } else {
+            // Render liked posts
+            posts.forEach(post => {
+                container.innerHTML += createProfileLikedPostElement(post);
+            });
+
+            profileLikesOffset += posts.length;
+            profileLikesLoaded = true;
+
+            // Show/hide load more button
+            if (loadMoreContainer) {
+                loadMoreContainer.style.display = posts.length >= LIKES_PER_PAGE ? 'flex' : 'none';
+            }
+        }
+    } catch (error) {
+        console.error('Error loading liked posts:', error);
+        if (!loadMore) {
+            container.innerHTML = `
+                <div class="profile-likes-error">
+                    <p>Failed to load liked posts</p>
+                    <button onclick="loadProfileLikes()" class="btn-retry">Retry</button>
+                </div>
+            `;
+        }
+    } finally {
+        if (loadMoreBtn) {
+            loadMoreBtn.disabled = false;
+            loadMoreBtn.textContent = 'Load More';
+        }
+    }
+}
+
+// Create liked post card HTML (similar to regular post but without edit options for other users' posts)
+function createProfileLikedPostElement(post) {
+    const authorName = `${post.author_first_name || ''} ${post.author_last_name || ''}`.trim() || 'Unknown User';
+    const metaInfo = buildPostMetaInfo(post);
+    const isOwnPost = post.user_id === currentUserId;
+
+    // Build media HTML
+    let mediaHtml = '';
+    if (post.media_urls && post.media_urls.length > 0) {
+        const mediaCount = post.media_urls.length;
+        const isVideo = post.media_type === 'video' || (post.media_urls[0] && post.media_urls[0].toLowerCase().match(/\.(mp4|mov|avi|webm)$/));
+
+        if (isVideo) {
+            mediaHtml = `
+                <div class="profile-post-media">
+                    <video controls src="${post.media_urls[0]}"></video>
+                </div>
+            `;
+        } else {
+            mediaHtml = `
+                <div class="profile-post-media">
+                    <img src="${post.media_urls[0]}" alt="Post media">
+                    ${mediaCount > 1 ? `<span class="media-count-badge"><span>1 / ${mediaCount}</span></span>` : ''}
+                </div>
+            `;
+        }
+    }
+
+    // Post options menu button (only for own posts)
+    const optionsButton = isOwnPost ? `
+        <button class="profile-post-more-btn" onclick="event.stopPropagation(); showProfilePostMenu('${post.id}', ${post.is_pinned || false}, event)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="1"></circle>
+                <circle cx="19" cy="12" r="1"></circle>
+                <circle cx="5" cy="12" r="1"></circle>
+            </svg>
+        </button>
+    ` : '';
+
+    return `
+        <article class="profile-post-card" data-post-id="${post.id}" onclick="navigateToPost('${post.id}')">
+            <div class="profile-post-header">
+                <div class="profile-post-avatar">
+                    ${post.author_image
+                        ? `<img src="${post.author_image}" alt="${authorName}">`
+                        : `<svg viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="12" cy="7" r="4"></circle>
+                          </svg>`
+                    }
+                </div>
+                <div class="profile-post-info">
+                    <div class="profile-post-author">
+                        ${authorName}
+                        ${post.author_verified ? `
+                            <svg class="verified-badge" viewBox="0 0 24 24" fill="#1DA1F2" width="16" height="16">
+                                <path d="M22.5 12.5c0-1.58-.875-2.95-2.148-3.6.154-.435.238-.905.238-1.4 0-2.21-1.71-3.998-3.818-3.998-.47 0-.92.084-1.336.25C14.818 2.415 13.51 1.5 12 1.5s-2.816.917-3.437 2.25c-.415-.165-.866-.25-1.336-.25-2.11 0-3.818 1.79-3.818 4 0 .494.083.964.237 1.4-1.272.65-2.147 2.018-2.147 3.6 0 1.495.782 2.798 1.942 3.486-.02.17-.032.34-.032.514 0 2.21 1.708 4 3.818 4 .47 0 .92-.086 1.335-.25.62 1.334 1.926 2.25 3.437 2.25 1.512 0 2.818-.916 3.437-2.25.415.163.865.248 1.336.248 2.11 0 3.818-1.79 3.818-4 0-.174-.012-.344-.033-.513 1.158-.687 1.943-1.99 1.943-3.484zm-6.616-3.334l-4.334 6.5c-.145.217-.382.334-.625.334-.143 0-.288-.04-.416-.126l-.115-.094-2.415-2.415c-.293-.293-.293-.768 0-1.06s.768-.294 1.06 0l1.77 1.767 3.825-5.74c.23-.345.696-.436 1.04-.207.346.23.44.696.21 1.04z"/>
+                            </svg>
+                        ` : ''}
+                    </div>
+                    <div class="profile-post-meta ${post.author_role === 'coach' ? 'coach-meta' : (post.author_transfer === 'y' ? 'transfer-player-meta' : '')}">${metaInfo}</div>
+                </div>
+                <div class="profile-post-header-actions">
+                    ${optionsButton}
+                    <div class="profile-post-view-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="9 18 15 12 9 6"></polyline>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+            <div class="profile-post-content">
+                <p>${formatPostContent(post.content)}</p>
+                ${mediaHtml}
+            </div>
+            <div class="profile-post-stats">
+                <span>${post.likes_count || 0} ${post.likes_count === 1 ? 'like' : 'likes'}</span>
+                <span>${post.comments_count || 0} ${post.comments_count === 1 ? 'comment' : 'comments'}</span>
+                <span>${post.shares_count || 0} ${(post.shares_count || 0) === 1 ? 'share' : 'shares'}</span>
+            </div>
+        </article>
+    `;
+}
+
+// Setup load more buttons
+document.addEventListener('DOMContentLoaded', () => {
+    const loadMorePostsBtn = document.getElementById('loadMorePostsBtn');
+    const loadMoreRepliesBtn = document.getElementById('loadMoreRepliesBtn');
+    const loadMoreLikesBtn = document.getElementById('loadMoreLikesBtn');
+
+    if (loadMorePostsBtn) {
+        loadMorePostsBtn.addEventListener('click', () => loadProfilePosts(true));
+    }
+
+    if (loadMoreRepliesBtn) {
+        loadMoreRepliesBtn.addEventListener('click', () => loadProfileReplies(true));
+    }
+
+    if (loadMoreLikesBtn) {
+        loadMoreLikesBtn.addEventListener('click', () => loadProfileLikes(true));
+    }
+});
+
+// ==================== POST OPTIONS MENU ====================
+
+// Show post options dropdown menu
+function showProfilePostMenu(postId, isPinned, event) {
+    event.stopPropagation();
+
+    // Remove existing menu
+    const existing = document.querySelector('.profile-post-dropdown-menu');
+    if (existing) existing.remove();
+
+    const menu = document.createElement('div');
+    menu.className = 'profile-post-dropdown-menu';
+    menu.innerHTML = `
+        <div class="dropdown-item" onclick="event.stopPropagation(); editProfilePost('${postId}')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+            </svg>
+            Edit Post
+        </div>
+        <div class="dropdown-item" onclick="event.stopPropagation(); ${isPinned ? `unpinProfilePost('${postId}')` : `pinProfilePost('${postId}')`}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="12" y1="17" x2="12" y2="22"></line>
+                <path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V17z"></path>
+            </svg>
+            ${isPinned ? 'Unpin Post' : 'Pin Post'}
+        </div>
+        <div class="dropdown-item dropdown-item-danger" onclick="event.stopPropagation(); deleteProfilePost('${postId}')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+            </svg>
+            Delete Post
+        </div>
+    `;
+
+    document.body.appendChild(menu);
+
+    // Position menu
+    const btn = event.target.closest('.profile-post-more-btn');
+    const rect = btn.getBoundingClientRect();
+    menu.style.top = rect.bottom + 5 + 'px';
+    menu.style.right = window.innerWidth - rect.right + 'px';
+
+    // Close on outside click or scroll
+    setTimeout(() => {
+        function closeMenu() {
+            menu.remove();
+            document.removeEventListener('click', closeMenu);
+            window.removeEventListener('scroll', closeMenu, true);
+        }
+        document.addEventListener('click', closeMenu);
+        window.addEventListener('scroll', closeMenu, true);
+    }, 0);
+}
+
+// Edit post
+async function editProfilePost(postId) {
+    // Close dropdown menu
+    document.querySelector('.profile-post-dropdown-menu')?.remove();
+
+    // Get current post content and media
+    const postCard = document.querySelector(`[data-post-id="${postId}"]`);
+    const currentContent = postCard?.querySelector('.profile-post-content p')?.innerText || '';
+
+    // Get current media
+    const mediaElement = postCard?.querySelector('.profile-post-media img, .profile-post-media video');
+    const currentMediaUrl = mediaElement?.src || '';
+    const currentMediaType = mediaElement?.tagName?.toLowerCase() === 'video' ? 'video' : 'image';
+
+    // Create edit modal
+    const modal = document.createElement('div');
+    modal.className = 'profile-post-modal-overlay';
+    modal.id = 'edit-profile-post-modal';
+    modal.innerHTML = `
+        <div class="profile-post-modal edit-modal">
+            <div class="profile-post-modal-header">
+                <h3>Edit Post</h3>
+                <button class="profile-post-modal-close" onclick="closeProfilePostModal('edit-profile-post-modal')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="profile-post-modal-body">
+                <textarea class="edit-post-textarea" id="edit-profile-post-content" placeholder="What's on your mind?">${escapeHtml(currentContent)}</textarea>
+
+                <div class="edit-post-media-section">
+                    <div class="edit-post-media-preview" id="edit-media-preview" style="${currentMediaUrl ? '' : 'display: none;'}">
+                        ${currentMediaUrl ? (currentMediaType === 'video'
+                            ? `<video src="${currentMediaUrl}" controls></video>`
+                            : `<img src="${currentMediaUrl}" alt="Post media">`)
+                        : ''}
+                        <button class="remove-media-btn" onclick="removeEditMedia()">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="18" y1="6" x2="6" y2="18"></line>
+                                <line x1="6" y1="6" x2="18" y2="18"></line>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="edit-post-media-actions">
+                        <label class="add-media-btn">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                                <polyline points="21 15 16 10 5 21"></polyline>
+                            </svg>
+                            <span>${currentMediaUrl ? 'Change Media' : 'Add Media'}</span>
+                            <input type="file" id="edit-media-input" accept="image/*,video/*" style="display: none;" onchange="handleEditMediaSelect(event)">
+                        </label>
+                    </div>
+                </div>
+
+                <div class="edit-modal-actions">
+                    <button class="edit-modal-btn edit-modal-btn-cancel" onclick="closeProfilePostModal('edit-profile-post-modal')">Cancel</button>
+                    <button class="edit-modal-btn edit-modal-btn-save" id="save-edit-btn" onclick="saveProfilePostEdit('${postId}')">Save Changes</button>
+                </div>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    // Store original media URL for comparison
+    modal.dataset.originalMediaUrl = currentMediaUrl;
+    modal.dataset.newMediaFile = '';
+
+    // Focus on textarea
+    setTimeout(() => {
+        const textarea = document.getElementById('edit-profile-post-content');
+        textarea.focus();
+        textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+    }, 100);
+
+    // Close on overlay click
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            closeProfilePostModal('edit-profile-post-modal');
+        }
+    });
+}
+
+// Handle media selection in edit modal
+let editMediaFile = null;
+function handleEditMediaSelect(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    editMediaFile = file;
+    const previewContainer = document.getElementById('edit-media-preview');
+    const isVideo = file.type.startsWith('video/');
+    const url = URL.createObjectURL(file);
+
+    previewContainer.innerHTML = `
+        ${isVideo
+            ? `<video src="${url}" controls></video>`
+            : `<img src="${url}" alt="New media">`
+        }
+        <button class="remove-media-btn" onclick="removeEditMedia()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+        </button>
+    `;
+    previewContainer.style.display = 'block';
+
+    // Update button text
+    const addMediaSpan = document.querySelector('.add-media-btn span');
+    if (addMediaSpan) addMediaSpan.textContent = 'Change Media';
+}
+
+// Remove media in edit modal
+function removeEditMedia() {
+    editMediaFile = null;
+    const previewContainer = document.getElementById('edit-media-preview');
+    previewContainer.innerHTML = '';
+    previewContainer.style.display = 'none';
+
+    // Reset file input
+    const input = document.getElementById('edit-media-input');
+    if (input) input.value = '';
+
+    // Update button text
+    const addMediaSpan = document.querySelector('.add-media-btn span');
+    if (addMediaSpan) addMediaSpan.textContent = 'Add Media';
+
+    // Mark media as removed
+    const modal = document.getElementById('edit-profile-post-modal');
+    if (modal) modal.dataset.mediaRemoved = 'true';
+}
+
+// Save post edit
+async function saveProfilePostEdit(postId) {
+    const content = document.getElementById('edit-profile-post-content')?.value.trim();
+    if (!content) {
+        showProfileToast('Post content cannot be empty', 'error');
+        return;
+    }
+
+    const saveBtn = document.getElementById('save-edit-btn');
+    if (saveBtn) {
+        saveBtn.disabled = true;
+        saveBtn.textContent = 'Saving...';
+    }
+
+    try {
+        const modal = document.getElementById('edit-profile-post-modal');
+        const mediaRemoved = modal?.dataset.mediaRemoved === 'true';
+
+        // Prepare update data
+        const updateData = { content };
+
+        // Handle media changes
+        if (editMediaFile) {
+            // Upload new media
+            const formData = new FormData();
+            formData.append('media', editMediaFile);
+
+            const uploadResponse = await fetch('/api/posts/upload-media', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                },
+                body: formData
+            });
+
+            if (uploadResponse.ok) {
+                const uploadResult = await uploadResponse.json();
+                updateData.media_urls = [uploadResult.url];
+                updateData.media_type = editMediaFile.type.startsWith('video/') ? 'video' : 'image';
+            }
+        } else if (mediaRemoved) {
+            // Media was removed
+            updateData.media_urls = [];
+            updateData.media_type = null;
+        }
+
+        await API.put(`/posts/${postId}`, updateData);
+
+        // Update the post content in the DOM
+        const postCard = document.querySelector(`[data-post-id="${postId}"]`);
+        const contentEl = postCard?.querySelector('.profile-post-content p');
+        if (contentEl) {
+            contentEl.innerHTML = formatPostContent(content);
+        }
+
+        // Update media if changed
+        const mediaContainer = postCard?.querySelector('.profile-post-media');
+        if (editMediaFile && updateData.media_urls?.length > 0) {
+            const isVideo = editMediaFile.type.startsWith('video/');
+            if (mediaContainer) {
+                mediaContainer.innerHTML = isVideo
+                    ? `<video controls src="${updateData.media_urls[0]}"></video>`
+                    : `<img src="${updateData.media_urls[0]}" alt="Post media">`;
+            } else {
+                // Add new media container
+                const contentDiv = postCard?.querySelector('.profile-post-content');
+                if (contentDiv) {
+                    const newMediaDiv = document.createElement('div');
+                    newMediaDiv.className = 'profile-post-media';
+                    newMediaDiv.innerHTML = isVideo
+                        ? `<video controls src="${updateData.media_urls[0]}"></video>`
+                        : `<img src="${updateData.media_urls[0]}" alt="Post media">`;
+                    contentDiv.appendChild(newMediaDiv);
+                }
+            }
+        } else if (mediaRemoved && mediaContainer) {
+            mediaContainer.remove();
+        }
+
+        closeProfilePostModal('edit-profile-post-modal');
+        showProfileToast('Post updated!', 'success');
+        editMediaFile = null;
+    } catch (error) {
+        console.error('Error updating post:', error);
+        showProfileToast('Failed to update post', 'error');
+        if (saveBtn) {
+            saveBtn.disabled = false;
+            saveBtn.textContent = 'Save Changes';
+        }
+    }
+}
+
+// Pin post
+async function pinProfilePost(postId) {
+    document.querySelector('.profile-post-dropdown-menu')?.remove();
+
+    try {
+        await API.post(`/posts/${postId}/pin`);
+        showProfileToast('Post pinned to your profile!', 'success');
+
+        // Reload posts to show pinned at top
+        profilePostsOffset = 0;
+        await loadProfilePosts(false);
+    } catch (error) {
+        console.error('Error pinning post:', error);
+        showProfileToast('Failed to pin post', 'error');
+    }
+}
+
+// Unpin post
+async function unpinProfilePost(postId) {
+    document.querySelector('.profile-post-dropdown-menu')?.remove();
+
+    try {
+        await API.delete(`/posts/${postId}/pin`);
+        showProfileToast('Post unpinned', 'success');
+
+        // Reload posts
+        profilePostsOffset = 0;
+        await loadProfilePosts(false);
+    } catch (error) {
+        console.error('Error unpinning post:', error);
+        showProfileToast('Failed to unpin post', 'error');
+    }
+}
+
+// Delete post
+async function deleteProfilePost(postId) {
+    document.querySelector('.profile-post-dropdown-menu')?.remove();
+
+    // Create delete confirmation modal
+    const modal = document.createElement('div');
+    modal.className = 'profile-post-modal-overlay';
+    modal.id = 'delete-profile-post-modal';
+    modal.innerHTML = `
+        <div class="profile-post-modal">
+            <div class="delete-modal">
+                <div class="delete-modal-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                        <line x1="10" y1="11" x2="10" y2="17"></line>
+                        <line x1="14" y1="11" x2="14" y2="17"></line>
+                    </svg>
+                </div>
+                <h3>Delete Post</h3>
+                <p>Are you sure you want to delete this post? This action cannot be undone.</p>
+                <div class="delete-modal-actions">
+                    <button class="delete-modal-btn delete-modal-btn-cancel" onclick="closeProfilePostModal('delete-profile-post-modal')">Cancel</button>
+                    <button class="delete-modal-btn delete-modal-btn-delete" onclick="confirmDeleteProfilePost('${postId}')">Delete</button>
+                </div>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    // Close on overlay click
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            closeProfilePostModal('delete-profile-post-modal');
+        }
+    });
+}
+
+// Confirm delete post
+async function confirmDeleteProfilePost(postId) {
+    const deleteBtn = document.querySelector('.delete-modal-btn-delete');
+    if (deleteBtn) {
+        deleteBtn.disabled = true;
+        deleteBtn.textContent = 'Deleting...';
+    }
+
+    try {
+        await API.delete(`/posts/${postId}`);
+
+        // Remove post from DOM
+        const postCard = document.querySelector(`[data-post-id="${postId}"]`);
+        // Also remove pinned badge if exists (it's a sibling before the article)
+        const pinnedBadge = postCard?.previousElementSibling;
+        if (pinnedBadge?.classList.contains('profile-post-pinned-badge')) {
+            pinnedBadge.remove();
+        }
+        postCard?.remove();
+
+        closeProfilePostModal('delete-profile-post-modal');
+        showProfileToast('Post deleted', 'success');
+
+        // Check if posts container is now empty
+        const container = document.getElementById('profilePostsContainer');
+        if (container && !container.querySelector('.profile-post-card')) {
+            container.innerHTML = `
+                <div class="profile-posts-empty">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                    <p>No posts yet</p>
+                </div>
+            `;
+            const loadMoreContainer = document.getElementById('loadMorePostsContainer');
+            if (loadMoreContainer) loadMoreContainer.style.display = 'none';
+        }
+    } catch (error) {
+        console.error('Error deleting post:', error);
+        showProfileToast('Failed to delete post', 'error');
+        if (deleteBtn) {
+            deleteBtn.disabled = false;
+            deleteBtn.textContent = 'Delete';
+        }
+    }
+}
+
+// Close modal utility
+function closeProfilePostModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        modal.remove();
+    }
+    editMediaFile = null;
+}
+
+// Toast notification for profile post actions
+function showProfileToast(message, type = 'info') {
+    // Remove existing toasts
+    document.querySelectorAll('.profile-toast').forEach(t => t.remove());
+
+    const toast = document.createElement('div');
+    toast.className = `profile-toast profile-toast-${type}`;
+    toast.innerHTML = `
+        <span>${message}</span>
+    `;
+    document.body.appendChild(toast);
+
+    // Trigger animation
+    setTimeout(() => toast.classList.add('show'), 10);
+
+    // Auto remove
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
+
+// Escape HTML utility
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}

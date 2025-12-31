@@ -197,14 +197,24 @@ async function showInfoFormModal() {
     // Parse existing positions into an array (handles both comma and slash separators)
     const existingPositions = profileData.position ? profileData.position.split(/[,\/]/).map(p => p.trim()).filter(p => p) : [];
 
-    // Parse height if exists (format: "6' 2\"")
+    // Parse height if exists - handles both string format "6' 2\"" and total inches (number or string)
     let heightFt = '';
     let heightIn = '';
     if (profileData.height) {
-        const heightMatch = profileData.height.match(/(\d+)'\s*(\d+)/);
-        if (heightMatch) {
-            heightFt = heightMatch[1];
-            heightIn = heightMatch[2];
+        if (typeof profileData.height === 'string' && profileData.height.includes("'")) {
+            // Parse from string format "6' 2\""
+            const heightMatch = profileData.height.match(/(\d+)'\s*(\d+)/);
+            if (heightMatch) {
+                heightFt = heightMatch[1];
+                heightIn = heightMatch[2];
+            }
+        } else {
+            // Convert from total inches (handles both number and string representation)
+            const totalInches = typeof profileData.height === 'number' ? profileData.height : parseInt(profileData.height);
+            if (!isNaN(totalInches) && totalInches > 0) {
+                heightFt = Math.floor(totalInches / 12);
+                heightIn = totalInches % 12;
+            }
         }
     }
 

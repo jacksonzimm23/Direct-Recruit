@@ -282,6 +282,77 @@ class Notification {
       relatedEntityType: 'post'
     });
   }
+
+  static async createShareNotification(postOwnerId, sharerUserId, sharerName, postId, shareType = 'repost') {
+    // Don't notify if sharing own post
+    if (postOwnerId === sharerUserId) return null;
+
+    // Check if notification exists within last hour
+    const exists = await this.exists({
+      userId: postOwnerId,
+      type: 'interaction',
+      relatedUserId: sharerUserId,
+      relatedEntityId: postId,
+      withinHours: 1
+    });
+
+    if (exists) return null;
+
+    const action = shareType === 'quote' ? 'quoted' : 'shared';
+
+    return this.create({
+      userId: postOwnerId,
+      type: 'interaction',
+      title: 'Post Shared',
+      message: `${sharerName} ${action} your post`,
+      relatedUserId: sharerUserId,
+      relatedEntityId: postId,
+      relatedEntityType: 'post'
+    });
+  }
+
+  static async createCommentLikeNotification(commentOwnerId, likerUserId, likerName, commentId, postId) {
+    // Don't notify if liking own comment
+    if (commentOwnerId === likerUserId) return null;
+
+    // Check if notification exists within last hour
+    const exists = await this.exists({
+      userId: commentOwnerId,
+      type: 'interaction',
+      relatedUserId: likerUserId,
+      relatedEntityId: commentId,
+      withinHours: 1
+    });
+
+    if (exists) return null;
+
+    return this.create({
+      userId: commentOwnerId,
+      type: 'interaction',
+      title: 'Comment Liked',
+      message: `${likerName} liked your comment`,
+      relatedUserId: likerUserId,
+      relatedEntityId: postId,
+      relatedEntityType: 'post'
+    });
+  }
+
+  static async createCommentReplyNotification(commentOwnerId, replierUserId, replierName, postId, replyPreview) {
+    // Don't notify if replying to own comment
+    if (commentOwnerId === replierUserId) return null;
+
+    const preview = replyPreview.length > 50 ? replyPreview.substring(0, 50) + '...' : replyPreview;
+
+    return this.create({
+      userId: commentOwnerId,
+      type: 'interaction',
+      title: 'New Reply',
+      message: `${replierName} replied to your comment: "${preview}"`,
+      relatedUserId: replierUserId,
+      relatedEntityId: postId,
+      relatedEntityType: 'post'
+    });
+  }
 }
 
 module.exports = Notification;
