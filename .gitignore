@@ -1,3 +1,32 @@
-frontend/nul
+# Environment files - NEVER commit these
+.env
+.env.local
+.env.production
+*.env
+
+# Node modules
+node_modules/
+
+# Build outputs
+dist/
+build/
+
+# OS files
+.DS_Store
+Thumbs.db
 nul
-frontend/nul
+
+# IDE
+.vscode/
+.idea/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Uploads (if local)
+uploads/
+
+# Temporary files
+*.tmp
+*.temp

@@ -84,12 +84,14 @@
                             id="username"
                             name="username"
                             required
+                            maxlength="20"
                             pattern="[a-z0-9_]+"
                             title="Only lowercase letters, numbers, and underscores allowed"
                             placeholder="coach_smith"
                         >
-                        <small class="form-hint" id="usernameHint">Choose a unique username (letters, numbers, underscore only)</small>
+                        <small class="form-hint" id="usernameHint">Choose a unique username (letters, numbers, underscore only) - <span id="usernameCharCount">0</span>/20</small>
                         <small class="form-error" id="usernameError" style="display: none; color: #ff6b6b; font-size: 0.875rem; margin-top: 0.25rem;">This username is already taken</small>
+                        <small class="form-error" id="usernameLengthError" style="display: none; color: #ff6b6b; font-size: 0.875rem; margin-top: 0.25rem;">Username cannot exceed 20 characters</small>
                     </div>
 
                     <div class="form-group">

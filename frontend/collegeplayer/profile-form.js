@@ -149,27 +149,50 @@ document.addEventListener('DOMContentLoaded', async function() {
     // Username availability validation
     const usernameInput = document.getElementById('username');
     const usernameError = document.getElementById('usernameError');
+    const usernameLengthError = document.getElementById('usernameLengthError');
     const usernameHint = document.getElementById('usernameHint');
+    const usernameCharCount = document.getElementById('usernameCharCount');
     let usernameCheckTimeout;
     let isUsernameAvailable = false;
 
     if (usernameInput && usernameError) {
         usernameInput.addEventListener('input', function() {
-            // Convert to lowercase automatically
-            this.value = this.value.toLowerCase();
+            // Convert to lowercase and remove invalid characters
+            this.value = this.value.toLowerCase().replace(/[^a-z0-9_]/g, '');
             const username = this.value.trim();
+
+            // Update character count
+            if (usernameCharCount) {
+                usernameCharCount.textContent = username.length;
+                // Show warning color when approaching limit
+                if (username.length >= 18) {
+                    usernameCharCount.style.color = username.length >= 20 ? '#ff6b6b' : '#ffa500';
+                } else {
+                    usernameCharCount.style.color = '';
+                }
+            }
 
             // Clear previous timeout
             clearTimeout(usernameCheckTimeout);
 
             // Reset error state
             usernameError.style.display = 'none';
+            if (usernameLengthError) usernameLengthError.style.display = 'none';
             usernameHint.style.display = 'block';
             usernameInput.style.borderColor = '';
             isUsernameAvailable = false;
 
+            // Check for max length
+            if (username.length >= 20) {
+                if (usernameLengthError) {
+                    usernameLengthError.style.display = 'block';
+                    usernameHint.style.display = 'none';
+                }
+                usernameInput.style.borderColor = '#ff6b6b';
+            }
+
             // Only check if username is not empty and matches pattern (lowercase only)
-            if (username.length >= 3 && /^[a-z0-9_]+$/.test(username)) {
+            if (username.length >= 3 && username.length <= 20 && /^[a-z0-9_]+$/.test(username)) {
                 // Debounce API call by 500ms
                 usernameCheckTimeout = setTimeout(async () => {
                     try {
@@ -189,6 +212,8 @@ document.addEventListener('DOMContentLoaded', async function() {
                         }
                     } catch (error) {
                         console.error('Error checking username:', error);
+                        // On error, assume available to let user proceed
+                        isUsernameAvailable = true;
                     }
                 }, 500);
             }

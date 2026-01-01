@@ -3,6 +3,7 @@ const router = express.Router();
 const User = require('../models/User');
 const PlayerProfile = require('../models/PlayerProfile');
 const CoachProfile = require('../models/CoachProfile');
+const OtherProfile = require('../models/OtherProfile');
 const { generateToken } = require('../utils/jwt');
 const { validateRegistration, validatePlayerProfile, validateCoachProfile, handleValidationErrors } = require('../middleware/validation');
 const { authMiddleware } = require('../middleware/auth');
@@ -83,13 +84,27 @@ router.post('/verify-email', authLimiter, async (req, res) => {
 
     await cognito.confirmSignUp(email, code);
 
-    // Update local user record
+    // Update local user record and auto-login
     const user = await User.findByEmail(email);
     if (user) {
       await User.markEmailVerified(user.id);
-    }
 
-    res.json({ message: 'Email verified successfully' });
+      // Generate token for auto-login
+      const token = generateToken(user.id, user.role);
+
+      res.json({
+        message: 'Email verified successfully',
+        token,
+        user: {
+          id: user.id,
+          email: user.email,
+          role: user.role,
+          profile_completed: user.profile_completed
+        }
+      });
+    } else {
+      res.json({ message: 'Email verified successfully' });
+    }
   } catch (error) {
     console.error('Verification error:', error);
     if (error.name === 'CodeMismatchException') {
@@ -246,6 +261,8 @@ router.get('/me', authMiddleware, async (req, res) => {
       // A coach is considered a college coach if they have a college_division
       // High school coaches won't have a division (FBS, FCS, D2, D3, NAIA, JUCO)
       isCollegeCoach = profile && profile.college_division && profile.college_division.trim() !== '' ? true : false;
+    } else if (req.user.role === 'other') {
+      profile = await OtherProfile.findByUserId(req.userId);
     }
 
     // Convert S3 key to signed URL for profile image

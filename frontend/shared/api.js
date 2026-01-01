@@ -133,12 +133,23 @@ const profileAPI = {
         });
     },
 
+    createOtherProfile: async (profileData) => {
+        return await apiRequest('/profile/other', {
+            method: 'POST',
+            body: JSON.stringify(profileData)
+        });
+    },
+
     getPlayerProfile: async (userId) => {
         return await apiRequest(`/profile/player/${userId}`);
     },
 
     getCoachProfile: async (userId) => {
         return await apiRequest(`/profile/coach/${userId}`);
+    },
+
+    getOtherProfile: async (userId) => {
+        return await apiRequest(`/profile/other/${userId}`);
     },
 
     searchPlayers: async (filters) => {

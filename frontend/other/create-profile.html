@@ -45,13 +45,13 @@
 
             <div class="form-header">
                 <h1>Create Your Account</h1>
-                <p>Join Direct Recruit as a team page, reporter, agent, or recruiting professional.</p>
+                <p>Join Direct Recruit as a team page, reporter, agent, NIL sponsor, or recruiting professional.</p>
             </div>
 
             <form id="otherProfileForm" class="profile-form">
-                <!-- Account Information -->
+                <!-- Personal Information -->
                 <div class="form-section">
-                    <h2 class="section-title">Account Information</h2>
+                    <h2 class="section-title">Personal Information</h2>
 
                     <div class="form-row">
                         <div class="form-group">
@@ -84,158 +84,99 @@
                             id="username"
                             name="username"
                             required
-                            placeholder="@username"
-                            pattern="^@?[a-zA-Z0-9_]{3,20}$"
+                            maxlength="20"
+                            pattern="[a-zA-Z0-9_]+"
+                            title="Only letters, numbers, and underscores allowed"
+                            placeholder="johnsmith_26"
                         >
-                        <small class="form-hint">3-20 characters, letters, numbers, and underscores only</small>
+                        <small class="form-hint" id="usernameHint">Choose a unique username (letters, numbers, underscore only) - <span id="usernameCharCount">0</span>/20</small>
+                        <small class="form-error" id="usernameError" style="display: none;">This username is already taken</small>
+                        <small class="form-error" id="usernameLengthError" style="display: none;">Username cannot exceed 20 characters</small>
                     </div>
 
                     <div class="form-group">
-                        <label for="email">Email Address <span class="required">*</span></label>
+                        <label for="email">Email <span class="required">*</span></label>
                         <input
                             type="email"
                             id="email"
                             name="email"
                             required
-                            placeholder="your.email@example.com"
+                            placeholder="john.smith@email.com"
                         >
+                        <small class="form-hint" id="emailHint">Enter your email address</small>
+                        <small class="form-error" id="emailError" style="display: none;">An account with this email already exists</small>
                     </div>
 
                     <div class="form-group">
-                        <label for="phone">Phone Number</label>
+                        <label for="password">Password <span class="required">*</span></label>
                         <input
-                            type="tel"
-                            id="phone"
-                            name="phone"
-                            placeholder="(555) 123-4567"
-                        >
-                        <small class="form-hint">Optional - for account recovery</small>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="password">Password <span class="required">*</span></label>
-                            <input
-                                type="password"
-                                id="password"
-                                name="password"
-                                required
-                                placeholder="Create a strong password"
-                                minlength="8"
-                            >
-                            <small class="form-hint">At least 8 characters</small>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="confirmPassword">Confirm Password <span class="required">*</span></label>
-                            <input
-                                type="password"
-                                id="confirmPassword"
-                                name="confirmPassword"
-                                required
-                                placeholder="Re-enter your password"
-                            >
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="dateOfBirth">Date of Birth <span class="required">*</span></label>
-                        <input
-                            type="date"
-                            id="dateOfBirth"
-                            name="dateOfBirth"
+                            type="password"
+                            id="password"
+                            name="password"
                             required
+                            minlength="8"
+                            placeholder="Create a strong password"
                         >
-                        <small class="form-hint">You must be 13 years or older</small>
+                        <div class="password-checklist" id="passwordChecklist">
+                            <div class="checklist-item" id="checkLength">
+                                <span class="check-icon">&#10005;</span>
+                                <span>At least 8 characters</span>
+                            </div>
+                            <div class="checklist-item" id="checkUppercase">
+                                <span class="check-icon">&#10005;</span>
+                                <span>One uppercase letter (A-Z)</span>
+                            </div>
+                            <div class="checklist-item" id="checkLowercase">
+                                <span class="check-icon">&#10005;</span>
+                                <span>One lowercase letter (a-z)</span>
+                            </div>
+                            <div class="checklist-item" id="checkNumber">
+                                <span class="check-icon">&#10005;</span>
+                                <span>One number (0-9)</span>
+                            </div>
+                            <div class="checklist-item" id="checkSpecial">
+                                <span class="check-icon">&#10005;</span>
+                                <span>One special character (!@#$%^&*)</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="confirmPassword">Confirm Password <span class="required">*</span></label>
+                        <input
+                            type="password"
+                            id="confirmPassword"
+                            name="confirmPassword"
+                            required
+                            minlength="8"
+                            placeholder="Re-enter password"
+                        >
+                        <div id="passwordMatch" class="password-match" style="display: none;"></div>
                     </div>
                 </div>
 
-                <!-- User Type -->
+                <!-- NIL Brand Section -->
                 <div class="form-section">
-                    <h2 class="section-title">User Type</h2>
+                    <h2 class="section-title">Account Type</h2>
 
-                    <div class="form-group">
-                        <label for="userType">I am a <span class="required">*</span></label>
-                        <select id="userType" name="userType" required>
-                            <option value="">Select your role</option>
-                            <option value="team-page">Team Page Administrator</option>
-                            <option value="reporter">Sports Reporter/Journalist</option>
-                            <option value="agent">Sports Agent</option>
-                            <option value="recruiter">Recruiting Professional</option>
-                            <option value="scout">Scout</option>
-                            <option value="media">Media Professional</option>
-                            <option value="other">Other</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group" id="organizationGroup">
-                        <label for="organization">Organization/Company</label>
-                        <input
-                            type="text"
-                            id="organization"
-                            name="organization"
-                            placeholder="Your organization or company name"
-                        >
-                        <small class="form-hint">Optional - helps build credibility</small>
-                    </div>
-                </div>
-
-                <!-- Bio -->
-                <div class="form-section">
-                    <h2 class="section-title">About You</h2>
-
-                    <div class="form-group">
-                        <label for="bio">Bio</label>
-                        <textarea
-                            id="bio"
-                            name="bio"
-                            rows="4"
-                            placeholder="Tell us a bit about yourself and what you do..."
-                            maxlength="300"
-                        ></textarea>
-                        <small class="form-hint"><span id="bioCount">0</span>/300 characters</small>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="location">Location</label>
-                        <input
-                            type="text"
-                            id="location"
-                            name="location"
-                            placeholder="City, State"
-                        >
-                    </div>
-
-                    <div class="form-group">
-                        <label for="website">Website</label>
-                        <input
-                            type="url"
-                            id="website"
-                            name="website"
-                            placeholder="https://yourwebsite.com"
-                        >
-                    </div>
-                </div>
-
-                <!-- Terms and Privacy -->
-                <div class="form-section">
                     <div class="checkbox-group">
                         <label class="checkbox-label">
-                            <input type="checkbox" id="agreeTerms" name="agreeTerms" required>
+                            <input type="checkbox" id="isNilBrand" name="isNilBrand">
                             <span class="checkbox-text">
-                                I agree to the <a href="#" target="_blank">Terms of Service</a> and
-                                <a href="#" target="_blank">Privacy Policy</a> <span class="required">*</span>
+                                I am an NIL Brand
                             </span>
                         </label>
                     </div>
 
-                    <div class="checkbox-group">
-                        <label class="checkbox-label">
-                            <input type="checkbox" id="emailUpdates" name="emailUpdates">
-                            <span class="checkbox-text">
-                                Send me updates and news about Direct Recruit
-                            </span>
-                        </label>
+                    <div class="form-group" id="companyNameGroup" style="display: none;">
+                        <label for="companyName">Company Name <span class="required">*</span></label>
+                        <input
+                            type="text"
+                            id="companyName"
+                            name="companyName"
+                            placeholder="Your company or brand name"
+                        >
+                        <small class="form-hint">Enter your NIL brand or company name</small>
                     </div>
                 </div>
 
@@ -255,6 +196,7 @@
         </div>
     </section>
 
+    <script src="../shared/api.js"></script>
     <script src="other-profile-form.js"></script>
 </body>
 </html>

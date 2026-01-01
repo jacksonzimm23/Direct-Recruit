@@ -16,12 +16,25 @@ class User {
   }
 
   static async findById(id) {
-    const result = await pool.query('SELECT id, email, role, created_at, email_verified, profile_completed, is_active FROM users WHERE id = $1', [id]);
+    const result = await pool.query('SELECT id, email, username, role, created_at, email_verified, profile_completed, is_active FROM users WHERE id = $1', [id]);
     return result.rows[0];
   }
 
   static async findByCognitoSub(cognitoSub) {
     const result = await pool.query('SELECT * FROM users WHERE cognito_sub = $1', [cognitoSub]);
+    return result.rows[0];
+  }
+
+  static async findByUsername(username) {
+    const result = await pool.query('SELECT * FROM users WHERE username = $1', [username]);
+    return result.rows[0];
+  }
+
+  static async updateUsername(userId, username) {
+    const result = await pool.query(
+      'UPDATE users SET username = $1 WHERE id = $2 RETURNING *',
+      [username, userId]
+    );
     return result.rows[0];
   }
 

@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const PlayerProfile = require('../models/PlayerProfile');
 const CoachProfile = require('../models/CoachProfile');
+const OtherProfile = require('../models/OtherProfile');
 const User = require('../models/User');
 const ProfileView = require('../models/ProfileView');
 const { authMiddleware, requireRole } = require('../middleware/auth');
@@ -40,8 +41,16 @@ router.post('/player', authMiddleware, requireRole('player'), validatePlayerProf
     let profile;
     if (existingProfile) {
       profile = await PlayerProfile.update(req.userId, req.body);
+      // Update username in users table if it changed
+      if (req.body.username) {
+        await User.updateUsername(req.userId, req.body.username);
+      }
     } else {
       profile = await PlayerProfile.create(req.userId, req.body);
+      // Save username to users table
+      if (req.body.username) {
+        await User.updateUsername(req.userId, req.body.username);
+      }
       await User.markProfileCompleted(req.userId);
     }
 
@@ -68,8 +77,15 @@ router.put('/', authMiddleware, async (req, res) => {
       profile = await PlayerProfile.update(req.userId, req.body);
     } else if (user.role === 'coach') {
       profile = await CoachProfile.update(req.userId, req.body);
+    } else if (user.role === 'other') {
+      profile = await OtherProfile.update(req.userId, req.body);
     } else {
       return res.status(400).json({ error: 'Invalid user role' });
+    }
+
+    // Update username in users table if it changed
+    if (req.body.username) {
+      await User.updateUsername(req.userId, req.body.username);
     }
 
     res.json({
@@ -91,8 +107,16 @@ router.post('/coach', authMiddleware, requireRole('coach'), validateCoachProfile
     let profile;
     if (existingProfile) {
       profile = await CoachProfile.update(req.userId, req.body);
+      // Update username in users table if it changed
+      if (req.body.username) {
+        await User.updateUsername(req.userId, req.body.username);
+      }
     } else {
       profile = await CoachProfile.create(req.userId, req.body);
+      // Save username to users table
+      if (req.body.username) {
+        await User.updateUsername(req.userId, req.body.username);
+      }
       await User.markProfileCompleted(req.userId);
     }
 
@@ -103,6 +127,53 @@ router.post('/coach', authMiddleware, requireRole('coach'), validateCoachProfile
   } catch (error) {
     console.error('Coach profile error:', error);
     res.status(500).json({ error: 'Failed to save profile' });
+  }
+});
+
+// Create/Update Other Profile
+router.post('/other', authMiddleware, requireRole('other'), async (req, res) => {
+  try {
+    const existingProfile = await OtherProfile.findByUserId(req.userId);
+
+    let profile;
+    if (existingProfile) {
+      profile = await OtherProfile.update(req.userId, req.body);
+      // Update username in users table if it changed
+      if (req.body.username) {
+        await User.updateUsername(req.userId, req.body.username);
+      }
+    } else {
+      profile = await OtherProfile.create(req.userId, req.body);
+      // Save username to users table
+      if (req.body.username) {
+        await User.updateUsername(req.userId, req.body.username);
+      }
+      await User.markProfileCompleted(req.userId);
+    }
+
+    res.json({
+      message: existingProfile ? 'Profile updated' : 'Profile created',
+      profile
+    });
+  } catch (error) {
+    console.error('Other profile error:', error);
+    res.status(500).json({ error: 'Failed to save profile' });
+  }
+});
+
+// Get Other Profile
+router.get('/other/:userId', authMiddleware, async (req, res) => {
+  try {
+    let profile = await OtherProfile.findByUserId(req.params.userId);
+    if (!profile) {
+      return res.status(404).json({ error: 'Profile not found' });
+    }
+    // Convert S3 key to signed URL
+    profile = await addSignedUrlToProfile(profile);
+    res.json({ profile });
+  } catch (error) {
+    console.error('Get other profile error:', error);
+    res.status(500).json({ error: 'Failed to fetch profile' });
   }
 });
 
@@ -280,21 +351,17 @@ router.get('/check-username/:username', async (req, res) => {
   try {
     const { username } = req.params;
 
-    // Check in both player and coach profiles
-    const [playerProfile, coachProfile] = await Promise.all([
-      PlayerProfile.findByUsername(username),
-      CoachProfile.findByUsername(username)
-    ]);
-
-    const isAvailable = !playerProfile && !coachProfile;
+    // Check in users table (single source of truth for usernames)
+    const existingUser = await User.findByUsername(username);
 
     res.json({
-      available: isAvailable,
+      available: !existingUser,
       username: username
     });
   } catch (error) {
     console.error('Check username error:', error);
-    res.status(500).json({ error: 'Failed to check username' });
+    // Return available: true on error so user can proceed (server-side validation will still happen)
+    res.json({ available: true, username: req.params.username });
   }
 });
 
@@ -331,6 +398,12 @@ router.get('/username/:username', authMiddleware, async (req, res) => {
     if (profile) {
       profile = await addSignedUrlToProfile(profile);
       return res.json({ profile, type: 'coach' });
+    }
+
+    profile = await OtherProfile.findByUsername(username);
+    if (profile) {
+      profile = await addSignedUrlToProfile(profile);
+      return res.json({ profile, type: 'other' });
     }
 
     res.status(404).json({ error: 'Profile not found' });

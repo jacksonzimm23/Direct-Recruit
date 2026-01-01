@@ -3,7 +3,7 @@ const { body, validationResult } = require('express-validator');
 const validateRegistration = [
   body('email').isEmail().normalizeEmail().withMessage('Valid email required'),
   body('password').isLength({ min: 8 }).withMessage('Password must be at least 8 characters'),
-  body('role').isIn(['player', 'coach']).withMessage('Role must be player or coach'),
+  body('role').isIn(['player', 'coach', 'other']).withMessage('Role must be player, coach, or other'),
 ];
 
 const validatePlayerProfile = [

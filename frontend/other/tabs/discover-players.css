@@ -1,0 +1,599 @@
+/* Discover Players Specific Styles */
+
+/* Override main-content to span full width */
+.main-content {
+    grid-column: 2 / -1 !important;
+}
+
+/* Content Header */
+.content-header {
+    padding: 1.5rem 1.5rem 0.5rem;
+}
+
+.content-header h1 {
+    font-size: 1.8rem;
+    font-weight: 900;
+    margin-bottom: 0;
+}
+
+/* Discover Sections */
+.discover-section {
+    margin-bottom: 0;
+}
+
+.section-title-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 1.5rem 1.5rem;
+}
+
+.section-title-sub {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--white);
+    margin: 0;
+}
+
+.section-bullet {
+    color: rgba(254, 252, 251, 0.5);
+    font-size: 0.8rem;
+}
+
+.section-subtitle {
+    font-size: 1rem;
+    color: rgba(254, 252, 251, 0.7);
+    margin: 0;
+}
+
+/* Filters Section */
+.filters-section {
+    padding: 1.5rem;
+    background: rgba(254, 252, 251, 0.02);
+    border-bottom: 1px solid rgba(18, 130, 162, 0.2);
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    align-items: flex-end;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    flex: 1;
+    min-width: 150px;
+}
+
+.filter-group label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: rgba(254, 252, 251, 0.7);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.filter-select {
+    background: rgba(254, 252, 251, 0.05);
+    border: 1px solid rgba(18, 130, 162, 0.3);
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    color: var(--white);
+    font-size: 0.95rem;
+    font-family: 'Inter', sans-serif;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.filter-select:focus {
+    outline: none;
+    border-color: var(--cerulean);
+    background: rgba(254, 252, 251, 0.08);
+}
+
+.filter-select option {
+    background: var(--oxford-blue);
+    color: var(--white);
+}
+
+.btn-reset-filters {
+    background: transparent;
+    border: 1px solid rgba(18, 130, 162, 0.3);
+    color: var(--cerulean);
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: 'Inter', sans-serif;
+    white-space: nowrap;
+}
+
+.btn-reset-filters:hover {
+    background: rgba(18, 130, 162, 0.1);
+    border-color: var(--cerulean);
+}
+
+/* Coaches Grid */
+.coaches-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
+    padding: 2rem 1.5rem;
+}
+
+/* Coach Cards */
+.coach-card {
+    background: rgba(254, 252, 251, 0.03);
+    border: 1px solid rgba(18, 130, 162, 0.2);
+    border-radius: 16px;
+    padding: 1.5rem;
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+}
+
+.coach-card:hover {
+    transform: translateY(-4px);
+    border-color: var(--cerulean);
+    background: rgba(254, 252, 251, 0.05);
+    box-shadow: 0 8px 24px rgba(18, 130, 162, 0.2);
+}
+
+.coach-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+}
+
+.coach-avatar-large {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: rgba(255, 107, 53, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 3px solid rgba(255, 107, 53, 0.4);
+}
+
+.coach-avatar-large svg {
+    width: 40px;
+    height: 40px;
+    color: var(--accent-orange);
+}
+
+.coach-avatar-large .avatar-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+}
+
+.coach-badge {
+    background: var(--cerulean);
+    color: var(--white);
+    padding: 0.4rem 0.8rem;
+    border-radius: 50px;
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+
+.coach-name {
+    font-size: 1.3rem;
+    font-weight: 800;
+    color: var(--white);
+    margin: 0.5rem 0 0.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.verified-badge {
+    width: 18px;
+    height: 18px;
+    color: var(--cerulean);
+    flex-shrink: 0;
+}
+
+.coach-position {
+    font-size: 0.95rem;
+    color: var(--accent-orange);
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+.coach-school {
+    background: rgba(18, 130, 162, 0.1);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.school-name {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--white);
+    margin-bottom: 0.25rem;
+}
+
+.school-division {
+    font-size: 0.85rem;
+    color: rgba(254, 252, 251, 0.7);
+}
+
+.coach-recruiting {
+    margin-bottom: 1rem;
+}
+
+.recruiting-label {
+    font-size: 0.85rem;
+    color: rgba(254, 252, 251, 0.6);
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+}
+
+.position-tags {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.position-tag {
+    background: rgba(255, 107, 53, 0.15);
+    color: var(--accent-orange);
+    padding: 0.35rem 0.65rem;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    border: 1px solid rgba(255, 107, 53, 0.3);
+}
+
+.btn-follow-coach {
+    width: 100%;
+    background: var(--accent-orange);
+    color: var(--white);
+    border: none;
+    padding: 0.85rem;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-family: 'Inter', sans-serif;
+    margin-top: auto;
+}
+
+.btn-follow-coach:hover {
+    background: #ff7d4d;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(255, 107, 53, 0.4);
+}
+
+.btn-view-profile-coach {
+    width: 100%;
+    background: var(--accent-orange);
+    color: var(--white);
+    border: none;
+    padding: 0.85rem;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-family: 'Inter', sans-serif;
+    margin-top: auto;
+}
+
+.btn-view-profile-coach:hover {
+    background: #ff7d4d;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(255, 107, 53, 0.4);
+}
+
+/* Players Grid */
+.players-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
+    padding: 2rem 1.5rem;
+}
+
+.player-card {
+    background: rgba(254, 252, 251, 0.03);
+    border: 1px solid rgba(18, 130, 162, 0.2);
+    border-radius: 16px;
+    padding: 1.5rem;
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+}
+
+.player-card:hover {
+    transform: translateY(-4px);
+    border-color: var(--cerulean);
+    background: rgba(254, 252, 251, 0.05);
+    box-shadow: 0 8px 24px rgba(18, 130, 162, 0.2);
+}
+
+.player-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+}
+
+.player-avatar-large {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: rgba(18, 130, 162, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 3px solid rgba(18, 130, 162, 0.4);
+}
+
+.player-avatar-large svg {
+    width: 40px;
+    height: 40px;
+    color: var(--cerulean);
+}
+
+.player-rating {
+    background: rgba(255, 107, 53, 0.15);
+    color: var(--accent-orange);
+    padding: 0.4rem 0.8rem;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 700;
+}
+
+.player-badge {
+    background: var(--cerulean);
+    color: var(--white);
+    padding: 0.4rem 0.8rem;
+    border-radius: 50px;
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+
+.player-school {
+    font-size: 0.9rem;
+    color: rgba(254, 252, 251, 0.6);
+    margin-bottom: 0.75rem;
+}
+
+.detail-icon {
+    width: 14px;
+    height: 14px;
+    margin-right: 0.4rem;
+    flex-shrink: 0;
+}
+
+.no-results-message {
+    color: rgba(254, 252, 251, 0.6);
+    padding: 2rem;
+    text-align: center;
+    grid-column: 1 / -1;
+}
+
+.player-name {
+    font-size: 1.3rem;
+    font-weight: 800;
+    color: var(--white);
+    margin: 0.5rem 0 0.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.player-position {
+    font-size: 0.95rem;
+    color: var(--cerulean);
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+/* Position Badges */
+.player-positions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.position-badge {
+    background: var(--cerulean);
+    color: var(--white);
+    padding: 0.35rem 0.75rem;
+    border-radius: 50px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+
+/* Division Badge (for college player cards) */
+.division-badge {
+    background: var(--cerulean);
+    color: var(--white);
+    padding: 0.4rem 0.8rem;
+    border-radius: 50px;
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+
+/* Player School Box (for college players - matches coach card format) */
+.player-school-box {
+    background: rgba(18, 130, 162, 0.1);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.player-school-box .school-name {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--white);
+    margin-bottom: 0.25rem;
+}
+
+.player-school-box .school-division {
+    font-size: 0.85rem;
+    color: rgba(254, 252, 251, 0.7);
+}
+
+.player-details {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.detail-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    color: rgba(254, 252, 251, 0.8);
+}
+
+.detail-item svg {
+    width: 16px;
+    height: 16px;
+    color: var(--cerulean);
+    flex-shrink: 0;
+}
+
+/* Avatar Image */
+.player-avatar-large .avatar-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+}
+
+/* Offers Detail Styling */
+.offers-detail {
+    color: var(--accent-orange) !important;
+    font-weight: 600;
+}
+
+.offers-detail svg {
+    color: var(--accent-orange) !important;
+}
+
+.player-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    margin-bottom: 1rem;
+    padding: 1rem;
+    background: rgba(18, 130, 162, 0.1);
+    border-radius: 8px;
+}
+
+.stat-item {
+    text-align: center;
+}
+
+.stat-label {
+    font-size: 0.75rem;
+    color: rgba(254, 252, 251, 0.6);
+    margin-bottom: 0.25rem;
+}
+
+.stat-value {
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: var(--white);
+}
+
+.btn-view-profile {
+    background: var(--cerulean);
+    color: var(--white);
+    border: none;
+    padding: 0.85rem;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-family: 'Inter', sans-serif;
+    margin-top: auto;
+}
+
+.btn-view-profile:hover {
+    background: var(--accent-orange);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3);
+}
+
+/* Load More */
+.load-more-container {
+    padding: 2rem 1.5rem;
+    display: flex;
+    justify-content: center;
+    border-top: 1px solid rgba(18, 130, 162, 0.2);
+}
+
+/* Hide container when button is hidden */
+.load-more-container:has(.btn-load-more[style*="display: none"]),
+.load-more-container:empty {
+    display: none;
+    padding: 0;
+    border: none;
+}
+
+.btn-load-more {
+    background: rgba(18, 130, 162, 0.15);
+    color: var(--cerulean);
+    border: 1px solid rgba(18, 130, 162, 0.3);
+    padding: 1rem 2.5rem;
+    border-radius: 50px;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-family: 'Inter', sans-serif;
+}
+
+.btn-load-more:hover {
+    background: rgba(18, 130, 162, 0.25);
+    border-color: var(--cerulean);
+    transform: scale(1.05);
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+    .players-grid,
+    .coaches-grid {
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    }
+}
+
+@media (max-width: 768px) {
+    .filters-section {
+        flex-direction: column;
+    }
+
+    .filter-group {
+        width: 100%;
+    }
+
+    .players-grid,
+    .coaches-grid {
+        grid-template-columns: 1fr;
+        padding: 1rem;
+    }
+
+    .content-header {
+        padding: 1rem;
+    }
+
+    .content-header h1 {
+        font-size: 1.5rem;
+    }
+}

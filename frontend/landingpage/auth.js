@@ -81,6 +81,9 @@ if (document.getElementById('signinForm')) {
                     console.error('Failed to fetch profile:', profileError);
                     window.location.href = '../hscoach/mainpage-coach.html';
                 }
+            } else if (data.user.role === 'other') {
+                // Redirect to other user dashboard
+                window.location.href = '../other/mainpage-other.html';
             }
         } catch (error) {
             // Show inline error message instead of alert

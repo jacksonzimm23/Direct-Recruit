@@ -5,6 +5,17 @@ College Coach
 Small schools using AI to match to recruiting areas / hs pipelines
 Big schools know who the big time recruitsare , benefit more from transfer portal 
 
+
+My Recommendation
+Now: Finish RDS migration (Level 5) - this is your biggest security improvement
+Later: Add AWS Secrets Manager when you deploy to production
+Much later: Private VPC when you have paying customers and need compliance
+
+
+psql "host=direct-recruit-db.c6t02cia6f8p.us-east-1.rds.amazonaws.com user=dr_admin dbname=direct_recruit sslmode=require"
+SELECT pg_size_pretty(pg_database_size('direct_recruit'));
+
+
 Currently working on: psql to AWS, check .env for info 
 
 To do:
@@ -37,16 +48,19 @@ GEN AI IDEAS
 - COLLEGEPLAYER: NIL Opportunity Matcher 
 AI analyzes player's social following, engagement, sport, and location → recommends NIL deal types they'd qualify for and helps draft outreach pitches to brands.
 
+
+
+
+
 Feed
 - verified account icons (team logo)
-
-NEED TO ASK CLAUDE SECURITY, API, AND DATABASE QUESTIONS WHEN ALL DONE WITH FRONT AND BACKEND, HOW TO TURN TO MOBILE APP
-
 
 Use Amazon RDS for PostgreSQL (need to switch AWS when getting off local server)
 - security with psql stuff 
 
-Feed: migrate to Aurora PostgreSQL
+
+
+
 
 
 Prompt for view profiles and keeping that page highlighted:

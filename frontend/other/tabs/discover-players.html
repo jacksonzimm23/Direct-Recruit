@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Discover Players - Direct Recruit</title>
+    <link rel="stylesheet" href="../../landingpage/styles.css">
+    <link rel="stylesheet" href="../mainpage-other.css">
+    <link rel="stylesheet" href="discover-players.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+</head>
+<body class="dashboard-body">
+    <!-- Sidebar Toggle Button -->
+    <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle Sidebar">
+        <svg class="toggle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="3" y1="12" x2="21" y2="12"></line>
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <line x1="3" y1="18" x2="21" y2="18"></line>
+        </svg>
+    </button>
+
+    <!-- Main Container -->
+    <div class="dashboard-container" id="dashboardContainer">
+        <!-- Left Sidebar Navigation -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">
+                    <img src="https://res.cloudinary.com/dzmsj6nwv/image/upload/v1762928148/LogoPNG3_pofqrr.png" alt="Direct Recruit Logo" class="logo-icon">
+                    <div class="logo-text">
+                        <span class="logo-title">Direct Recruit</span>
+                        <span class="logo-subtitle">GET RECRUITED · THE RIGHT WAY</span>
+                    </div>
+                </div>
+            </div>
+
+            <nav class="sidebar-nav">
+                <!-- Navigation items injected by sidebar-nav.js -->
+            </nav>
+
+            <div class="sidebar-footer">
+                <!-- Footer content injected by sidebar-footer.js -->
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="content-header">
+                <h1>Discover</h1>
+            </div>
+
+            <!-- Find Coaches Section -->
+            <div class="discover-section">
+                <div class="section-title-row">
+                    <h2 class="section-title-sub">Find Coaches</h2>
+                    <span class="section-bullet">•</span>
+                    <p class="section-subtitle">Connect with college coaches looking for talent</p>
+                </div>
+
+                <!-- Coach Filters -->
+                <div class="filters-section">
+                    <div class="filter-group">
+                        <label>State</label>
+                        <select class="filter-select" id="coachStateFilter">
+                            <option value="">All States</option>
+                            <option value="AL">Alabama</option>
+                            <option value="AK">Alaska</option>
+                            <option value="AZ">Arizona</option>
+                            <option value="AR">Arkansas</option>
+                            <option value="CA">California</option>
+                            <option value="CO">Colorado</option>
+                            <option value="FL">Florida</option>
+                            <option value="GA">Georgia</option>
+                            <option value="IL">Illinois</option>
+                            <option value="IN">Indiana</option>
+                            <option value="MI">Michigan</option>
+                            <option value="NY">New York</option>
+                            <option value="NC">North Carolina</option>
+                            <option value="OH">Ohio</option>
+                            <option value="PA">Pennsylvania</option>
+                            <option value="TX">Texas</option>
+                        </select>
+                    </div>
+
+                    <div class="filter-group">
+                        <label>Division</label>
+                        <select class="filter-select" id="divisionFilter">
+                            <option value="">All Divisions</option>
+                            <option value="FBS">Division I (FBS)</option>
+                            <option value="FCS">Division I (FCS)</option>
+                            <option value="D2">Division II</option>
+                            <option value="D3">Division III</option>
+                            <option value="NAIA">NAIA</option>
+                            <option value="JUCO">Junior College</option>
+                        </select>
+                    </div>
+
+                    <button class="btn-reset-filters" id="resetCoachFilters">Reset Filters</button>
+                </div>
+
+                <!-- Coaches Grid -->
+                <div class="coaches-grid" id="coachesGrid">
+                    <!-- Coach cards will be loaded dynamically -->
+                </div>
+
+                <!-- Load More Button -->
+                <div class="load-more-container">
+                    <button class="btn-load-more" id="loadMoreCoachesBtn">Load More Coaches</button>
+                </div>
+            </div>
+
+            <!-- Connect with Players Section -->
+            <div class="discover-section">
+                <div class="section-title-row">
+                    <h2 class="section-title-sub">Connect with Players</h2>
+                    <span class="section-bullet">•</span>
+                    <p class="section-subtitle">Network with other athletes and build connections</p>
+                </div>
+
+                <!-- Players Grid -->
+                <div class="players-grid" id="playersGrid">
+                    <!-- Player cards will be loaded dynamically -->
+                </div>
+
+                <!-- Load More Button -->
+                <div class="load-more-container">
+                    <button class="btn-load-more" id="loadMorePlayersBtn">Load More Players</button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="../../shared/api.js"></script>
+    <script src="../sidebar-nav.js"></script>
+    <script src="../sidebar-footer.js"></script>
+    <script src="../mainpage-other.js"></script>
+    <script src="discover-players.js"></script>
+</body>
+</html>

@@ -24,7 +24,10 @@
       "Bash(cmd /c xcopy:*)",
       "Bash(grep:*)",
       "Bash(npm install:*)",
-      "Bash(node verify-stars.js:*)"
+      "Bash(node verify-stars.js:*)",
+      "Bash(powershell -Command \"Copy-Item -Path ''hsplayer\\\\mainpage-player.html'' -Destination ''other\\\\mainpage-other.html''\")",
+      "Bash(powershell -Command:*)",
+      "Bash(dir:*)"
     ],
     "deny": [],
     "ask": []

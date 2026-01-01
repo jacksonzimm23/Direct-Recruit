@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify Your Email - Direct Recruit</title>
+    <link rel="stylesheet" href="../landingpage/styles.css">
+    <link rel="stylesheet" href="verify-email.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="../landingpage/index.html" class="logo">
+                <img src="https://res.cloudinary.com/dzmsj6nwv/image/upload/v1762928148/LogoPNG3_pofqrr.png" alt="Direct Recruit Logo" class="logo-icon">
+                <div class="logo-text">
+                    <span class="logo-title">Direct Recruit</span>
+                    <span class="logo-subtitle">GET RECRUITED · THE RIGHT WAY</span>
+                </div>
+            </a>
+        </div>
+    </nav>
+
+    <!-- Verification Section -->
+    <section class="verify-section">
+        <div class="verify-container">
+            <div class="verify-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                </svg>
+            </div>
+
+            <h1>Verify Your Email</h1>
+            <p class="verify-subtitle">We've sent a 6-digit verification code to</p>
+            <p class="verify-email" id="userEmail">your email</p>
+
+            <form id="verifyForm" class="verify-form">
+                <div class="code-inputs">
+                    <input type="text" maxlength="1" class="code-input" data-index="0" inputmode="numeric" pattern="[0-9]" autocomplete="one-time-code">
+                    <input type="text" maxlength="1" class="code-input" data-index="1" inputmode="numeric" pattern="[0-9]">
+                    <input type="text" maxlength="1" class="code-input" data-index="2" inputmode="numeric" pattern="[0-9]">
+                    <input type="text" maxlength="1" class="code-input" data-index="3" inputmode="numeric" pattern="[0-9]">
+                    <input type="text" maxlength="1" class="code-input" data-index="4" inputmode="numeric" pattern="[0-9]">
+                    <input type="text" maxlength="1" class="code-input" data-index="5" inputmode="numeric" pattern="[0-9]">
+                </div>
+
+                <p class="error-message" id="errorMessage"></p>
+
+                <button type="submit" class="btn-verify" id="verifyBtn">
+                    Verify Email
+                    <svg class="btn-icon" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                    </svg>
+                </button>
+            </form>
+
+            <div class="resend-section">
+                <p>Didn't receive the code?</p>
+                <button type="button" class="btn-resend" id="resendBtn">
+                    Resend Code
+                </button>
+                <p class="resend-timer" id="resendTimer"></p>
+            </div>
+
+            <div class="help-text">
+                <p>Check your spam folder if you don't see the email.</p>
+                <p>The code expires in 24 hours.</p>
+            </div>
+        </div>
+    </section>
+
+    <script src="../shared/api.js"></script>
+    <script src="verify-email.js"></script>
+</body>
+</html>
