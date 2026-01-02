@@ -281,7 +281,6 @@ async function updateSidebarFooter() {
         const response = await API.get('/auth/me');
         if (response.user && response.profile) {
             const profile = response.profile;
-            const userRole = response.user.role;
 
             // Update name
             const userName = document.querySelector('.sidebar-footer .user-name');
@@ -289,21 +288,12 @@ async function updateSidebarFooter() {
                 userName.textContent = `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || 'Other User';
             }
 
-            // Update role/info line
+            // Update subheader line
             const userRoleElement = document.querySelector('.sidebar-footer .user-role');
             if (userRoleElement) {
-                if (userRole === 'other') {
-                    // Other: NIL Brand or generic "Other User"
-                    if (profile.is_nil_brand && profile.company_name) {
-                        userRoleElement.textContent = `NIL Brand • ${profile.company_name}`;
-                    } else if (profile.is_nil_brand) {
-                        userRoleElement.textContent = 'NIL Brand';
-                    } else {
-                        userRoleElement.textContent = 'Other User';
-                    }
-                } else {
-                    userRoleElement.textContent = userRole || 'User';
-                }
+                // Use subheader if available, otherwise show empty or placeholder
+                userRoleElement.textContent = profile.subheader || '';
+                userRoleElement.style.color = '#d4a017'; // Yellow color for other profile
             }
 
             // Update avatar and show it (was hidden initially to prevent flash)
@@ -313,6 +303,12 @@ async function updateSidebarFooter() {
                     avatarElement.innerHTML = `<img src="${profile.profile_picture_url}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
                 }
                 avatarElement.style.visibility = 'visible';
+            }
+
+            // Update post creation box avatar
+            const postAvatarElement = document.querySelector('.create-post-box .post-avatar-circle');
+            if (postAvatarElement && profile.profile_picture_url) {
+                postAvatarElement.innerHTML = `<img src="${profile.profile_picture_url}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
             }
         }
     } catch (error) {

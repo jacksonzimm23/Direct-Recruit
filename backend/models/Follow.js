@@ -11,7 +11,7 @@ class Follow {
         [followerId, followingId]
       );
 
-      // Update following_count for the follower (in both player and coach profiles)
+      // Update following_count for the follower (in player, coach, and other profiles)
       await client.query(
         'UPDATE player_profiles SET following_count = following_count + 1 WHERE user_id = $1',
         [followerId]
@@ -20,14 +20,22 @@ class Follow {
         'UPDATE coach_profiles SET following_count = following_count + 1 WHERE user_id = $1',
         [followerId]
       );
+      await client.query(
+        'UPDATE other_profiles SET following_count = following_count + 1 WHERE user_id = $1',
+        [followerId]
+      );
 
-      // Update followers_count for the user being followed (in both player and coach profiles)
+      // Update followers_count for the user being followed (in player, coach, and other profiles)
       await client.query(
         'UPDATE player_profiles SET followers_count = followers_count + 1 WHERE user_id = $1',
         [followingId]
       );
       await client.query(
         'UPDATE coach_profiles SET followers_count = followers_count + 1 WHERE user_id = $1',
+        [followingId]
+      );
+      await client.query(
+        'UPDATE other_profiles SET followers_count = followers_count + 1 WHERE user_id = $1',
         [followingId]
       );
 
@@ -53,7 +61,7 @@ class Follow {
 
       // Only update counts if a row was actually deleted
       if (result.rows.length > 0) {
-        // Decrement following_count for the follower (in both player and coach profiles)
+        // Decrement following_count for the follower (in player, coach, and other profiles)
         await client.query(
           'UPDATE player_profiles SET following_count = GREATEST(following_count - 1, 0) WHERE user_id = $1',
           [followerId]
@@ -62,14 +70,22 @@ class Follow {
           'UPDATE coach_profiles SET following_count = GREATEST(following_count - 1, 0) WHERE user_id = $1',
           [followerId]
         );
+        await client.query(
+          'UPDATE other_profiles SET following_count = GREATEST(following_count - 1, 0) WHERE user_id = $1',
+          [followerId]
+        );
 
-        // Decrement followers_count for the user being unfollowed (in both player and coach profiles)
+        // Decrement followers_count for the user being unfollowed (in player, coach, and other profiles)
         await client.query(
           'UPDATE player_profiles SET followers_count = GREATEST(followers_count - 1, 0) WHERE user_id = $1',
           [followingId]
         );
         await client.query(
           'UPDATE coach_profiles SET followers_count = GREATEST(followers_count - 1, 0) WHERE user_id = $1',
+          [followingId]
+        );
+        await client.query(
+          'UPDATE other_profiles SET followers_count = GREATEST(followers_count - 1, 0) WHERE user_id = $1',
           [followingId]
         );
       }
@@ -87,14 +103,15 @@ class Follow {
   static async getFollowers(userId, limit = 50, offset = 0) {
     const result = await pool.query(
       `SELECT u.id, u.email, u.role,
-              COALESCE(pp.first_name, cp.first_name) as first_name,
-              COALESCE(pp.last_name, cp.last_name) as last_name,
-              COALESCE(pp.profile_image_url, cp.profile_image_url) as profile_image_url,
+              COALESCE(pp.first_name, cp.first_name, op.first_name) as first_name,
+              COALESCE(pp.last_name, cp.last_name, op.last_name) as last_name,
+              COALESCE(pp.profile_image_url, cp.profile_image_url, op.profile_picture_url) as profile_image_url,
               f.created_at as followed_at
        FROM follows f
        JOIN users u ON f.follower_id = u.id
        LEFT JOIN player_profiles pp ON u.id = pp.user_id
        LEFT JOIN coach_profiles cp ON u.id = cp.user_id
+       LEFT JOIN other_profiles op ON u.id = op.user_id
        WHERE f.following_id = $1
        ORDER BY f.created_at DESC
        LIMIT $2 OFFSET $3`,
@@ -106,14 +123,15 @@ class Follow {
   static async getFollowing(userId, limit = 50, offset = 0) {
     const result = await pool.query(
       `SELECT u.id, u.email, u.role,
-              COALESCE(pp.first_name, cp.first_name) as first_name,
-              COALESCE(pp.last_name, cp.last_name) as last_name,
-              COALESCE(pp.profile_image_url, cp.profile_image_url) as profile_image_url,
+              COALESCE(pp.first_name, cp.first_name, op.first_name) as first_name,
+              COALESCE(pp.last_name, cp.last_name, op.last_name) as last_name,
+              COALESCE(pp.profile_image_url, cp.profile_image_url, op.profile_picture_url) as profile_image_url,
               f.created_at as followed_at
        FROM follows f
        JOIN users u ON f.following_id = u.id
        LEFT JOIN player_profiles pp ON u.id = pp.user_id
        LEFT JOIN coach_profiles cp ON u.id = cp.user_id
+       LEFT JOIN other_profiles op ON u.id = op.user_id
        WHERE f.follower_id = $1
        ORDER BY f.created_at DESC
        LIMIT $2 OFFSET $3`,
@@ -145,6 +163,33 @@ class Follow {
       );
     }
 
+    // If not found in coach_profiles, try other_profiles
+    if (result.rows.length === 0) {
+      try {
+        result = await pool.query(
+          'SELECT followers_count, following_count FROM other_profiles WHERE user_id = $1',
+          [userId]
+        );
+      } catch (error) {
+        // If columns don't exist, fall back to counting from follows table
+        if (error.code === '42703') { // undefined_column error
+          const followersResult = await pool.query(
+            'SELECT COUNT(*) as count FROM follows WHERE following_id = $1',
+            [userId]
+          );
+          const followingResult = await pool.query(
+            'SELECT COUNT(*) as count FROM follows WHERE follower_id = $1',
+            [userId]
+          );
+          return {
+            followers_count: parseInt(followersResult.rows[0].count) || 0,
+            following_count: parseInt(followingResult.rows[0].count) || 0
+          };
+        }
+        throw error;
+      }
+    }
+
     // Return the counts or default to 0
     if (result.rows.length > 0) {
       return {
@@ -153,7 +198,19 @@ class Follow {
       };
     }
 
-    return { followers_count: 0, following_count: 0 };
+    // If no profile found at all, count from follows table
+    const followersResult = await pool.query(
+      'SELECT COUNT(*) as count FROM follows WHERE following_id = $1',
+      [userId]
+    );
+    const followingResult = await pool.query(
+      'SELECT COUNT(*) as count FROM follows WHERE follower_id = $1',
+      [userId]
+    );
+    return {
+      followers_count: parseInt(followersResult.rows[0].count) || 0,
+      following_count: parseInt(followingResult.rows[0].count) || 0
+    };
   }
 }
 

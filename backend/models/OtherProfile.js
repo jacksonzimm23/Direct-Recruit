@@ -72,6 +72,55 @@ class OtherProfile {
     const result = await pool.query(query, values);
     return result.rows;
   }
+
+  // Discover other profiles with pagination
+  static async discover(filters = {}, limit = 12, offset = 0) {
+    let query = `
+      SELECT op.*, u.email
+      FROM other_profiles op
+      JOIN users u ON op.user_id = u.id
+      WHERE u.is_active = true
+    `;
+    const values = [];
+    let paramCount = 1;
+
+    // Exclude current user if specified
+    if (filters.excludeUserId) {
+      query += ` AND op.user_id != $${paramCount}`;
+      values.push(filters.excludeUserId);
+      paramCount++;
+    }
+
+    // Filter by NIL brand status
+    if (filters.is_nil_brand !== undefined) {
+      query += ` AND op.is_nil_brand = $${paramCount}`;
+      values.push(filters.is_nil_brand);
+      paramCount++;
+    }
+
+    // Search term filter
+    if (filters.searchTerm) {
+      query += ` AND (op.first_name ILIKE $${paramCount} OR op.last_name ILIKE $${paramCount} OR op.username ILIKE $${paramCount} OR op.subheader ILIKE $${paramCount})`;
+      values.push(`%${filters.searchTerm}%`);
+      paramCount++;
+    }
+
+    // Count total for hasMore check
+    const countQuery = query.replace('SELECT op.*, u.email', 'SELECT COUNT(*) as total');
+    const countResult = await pool.query(countQuery, values);
+    const total = parseInt(countResult.rows[0].total);
+
+    // Add ordering and pagination
+    query += ` ORDER BY op.created_at DESC LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
+    values.push(limit, offset);
+
+    const result = await pool.query(query, values);
+
+    return {
+      profiles: result.rows,
+      hasMore: offset + result.rows.length < total
+    };
+  }
 }
 
 module.exports = OtherProfile;

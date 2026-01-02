@@ -299,6 +299,26 @@ router.get('/discover/transferplayers', authMiddleware, async (req, res) => {
   }
 });
 
+// Discover Other Profiles
+router.get('/discover/other', authMiddleware, async (req, res) => {
+  try {
+    const filters = {
+      is_nil_brand: req.query.is_nil_brand,
+      searchTerm: req.query.q,
+      excludeUserId: req.userId // Exclude current user's profile
+    };
+    const limit = parseInt(req.query.limit) || 12;
+    const offset = parseInt(req.query.offset) || 0;
+
+    const result = await OtherProfile.discover(filters, limit, offset);
+    result.profiles = await addSignedUrlsToProfiles(result.profiles);
+    res.json({ profiles: result.profiles, hasMore: result.hasMore });
+  } catch (error) {
+    console.error('Discover other profiles error:', error);
+    res.status(500).json({ error: 'Failed to fetch other profiles' });
+  }
+});
+
 // Search Coaches
 router.get('/search/coaches', authMiddleware, async (req, res) => {
   try {

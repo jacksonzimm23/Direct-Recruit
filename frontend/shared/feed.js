@@ -505,6 +505,13 @@ class FeedManager {
 
             parts.push(timeAgo);
             metaInfo = starsHtml + parts.join(' • ');
+        } else if (post.author_role === 'other') {
+            // Other profile: entire meta info in yellow
+            if (post.author_subheader) {
+                metaInfo = `<span style="color: #d4a017;">${post.author_subheader} • ${timeAgo}</span>`;
+            } else {
+                metaInfo = `<span style="color: #d4a017;">${timeAgo}</span>`;
+            }
         } else {
             // Coach
             const parts = [];
@@ -629,7 +636,7 @@ class FeedManager {
                         </a>
                         ${post.author_username ? `<span class="post-user-handle">@${post.author_username}</span>` : ''}
                     </div>
-                    <div class="post-meta ${post.author_role === 'coach' ? 'coach-meta' : (post.author_transfer === 'y' ? 'transfer-player-meta' : 'player-meta')}">
+                    <div class="post-meta ${post.author_role === 'coach' ? 'coach-meta' : (post.author_role === 'other' ? 'other-meta' : (post.author_transfer === 'y' ? 'transfer-player-meta' : 'player-meta'))}">
                         ${metaInfo}
                     </div>
                 </div>
@@ -2304,6 +2311,8 @@ class FeedManager {
         } else if (currentPath.includes('/collegecoach/')) {
             basePath = currentPath.includes('/tabs/') ? '' : 'tabs/';
         } else if (currentPath.includes('/transferplayer/')) {
+            basePath = currentPath.includes('/tabs/') ? '' : 'tabs/';
+        } else if (currentPath.includes('/other/')) {
             basePath = currentPath.includes('/tabs/') ? '' : 'tabs/';
         }
 

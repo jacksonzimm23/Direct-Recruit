@@ -16,17 +16,20 @@ psql "host=direct-recruit-db.c6t02cia6f8p.us-east-1.rds.amazonaws.com user=dr_ad
 SELECT pg_size_pretty(pg_database_size('direct_recruit'));
 
 
-Currently working on: psql to AWS, check .env for info 
+
+Currently working on: other  
 
 To do:
 - stars modal for transferplayer 
-- right sidebar backend and show more pages
+- right sidebar backend and show more pages (feed)
 - Tabs Headers to look the same (logo and sidebar footer location) 
 - settings page
-- others profile 
+- media for comments (store in AWS)
 - google sign in 
 - turn to app 
 - scroll bars 
+- timestamp to be time since post, not on timezone
+- change postgres super user and its password 
 
 GAMEPLANS TO SUCCESS
 - Step 1: implement final prototype features (right sidebar, NIL Opportunity Match for college players)
@@ -57,7 +60,6 @@ Feed
 
 Use Amazon RDS for PostgreSQL (need to switch AWS when getting off local server)
 - security with psql stuff 
-
 
 
 

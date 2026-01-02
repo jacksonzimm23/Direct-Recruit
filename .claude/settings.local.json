@@ -27,7 +27,10 @@
       "Bash(node verify-stars.js:*)",
       "Bash(powershell -Command \"Copy-Item -Path ''hsplayer\\\\mainpage-player.html'' -Destination ''other\\\\mainpage-other.html''\")",
       "Bash(powershell -Command:*)",
-      "Bash(dir:*)"
+      "Bash(dir:*)",
+      "Bash(set:*)",
+      "Bash(node scripts/check-time.js:*)",
+      "Bash(node scripts/fix-timestamps.js:*)"
     ],
     "deny": [],
     "ask": []

@@ -17,10 +17,10 @@ class Post {
       `SELECT p.*,
               u.id as author_user_id,
               u.role as author_role,
-              COALESCE(pp.username, cp.username) as author_username,
-              COALESCE(pp.first_name, cp.first_name) as author_first_name,
-              COALESCE(pp.last_name, cp.last_name) as author_last_name,
-              COALESCE(pp.profile_image_url, cp.profile_image_url) as author_image,
+              COALESCE(pp.username, cp.username, op.username) as author_username,
+              COALESCE(pp.first_name, cp.first_name, op.first_name) as author_first_name,
+              COALESCE(pp.last_name, cp.last_name, op.last_name) as author_last_name,
+              COALESCE(pp.profile_image_url, cp.profile_image_url, op.profile_picture_url) as author_image,
               COALESCE(pp.position, cp.position_title) as author_position,
               COALESCE(pp.high_school, cp.college_name) as author_school,
               pp.graduation_year as author_grad_year,
@@ -32,6 +32,7 @@ class Post {
               pp.eligibility as author_eligibility,
               COALESCE(pp.state, cp.state) as author_state,
               cp.verified as author_verified,
+              op.subheader as author_subheader,
               ${currentUserId ? `EXISTS(SELECT 1 FROM post_likes WHERE post_id = p.id AND user_id = $2) as user_liked,` : ''}
               ${currentUserId ? `EXISTS(SELECT 1 FROM post_saves WHERE post_id = p.id AND user_id = $2) as user_saved,` : ''}
               ${currentUserId ? `EXISTS(SELECT 1 FROM follows WHERE follower_id = $2 AND following_id = p.user_id) as is_following` : 'false as is_following'}
@@ -39,6 +40,7 @@ class Post {
        JOIN users u ON p.user_id = u.id
        LEFT JOIN player_profiles pp ON u.id = pp.user_id
        LEFT JOIN coach_profiles cp ON u.id = cp.user_id
+       LEFT JOIN other_profiles op ON u.id = op.user_id
        WHERE p.id = $1`,
       currentUserId ? [postId, currentUserId] : [postId]
     );
@@ -85,10 +87,10 @@ class Post {
       `SELECT p.*,
               u.id as author_user_id,
               u.role as author_role,
-              COALESCE(pp.username, cp.username) as author_username,
-              COALESCE(pp.first_name, cp.first_name) as author_first_name,
-              COALESCE(pp.last_name, cp.last_name) as author_last_name,
-              COALESCE(pp.profile_image_url, cp.profile_image_url) as author_image,
+              COALESCE(pp.username, cp.username, op.username) as author_username,
+              COALESCE(pp.first_name, cp.first_name, op.first_name) as author_first_name,
+              COALESCE(pp.last_name, cp.last_name, op.last_name) as author_last_name,
+              COALESCE(pp.profile_image_url, cp.profile_image_url, op.profile_picture_url) as author_image,
               COALESCE(pp.position, cp.position_title) as author_position,
               COALESCE(pp.high_school, cp.college_name) as author_school,
               pp.graduation_year as author_grad_year,
@@ -100,6 +102,7 @@ class Post {
               pp.star_rating as author_star_rating,
               COALESCE(pp.state, cp.state) as author_state,
               cp.verified as author_verified,
+              op.subheader as author_subheader,
               EXISTS(SELECT 1 FROM post_likes WHERE post_id = p.id AND user_id = $1) as user_liked,
               EXISTS(SELECT 1 FROM post_saves WHERE post_id = p.id AND user_id = $1) as user_saved,
               EXISTS(SELECT 1 FROM post_shares WHERE original_post_id = p.id AND user_id = $1 AND share_type = 'repost') as user_reposted,
@@ -108,6 +111,7 @@ class Post {
        JOIN users u ON p.user_id = u.id
        LEFT JOIN player_profiles pp ON u.id = pp.user_id
        LEFT JOIN coach_profiles cp ON u.id = cp.user_id
+       LEFT JOIN other_profiles op ON u.id = op.user_id
        WHERE (
          p.user_id IN (SELECT following_id FROM follows WHERE follower_id = $1)
          OR p.user_id = $1
@@ -128,10 +132,10 @@ class Post {
       `SELECT p.*,
               u.id as author_user_id,
               u.role as author_role,
-              COALESCE(pp.username, cp.username) as author_username,
-              COALESCE(pp.first_name, cp.first_name) as author_first_name,
-              COALESCE(pp.last_name, cp.last_name) as author_last_name,
-              COALESCE(pp.profile_image_url, cp.profile_image_url) as author_image,
+              COALESCE(pp.username, cp.username, op.username) as author_username,
+              COALESCE(pp.first_name, cp.first_name, op.first_name) as author_first_name,
+              COALESCE(pp.last_name, cp.last_name, op.last_name) as author_last_name,
+              COALESCE(pp.profile_image_url, cp.profile_image_url, op.profile_picture_url) as author_image,
               COALESCE(pp.position, cp.position_title) as author_position,
               COALESCE(pp.high_school, cp.college_name) as author_school,
               pp.graduation_year as author_grad_year,
@@ -143,6 +147,7 @@ class Post {
               pp.star_rating as author_star_rating,
               COALESCE(pp.state, cp.state) as author_state,
               cp.verified as author_verified,
+              op.subheader as author_subheader,
               EXISTS(SELECT 1 FROM post_likes WHERE post_id = p.id AND user_id = $1) as user_liked,
               EXISTS(SELECT 1 FROM post_saves WHERE post_id = p.id AND user_id = $1) as user_saved,
               EXISTS(SELECT 1 FROM post_shares WHERE original_post_id = p.id AND user_id = $1 AND share_type = 'repost') as user_reposted,
@@ -151,6 +156,7 @@ class Post {
        JOIN users u ON p.user_id = u.id
        LEFT JOIN player_profiles pp ON u.id = pp.user_id
        LEFT JOIN coach_profiles cp ON u.id = cp.user_id
+       LEFT JOIN other_profiles op ON u.id = op.user_id
        WHERE p.user_id NOT IN (SELECT following_id FROM follows WHERE follower_id = $1)
        AND p.user_id != $1
        AND p.visibility = 'public'
@@ -185,10 +191,10 @@ class Post {
       `SELECT p.*,
               u.id as author_user_id,
               u.role as author_role,
-              COALESCE(pp.username, cp.username) as author_username,
-              COALESCE(pp.first_name, cp.first_name) as author_first_name,
-              COALESCE(pp.last_name, cp.last_name) as author_last_name,
-              COALESCE(pp.profile_image_url, cp.profile_image_url) as author_image,
+              COALESCE(pp.username, cp.username, op.username) as author_username,
+              COALESCE(pp.first_name, cp.first_name, op.first_name) as author_first_name,
+              COALESCE(pp.last_name, cp.last_name, op.last_name) as author_last_name,
+              COALESCE(pp.profile_image_url, cp.profile_image_url, op.profile_picture_url) as author_image,
               COALESCE(pp.position, cp.position_title) as author_position,
               COALESCE(pp.high_school, cp.college_name) as author_school,
               pp.graduation_year as author_grad_year,
@@ -200,12 +206,14 @@ class Post {
               pp.eligibility as author_eligibility,
               COALESCE(pp.state, cp.state) as author_state,
               cp.verified as author_verified,
+              op.subheader as author_subheader,
               ${currentUserId ? `EXISTS(SELECT 1 FROM post_likes WHERE post_id = p.id AND user_id = $3) as user_liked,` : 'false as user_liked,'}
               ${currentUserId ? `EXISTS(SELECT 1 FROM post_saves WHERE post_id = p.id AND user_id = $3) as user_saved` : 'false as user_saved'}
        FROM posts p
        JOIN users u ON p.user_id = u.id
        LEFT JOIN player_profiles pp ON u.id = pp.user_id
        LEFT JOIN coach_profiles cp ON u.id = cp.user_id
+       LEFT JOIN other_profiles op ON u.id = op.user_id
        WHERE p.user_id = $1
        AND (p.is_deleted = false OR p.is_deleted IS NULL)
        ORDER BY p.is_pinned DESC NULLS LAST, p.created_at DESC
@@ -274,14 +282,15 @@ class Post {
   static async getLikes(postId, limit = 50, offset = 0) {
     const result = await pool.query(
       `SELECT u.id, u.username, u.role,
-              COALESCE(pp.first_name, cp.first_name) as first_name,
-              COALESCE(pp.last_name, cp.last_name) as last_name,
-              COALESCE(pp.profile_image_url, cp.profile_image_url) as profile_image_url,
+              COALESCE(pp.first_name, cp.first_name, op.first_name) as first_name,
+              COALESCE(pp.last_name, cp.last_name, op.last_name) as last_name,
+              COALESCE(pp.profile_image_url, cp.profile_image_url, op.profile_picture_url) as profile_image_url,
               pl.created_at as liked_at
        FROM post_likes pl
        JOIN users u ON pl.user_id = u.id
        LEFT JOIN player_profiles pp ON u.id = pp.user_id
        LEFT JOIN coach_profiles cp ON u.id = cp.user_id
+       LEFT JOIN other_profiles op ON u.id = op.user_id
        WHERE pl.post_id = $1
        ORDER BY pl.created_at DESC
        LIMIT $2 OFFSET $3`,
@@ -322,16 +331,17 @@ class Post {
     const result = await pool.query(
       `SELECT c.*,
               u.id as author_user_id,
-              COALESCE(pp.username, cp.username) as author_username,
+              COALESCE(pp.username, cp.username, op.username) as author_username,
               u.role as author_role,
-              COALESCE(pp.first_name, cp.first_name) as author_first_name,
-              COALESCE(pp.last_name, cp.last_name) as author_last_name,
-              COALESCE(pp.profile_image_url, cp.profile_image_url) as author_image,
+              COALESCE(pp.first_name, cp.first_name, op.first_name) as author_first_name,
+              COALESCE(pp.last_name, cp.last_name, op.last_name) as author_last_name,
+              COALESCE(pp.profile_image_url, cp.profile_image_url, op.profile_picture_url) as author_image,
               ${currentUserId ? `EXISTS(SELECT 1 FROM comment_likes WHERE comment_id = c.id AND user_id = $4) as user_liked` : 'false as user_liked'}
        FROM post_comments c
        JOIN users u ON c.user_id = u.id
        LEFT JOIN player_profiles pp ON u.id = pp.user_id
        LEFT JOIN coach_profiles cp ON u.id = cp.user_id
+       LEFT JOIN other_profiles op ON u.id = op.user_id
        WHERE c.post_id = $1 AND c.parent_comment_id IS NULL
        AND (c.is_deleted = false OR c.is_deleted IS NULL)
        ORDER BY c.created_at DESC
@@ -345,15 +355,16 @@ class Post {
     const result = await pool.query(
       `SELECT c.*,
               u.id as author_user_id,
-              COALESCE(pp.username, cp.username) as author_username,
+              COALESCE(pp.username, cp.username, op.username) as author_username,
               u.role as author_role,
-              COALESCE(pp.first_name, cp.first_name) as author_first_name,
-              COALESCE(pp.last_name, cp.last_name) as author_last_name,
-              COALESCE(pp.profile_image_url, cp.profile_image_url) as author_image
+              COALESCE(pp.first_name, cp.first_name, op.first_name) as author_first_name,
+              COALESCE(pp.last_name, cp.last_name, op.last_name) as author_last_name,
+              COALESCE(pp.profile_image_url, cp.profile_image_url, op.profile_picture_url) as author_image
        FROM post_comments c
        JOIN users u ON c.user_id = u.id
        LEFT JOIN player_profiles pp ON u.id = pp.user_id
        LEFT JOIN coach_profiles cp ON u.id = cp.user_id
+       LEFT JOIN other_profiles op ON u.id = op.user_id
        WHERE c.parent_comment_id = $1
        AND (c.is_deleted = false OR c.is_deleted IS NULL)
        ORDER BY c.created_at ASC
@@ -526,13 +537,14 @@ class Post {
       `SELECT p.*,
               u.id as author_user_id,
               u.role as author_role,
-              COALESCE(pp.username, cp.username) as author_username,
-              COALESCE(pp.first_name, cp.first_name) as author_first_name,
-              COALESCE(pp.last_name, cp.last_name) as author_last_name,
-              COALESCE(pp.profile_image_url, cp.profile_image_url) as author_image,
+              COALESCE(pp.username, cp.username, op.username) as author_username,
+              COALESCE(pp.first_name, cp.first_name, op.first_name) as author_first_name,
+              COALESCE(pp.last_name, cp.last_name, op.last_name) as author_last_name,
+              COALESCE(pp.profile_image_url, cp.profile_image_url, op.profile_picture_url) as author_image,
               COALESCE(pp.position, cp.position_title) as author_position,
               COALESCE(pp.high_school, cp.college_name) as author_school,
               cp.verified as author_verified,
+              op.subheader as author_subheader,
               EXISTS(SELECT 1 FROM post_likes WHERE post_id = p.id AND user_id = $1) as user_liked,
               true as user_saved,
               ps.created_at as saved_at
@@ -541,6 +553,7 @@ class Post {
        JOIN users u ON p.user_id = u.id
        LEFT JOIN player_profiles pp ON u.id = pp.user_id
        LEFT JOIN coach_profiles cp ON u.id = cp.user_id
+       LEFT JOIN other_profiles op ON u.id = op.user_id
        WHERE ps.user_id = $1
        ORDER BY ps.created_at DESC
        LIMIT $2 OFFSET $3`,
@@ -555,10 +568,10 @@ class Post {
       `SELECT p.*,
               u.id as author_user_id,
               u.role as author_role,
-              COALESCE(pp.username, cp.username) as author_username,
-              COALESCE(pp.first_name, cp.first_name) as author_first_name,
-              COALESCE(pp.last_name, cp.last_name) as author_last_name,
-              COALESCE(pp.profile_image_url, cp.profile_image_url) as author_image,
+              COALESCE(pp.username, cp.username, op.username) as author_username,
+              COALESCE(pp.first_name, cp.first_name, op.first_name) as author_first_name,
+              COALESCE(pp.last_name, cp.last_name, op.last_name) as author_last_name,
+              COALESCE(pp.profile_image_url, cp.profile_image_url, op.profile_picture_url) as author_image,
               COALESCE(pp.position, cp.position_title) as author_position,
               COALESCE(pp.high_school, cp.college_name) as author_school,
               COALESCE(pp.graduation_year) as author_grad_year,
@@ -570,6 +583,7 @@ class Post {
               pp.height as author_height,
               pp.weight as author_weight,
               pp.star_rating as author_star_rating,
+              op.subheader as author_subheader,
               true as user_liked,
               ${currentUserId ? `EXISTS(SELECT 1 FROM post_saves WHERE post_id = p.id AND user_id = $3) as user_saved,` : 'false as user_saved,'}
               pl.created_at as liked_at
@@ -578,6 +592,7 @@ class Post {
        JOIN users u ON p.user_id = u.id
        LEFT JOIN player_profiles pp ON u.id = pp.user_id
        LEFT JOIN coach_profiles cp ON u.id = cp.user_id
+       LEFT JOIN other_profiles op ON u.id = op.user_id
        WHERE pl.user_id = $1
        AND (p.is_deleted = false OR p.is_deleted IS NULL)
        ORDER BY pl.created_at DESC
@@ -698,15 +713,16 @@ class Post {
               u.id as user_id,
               u.username,
               u.role,
-              COALESCE(pp.first_name, cp.first_name) as first_name,
-              COALESCE(pp.last_name, cp.last_name) as last_name,
-              COALESCE(pp.profile_image_url, cp.profile_image_url) as profile_image_url,
+              COALESCE(pp.first_name, cp.first_name, op.first_name) as first_name,
+              COALESCE(pp.last_name, cp.last_name, op.last_name) as last_name,
+              COALESCE(pp.profile_image_url, cp.profile_image_url, op.profile_picture_url) as profile_image_url,
               COALESCE(pp.position, cp.position_title) as position,
               COALESCE(pp.high_school, cp.college_name) as school
        FROM post_shares ps
        JOIN users u ON ps.user_id = u.id
        LEFT JOIN player_profiles pp ON u.id = pp.user_id
        LEFT JOIN coach_profiles cp ON u.id = cp.user_id
+       LEFT JOIN other_profiles op ON u.id = op.user_id
        WHERE ps.original_post_id = $1
        ORDER BY ps.created_at DESC
        LIMIT $2 OFFSET $3`,
@@ -742,10 +758,10 @@ class Post {
               p.created_at as original_created_at,
               u.id as author_user_id,
               u.role as author_role,
-              COALESCE(pp.username, cp.username) as author_username,
-              COALESCE(pp.first_name, cp.first_name) as author_first_name,
-              COALESCE(pp.last_name, cp.last_name) as author_last_name,
-              COALESCE(pp.profile_image_url, cp.profile_image_url) as author_image,
+              COALESCE(pp.username, cp.username, op.username) as author_username,
+              COALESCE(pp.first_name, cp.first_name, op.first_name) as author_first_name,
+              COALESCE(pp.last_name, cp.last_name, op.last_name) as author_last_name,
+              COALESCE(pp.profile_image_url, cp.profile_image_url, op.profile_picture_url) as author_image,
               COALESCE(pp.position, cp.position_title) as author_position,
               COALESCE(pp.high_school, cp.college_name) as author_school,
               pp.graduation_year as author_grad_year,
@@ -757,23 +773,26 @@ class Post {
               pp.eligibility as author_eligibility,
               COALESCE(pp.state, cp.state) as author_state,
               cp.verified as author_verified,
+              op.subheader as author_subheader,
               EXISTS(SELECT 1 FROM post_likes WHERE post_id = p.id AND user_id = $1) as user_liked,
               EXISTS(SELECT 1 FROM post_saves WHERE post_id = p.id AND user_id = $1) as user_saved,
               CASE WHEN ps.share_type = 'repost' THEN true ELSE false END as user_reposted,
               true as is_repost,
               qu.id as quoter_user_id,
-              COALESCE(qpp.first_name, qcp.first_name) as quoter_first_name,
-              COALESCE(qpp.last_name, qcp.last_name) as quoter_last_name,
-              COALESCE(qpp.profile_image_url, qcp.profile_image_url) as quoter_image,
+              COALESCE(qpp.first_name, qcp.first_name, qop.first_name) as quoter_first_name,
+              COALESCE(qpp.last_name, qcp.last_name, qop.last_name) as quoter_last_name,
+              COALESCE(qpp.profile_image_url, qcp.profile_image_url, qop.profile_picture_url) as quoter_image,
               qu.role as quoter_role
        FROM post_shares ps
        JOIN posts p ON ps.original_post_id = p.id
        JOIN users u ON p.user_id = u.id
        LEFT JOIN player_profiles pp ON u.id = pp.user_id
        LEFT JOIN coach_profiles cp ON u.id = cp.user_id
+       LEFT JOIN other_profiles op ON u.id = op.user_id
        JOIN users qu ON ps.user_id = qu.id
        LEFT JOIN player_profiles qpp ON qu.id = qpp.user_id
        LEFT JOIN coach_profiles qcp ON qu.id = qcp.user_id
+       LEFT JOIN other_profiles qop ON qu.id = qop.user_id
        WHERE ps.user_id = $1 AND ps.share_type IN ('repost', 'quote')
        AND (p.is_deleted = false OR p.is_deleted IS NULL)
        ORDER BY ps.created_at DESC
@@ -816,10 +835,10 @@ class Post {
               c.created_at as reply_created_at,
               u.id as author_user_id,
               u.role as author_role,
-              COALESCE(pp.username, cp.username) as author_username,
-              COALESCE(pp.first_name, cp.first_name) as author_first_name,
-              COALESCE(pp.last_name, cp.last_name) as author_last_name,
-              COALESCE(pp.profile_image_url, cp.profile_image_url) as author_image,
+              COALESCE(pp.username, cp.username, op.username) as author_username,
+              COALESCE(pp.first_name, cp.first_name, op.first_name) as author_first_name,
+              COALESCE(pp.last_name, cp.last_name, op.last_name) as author_last_name,
+              COALESCE(pp.profile_image_url, cp.profile_image_url, op.profile_picture_url) as author_image,
               COALESCE(pp.position, cp.position_title) as author_position,
               COALESCE(pp.high_school, cp.college_name) as author_school,
               pp.graduation_year as author_grad_year,
@@ -831,6 +850,7 @@ class Post {
               pp.eligibility as author_eligibility,
               COALESCE(pp.state, cp.state) as author_state,
               cp.verified as author_verified,
+              op.subheader as author_subheader,
               -- Original post info
               p.id as original_post_id,
               p.content as original_post_content,
@@ -838,19 +858,21 @@ class Post {
               -- Original post author info
               op_u.id as original_author_user_id,
               op_u.role as original_author_role,
-              COALESCE(op_pp.username, op_cp.username) as original_author_username,
-              COALESCE(op_pp.first_name, op_cp.first_name) as original_author_first_name,
-              COALESCE(op_pp.last_name, op_cp.last_name) as original_author_last_name,
-              COALESCE(op_pp.profile_image_url, op_cp.profile_image_url) as original_author_image,
+              COALESCE(op_pp.username, op_cp.username, op_op.username) as original_author_username,
+              COALESCE(op_pp.first_name, op_cp.first_name, op_op.first_name) as original_author_first_name,
+              COALESCE(op_pp.last_name, op_cp.last_name, op_op.last_name) as original_author_last_name,
+              COALESCE(op_pp.profile_image_url, op_cp.profile_image_url, op_op.profile_picture_url) as original_author_image,
               ${currentUserId ? `EXISTS(SELECT 1 FROM comment_likes WHERE comment_id = c.id AND user_id = $3) as user_liked` : 'false as user_liked'}
        FROM post_comments c
        JOIN users u ON c.user_id = u.id
        LEFT JOIN player_profiles pp ON u.id = pp.user_id
        LEFT JOIN coach_profiles cp ON u.id = cp.user_id
+       LEFT JOIN other_profiles op ON u.id = op.user_id
        JOIN posts p ON c.post_id = p.id
        JOIN users op_u ON p.user_id = op_u.id
        LEFT JOIN player_profiles op_pp ON op_u.id = op_pp.user_id
        LEFT JOIN coach_profiles op_cp ON op_u.id = op_cp.user_id
+       LEFT JOIN other_profiles op_op ON op_u.id = op_op.user_id
        WHERE c.user_id = $1
        AND (c.is_deleted = false OR c.is_deleted IS NULL)
        AND (p.is_deleted = false OR p.is_deleted IS NULL)

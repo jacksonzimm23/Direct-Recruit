@@ -20,32 +20,39 @@ class Notification {
         CASE
           WHEN u.role = 'player' THEN pp.first_name
           WHEN u.role = 'coach' THEN cp.first_name
+          WHEN u.role = 'other' THEN op.first_name
         END as related_user_first_name,
         CASE
           WHEN u.role = 'player' THEN pp.last_name
           WHEN u.role = 'coach' THEN cp.last_name
+          WHEN u.role = 'other' THEN op.last_name
         END as related_user_last_name,
         CASE
           WHEN u.role = 'player' THEN pp.username
           WHEN u.role = 'coach' THEN cp.username
+          WHEN u.role = 'other' THEN op.username
         END as related_user_username,
         CASE
           WHEN u.role = 'player' THEN pp.profile_image_url
           WHEN u.role = 'coach' THEN cp.profile_image_url
+          WHEN u.role = 'other' THEN op.profile_picture_url
         END as related_user_profile_image,
         CASE
           WHEN u.role = 'player' THEN pp.position
           WHEN u.role = 'coach' THEN cp.position_title
+          WHEN u.role = 'other' THEN op.subheader
         END as related_user_position,
         CASE
           WHEN u.role = 'player' THEN pp.high_school
           WHEN u.role = 'coach' THEN cp.college_name
+          WHEN u.role = 'other' THEN op.company_name
         END as related_user_school,
         u.role as related_user_role
       FROM notifications n
       LEFT JOIN users u ON n.related_user_id = u.id
       LEFT JOIN player_profiles pp ON u.id = pp.user_id AND u.role = 'player'
       LEFT JOIN coach_profiles cp ON u.id = cp.user_id AND u.role = 'coach'
+      LEFT JOIN other_profiles op ON u.id = op.user_id AND u.role = 'other'
       WHERE n.user_id = $1
     `;
 

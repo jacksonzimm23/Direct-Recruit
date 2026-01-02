@@ -4,6 +4,7 @@ const Post = require('../models/Post');
 const Notification = require('../models/Notification');
 const PlayerProfile = require('../models/PlayerProfile');
 const CoachProfile = require('../models/CoachProfile');
+const OtherProfile = require('../models/OtherProfile');
 const User = require('../models/User');
 const pool = require('../config/database');
 const { authMiddleware } = require('../middleware/auth');
@@ -96,6 +97,9 @@ async function getUserName(userId) {
     return profile ? `${profile.first_name} ${profile.last_name}` : 'Someone';
   } else if (user.role === 'coach') {
     const profile = await CoachProfile.findByUserId(userId);
+    return profile ? `${profile.first_name} ${profile.last_name}` : 'Someone';
+  } else if (user.role === 'other') {
+    const profile = await OtherProfile.findByUserId(userId);
     return profile ? `${profile.first_name} ${profile.last_name}` : 'Someone';
   }
   return 'Someone';

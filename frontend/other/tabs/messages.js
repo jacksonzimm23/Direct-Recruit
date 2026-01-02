@@ -70,11 +70,15 @@ async function loadCurrentUser() {
             if (userRole && response.profile) {
                 const profile = response.profile;
                 const user = response.user;
-                const parts = [];
 
-                // Check if logged-in user is a transfer player
-                if (user.is_transfer_player) {
+                // Check user role and display appropriate subheader
+                if (user.role === 'other') {
+                    // Other profile type: use subheader field
+                    userRole.textContent = profile.subheader || '';
+                    userRole.style.color = '#d4a017'; // Yellow color for other profile
+                } else if (user.is_transfer_player) {
                     // Transfer Player: position • height • weight • YOE
+                    const parts = [];
                     if (profile.position) parts.push(profile.position);
 
                     if (profile.height) {
@@ -101,6 +105,7 @@ async function loadCurrentUser() {
                     userRole.style.color = '#b91c1c';
                 } else {
                     // Default format for HS players
+                    const parts = [];
                     if (profile.position) parts.push(profile.position);
                     if (profile.high_school) parts.push(profile.high_school);
                     if (profile.graduation_year) parts.push(`Class of ${profile.graduation_year}`);
@@ -111,8 +116,10 @@ async function loadCurrentUser() {
             // Update avatar and show it (was hidden initially to prevent flash)
             const avatarElement = document.querySelector('.sidebar-footer .user-avatar-circle');
             if (avatarElement) {
-                if (response.profile && response.profile.profile_image_url) {
-                    avatarElement.innerHTML = `<img src="${response.profile.profile_image_url}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
+                // Check for both profile_image_url (player/coach) and profile_picture_url (other)
+                const profileImageUrl = response.profile.profile_image_url || response.profile.profile_picture_url;
+                if (response.profile && profileImageUrl) {
+                    avatarElement.innerHTML = `<img src="${profileImageUrl}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
                 }
                 // Show the avatar (it was hidden initially)
                 avatarElement.style.visibility = 'visible';
@@ -393,6 +400,11 @@ function updateThreadHeader(participant) {
             }
             threadUserRole.classList.add('coach');
             threadUserRole.style.color = '';
+        } else if (participant.role === 'other') {
+            // Other profile: display subheader in yellow
+            roleText = participant.subheader || '';
+            threadUserRole.style.color = '#d4a017'; // Yellow color for other profile
+            threadUserRole.classList.remove('coach');
         }
 
         // Use innerHTML to allow the stars span to render
@@ -719,7 +731,14 @@ function showEmptyState() {
 // Navigate to a user's profile
 async function navigateToProfile(userId, role) {
     try {
-        const endpoint = role === 'coach' ? `/profile/coach/${userId}` : `/profile/player/${userId}`;
+        let endpoint;
+        if (role === 'coach') {
+            endpoint = `/profile/coach/${userId}`;
+        } else if (role === 'other') {
+            endpoint = `/profile/other/${userId}`;
+        } else {
+            endpoint = `/profile/player/${userId}`;
+        }
         const response = await API.get(endpoint);
 
         if (response.profile && response.profile.username) {
@@ -727,14 +746,15 @@ async function navigateToProfile(userId, role) {
             sessionStorage.setItem('messagesReturnConversationId', currentConversationId);
 
             // Navigate to the appropriate profile page based on role
-            // For coaches, go to their coach profile page
-            // For players, stay in current player profile page
             if (role === 'coach') {
                 // Determine if coach is college or hs based on their profile
                 const isCollegeCoach = response.profile.college_division &&
                     ['FBS', 'FCS', 'D2', 'D3', 'NAIA', 'NJCAA'].includes(response.profile.college_division);
                 const coachFolder = isCollegeCoach ? 'collegecoach' : 'hscoach';
                 window.location.href = `../../${coachFolder}/tabs/my-profile.html?username=${response.profile.username}&from=messages`;
+            } else if (role === 'other') {
+                // Other profile type
+                window.location.href = `my-profile.html?username=${response.profile.username}&from=messages`;
             } else {
                 // For players, check if transfer player first, then college or hs
                 const isTransferPlayer = response.profile.transfer === 'y';
@@ -746,7 +766,7 @@ async function navigateToProfile(userId, role) {
                 } else if (isCollegePlayer) {
                     window.location.href = `../../collegeplayer/tabs/my-profile.html?username=${response.profile.username}&from=messages`;
                 } else {
-                    window.location.href = `my-profile.html?username=${response.profile.username}&from=messages`;
+                    window.location.href = `../../hsplayer/tabs/my-profile.html?username=${response.profile.username}&from=messages`;
                 }
             }
         }

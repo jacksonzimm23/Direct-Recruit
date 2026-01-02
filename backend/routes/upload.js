@@ -4,6 +4,7 @@ const upload = require('../middleware/upload');
 const { authMiddleware } = require('../middleware/auth');
 const PlayerProfile = require('../models/PlayerProfile');
 const CoachProfile = require('../models/CoachProfile');
+const OtherProfile = require('../models/OtherProfile');
 const path = require('path');
 const multer = require('multer');
 const { uploadToS3, getSignedS3Url, generateProfileImageKey, generatePostMediaKey, deleteFromS3 } = require('../utils/s3');
@@ -64,13 +65,17 @@ router.post('/profile-image', authMiddleware, s3Upload.single('profile_image'), 
       existingProfile = await PlayerProfile.findByUserId(req.userId);
     } else if (req.user.role === 'coach') {
       existingProfile = await CoachProfile.findByUserId(req.userId);
+    } else if (req.user.role === 'other') {
+      existingProfile = await OtherProfile.findByUserId(req.userId);
     }
 
     // Delete old profile image from S3 if it exists
-    if (existingProfile && existingProfile.profile_image_url && existingProfile.profile_image_url.startsWith('profiles/')) {
+    // Check both profile_image_url (player/coach) and profile_picture_url (other)
+    const existingImageUrl = existingProfile?.profile_image_url || existingProfile?.profile_picture_url;
+    if (existingImageUrl && existingImageUrl.startsWith('profiles/')) {
       try {
-        await deleteFromS3(existingProfile.profile_image_url);
-        console.log('Deleted old profile image:', existingProfile.profile_image_url);
+        await deleteFromS3(existingImageUrl);
+        console.log('Deleted old profile image:', existingImageUrl);
       } catch (deleteError) {
         // Log but don't fail the upload if delete fails
         console.error('Failed to delete old profile image:', deleteError);
@@ -97,6 +102,9 @@ router.post('/profile-image', authMiddleware, s3Upload.single('profile_image'), 
       await PlayerProfile.update(req.userId, { profile_image_url: s3Key });
     } else if (req.user.role === 'coach') {
       await CoachProfile.update(req.userId, { profile_image_url: s3Key });
+    } else if (req.user.role === 'other') {
+      // Other profiles use profile_picture_url column
+      await OtherProfile.update(req.userId, { profile_picture_url: s3Key });
     }
 
     res.json({

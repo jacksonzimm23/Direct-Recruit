@@ -86,13 +86,14 @@ class Message {
   static async getConversationMessages(conversationId, limit = 50, offset = 0) {
     const result = await pool.query(
       `SELECT m.*,
-              COALESCE(pp.first_name, cp.first_name) as sender_first_name,
-              COALESCE(pp.last_name, cp.last_name) as sender_last_name,
-              COALESCE(pp.profile_image_url, cp.profile_image_url) as sender_image
+              COALESCE(pp.first_name, cp.first_name, op.first_name) as sender_first_name,
+              COALESCE(pp.last_name, cp.last_name, op.last_name) as sender_last_name,
+              COALESCE(pp.profile_image_url, cp.profile_image_url, op.profile_picture_url) as sender_image
        FROM messages m
        JOIN users u ON m.sender_id = u.id
        LEFT JOIN player_profiles pp ON u.id = pp.user_id
        LEFT JOIN coach_profiles cp ON u.id = cp.user_id
+       LEFT JOIN other_profiles op ON u.id = op.user_id
        WHERE m.conversation_id = $1
        ORDER BY m.created_at DESC
        LIMIT $2 OFFSET $3`,
@@ -110,9 +111,9 @@ class Message {
       `SELECT c.*,
               array_agg(DISTINCT jsonb_build_object(
                 'id', u.id,
-                'first_name', COALESCE(pp.first_name, cp.first_name),
-                'last_name', COALESCE(pp.last_name, cp.last_name),
-                'profile_image', COALESCE(pp.profile_image_url, cp.profile_image_url),
+                'first_name', COALESCE(pp.first_name, cp.first_name, op.first_name),
+                'last_name', COALESCE(pp.last_name, cp.last_name, op.last_name),
+                'profile_image', COALESCE(pp.profile_image_url, cp.profile_image_url, op.profile_picture_url),
                 'role', u.role,
                 'position', pp.position,
                 'height', pp.height,
@@ -126,7 +127,8 @@ class Message {
                 'college_name', cp.college_name,
                 'position_title', cp.position_title,
                 'college_division', COALESCE(pp.college_division, cp.college_division),
-                'player_status', pp.player_status
+                'player_status', pp.player_status,
+                'subheader', op.subheader
               )) FILTER (WHERE u.id != $1) as participants,
               (SELECT content FROM messages WHERE conversation_id = c.id ORDER BY created_at DESC LIMIT 1) as last_message,
               (SELECT created_at FROM messages WHERE conversation_id = c.id ORDER BY created_at DESC LIMIT 1) as last_message_time,
@@ -138,6 +140,7 @@ class Message {
        JOIN users u ON cp_other.user_id = u.id
        LEFT JOIN player_profiles pp ON u.id = pp.user_id
        LEFT JOIN coach_profiles cp ON u.id = cp.user_id
+       LEFT JOIN other_profiles op ON u.id = op.user_id
        WHERE cp_user.user_id = $1
          AND (
            EXISTS (SELECT 1 FROM messages m WHERE m.conversation_id = c.id)

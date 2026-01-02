@@ -396,6 +396,11 @@ function updateThreadHeader(participant) {
             }
             threadUserRole.classList.add('coach');
             threadUserRole.style.color = '';
+        } else if (participant.role === 'other') {
+            // Other profile: display subheader in yellow
+            roleText = participant.subheader || '';
+            threadUserRole.style.color = '#d4a017'; // Yellow color for other profile
+            threadUserRole.classList.remove('coach');
         }
 
         // Use innerHTML to allow the stars span to render
@@ -724,7 +729,14 @@ function showEmptyState() {
 // Navigate to a user's profile
 async function navigateToProfile(userId, role) {
     try {
-        const endpoint = role === 'coach' ? `/profile/coach/${userId}` : `/profile/player/${userId}`;
+        let endpoint;
+        if (role === 'coach') {
+            endpoint = `/profile/coach/${userId}`;
+        } else if (role === 'other') {
+            endpoint = `/profile/other/${userId}`;
+        } else {
+            endpoint = `/profile/player/${userId}`;
+        }
         const response = await API.get(endpoint);
 
         if (response.profile && response.profile.username) {
@@ -738,6 +750,9 @@ async function navigateToProfile(userId, role) {
                     ['FBS', 'FCS', 'D2', 'D3', 'NAIA', 'NJCAA'].includes(response.profile.college_division);
                 const coachFolder = isCollegeCoach ? 'collegecoach' : 'hscoach';
                 window.location.href = `../../${coachFolder}/tabs/my-profile.html?username=${response.profile.username}&from=messages`;
+            } else if (role === 'other') {
+                // Other profile type
+                window.location.href = `../../other/tabs/my-profile.html?username=${response.profile.username}&from=messages`;
             } else {
                 // For players, check if transfer player first, then college or hs
                 const isTransferPlayer = response.profile.transfer === 'y';
