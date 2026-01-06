@@ -8,6 +8,12 @@ document.addEventListener('DOMContentLoaded', async function() {
     // Update sidebar footer with user info
     await updateSidebarFooter();
 
+    // Initialize mobile sidebar
+    initMobileSidebar();
+
+    // Initialize mobile post modal
+    initMobilePostModal();
+
     // Update unread messages badge
     await updateUnreadMessagesBadge();
     // Refresh unread count every 30 seconds
@@ -345,6 +351,32 @@ async function updateSidebarFooter() {
                 avatarElement.style.visibility = 'visible';
             }
 
+            // Update mobile header user info
+            const fullName = `${profile.first_name} ${profile.last_name}`;
+            const roleText = 'Transfer Player';
+            const mobileUserName = document.getElementById('mobileUserName');
+            const mobileUserRole = document.getElementById('mobileUserRole');
+            if (mobileUserName) mobileUserName.textContent = fullName;
+            if (mobileUserRole) mobileUserRole.textContent = roleText;
+
+            // Update mobile header avatar
+            const mobileProfilePic = document.getElementById('mobileProfilePic');
+            if (mobileProfilePic && profile.profile_image_url) {
+                mobileProfilePic.innerHTML = `<img src="${profile.profile_image_url}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
+            }
+
+            // Update mobile sidebar user info
+            const mobileSidebarUserName = document.getElementById('mobileSidebarUserName');
+            const mobileSidebarUserRole = document.getElementById('mobileSidebarUserRole');
+            if (mobileSidebarUserName) mobileSidebarUserName.textContent = fullName;
+            if (mobileSidebarUserRole) mobileSidebarUserRole.textContent = roleText;
+
+            // Update mobile sidebar avatar
+            const mobileSidebarAvatar = document.getElementById('mobileSidebarAvatar');
+            if (mobileSidebarAvatar && profile.profile_image_url) {
+                mobileSidebarAvatar.innerHTML = `<img src="${profile.profile_image_url}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
+            }
+
             // Load star rating for sidebar footer (for transfer players)
             if (userRole === 'player') {
                 await loadSidebarFooterStars();
@@ -468,4 +500,248 @@ async function updateUnreadNotificationsBadge() {
     } catch (error) {
         console.error('Error updating unread notifications badge:', error);
     }
+}
+
+// Initialize mobile sidebar functionality
+function initMobileSidebar() {
+    const mobileProfilePic = document.getElementById('mobileProfilePic');
+    const mobileSidebar = document.getElementById('mobileSidebar');
+    const mobileSidebarOverlay = document.getElementById('mobileSidebarOverlay');
+    const mobileSidebarLogout = document.getElementById('mobileSidebarLogout');
+
+    if (!mobileProfilePic || !mobileSidebar) return;
+
+    // Open sidebar when clicking profile pic
+    mobileProfilePic.addEventListener('click', function(e) {
+        e.preventDefault();
+        mobileSidebar.classList.add('active');
+        mobileSidebarOverlay.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    });
+
+    // Close sidebar
+    function closeMobileSidebar() {
+        mobileSidebar.classList.remove('active');
+        mobileSidebarOverlay.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+
+    // Click overlay to close
+    if (mobileSidebarOverlay) {
+        mobileSidebarOverlay.addEventListener('click', closeMobileSidebar);
+    }
+
+    // Logout button
+    if (mobileSidebarLogout) {
+        mobileSidebarLogout.addEventListener('click', function() {
+            closeMobileSidebar();
+            // Clear authentication
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            // Redirect to landing page
+            const isInTabsFolder = window.location.pathname.includes('/tabs/');
+            window.location.href = isInTabsFolder ? '../../landingpage/index.html' : '../landingpage/index.html';
+        });
+    }
+}
+
+// Initialize mobile post modal functionality
+function initMobilePostModal() {
+    const fab = document.getElementById('mobileFabPost');
+    const modal = document.getElementById('mobilePostModal');
+    const closeBtn = document.getElementById('mobilePostModalClose');
+    const submitBtn = document.getElementById('mobilePostModalSubmit');
+    const textarea = document.getElementById('mobilePostModalTextarea');
+    const mediaBtn = document.getElementById('mobilePostModalMediaBtn');
+    const mediaInput = document.getElementById('mobilePostMediaInput');
+    const mediaPreview = document.getElementById('mobilePostModalMediaPreview');
+    const avatarEl = document.getElementById('mobilePostModalAvatar');
+    const usernameEl = document.getElementById('mobilePostModalUsername');
+
+    if (!fab || !modal) return;
+
+    let selectedFiles = [];
+
+    // Open modal when FAB is clicked
+    fab.addEventListener('click', function() {
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+        // Small delay to ensure modal is visible before focusing (triggers keyboard)
+        setTimeout(() => {
+            textarea.focus();
+        }, 100);
+    });
+
+    // Handle keyboard visibility - adjust modal when keyboard appears
+    if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', () => {
+            if (modal.classList.contains('active')) {
+                // Adjust modal height to visible viewport (accounts for keyboard)
+                const viewportHeight = window.visualViewport.height;
+                modal.style.height = `${viewportHeight}px`;
+                modal.style.top = `${window.visualViewport.offsetTop}px`;
+            }
+        });
+
+        window.visualViewport.addEventListener('scroll', () => {
+            if (modal.classList.contains('active')) {
+                // Keep modal positioned correctly when viewport scrolls
+                modal.style.top = `${window.visualViewport.offsetTop}px`;
+            }
+        });
+    }
+
+    // Close modal
+    function closeModal() {
+        modal.classList.remove('active');
+        document.body.style.overflow = '';
+        textarea.value = '';
+        textarea.blur(); // Dismiss keyboard
+        selectedFiles = [];
+        mediaPreview.innerHTML = '';
+        // Reset modal height
+        modal.style.height = '';
+        modal.style.top = '';
+    }
+
+    closeBtn.addEventListener('click', closeModal);
+
+    // Close on escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && modal.classList.contains('active')) {
+            closeModal();
+        }
+    });
+
+    // Media button click
+    mediaBtn.addEventListener('click', function() {
+        mediaInput.click();
+    });
+
+    // Handle file selection
+    mediaInput.addEventListener('change', function() {
+        const files = Array.from(this.files);
+
+        files.forEach(file => {
+            // Check file size (200MB for videos, 10MB for images)
+            const maxSize = file.type.startsWith('video/') ? 200 * 1024 * 1024 : 10 * 1024 * 1024;
+            if (file.size > maxSize) {
+                const maxSizeMB = maxSize / (1024 * 1024);
+                alert(`File "${file.name}" is too large. Maximum size is ${maxSizeMB}MB.`);
+                return;
+            }
+
+            selectedFiles.push(file);
+
+            // Create preview
+            const previewItem = document.createElement('div');
+            previewItem.style.cssText = 'position: relative; display: inline-block; margin: 0.5rem 0.5rem 0 0;';
+
+            if (file.type.startsWith('image/')) {
+                const img = document.createElement('img');
+                img.src = URL.createObjectURL(file);
+                img.style.cssText = 'max-width: 150px; max-height: 150px; border-radius: 8px; object-fit: cover;';
+                previewItem.appendChild(img);
+            } else if (file.type.startsWith('video/')) {
+                const video = document.createElement('video');
+                video.src = URL.createObjectURL(file);
+                video.style.cssText = 'max-width: 150px; max-height: 150px; border-radius: 8px; object-fit: cover;';
+                video.muted = true;
+                previewItem.appendChild(video);
+            }
+
+            // Remove button
+            const removeBtn = document.createElement('button');
+            removeBtn.innerHTML = '×';
+            removeBtn.style.cssText = 'position: absolute; top: -8px; right: -8px; width: 24px; height: 24px; border-radius: 50%; background: #ff6b6b; color: white; border: none; cursor: pointer; font-size: 16px; line-height: 1;';
+            removeBtn.addEventListener('click', function() {
+                const index = selectedFiles.indexOf(file);
+                if (index > -1) selectedFiles.splice(index, 1);
+                previewItem.remove();
+            });
+            previewItem.appendChild(removeBtn);
+
+            mediaPreview.appendChild(previewItem);
+        });
+
+        // Clear input
+        this.value = '';
+    });
+
+    // Submit post
+    submitBtn.addEventListener('click', async function() {
+        const content = textarea.value.trim();
+
+        if (!content && selectedFiles.length === 0) {
+            alert('Please enter some content or add media to your post.');
+            return;
+        }
+
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Posting...';
+
+        try {
+            // Upload media files first if any
+            let mediaUrls = [];
+
+            if (selectedFiles.length > 0) {
+                submitBtn.textContent = 'Uploading...';
+                const uploadResponse = await uploadAPI.uploadPostMedia(selectedFiles);
+                if (uploadResponse.media && uploadResponse.media.length > 0) {
+                    mediaUrls = uploadResponse.media;
+                }
+            }
+
+            // Create the post
+            submitBtn.textContent = 'Posting...';
+            const postData = {
+                content: content,
+                media: mediaUrls
+            };
+
+            const response = await postsAPI.createPost(postData);
+
+            if (response.post) {
+                // Close modal and reset
+                closeModal();
+
+                // Refresh the feed to show new post
+                if (typeof window.feedSystem !== 'undefined' && window.feedSystem) {
+                    window.feedSystem.loadFeed();
+                } else {
+                    // Fallback: reload page
+                    window.location.reload();
+                }
+            }
+        } catch (error) {
+            console.error('Error creating post:', error);
+            alert('Failed to create post. Please try again.');
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Post';
+        }
+    });
+
+    // Update modal avatar and username from user data
+    async function updateModalUserInfo() {
+        try {
+            const response = await authAPI.getCurrentUser();
+            if (response.user && response.profile) {
+                const profile = response.profile;
+                const fullName = `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || 'User';
+
+                if (usernameEl) {
+                    usernameEl.textContent = fullName;
+                }
+
+                if (avatarEl && profile.profile_image_url) {
+                    avatarEl.innerHTML = `<img src="${profile.profile_image_url}" alt="Profile">`;
+                }
+            }
+        } catch (error) {
+            console.error('Error updating modal user info:', error);
+        }
+    }
+
+    updateModalUserInfo();
 }

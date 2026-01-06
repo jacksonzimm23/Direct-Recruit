@@ -1,0 +1,1056 @@
+/*
+ * Mobile Overrides - Unified Styles for ALL Profiles
+ * ===================================================
+ * This single file controls mobile styling for:
+ * - hsplayer, collegeplayer, transferplayer
+ * - hscoach, collegecoach
+ * - other
+ *
+ * Load this file LAST in all HTML pages to override existing styles.
+ *
+ * Breakpoints:
+ * - 768px: Tablet/Mobile transition
+ * - 480px: Small mobile
+ * - 375px: iPhone SE and similar
+ * - 360px: Small Android devices
+ *
+ * To test: Open Chrome DevTools (F12) → Toggle Device Toolbar (Ctrl+Shift+M)
+ */
+
+/* === HIDE MOBILE ELEMENTS ON DESKTOP === */
+.mobile-header,
+.mobile-sidebar,
+.mobile-sidebar-overlay,
+.mobile-fab-post,
+.mobile-post-modal-overlay {
+    display: none;
+}
+
+/* ============================================
+   MOBILE BREAKPOINT (768px and below)
+   ============================================ */
+@media (max-width: 768px) {
+
+    /* === MOBILE HEADER WITH PROFILE PICTURE === */
+    .mobile-header {
+        display: flex !important;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.75rem 1rem;
+        background: rgba(0, 15, 35, 0.98);
+        border-bottom: 1px solid rgba(18, 130, 162, 0.2);
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 999;
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+    }
+
+    .mobile-header-left {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .mobile-profile-pic {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 2px solid rgba(18, 130, 162, 0.5);
+        cursor: pointer;
+        transition: border-color 0.2s ease;
+    }
+
+    .mobile-profile-pic:hover {
+        border-color: var(--cerulean, #1282A2);
+    }
+
+    /* Default avatar circle for mobile header */
+    .mobile-avatar-circle {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: rgba(18, 130, 162, 0.2);
+        border: 2px solid rgba(18, 130, 162, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: border-color 0.2s ease;
+    }
+
+    .mobile-avatar-circle:hover {
+        border-color: var(--cerulean, #1282A2);
+    }
+
+    .mobile-avatar-circle svg {
+        width: 20px;
+        height: 20px;
+        color: var(--cerulean, #1282A2);
+    }
+
+    .mobile-header-logo {
+        height: 32px;
+        width: auto;
+    }
+
+    /* User info next to profile picture */
+    .mobile-user-info {
+        display: flex;
+        flex-direction: column;
+        gap: 0.1rem;
+    }
+
+    .mobile-user-name {
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: var(--white, #FEFCFB);
+        line-height: 1.2;
+    }
+
+    .mobile-user-role {
+        font-size: 0.75rem;
+        font-weight: 500;
+        color: #d4a017;
+        line-height: 1.2;
+    }
+
+    .mobile-header-right {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    /* Adjust main content for fixed mobile header (header is ~56px tall) */
+    .main-content {
+        padding-top: 65px !important;
+        margin-top: 0 !important;
+    }
+
+    /* === MOBILE LEFT SIDEBAR (Profile Menu) === */
+    .mobile-sidebar-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 1001;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+
+    .mobile-sidebar-overlay.active {
+        display: block;
+        opacity: 1;
+    }
+
+    .mobile-sidebar {
+        position: fixed;
+        top: 0;
+        left: -320px;
+        width: 320px;
+        height: 100%;
+        background: rgba(0, 15, 35, 0.98);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        z-index: 1002;
+        transition: left 0.3s ease;
+        display: flex;
+        flex-direction: column;
+        border-right: 1px solid rgba(18, 130, 162, 0.2);
+    }
+
+    .mobile-sidebar.active {
+        left: 0;
+    }
+
+    .mobile-sidebar-header {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 1.25rem 1rem;
+        border-bottom: 1px solid rgba(18, 130, 162, 0.2);
+        text-decoration: none;
+        cursor: pointer;
+        transition: background 0.2s ease;
+    }
+
+    .mobile-sidebar-header:hover {
+        background: rgba(18, 130, 162, 0.1);
+    }
+
+    .mobile-sidebar-avatar {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 2px solid rgba(18, 130, 162, 0.5);
+    }
+
+    .mobile-sidebar-avatar-circle {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background: rgba(18, 130, 162, 0.2);
+        border: 2px solid rgba(18, 130, 162, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .mobile-sidebar-avatar-circle svg {
+        width: 28px;
+        height: 28px;
+        color: var(--cerulean, #1282A2);
+    }
+
+    .mobile-sidebar-user-info {
+        flex: 1;
+    }
+
+    .mobile-sidebar-user-name {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--white, #FEFCFB);
+        line-height: 1.3;
+    }
+
+    .mobile-sidebar-user-role {
+        font-size: 0.85rem;
+        font-weight: 500;
+        color: #d4a017;
+        line-height: 1.3;
+    }
+
+    .mobile-sidebar-close {
+        background: none;
+        border: none;
+        color: var(--white, #FEFCFB);
+        padding: 0.5rem;
+        cursor: pointer;
+        opacity: 0.7;
+        transition: opacity 0.2s ease;
+    }
+
+    .mobile-sidebar-close:hover {
+        opacity: 1;
+    }
+
+    .mobile-sidebar-close svg {
+        width: 24px;
+        height: 24px;
+    }
+
+    .mobile-sidebar-nav {
+        flex: 1;
+        padding: 1rem 0;
+        overflow-y: auto;
+    }
+
+    .mobile-sidebar-nav-item {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1rem 1.25rem;
+        color: var(--white, #FEFCFB);
+        text-decoration: none;
+        transition: background-color 0.2s ease;
+    }
+
+    .mobile-sidebar-nav-item:hover {
+        background: rgba(18, 130, 162, 0.1);
+    }
+
+    .mobile-sidebar-nav-item svg {
+        width: 24px;
+        height: 24px;
+        opacity: 0.8;
+    }
+
+    .mobile-sidebar-nav-item span {
+        font-size: 1rem;
+        font-weight: 500;
+    }
+
+    .mobile-sidebar-divider {
+        height: 1px;
+        background: rgba(18, 130, 162, 0.2);
+        margin: 0.5rem 1rem;
+    }
+
+    .mobile-sidebar-nav-item.danger {
+        color: #ef4444;
+    }
+
+    .mobile-sidebar-footer {
+        padding: 1rem;
+        border-top: 1px solid rgba(18, 130, 162, 0.2);
+    }
+
+    .mobile-sidebar-footer img {
+        height: 28px;
+        width: auto;
+        opacity: 0.6;
+    }
+
+    /* === BOTTOM NAVIGATION === */
+
+    /* Hide My Profile and Settings on mobile bottom nav */
+    .sidebar .nav-item[href*="my-profile"],
+    .sidebar .nav-item[href*="settings"] {
+        display: none !important;
+    }
+
+    /* === BOTTOM NAVIGATION === */
+    .sidebar {
+        position: fixed !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        top: auto !important;
+        height: 70px !important;
+        min-height: 70px !important;
+        background: rgba(0, 15, 35, 0.98) !important;
+        backdrop-filter: blur(20px) !important;
+        -webkit-backdrop-filter: blur(20px) !important;
+        border-top: 1px solid rgba(18, 130, 162, 0.3) !important;
+        border-right: none !important;
+        padding: 0 !important;
+        z-index: 1000 !important;
+        padding-bottom: env(safe-area-inset-bottom) !important;
+        flex-direction: row !important;
+        overflow: visible !important;
+    }
+
+    .sidebar-nav {
+        display: flex !important;
+        flex-direction: row !important;
+        justify-content: space-around !important;
+        align-items: center !important;
+        height: 100% !important;
+        width: 100% !important;
+        padding: 0 0.5rem !important;
+        gap: 0 !important;
+    }
+
+    .nav-item {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: center !important;
+        padding: 0.5rem 0.25rem !important;
+        gap: 0.2rem !important;
+        min-width: 55px !important;
+        border-radius: 12px !important;
+        flex: 1 !important;
+    }
+
+    .nav-item span {
+        font-size: 0.6rem !important;
+        font-weight: 500 !important;
+        white-space: nowrap !important;
+        text-align: center !important;
+    }
+
+    .nav-icon {
+        width: 24px !important;
+        height: 24px !important;
+    }
+
+    /* Hide elements not needed on mobile */
+    .sidebar-header,
+    .sidebar-footer,
+    .btn-post,
+    .sidebar-logo,
+    .user-menu,
+    .logo-text {
+        display: none !important;
+    }
+
+    /* === TOGGLE BUTTONS - HIDE ON MOBILE === */
+    .sidebar-toggle,
+    .right-sidebar-toggle {
+        display: none !important;
+    }
+
+    /* === RIGHT SIDEBAR - HIDE ON MOBILE === */
+    .right-sidebar {
+        display: none !important;
+    }
+
+    /* === DASHBOARD CONTAINER === */
+    .dashboard-container {
+        display: block !important;
+        padding: 0 !important;
+        max-width: 100% !important;
+        grid-template-columns: 1fr !important;
+    }
+
+    .dashboard-container.sidebar-hidden,
+    .dashboard-container.right-sidebar-hidden,
+    .dashboard-container.sidebar-hidden.right-sidebar-hidden,
+    .dashboard-container.no-right-sidebar,
+    .dashboard-container.no-right-sidebar.sidebar-hidden {
+        grid-template-columns: 1fr !important;
+    }
+
+    /* === MAIN CONTENT === */
+    .main-content {
+        padding: 1rem !important;
+        padding-top: 65px !important;
+        padding-bottom: 90px !important;
+        min-height: calc(100vh - 90px) !important;
+    }
+
+    .content-header {
+        display: flex !important;
+        position: relative !important;
+        top: auto !important;
+        padding: 0.5rem 1rem !important;
+        margin-top: 0 !important;
+        margin-bottom: 0 !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 0 !important;
+        min-height: auto !important;
+        background: rgba(10, 17, 40, 0.98) !important;
+        border-bottom: none !important;
+    }
+
+    /* Feed tabs - normal positioning */
+    .feed-tabs {
+        margin-bottom: 1rem !important;
+    }
+
+    /* Hide the "Feed" title on mobile - search bar is enough */
+    .content-header h1 {
+        display: none !important;
+    }
+
+    /* Search component in header - full width on mobile */
+    #searchComponent {
+        display: block !important;
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+
+    .search-container {
+        display: block !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 0 !important;
+    }
+
+    .search-box {
+        display: flex !important;
+        width: 100% !important;
+        padding: 0.6rem 0.75rem !important;
+    }
+
+    .search-input {
+        display: block !important;
+        width: 100% !important;
+        font-size: 0.875rem !important;
+    }
+
+    /* === FEED / POSTS === */
+    /* Hide the inline create-post-box on mobile - use FAB instead */
+    .create-post-box {
+        display: none !important;
+    }
+
+    /* === FLOATING ACTION BUTTON (FAB) FOR NEW POST === */
+    .mobile-fab-post {
+        display: flex !important;
+        position: fixed !important;
+        bottom: 85px !important;
+        right: 1rem !important;
+        width: 56px !important;
+        height: 56px !important;
+        background: var(--cerulean, #1282A2) !important;
+        border: none !important;
+        border-radius: 50% !important;
+        align-items: center !important;
+        justify-content: center !important;
+        box-shadow: 0 4px 12px rgba(18, 130, 162, 0.4) !important;
+        cursor: pointer !important;
+        z-index: 998 !important;
+        transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+    }
+
+    .mobile-fab-post:hover,
+    .mobile-fab-post:active {
+        transform: scale(1.05) !important;
+        box-shadow: 0 6px 16px rgba(18, 130, 162, 0.5) !important;
+    }
+
+    .mobile-fab-post svg {
+        width: 24px !important;
+        height: 24px !important;
+        color: white !important;
+        stroke: white !important;
+    }
+
+    /* === MOBILE POST MODAL === */
+    .mobile-post-modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        height: 100%;
+        background: rgba(0, 15, 35, 0.98);
+        z-index: 2000;
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+    .mobile-post-modal-overlay.active {
+        display: flex !important;
+    }
+
+    .mobile-post-modal-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1rem;
+        border-bottom: 1px solid rgba(18, 130, 162, 0.2);
+        flex-shrink: 0;
+        background: rgba(0, 15, 35, 0.98);
+    }
+
+    .mobile-post-modal-close {
+        background: none;
+        border: none;
+        color: var(--white, #FEFCFB);
+        padding: 0.5rem;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .mobile-post-modal-close svg {
+        width: 24px;
+        height: 24px;
+    }
+
+    .mobile-post-modal-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--white, #FEFCFB);
+    }
+
+    .mobile-post-modal-submit {
+        background: var(--accent-orange, #FF6B35);
+        color: white;
+        border: none;
+        padding: 0.5rem 1.25rem;
+        border-radius: 50px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.2s ease;
+    }
+
+    .mobile-post-modal-submit:hover {
+        background: #ff7d4d;
+    }
+
+    .mobile-post-modal-body {
+        flex: 1;
+        padding: 1rem;
+        overflow-y: auto;
+    }
+
+    .mobile-post-modal-user {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 1rem;
+    }
+
+    .mobile-post-modal-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: rgba(18, 130, 162, 0.2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .mobile-post-modal-avatar img {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+
+    .mobile-post-modal-avatar svg {
+        width: 20px;
+        height: 20px;
+        color: var(--cerulean, #1282A2);
+    }
+
+    .mobile-post-modal-username {
+        font-weight: 600;
+        color: var(--white, #FEFCFB);
+    }
+
+    .mobile-post-modal-textarea {
+        width: 100%;
+        min-height: 150px;
+        background: transparent;
+        border: none;
+        color: var(--white, #FEFCFB);
+        font-size: 1.1rem;
+        font-family: 'Inter', sans-serif;
+        resize: none;
+        outline: none;
+    }
+
+    .mobile-post-modal-textarea::placeholder {
+        color: rgba(254, 252, 251, 0.5);
+    }
+
+    .mobile-post-modal-media-preview {
+        margin-top: 1rem;
+    }
+
+    .mobile-post-modal-footer {
+        padding: 1rem;
+        border-top: 1px solid rgba(18, 130, 162, 0.2);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        flex-shrink: 0;
+        background: rgba(0, 15, 35, 0.98);
+    }
+
+    .mobile-post-modal-media-btn {
+        background: transparent;
+        border: none;
+        color: var(--cerulean, #1282A2);
+        padding: 0.5rem;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        transition: background 0.2s ease;
+    }
+
+    .mobile-post-modal-media-btn:hover {
+        background: rgba(18, 130, 162, 0.2);
+    }
+
+    .mobile-post-modal-media-btn svg {
+        width: 24px;
+        height: 24px;
+    }
+
+    .post-input {
+        font-size: 0.95rem !important;
+    }
+
+    .feed-posts {
+        gap: 1rem !important;
+    }
+
+    /* === POST CARD MOBILE ADJUSTMENTS === */
+    /* Hide the arrow/triangle icon on mobile - no hover on touch */
+    .post-view-icon {
+        display: none !important;
+    }
+
+    /* Remove hover effects on post cards for mobile */
+    .post-card:hover {
+        transform: none !important;
+    }
+
+    /* Ensure post header actions (3 dots) is on far right */
+    .post-header {
+        position: relative !important;
+    }
+
+    .post-header-actions {
+        position: absolute !important;
+        top: 0 !important;
+        right: 0 !important;
+    }
+
+    .post-more-btn {
+        width: 36px !important;
+        height: 36px !important;
+    }
+
+    /* === POST HEADER NAME/USERNAME LAYOUT === */
+    /* Line 1: Name + Username (no wrap, ellipsis truncation) */
+    /* Line 2: Subheader (position/school) */
+    .post-user-info {
+        flex: 1 !important;
+        min-width: 0 !important;
+        overflow: hidden !important;
+        padding-right: 40px !important; /* Space for 3-dot menu */
+    }
+
+    .post-user-name-row {
+        display: flex !important;
+        flex-wrap: nowrap !important;
+        align-items: center !important;
+        gap: 0.4rem !important;
+        width: 100% !important;
+    }
+
+    /* Name gets priority - shows full name, only truncates if very long */
+    .post-user-name {
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 0.25rem !important;
+        flex: 0 1 auto !important;
+        max-width: none !important;
+        overflow: visible !important;
+        text-overflow: clip !important;
+        white-space: nowrap !important;
+    }
+
+    /* Username/handle shrinks and truncates first */
+    .post-user-handle {
+        flex: 0 1 auto !important;
+        min-width: 30px !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        white-space: nowrap !important;
+    }
+
+    .post-meta {
+        display: block !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        white-space: nowrap !important;
+        margin-top: 0.125rem !important;
+    }
+
+    .post-card {
+        padding: 1rem !important;
+        border-radius: 12px !important;
+    }
+
+    .post-header {
+        gap: 0.75rem !important;
+    }
+
+    .post-avatar,
+    .post-avatar-circle {
+        width: 40px !important;
+        height: 40px !important;
+    }
+
+    .post-author-name {
+        font-size: 0.9rem !important;
+    }
+
+    .post-content {
+        font-size: 0.95rem !important;
+        line-height: 1.5 !important;
+    }
+
+    .post-actions {
+        padding-top: 0.75rem !important;
+        gap: 0.5rem !important;
+    }
+
+    .post-action-btn {
+        padding: 0.5rem !important;
+        font-size: 0.8rem !important;
+        gap: 0.3rem !important;
+    }
+
+    /* === SEARCH COMPONENT === */
+    .search-container {
+        width: 100% !important;
+    }
+
+    .search-input {
+        font-size: 0.9rem !important;
+    }
+
+    /* === FORMS === */
+    .form-group {
+        margin-bottom: 1rem !important;
+    }
+
+    .form-label {
+        font-size: 0.85rem !important;
+    }
+
+    .form-input,
+    .form-select,
+    .form-textarea {
+        padding: 0.75rem !important;
+        font-size: 0.95rem !important;
+    }
+
+    /* === BUTTONS === */
+    .btn-primary,
+    .btn-secondary,
+    .btn-post-submit {
+        padding: 0.75rem 1.25rem !important;
+        font-size: 0.9rem !important;
+    }
+
+    /* === MODALS === */
+    .modal-content {
+        width: 95% !important;
+        max-width: 95% !important;
+        margin: 1rem !important;
+        max-height: 90vh !important;
+        border-radius: 16px !important;
+    }
+
+    .modal-header {
+        padding: 1rem !important;
+    }
+
+    .modal-body {
+        padding: 1rem !important;
+    }
+
+    .modal-footer {
+        padding: 1rem !important;
+    }
+
+    /* === PROFILE CARDS === */
+    .profile-card,
+    .player-card,
+    .coach-card {
+        padding: 1rem !important;
+    }
+
+    /* === TABS === */
+    .tabs-container,
+    .feed-tabs {
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        scrollbar-width: none !important;
+    }
+
+    .tabs-container::-webkit-scrollbar,
+    .feed-tabs::-webkit-scrollbar {
+        display: none !important;
+    }
+
+    .tab-btn,
+    .feed-tab {
+        padding: 0.6rem 1rem !important;
+        font-size: 0.85rem !important;
+        white-space: nowrap !important;
+    }
+
+    /* === MESSAGES PAGE === */
+    .messages-container {
+        flex-direction: column !important;
+    }
+
+    .conversations-list {
+        width: 100% !important;
+        max-height: 40vh !important;
+        border-right: none !important;
+        border-bottom: 1px solid rgba(18, 130, 162, 0.2) !important;
+    }
+
+    .chat-area {
+        width: 100% !important;
+        height: 50vh !important;
+    }
+
+    .message-input-container {
+        padding: 0.75rem !important;
+    }
+
+    /* === NOTIFICATIONS PAGE === */
+    .notification-item {
+        padding: 1rem !important;
+    }
+
+    .notification-icon {
+        width: 36px !important;
+        height: 36px !important;
+    }
+
+    /* === SETTINGS PAGE === */
+    .settings-container {
+        flex-direction: column !important;
+    }
+
+    .settings-nav {
+        width: 100% !important;
+        flex-direction: row !important;
+        overflow-x: auto !important;
+        border-right: none !important;
+        border-bottom: 1px solid rgba(18, 130, 162, 0.2) !important;
+        padding: 0.5rem !important;
+    }
+
+    .settings-nav-btn {
+        white-space: nowrap !important;
+        padding: 0.5rem 1rem !important;
+    }
+
+    .settings-content {
+        width: 100% !important;
+        padding: 1rem !important;
+    }
+
+    /* === DISCOVER PAGE === */
+    .discover-grid,
+    .players-grid,
+    .coaches-grid {
+        grid-template-columns: 1fr !important;
+        gap: 1rem !important;
+    }
+
+    /* === PROFILE VIEW PAGE === */
+    .profile-header {
+        flex-direction: column !important;
+        text-align: center !important;
+    }
+
+    .profile-avatar {
+        width: 100px !important;
+        height: 100px !important;
+    }
+
+    .profile-stats {
+        justify-content: center !important;
+        gap: 1.5rem !important;
+    }
+
+    .profile-actions {
+        justify-content: center !important;
+        flex-wrap: wrap !important;
+    }
+}
+
+/* ============================================
+   SMALL MOBILE (480px and below)
+   ============================================ */
+@media (max-width: 480px) {
+
+    .main-content {
+        padding: 0.75rem !important;
+        padding-top: 70px !important;
+        padding-bottom: 85px !important;
+    }
+
+    .content-header h1 {
+        display: none !important;
+    }
+
+    /* Smaller nav items */
+    .nav-item {
+        min-width: 48px !important;
+        padding: 0.4rem 0.2rem !important;
+    }
+
+    .nav-item span {
+        font-size: 0.55rem !important;
+    }
+
+    .nav-icon {
+        width: 22px !important;
+        height: 22px !important;
+    }
+
+    /* Smaller posts */
+    .post-card {
+        padding: 0.875rem !important;
+    }
+
+    .post-avatar,
+    .post-avatar-circle {
+        width: 36px !important;
+        height: 36px !important;
+    }
+
+    .create-post-box {
+        padding: 0.875rem !important;
+    }
+
+    /* Smaller profile elements */
+    .profile-avatar {
+        width: 80px !important;
+        height: 80px !important;
+    }
+
+    /* Modal adjustments */
+    .modal-content {
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 0 !important;
+        border-radius: 0 !important;
+        min-height: 100vh !important;
+    }
+}
+
+/* ============================================
+   EXTRA SMALL MOBILE (375px and below)
+   ============================================ */
+@media (max-width: 375px) {
+
+    .nav-item span {
+        font-size: 0.5rem !important;
+    }
+
+    .nav-icon {
+        width: 20px !important;
+        height: 20px !important;
+    }
+
+    .main-content {
+        padding: 0.5rem !important;
+        padding-top: 70px !important;
+        padding-bottom: 80px !important;
+    }
+
+    .content-header h1 {
+        display: none !important;
+    }
+
+    .post-content {
+        font-size: 0.9rem !important;
+    }
+
+    .btn-primary,
+    .btn-secondary {
+        padding: 0.6rem 1rem !important;
+        font-size: 0.85rem !important;
+    }
+}
+
+/* ============================================
+   iOS SAFE AREAS (for app deployment)
+   ============================================ */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+    @media (max-width: 768px) {
+        .sidebar {
+            padding-bottom: env(safe-area-inset-bottom) !important;
+        }
+
+        .main-content {
+            padding-bottom: calc(90px + env(safe-area-inset-bottom)) !important;
+        }
+
+        body {
+            padding-top: env(safe-area-inset-top);
+        }
+    }
+}
