@@ -670,8 +670,13 @@ function initMobilePostModal() {
             if (selectedFiles.length > 0) {
                 submitBtn.textContent = 'Uploading...';
                 const uploadResponse = await uploadAPI.uploadPostMedia(selectedFiles);
+
+                // Extract S3 keys from upload result
                 if (uploadResponse.media && uploadResponse.media.length > 0) {
-                    mediaUrls = uploadResponse.media;
+                    mediaUrls = uploadResponse.media.map(m => m.s3Key);
+                } else if (uploadResponse.s3Key) {
+                    // Single file fallback
+                    mediaUrls = [uploadResponse.s3Key];
                 }
             }
 
@@ -679,7 +684,7 @@ function initMobilePostModal() {
             submitBtn.textContent = 'Posting...';
             const postData = {
                 content: content,
-                media: mediaUrls
+                media_urls: mediaUrls
             };
 
             const response = await postsAPI.createPost(postData);

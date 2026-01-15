@@ -208,22 +208,25 @@ function displayProfile() {
     updateProfileActions();
 }
 
-// Update sidebar footer with current user info
+// Update sidebar footer and mobile header with current user info
 function updateSidebarFooter() {
     if (!currentProfile) return;
+
+    const firstName = currentProfile.first_name || '';
+    const lastName = currentProfile.last_name || '';
+    const fullName = `${firstName} ${lastName}`.trim() || 'Other User';
+    const subheaderText = currentProfile.subheader || '';
 
     // Update name in sidebar
     const userName = document.querySelector('.sidebar-footer .user-name');
     if (userName) {
-        const firstName = currentProfile.first_name || '';
-        const lastName = currentProfile.last_name || '';
-        userName.textContent = `${firstName} ${lastName}`.trim() || 'Other User';
+        userName.textContent = fullName;
     }
 
     // Update subheader in sidebar
     const userRoleElement = document.querySelector('.sidebar-footer .user-role');
     if (userRoleElement) {
-        userRoleElement.textContent = currentProfile.subheader || '';
+        userRoleElement.textContent = subheaderText;
         userRoleElement.style.color = '#d4a017'; // Yellow color for other profile
     }
 
@@ -234,6 +237,46 @@ function updateSidebarFooter() {
             sidebarAvatar.innerHTML = `<img src="${currentProfile.profile_picture_url}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
         }
         sidebarAvatar.style.visibility = 'visible';
+    }
+
+    // === MOBILE HEADER UPDATES ===
+    // Update mobile header profile picture
+    const mobileProfilePic = document.getElementById('mobileProfilePic');
+    if (mobileProfilePic) {
+        if (currentProfile.profile_picture_url) {
+            mobileProfilePic.innerHTML = `<img src="${currentProfile.profile_picture_url}" alt="Profile" class="mobile-profile-pic">`;
+        }
+    }
+
+    // Update mobile header user name
+    const mobileUserName = document.getElementById('mobileUserName');
+    if (mobileUserName) {
+        mobileUserName.textContent = fullName;
+    }
+
+    // Update mobile header user role/subheader
+    const mobileUserRole = document.getElementById('mobileUserRole');
+    if (mobileUserRole) {
+        mobileUserRole.textContent = subheaderText;
+    }
+
+    // === MOBILE SIDEBAR UPDATES ===
+    // Update mobile sidebar avatar
+    const mobileSidebarAvatar = document.getElementById('mobileSidebarAvatar');
+    if (mobileSidebarAvatar && currentProfile.profile_picture_url) {
+        mobileSidebarAvatar.innerHTML = `<img src="${currentProfile.profile_picture_url}" alt="Profile" class="mobile-sidebar-avatar">`;
+    }
+
+    // Update mobile sidebar user name
+    const mobileSidebarUserName = document.getElementById('mobileSidebarUserName');
+    if (mobileSidebarUserName) {
+        mobileSidebarUserName.textContent = fullName;
+    }
+
+    // Update mobile sidebar user role
+    const mobileSidebarUserRole = document.getElementById('mobileSidebarUserRole');
+    if (mobileSidebarUserRole) {
+        mobileSidebarUserRole.textContent = subheaderText;
     }
 }
 

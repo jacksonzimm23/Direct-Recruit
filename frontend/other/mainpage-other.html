@@ -13,7 +13,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 </head>
-<body class="dashboard-body">
+<body class="dashboard-body profile-type-other">
     <!-- Mobile Header (visible only on mobile) -->
     <header class="mobile-header" id="mobileHeader">
         <div class="mobile-header-left">
@@ -65,8 +65,10 @@
                 </svg>
                 <span>Settings</span>
             </a>
-            <div class="mobile-sidebar-divider"></div>
-            <button class="mobile-sidebar-nav-item danger" id="mobileSidebarLogout">
+        </nav>
+        <div class="mobile-sidebar-footer">
+            <img src="https://res.cloudinary.com/dzmsj6nwv/image/upload/v1762928148/LogoPNG3_pofqrr.png" alt="Direct Recruit" class="mobile-sidebar-logo">
+            <button class="mobile-sidebar-logout-btn" id="mobileSidebarLogout">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
                     <polyline points="16 17 21 12 16 7"></polyline>
@@ -74,9 +76,6 @@
                 </svg>
                 <span>Logout</span>
             </button>
-        </nav>
-        <div class="mobile-sidebar-footer">
-            <img src="https://res.cloudinary.com/dzmsj6nwv/image/upload/v1762928148/LogoPNG3_pofqrr.png" alt="Direct Recruit">
         </div>
     </aside>
 
@@ -123,7 +122,7 @@
         </div>
     </div>
     <!-- Hidden file input for mobile modal media uploads -->
-    <input type="file" id="mobilePostMediaInput" accept="image/jpeg,image/png,image/gif,image/webp,video/mp4,video/mov,video/avi,video/webm" multiple style="display: none;">
+    <input type="file" id="mobilePostMediaInput" accept="image/*,video/*" multiple style="display: none;">
 
     <!-- Sidebar Toggle Button -->
     <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle Sidebar">

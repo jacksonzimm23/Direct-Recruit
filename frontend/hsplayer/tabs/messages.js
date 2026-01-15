@@ -103,7 +103,7 @@ async function loadCurrentUser() {
                     // Default format for HS players
                     if (profile.position) parts.push(profile.position);
                     if (profile.high_school) parts.push(profile.high_school);
-                    if (profile.graduation_year) parts.push(`Class of ${profile.graduation_year}`);
+                    if (profile.graduation_year) parts.push(profile.graduation_year);
                     userRole.textContent = parts.join(' • ') || 'Player';
                 }
             }
@@ -363,10 +363,10 @@ function updateThreadHeader(participant) {
                     starsPrefix = `<span style="color: #ffd700; font-weight: 600;">${participant.star_rating}★</span> `;
                 }
 
-                // HS Player: Position • High School • Class of Year
+                // HS Player: Position • High School • Year
                 if (participant.position) parts.push(participant.position);
                 if (participant.high_school) parts.push(participant.high_school);
-                if (participant.graduation_year) parts.push(`Class of ${participant.graduation_year}`);
+                if (participant.graduation_year) parts.push(participant.graduation_year);
                 roleText = parts.join(' • ') || 'Player';
                 threadUserRole.style.color = '';
             }

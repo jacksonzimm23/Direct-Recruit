@@ -233,56 +233,65 @@ document.addEventListener('DOMContentLoaded', async function() {
         });
     }
 
-    // Logout modal function
-    function showLogoutModal() {
-        // Create modal overlay
-        const modal = document.createElement('div');
-        modal.className = 'logout-modal-overlay';
-        modal.innerHTML = `
-            <div class="logout-modal">
-                <div class="logout-modal-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-                        <polyline points="16 17 21 12 16 7"></polyline>
-                        <line x1="21" y1="12" x2="9" y2="12"></line>
-                    </svg>
-                </div>
-                <h2 class="logout-modal-title">Logout</h2>
-                <p class="logout-modal-text">Are you sure you want to logout?</p>
-                <div class="logout-modal-actions">
-                    <button class="logout-modal-btn logout-modal-btn-cancel" id="logoutCancel">Cancel</button>
-                    <button class="logout-modal-btn logout-modal-btn-confirm" id="logoutConfirm">Logout</button>
-                </div>
-            </div>
-        `;
-
-        document.body.appendChild(modal);
-
-        // Handle cancel
-        document.getElementById('logoutCancel').addEventListener('click', () => {
-            modal.remove();
-        });
-
-        // Handle confirm
-        document.getElementById('logoutConfirm').addEventListener('click', () => {
-            // Clear authentication
-            localStorage.removeItem('token');
-            localStorage.removeItem('user');
-            // Redirect to landing page - check if we're in tabs folder or main folder
-            const isInTabsFolder = window.location.pathname.includes('/tabs/');
-            window.location.href = isInTabsFolder ? '../../landingpage/index.html' : '../landingpage/index.html';
-        });
-
-        // Close on overlay click
-        modal.addEventListener('click', (e) => {
-            if (e.target === modal) {
-                modal.remove();
-            }
-        });
-    }
-
     console.log('Direct Recruit Player Dashboard Loaded');
 });
+
+// Logout modal function - Global so it can be called from mobile sidebar
+function showLogoutModal() {
+    // Create modal overlay
+    const modal = document.createElement('div');
+    modal.className = 'logout-modal-overlay';
+    modal.innerHTML = `
+        <div class="logout-modal">
+            <div class="logout-modal-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                    <polyline points="16 17 21 12 16 7"></polyline>
+                    <line x1="21" y1="12" x2="9" y2="12"></line>
+                </svg>
+            </div>
+            <h2 class="logout-modal-title">Logout</h2>
+            <p class="logout-modal-text">Are you sure you want to logout?</p>
+            <div class="logout-modal-actions">
+                <button class="logout-modal-btn logout-modal-btn-cancel" id="logoutCancel">Cancel</button>
+                <button class="logout-modal-btn logout-modal-btn-confirm" id="logoutConfirm">Logout</button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    // Handle cancel
+    document.getElementById('logoutCancel').addEventListener('click', () => {
+        modal.remove();
+    });
+
+    // Handle confirm
+    document.getElementById('logoutConfirm').addEventListener('click', () => {
+        // Clear authentication
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        // Redirect to landing page - check if we're in tabs folder or main folder
+        const isInTabsFolder = window.location.pathname.includes('/tabs/');
+        window.location.href = isInTabsFolder ? '../../landingpage/index.html' : '../landingpage/index.html';
+    });
+
+    // Close on overlay click
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            modal.remove();
+        }
+    });
+
+    // Close on escape key
+    const escHandler = (e) => {
+        if (e.key === 'Escape') {
+            modal.remove();
+            document.removeEventListener('keydown', escHandler);
+        }
+    };
+    document.addEventListener('keydown', escHandler);
+}
 
 // Update sidebar footer with current user info
 async function updateSidebarFooter() {
@@ -296,17 +305,37 @@ async function updateSidebarFooter() {
             // Build role/info string
             const parts = [];
             if (userRole === 'player') {
-                // Player: Position, High School, Class of Graduation Year
+                // Player: Position, Height, Weight, Class (graduation year)
                 if (profile.position) parts.push(profile.position);
-                if (profile.high_school) parts.push(profile.high_school);
-                if (profile.graduation_year) parts.push(`Class of ${profile.graduation_year}`);
+
+                // Height (handle both string "6'2"" and number 74 formats)
+                if (profile.height) {
+                    if (typeof profile.height === 'string' && (profile.height.includes("'") || profile.height.includes('"'))) {
+                        // Already formatted as string like "6'2""
+                        parts.push(profile.height);
+                    } else {
+                        // Number (total inches) - convert to feet'inches"
+                        const totalInches = parseInt(profile.height);
+                        const feet = Math.floor(totalInches / 12);
+                        const inches = totalInches % 12;
+                        parts.push(`${feet}'${inches}"`);
+                    }
+                }
+
+                // Weight
+                if (profile.weight) {
+                    parts.push(`${profile.weight} lbs`);
+                }
+
+                // Class (graduation year only)
+                if (profile.graduation_year) parts.push(profile.graduation_year);
             } else if (userRole === 'coach') {
                 // Coach: Position Title, College, State
                 if (profile.position_title) parts.push(profile.position_title);
                 if (profile.college_name) parts.push(profile.college_name);
                 if (profile.state) parts.push(profile.state);
             }
-            const roleText = parts.join(' • ') || (userRole === 'player' ? 'Player' : 'Coach');
+            const roleText = parts.join(' • ') || (userRole === 'player' ? 'HS Player' : 'Coach');
 
             // Update desktop sidebar footer
             const userName = document.querySelector('.sidebar-footer .user-name');
@@ -653,8 +682,13 @@ function initMobilePostModal() {
             if (selectedFiles.length > 0) {
                 submitBtn.textContent = 'Uploading...';
                 const uploadResponse = await uploadAPI.uploadPostMedia(selectedFiles);
+
+                // Extract S3 keys from upload result
                 if (uploadResponse.media && uploadResponse.media.length > 0) {
-                    mediaUrls = uploadResponse.media;
+                    mediaUrls = uploadResponse.media.map(m => m.s3Key);
+                } else if (uploadResponse.s3Key) {
+                    // Single file fallback
+                    mediaUrls = [uploadResponse.s3Key];
                 }
             }
 
@@ -662,7 +696,7 @@ function initMobilePostModal() {
             submitBtn.textContent = 'Posting...';
             const postData = {
                 content: content,
-                media: mediaUrls
+                media_urls: mediaUrls
             };
 
             const response = await postsAPI.createPost(postData);

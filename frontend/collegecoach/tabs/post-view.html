@@ -13,18 +13,17 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <style>
+        /* Match feed page layout - no extra max-width constraint */
         .post-view-container {
-            max-width: 900px;
-            margin: 0 auto;
-            padding: 1.5rem 2rem;
+            padding: 0;
         }
 
         .post-view-header {
             display: flex;
             align-items: center;
             gap: 1rem;
-            margin-bottom: 1.5rem;
-            padding-bottom: 1rem;
+            margin-bottom: 1rem;
+            padding: 1rem 0;
             border-bottom: 1px solid rgba(18, 130, 162, 0.2);
         }
 
@@ -58,29 +57,36 @@
             color: var(--white);
         }
 
+        /* Match feed page post card styling exactly */
         .post-view-content {
-            background: rgba(254, 252, 251, 0.03);
-            border: 1px solid rgba(18, 130, 162, 0.2);
-            border-radius: 16px;
             overflow: hidden;
         }
 
         .post-view-content .post-card {
-            border: none;
-            border-radius: 0;
-            margin: 0;
-            padding: 1.5rem;
+            cursor: default;
+            transform: none !important;
         }
 
-        .post-view-content .post-content p {
-            font-size: 1.1rem;
-            line-height: 1.6;
+        .post-view-content .post-card:hover {
+            transform: none !important;
         }
 
-        .post-view-content .post-media img,
-        .post-view-content .post-media video {
-            max-height: 600px;
+        /* Hide the arrow icon on single post view */
+        .post-view-content .post-view-icon {
+            display: none;
         }
+
+        /* Disable click navigation on post content */
+        .post-view-content .post-content {
+            cursor: default;
+        }
+
+        /* Hide feed tabs on single post view */
+        .post-view-content .feed-tabs {
+            display: none !important;
+        }
+
+        /* Use feed.css defaults for post content and media - no overrides needed */
 
         .loading-state {
             display: flex;
@@ -118,12 +124,14 @@
             opacity: 0.5;
         }
 
+        /* Comments section always visible on post view */
         .post-view-content .post-comments-section {
             display: block !important;
             border-top: 1px solid rgba(18, 130, 162, 0.2);
             padding: 1.5rem;
         }
 
+        /* Better spacing for comments */
         .post-view-content .post-stats {
             padding: 0.75rem 0;
         }
@@ -135,23 +143,15 @@
             margin: 0.5rem 0;
         }
 
+        /* Responsive adjustments - let feed.css and mobile-overrides.css handle most styling */
         @media (max-width: 768px) {
-            .post-view-container {
-                padding: 1rem;
-            }
-
-            .post-view-content .post-card {
-                padding: 1rem;
-            }
-
-            .post-view-content .post-media img,
-            .post-view-content .post-media video {
-                max-height: 400px;
+            .post-view-header {
+                padding: 0.75rem 0;
             }
         }
     </style>
 </head>
-<body class="dashboard-body">
+<body class="dashboard-body profile-type-coach">
     <!-- Mobile Header (visible only on mobile) -->
     <header class="mobile-header" id="mobileHeader">
         <div class="mobile-header-left">
@@ -176,7 +176,7 @@
 
     <!-- Mobile Sidebar (Profile Menu) -->
     <aside class="mobile-sidebar" id="mobileSidebar">
-        <div class="mobile-sidebar-header">
+        <a href="my-profile.html" class="mobile-sidebar-header" id="mobileSidebarProfileLink">
             <div class="mobile-sidebar-avatar-circle" id="mobileSidebarAvatar">
                 <svg viewBox="0 0 24 24" fill="currentColor">
                     <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
@@ -187,13 +187,7 @@
                 <div class="mobile-sidebar-user-name" id="mobileSidebarUserName">User</div>
                 <div class="mobile-sidebar-user-role" id="mobileSidebarUserRole"></div>
             </div>
-            <button class="mobile-sidebar-close" id="mobileSidebarClose" aria-label="Close menu">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <line x1="18" y1="6" x2="6" y2="18"></line>
-                    <line x1="6" y1="6" x2="18" y2="18"></line>
-                </svg>
-            </button>
-        </div>
+        </a>
         <nav class="mobile-sidebar-nav">
             <a href="my-profile.html" class="mobile-sidebar-nav-item">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -209,8 +203,10 @@
                 </svg>
                 <span>Settings</span>
             </a>
-            <div class="mobile-sidebar-divider"></div>
-            <button class="mobile-sidebar-nav-item danger" id="mobileSidebarLogout">
+        </nav>
+        <div class="mobile-sidebar-footer">
+            <img src="https://res.cloudinary.com/dzmsj6nwv/image/upload/v1762928148/LogoPNG3_pofqrr.png" alt="Direct Recruit" class="mobile-sidebar-logo">
+            <button class="mobile-sidebar-logout-btn" id="mobileSidebarLogout">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
                     <polyline points="16 17 21 12 16 7"></polyline>
@@ -218,9 +214,6 @@
                 </svg>
                 <span>Logout</span>
             </button>
-        </nav>
-        <div class="mobile-sidebar-footer">
-            <img src="https://res.cloudinary.com/dzmsj6nwv/image/upload/v1762928148/LogoPNG3_pofqrr.png" alt="Direct Recruit">
         </div>
     </aside>
 

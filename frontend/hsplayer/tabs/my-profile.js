@@ -523,10 +523,10 @@ function updateNavbarForLoggedInUser(user, profile) {
                 userRole.textContent = parts.join(' • ') || 'Transfer Player';
                 userRole.style.color = '#b91c1c'; // Transfer player red
             } else if (userFolder === 'hsplayer') {
-                // HS Player: position • high_school • Class of graduation_year
+                // HS Player: position • high_school • graduation_year
                 if (profile.position) parts.push(profile.position);
                 if (profile.high_school) parts.push(profile.high_school);
-                if (profile.graduation_year) parts.push(`Class of ${profile.graduation_year}`);
+                if (profile.graduation_year) parts.push(profile.graduation_year);
                 userRole.textContent = parts.join(' • ') || 'Player';
             } else if (userFolder === 'collegeplayer') {
                 // College Player: position • high_school • division
@@ -935,7 +935,7 @@ async function loadFollowCounts(userId) {
 }
 
 function displayPlayerProfile(profile) {
-    // Row 1: Position, Height, Weight (all in blue)
+    // Row 1: Position, Height, Weight, Class (all in blue)
     const positionElement = document.querySelector('.profile-position');
     if (positionElement) {
         const parts = [];
@@ -961,33 +961,28 @@ function displayPlayerProfile(profile) {
             parts.push(weightStr.includes('lbs') ? weightStr : `${profile.weight} lbs`);
         }
 
+        // Add class (graduation year)
+        if (profile.graduation_year) {
+            parts.push(profile.graduation_year);
+        }
+
         positionElement.textContent = parts.length > 0 ? parts.join(' • ') : 'Position not specified';
     }
 
-    // Row 2 & 3: School info, Class (GPA is shown in Academics section only)
+    // Row 2: School info (GPA is shown in Academics section only)
     const metaElement = document.querySelector('.profile-meta');
     if (metaElement) {
-        const lines = [];
-
-        // Row 2: High School Name, State OR College Name, Division
-        const row2Parts = [];
+        // High School Name, State OR College Name, Division
+        const parts = [];
         if (profile.high_school) {
-            row2Parts.push(profile.high_school);
-            if (profile.state) row2Parts.push(profile.state);
+            parts.push(profile.high_school);
+            if (profile.state) parts.push(profile.state);
         } else if (profile.college_name) {
-            row2Parts.push(profile.college_name);
-            if (profile.college_division) row2Parts.push(profile.college_division);
-        }
-        if (row2Parts.length > 0) {
-            lines.push(row2Parts.join(', '));
+            parts.push(profile.college_name);
+            if (profile.college_division) parts.push(profile.college_division);
         }
 
-        // Row 3: Class of YYYY
-        if (profile.graduation_year) {
-            lines.push(`Class of ${profile.graduation_year}`);
-        }
-
-        metaElement.innerHTML = lines.join('<br>') || 'Information not provided';
+        metaElement.textContent = parts.length > 0 ? parts.join(', ') : 'Information not provided';
     }
 
     // Update username display
@@ -1157,7 +1152,7 @@ function updateSchoolInfo(profile) {
             schoolLocation.textContent = `${profile.city}, ${profile.state}`;
         }
         if (schoolClass && profile.graduation_year) {
-            schoolClass.textContent = `Class of ${profile.graduation_year}`;
+            schoolClass.textContent = profile.graduation_year;
         }
     }
 }
@@ -2164,9 +2159,6 @@ function setupUI() {
         if (addSeasonHighlightBtn) addSeasonHighlightBtn.classList.add('show-button');
         if (addGameHighlightBtn) addGameHighlightBtn.classList.add('show-button');
 
-        // Show Add Stars button for own profile
-        const addStarsBtn = document.getElementById('addStarsBtn');
-        if (addStarsBtn) addStarsBtn.classList.add('show-button');
     }
 }
 
@@ -6018,36 +6010,43 @@ async function recordProfileView(viewedUserId) {
 // Fetch and display profile view count
 async function loadProfileViewCount() {
     const viewCountElement = document.getElementById('profileViewsCount');
+    const mobileViewCountElement = document.getElementById('mobileProfileViewsCount');
     const profileStatsWidget = document.getElementById('profileStatsWidget');
-
-    if (!viewCountElement || !profileStatsWidget) return;
+    const mobileProfileViewsLink = document.getElementById('mobileProfileViewsLink');
 
     // Only show profile stats for own profile and if it's a player profile (not coach)
     if (!isOwnProfile || currentProfileType !== 'player') {
-        profileStatsWidget.style.display = 'none';
+        if (profileStatsWidget) profileStatsWidget.style.display = 'none';
+        if (mobileProfileViewsLink) mobileProfileViewsLink.style.display = 'none';
         return;
     }
 
     // Check if this is an HS player (no college_division)
     if (currentProfile && currentProfile.college_division && currentProfile.college_division.trim() !== '') {
-        profileStatsWidget.style.display = 'none';
+        if (profileStatsWidget) profileStatsWidget.style.display = 'none';
+        if (mobileProfileViewsLink) mobileProfileViewsLink.style.display = 'none';
         return;
     }
 
-    profileStatsWidget.style.display = 'block';
+    if (profileStatsWidget) profileStatsWidget.style.display = 'block';
+    if (mobileProfileViewsLink) mobileProfileViewsLink.style.display = 'flex';
 
     try {
         const response = await API.get(`/profile/views/${currentUserId}`);
-        viewCountElement.textContent = response.viewCount || 0;
+        const viewCount = response.viewCount || 0;
+        if (viewCountElement) viewCountElement.textContent = viewCount;
+        if (mobileViewCountElement) mobileViewCountElement.textContent = viewCount;
     } catch (error) {
         console.error('Error loading profile view count:', error);
-        viewCountElement.textContent = '0';
+        if (viewCountElement) viewCountElement.textContent = '0';
+        if (mobileViewCountElement) mobileViewCountElement.textContent = '0';
     }
 }
 
 // Setup the profile viewers modal
 function setupProfileViewersModal() {
     const profileViewsLink = document.getElementById('profileViewsLink');
+    const mobileProfileViewsLink = document.getElementById('mobileProfileViewsLink');
     const modal = document.getElementById('profileViewersModal');
     const modalOverlay = document.getElementById('profileViewersModalOverlay');
     const modalClose = document.getElementById('profileViewersModalClose');
@@ -6057,6 +6056,22 @@ function setupProfileViewersModal() {
             e.preventDefault();
             // Only open modal if viewing own profile
             if (isOwnProfile) {
+                openProfileViewersModal();
+            }
+        });
+    }
+
+    // Mobile profile views link
+    if (mobileProfileViewsLink) {
+        mobileProfileViewsLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            // Only open modal if viewing own profile
+            if (isOwnProfile) {
+                // Close mobile sidebar first
+                const mobileSidebar = document.getElementById('mobileSidebar');
+                const mobileSidebarOverlay = document.getElementById('mobileSidebarOverlay');
+                if (mobileSidebar) mobileSidebar.classList.remove('active');
+                if (mobileSidebarOverlay) mobileSidebarOverlay.classList.remove('active');
                 openProfileViewersModal();
             }
         });
@@ -6161,822 +6176,6 @@ function closeProfileViewersModal() {
 // Initialize profile viewers modal when DOM is ready
 document.addEventListener('DOMContentLoaded', setupProfileViewersModal);
 
-// ============================================
-// ADD STARS MODAL
-// ============================================
-
-// Star verification state
-let starsVerificationData = {
-    stars: null,
-    source: null,
-    url: null
-};
-
-// Track if player has an existing star rating
-let playerHasExistingStarRating = false;
-
-function showAddStarsModal() {
-    const modal = document.getElementById('addStarsModal');
-    if (modal) {
-        modal.classList.add('active');
-        showStarsStep('input');
-
-        // Show/hide clear button based on existing rating
-        const clearBtn = document.getElementById('btnClearStars');
-        if (clearBtn) {
-            clearBtn.classList.toggle('hidden', !playerHasExistingStarRating);
-        }
-    }
-}
-
-function hideAddStarsModal() {
-    const modal = document.getElementById('addStarsModal');
-    if (modal) {
-        modal.classList.remove('active');
-        resetAddStarsModal();
-    }
-}
-
-function showStarsStep(step) {
-    // Hide all steps
-    const steps = ['starsStepInput', 'starsStepLoading', 'starsStepConfirm', 'starsStepNoStars', 'starsStepSupport'];
-    const footers = ['starsFooterInput', 'starsFooterLoading', 'starsFooterConfirm', 'starsFooterNoStars', 'starsFooterSupport'];
-
-    steps.forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.classList.add('hidden');
-    });
-
-    footers.forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.classList.add('hidden');
-    });
-
-    // Show the target step
-    const stepMap = {
-        'input': { step: 'starsStepInput', footer: 'starsFooterInput' },
-        'loading': { step: 'starsStepLoading', footer: 'starsFooterLoading' },
-        'confirm': { step: 'starsStepConfirm', footer: 'starsFooterConfirm' },
-        'no-stars': { step: 'starsStepNoStars', footer: 'starsFooterNoStars' },
-        'support': { step: 'starsStepSupport', footer: 'starsFooterSupport' }
-    };
-
-    const target = stepMap[step];
-    if (target) {
-        const stepEl = document.getElementById(target.step);
-        const footerEl = document.getElementById(target.footer);
-        if (stepEl) stepEl.classList.remove('hidden');
-        if (footerEl) footerEl.classList.remove('hidden');
-    }
-}
-
-function updateStarsDisplay(starsCount) {
-    const displayEl = document.getElementById('starsDisplayConfirm');
-    const countText = document.getElementById('starsCountText');
-
-    if (displayEl) {
-        let starsHTML = '';
-        for (let i = 1; i <= 5; i++) {
-            if (i <= starsCount) {
-                starsHTML += '<span class="star-icon filled">★</span>';
-            } else {
-                starsHTML += '<span class="star-icon empty">★</span>';
-            }
-        }
-        displayEl.innerHTML = starsHTML;
-    }
-
-    if (countText) {
-        countText.textContent = starsCount;
-    }
-}
-
-function updateSourceDisplay(source) {
-    const sourceText = document.getElementById('starsSourceText');
-    if (sourceText) {
-        sourceText.textContent = source === '247sports' ? '247 Sports' : 'On3 / Rivals';
-    }
-}
-
-async function verifyStarRating(source, url) {
-    const token = localStorage.getItem('auth_token');
-    if (!token) {
-        throw new Error('Please log in to verify your star rating');
-    }
-
-    const response = await fetch(`${API_BASE_URL}/stars/verify`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ source, url })
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-        throw new Error(data.error || 'Verification failed');
-    }
-
-    return data;
-}
-
-async function saveStarRating(stars, source, url) {
-    const token = localStorage.getItem('auth_token');
-    if (!token) {
-        throw new Error('Please log in to save your star rating');
-    }
-
-    const response = await fetch(`${API_BASE_URL}/stars/save`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ stars, source, url })
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-        throw new Error(data.error || 'Failed to save star rating');
-    }
-
-    return data;
-}
-
-function animateProgressBar(duration, callback) {
-    const progressFill = document.getElementById('starsProgressFill');
-    const progressText = document.getElementById('starsProgressText');
-
-    let progress = 0;
-    const startTime = Date.now();
-
-    function updateProgress() {
-        const elapsed = Date.now() - startTime;
-        progress = Math.min((elapsed / duration) * 100, 100);
-
-        if (progressFill) {
-            progressFill.style.width = `${progress}%`;
-        }
-        if (progressText) {
-            progressText.textContent = `${Math.round(progress)}%`;
-        }
-
-        if (progress < 100) {
-            requestAnimationFrame(updateProgress);
-        } else {
-            if (callback) callback();
-        }
-    }
-
-    updateProgress();
-}
-
-function removeStarRatingFromProfile() {
-    // Remove star rating element from profile
-    const existingRating = document.querySelector('.profile-star-rating');
-    if (existingRating) {
-        existingRating.remove();
-    }
-
-    // Also remove from sidebar footer
-    removeStarsFromSidebarFooter();
-}
-
-function removeStarsFromSubheader() {
-    const positionStars = document.querySelector('.profile-position-stars');
-    if (positionStars) {
-        positionStars.remove();
-    }
-}
-
-function removeStarsFromSidebarFooter() {
-    const sidebarStars = document.querySelector('.sidebar-footer .sidebar-stars');
-    if (sidebarStars) {
-        sidebarStars.remove();
-    }
-}
-
-function displayStarRatingOnProfile(starsCount, animate = false) {
-    const profilePosition = document.querySelector('.profile-position');
-    if (!profilePosition) return;
-
-    // Remove existing star rating if present
-    const existingRating = document.querySelector('.profile-star-rating');
-    if (existingRating) {
-        existingRating.remove();
-    }
-
-    // Only display stars if player has 1-5 stars (not 0)
-    if (starsCount < 1 || starsCount > 5) {
-        removeStarsFromSidebarFooter();
-        return;
-    }
-
-    // Create star rating element with all 5 stars (empty initially for animation)
-    const ratingEl = document.createElement('div');
-    ratingEl.className = 'profile-star-rating';
-    ratingEl.setAttribute('data-stars', starsCount);
-
-    // All stars start empty for animation
-    for (let i = 1; i <= 5; i++) {
-        const starSpan = document.createElement('span');
-        starSpan.className = 'star empty';
-        starSpan.textContent = '★';
-        starSpan.setAttribute('data-index', i);
-        ratingEl.appendChild(starSpan);
-    }
-
-    // Insert below the profile-position (subheader)
-    profilePosition.insertAdjacentElement('afterend', ratingEl);
-
-    if (animate) {
-        // Start with empty stars animation
-        ratingEl.classList.add('animate-empty');
-    } else {
-        // No animation, just show filled stars directly
-        setTimeout(() => {
-            const stars = ratingEl.querySelectorAll('.star');
-            stars.forEach((star, index) => {
-                if (index < starsCount) {
-                    star.classList.remove('empty');
-                    star.classList.add('filled');
-                }
-                star.style.opacity = '1';
-            });
-            ratingEl.classList.add('visible');
-        }, 50);
-    }
-
-    // Also update sidebar footer (no animation)
-    updateStarsInSidebarFooter(starsCount);
-}
-
-function updateStarsInSubheader(starsCount) {
-    if (starsCount < 1 || starsCount > 5) return;
-
-    const positionEl = document.querySelector('.profile-position');
-    if (!positionEl) return;
-
-    // Remove existing stars display
-    removeStarsFromSubheader();
-
-    // Create stars display for subheader
-    const starsEl = document.createElement('span');
-    starsEl.className = 'profile-position-stars';
-    starsEl.innerHTML = `<span class="star-count">${starsCount}</span><span class="star-icon">★</span>`;
-
-    // Insert at the beginning of position line
-    positionEl.insertBefore(starsEl, positionEl.firstChild);
-}
-
-function updateStarsInSidebarFooter(starsCount) {
-    if (starsCount < 1 || starsCount > 5) return;
-
-    const sidebarFooter = document.querySelector('.sidebar-footer .user-info');
-    if (!sidebarFooter) return;
-
-    // Remove existing stars display
-    removeStarsFromSidebarFooter();
-
-    // Find the user-role element (position info line)
-    const userRole = sidebarFooter.querySelector('.user-role');
-    if (!userRole) return;
-
-    // Create stars display for sidebar - insert at beginning with margin after
-    const starsEl = document.createElement('span');
-    starsEl.className = 'sidebar-stars';
-    starsEl.innerHTML = `<span class="star-count">${starsCount}</span><span class="star-icon">★</span>`;
-    starsEl.style.color = '#ffd700';
-    starsEl.style.fontWeight = '600';
-    starsEl.style.marginRight = '0.35em';
-
-    // Insert at the beginning of user role
-    userRole.insertBefore(starsEl, userRole.firstChild);
-}
-
-function createFlyingStarsAnimation(starsCount) {
-    const container = document.getElementById('flyingStarsContainer');
-    const profileRating = document.querySelector('.profile-star-rating');
-    const modal = document.getElementById('addStarsModal');
-
-    if (!container || !profileRating) return;
-
-    // Get the modal center position for starting point
-    const modalContent = modal?.querySelector('.add-stars-modal-content');
-    const modalRect = modalContent?.getBoundingClientRect() || { left: window.innerWidth / 2, top: window.innerHeight / 2, width: 0, height: 0 };
-    const startX = modalRect.left + modalRect.width / 2;
-    const startY = modalRect.top + modalRect.height / 2;
-
-    // Get each target star position
-    const targetStars = profileRating.querySelectorAll('.star');
-
-    // Create flying stars that fly to their target positions
-    for (let i = 0; i < starsCount; i++) {
-        const targetStar = targetStars[i];
-        if (!targetStar) continue;
-
-        const targetRect = targetStar.getBoundingClientRect();
-        const endX = targetRect.left + targetRect.width / 2;
-        const endY = targetRect.top + targetRect.height / 2;
-
-        const flyingStar = document.createElement('div');
-        flyingStar.className = 'flying-star';
-        flyingStar.innerHTML = '★';
-        flyingStar.style.left = `${startX}px`;
-        flyingStar.style.top = `${startY}px`;
-        flyingStar.style.setProperty('--end-x', `${endX - startX}px`);
-        flyingStar.style.setProperty('--end-y', `${endY - startY}px`);
-        flyingStar.style.animationDelay = `${i * 0.2}s`;
-
-        // When star reaches destination, fill in the target star
-        const delay = i * 200 + 800; // animation duration + stagger
-        setTimeout(() => {
-            targetStar.classList.remove('empty');
-            targetStar.classList.add('filled', 'land');
-            targetStar.style.opacity = '1';
-        }, delay);
-
-        container.appendChild(flyingStar);
-    }
-
-    // Clean up flying stars after animation completes
-    setTimeout(() => {
-        container.innerHTML = '';
-    }, starsCount * 200 + 1500);
-}
-
-function setupAddStarsModal() {
-    // Add Stars button click handler
-    const addStarsBtn = document.getElementById('addStarsBtn');
-    if (addStarsBtn) {
-        addStarsBtn.addEventListener('click', showAddStarsModal);
-    }
-
-    // Close button
-    const closeBtn = document.getElementById('addStarsModalClose');
-    if (closeBtn) {
-        closeBtn.addEventListener('click', hideAddStarsModal);
-    }
-
-    // Cancel button
-    const cancelBtn = document.getElementById('btnAddStarsCancel');
-    if (cancelBtn) {
-        cancelBtn.addEventListener('click', hideAddStarsModal);
-    }
-
-    // Close when clicking overlay
-    const overlay = document.getElementById('addStarsModalOverlay');
-    if (overlay) {
-        overlay.addEventListener('click', hideAddStarsModal);
-    }
-
-    // Source dropdown change handler - update URL hint
-    const sourceSelect = document.getElementById('starsSource');
-    const urlInput = document.getElementById('starsProfileUrl');
-    const urlHint = document.getElementById('starsUrlHint');
-    const verifyBtn = document.getElementById('btnAddStarsVerify');
-
-    // URL validation function
-    function validateStarsUrl(source, url) {
-        if (!source || !url) return false;
-
-        if (source === '247sports') {
-            return url.includes('247sports.com') && url.includes('/player/');
-        } else if (source === 'on3') {
-            return url.includes('on3.com') && (url.includes('/db/') || url.includes('/rivals/'));
-        }
-        return false;
-    }
-
-    // Update verify button state
-    function updateVerifyButtonState() {
-        const source = sourceSelect?.value;
-        const url = urlInput?.value?.trim();
-        const isValid = validateStarsUrl(source, url);
-
-        if (verifyBtn) {
-            verifyBtn.disabled = !isValid;
-            verifyBtn.classList.toggle('disabled', !isValid);
-        }
-    }
-
-    // Initial state - disabled
-    if (verifyBtn) {
-        verifyBtn.disabled = true;
-        verifyBtn.classList.add('disabled');
-    }
-
-    if (sourceSelect && urlHint && urlInput) {
-        sourceSelect.addEventListener('change', function() {
-            const source = this.value;
-            if (source === 'on3') {
-                urlHint.textContent = 'Example: https://www.on3.com/db/player-name/ or https://www.on3.com/rivals/player-name/';
-                urlInput.placeholder = 'https://www.on3.com/db/...';
-            } else if (source === '247sports') {
-                urlHint.textContent = 'Example: https://247sports.com/player/player-name/';
-                urlInput.placeholder = 'https://247sports.com/player/...';
-            } else {
-                urlHint.textContent = 'Select a recruiting service first';
-                urlInput.placeholder = 'Paste your profile URL here...';
-            }
-            updateVerifyButtonState();
-        });
-
-        // Listen for URL input changes
-        urlInput.addEventListener('input', updateVerifyButtonState);
-        urlInput.addEventListener('paste', () => setTimeout(updateVerifyButtonState, 0));
-    }
-
-    // Verify button click handler
-    if (verifyBtn) {
-        verifyBtn.addEventListener('click', async function() {
-            const source = document.getElementById('starsSource')?.value;
-            const url = document.getElementById('starsProfileUrl')?.value?.trim();
-
-            // Double-check validation (button should already be disabled if invalid)
-            if (!validateStarsUrl(source, url)) {
-                return;
-            }
-
-            // Show loading step
-            showStarsStep('loading');
-
-            // Reset progress bar
-            const progressFill = document.getElementById('starsProgressFill');
-            const progressText = document.getElementById('starsProgressText');
-            if (progressFill) progressFill.style.width = '0%';
-            if (progressText) progressText.textContent = '0%';
-
-            // Start verification and progress animation
-            const minDuration = 5000; // Minimum 5 seconds for AI effect
-
-            let verificationResult = null;
-            let verificationError = null;
-
-            // Start the API call
-            verifyStarRating(source, url)
-                .then(result => {
-                    verificationResult = result;
-                })
-                .catch(error => {
-                    verificationError = error;
-                });
-
-            // Animate progress bar
-            animateProgressBar(minDuration, async () => {
-                // Wait a bit more if API hasn't returned yet
-                while (verificationResult === null && verificationError === null) {
-                    await new Promise(resolve => setTimeout(resolve, 100));
-                }
-
-                if (verificationError) {
-                    alert(verificationError.message || 'Verification failed. Please try again.');
-                    showStarsStep('input');
-                    return;
-                }
-
-                // Store verification data
-                starsVerificationData = {
-                    stars: verificationResult.stars,
-                    source: source,
-                    url: url
-                };
-
-                // Show appropriate result
-                if (verificationResult.stars >= 1 && verificationResult.stars <= 5) {
-                    updateStarsDisplay(verificationResult.stars);
-                    updateSourceDisplay(source);
-                    showStarsStep('confirm');
-                } else {
-                    showStarsStep('no-stars');
-                }
-            });
-        });
-    }
-
-    // Yes button (confirm stars are correct)
-    const yesBtn = document.getElementById('btnStarsYes');
-    if (yesBtn) {
-        yesBtn.addEventListener('click', async function() {
-            try {
-                // Save the star rating
-                await saveStarRating(
-                    starsVerificationData.stars,
-                    starsVerificationData.source,
-                    starsVerificationData.url
-                );
-
-                const starCount = starsVerificationData.stars;
-
-                // Add fade-out class to modal
-                const modal = document.getElementById('addStarsModal');
-                if (modal) {
-                    modal.classList.add('fade-out');
-                }
-
-                // Step 1: Create empty stars display next to name (with animation)
-                setTimeout(() => {
-                    displayStarRatingOnProfile(starCount, true);
-                }, 200);
-
-                // Step 2: After empty stars appear, create flying stars from modal center
-                setTimeout(() => {
-                    createFlyingStarsAnimation(starCount);
-                }, 700);
-
-                // Step 3: Update button text after animation completes
-                const totalAnimTime = 700 + (starCount * 200) + 1000;
-                setTimeout(() => {
-                    const addStarsBtn = document.getElementById('addStarsBtn');
-                    if (addStarsBtn) {
-                        addStarsBtn.innerHTML = `
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
-                            </svg>
-                            Update Star Rating
-                        `;
-                    }
-                }, totalAnimTime);
-
-                // Hide modal after a short delay
-                setTimeout(() => {
-                    hideAddStarsModal();
-                    const modalEl = document.getElementById('addStarsModal');
-                    if (modalEl) modalEl.classList.remove('fade-out');
-                }, 600);
-
-            } catch (error) {
-                alert(error.message || 'Failed to save star rating. Please try again.');
-            }
-        });
-    }
-
-    // No button (stars are wrong)
-    const noBtn = document.getElementById('btnStarsNo');
-    if (noBtn) {
-        noBtn.addEventListener('click', function() {
-            showStarsStep('support');
-        });
-    }
-
-    // No Stars close button
-    const noStarsCloseBtn = document.getElementById('btnNoStarsClose');
-    if (noStarsCloseBtn) {
-        noStarsCloseBtn.addEventListener('click', hideAddStarsModal);
-    }
-
-    // No Stars save button (saves 0 stars to database)
-    const noStarsSaveBtn = document.getElementById('btnNoStarsSave');
-    if (noStarsSaveBtn) {
-        noStarsSaveBtn.addEventListener('click', async function() {
-            try {
-                // Save 0 stars to the database
-                await saveStarRating(
-                    0,
-                    starsVerificationData.source,
-                    starsVerificationData.url
-                );
-
-                // Remove any existing star display from profile (since they now have 0)
-                removeStarRatingFromProfile();
-
-                // Show confirmation and close
-                alert('Your profile has been verified. Keep working to earn your stars!');
-                hideAddStarsModal();
-
-                // Update button text to show they can re-verify later
-                const addStarsBtn = document.getElementById('addStarsBtn');
-                if (addStarsBtn) {
-                    addStarsBtn.innerHTML = `
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
-                        </svg>
-                        Update Star Rating
-                    `;
-                }
-            } catch (error) {
-                alert(error.message || 'Failed to save. Please try again.');
-            }
-        });
-    }
-
-    // Support back button
-    const supportBackBtn = document.getElementById('btnSupportBack');
-    if (supportBackBtn) {
-        supportBackBtn.addEventListener('click', function() {
-            showStarsStep('confirm');
-        });
-    }
-
-    // Support send button
-    const supportSendBtn = document.getElementById('btnSupportSend');
-    if (supportSendBtn) {
-        supportSendBtn.addEventListener('click', function() {
-            const message = document.getElementById('supportMessage')?.value?.trim();
-
-            if (!message) {
-                alert('Please describe your issue before sending');
-                return;
-            }
-
-            // For now, just show a confirmation (could integrate with backend later)
-            alert('Thank you! Our support team will review your request and get back to you soon.');
-            hideAddStarsModal();
-        });
-    }
-}
-
-function resetAddStarsModal() {
-    const sourceSelect = document.getElementById('starsSource');
-    const urlInput = document.getElementById('starsProfileUrl');
-    const urlHint = document.getElementById('starsUrlHint');
-    const supportMessage = document.getElementById('supportMessage');
-    const progressFill = document.getElementById('starsProgressFill');
-    const progressText = document.getElementById('starsProgressText');
-
-    if (sourceSelect) sourceSelect.value = '';
-    if (urlInput) urlInput.value = '';
-    if (urlHint) urlHint.textContent = 'Select a recruiting service first';
-    if (supportMessage) supportMessage.value = '';
-    if (progressFill) progressFill.style.width = '0%';
-    if (progressText) progressText.textContent = '0%';
-
-    // Reset verification data
-    starsVerificationData = { stars: null, source: null, url: null };
-
-    // Reset to input step
-    showStarsStep('input');
-}
-
-// Clear Stars Confirmation Modal functions
-function showClearStarsConfirmModal() {
-    const modal = document.getElementById('clearStarsConfirmModal');
-    if (modal) {
-        modal.classList.add('active');
-    }
-}
-
-function hideClearStarsConfirmModal() {
-    const modal = document.getElementById('clearStarsConfirmModal');
-    if (modal) {
-        modal.classList.remove('active');
-    }
-}
-
-async function clearStarRating() {
-    const token = localStorage.getItem('auth_token');
-    if (!token) {
-        alert('Please log in to clear star rating');
-        return;
-    }
-
-    try {
-        const response = await fetch(`${API_BASE_URL}/stars/clear`, {
-            method: 'DELETE',
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
-        });
-
-        if (response.ok) {
-            // Clear visuals from profile
-            removeStarRatingFromProfile();
-
-            // Reset the flag
-            playerHasExistingStarRating = false;
-
-            // Change button back to "Add Star Rating"
-            const addStarsBtn = document.getElementById('addStarsBtn');
-            if (addStarsBtn) {
-                addStarsBtn.innerHTML = `
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
-                    </svg>
-                    Add Star Rating
-                `;
-            }
-
-            // Hide clear button
-            const clearBtn = document.getElementById('btnClearStars');
-            if (clearBtn) {
-                clearBtn.classList.add('hidden');
-            }
-
-            // Close modals
-            hideClearStarsConfirmModal();
-            hideAddStarsModal();
-        } else {
-            const data = await response.json();
-            alert(data.error || 'Failed to clear star rating');
-        }
-    } catch (error) {
-        console.error('Clear star rating error:', error);
-        alert('An error occurred while clearing the star rating');
-    }
-}
-
-function setupClearStarsModal() {
-    // Clear button in add stars modal
-    const clearBtn = document.getElementById('btnClearStars');
-    if (clearBtn) {
-        clearBtn.addEventListener('click', showClearStarsConfirmModal);
-    }
-
-    // Cancel button in confirmation modal
-    const cancelBtn = document.getElementById('btnClearStarsCancel');
-    if (cancelBtn) {
-        cancelBtn.addEventListener('click', hideClearStarsConfirmModal);
-    }
-
-    // Confirm clear button
-    const confirmBtn = document.getElementById('btnClearStarsConfirm');
-    if (confirmBtn) {
-        confirmBtn.addEventListener('click', clearStarRating);
-    }
-
-    // Close on overlay click
-    const overlay = document.getElementById('clearStarsConfirmOverlay');
-    if (overlay) {
-        overlay.addEventListener('click', hideClearStarsConfirmModal);
-    }
-}
-
-// Check for existing star rating on profile load
-async function loadExistingStarRating() {
-    const token = localStorage.getItem('auth_token');
-    if (!token) return;
-
-    try {
-        const response = await fetch(`${API_BASE_URL}/stars/my-rating`, {
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
-        });
-
-        if (response.ok) {
-            const data = await response.json();
-            const addStarsBtn = document.getElementById('addStarsBtn');
-
-            // Check if player has verified stars (including 0)
-            if (data.stars !== null && data.stars !== undefined) {
-                // Set flag for clear button visibility
-                playerHasExistingStarRating = true;
-
-                // Display stars on profile only if 1-5
-                if (data.stars >= 1 && data.stars <= 5) {
-                    displayStarRatingOnProfile(data.stars);
-
-                    // Retry sidebar footer update since profile data may load after this
-                    // Use more attempts with shorter delay to catch the moment after profile loads
-                    retrySidebarFooterStars(data.stars, 15);
-                }
-
-                // Change button to "Update Star Rating" for re-verification
-                if (addStarsBtn) {
-                    addStarsBtn.innerHTML = `
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
-                        </svg>
-                        Update Star Rating
-                    `;
-                }
-            } else {
-                playerHasExistingStarRating = false;
-            }
-        }
-    } catch (error) {
-        console.error('Failed to load star rating:', error);
-    }
-}
-
-// Retry updating sidebar footer stars until the element has content
-function retrySidebarFooterStars(starsCount, attemptsLeft) {
-    if (attemptsLeft <= 0) return;
-
-    const sidebarFooter = document.querySelector('.sidebar-footer .user-info');
-    const userRole = sidebarFooter?.querySelector('.user-role');
-
-    // Check if user-role exists AND has text content (profile data has loaded)
-    // Also check it doesn't already have stars to avoid duplicates
-    const existingStars = userRole?.querySelector('.sidebar-stars');
-    if (userRole && userRole.textContent.trim().length > 0 && !existingStars) {
-        updateStarsInSidebarFooter(starsCount);
-    } else if (!existingStars) {
-        // Sidebar footer content not loaded yet, retry after delay
-        setTimeout(() => retrySidebarFooterStars(starsCount, attemptsLeft - 1), 300);
-    }
-}
-
-// Initialize Add Stars modal when DOM is ready
-document.addEventListener('DOMContentLoaded', () => {
-    setupAddStarsModal();
-    setupClearStarsModal();
-    loadExistingStarRating();
-});
-
 // ==================== PROFILE POSTS & REPLIES ====================
 
 // Helper function to format time ago
@@ -7070,11 +6269,11 @@ function buildPostMetaInfo(post) {
                 parts.push(div);
             }
         } else {
-            // HS Player: Position • High School • Class of Year
+            // HS Player: Position • High School • Year
             if (post.author_position) parts.push(post.author_position);
             if (post.author_school) parts.push(post.author_school);
             if (post.author_grad_year) {
-                parts.push(`Class of ${post.author_grad_year}`);
+                parts.push(post.author_grad_year);
             }
         }
         parts.push(timeAgo);
@@ -8288,3 +7487,42 @@ function escapeHtml(text) {
     div.textContent = text;
     return div.innerHTML;
 }
+
+// Mobile sidebar toggle functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const sidebarToggle = document.getElementById('sidebarToggle');
+    const sidebar = document.getElementById('sidebar');
+    const sidebarOverlay = document.getElementById('sidebarOverlay');
+
+    if (sidebarToggle && sidebar) {
+        // Toggle sidebar on button click
+        sidebarToggle.addEventListener('click', function(e) {
+            e.stopPropagation();
+            sidebar.classList.toggle('open');
+            if (sidebarOverlay) {
+                sidebarOverlay.classList.toggle('active');
+            }
+        });
+
+        // Close sidebar when clicking overlay
+        if (sidebarOverlay) {
+            sidebarOverlay.addEventListener('click', function() {
+                sidebar.classList.remove('open');
+                sidebarOverlay.classList.remove('active');
+            });
+        }
+
+        // Close sidebar when clicking a nav link (on mobile)
+        const navLinks = sidebar.querySelectorAll('.nav-item');
+        navLinks.forEach(link => {
+            link.addEventListener('click', function() {
+                if (window.innerWidth <= 768) {
+                    sidebar.classList.remove('open');
+                    if (sidebarOverlay) {
+                        sidebarOverlay.classList.remove('active');
+                    }
+                }
+            });
+        });
+    }
+});

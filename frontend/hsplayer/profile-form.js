@@ -334,10 +334,10 @@ document.addEventListener('DOMContentLoaded', async function() {
                 first_name: document.getElementById('firstName').value,
                 last_name: document.getElementById('lastName').value,
                 username: document.getElementById('username').value,
-                position: selectedPositions.length > 0 ? selectedPositions[0] : null,
+                position: selectedPositions.length > 0 ? selectedPositions.join('/') : null,
                 height: height,
                 weight: parseInt(document.getElementById('weight').value) || null,
-                hudl_profile: document.getElementById('hudlProfile').value || null,
+                hudl_profile: document.getElementById('hudlProfile')?.value || null,
             };
 
             // High school specific fields
@@ -399,7 +399,7 @@ async function loadExistingProfile() {
                 }
 
                 if (profile.weight) document.getElementById('weight').value = profile.weight;
-                if (profile.hudl_profile) document.getElementById('hudlProfile').value = profile.hudl_profile;
+                if (profile.hudl_profile && document.getElementById('hudlProfile')) document.getElementById('hudlProfile').value = profile.hudl_profile;
 
                 // Handle position - check the appropriate checkbox
                 if (profile.position) {

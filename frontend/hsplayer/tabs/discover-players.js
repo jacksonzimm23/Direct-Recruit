@@ -212,7 +212,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             <line x1="8" y1="2" x2="8" y2="6"></line>
                             <line x1="3" y1="10" x2="21" y2="10"></line>
                         </svg>
-                        Class of ${gradYear}
+                        ${gradYear}
                     </div>
                     <div class="detail-item offers-detail">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">

@@ -495,11 +495,11 @@ class FeedManager {
                     parts.push(div);
                 }
             } else {
-                // HS Player: Position • High School • Class of Year
+                // HS Player: Position • High School • Year
                 if (post.author_position) parts.push(post.author_position);
                 if (post.author_school) parts.push(post.author_school);
                 if (post.author_grad_year) {
-                    parts.push(`Class of ${post.author_grad_year}`);
+                    parts.push(post.author_grad_year);
                 }
             }
 
@@ -601,9 +601,10 @@ class FeedManager {
                         </div>
                     `;
                 } else {
+                    // Put onclick on the img itself, not the container, so clicking outside the image navigates to post view
                     mediaHtml = `
-                        <div class="post-media" onclick="feedManager.openMediaSlideshow(${mediaUrlsJson}, 0, ${mediaTypesJson})">
-                            <img src="${post.media_urls[0]}" alt="Post media">
+                        <div class="post-media">
+                            <img src="${post.media_urls[0]}" alt="Post media" onclick="feedManager.openMediaSlideshow(${mediaUrlsJson}, 0, ${mediaTypesJson})">
                         </div>
                     `;
                 }
@@ -2356,16 +2357,16 @@ document.addEventListener('click', (event) => {
     // Check if click is on post-content or inside it (for text area clicks)
     const postContent = event.target.closest('.post-content');
     if (postContent && feedManager) {
-        // Don't navigate if clicking on video, links, buttons, or images (images open slideshow)
+        // Don't navigate if clicking directly on interactive media elements
         const isVideo = event.target.closest('video');
         const isLink = event.target.closest('a');
         const isButton = event.target.closest('button');
-        const isImage = event.target.closest('img');
-        const isMediaWrapper = event.target.closest('.media-wrapper');
-        const isPostMedia = event.target.closest('.post-media');
+        const isImage = event.target.tagName === 'IMG'; // Only if clicking directly on the image itself
+        const isMediaWrapper = event.target.closest('.media-wrapper'); // Multi-media wrapper with click handler
 
-        // Allow slideshow to handle image/media clicks
-        if (isVideo || isLink || isButton || isImage || isMediaWrapper || (isPostMedia && isPostMedia.hasAttribute('onclick'))) {
+        // Allow slideshow to handle direct clicks on images or media wrappers
+        // But clicking on .post-media padding/background should navigate to post view
+        if (isVideo || isLink || isButton || isImage || isMediaWrapper) {
             return;
         }
 

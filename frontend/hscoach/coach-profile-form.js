@@ -290,7 +290,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                 last_name: document.getElementById('lastName').value,
                 username: document.getElementById('username').value,
                 position_title: selectedPositions.length > 0 ? selectedPositions.join(', ') : null,
-                bio: document.getElementById('teamBioLink').value || null
+                bio: document.getElementById('teamBioLink')?.value || null
             };
 
             // High school specific data
@@ -503,7 +503,7 @@ async function loadExistingProfile() {
                     });
                 }
 
-                if (profile.bio) document.getElementById('teamBioLink').value = profile.bio;
+                if (profile.bio && document.getElementById('teamBioLink')) document.getElementById('teamBioLink').value = profile.bio;
 
                 // Hide password fields when editing
                 const passwordFields = document.querySelectorAll('.form-group:has(#password), .form-group:has(#confirmPassword)');

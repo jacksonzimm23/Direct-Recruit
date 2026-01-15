@@ -5665,17 +5665,20 @@ input[type="file"]::file-selector-button:hover {
 
 .profile-post-media {
     margin-top: 0.75rem;
-    border-radius: 8px;
+    border-radius: 12px;
     overflow: hidden;
     position: relative;
+    text-align: left;
 }
 
 .profile-post-media img,
 .profile-post-media video {
-    width: 100%;
-    max-height: 300px;
-    object-fit: cover;
-    display: block;
+    display: inline-block;
+    width: 50%;
+    max-height: 400px;
+    object-fit: contain;
+    border-radius: 12px;
+    vertical-align: top;
 }
 
 .profile-post-media .media-count-badge {
@@ -6600,4 +6603,418 @@ input[type="file"]::file-selector-button:hover {
 .reply-delete-modal-actions .btn-delete:disabled {
     opacity: 0.6;
     cursor: not-allowed;
+}
+
+/* ============================================
+   OTHER PROFILE - MOBILE MY-PROFILE STYLES
+   ============================================ */
+@media (max-width: 768px) {
+    /* === MAIN CONTENT AREA === */
+    .profile-content {
+        padding: 0 !important;
+        padding-top: 60px !important;
+        padding-bottom: 90px !important;
+    }
+
+    /* === PROFILE HEADER - CENTERED MOBILE LAYOUT === */
+    .profile-header-simple {
+        margin-bottom: 1rem;
+        padding: 1rem;
+    }
+
+    .profile-header-top {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        gap: 1rem;
+        padding-bottom: 1rem;
+    }
+
+    /* Avatar - centered and smaller */
+    .profile-avatar-container {
+        display: flex;
+        justify-content: center;
+    }
+
+    .profile-avatar-large {
+        width: 90px;
+        height: 90px;
+    }
+
+    .profile-avatar-large svg {
+        width: 45px;
+        height: 45px;
+    }
+
+    .btn-change-photo {
+        width: 32px;
+        height: 32px;
+        border-width: 2px;
+    }
+
+    .btn-change-photo svg {
+        width: 16px;
+        height: 16px;
+    }
+
+    /* Profile info - centered */
+    .profile-header-info {
+        text-align: center;
+        width: 100%;
+    }
+
+    .profile-name {
+        font-size: 1.5rem;
+        display: block;
+        margin-bottom: 0.25rem;
+    }
+
+    .profile-name-row {
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+
+    .profile-position {
+        font-size: 0.95rem;
+        margin-bottom: 0.25rem;
+    }
+
+    .profile-meta {
+        font-size: 0.85rem;
+        white-space: normal;
+        line-height: 1.4;
+    }
+
+    .profile-username {
+        font-size: 0.85rem;
+        margin-top: 0.25rem;
+    }
+
+    /* Follow stats - centered */
+    .profile-follow-stats {
+        justify-content: center;
+        gap: 1.5rem;
+        margin-top: 0.75rem;
+    }
+
+    .follow-stat-link {
+        font-size: 0.9rem;
+    }
+
+    /* Actions - centered row */
+    .profile-actions {
+        justify-content: center;
+        padding-top: 1rem;
+        gap: 0.75rem;
+    }
+
+    .btn-edit-profile {
+        padding: 0.6rem 1.25rem;
+        font-size: 0.85rem;
+    }
+
+    .btn-share-profile {
+        width: 40px;
+        height: 40px;
+        padding: 0;
+    }
+
+    /* === ABOUT & CONTACT INFO SECTION === */
+    .profile-info-row {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+        margin-bottom: 1rem;
+        padding: 0 1rem;
+    }
+
+    .profile-info-column .section-title {
+        font-size: 1.1rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .info-card {
+        padding: 1rem;
+        margin-bottom: 0;
+    }
+
+    .bio-text {
+        font-size: 0.9rem;
+        line-height: 1.5;
+    }
+
+    .contact-item {
+        font-size: 0.85rem;
+        padding: 0.4rem 0;
+    }
+
+    /* === PROFILE TABS - HORIZONTAL SCROLL === */
+    .profile-tabs {
+        display: flex;
+        gap: 0;
+        padding: 0;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+        border-bottom: 1px solid rgba(18, 130, 162, 0.2);
+    }
+
+    .profile-tabs::-webkit-scrollbar {
+        display: none;
+    }
+
+    .profile-tab {
+        flex: 1;
+        min-width: max-content;
+        padding: 0.875rem 1rem;
+        font-size: 0.875rem;
+        text-align: center;
+        border-bottom-width: 2px;
+    }
+
+    /* === TAB CONTENT === */
+    .profile-tab-content {
+        padding: 0.5rem 0;
+    }
+
+    /* === POSTS/REPLIES/LIKES CARDS === */
+    .profile-posts-container,
+    .profile-replies-container,
+    .profile-likes-container {
+        padding: 0;
+    }
+
+    .profile-post-card,
+    .profile-reply-card {
+        padding: 1rem;
+        border-radius: 0;
+        border-left: none;
+        border-right: none;
+        margin-bottom: 0;
+        border-bottom: 1px solid rgba(18, 130, 162, 0.15);
+    }
+
+    .profile-post-header {
+        gap: 0.75rem;
+    }
+
+    .profile-post-avatar {
+        width: 40px;
+        height: 40px;
+    }
+
+    .profile-post-author-name {
+        font-size: 0.9rem;
+    }
+
+    .profile-post-timestamp {
+        font-size: 0.75rem;
+    }
+
+    .profile-post-content {
+        font-size: 0.9rem;
+        line-height: 1.5;
+        margin: 0.75rem 0;
+    }
+
+    .profile-post-media {
+        margin: 0.75rem 0;
+        border-radius: 12px;
+        overflow: hidden;
+        text-align: left;
+    }
+
+    .profile-post-media img,
+    .profile-post-media video {
+        display: inline-block;
+        width: 50%;
+        max-height: 400px;
+        object-fit: contain;
+        border-radius: 12px;
+        vertical-align: top;
+    }
+
+    /* Hide the arrow/triangle icon on mobile - no hover on touch */
+    .profile-post-view-icon,
+    .profile-reply-view-icon {
+        display: none !important;
+    }
+
+    /* Remove hover effects on post cards for mobile */
+    .profile-post-card:hover,
+    .profile-reply-card:hover {
+        transform: none !important;
+    }
+
+    .profile-post-actions {
+        padding-top: 0.5rem;
+        gap: 0.25rem;
+    }
+
+    .profile-post-action-btn {
+        padding: 0.4rem 0.6rem;
+        font-size: 0.8rem;
+        gap: 0.3rem;
+    }
+
+    .profile-post-action-btn svg {
+        width: 16px;
+        height: 16px;
+    }
+
+    /* === LOAD MORE BUTTON === */
+    .load-more-container {
+        padding: 1rem;
+    }
+
+    .btn-load-more {
+        width: 100%;
+        padding: 0.75rem;
+        font-size: 0.9rem;
+    }
+
+    /* === EMPTY STATE === */
+    .empty-posts-message,
+    .empty-replies-message,
+    .empty-likes-message {
+        padding: 2rem 1rem;
+        font-size: 0.9rem;
+    }
+
+    /* === EDIT PROFILE MODAL === */
+    .edit-modal-content {
+        width: 100% !important;
+        max-width: 100% !important;
+        height: 100% !important;
+        max-height: 100% !important;
+        border-radius: 0 !important;
+        margin: 0 !important;
+    }
+
+    .edit-modal-header {
+        padding: 1rem;
+        position: sticky;
+        top: 0;
+        background: var(--oxford-blue);
+        z-index: 10;
+    }
+
+    .edit-modal-body {
+        padding: 1rem;
+        padding-bottom: 100px;
+        overflow-y: auto;
+    }
+
+    .edit-modal-footer {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        padding: 1rem;
+        background: var(--oxford-blue);
+        border-top: 1px solid rgba(18, 130, 162, 0.2);
+        z-index: 10;
+    }
+
+    .form-row {
+        flex-direction: column;
+        gap: 0;
+    }
+
+    .form-group {
+        margin-bottom: 1rem;
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+        font-size: 16px; /* Prevents iOS zoom */
+    }
+
+    /* === FOLLOWERS/FOLLOWING MODAL === */
+    .follow-list-modal-content {
+        width: 100%;
+        max-width: 100%;
+        height: 100%;
+        max-height: 100%;
+        border-radius: 0;
+    }
+
+    .follow-list-modal-header {
+        padding: 1rem;
+    }
+
+    .follow-list-modal-body {
+        padding: 0.5rem 1rem;
+    }
+
+    .follow-list-item {
+        padding: 0.75rem 0.5rem;
+    }
+
+    .follow-list-avatar {
+        width: 44px;
+        height: 44px;
+    }
+
+    .follow-list-name {
+        font-size: 0.9rem;
+    }
+
+    .follow-list-role {
+        font-size: 0.8rem;
+    }
+
+    /* === POST OPTIONS DROPDOWN === */
+    .profile-post-dropdown-menu {
+        min-width: 140px;
+    }
+
+    .profile-post-dropdown-menu .dropdown-item {
+        padding: 0.65rem 0.875rem;
+        font-size: 0.85rem;
+    }
+
+    /* === POST MODALS (Edit/Delete) === */
+    .profile-post-modal-overlay {
+        padding: 0;
+    }
+
+    .profile-post-modal {
+        width: 100%;
+        max-width: 100%;
+        height: 100%;
+        max-height: 100%;
+        border-radius: 0;
+    }
+
+    .delete-modal {
+        padding: 1.5rem 1rem;
+    }
+
+    .delete-modal-icon {
+        width: 48px;
+        height: 48px;
+    }
+
+    .delete-modal h3 {
+        font-size: 1.1rem;
+    }
+
+    .delete-modal p {
+        font-size: 0.85rem;
+    }
+
+    /* === SHARE TOAST === */
+    .share-toast {
+        bottom: 100px;
+        left: 1rem;
+        right: 1rem;
+        transform: translateX(0) translateY(100px);
+        width: auto;
+    }
+
+    .share-toast.show {
+        transform: translateX(0) translateY(0);
+    }
 }

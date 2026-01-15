@@ -7,28 +7,28 @@ Big schools know who the big time recruitsare , benefit more from transfer porta
 
 
 My Recommendation
-Now: Finish RDS migration (Level 5) - this is your biggest security improvement
 Later: Add AWS Secrets Manager when you deploy to production
 Much later: Private VPC when you have paying customers and need compliance
 
 
 psql "host=direct-recruit-db.c6t02cia6f8p.us-east-1.rds.amazonaws.com user=dr_admin dbname=direct_recruit sslmode=require"
+
 SELECT pg_size_pretty(pg_database_size('direct_recruit'));
 
 
 
-Currently working on: other  
+Currently working on: turn to app
 
 To do:
+- feed logic for your network vs discover (what posts are shown) 
+- repost comments backend 
 - stars modal for transferplayer 
 - right sidebar backend and show more pages (feed)
 - Tabs Headers to look the same (logo and sidebar footer location) 
 - settings page
 - media for comments (store in AWS)
 - google sign in 
-- turn to app 
 - scroll bars 
-- timestamp to be time since post, not on timezone
 - change postgres super user and its password 
 
 GAMEPLANS TO SUCCESS

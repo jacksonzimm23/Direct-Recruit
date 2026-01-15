@@ -13,7 +13,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 </head>
-<body class="dashboard-body">
+<body class="dashboard-body profile-type-player">
     <!-- Mobile Header (visible only on mobile) -->
     <header class="mobile-header" id="mobileHeader">
         <div class="mobile-header-left">
@@ -66,7 +66,18 @@
                 <span>Settings</span>
             </a>
             <div class="mobile-sidebar-divider"></div>
-            <button class="mobile-sidebar-nav-item danger" id="mobileSidebarLogout">
+            <a href="#" class="mobile-sidebar-nav-item mobile-sidebar-stat-item" id="mobileProfileViewsLink">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+                <span>Profile Views</span>
+                <span class="mobile-stat-value" id="mobileProfileViewsCount">0</span>
+            </a>
+        </nav>
+        <div class="mobile-sidebar-footer">
+            <img src="https://res.cloudinary.com/dzmsj6nwv/image/upload/v1762928148/LogoPNG3_pofqrr.png" alt="Direct Recruit" class="mobile-sidebar-logo">
+            <button class="mobile-sidebar-logout-btn" id="mobileSidebarLogout">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
                     <polyline points="16 17 21 12 16 7"></polyline>
@@ -74,9 +85,6 @@
                 </svg>
                 <span>Logout</span>
             </button>
-        </nav>
-        <div class="mobile-sidebar-footer">
-            <img src="https://res.cloudinary.com/dzmsj6nwv/image/upload/v1762928148/LogoPNG3_pofqrr.png" alt="Direct Recruit">
         </div>
     </aside>
 
@@ -282,28 +290,28 @@
                         <div class="trending-rank">1</div>
                         <div class="trending-info">
                             <div class="trending-name">James Peterson</div>
-                            <div class="trending-meta">QB • 5⭐ • Class of 2026</div>
+                            <div class="trending-meta">QB • 5⭐ • 2026</div>
                         </div>
                     </div>
                     <div class="trending-item">
                         <div class="trending-rank">2</div>
                         <div class="trending-info">
                             <div class="trending-name">Derek Williams</div>
-                            <div class="trending-meta">DE • 5⭐ • Class of 2026</div>
+                            <div class="trending-meta">DE • 5⭐ • 2026</div>
                         </div>
                     </div>
                     <div class="trending-item">
                         <div class="trending-rank">3</div>
                         <div class="trending-info">
                             <div class="trending-name">Michael Davis</div>
-                            <div class="trending-meta">RB • 4⭐ • Class of 2026</div>
+                            <div class="trending-meta">RB • 4⭐ • 2026</div>
                         </div>
                     </div>
                     <div class="trending-item">
                         <div class="trending-rank">4</div>
                         <div class="trending-info">
                             <div class="trending-name">Chris Thompson</div>
-                            <div class="trending-meta">CB • 4⭐ • Class of 2026</div>
+                            <div class="trending-meta">CB • 4⭐ • 2026</div>
                         </div>
                     </div>
                 </div>
@@ -336,7 +344,7 @@
                         </div>
                         <div class="follow-info">
                             <div class="follow-name">Jake Morrison</div>
-                            <div class="follow-meta">LB • Class of 2026</div>
+                            <div class="follow-meta">LB • 2026</div>
                         </div>
                         <button class="btn-follow">Follow</button>
                     </div>
