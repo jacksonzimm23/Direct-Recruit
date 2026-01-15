@@ -113,7 +113,7 @@
 
     .mobile-user-role {
         font-size: 0.75rem;
-        font-weight: 600;
+        font-weight: 700;
         color: #d4a017; /* Default: Other (yellow) */
         line-height: 1.2;
     }
@@ -1092,6 +1092,234 @@
         justify-content: center !important;
         flex-wrap: wrap !important;
     }
+
+    /* === OVERVIEW TAB - CONSISTENT SECTION SPACING === */
+    /* Stack sections vertically on mobile with consistent spacing */
+    .overview-top-row {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 0 !important;
+        margin-bottom: 0 !important;
+    }
+
+    /* All sections in overview get consistent bottom margin */
+    .overview-top-row .overview-section,
+    #overviewCareerStatsContainer,
+    #overviewSeasonStatsContainer {
+        margin-bottom: 1.5rem !important;
+        margin-top: 0 !important;
+    }
+
+    /* Remove bottom margin from last element in overview */
+    #overview > *:last-child,
+    #overviewSeasonStatsContainer:last-child,
+    #overviewCareerStatsContainer:last-child:not(:has(~ #overviewSeasonStatsContainer)) {
+        margin-bottom: 0 !important;
+    }
+
+    /* === EDIT OFFER MODAL - BUTTON SIZING === */
+    .edit-offer-footer {
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: stretch !important;
+        gap: 0.75rem !important;
+    }
+
+    .edit-offer-footer .btn-modal-delete {
+        padding: 0.75rem 1rem !important;
+        font-size: 0.9rem !important;
+        flex: 1 !important;
+        height: 44px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+
+    .edit-offer-footer .btn-modal-delete svg {
+        width: 16px !important;
+        height: 16px !important;
+    }
+
+    .edit-offer-actions {
+        display: flex !important;
+        gap: 0.75rem !important;
+        flex: 2 !important;
+    }
+
+    .edit-offer-actions .btn-modal-cancel,
+    .edit-offer-actions .btn-modal-save {
+        padding: 0.75rem 1rem !important;
+        font-size: 0.9rem !important;
+        flex: 1 !important;
+        height: 44px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+
+    /* === ADD STATS MODAL - POSITION INPUT ROW === */
+    .position-input-row {
+        display: flex !important;
+        gap: 0.5rem !important;
+        align-items: center !important;
+    }
+
+    .stats-position-input {
+        flex: 1 !important;
+        min-width: 0 !important;
+        padding: 0.65rem 0.75rem !important;
+        font-size: 0.85rem !important;
+    }
+
+    .btn-select-position {
+        flex-shrink: 0 !important;
+        padding: 0.65rem 0.75rem !important;
+        font-size: 0.8rem !important;
+        white-space: nowrap !important;
+    }
+
+    .btn-select-position svg {
+        width: 14px !important;
+        height: 14px !important;
+    }
+
+    /* === STATS TAB - ADD STATS BUTTON ABOVE TITLE === */
+    .stats-section-header {
+        display: flex !important;
+        flex-direction: column-reverse !important;
+        align-items: stretch !important;
+        gap: 1rem !important;
+        margin-bottom: 1rem !important;
+    }
+
+    .stats-section-header .btn-add-stats {
+        width: 100% !important;
+        justify-content: center !important;
+    }
+
+    .stats-title-with-dropdown {
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: flex-start !important;
+        gap: 0.75rem !important;
+    }
+
+    .stats-title-with-dropdown .section-title {
+        text-align: left !important;
+        margin-bottom: 0 !important;
+    }
+
+    /* === EDIT STATS MODAL - BUTTON SIZING === */
+    .edit-stats-footer {
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: stretch !important;
+        gap: 0.75rem !important;
+    }
+
+    .edit-stats-footer .btn-modal-delete {
+        padding: 0.75rem 1rem !important;
+        font-size: 0.9rem !important;
+        flex: 1 !important;
+        height: 44px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+
+    .edit-stats-footer .btn-modal-delete svg {
+        width: 16px !important;
+        height: 16px !important;
+    }
+
+    .edit-stats-actions {
+        display: flex !important;
+        gap: 0.75rem !important;
+        flex: 2 !important;
+    }
+
+    .edit-stats-actions .btn-modal-cancel,
+    .edit-stats-actions .btn-modal-save {
+        padding: 0.75rem 1rem !important;
+        font-size: 0.9rem !important;
+        flex: 1 !important;
+        height: 44px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+
+    /* === STATS TABLE SCROLL INDICATOR === */
+    .stats-table-wrapper {
+        position: relative !important;
+    }
+
+    .stats-table-container {
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        scrollbar-width: none !important;
+    }
+
+    .stats-table-container::-webkit-scrollbar {
+        display: none !important;
+    }
+
+    .stats-scroll-arrow {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 32px;
+        height: 32px;
+        background: rgba(0, 15, 35, 0.95);
+        border: 1px solid rgba(18, 130, 162, 0.3);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        z-index: 10;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.2s ease, visibility 0.2s ease;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    }
+
+    .stats-scroll-arrow.visible {
+        opacity: 1;
+        visibility: visible;
+    }
+
+    .stats-scroll-arrow:hover,
+    .stats-scroll-arrow:active {
+        background: rgba(18, 130, 162, 0.2);
+        border-color: rgba(18, 130, 162, 0.5);
+    }
+
+    .stats-scroll-arrow svg {
+        width: 16px;
+        height: 16px;
+        stroke: var(--cerulean, #1282A2);
+    }
+
+    .stats-scroll-arrow-right {
+        right: 4px;
+    }
+
+    /* Profile type color overrides for stats scroll arrows */
+    .profile-type-transfer .stats-scroll-arrow svg {
+        stroke: #e63946;
+    }
+
+    .profile-type-transfer .stats-scroll-arrow:hover,
+    .profile-type-transfer .stats-scroll-arrow:active {
+        background: rgba(230, 57, 70, 0.2);
+        border-color: rgba(230, 57, 70, 0.5);
+    }
+
+    .profile-type-player .stats-scroll-arrow svg {
+        stroke: #1282A2;
+    }
 }
 
 /* ============================================
@@ -1183,9 +1411,22 @@
 }
 
 /* ============================================
-   PROFILE TABS SCROLL ARROWS (Mobile)
+   PROFILE TABS SCROLL ARROWS (Mobile Only)
    ============================================ */
+
+/* Hide scroll arrows on desktop by default */
+.tabs-scroll-arrow,
+.stats-scroll-arrow {
+    display: none !important;
+}
+
 @media (max-width: 768px) {
+    /* Show scroll arrows on mobile */
+    .tabs-scroll-arrow,
+    .stats-scroll-arrow {
+        display: flex !important;
+    }
+
     /* Container for tabs with scroll arrows */
     .profile-tabs-container {
         position: relative;
