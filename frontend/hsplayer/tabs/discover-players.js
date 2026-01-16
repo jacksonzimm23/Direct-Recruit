@@ -637,4 +637,97 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
         `;
     }
+
+    // ========== MOBILE FILTER MODAL ==========
+    const mobileFilterFab = document.getElementById('mobileFilterFab');
+    const mobileFilterOverlay = document.getElementById('mobileFilterOverlay');
+    const mobileFilterModal = document.getElementById('mobileFilterModal');
+    const mobileFilterClose = document.getElementById('mobileFilterClose');
+    const mobileFilterReset = document.getElementById('mobileFilterReset');
+    const mobileFilterApply = document.getElementById('mobileFilterApply');
+    const filterBadge = document.getElementById('filterBadge');
+
+    // Mobile filter elements
+    const mobileCoachStateFilter = document.getElementById('mobileCoachStateFilter');
+    const mobileDivisionFilter = document.getElementById('mobileDivisionFilter');
+
+    // Open mobile filter modal
+    function openMobileFilterModal() {
+        if (mobileFilterModal && mobileFilterOverlay) {
+            // Sync mobile filters with desktop filters
+            if (mobileCoachStateFilter && coachStateFilter) {
+                mobileCoachStateFilter.value = coachStateFilter.value;
+            }
+            if (mobileDivisionFilter && divisionFilter) {
+                mobileDivisionFilter.value = divisionFilter.value;
+            }
+            mobileFilterOverlay.classList.add('active');
+            mobileFilterModal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+    }
+
+    // Close mobile filter modal
+    function closeMobileFilterModal() {
+        if (mobileFilterModal && mobileFilterOverlay) {
+            mobileFilterOverlay.classList.remove('active');
+            mobileFilterModal.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+    }
+
+    // Update filter badge count
+    function updateFilterBadge() {
+        if (!filterBadge) return;
+        let count = 0;
+        if (coachStateFilter && coachStateFilter.value) count++;
+        if (divisionFilter && divisionFilter.value) count++;
+        filterBadge.textContent = count > 0 ? count : '';
+    }
+
+    // Apply mobile filters
+    function applyMobileFilters() {
+        // Sync mobile filters to desktop filters
+        if (mobileCoachStateFilter && coachStateFilter) {
+            coachStateFilter.value = mobileCoachStateFilter.value;
+        }
+        if (mobileDivisionFilter && divisionFilter) {
+            divisionFilter.value = mobileDivisionFilter.value;
+        }
+        // Reload coaches with new filters
+        loadCollegeCoaches(false);
+        updateFilterBadge();
+        closeMobileFilterModal();
+    }
+
+    // Reset mobile filters
+    function resetMobileFilters() {
+        if (mobileCoachStateFilter) mobileCoachStateFilter.value = '';
+        if (mobileDivisionFilter) mobileDivisionFilter.value = '';
+        if (coachStateFilter) coachStateFilter.value = '';
+        if (divisionFilter) divisionFilter.value = '';
+        loadCollegeCoaches(false);
+        updateFilterBadge();
+        closeMobileFilterModal();
+    }
+
+    // Event listeners for mobile filter
+    if (mobileFilterFab) {
+        mobileFilterFab.addEventListener('click', openMobileFilterModal);
+    }
+    if (mobileFilterOverlay) {
+        mobileFilterOverlay.addEventListener('click', closeMobileFilterModal);
+    }
+    if (mobileFilterClose) {
+        mobileFilterClose.addEventListener('click', closeMobileFilterModal);
+    }
+    if (mobileFilterApply) {
+        mobileFilterApply.addEventListener('click', applyMobileFilters);
+    }
+    if (mobileFilterReset) {
+        mobileFilterReset.addEventListener('click', resetMobileFilters);
+    }
+
+    // Initialize filter badge
+    updateFilterBadge();
 });

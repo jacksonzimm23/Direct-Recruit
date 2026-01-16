@@ -204,6 +204,70 @@
         </main>
     </div>
 
+    <!-- Mobile Filter FAB Button -->
+    <button class="mobile-filter-fab" id="mobileFilterFab" aria-label="Open filters">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+        </svg>
+        <span class="filter-badge" id="filterBadge"></span>
+    </button>
+
+    <!-- Mobile Filter Modal Overlay -->
+    <div class="mobile-filter-overlay" id="mobileFilterOverlay"></div>
+
+    <!-- Mobile Filter Modal -->
+    <div class="mobile-filter-modal" id="mobileFilterModal">
+        <div class="mobile-filter-modal-header">
+            <h3>Filter Coaches</h3>
+            <button class="mobile-filter-close" id="mobileFilterClose" aria-label="Close filters">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+        <div class="mobile-filter-modal-body">
+            <div class="mobile-filter-group">
+                <label>State</label>
+                <select id="mobileCoachStateFilter">
+                    <option value="">All States</option>
+                    <option value="AL">Alabama</option>
+                    <option value="AK">Alaska</option>
+                    <option value="AZ">Arizona</option>
+                    <option value="AR">Arkansas</option>
+                    <option value="CA">California</option>
+                    <option value="CO">Colorado</option>
+                    <option value="FL">Florida</option>
+                    <option value="GA">Georgia</option>
+                    <option value="IL">Illinois</option>
+                    <option value="IN">Indiana</option>
+                    <option value="MI">Michigan</option>
+                    <option value="NY">New York</option>
+                    <option value="NC">North Carolina</option>
+                    <option value="OH">Ohio</option>
+                    <option value="PA">Pennsylvania</option>
+                    <option value="TX">Texas</option>
+                </select>
+            </div>
+            <div class="mobile-filter-group">
+                <label>Division</label>
+                <select id="mobileDivisionFilter">
+                    <option value="">All Divisions</option>
+                    <option value="FBS">Division I (FBS)</option>
+                    <option value="FCS">Division I (FCS)</option>
+                    <option value="D2">Division II</option>
+                    <option value="D3">Division III</option>
+                    <option value="NAIA">NAIA</option>
+                    <option value="JUCO">Junior College</option>
+                </select>
+            </div>
+        </div>
+        <div class="mobile-filter-modal-footer">
+            <button class="mobile-filter-reset" id="mobileFilterReset">Reset</button>
+            <button class="mobile-filter-apply" id="mobileFilterApply">Apply Filters</button>
+        </div>
+    </div>
+
     <script src="../../shared/api.js"></script>
     <script src="../sidebar-nav.js"></script>
     <script src="../sidebar-footer.js"></script>

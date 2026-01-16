@@ -21,16 +21,6 @@
     visibility: visible;
 }
 
-/* Right sidebar toggle button - hidden by default */
-.right-sidebar-toggle {
-    display: none;
-}
-
-/* Show toggle button when enabled by JS */
-.right-sidebar-toggle.show-toggle {
-    display: flex;
-}
-
 /* Hide edit controls by default to prevent flash when viewing others */
 .btn-edit-profile {
     display: none;

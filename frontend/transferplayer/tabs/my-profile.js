@@ -2003,13 +2003,30 @@ function updateActiveNavItem() {
 }
 
 function setupUI() {
-    // Sidebar toggle functionality - mainpage-player.js handles the toggle event
-    // This function only manages the sidebar visibility state
+    // Sidebar toggle functionality
     const dashboardContainer = document.getElementById('dashboardContainer');
     const rightSidebar = document.getElementById('rightSidebar');
     const rightSidebarToggle = document.getElementById('rightSidebarToggle');
+    const sidebarToggle = document.getElementById('sidebarToggle');
 
-    // Use setTimeout to ensure this runs after mainpage-player.js DOMContentLoaded
+    // Left sidebar toggle click handler
+    if (sidebarToggle) {
+        sidebarToggle.addEventListener('click', function() {
+            const isHidden = dashboardContainer.classList.toggle('sidebar-hidden');
+            document.body.classList.toggle('sidebar-hidden', isHidden);
+            localStorage.setItem('playerSidebarHidden', isHidden);
+        });
+    }
+
+    // Right sidebar toggle click handler
+    if (rightSidebarToggle) {
+        rightSidebarToggle.addEventListener('click', function() {
+            const isHidden = dashboardContainer.classList.toggle('right-sidebar-hidden');
+            localStorage.setItem('playerRightSidebarHidden', isHidden);
+        });
+    }
+
+    // Use setTimeout to ensure this runs after DOMContentLoaded
     setTimeout(() => {
         // Show or hide right sidebar based on profile ownership
         if (isOwnProfile) {

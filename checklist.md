@@ -20,6 +20,9 @@ SELECT pg_size_pretty(pg_database_size('direct_recruit'));
 Currently working on: turn to app
 
 To do:
+- left sidebar toggle on hsplayer and transferplayer my profile page 
+- fix comp % for QB stats input, also fix career stats season to be descending order 
+- 4 photo max and visuals (same as X)
 - feed logic for your network vs discover (what posts are shown) 
 - repost comments backend 
 - stars modal for transferplayer 
