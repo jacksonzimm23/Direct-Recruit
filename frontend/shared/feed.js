@@ -139,8 +139,14 @@ class FeedManager {
 
         // Check how many more files we can add
         const remainingSlots = this.maxMediaFiles - this.pendingMediaFiles.length;
+        if (remainingSlots === 0) {
+            this.showToast(`Maximum ${this.maxMediaFiles} media files allowed`, 'error');
+            event.target.value = '';
+            return;
+        }
+
         if (files.length > remainingSlots) {
-            this.showToast(`Can only add ${remainingSlots} more file(s)`, 'error');
+            this.showToast(`Maximum ${this.maxMediaFiles} media files allowed. You can only add ${remainingSlots} more.`, 'error');
             files.splice(remainingSlots);
         }
 
@@ -209,6 +215,7 @@ class FeedManager {
         if (this.pendingMediaPreviews.length === 0) {
             container.style.display = 'none';
             grid.innerHTML = '';
+            this.updateMediaCounter();
             return;
         }
 
@@ -234,10 +241,28 @@ class FeedManager {
             </div>
         `).join('');
 
-        // Update media button state
+        // Update media button state and counter
+        this.updateMediaCounter();
+    }
+
+    updateMediaCounter() {
+        const counter = document.getElementById('mediaCounter');
         const addMediaBtn = document.getElementById('addMediaBtn');
+        const currentCount = this.pendingMediaFiles.length;
+
+        // Update counter display
+        if (counter) {
+            counter.textContent = `${currentCount}/${this.maxMediaFiles}`;
+            if (currentCount >= this.maxMediaFiles) {
+                counter.classList.add('at-max');
+            } else {
+                counter.classList.remove('at-max');
+            }
+        }
+
+        // Update button state
         if (addMediaBtn) {
-            if (this.pendingMediaFiles.length >= this.maxMediaFiles) {
+            if (currentCount >= this.maxMediaFiles) {
                 addMediaBtn.classList.add('disabled');
                 addMediaBtn.title = `Maximum ${this.maxMediaFiles} files`;
             } else {
@@ -539,10 +564,12 @@ class FeedManager {
             }
         }
 
-        // Build media HTML
+        // Build media HTML using fixed-size grid layout
         let mediaHtml = '';
         if (post.media_urls && post.media_urls.length > 0) {
-            const mediaCount = post.media_urls.length;
+            // Limit to max 4 media items
+            const mediaUrls = post.media_urls.slice(0, 4);
+            const mediaCount = mediaUrls.length;
             const mediaUrlsJson = JSON.stringify(post.media_urls).replace(/'/g, "\\'").replace(/"/g, '&quot;');
             const mediaTypesJson = JSON.stringify(post.media_types || []).replace(/'/g, "\\'").replace(/"/g, '&quot;');
 
@@ -559,56 +586,39 @@ class FeedManager {
                 return videoExtensions.some(ext => url.toLowerCase().includes(ext));
             };
 
-            // Helper to render media element
-            const renderMediaElement = (url, index, clickable = true) => {
+            // Helper to render a grid cell with media
+            const renderGridCell = (url, index) => {
                 const isVideo = isVideoUrl(url, index);
-                if (isVideo) {
-                    return `<video ${clickable ? `onclick="feedManager.openMediaSlideshow(${mediaUrlsJson}, ${index}, ${mediaTypesJson})"` : ''} src="${url}" muted></video>`;
-                } else {
-                    return `<img src="${url}" alt="Post media ${index + 1}" ${clickable ? `onclick="feedManager.openMediaSlideshow(${mediaUrlsJson}, ${index}, ${mediaTypesJson})"` : ''}>`;
-                }
-            };
+                const videoIndicator = isVideo ? `
+                    <div class="video-indicator">
+                        <svg viewBox="0 0 24 24" fill="currentColor">
+                            <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                        </svg>
+                    </div>
+                ` : '';
 
-            // Always show first media item in single format, with slideshow for 2+ items
-            const firstIsVideo = isVideoUrl(post.media_urls[0], 0);
-
-            if (mediaCount >= 2) {
-                // 2+ media items: show first item with count badge, click opens slideshow
-                mediaHtml = `
-                    <div class="post-media">
-                        <div class="media-wrapper" onclick="feedManager.openMediaSlideshow(${mediaUrlsJson}, 0, ${mediaTypesJson})">
-                            ${firstIsVideo ?
-                                `<video src="${post.media_urls[0]}" muted></video>` :
-                                `<img src="${post.media_urls[0]}" alt="Post media">`
-                            }
-                            <div class="media-count-badge">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                                    <circle cx="8.5" cy="8.5" r="1.5"></circle>
-                                    <polyline points="21 15 16 10 5 21"></polyline>
-                                </svg>
-                                <span>1 / ${mediaCount}</span>
-                            </div>
-                        </div>
+                return `
+                    <div class="media-grid-cell" onclick="feedManager.openMediaSlideshow(${mediaUrlsJson}, ${index}, ${mediaTypesJson})">
+                        ${isVideo ?
+                            `<video src="${url}" muted preload="metadata"></video>` :
+                            `<img src="${url}" alt="Post media ${index + 1}">`
+                        }
+                        ${videoIndicator}
                     </div>
                 `;
-            } else {
-                // Single media item
-                if (firstIsVideo) {
-                    mediaHtml = `
-                        <div class="post-media">
-                            <video controls src="${post.media_urls[0]}"></video>
-                        </div>
-                    `;
-                } else {
-                    // Put onclick on the img itself, not the container, so clicking outside the image navigates to post view
-                    mediaHtml = `
-                        <div class="post-media">
-                            <img src="${post.media_urls[0]}" alt="Post media" onclick="feedManager.openMediaSlideshow(${mediaUrlsJson}, 0, ${mediaTypesJson})">
-                        </div>
-                    `;
-                }
+            };
+
+            // Build grid cells for each media item
+            let gridCells = '';
+            for (let i = 0; i < mediaCount; i++) {
+                gridCells += renderGridCell(mediaUrls[i], i);
             }
+
+            mediaHtml = `
+                <div class="post-media-grid media-count-${mediaCount}">
+                    ${gridCells}
+                </div>
+            `;
         }
 
         article.innerHTML = `

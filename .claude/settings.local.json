@@ -30,7 +30,8 @@
       "Bash(dir:*)",
       "Bash(set:*)",
       "Bash(node scripts/check-time.js:*)",
-      "Bash(node scripts/fix-timestamps.js:*)"
+      "Bash(node scripts/fix-timestamps.js:*)",
+      "Bash(node -c:*)"
     ],
     "deny": [],
     "ask": []

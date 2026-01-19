@@ -22,7 +22,10 @@
 .mobile-sidebar,
 .mobile-sidebar-overlay,
 .mobile-fab-post,
-.mobile-post-modal-overlay {
+.mobile-post-modal-overlay,
+.mobile-filter-fab,
+.mobile-filter-overlay,
+.mobile-filter-modal {
     display: none;
 }
 
@@ -811,6 +814,21 @@
     .mobile-post-modal-media-btn svg {
         width: 24px;
         height: 24px;
+    }
+
+    /* Mobile media counter */
+    .mobile-media-counter {
+        font-size: 0.85rem;
+        color: rgba(255, 255, 255, 0.5);
+        font-weight: 500;
+        padding: 0.25rem 0.6rem;
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 12px;
+    }
+
+    .mobile-media-counter.at-max {
+        color: var(--accent-orange, #FF6B35);
+        background: rgba(255, 107, 53, 0.15);
     }
 
     .post-input {

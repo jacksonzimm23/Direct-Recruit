@@ -53,6 +53,14 @@ class User {
   static async markEmailVerified(userId) {
     await pool.query('UPDATE users SET email_verified = true WHERE id = $1', [userId]);
   }
+
+  static async updateEmail(userId, newEmail) {
+    const result = await pool.query(
+      'UPDATE users SET email = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 RETURNING id, email, role',
+      [newEmail, userId]
+    );
+    return result.rows[0];
+  }
 }
 
 module.exports = User;

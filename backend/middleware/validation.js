@@ -17,7 +17,7 @@ const validatePlayerProfile = [
     return true;
   }),
   body('position').optional({ nullable: true }).custom((value) => {
-    if (value === null || value === undefined) return true;
+    if (value === null || value === undefined || value === '') return true;
     const validPositions = [
       // Offense - Skill Positions
       'QB', 'RB', 'FB', 'WR', 'TE',
@@ -34,7 +34,13 @@ const validatePlayerProfile = [
       // Two-Way & Athletes
       'ATH'
     ];
-    if (!validPositions.includes(value)) throw new Error('Invalid position');
+    // Support multi-position values like "CB/WR" or "QB/ATH"
+    const positions = value.split('/').map(p => p.trim());
+    for (const pos of positions) {
+      if (!validPositions.includes(pos)) {
+        throw new Error(`Invalid position: ${pos}`);
+      }
+    }
     return true;
   }),
   body('gpa').optional({ nullable: true }).custom((value) => {

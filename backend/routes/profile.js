@@ -497,4 +497,81 @@ router.get('/viewers/:userId', authMiddleware, async (req, res) => {
   }
 });
 
+// Get random suggested connections (excludes current user)
+router.get('/suggested-connections', authMiddleware, async (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit) || 5;
+    const offset = parseInt(req.query.offset) || 0;
+    const currentUserId = req.userId;
+
+    // Query to get random users from all profile types, excluding current user
+    const pool = require('../config/database');
+
+    const result = await pool.query(`
+      SELECT
+        u.id as user_id,
+        u.role,
+        COALESCE(pp.first_name, cp.first_name, op.first_name, '') as first_name,
+        COALESCE(pp.last_name, cp.last_name, op.last_name, '') as last_name,
+        COALESCE(pp.username, cp.username, op.username, '') as username,
+        COALESCE(pp.profile_image_url, cp.profile_image_url, op.profile_picture_url) as profile_image_url,
+        CASE
+          WHEN u.role = 'player' THEN
+            CASE
+              WHEN pp.college_division IS NOT NULL AND pp.college_division != '' THEN
+                CASE
+                  WHEN pp.transfer = 'y' THEN COALESCE(pp.position, '')
+                  ELSE COALESCE(pp.position, '')
+                END
+              ELSE COALESCE(pp.position, '')
+            END
+          WHEN u.role = 'coach' THEN COALESCE(cp.position_title, '')
+          WHEN u.role = 'other' THEN COALESCE(op.subheader, '')
+          ELSE ''
+        END as subheader_line1,
+        CASE
+          WHEN u.role = 'player' THEN COALESCE(pp.high_school, '')
+          WHEN u.role = 'coach' THEN COALESCE(cp.college_name, '')
+          WHEN u.role = 'other' THEN ''
+          ELSE ''
+        END as subheader_line2,
+        CASE
+          WHEN u.role = 'player' THEN
+            CASE
+              WHEN pp.transfer = 'y' THEN 'transfer'
+              WHEN pp.college_division IS NOT NULL AND pp.college_division != '' THEN 'college'
+              ELSE 'hs'
+            END
+          WHEN u.role = 'coach' THEN 'coach'
+          WHEN u.role = 'other' THEN 'other'
+          ELSE 'unknown'
+        END as profile_type
+      FROM users u
+      LEFT JOIN player_profiles pp ON u.id = pp.user_id
+      LEFT JOIN coach_profiles cp ON u.id = cp.user_id
+      LEFT JOIN other_profiles op ON u.id = op.user_id
+      WHERE u.id != $1
+        AND u.profile_completed = true
+        AND u.is_active = true
+        AND (pp.user_id IS NOT NULL OR cp.user_id IS NOT NULL OR op.user_id IS NOT NULL)
+      ORDER BY RANDOM()
+      LIMIT $2 OFFSET $3
+    `, [currentUserId, limit + 1, offset]);
+
+    const connections = result.rows.slice(0, limit);
+    const hasMore = result.rows.length > limit;
+
+    // Add signed URLs to profile images
+    const connectionsWithUrls = await addSignedUrlsToProfiles(connections);
+
+    res.json({
+      connections: connectionsWithUrls,
+      hasMore
+    });
+  } catch (error) {
+    console.error('Get suggested connections error:', error);
+    res.status(500).json({ error: 'Failed to fetch suggested connections' });
+  }
+});
+
 module.exports = router;

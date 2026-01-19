@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="../shared/feed.css">
     <link rel="stylesheet" href="../shared/search.css">
     <link rel="stylesheet" href="../shared/mobile-overrides.css">
+    <link rel="stylesheet" href="../shared/suggested-connections.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -119,6 +120,7 @@
                     <polyline points="21 15 16 10 5 21"></polyline>
                 </svg>
             </button>
+            <span class="mobile-media-counter" id="mobileMediaCounter">0/4</span>
         </div>
     </div>
     <!-- Hidden file input for mobile modal media uploads -->
@@ -258,6 +260,7 @@
                                     <polyline points="21 15 16 10 5 21"></polyline>
                                 </svg>
                             </button>
+                            <span class="media-counter" id="mediaCounter">0/4</span>
                         </div>
                         <button class="btn-post-submit">Post</button>
                     </div>
@@ -274,122 +277,39 @@
 
         <!-- Right Sidebar -->
         <aside class="right-sidebar" id="rightSidebar">
-            <!-- Trending Topics -->
-            <div class="widget">
-                <div class="widget-title">Trending Topics</div>
-                <div class="trending-list">
-                    <div class="trending-item">
-                        <div class="trending-info">
-                            <div class="trending-topic">#Recruiting2026</div>
-                            <div class="trending-count">1,247 posts</div>
-                        </div>
-                    </div>
-                    <div class="trending-item">
-                        <div class="trending-info">
-                            <div class="trending-topic">#TransferPortal</div>
-                            <div class="trending-count">892 posts</div>
-                        </div>
-                    </div>
-                    <div class="trending-item">
-                        <div class="trending-info">
-                            <div class="trending-topic">#StateChampionship</div>
-                            <div class="trending-count">654 posts</div>
-                        </div>
-                    </div>
-                    <div class="trending-item">
-                        <div class="trending-info">
-                            <div class="trending-topic">#D1Football</div>
-                            <div class="trending-count">523 posts</div>
-                        </div>
-                    </div>
+            <!-- Suggested Connections -->
+            <div class="widget" id="suggestedConnectionsWidget">
+                <h3 class="widget-title">Suggested Connections</h3>
+                <div class="widget-content" id="suggestedConnectionsList">
+                    <!-- Connections will be loaded dynamically -->
                 </div>
-            </div>
-
-            <!-- Quick Filters -->
-            <div class="widget">
-                <div class="widget-title">Quick Filters</div>
-                <div class="filter-list">
-                    <button class="filter-btn active">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <line x1="4" y1="21" x2="4" y2="14"></line>
-                            <line x1="4" y1="10" x2="4" y2="3"></line>
-                            <line x1="12" y1="21" x2="12" y2="12"></line>
-                            <line x1="12" y1="8" x2="12" y2="3"></line>
-                            <line x1="20" y1="21" x2="20" y2="16"></line>
-                            <line x1="20" y1="12" x2="20" y2="3"></line>
-                            <line x1="1" y1="14" x2="7" y2="14"></line>
-                            <line x1="9" y1="8" x2="15" y2="8"></line>
-                            <line x1="17" y1="16" x2="23" y2="16"></line>
-                        </svg>
-                        <span>All Posts</span>
-                    </button>
-                    <button class="filter-btn">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                            <circle cx="9" cy="7" r="4"></circle>
-                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                        </svg>
-                        <span>Players Only</span>
-                    </button>
-                    <button class="filter-btn">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                            <circle cx="9" cy="7" r="4"></circle>
-                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                        </svg>
-                        <span>Coaches Only</span>
-                    </button>
-                </div>
-            </div>
-
-            <!-- Recruiting Stats -->
-            <div class="widget">
-                <div class="widget-title">Your Recruiting Stats</div>
-                <div class="stats-list">
-                    <div class="stat-item-widget">
-                        <div class="stat-icon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <circle cx="11" cy="11" r="8"></circle>
-                                <path d="m21 21-4.35-4.35"></path>
-                            </svg>
-                        </div>
-                        <div class="stat-details">
-                            <div class="stat-value-lg">127</div>
-                            <div class="stat-label-sm">Players Viewed</div>
-                        </div>
-                    </div>
-                    <div class="stat-item-widget">
-                        <div class="stat-icon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-                            </svg>
-                        </div>
-                        <div class="stat-details">
-                            <div class="stat-value-lg">34</div>
-                            <div class="stat-label-sm">Active Conversations</div>
-                        </div>
-                    </div>
-                    <div class="stat-item-widget">
-                        <div class="stat-icon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
-                            </svg>
-                        </div>
-                        <div class="stat-details">
-                            <div class="stat-value-lg">18</div>
-                            <div class="stat-label-sm">Shortlisted Players</div>
-                        </div>
-                    </div>
-                </div>
+                <button class="widget-show-more" id="showMoreConnections" style="display: none;">Show more</button>
             </div>
         </aside>
+
+    <!-- Suggested Connections Modal -->
+    <div class="connections-modal-overlay" id="connectionsModalOverlay">
+        <div class="connections-modal">
+            <div class="connections-modal-header">
+                <h3>Suggested Connections</h3>
+                <button class="connections-modal-close" id="connectionsModalClose" aria-label="Close">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="connections-modal-body" id="connectionsModalList">
+                <!-- All connections will be loaded here -->
+            </div>
+        </div>
+    </div>
     </div>
 
     <script src="../shared/api.js?v=2"></script>
     <script src="../shared/search.js?v=2"></script>
     <script src="../shared/feed.js?v=2"></script>
+    <script src="../shared/suggested-connections.js"></script>
     <script src="mainpage-coach.js?v=2000"></script>
     <script>
         // Initialize search component

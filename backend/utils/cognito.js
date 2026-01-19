@@ -7,6 +7,7 @@ const {
   AdminCreateUserCommand,
   AdminSetUserPasswordCommand,
   AdminGetUserCommand,
+  AdminUpdateUserAttributesCommand,
   ForgotPasswordCommand,
   ConfirmForgotPasswordCommand,
   ChangePasswordCommand,
@@ -333,6 +334,32 @@ function generateTemporaryPassword() {
   return password.split('').sort(() => crypto.randomInt(3) - 1).join('');
 }
 
+// Generate a 6-digit verification code
+function generateVerificationCode() {
+  return crypto.randomInt(100000, 999999).toString();
+}
+
+// Admin update user email (used after verification is complete)
+// This changes the email WITHOUT affecting the password
+async function adminUpdateUserEmail(currentEmail, newEmail) {
+  const command = new AdminUpdateUserAttributesCommand({
+    UserPoolId: USER_POOL_ID,
+    Username: currentEmail,
+    UserAttributes: [
+      { Name: 'email', Value: newEmail },
+      { Name: 'email_verified', Value: 'true' }
+    ]
+  });
+
+  try {
+    await client.send(command);
+    return { success: true };
+  } catch (error) {
+    console.error('Cognito adminUpdateUserEmail error:', error);
+    throw error;
+  }
+}
+
 module.exports = {
   signUp,
   confirmSignUp,
@@ -341,9 +368,11 @@ module.exports = {
   adminCreateUser,
   adminSetUserPassword,
   adminGetUser,
+  adminUpdateUserEmail,
   forgotPassword,
   confirmForgotPassword,
   changePassword,
   globalSignOut,
-  generateTemporaryPassword
+  generateTemporaryPassword,
+  generateVerificationCode
 };

@@ -372,11 +372,20 @@ document.addEventListener('DOMContentLoaded', async function() {
 // Load existing profile data for editing
 async function loadExistingProfile() {
     try {
-        const response = await fetch('/api/auth/me', {
+        const token = localStorage.getItem('auth_token');
+        if (!token) return; // No token, user is creating new profile
+
+        const response = await fetch(`${window.API_BASE_URL || 'http://localhost:5000/api'}/auth/me`, {
             headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
+                'Authorization': `Bearer ${token}`
             }
         });
+
+        // If unauthorized, clear the invalid token and continue with new profile creation
+        if (response.status === 401) {
+            localStorage.removeItem('auth_token');
+            return;
+        }
 
         if (response.ok) {
             const data = await response.json();

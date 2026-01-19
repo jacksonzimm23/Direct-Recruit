@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="../shared/feed.css">
     <link rel="stylesheet" href="../shared/search.css">
     <link rel="stylesheet" href="../shared/mobile-overrides.css">
+    <link rel="stylesheet" href="../shared/suggested-connections.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -119,6 +120,7 @@
                     <polyline points="21 15 16 10 5 21"></polyline>
                 </svg>
             </button>
+            <span class="mobile-media-counter" id="mobileMediaCounter">0/4</span>
         </div>
     </div>
     <!-- Hidden file input for mobile modal media uploads -->
@@ -257,6 +259,7 @@
                                     <polyline points="21 15 16 10 5 21"></polyline>
                                 </svg>
                             </button>
+                            <span class="media-counter" id="mediaCounter">0/4</span>
                         </div>
                         <button class="btn-post-submit">Post</button>
                     </div>
@@ -273,94 +276,39 @@
 
         <!-- Right Sidebar -->
         <aside class="right-sidebar">
-            <!-- Trending Recruits -->
-            <div class="widget">
-                <h3 class="widget-title">Top Recruits</h3>
-                <div class="widget-content">
-                    <div class="trending-item">
-                        <div class="trending-rank">1</div>
-                        <div class="trending-info">
-                            <div class="trending-name">James Peterson</div>
-                            <div class="trending-meta">QB • 5⭐ • Class of 2026</div>
-                        </div>
-                    </div>
-                    <div class="trending-item">
-                        <div class="trending-rank">2</div>
-                        <div class="trending-info">
-                            <div class="trending-name">Derek Williams</div>
-                            <div class="trending-meta">DE • 5⭐ • Class of 2026</div>
-                        </div>
-                    </div>
-                    <div class="trending-item">
-                        <div class="trending-rank">3</div>
-                        <div class="trending-info">
-                            <div class="trending-name">Michael Davis</div>
-                            <div class="trending-meta">RB • 4⭐ • Class of 2026</div>
-                        </div>
-                    </div>
-                    <div class="trending-item">
-                        <div class="trending-rank">4</div>
-                        <div class="trending-info">
-                            <div class="trending-name">Chris Thompson</div>
-                            <div class="trending-meta">CB • 4⭐ • Class of 2026</div>
-                        </div>
-                    </div>
-                </div>
-                <button class="widget-show-more">Show more</button>
-            </div>
-
-            <!-- Who to Follow -->
-            <div class="widget">
+            <!-- Suggested Connections -->
+            <div class="widget" id="suggestedConnectionsWidget">
                 <h3 class="widget-title">Suggested Connections</h3>
-                <div class="widget-content">
-                    <div class="follow-item">
-                        <div class="follow-avatar-circle">
-                            <svg viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                                <circle cx="12" cy="7" r="4"></circle>
-                            </svg>
-                        </div>
-                        <div class="follow-info">
-                            <div class="follow-name">Coach Martinez</div>
-                            <div class="follow-meta">Ohio State University</div>
-                        </div>
-                        <button class="btn-follow">Follow</button>
-                    </div>
-                    <div class="follow-item">
-                        <div class="follow-avatar-circle">
-                            <svg viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                                <circle cx="12" cy="7" r="4"></circle>
-                            </svg>
-                        </div>
-                        <div class="follow-info">
-                            <div class="follow-name">Jake Morrison</div>
-                            <div class="follow-meta">LB • Class of 2026</div>
-                        </div>
-                        <button class="btn-follow">Follow</button>
-                    </div>
-                    <div class="follow-item">
-                        <div class="follow-avatar-circle">
-                            <svg viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                                <circle cx="12" cy="7" r="4"></circle>
-                            </svg>
-                        </div>
-                        <div class="follow-info">
-                            <div class="follow-name">Coach Reynolds</div>
-                            <div class="follow-meta">Texas A&M</div>
-                        </div>
-                        <button class="btn-follow">Follow</button>
-                    </div>
+                <div class="widget-content" id="suggestedConnectionsList">
+                    <!-- Connections will be loaded dynamically -->
                 </div>
-                <button class="widget-show-more">Show more</button>
+                <button class="widget-show-more" id="showMoreConnections" style="display: none;">Show more</button>
             </div>
         </aside>
+
+    <!-- Suggested Connections Modal -->
+    <div class="connections-modal-overlay" id="connectionsModalOverlay">
+        <div class="connections-modal">
+            <div class="connections-modal-header">
+                <h3>Suggested Connections</h3>
+                <button class="connections-modal-close" id="connectionsModalClose" aria-label="Close">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="connections-modal-body" id="connectionsModalList">
+                <!-- All connections will be loaded here -->
+            </div>
+        </div>
+    </div>
     </div>
 
     <script src="../shared/api.js"></script>
     <script src="../shared/search.js"></script>
     <script src="../shared/feed.js"></script>
+    <script src="../shared/suggested-connections.js"></script>
     <script src="mainpage-other.js"></script>
     <script>
         // Initialize search component

@@ -17,22 +17,18 @@ SELECT pg_size_pretty(pg_database_size('direct_recruit'));
 
 
 
-Currently working on: turn to app
+Currently working on: hsplayer discover page only 
 
 To do:
-- left sidebar toggle on hsplayer and transferplayer my profile page 
+- ADD AWS SES 
+
 - fix comp % for QB stats input, also fix career stats season to be descending order 
-- 4 photo max and visuals (same as X)
 - feed logic for your network vs discover (what posts are shown) 
-- repost comments backend 
-- stars modal for transferplayer 
-- right sidebar backend and show more pages (feed)
-- Tabs Headers to look the same (logo and sidebar footer location) 
 - settings page
-- media for comments (store in AWS)
 - google sign in 
 - scroll bars 
 - change postgres super user and its password 
+- team pages contact DR directly 
 
 GAMEPLANS TO SUCCESS
 - Step 1: implement final prototype features (right sidebar, NIL Opportunity Match for college players)

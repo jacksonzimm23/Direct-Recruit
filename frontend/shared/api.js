@@ -521,3 +521,4 @@ const API = {
 
 // Make API available globally
 window.API = API;
+window.API_BASE_URL = API_BASE_URL;

@@ -566,10 +566,24 @@ function initMobilePostModal() {
     const mediaPreview = document.getElementById('mobilePostModalMediaPreview');
     const avatarEl = document.getElementById('mobilePostModalAvatar');
     const usernameEl = document.getElementById('mobilePostModalUsername');
+    const mediaCounter = document.getElementById('mobileMediaCounter');
 
     if (!fab || !modal) return;
 
     let selectedFiles = [];
+    const maxMediaFiles = 4;
+
+    // Update the mobile media counter display
+    function updateMobileMediaCounter() {
+        if (mediaCounter) {
+            mediaCounter.textContent = `${selectedFiles.length}/${maxMediaFiles}`;
+            if (selectedFiles.length >= maxMediaFiles) {
+                mediaCounter.classList.add('at-max');
+            } else {
+                mediaCounter.classList.remove('at-max');
+            }
+        }
+    }
 
     // Open modal when FAB is clicked
     fab.addEventListener('click', function() {
@@ -608,6 +622,7 @@ function initMobilePostModal() {
         textarea.blur(); // Dismiss keyboard
         selectedFiles = [];
         mediaPreview.innerHTML = '';
+        updateMobileMediaCounter();
         // Reset modal height
         modal.style.height = '';
         modal.style.top = '';
@@ -624,12 +639,29 @@ function initMobilePostModal() {
 
     // Media button click
     mediaBtn.addEventListener('click', function() {
+        if (selectedFiles.length >= maxMediaFiles) {
+            alert(`Maximum ${maxMediaFiles} media files allowed`);
+            return;
+        }
         mediaInput.click();
     });
 
     // Handle file selection
     mediaInput.addEventListener('change', function() {
-        const files = Array.from(this.files);
+        let files = Array.from(this.files);
+
+        // Check how many more files we can add
+        const remainingSlots = maxMediaFiles - selectedFiles.length;
+        if (remainingSlots === 0) {
+            alert(`Maximum ${maxMediaFiles} media files allowed`);
+            this.value = '';
+            return;
+        }
+
+        if (files.length > remainingSlots) {
+            alert(`Maximum ${maxMediaFiles} media files allowed. You can only add ${remainingSlots} more.`);
+            files = files.slice(0, remainingSlots);
+        }
 
         files.forEach(file => {
             // Check file size (200MB for videos, 10MB for images)
@@ -641,6 +673,7 @@ function initMobilePostModal() {
             }
 
             selectedFiles.push(file);
+            updateMobileMediaCounter();
 
             // Create preview
             const previewItem = document.createElement('div');
@@ -667,6 +700,7 @@ function initMobilePostModal() {
                 const index = selectedFiles.indexOf(file);
                 if (index > -1) selectedFiles.splice(index, 1);
                 previewItem.remove();
+                updateMobileMediaCounter();
             });
             previewItem.appendChild(removeBtn);
 
