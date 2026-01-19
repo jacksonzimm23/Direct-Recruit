@@ -17,10 +17,9 @@ SELECT pg_size_pretty(pg_database_size('direct_recruit'));
 
 
 
-Currently working on: hsplayer discover page only 
+Currently working on: security 
 
 To do:
-- ADD AWS SES 
 
 - fix comp % for QB stats input, also fix career stats season to be descending order 
 - feed logic for your network vs discover (what posts are shown) 

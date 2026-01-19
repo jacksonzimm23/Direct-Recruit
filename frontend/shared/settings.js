@@ -88,15 +88,22 @@ function initializeSettingsNavigation() {
 function initializeFormHandlers() {
     const inputs = document.querySelectorAll('.form-input, .form-select');
 
-    // IDs of email change fields that should NOT trigger Save Changes
-    const emailChangeFieldIds = ['currentEmail', 'newEmail', 'confirmEmail', 'emailChangePassword'];
+    // IDs of fields that should NOT trigger Save Changes (handled separately)
+    const excludedFieldIds = [
+        // Email change fields
+        'currentEmail', 'newEmail', 'confirmEmail', 'emailChangePassword',
+        // Password change fields
+        'currentPassword', 'newPassword', 'confirmPassword',
+        // Forgot password modal fields
+        'forgotNewPassword', 'forgotConfirmPassword'
+    ];
 
     inputs.forEach(input => {
         // Store original value
         input.dataset.originalValue = input.value;
 
-        // Skip email change fields - they have their own separate handling
-        if (emailChangeFieldIds.includes(input.id)) {
+        // Skip excluded fields - they have their own separate handling
+        if (excludedFieldIds.includes(input.id)) {
             return;
         }
 
@@ -323,6 +330,8 @@ function showDeleteAccountModal() {
 // Password Change Handler
 function initializePasswordChange() {
     const updatePasswordBtn = document.getElementById('updatePasswordBtn');
+    const newPasswordInput = document.getElementById('newPassword');
+    const confirmPasswordInput = document.getElementById('confirmPassword');
 
     if (updatePasswordBtn) {
         updatePasswordBtn.addEventListener('click', function(e) {
@@ -330,16 +339,131 @@ function initializePasswordChange() {
             handlePasswordChange(this);
         });
     }
+
+    // Initialize password validation
+    if (newPasswordInput) {
+        newPasswordInput.addEventListener('input', function() {
+            validatePasswordRequirements(this.value);
+
+            // Also check password match if confirm has value
+            if (confirmPasswordInput && confirmPasswordInput.value) {
+                checkPasswordMatch();
+            }
+        });
+    }
+
+    // Initialize confirm password match checking
+    if (confirmPasswordInput) {
+        confirmPasswordInput.addEventListener('input', checkPasswordMatch);
+    }
 }
 
-function handlePasswordChange(button) {
+// Password validation functions
+function validatePasswordRequirements(password) {
+    const checkLength = document.getElementById('checkLength');
+    const checkUppercase = document.getElementById('checkUppercase');
+    const checkLowercase = document.getElementById('checkLowercase');
+    const checkNumber = document.getElementById('checkNumber');
+    const checkSpecial = document.getElementById('checkSpecial');
+
+    // Check each criteria
+    const hasLength = password.length >= 8;
+    const hasUpperCase = /[A-Z]/.test(password);
+    const hasLowerCase = /[a-z]/.test(password);
+    const hasNumber = /[0-9]/.test(password);
+    const hasSpecialChar = /[!@#$%^&*]/.test(password);
+
+    // Update checklist
+    updateChecklistItem(checkLength, hasLength);
+    updateChecklistItem(checkUppercase, hasUpperCase);
+    updateChecklistItem(checkLowercase, hasLowerCase);
+    updateChecklistItem(checkNumber, hasNumber);
+    updateChecklistItem(checkSpecial, hasSpecialChar);
+
+    // Store validity on the input element
+    const newPasswordInput = document.getElementById('newPassword');
+    if (newPasswordInput) {
+        const allValid = hasLength && hasUpperCase && hasLowerCase && hasNumber && hasSpecialChar;
+        newPasswordInput.dataset.valid = allValid;
+    }
+}
+
+function updateChecklistItem(element, isValid) {
+    if (!element) return;
+    const icon = element.querySelector('.check-icon');
+    if (isValid) {
+        element.classList.add('valid');
+        if (icon) icon.innerHTML = '&#10003;'; // Checkmark
+    } else {
+        element.classList.remove('valid');
+        if (icon) icon.innerHTML = '&#10005;'; // X mark
+    }
+}
+
+function checkPasswordMatch() {
+    const newPassword = document.getElementById('newPassword')?.value;
+    const confirmPassword = document.getElementById('confirmPassword')?.value;
+    const matchMsg = document.getElementById('passwordMatchMessage');
+
+    if (!matchMsg) return;
+
+    // Don't show message if confirm password is empty
+    if (!confirmPassword) {
+        matchMsg.textContent = '';
+        matchMsg.className = 'password-match-message';
+        return;
+    }
+
+    // Check if passwords match
+    if (newPassword === confirmPassword) {
+        matchMsg.textContent = 'Passwords match!';
+        matchMsg.className = 'password-match-message show match';
+    } else {
+        matchMsg.textContent = 'Passwords do not match';
+        matchMsg.className = 'password-match-message show no-match';
+    }
+}
+
+function resetPasswordChecklist() {
+    const checklistItems = ['checkLength', 'checkUppercase', 'checkLowercase', 'checkNumber', 'checkSpecial'];
+    checklistItems.forEach(id => {
+        const element = document.getElementById(id);
+        if (element) {
+            element.classList.remove('valid');
+            const icon = element.querySelector('.check-icon');
+            if (icon) icon.innerHTML = '&#10005;';
+        }
+    });
+
+    // Clear password match message
+    const matchMsg = document.getElementById('passwordMatchMessage');
+    if (matchMsg) {
+        matchMsg.textContent = '';
+        matchMsg.className = 'password-match-message';
+    }
+
+    // Reset validity
+    const newPasswordInput = document.getElementById('newPassword');
+    if (newPasswordInput) {
+        newPasswordInput.dataset.valid = 'false';
+    }
+}
+
+async function handlePasswordChange(button) {
     const currentPassword = document.getElementById('currentPassword')?.value;
     const newPassword = document.getElementById('newPassword')?.value;
     const confirmPassword = document.getElementById('confirmPassword')?.value;
+    const newPasswordInput = document.getElementById('newPassword');
 
     // Validation
     if (!currentPassword || !newPassword || !confirmPassword) {
         showNotification('Please fill in all password fields', 'warning');
+        return;
+    }
+
+    // Check if password meets all requirements
+    if (newPasswordInput?.dataset.valid !== 'true') {
+        showNotification('Please make sure your password meets all requirements', 'warning');
         return;
     }
 
@@ -348,8 +472,9 @@ function handlePasswordChange(button) {
         return;
     }
 
-    if (newPassword.length < 8) {
-        showNotification('Password must be at least 8 characters long', 'warning');
+    // Check if new password is same as current password
+    if (currentPassword === newPassword) {
+        showNotification('New password must be different from your current password', 'warning');
         return;
     }
 
@@ -358,17 +483,40 @@ function handlePasswordChange(button) {
     button.textContent = 'Updating...';
     button.disabled = true;
 
-    // TODO: Replace with actual API call
-    setTimeout(() => {
-        showNotification('Password updated successfully!', 'success');
-        button.textContent = originalText;
-        button.disabled = false;
+    try {
+        const token = localStorage.getItem('auth_token');
+        const response = await fetch(`${window.API_BASE_URL || 'http://localhost:5000/api'}/settings/password/change`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ currentPassword, newPassword })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || 'Failed to change password');
+        }
+
+        showNotification('Password updated successfully! A confirmation email has been sent.', 'success');
 
         // Clear password fields
         document.getElementById('currentPassword').value = '';
         document.getElementById('newPassword').value = '';
         document.getElementById('confirmPassword').value = '';
-    }, 1500);
+
+        // Reset password checklist
+        resetPasswordChecklist();
+
+    } catch (error) {
+        console.error('Password change error:', error);
+        showNotification(error.message || 'Failed to change password', 'error');
+    } finally {
+        button.textContent = originalText;
+        button.disabled = false;
+    }
 }
 
 // Email Change Handler
@@ -1075,4 +1223,731 @@ window.addEventListener('beforeunload', function(e) {
         e.preventDefault();
         e.returnValue = '';
     }
+});
+
+// ==================== FORGOT PASSWORD MODAL ====================
+
+let forgotPasswordData = null; // Store data needed for reset flow
+let forgotPasswordResendCount = 0;
+
+function initializeForgotPassword() {
+    const forgotPasswordLink = document.getElementById('forgotPasswordLink');
+
+    if (forgotPasswordLink) {
+        forgotPasswordLink.addEventListener('click', function(e) {
+            e.preventDefault();
+            openForgotPasswordModal();
+        });
+    }
+
+    // Initialize modal handlers
+    initializeForgotPasswordModal();
+}
+
+function initializeForgotPasswordModal() {
+    // Close button
+    const closeBtn = document.getElementById('closeForgotPasswordModal');
+    if (closeBtn) {
+        closeBtn.addEventListener('click', closeForgotPasswordModal);
+    }
+
+    // Cancel button
+    const cancelBtn = document.getElementById('cancelForgotPassword');
+    if (cancelBtn) {
+        cancelBtn.addEventListener('click', closeForgotPasswordModal);
+    }
+
+    // Send code button (Step 1)
+    const sendCodeBtn = document.getElementById('sendResetCodeBtn');
+    if (sendCodeBtn) {
+        sendCodeBtn.addEventListener('click', handleSendResetCode);
+    }
+
+    // Verify code button (Step 2)
+    const verifyCodeBtn = document.getElementById('verifyResetCodeBtn');
+    if (verifyCodeBtn) {
+        verifyCodeBtn.addEventListener('click', handleVerifyResetCode);
+    }
+
+    // Back button (Step 2)
+    const backBtn = document.getElementById('backToStep1Btn');
+    if (backBtn) {
+        backBtn.addEventListener('click', goBackToStep1);
+    }
+
+    // Resend code button (Step 2)
+    const resendBtn = document.getElementById('resendResetCodeBtn');
+    if (resendBtn) {
+        resendBtn.addEventListener('click', handleResendResetCode);
+    }
+
+    // Set new password button (Step 3)
+    const setPasswordBtn = document.getElementById('setNewPasswordBtn');
+    if (setPasswordBtn) {
+        setPasswordBtn.addEventListener('click', handleSetNewPassword);
+    }
+
+    // Verify Cognito code button (Step 4)
+    const verifyCognitoBtn = document.getElementById('verifyCognitoCodeBtn');
+    if (verifyCognitoBtn) {
+        verifyCognitoBtn.addEventListener('click', handleVerifyCognitoCode);
+    }
+
+    // Done button (Step 5)
+    const doneBtn = document.getElementById('closeForgotPasswordSuccess');
+    if (doneBtn) {
+        doneBtn.addEventListener('click', closeForgotPasswordModal);
+    }
+
+    // Setup code input handlers for Step 2
+    setupForgotPasswordCodeInputs();
+
+    // Setup code input handlers for Step 4 (Cognito code)
+    setupCognitoCodeInputs();
+
+    // Setup password validation for Step 3
+    setupForgotPasswordValidation();
+
+    // Close on background/overlay click
+    const modal = document.getElementById('forgotPasswordModal');
+    const overlay = document.getElementById('forgotPasswordModalOverlay');
+    if (modal) {
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                closeForgotPasswordModal();
+            }
+        });
+    }
+    if (overlay) {
+        overlay.addEventListener('click', closeForgotPasswordModal);
+    }
+}
+
+function setupForgotPasswordCodeInputs() {
+    const codeInputs = document.querySelectorAll('.forgot-password-code-input');
+
+    codeInputs.forEach((input, index) => {
+        input.addEventListener('input', function(e) {
+            const value = this.value.replace(/\D/g, '');
+            this.value = value;
+
+            if (value && index < codeInputs.length - 1) {
+                codeInputs[index + 1].focus();
+            }
+        });
+
+        input.addEventListener('keydown', function(e) {
+            if (e.key === 'Backspace' && !this.value && index > 0) {
+                codeInputs[index - 1].focus();
+            }
+        });
+
+        input.addEventListener('paste', function(e) {
+            e.preventDefault();
+            const pastedData = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
+
+            pastedData.split('').forEach((char, i) => {
+                if (codeInputs[i]) {
+                    codeInputs[i].value = char;
+                }
+            });
+
+            const nextIndex = Math.min(pastedData.length, codeInputs.length - 1);
+            codeInputs[nextIndex].focus();
+        });
+    });
+}
+
+function setupCognitoCodeInputs() {
+    const codeInputs = document.querySelectorAll('.forgot-password-cognito-code-input');
+
+    codeInputs.forEach((input, index) => {
+        input.addEventListener('input', function(e) {
+            const value = this.value.replace(/\D/g, '');
+            this.value = value;
+
+            if (value && index < codeInputs.length - 1) {
+                codeInputs[index + 1].focus();
+            }
+        });
+
+        input.addEventListener('keydown', function(e) {
+            if (e.key === 'Backspace' && !this.value && index > 0) {
+                codeInputs[index - 1].focus();
+            }
+        });
+
+        input.addEventListener('paste', function(e) {
+            e.preventDefault();
+            const pastedData = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
+
+            pastedData.split('').forEach((char, i) => {
+                if (codeInputs[i]) {
+                    codeInputs[i].value = char;
+                }
+            });
+
+            const nextIndex = Math.min(pastedData.length, codeInputs.length - 1);
+            codeInputs[nextIndex].focus();
+        });
+    });
+}
+
+function setupForgotPasswordValidation() {
+    const newPasswordInput = document.getElementById('forgotNewPassword');
+    const confirmPasswordInput = document.getElementById('forgotConfirmPassword');
+
+    if (newPasswordInput) {
+        newPasswordInput.addEventListener('input', function() {
+            validateForgotPasswordRequirements(this.value);
+            if (confirmPasswordInput && confirmPasswordInput.value) {
+                checkForgotPasswordMatch();
+            }
+        });
+    }
+
+    if (confirmPasswordInput) {
+        confirmPasswordInput.addEventListener('input', checkForgotPasswordMatch);
+    }
+}
+
+function validateForgotPasswordRequirements(password) {
+    const requirements = {
+        'forgotCheckLength': password.length >= 8,
+        'forgotCheckUppercase': /[A-Z]/.test(password),
+        'forgotCheckLowercase': /[a-z]/.test(password),
+        'forgotCheckNumber': /[0-9]/.test(password),
+        'forgotCheckSpecial': /[!@#$%^&*]/.test(password)
+    };
+
+    for (const [id, isValid] of Object.entries(requirements)) {
+        const item = document.getElementById(id);
+        if (item) {
+            if (isValid) {
+                item.classList.add('valid');
+                item.querySelector('.check-icon').innerHTML = '&#10003;';
+            } else {
+                item.classList.remove('valid');
+                item.querySelector('.check-icon').innerHTML = '&#10005;';
+            }
+        }
+    }
+
+    return Object.values(requirements).every(v => v);
+}
+
+function checkForgotPasswordMatch() {
+    const newPassword = document.getElementById('forgotNewPassword')?.value || '';
+    const confirmPassword = document.getElementById('forgotConfirmPassword')?.value || '';
+    const matchMessage = document.getElementById('forgotPasswordMatchMessage');
+
+    if (!matchMessage) return false;
+
+    if (!confirmPassword) {
+        matchMessage.classList.remove('show', 'match', 'no-match');
+        matchMessage.textContent = '';
+        return false;
+    }
+
+    matchMessage.classList.add('show');
+
+    if (newPassword === confirmPassword) {
+        matchMessage.classList.remove('no-match');
+        matchMessage.classList.add('match');
+        matchMessage.textContent = 'Passwords match';
+        return true;
+    } else {
+        matchMessage.classList.remove('match');
+        matchMessage.classList.add('no-match');
+        matchMessage.textContent = 'Passwords do not match';
+        return false;
+    }
+}
+
+async function openForgotPasswordModal() {
+    const modal = document.getElementById('forgotPasswordModal');
+    const emailDisplay = document.getElementById('forgotPasswordEmailDisplay');
+
+    // Get current email from the account settings
+    const currentEmail = document.getElementById('currentEmail')?.value || '';
+
+    if (emailDisplay) {
+        emailDisplay.textContent = currentEmail;
+    }
+
+    // Store email for the flow
+    forgotPasswordData = { email: currentEmail };
+    forgotPasswordResendCount = 0;
+
+    // Reset to Step 1
+    showForgotPasswordStep(1);
+
+    // Clear any errors
+    clearForgotPasswordErrors();
+
+    // Show modal
+    if (modal) {
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+}
+
+function closeForgotPasswordModal() {
+    const modal = document.getElementById('forgotPasswordModal');
+
+    if (modal) {
+        modal.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+
+    // Clear stored data
+    forgotPasswordData = null;
+    forgotPasswordResendCount = 0;
+
+    // Clear any cooldown intervals
+    const resendBtn = document.getElementById('resendResetCodeBtn');
+    if (resendBtn && resendBtn.dataset.cooldownInterval) {
+        clearInterval(parseInt(resendBtn.dataset.cooldownInterval));
+        resendBtn.textContent = 'Resend Code';
+        resendBtn.disabled = false;
+        delete resendBtn.dataset.cooldownInterval;
+    }
+
+    // Reset form fields
+    resetForgotPasswordForm();
+
+    // Cancel the pending reset on the server (if any)
+    cancelPendingReset();
+}
+
+async function cancelPendingReset() {
+    try {
+        const token = localStorage.getItem('auth_token');
+        if (!token) return;
+
+        await fetch(`${window.API_BASE_URL || 'http://localhost:5000/api'}/settings/password/forgot/cancel`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            }
+        });
+    } catch (error) {
+        // Ignore errors for cancel
+        console.log('Cancel pending reset:', error);
+    }
+}
+
+function showForgotPasswordStep(stepNumber) {
+    // Show/hide body steps
+    const steps = document.querySelectorAll('.forgot-password-step');
+    steps.forEach((step, index) => {
+        step.style.display = index + 1 === stepNumber ? 'block' : 'none';
+    });
+
+    // Show/hide footer steps
+    const footerSteps = document.querySelectorAll('.forgot-password-footer-step');
+    footerSteps.forEach((step, index) => {
+        step.style.display = index + 1 === stepNumber ? 'flex' : 'none';
+    });
+
+    // Update modal header title based on step
+    const modalTitle = document.getElementById('forgotPasswordModalTitle');
+    if (modalTitle) {
+        const titles = {
+            1: 'Reset Password',
+            2: 'Verify Email',
+            3: 'New Password',
+            4: 'Final Verification',
+            5: 'Success'
+        };
+        modalTitle.textContent = titles[stepNumber] || 'Reset Password';
+    }
+}
+
+function clearForgotPasswordErrors() {
+    const errorElements = document.querySelectorAll('.forgot-password-error');
+    errorElements.forEach(el => {
+        el.textContent = '';
+        el.style.display = 'none';
+    });
+}
+
+function showForgotPasswordError(elementId, message) {
+    const errorEl = document.getElementById(elementId);
+    if (errorEl) {
+        errorEl.textContent = message;
+        errorEl.style.display = 'block';
+    }
+}
+
+function resetForgotPasswordForm() {
+    // Clear code inputs (Step 2)
+    const codeInputs = document.querySelectorAll('.forgot-password-code-input');
+    codeInputs.forEach(input => {
+        input.value = '';
+    });
+
+    // Clear Cognito code inputs (Step 4)
+    const cognitoCodeInputs = document.querySelectorAll('.forgot-password-cognito-code-input');
+    cognitoCodeInputs.forEach(input => {
+        input.value = '';
+    });
+
+    // Clear password inputs
+    const newPasswordInput = document.getElementById('forgotNewPassword');
+    const confirmPasswordInput = document.getElementById('forgotConfirmPassword');
+    if (newPasswordInput) newPasswordInput.value = '';
+    if (confirmPasswordInput) confirmPasswordInput.value = '';
+
+    // Reset password checklist
+    const checklistItems = ['forgotCheckLength', 'forgotCheckUppercase', 'forgotCheckLowercase', 'forgotCheckNumber', 'forgotCheckSpecial'];
+    checklistItems.forEach(id => {
+        const item = document.getElementById(id);
+        if (item) {
+            item.classList.remove('valid');
+            item.querySelector('.check-icon').innerHTML = '&#10005;';
+        }
+    });
+
+    // Reset match message
+    const matchMessage = document.getElementById('forgotPasswordMatchMessage');
+    if (matchMessage) {
+        matchMessage.classList.remove('show', 'match', 'no-match');
+        matchMessage.textContent = '';
+    }
+
+    // Reset resend count display
+    const resendCountEl = document.getElementById('resetResendCount');
+    if (resendCountEl) {
+        resendCountEl.textContent = '';
+    }
+}
+
+async function handleSendResetCode() {
+    const sendBtn = document.getElementById('sendResetCodeBtn');
+    const originalText = sendBtn.textContent;
+    sendBtn.textContent = 'Sending...';
+    sendBtn.disabled = true;
+
+    clearForgotPasswordErrors();
+
+    try {
+        const token = localStorage.getItem('auth_token');
+        const response = await fetch(`${window.API_BASE_URL || 'http://localhost:5000/api'}/settings/password/forgot/request`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || 'Failed to send verification code');
+        }
+
+        // Store email and move to Step 2
+        forgotPasswordData = { email: data.email };
+
+        // Update email display in Step 2
+        const emailConfirm = document.getElementById('forgotPasswordEmailConfirm');
+        if (emailConfirm) {
+            emailConfirm.textContent = data.email;
+        }
+
+        showForgotPasswordStep(2);
+
+        // Focus first code input
+        const firstInput = document.querySelector('.forgot-password-code-input');
+        if (firstInput) {
+            setTimeout(() => firstInput.focus(), 100);
+        }
+
+    } catch (error) {
+        console.error('Send reset code error:', error);
+        showForgotPasswordError('forgotPasswordError', error.message);
+    } finally {
+        sendBtn.textContent = originalText;
+        sendBtn.disabled = false;
+    }
+}
+
+async function handleVerifyResetCode() {
+    const codeInputs = document.querySelectorAll('.forgot-password-code-input');
+    const code = Array.from(codeInputs).map(input => input.value).join('');
+
+    if (code.length !== 6) {
+        showForgotPasswordError('forgotPasswordCodeError', 'Please enter the complete 6-digit code');
+        return;
+    }
+
+    const verifyBtn = document.getElementById('verifyResetCodeBtn');
+    const originalText = verifyBtn.textContent;
+    verifyBtn.textContent = 'Verifying...';
+    verifyBtn.disabled = true;
+
+    clearForgotPasswordErrors();
+
+    try {
+        const token = localStorage.getItem('auth_token');
+        const response = await fetch(`${window.API_BASE_URL || 'http://localhost:5000/api'}/settings/password/forgot/verify`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ code })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || 'Invalid verification code');
+        }
+
+        // Move to Step 3 (Set New Password)
+        showForgotPasswordStep(3);
+
+        // Focus new password input
+        const newPasswordInput = document.getElementById('forgotNewPassword');
+        if (newPasswordInput) {
+            setTimeout(() => newPasswordInput.focus(), 100);
+        }
+
+    } catch (error) {
+        console.error('Verify reset code error:', error);
+        showForgotPasswordError('forgotPasswordCodeError', error.message);
+    } finally {
+        verifyBtn.textContent = originalText;
+        verifyBtn.disabled = false;
+    }
+}
+
+function goBackToStep1() {
+    showForgotPasswordStep(1);
+    clearForgotPasswordErrors();
+}
+
+async function handleResendResetCode() {
+    const resendBtn = document.getElementById('resendResetCodeBtn');
+    const originalText = resendBtn.textContent;
+    resendBtn.textContent = 'Sending...';
+    resendBtn.disabled = true;
+
+    clearForgotPasswordErrors();
+
+    try {
+        const token = localStorage.getItem('auth_token');
+        const response = await fetch(`${window.API_BASE_URL || 'http://localhost:5000/api'}/settings/password/forgot/resend`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            // Check if it's a rate limit error
+            if (response.status === 429) {
+                startForgotPasswordCooldown(data.minutesRemaining || 15);
+            }
+            throw new Error(data.error || 'Failed to resend code');
+        }
+
+        // Clear code inputs
+        const codeInputs = document.querySelectorAll('.forgot-password-code-input');
+        codeInputs.forEach(input => input.value = '');
+        if (codeInputs[0]) codeInputs[0].focus();
+
+        // Update resends remaining
+        const resendCountEl = document.getElementById('resetResendCount');
+        if (resendCountEl && data.resendsRemaining !== undefined) {
+            if (data.resendsRemaining > 0) {
+                resendCountEl.textContent = `(${data.resendsRemaining} left)`;
+            } else {
+                resendCountEl.textContent = '(No more resends)';
+            }
+        }
+
+        showNotification('Verification code resent!', 'success');
+
+    } catch (error) {
+        console.error('Resend reset code error:', error);
+        showForgotPasswordError('forgotPasswordCodeError', error.message);
+    } finally {
+        if (!resendBtn.dataset.cooldownInterval) {
+            resendBtn.textContent = originalText;
+            resendBtn.disabled = false;
+        }
+    }
+}
+
+function startForgotPasswordCooldown(minutes) {
+    const resendBtn = document.getElementById('resendResetCodeBtn');
+    if (!resendBtn) return;
+
+    let secondsRemaining = minutes * 60;
+    resendBtn.disabled = true;
+
+    const updateButtonText = () => {
+        const mins = Math.floor(secondsRemaining / 60);
+        const secs = secondsRemaining % 60;
+        resendBtn.textContent = `Try again in ${mins}:${secs.toString().padStart(2, '0')}`;
+    };
+
+    updateButtonText();
+
+    const countdownInterval = setInterval(() => {
+        secondsRemaining--;
+        if (secondsRemaining <= 0) {
+            clearInterval(countdownInterval);
+            resendBtn.textContent = 'Resend Code';
+            resendBtn.disabled = false;
+            delete resendBtn.dataset.cooldownInterval;
+            clearForgotPasswordErrors();
+        } else {
+            updateButtonText();
+        }
+    }, 1000);
+
+    resendBtn.dataset.cooldownInterval = countdownInterval;
+}
+
+async function handleSetNewPassword() {
+    const newPassword = document.getElementById('forgotNewPassword')?.value || '';
+    const confirmPassword = document.getElementById('forgotConfirmPassword')?.value || '';
+
+    // Validate password requirements
+    if (!validateForgotPasswordRequirements(newPassword)) {
+        showForgotPasswordError('forgotPasswordSetError', 'Please meet all password requirements');
+        return;
+    }
+
+    // Validate passwords match
+    if (newPassword !== confirmPassword) {
+        showForgotPasswordError('forgotPasswordSetError', 'Passwords do not match');
+        return;
+    }
+
+    const setBtn = document.getElementById('setNewPasswordBtn');
+    const originalText = setBtn.textContent;
+    setBtn.textContent = 'Setting Password...';
+    setBtn.disabled = true;
+
+    clearForgotPasswordErrors();
+
+    try {
+        const token = localStorage.getItem('auth_token');
+        const response = await fetch(`${window.API_BASE_URL || 'http://localhost:5000/api'}/settings/password/forgot/set`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ newPassword })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || 'Failed to set new password');
+        }
+
+        // Check if Cognito code is required (two-step password reset)
+        if (data.requiresCognitoCode) {
+            // Store the new password for the next step
+            forgotPasswordData = { ...forgotPasswordData, newPassword, email: data.email };
+
+            // Update email display in Step 4
+            const emailConfirm = document.getElementById('forgotPasswordCognitoEmailConfirm');
+            if (emailConfirm) {
+                emailConfirm.textContent = data.email;
+            }
+
+            // Move to Step 4 (Cognito Code)
+            showForgotPasswordStep(4);
+
+            // Focus first Cognito code input
+            setTimeout(() => {
+                const firstInput = document.querySelector('.forgot-password-cognito-code-input');
+                if (firstInput) firstInput.focus();
+            }, 100);
+        } else {
+            // Move to Step 5 (Success)
+            showForgotPasswordStep(5);
+        }
+
+    } catch (error) {
+        console.error('Set new password error:', error);
+        showForgotPasswordError('forgotPasswordSetError', error.message);
+    } finally {
+        setBtn.textContent = originalText;
+        setBtn.disabled = false;
+    }
+}
+
+async function handleVerifyCognitoCode() {
+    // Get the Cognito code from inputs
+    const codeInputs = document.querySelectorAll('.forgot-password-cognito-code-input');
+    let code = '';
+    codeInputs.forEach(input => {
+        code += input.value;
+    });
+
+    if (code.length !== 6) {
+        showForgotPasswordError('forgotPasswordCognitoCodeError', 'Please enter the complete 6-digit code');
+        return;
+    }
+
+    if (!forgotPasswordData?.newPassword) {
+        showForgotPasswordError('forgotPasswordCognitoCodeError', 'Session expired. Please restart the process.');
+        return;
+    }
+
+    const verifyBtn = document.getElementById('verifyCognitoCodeBtn');
+    const originalText = verifyBtn.textContent;
+    verifyBtn.textContent = 'Completing...';
+    verifyBtn.disabled = true;
+
+    clearForgotPasswordErrors();
+
+    try {
+        const token = localStorage.getItem('auth_token');
+        const response = await fetch(`${window.API_BASE_URL || 'http://localhost:5000/api'}/settings/password/forgot/set`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+                newPassword: forgotPasswordData.newPassword,
+                cognitoCode: code
+            })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || 'Failed to complete password reset');
+        }
+
+        // Move to Step 5 (Success)
+        showForgotPasswordStep(5);
+
+    } catch (error) {
+        console.error('Verify Cognito code error:', error);
+        showForgotPasswordError('forgotPasswordCognitoCodeError', error.message);
+    } finally {
+        verifyBtn.textContent = originalText;
+        verifyBtn.disabled = false;
+    }
+}
+
+// Initialize forgot password on page load
+document.addEventListener('DOMContentLoaded', function() {
+    initializeForgotPassword();
 });

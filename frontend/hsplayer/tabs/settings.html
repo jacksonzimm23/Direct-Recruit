@@ -437,16 +437,40 @@
                             <div class="form-group">
                                 <label for="currentPassword">Current Password</label>
                                 <input type="password" id="currentPassword" placeholder="Enter current password" class="form-input">
+                                <button type="button" class="forgot-password-link" id="forgotPasswordLink">Forgot Password?</button>
                             </div>
 
                             <div class="form-group">
                                 <label for="newPassword">New Password</label>
                                 <input type="password" id="newPassword" placeholder="Enter new password" class="form-input">
+                                <div class="password-checklist" id="passwordChecklist">
+                                    <div class="checklist-item" id="checkLength">
+                                        <span class="check-icon">&#10005;</span>
+                                        <span>At least 8 characters</span>
+                                    </div>
+                                    <div class="checklist-item" id="checkUppercase">
+                                        <span class="check-icon">&#10005;</span>
+                                        <span>One uppercase letter (A-Z)</span>
+                                    </div>
+                                    <div class="checklist-item" id="checkLowercase">
+                                        <span class="check-icon">&#10005;</span>
+                                        <span>One lowercase letter (a-z)</span>
+                                    </div>
+                                    <div class="checklist-item" id="checkNumber">
+                                        <span class="check-icon">&#10005;</span>
+                                        <span>One number (0-9)</span>
+                                    </div>
+                                    <div class="checklist-item" id="checkSpecial">
+                                        <span class="check-icon">&#10005;</span>
+                                        <span>One special character (!@#$%^&*)</span>
+                                    </div>
+                                </div>
                             </div>
 
                             <div class="form-group">
                                 <label for="confirmPassword">Confirm New Password</label>
                                 <input type="password" id="confirmPassword" placeholder="Confirm new password" class="form-input">
+                                <div class="password-match-message" id="passwordMatchMessage"></div>
                             </div>
 
                             <button class="btn-secondary" id="updatePasswordBtn">Update Password</button>
@@ -563,6 +587,200 @@
                 Didn't receive the code?
                 <button class="btn-resend-code" id="resendEmailCodeBtn">Resend Code</button>
             </p>
+        </div>
+    </div>
+
+    <!-- Forgot Password Modal -->
+    <div class="forgot-password-modal" id="forgotPasswordModal">
+        <div class="forgot-password-modal-overlay" id="forgotPasswordModalOverlay"></div>
+        <div class="forgot-password-modal-content">
+            <!-- Modal Header -->
+            <div class="forgot-password-modal-header">
+                <h2 id="forgotPasswordModalTitle">Reset Password</h2>
+                <button class="forgot-password-modal-close" id="closeForgotPasswordModal">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Modal Body -->
+            <div class="forgot-password-modal-body">
+                <!-- Step 1: Confirm Email -->
+                <div class="forgot-password-step" id="forgotPasswordStep1">
+                    <div class="forgot-password-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                        </svg>
+                    </div>
+
+                    <h2 class="forgot-password-title">Reset Your Password</h2>
+                    <p class="forgot-password-subtitle">
+                        We'll send a verification code to your email address to confirm your identity.
+                    </p>
+
+                    <div class="forgot-password-email-display">
+                        <label>Send verification code to:</label>
+                        <div class="email-display-box" id="forgotPasswordEmailDisplay"></div>
+                    </div>
+
+                    <p class="forgot-password-error" id="forgotPasswordError"></p>
+                </div>
+
+                <!-- Step 2: Enter Verification Code -->
+                <div class="forgot-password-step" id="forgotPasswordStep2" style="display: none;">
+                    <div class="forgot-password-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                            <polyline points="22,6 12,13 2,6"></polyline>
+                        </svg>
+                    </div>
+
+                    <h2 class="forgot-password-title">Check Your Email</h2>
+                    <p class="forgot-password-subtitle">
+                        Enter the 6-digit code sent to<br>
+                        <strong id="forgotPasswordEmailConfirm"></strong>
+                    </p>
+
+                    <div class="verification-code-inputs forgot-password-code-inputs">
+                        <input type="text" class="verification-code-input forgot-password-code-input" maxlength="1" pattern="[0-9]" inputmode="numeric">
+                        <input type="text" class="verification-code-input forgot-password-code-input" maxlength="1" pattern="[0-9]" inputmode="numeric">
+                        <input type="text" class="verification-code-input forgot-password-code-input" maxlength="1" pattern="[0-9]" inputmode="numeric">
+                        <input type="text" class="verification-code-input forgot-password-code-input" maxlength="1" pattern="[0-9]" inputmode="numeric">
+                        <input type="text" class="verification-code-input forgot-password-code-input" maxlength="1" pattern="[0-9]" inputmode="numeric">
+                        <input type="text" class="verification-code-input forgot-password-code-input" maxlength="1" pattern="[0-9]" inputmode="numeric">
+                    </div>
+
+                    <p class="forgot-password-error" id="forgotPasswordCodeError"></p>
+
+                    <p class="forgot-password-resend">
+                        Didn't receive the code?
+                        <button class="btn-resend-reset-code" id="resendResetCodeBtn">Resend Code</button>
+                        <span class="resend-count" id="resetResendCount"></span>
+                    </p>
+                </div>
+
+                <!-- Step 3: Set New Password -->
+                <div class="forgot-password-step" id="forgotPasswordStep3" style="display: none;">
+                    <div class="forgot-password-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                        </svg>
+                    </div>
+
+                    <h2 class="forgot-password-title">Create New Password</h2>
+                    <p class="forgot-password-subtitle">
+                        Choose a strong password for your account.
+                    </p>
+
+                    <div class="forgot-password-form">
+                        <div class="form-group">
+                            <label for="forgotNewPassword">New Password</label>
+                            <input type="password" id="forgotNewPassword" placeholder="Enter new password" class="form-input">
+                            <div class="password-checklist" id="forgotPasswordChecklist">
+                                <div class="checklist-item" id="forgotCheckLength">
+                                    <span class="check-icon">&#10005;</span>
+                                    <span>At least 8 characters</span>
+                                </div>
+                                <div class="checklist-item" id="forgotCheckUppercase">
+                                    <span class="check-icon">&#10005;</span>
+                                    <span>One uppercase letter (A-Z)</span>
+                                </div>
+                                <div class="checklist-item" id="forgotCheckLowercase">
+                                    <span class="check-icon">&#10005;</span>
+                                    <span>One lowercase letter (a-z)</span>
+                                </div>
+                                <div class="checklist-item" id="forgotCheckNumber">
+                                    <span class="check-icon">&#10005;</span>
+                                    <span>One number (0-9)</span>
+                                </div>
+                                <div class="checklist-item" id="forgotCheckSpecial">
+                                    <span class="check-icon">&#10005;</span>
+                                    <span>One special character (!@#$%^&*)</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="forgotConfirmPassword">Confirm New Password</label>
+                            <input type="password" id="forgotConfirmPassword" placeholder="Confirm new password" class="form-input">
+                            <div class="password-match-message" id="forgotPasswordMatchMessage"></div>
+                        </div>
+                    </div>
+
+                    <p class="forgot-password-error" id="forgotPasswordSetError"></p>
+                </div>
+
+                <!-- Step 4: Cognito Verification Code -->
+                <div class="forgot-password-step" id="forgotPasswordStep4" style="display: none;">
+                    <div class="forgot-password-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                            <polyline points="22,6 12,13 2,6"></polyline>
+                        </svg>
+                    </div>
+
+                    <h2 class="forgot-password-title">Final Verification</h2>
+                    <p class="forgot-password-subtitle">
+                        Enter the verification code sent to<br>
+                        <strong id="forgotPasswordCognitoEmailConfirm"></strong>
+                    </p>
+
+                    <div class="verification-code-inputs forgot-password-cognito-code-inputs">
+                        <input type="text" class="verification-code-input forgot-password-cognito-code-input" maxlength="1" pattern="[0-9]" inputmode="numeric">
+                        <input type="text" class="verification-code-input forgot-password-cognito-code-input" maxlength="1" pattern="[0-9]" inputmode="numeric">
+                        <input type="text" class="verification-code-input forgot-password-cognito-code-input" maxlength="1" pattern="[0-9]" inputmode="numeric">
+                        <input type="text" class="verification-code-input forgot-password-cognito-code-input" maxlength="1" pattern="[0-9]" inputmode="numeric">
+                        <input type="text" class="verification-code-input forgot-password-cognito-code-input" maxlength="1" pattern="[0-9]" inputmode="numeric">
+                        <input type="text" class="verification-code-input forgot-password-cognito-code-input" maxlength="1" pattern="[0-9]" inputmode="numeric">
+                    </div>
+
+                    <p class="forgot-password-error" id="forgotPasswordCognitoCodeError"></p>
+                </div>
+
+                <!-- Step 5: Success -->
+                <div class="forgot-password-step" id="forgotPasswordStep5" style="display: none;">
+                    <div class="forgot-password-icon success">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                        </svg>
+                    </div>
+
+                    <h2 class="forgot-password-title">Password Reset Complete</h2>
+                    <p class="forgot-password-subtitle">
+                        Your password has been successfully changed. You can now use your new password to sign in.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="forgot-password-modal-footer" id="forgotPasswordModalFooter">
+                <!-- Step 1 buttons -->
+                <div class="forgot-password-footer-step" id="forgotPasswordFooter1">
+                    <button class="btn-cancel-forgot-password" id="cancelForgotPassword">Cancel</button>
+                    <button class="btn-send-reset-code" id="sendResetCodeBtn">Send Code</button>
+                </div>
+                <!-- Step 2 buttons -->
+                <div class="forgot-password-footer-step" id="forgotPasswordFooter2" style="display: none;">
+                    <button class="btn-back-forgot-password" id="backToStep1Btn">Back</button>
+                    <button class="btn-verify-reset-code" id="verifyResetCodeBtn">Verify Code</button>
+                </div>
+                <!-- Step 3 buttons -->
+                <div class="forgot-password-footer-step" id="forgotPasswordFooter3" style="display: none;">
+                    <button class="btn-set-new-password" id="setNewPasswordBtn">Reset Password</button>
+                </div>
+                <!-- Step 4 buttons -->
+                <div class="forgot-password-footer-step" id="forgotPasswordFooter4" style="display: none;">
+                    <button class="btn-verify-cognito-code" id="verifyCognitoCodeBtn">Complete Reset</button>
+                </div>
+                <!-- Step 5 buttons -->
+                <div class="forgot-password-footer-step" id="forgotPasswordFooter5" style="display: none;">
+                    <button class="btn-close-forgot-password" id="closeForgotPasswordSuccess">Done</button>
+                </div>
+            </div>
         </div>
     </div>
 

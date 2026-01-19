@@ -224,6 +224,9 @@ router.post('/forgot-password', authLimiter, async (req, res) => {
       // Don't reveal if user exists
       return res.json({ message: 'If an account exists with this email, a password reset code has been sent.' });
     }
+    if (error.name === 'LimitExceededException') {
+      return res.status(429).json({ error: 'Too many requests. Please wait before trying again.' });
+    }
     res.status(500).json({ error: 'Failed to initiate password reset' });
   }
 });
@@ -235,6 +238,20 @@ router.post('/reset-password', authLimiter, async (req, res) => {
 
     if (!email || !code || !newPassword) {
       return res.status(400).json({ error: 'Email, code, and new password are required' });
+    }
+
+    // Check if new password is the same as current password by attempting sign-in
+    try {
+      await cognito.signIn(email, newPassword);
+      // If sign-in succeeds, the new password is the same as the current one
+      return res.status(400).json({ error: 'New password must be different from your current password' });
+    } catch (signInError) {
+      // NotAuthorizedException means password is different (which is what we want)
+      // UserNotFoundException means user doesn't exist (will be caught by confirmForgotPassword)
+      // Any other error, we proceed and let confirmForgotPassword handle it
+      if (signInError.name !== 'NotAuthorizedException' && signInError.name !== 'UserNotFoundException') {
+        console.log('Password check error (non-blocking):', signInError.name);
+      }
     }
 
     await cognito.confirmForgotPassword(email, code, newPassword);
@@ -249,7 +266,17 @@ router.post('/reset-password', authLimiter, async (req, res) => {
       return res.status(400).json({ error: 'Reset code has expired' });
     }
     if (error.name === 'InvalidPasswordException') {
-      return res.status(400).json({ error: 'Password does not meet requirements' });
+      // Check if it's a same-password error (Cognito includes this in the message)
+      const errorMessage = error.message || '';
+      if (errorMessage.toLowerCase().includes('previous') ||
+          errorMessage.toLowerCase().includes('same') ||
+          errorMessage.toLowerCase().includes('history')) {
+        return res.status(400).json({ error: 'New password must be different from your current password' });
+      }
+      return res.status(400).json({ error: 'Password does not meet requirements. Must be at least 8 characters with uppercase, lowercase, numbers, and special characters.' });
+    }
+    if (error.name === 'LimitExceededException') {
+      return res.status(429).json({ error: 'Too many attempts. Please wait before trying again.' });
     }
     res.status(500).json({ error: 'Password reset failed' });
   }

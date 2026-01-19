@@ -57,6 +57,19 @@ document.addEventListener('DOMContentLoaded', function() {
 
             const data = await response.json();
 
+            // Check for rate limit error
+            if (response.status === 429) {
+                showEmailError(data.error || 'Too many requests. Please wait before trying again.');
+                sendCodeBtn.disabled = false;
+                sendCodeBtn.innerHTML = `
+                    Send Reset Code
+                    <svg class="btn-icon" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                    </svg>
+                `;
+                return;
+            }
+
             // Always proceed to step 2 (we don't reveal if email exists)
             userEmail = email;
             userEmailEl.textContent = maskEmail(email);
@@ -263,12 +276,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 }, 2500);
             } else {
                 showResetError(data.error || 'Failed to reset password');
-                resetCodeInputs();
+                // Only reset code inputs if the code was invalid, not for password errors
+                if (data.error && (data.error.includes('Invalid reset code') || data.error.includes('expired'))) {
+                    resetCodeInputs();
+                }
             }
         } catch (error) {
             console.error('Reset password error:', error);
             showResetError('Something went wrong. Please try again.');
-            resetCodeInputs();
         }
 
         resetBtn.disabled = false;
@@ -295,6 +310,14 @@ document.addEventListener('DOMContentLoaded', function() {
             });
 
             const data = await response.json();
+
+            // Check for rate limit error
+            if (response.status === 429) {
+                showResetError(data.error || 'Too many requests. Please wait before trying again.');
+                resendBtn.disabled = false;
+                resendBtn.textContent = 'Resend Code';
+                return;
+            }
 
             // Start cooldown timer (60 seconds)
             startResendTimer(60);
