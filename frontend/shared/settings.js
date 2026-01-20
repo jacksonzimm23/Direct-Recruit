@@ -301,29 +301,157 @@ function initializeDeleteAccount() {
 
     if (deleteBtn) {
         deleteBtn.addEventListener('click', function() {
-            showDeleteAccountModal();
+            openDeleteAccountModal();
+        });
+    }
+
+    // Initialize delete account modal handlers
+    initializeDeleteAccountModal();
+}
+
+function initializeDeleteAccountModal() {
+    const modal = document.getElementById('deleteAccountModal');
+    const overlay = document.getElementById('deleteAccountModalOverlay');
+    const closeBtn = document.getElementById('closeDeleteAccountModal');
+    const cancelBtn = document.getElementById('cancelDeleteAccount');
+    const confirmBtn = document.getElementById('confirmDeleteAccount');
+
+    // Close handlers
+    if (closeBtn) {
+        closeBtn.addEventListener('click', closeDeleteAccountModal);
+    }
+
+    if (cancelBtn) {
+        cancelBtn.addEventListener('click', closeDeleteAccountModal);
+    }
+
+    if (overlay) {
+        overlay.addEventListener('click', closeDeleteAccountModal);
+    }
+
+    // Confirm delete handler
+    if (confirmBtn) {
+        confirmBtn.addEventListener('click', handleDeleteAccount);
+    }
+
+    // Clear error when typing in password field
+    const passwordInput = document.getElementById('deleteAccountPassword');
+    if (passwordInput) {
+        passwordInput.addEventListener('input', function() {
+            clearDeleteAccountError();
         });
     }
 }
 
-// Show Delete Account Modal
-function showDeleteAccountModal() {
-    const confirmed = confirm(
-        'WARNING: This will permanently delete your account and all associated data.\n\n' +
-        'This action cannot be undone. Are you absolutely sure you want to continue?'
-    );
+function openDeleteAccountModal() {
+    const modal = document.getElementById('deleteAccountModal');
 
-    if (confirmed) {
-        const doubleConfirm = confirm(
-            'Please confirm one more time:\n\n' +
-            'I understand that my account and all data will be permanently deleted.'
-        );
+    if (modal) {
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
 
-        if (doubleConfirm) {
-            // TODO: Call API endpoint to delete account
-            console.log('Account deletion requested');
-            showNotification('Account deletion request submitted. You will receive a confirmation email.', 'warning');
+        // Clear previous state
+        const passwordInput = document.getElementById('deleteAccountPassword');
+        if (passwordInput) {
+            passwordInput.value = '';
         }
+        clearDeleteAccountError();
+
+        // Focus password input
+        setTimeout(() => {
+            if (passwordInput) passwordInput.focus();
+        }, 100);
+    }
+}
+
+function closeDeleteAccountModal() {
+    const modal = document.getElementById('deleteAccountModal');
+
+    if (modal) {
+        modal.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+
+    // Clear password field
+    const passwordInput = document.getElementById('deleteAccountPassword');
+    if (passwordInput) {
+        passwordInput.value = '';
+    }
+    clearDeleteAccountError();
+}
+
+function showDeleteAccountError(message) {
+    const errorEl = document.getElementById('deleteAccountError');
+    if (errorEl) {
+        errorEl.textContent = message;
+    }
+}
+
+function clearDeleteAccountError() {
+    const errorEl = document.getElementById('deleteAccountError');
+    if (errorEl) {
+        errorEl.textContent = '';
+    }
+}
+
+async function handleDeleteAccount() {
+    const passwordInput = document.getElementById('deleteAccountPassword');
+    const password = passwordInput?.value;
+
+    if (!password) {
+        showDeleteAccountError('Please enter your password to confirm deletion');
+        return;
+    }
+
+    const confirmBtn = document.getElementById('confirmDeleteAccount');
+    const originalText = confirmBtn.textContent;
+    confirmBtn.textContent = 'Deleting...';
+    confirmBtn.disabled = true;
+
+    clearDeleteAccountError();
+
+    try {
+        const token = localStorage.getItem('auth_token');
+        const response = await fetch(`${window.API_BASE_URL || 'http://localhost:5000/api'}/settings/account/delete`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ password })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || 'Failed to delete account');
+        }
+
+        // Success - close modal and logout
+        closeDeleteAccountModal();
+
+        // Clear all auth data
+        localStorage.removeItem('auth_token');
+        localStorage.removeItem('user_data');
+        localStorage.removeItem('userSettings');
+
+        // Show success notification briefly then redirect
+        showNotification('Your account has been deleted. We\'re sorry to see you go.', 'success');
+
+        // Clear form modified state to prevent beforeunload warning
+        formModified = false;
+
+        // Redirect to landing page after a short delay
+        setTimeout(() => {
+            window.location.href = '/';
+        }, 2000);
+
+    } catch (error) {
+        console.error('Delete account error:', error);
+        showDeleteAccountError(error.message || 'Failed to delete account');
+    } finally {
+        confirmBtn.textContent = originalText;
+        confirmBtn.disabled = false;
     }
 }
 

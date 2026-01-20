@@ -611,4 +611,72 @@ router.post('/password/forgot/cancel', authMiddleware, async (req, res) => {
   }
 });
 
+// ==================== DELETE ACCOUNT ====================
+
+// Delete user account permanently
+router.delete('/account/delete', authMiddleware, async (req, res) => {
+  try {
+    const { password } = req.body;
+
+    if (!password) {
+      return res.status(400).json({ error: 'Password is required to delete account' });
+    }
+
+    // Get current user
+    const currentUser = await User.findById(req.userId);
+    if (!currentUser) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Verify password by signing in with Cognito
+    try {
+      console.log('[Settings] Verifying password for account deletion:', currentUser.email);
+      await cognito.signIn(currentUser.email, password);
+      console.log('[Settings] Password verified successfully');
+    } catch (cognitoError) {
+      console.error('[Settings] Password verification error:', cognitoError.name, cognitoError.message);
+      if (cognitoError.name === 'NotAuthorizedException') {
+        return res.status(401).json({ error: 'Incorrect password' });
+      }
+      if (cognitoError.name === 'UserNotFoundException') {
+        return res.status(401).json({ error: 'User not found in authentication system' });
+      }
+      throw cognitoError;
+    }
+
+    // Store email before deletion for sending confirmation
+    const userEmail = currentUser.email;
+
+    // Delete from Cognito FIRST (so we can fail gracefully if it doesn't work)
+    try {
+      console.log('[Settings] Deleting user from Cognito:', userEmail);
+      await cognito.adminDeleteUser(userEmail);
+      console.log('[Settings] User deleted from Cognito');
+    } catch (cognitoError) {
+      console.error('[Settings] Cognito deletion error:', cognitoError.name, cognitoError.message);
+      // Only fail if it's not a "user not found" error (already deleted)
+      if (cognitoError.name !== 'UserNotFoundException') {
+        return res.status(500).json({ error: 'Failed to delete account from authentication system' });
+      }
+      // User not found in Cognito is fine - continue with PostgreSQL deletion
+      console.log('[Settings] User not found in Cognito (may already be deleted), continuing...');
+    }
+
+    // Delete from PostgreSQL (cascades to all related tables)
+    console.log('[Settings] Deleting user from PostgreSQL:', req.userId);
+    await User.delete(req.userId);
+    console.log('[Settings] User deleted from PostgreSQL');
+
+    // Send goodbye email (non-blocking)
+    email.sendAccountDeletionConfirmation(userEmail)
+      .then(() => console.log('[Settings] Account deletion email sent to:', userEmail))
+      .catch(err => console.error('[Settings] Failed to send account deletion email:', err));
+
+    res.json({ message: 'Account deleted successfully' });
+  } catch (error) {
+    console.error('Delete account error:', error);
+    res.status(500).json({ error: 'Failed to delete account' });
+  }
+});
+
 module.exports = router;

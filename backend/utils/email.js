@@ -473,9 +473,117 @@ If you didn't request this reset, you can safely ignore this email.
   }
 }
 
+/**
+ * Send account deletion confirmation email (sorry to see you go)
+ */
+async function sendAccountDeletionConfirmation(toEmail) {
+  const params = {
+    Source: FROM_EMAIL,
+    Destination: {
+      ToAddresses: [toEmail]
+    },
+    Message: {
+      Subject: {
+        Data: 'Your account has been deleted - Direct Recruit',
+        Charset: 'UTF-8'
+      },
+      Body: {
+        Html: {
+          Data: `
+            <!DOCTYPE html>
+            <html>
+            <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            </head>
+            <body style="margin: 0; padding: 0; font-family: Arial, Helvetica, sans-serif; background-color: #f4f4f4;">
+              <table role="presentation" style="width: 100%; border-collapse: collapse; background-color: #f4f4f4;">
+                <tr>
+                  <td align="center" style="padding: 40px 20px;">
+                    <table role="presentation" style="max-width: 480px; width: 100%; border-collapse: collapse;">
+                      <!-- Header -->
+                      <tr>
+                        <td style="text-align: center; padding-bottom: 30px;">
+                          <h1 style="color: #1282a2; font-size: 28px; margin: 0; font-family: Arial, Helvetica, sans-serif;">Direct Recruit</h1>
+                        </td>
+                      </tr>
+                      <!-- Content Box -->
+                      <tr>
+                        <td style="background-color: #ffffff; border: 1px solid #e0e0e0; border-radius: 8px; padding: 40px 30px;">
+                          <h2 style="color: #1a1a2e; font-size: 24px; margin: 0 0 20px 0; text-align: center; font-family: Arial, Helvetica, sans-serif;">We're Sorry to See You Go</h2>
+                          <p style="color: #555555; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0; text-align: center; font-family: Arial, Helvetica, sans-serif;">
+                            Your Direct Recruit account has been permanently deleted as requested.
+                          </p>
+                          <p style="color: #555555; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0; text-align: center; font-family: Arial, Helvetica, sans-serif;">
+                            All your personal data, including your profile, messages, connections, and uploaded content has been removed from our systems.
+                          </p>
+                          <table role="presentation" style="width: 100%; border-collapse: collapse; margin: 25px 0;">
+                            <tr>
+                              <td style="background-color: #e8f4f8; border: 1px solid #1282a2; border-radius: 8px; padding: 15px; text-align: center;">
+                                <p style="color: #666666; font-size: 14px; margin: 0; font-family: Arial, Helvetica, sans-serif;">
+                                  If you ever want to come back, you're always welcome to create a new account using this email address.
+                                </p>
+                              </td>
+                            </tr>
+                          </table>
+                          <p style="color: #888888; font-size: 14px; line-height: 1.5; margin: 0; text-align: center; font-family: Arial, Helvetica, sans-serif;">
+                            Thank you for being part of the Direct Recruit community. We wish you all the best in your athletic journey.
+                          </p>
+                        </td>
+                      </tr>
+                      <!-- Footer -->
+                      <tr>
+                        <td style="text-align: center; padding-top: 30px;">
+                          <p style="color: #999999; font-size: 12px; margin: 0; font-family: Arial, Helvetica, sans-serif;">
+                            &copy; ${new Date().getFullYear()} Direct Recruit. All rights reserved.
+                          </p>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </body>
+            </html>
+          `,
+          Charset: 'UTF-8'
+        },
+        Text: {
+          Data: `
+Direct Recruit - We're Sorry to See You Go
+
+Your Direct Recruit account has been permanently deleted as requested.
+
+All your personal data, including your profile, messages, connections, and uploaded content has been removed from our systems.
+
+If you ever want to come back, you're always welcome to create a new account using this email address.
+
+Thank you for being part of the Direct Recruit community. We wish you all the best in your athletic journey.
+
+© ${new Date().getFullYear()} Direct Recruit. All rights reserved.
+          `,
+          Charset: 'UTF-8'
+        }
+      }
+    }
+  };
+
+  try {
+    const command = new SendEmailCommand(params);
+    const response = await sesClient.send(command);
+    console.log('[Email] Account deletion confirmation sent to:', toEmail, 'MessageId:', response.MessageId);
+    return { success: true, messageId: response.MessageId };
+  } catch (error) {
+    console.error('[Email] Failed to send account deletion confirmation:', error);
+    // Don't throw - this is a non-critical notification
+    return { success: false, error: error.message };
+  }
+}
+
 module.exports = {
   sendEmailChangeVerification,
   sendEmailChangeConfirmation,
   sendPasswordChangeConfirmation,
-  sendPasswordResetVerification
+  sendPasswordResetVerification,
+  sendAccountDeletionConfirmation
 };

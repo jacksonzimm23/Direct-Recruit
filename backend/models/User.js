@@ -61,6 +61,16 @@ class User {
     );
     return result.rows[0];
   }
+
+  // Delete user and all associated data
+  // PostgreSQL CASCADE constraints handle most related data automatically
+  static async delete(userId) {
+    const result = await pool.query(
+      'DELETE FROM users WHERE id = $1 RETURNING id, email',
+      [userId]
+    );
+    return result.rows[0];
+  }
 }
 
 module.exports = User;

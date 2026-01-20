@@ -8,6 +8,7 @@ const {
   AdminSetUserPasswordCommand,
   AdminGetUserCommand,
   AdminUpdateUserAttributesCommand,
+  AdminDeleteUserCommand,
   ForgotPasswordCommand,
   ConfirmForgotPasswordCommand,
   ChangePasswordCommand,
@@ -360,6 +361,23 @@ async function adminUpdateUserEmail(currentEmail, newEmail) {
   }
 }
 
+// Admin delete user from Cognito User Pool
+async function adminDeleteUser(email) {
+  const command = new AdminDeleteUserCommand({
+    UserPoolId: USER_POOL_ID,
+    Username: email
+  });
+
+  try {
+    await client.send(command);
+    console.log('[Cognito] User deleted:', email);
+    return { success: true };
+  } catch (error) {
+    console.error('Cognito adminDeleteUser error:', error);
+    throw error;
+  }
+}
+
 module.exports = {
   signUp,
   confirmSignUp,
@@ -369,6 +387,7 @@ module.exports = {
   adminSetUserPassword,
   adminGetUser,
   adminUpdateUserEmail,
+  adminDeleteUser,
   forgotPassword,
   confirmForgotPassword,
   changePassword,
