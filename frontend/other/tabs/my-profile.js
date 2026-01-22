@@ -67,7 +67,7 @@ async function loadOwnProfile() {
             currentProfile = response.profile;
             viewingUserId = response.user.id;
             isOwnProfile = true;
-            displayProfile();
+            displayProfile(response.profile, 'other'); // Own profile is always 'other' type
 
             // Show Likes tab for own profile
             const likesTab = document.querySelector('.profile-tab[data-tab="likes"]');
@@ -97,7 +97,7 @@ async function loadProfileByUsername(username) {
             currentProfile = response.profile;
             viewingUserId = response.profile.user_id;
             isOwnProfile = currentUserId === viewingUserId;
-            displayProfile();
+            displayProfile(response.profile, response.type, response.accessLevel, response.hasPendingRequest);
 
             // Hide Likes tab if viewing someone else's profile
             const likesTab = document.querySelector('.profile-tab[data-tab="likes"]');
@@ -140,35 +140,45 @@ async function loadFollowCounts(userId) {
     }
 }
 
-function displayProfile() {
-    if (!currentProfile) return;
+function displayProfile(profile, type, accessLevel = 'full', hasPendingRequest = false) {
+    console.log('displayProfile called with type:', type, 'accessLevel:', accessLevel);
+
+    // Use passed profile or fall back to currentProfile
+    const profileData = profile || currentProfile;
+    if (!profileData) return;
+
+    // Check if this is a restricted (private) profile view
+    const isRestrictedView = accessLevel === 'limited';
+
 
     // Update profile name in header
     const nameElement = document.querySelector('.profile-name');
     if (nameElement) {
-        const firstName = currentProfile.first_name || '';
-        const lastName = currentProfile.last_name || '';
+        const firstName = profileData.first_name || '';
+        const lastName = profileData.last_name || '';
         nameElement.textContent = `${firstName} ${lastName}`.trim() || 'Your Name';
     }
 
-    // Update subheader (displayed under name, using profile-position element)
-    const subheaderElement = document.querySelector('.profile-position');
-    if (subheaderElement) {
-        subheaderElement.textContent = currentProfile.subheader || '';
-        subheaderElement.style.color = '#d4a017'; // Yellow color for other profile
+    // Display type-specific content
+    if (type === 'player') {
+        displayPlayerProfile(profileData);
+    } else if (type === 'coach') {
+        displayCoachProfile(profileData);
+    } else {
+        displayOtherProfile(profileData);
     }
 
     // Update username display
     const usernameElement = document.querySelector('.profile-username');
     if (usernameElement) {
-        usernameElement.textContent = currentProfile.username ? `@${currentProfile.username}` : '';
+        usernameElement.textContent = profileData.username ? `@${profileData.username}` : '';
     }
 
     // Update bio in the About section
     const bioText = document.querySelector('.profile-info-row .bio-text');
     if (bioText) {
-        if (currentProfile.bio) {
-            bioText.textContent = currentProfile.bio;
+        if (profileData.bio) {
+            bioText.textContent = profileData.bio;
             bioText.classList.remove('empty-state');
         } else {
             bioText.textContent = 'No bio provided yet.';
@@ -180,10 +190,11 @@ function displayProfile() {
     updateContactInfoSection();
 
     // Update profile image if available
-    if (currentProfile.profile_picture_url) {
+    const imgUrl = profileData.profile_picture_url || profileData.profile_image_url;
+    if (imgUrl) {
         const avatarElement = document.getElementById('profileAvatar');
         if (avatarElement) {
-            avatarElement.innerHTML = `<img src="${currentProfile.profile_picture_url}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
+            avatarElement.innerHTML = `<img src="${imgUrl}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
         }
     }
 
@@ -206,6 +217,163 @@ function displayProfile() {
 
     // Update profile actions based on ownership
     updateProfileActions();
+
+    // If this is a private profile view (restricted), add overlay on tabs section
+    if (isRestrictedView) {
+        addPrivateProfileOverlay();
+        disableFollowLinksForPrivateProfile();
+    }
+}
+
+// Disable followers/following links for private profiles
+function disableFollowLinksForPrivateProfile() {
+    const followersLink = document.getElementById('followersLink');
+    const followingLink = document.getElementById('followingLink');
+
+    if (followersLink) {
+        followersLink.style.pointerEvents = 'none';
+        followersLink.style.cursor = 'default';
+        followersLink.style.opacity = '0.6';
+        followersLink.removeAttribute('href');
+    }
+
+    if (followingLink) {
+        followingLink.style.pointerEvents = 'none';
+        followingLink.style.cursor = 'default';
+        followingLink.style.opacity = '0.6';
+        followingLink.removeAttribute('href');
+    }
+}
+
+// Add private profile overlay over the tabs section
+function addPrivateProfileOverlay() {
+    const existingOverlay = document.querySelector('.private-profile-overlay');
+    if (existingOverlay) existingOverlay.remove();
+
+    const tabsContainer = document.querySelector('.profile-tabs-container');
+    const tabContent = document.querySelector('.profile-tab-content');
+    if (!tabsContainer) return;
+
+    const wrapper = document.createElement('div');
+    wrapper.className = 'private-profile-tabs-wrapper';
+    wrapper.style.position = 'relative';
+    tabsContainer.parentElement.insertBefore(wrapper, tabsContainer);
+    wrapper.appendChild(tabsContainer);
+    if (tabContent) wrapper.appendChild(tabContent);
+
+    const overlay = document.createElement('div');
+    overlay.className = 'private-profile-overlay';
+    overlay.innerHTML = `
+        <div class="private-profile-message">
+            <svg class="lock-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="48" height="48">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+            </svg>
+            <h3>This Account is Private</h3>
+        </div>
+    `;
+    wrapper.appendChild(overlay);
+
+    if (!document.getElementById('privateProfileStyles')) {
+        const style = document.createElement('style');
+        style.id = 'privateProfileStyles';
+        style.textContent = `
+            .private-profile-tabs-wrapper { position: relative; }
+            .private-profile-overlay {
+                position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+                display: flex; align-items: flex-start; justify-content: center;
+                background: #0a1128;
+                border-radius: 12px; z-index: 10; min-height: 300px;
+            }
+            .private-profile-message { text-align: center; padding: 30px 40px; color: white; }
+            .private-profile-message .lock-icon { color: white; margin-bottom: 16px; opacity: 0.9; }
+            .private-profile-message h3 { margin: 0; font-size: 20px; font-weight: 600; color: white; }
+        `;
+        document.head.appendChild(style);
+    }
+}
+
+// Helper function to format height
+function formatHeight(height) {
+    if (!height) return null;
+    if (typeof height === 'string' && (height.includes("'") || height.includes('"'))) {
+        return height;
+    }
+    if (typeof height === 'number') {
+        const feet = Math.floor(height / 12);
+        const inches = height % 12;
+        return `${feet}'${inches}"`;
+    }
+    if (typeof height === 'string' && /^\d+$/.test(height)) {
+        const totalInches = parseInt(height);
+        const feet = Math.floor(totalInches / 12);
+        const inches = totalInches % 12;
+        return `${feet}'${inches}"`;
+    }
+    return height;
+}
+
+function displayPlayerProfile(profile) {
+    // Update position/title line for player
+    const positionElement = document.querySelector('.profile-position');
+    if (positionElement) {
+        const parts = [];
+        if (profile.position) {
+            const positionDisplay = Array.isArray(profile.position)
+                ? profile.position.join('/')
+                : profile.position;
+            parts.push(positionDisplay);
+        }
+        if (profile.height) {
+            const formattedHeight = formatHeight(profile.height);
+            if (formattedHeight) parts.push(formattedHeight);
+        }
+        if (profile.weight) {
+            parts.push(`${profile.weight} lbs`);
+        }
+        if (profile.college_division) {
+            const div = profile.college_division;
+            if (div === 'FBS' || div === 'FCS') {
+                parts.push(`D1 ${div}`);
+            } else {
+                parts.push(div);
+            }
+        }
+        positionElement.textContent = parts.join(' • ') || 'Player';
+        positionElement.style.color = '#1282a2'; // Blue for players
+    }
+}
+
+function displayCoachProfile(profile) {
+    // Update position/title line for coach
+    const positionElement = document.querySelector('.profile-position');
+    if (positionElement) {
+        const parts = [];
+        if (profile.position_title) parts.push(profile.position_title);
+        if (profile.team_name) parts.push(profile.team_name);
+        if (profile.college_division) {
+            const div = profile.college_division;
+            if (div === 'FBS' || div === 'FCS') {
+                parts.push(`D1 ${div}`);
+            } else {
+                parts.push(div);
+            }
+        }
+        positionElement.textContent = parts.join(' • ') || 'Coach';
+        positionElement.style.color = '#f47521'; // Orange for coaches
+    }
+}
+
+function displayOtherProfile(profileData) {
+    // Update subheader (displayed under name, using profile-position element)
+    const subheaderElement = document.querySelector('.profile-position');
+    if (subheaderElement) {
+        const parts = [];
+        if (profileData.subheader) parts.push(profileData.subheader);
+        if (profileData.company_name) parts.push(profileData.company_name);
+        subheaderElement.textContent = parts.join(' • ') || '';
+        subheaderElement.style.color = '#d4a017'; // Yellow color for other profile
+    }
 }
 
 // Update sidebar footer and mobile header with current user info
@@ -281,9 +449,12 @@ function updateSidebarFooter() {
 }
 
 // Update profile actions (edit/share/follow buttons) based on ownership
-function updateProfileActions() {
+function updateProfileActions(hasPendingRequest = false) {
     const actionsContainer = document.querySelector('.profile-actions');
     if (!actionsContainer) return;
+
+    // Store pending request status for follow button setup
+    window.hasPendingFollowRequest = hasPendingRequest;
 
     // Check if navigated to this profile via URL parameter
     const urlParams = new URLSearchParams(window.location.search);
@@ -405,7 +576,7 @@ function updateProfileActions() {
                 </svg>
                 Follow
             </button>
-            <button class="btn-message" id="messageBtn">
+            <button class="btn-message" id="messageBtn" style="display: none;">
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
                 </svg>
@@ -429,14 +600,37 @@ function updateProfileActions() {
             followBtn.addEventListener('click', () => toggleFollow(followBtn));
         }
 
-        // Setup message button
-        const messageBtn = document.getElementById('messageBtn');
-        if (messageBtn) {
+        // Setup message button (checks permissions and shows/hides accordingly)
+        setupMessageButton();
+    }
+}
+
+async function setupMessageButton() {
+    const messageBtn = document.getElementById('messageBtn');
+    if (!messageBtn || !viewingUserId) return;
+
+    // Check message permissions
+    try {
+        const permissionResult = await API.get(`/follow/can-message/${viewingUserId}`);
+
+        if (permissionResult.canMessage) {
+            // Show the message button
+            messageBtn.style.display = '';
             messageBtn.addEventListener('click', () => {
                 // Navigate to messages with this user
                 window.location.href = `messages.html?userId=${viewingUserId}`;
             });
+        } else {
+            // Keep the button hidden (already hidden by default)
+            messageBtn.style.display = 'none';
         }
+    } catch (error) {
+        console.error('Error checking message permissions:', error);
+        // On error, show the button (fail open for better UX)
+        messageBtn.style.display = '';
+        messageBtn.addEventListener('click', () => {
+            window.location.href = `messages.html?userId=${viewingUserId}`;
+        });
     }
 }
 
@@ -444,8 +638,11 @@ function updateProfileActions() {
 async function checkFollowStatus(followBtn) {
     try {
         const response = await followAPI.checkFollowing(viewingUserId);
+        const hasPendingRequest = window.hasPendingFollowRequest || false;
+
         if (response.isFollowing) {
             followBtn.classList.add('following');
+            followBtn.classList.remove('requested');
             followBtn.innerHTML = `
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
@@ -453,6 +650,17 @@ async function checkFollowStatus(followBtn) {
                     <polyline points="17 11 19 13 23 9"></polyline>
                 </svg>
                 Following
+            `;
+        } else if (hasPendingRequest) {
+            followBtn.classList.add('requested');
+            followBtn.classList.remove('following');
+            followBtn.innerHTML = `
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="8.5" cy="7" r="4"></circle>
+                    <circle cx="20" cy="11" r="3"></circle>
+                </svg>
+                Requested
             `;
         }
     } catch (error) {
@@ -463,11 +671,13 @@ async function checkFollowStatus(followBtn) {
 // Toggle follow/unfollow
 async function toggleFollow(followBtn) {
     const isFollowing = followBtn.classList.contains('following');
+    const isRequested = followBtn.classList.contains('requested');
 
     try {
         if (isFollowing) {
             await followAPI.unfollow(viewingUserId);
             followBtn.classList.remove('following');
+            followBtn.classList.remove('requested');
             followBtn.innerHTML = `
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
@@ -478,18 +688,48 @@ async function toggleFollow(followBtn) {
                 Follow
             `;
             showToast('Unfollowed');
-        } else {
-            await followAPI.follow(viewingUserId);
-            followBtn.classList.add('following');
+            window.hasPendingFollowRequest = false;
+        } else if (isRequested) {
+            // Cancel the follow request
+            await API.delete(`/follow/${viewingUserId}/request`);
+            followBtn.classList.remove('requested');
             followBtn.innerHTML = `
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
                     <circle cx="8.5" cy="7" r="4"></circle>
-                    <polyline points="17 11 19 13 23 9"></polyline>
+                    <line x1="20" y1="8" x2="20" y2="14"></line>
+                    <line x1="23" y1="11" x2="17" y2="11"></line>
                 </svg>
-                Following
+                Follow
             `;
-            showToast('Following');
+            showToast('Request cancelled');
+            window.hasPendingFollowRequest = false;
+        } else {
+            const response = await followAPI.follow(viewingUserId);
+            if (response.requestPending) {
+                followBtn.classList.add('requested');
+                followBtn.innerHTML = `
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="8.5" cy="7" r="4"></circle>
+                        <circle cx="20" cy="11" r="3"></circle>
+                    </svg>
+                    Requested
+                `;
+                showToast('Follow request sent');
+                window.hasPendingFollowRequest = true;
+            } else {
+                followBtn.classList.add('following');
+                followBtn.innerHTML = `
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="8.5" cy="7" r="4"></circle>
+                        <polyline points="17 11 19 13 23 9"></polyline>
+                    </svg>
+                    Following
+                `;
+                showToast('Following');
+            }
         }
 
         // Update follower count
@@ -892,21 +1132,26 @@ async function showFollowListModal(type) {
                     if (profileResponse.profile && profileResponse.profile.username) {
                         hideFollowListModal();
                         const profile = profileResponse.profile;
-
+                        // Navigate to appropriate profile folder based on role and profile data
+                        let folder = 'hsplayer';
                         if (role === 'coach') {
-                            const isCollegeCoach = profile.college_division &&
-                                ['FBS', 'FCS', 'D2', 'D3', 'NAIA', 'NJCAA'].includes(profile.college_division);
-                            const coachFolder = isCollegeCoach ? 'collegecoach' : 'hscoach';
-                            window.location.href = `../../${coachFolder}/tabs/my-profile.html?username=${profile.username}&from=profile`;
-                        } else if (role === 'player') {
-                            const isCollegePlayer = profile.college_division &&
-                                ['FBS', 'FCS', 'D2', 'D3', 'NAIA', 'NJCAA'].includes(profile.college_division);
-                            const playerFolder = isCollegePlayer ? 'collegeplayer' : 'hsplayer';
-                            window.location.href = `../../${playerFolder}/tabs/my-profile.html?username=${profile.username}&from=profile`;
+                            const hasCollegeDivision = profile.college_division &&
+                                ['FBS', 'FCS', 'D2', 'D3', 'NAIA', 'NJCAA', 'JUCO'].includes(profile.college_division);
+                            folder = hasCollegeDivision ? 'collegecoach' : 'hscoach';
+                        } else if (role === 'other') {
+                            folder = 'other';
                         } else {
-                            // Other profile type
-                            window.location.href = `my-profile.html?username=${profile.username}&from=profile`;
+                            // Player - check for transfer or college
+                            if (profile.transfer === 'y' || profile.is_transfer_player) {
+                                folder = 'transferplayer';
+                            } else if (profile.college_division &&
+                                ['FBS', 'FCS', 'D2', 'D3', 'NAIA', 'NJCAA', 'JUCO'].includes(profile.college_division)) {
+                                folder = 'collegeplayer';
+                            } else {
+                                folder = 'hsplayer';
+                            }
                         }
+                        window.location.href = `../../${folder}/tabs/my-profile.html?username=${profile.username}&from=profile`;
                     }
                 } catch (error) {
                     console.error('Error fetching profile:', error);

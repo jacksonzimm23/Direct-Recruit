@@ -25,7 +25,23 @@ async function addSignedUrlsToProfiles(profiles) {
   }));
 }
 
-// Follow a user
+// Helper function to get user name
+async function getUserName(userId) {
+  const user = await User.findById(userId);
+  let name = 'Someone';
+
+  if (user.role === 'player') {
+    const profile = await PlayerProfile.findByUserId(userId);
+    if (profile) name = `${profile.first_name} ${profile.last_name}`;
+  } else if (user.role === 'coach') {
+    const profile = await CoachProfile.findByUserId(userId);
+    if (profile) name = `${profile.first_name} ${profile.last_name}`;
+  }
+
+  return name;
+}
+
+// Follow a user (or send follow request if private)
 router.post('/:userId', authMiddleware, async (req, res) => {
   try {
     const { userId } = req.params;
@@ -39,28 +55,43 @@ router.post('/:userId', authMiddleware, async (req, res) => {
       return res.status(400).json({ error: 'Already following this user' });
     }
 
-    await Follow.follow(req.userId, userId);
+    // Check if target user has a private profile
+    const isPrivate = await Follow.isPrivateProfile(userId);
 
-    // Create notification for the followed user
-    try {
-      const followerUser = await User.findById(req.userId);
-      let followerName = 'Someone';
-
-      if (followerUser.role === 'player') {
-        const profile = await PlayerProfile.findByUserId(req.userId);
-        if (profile) followerName = `${profile.first_name} ${profile.last_name}`;
-      } else if (followerUser.role === 'coach') {
-        const profile = await CoachProfile.findByUserId(req.userId);
-        if (profile) followerName = `${profile.first_name} ${profile.last_name}`;
+    if (isPrivate) {
+      // Check if there's already a pending request
+      const hasPending = await Follow.hasPendingFollowRequest(req.userId, userId);
+      if (hasPending) {
+        return res.status(400).json({ error: 'Follow request already pending' });
       }
 
-      await Notification.createFollowNotification(userId, req.userId, followerName);
-    } catch (notifError) {
-      console.error('Failed to create follow notification:', notifError);
-      // Don't fail the follow action if notification fails
-    }
+      // Send follow request instead of instant follow
+      await Follow.sendFollowRequest(req.userId, userId);
 
-    res.json({ message: 'Successfully followed user' });
+      // Create notification for follow request
+      try {
+        const requesterName = await getUserName(req.userId);
+        await Notification.createFollowRequestNotification(userId, req.userId, requesterName);
+      } catch (notifError) {
+        console.error('Failed to create follow request notification:', notifError);
+      }
+
+      res.json({ message: 'Follow request sent', requestPending: true });
+    } else {
+      // Public profile - instant follow
+      await Follow.follow(req.userId, userId);
+
+      // Create notification for the followed user
+      try {
+        const followerName = await getUserName(req.userId);
+        await Notification.createFollowNotification(userId, req.userId, followerName);
+      } catch (notifError) {
+        console.error('Failed to create follow notification:', notifError);
+        // Don't fail the follow action if notification fails
+      }
+
+      res.json({ message: 'Successfully followed user', requestPending: false });
+    }
   } catch (error) {
     console.error('Follow error:', error);
     res.status(500).json({ error: 'Failed to follow user' });
@@ -91,6 +122,14 @@ router.get('/:userId/followers', authMiddleware, async (req, res) => {
     const limit = parseInt(req.query.limit) || 50;
     const offset = parseInt(req.query.offset) || 0;
 
+    // Private profile restrictions disabled - will be added later
+    // const isPrivate = await Follow.isPrivateProfile(userId);
+    // const isOwnProfile = req.userId === userId;
+    // const isFollowing = await Follow.isFollowing(req.userId, userId);
+    // if (isPrivate && !isOwnProfile && !isFollowing) {
+    //   return res.status(403).json({ error: 'This account is private', isPrivate: true });
+    // }
+
     let followers = await Follow.getFollowers(userId, limit, offset);
     followers = await addSignedUrlsToProfiles(followers);
     res.json({ followers, count: followers.length });
@@ -106,6 +145,14 @@ router.get('/:userId/following', authMiddleware, async (req, res) => {
     const { userId } = req.params;
     const limit = parseInt(req.query.limit) || 50;
     const offset = parseInt(req.query.offset) || 0;
+
+    // Private profile restrictions disabled - will be added later
+    // const isPrivate = await Follow.isPrivateProfile(userId);
+    // const isOwnProfile = req.userId === userId;
+    // const isFollowing = await Follow.isFollowing(req.userId, userId);
+    // if (isPrivate && !isOwnProfile && !isFollowing) {
+    //   return res.status(403).json({ error: 'This account is private', isPrivate: true });
+    // }
 
     let following = await Follow.getFollowing(userId, limit, offset);
     following = await addSignedUrlsToProfiles(following);
@@ -149,6 +196,195 @@ router.get('/:userId/follows-me', authMiddleware, async (req, res) => {
   } catch (error) {
     console.error('Check follows me error:', error);
     res.status(500).json({ error: 'Failed to check follow status' });
+  }
+});
+
+// Check follow request status for a user
+router.get('/:userId/request-status', authMiddleware, async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const hasPending = await Follow.hasPendingFollowRequest(req.userId, userId);
+    const isPrivate = await Follow.isPrivateProfile(userId);
+    res.json({ hasPendingRequest: hasPending, isPrivateProfile: isPrivate });
+  } catch (error) {
+    console.error('Check request status error:', error);
+    res.status(500).json({ error: 'Failed to check request status' });
+  }
+});
+
+// Cancel an outgoing follow request
+router.delete('/:userId/request', authMiddleware, async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const result = await Follow.cancelFollowRequest(req.userId, userId);
+    if (!result) {
+      return res.status(400).json({ error: 'No pending follow request found' });
+    }
+    res.json({ message: 'Follow request cancelled' });
+  } catch (error) {
+    console.error('Cancel follow request error:', error);
+    res.status(500).json({ error: 'Failed to cancel follow request' });
+  }
+});
+
+// Get incoming follow requests (requests others have sent to the user)
+router.get('/requests/incoming', authMiddleware, async (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit) || 50;
+    const offset = parseInt(req.query.offset) || 0;
+    let requests = await Follow.getIncomingFollowRequests(req.userId, limit, offset);
+    requests = await addSignedUrlsToProfiles(requests);
+    res.json({ requests, count: requests.length });
+  } catch (error) {
+    console.error('Get incoming requests error:', error);
+    res.status(500).json({ error: 'Failed to fetch incoming follow requests' });
+  }
+});
+
+// Get outgoing follow requests (requests the user has sent)
+router.get('/requests/outgoing', authMiddleware, async (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit) || 50;
+    const offset = parseInt(req.query.offset) || 0;
+    let requests = await Follow.getOutgoingFollowRequests(req.userId, limit, offset);
+    requests = await addSignedUrlsToProfiles(requests);
+    res.json({ requests, count: requests.length });
+  } catch (error) {
+    console.error('Get outgoing requests error:', error);
+    res.status(500).json({ error: 'Failed to fetch outgoing follow requests' });
+  }
+});
+
+// Get count of pending incoming follow requests
+router.get('/requests/count', authMiddleware, async (req, res) => {
+  try {
+    const count = await Follow.countPendingFollowRequests(req.userId);
+    res.json({ count });
+  } catch (error) {
+    console.error('Get request count error:', error);
+    res.status(500).json({ error: 'Failed to fetch follow request count' });
+  }
+});
+
+// Accept a follow request
+router.post('/requests/:requestId/accept', authMiddleware, async (req, res) => {
+  try {
+    const { requestId } = req.params;
+
+    // Verify the request is for the current user
+    const request = await Follow.getFollowRequestById(requestId);
+    if (!request) {
+      return res.status(404).json({ error: 'Follow request not found' });
+    }
+    if (request.target_id !== req.userId) {
+      return res.status(403).json({ error: 'Not authorized to accept this request' });
+    }
+    if (request.status !== 'pending') {
+      return res.status(400).json({ error: 'Follow request already processed' });
+    }
+
+    await Follow.acceptFollowRequest(requestId);
+
+    // Create notification for the requester that their request was accepted
+    try {
+      const accepterName = await getUserName(req.userId);
+      await Notification.createFollowRequestAcceptedNotification(request.requester_id, req.userId, accepterName);
+    } catch (notifError) {
+      console.error('Failed to create follow request accepted notification:', notifError);
+    }
+
+    res.json({ message: 'Follow request accepted' });
+  } catch (error) {
+    console.error('Accept follow request error:', error);
+    res.status(500).json({ error: 'Failed to accept follow request' });
+  }
+});
+
+// Decline a follow request
+router.post('/requests/:requestId/decline', authMiddleware, async (req, res) => {
+  try {
+    const { requestId } = req.params;
+
+    // Verify the request is for the current user
+    const request = await Follow.getFollowRequestById(requestId);
+    if (!request) {
+      return res.status(404).json({ error: 'Follow request not found' });
+    }
+    if (request.target_id !== req.userId) {
+      return res.status(403).json({ error: 'Not authorized to decline this request' });
+    }
+    if (request.status !== 'pending') {
+      return res.status(400).json({ error: 'Follow request already processed' });
+    }
+
+    await Follow.declineFollowRequest(requestId);
+    res.json({ message: 'Follow request declined' });
+  } catch (error) {
+    console.error('Decline follow request error:', error);
+    res.status(500).json({ error: 'Failed to decline follow request' });
+  }
+});
+
+// Accept a follow request by requester user ID (for use from notifications)
+router.post('/requests/user/:userId/accept', authMiddleware, async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    // Find pending request from this user to current user
+    const request = await Follow.getPendingRequestByUsers(userId, req.userId);
+    if (!request) {
+      // Request was cancelled or doesn't exist - return success but indicate no action taken
+      // This matches Instagram behavior where accepting a cancelled request just dismisses it
+      return res.json({ message: 'Follow request no longer exists', requestCancelled: true });
+    }
+
+    await Follow.acceptFollowRequest(request.id);
+
+    // Create notification for the requester that their request was accepted
+    try {
+      const accepterName = await getUserName(req.userId);
+      await Notification.createFollowRequestAcceptedNotification(userId, req.userId, accepterName);
+    } catch (notifError) {
+      console.error('Failed to create follow request accepted notification:', notifError);
+    }
+
+    res.json({ message: 'Follow request accepted', requestCancelled: false });
+  } catch (error) {
+    console.error('Accept follow request by user error:', error);
+    res.status(500).json({ error: 'Failed to accept follow request' });
+  }
+});
+
+// Decline a follow request by requester user ID (for use from notifications)
+router.post('/requests/user/:userId/decline', authMiddleware, async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    // Find pending request from this user to current user
+    const request = await Follow.getPendingRequestByUsers(userId, req.userId);
+    if (!request) {
+      // Request was cancelled or doesn't exist - return success but indicate no action taken
+      // This matches Instagram behavior where declining a cancelled request just dismisses it
+      return res.json({ message: 'Follow request no longer exists', requestCancelled: true });
+    }
+
+    await Follow.declineFollowRequest(request.id);
+    res.json({ message: 'Follow request declined', requestCancelled: false });
+  } catch (error) {
+    console.error('Decline follow request by user error:', error);
+    res.status(500).json({ error: 'Failed to decline follow request' });
+  }
+});
+
+// Check if current user can message another user
+router.get('/can-message/:userId', authMiddleware, async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const result = await Follow.canMessage(req.userId, userId);
+    res.json(result);
+  } catch (error) {
+    console.error('Check can message error:', error);
+    res.status(500).json({ error: 'Failed to check message permissions' });
   }
 });
 

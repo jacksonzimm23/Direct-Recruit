@@ -262,6 +262,7 @@
     font-weight: 900;
     color: var(--white);
     margin-bottom: 0.5rem;
+    white-space: nowrap;
 }
 
 .profile-position {
@@ -275,13 +276,14 @@
     display: block;
     color: rgba(254, 252, 251, 0.7);
     font-size: 0.95rem;
+    line-height: 1.6;
 }
 
 .profile-username {
     color: rgba(254, 252, 251, 0.7);
     font-size: 0.95rem;
+    font-weight: 500;
     margin-top: 0.5rem;
-    line-height: 1.6;
 }
 
 .profile-follow-stats {

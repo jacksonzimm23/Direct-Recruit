@@ -160,7 +160,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const weight = player.weight ? `${player.weight} lbs` : 'N/A';
         const gpaVal = player.gpa ? parseFloat(player.gpa) : null;
         const gpa = gpaVal ? gpaVal.toFixed(1) : 'N/A';
-        const school = player.high_school || 'Unknown School';
+        const school = player.team_name || 'Unknown School';
         const state = player.state || '';
         const gradYear = player.graduation_year || 'N/A';
         const offerCount = countOffers(player.offers);
@@ -273,7 +273,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Create college player card HTML (blue theme, matching coach card school/division format)
     function createCollegePlayerCard(player) {
         const displayName = `${player.first_name || ''} ${player.last_name || ''}`.trim() || 'Unknown Player';
-        const school = player.high_school || 'Unknown School'; // stored as high_school in player_profiles
+        const school = player.team_name || 'Unknown School';
         const division = player.college_division || '';
         const state = player.state || '';
         const profileImage = player.profile_image_url;
@@ -323,12 +323,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     e.stopPropagation();
                     const username = newCard.dataset.username;
                     if (username) {
-                        // Navigate to appropriate profile page based on player type
-                        if (playerType === 'college') {
-                            window.location.href = `../../collegeplayer/tabs/my-profile.html?username=${username}&from=discover`;
-                        } else {
-                            window.location.href = `../../hsplayer/tabs/my-profile.html?username=${username}&from=discover`;
-                        }
+                        // Navigate to appropriate player profile folder
+                        const folder = playerType === 'college' ? 'collegeplayer' : 'hsplayer';
+                        window.location.href = `../../${folder}/tabs/my-profile.html?username=${username}&from=discover`;
                     } else {
                         alert('Profile not available. User has not set up their profile yet.');
                     }
@@ -340,11 +337,9 @@ document.addEventListener('DOMContentLoaded', function() {
             newCard.addEventListener('click', function() {
                 const username = this.dataset.username;
                 if (username) {
-                    if (playerType === 'college') {
-                        window.location.href = `../../collegeplayer/tabs/my-profile.html?username=${username}&from=discover`;
-                    } else {
-                        window.location.href = `../../hsplayer/tabs/my-profile.html?username=${username}&from=discover`;
-                    }
+                    // Navigate to appropriate player profile folder
+                    const folder = playerType === 'college' ? 'collegeplayer' : 'hsplayer';
+                    window.location.href = `../../${folder}/tabs/my-profile.html?username=${username}&from=discover`;
                 }
             });
         });
@@ -501,8 +496,11 @@ document.addEventListener('DOMContentLoaded', function() {
             card.addEventListener('click', function() {
                 const username = this.dataset.username;
                 if (username) {
-                    // Navigate to college coach profile page with username parameter and from=discover
-                    window.location.href = `../../collegecoach/tabs/my-profile.html?username=${username}&from=discover`;
+                    // Navigate to appropriate coach profile folder
+                    // College coaches have the graduation cap badge
+                    const isCollegeCoach = this.querySelector('.coach-badge')?.textContent?.includes('🎓');
+                    const folder = isCollegeCoach ? 'collegecoach' : 'hscoach';
+                    window.location.href = `../../${folder}/tabs/my-profile.html?username=${username}&from=discover`;
                 } else {
                     const coachName = this.querySelector('.coach-name').textContent.trim();
                     console.log('No username for coach:', coachName);
@@ -624,7 +622,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 </h3>
                 <div class="coach-position">Position: ${positionAcronym}</div>
                 <div class="coach-school">
-                    <div class="school-name">${coach.college_name || ''}${coach.state ? ', ' + coach.state : ''}</div>
+                    <div class="school-name">${coach.team_name || ''}${coach.state ? ', ' + coach.state : ''}</div>
                     <div class="school-division">${divisionDisplay}</div>
                 </div>
                 <div class="coach-recruiting">

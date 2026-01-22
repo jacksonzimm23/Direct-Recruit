@@ -1554,91 +1554,53 @@ class FeedManager {
             return;
         }
 
-        // Fetch profile data if we need to determine college vs HS
-        const collegeDivisions = ['FBS', 'FCS', 'D2', 'D3', 'NAIA', 'NJCAA'];
-
         // Check if identifier is a UUID (user_id) vs a username
         const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(identifier);
 
         // Determine current path context
         const currentPath = window.location.pathname;
         const isInTabsFolder = currentPath.includes('/tabs/');
+        const prefix = isInTabsFolder ? '../../' : '../';
 
         try {
             let username = identifier;
 
-            // If we don't have college_division info, fetch the profile
-            if (collegeDivision === null) {
-                let endpoint;
-                if (isUUID) {
-                    // Use userId endpoint
-                    endpoint = role === 'coach' ? `/profile/coach/${identifier}` : `/profile/player/${identifier}`;
-                } else {
-                    // Use username endpoint
-                    endpoint = role === 'coach' ? `/profile/coach/username/${identifier}` : `/profile/player/username/${identifier}`;
-                }
+            // If identifier is a UUID, we need to get the username first
+            if (isUUID) {
+                let endpoint = role === 'coach' ? `/profile/coach/${identifier}` : `/profile/player/${identifier}`;
                 const response = await API.get(endpoint);
                 if (response.profile) {
-                    collegeDivision = response.profile.college_division || '';
-                    // Get the username from the profile for navigation
                     username = response.profile.username || identifier;
                 }
             }
 
-            const isCollege = collegeDivision && collegeDivisions.includes(collegeDivision);
-            let targetFolder = '';
+            // Determine the correct folder based on role and college division
+            let folder = 'hsplayer';
+            const isCollege = collegeDivision && collegeDivision.trim() !== '';
 
             if (role === 'coach') {
-                targetFolder = isCollege ? 'collegecoach' : 'hscoach';
-            } else {
-                targetFolder = isCollege ? 'collegeplayer' : 'hsplayer';
+                folder = isCollege ? 'collegecoach' : 'hscoach';
+            } else if (role === 'player') {
+                folder = isCollege ? 'collegeplayer' : 'hsplayer';
+            } else if (role === 'other') {
+                folder = 'other';
             }
 
-            // Navigate to the profile with from=feed parameter
-            window.location.href = `/frontend/${targetFolder}/tabs/my-profile.html?username=${username}&from=feed`;
+            // Navigate to the profile type's folder with cross-folder navigation
+            window.location.href = `${prefix}${folder}/tabs/my-profile.html?username=${username}&from=feed`;
         } catch (error) {
             console.error('Error navigating to profile:', error);
-            // Fallback: use current path to determine base URL
-            const currentFolder = currentPath.match(/\/(hsplayer|hscoach|collegeplayer|collegecoach|transferplayer)\//)?.[1] || 'hsplayer';
-
-            let baseUrl = '';
-            if (isInTabsFolder) {
-                // Already in tabs folder, use relative path without adding another tabs/
-                if (role === 'coach') {
-                    if (currentFolder.includes('coach')) {
-                        baseUrl = 'my-profile.html';
-                    } else {
-                        const targetCoach = currentFolder.includes('college') ? 'collegecoach' : 'hscoach';
-                        baseUrl = `../../${targetCoach}/tabs/my-profile.html`;
-                    }
-                } else {
-                    if (currentFolder.includes('player')) {
-                        baseUrl = 'my-profile.html';
-                    } else {
-                        const targetPlayer = currentFolder.includes('college') ? 'collegeplayer' : 'hsplayer';
-                        baseUrl = `../../${targetPlayer}/tabs/my-profile.html`;
-                    }
-                }
-            } else {
-                // On mainpage, need to go into tabs/
-                if (role === 'coach') {
-                    if (currentFolder.includes('coach')) {
-                        baseUrl = 'tabs/my-profile.html';
-                    } else {
-                        const targetCoach = currentFolder.includes('college') ? 'collegecoach' : 'hscoach';
-                        baseUrl = `../${targetCoach}/tabs/my-profile.html`;
-                    }
-                } else {
-                    if (currentFolder.includes('player')) {
-                        baseUrl = 'tabs/my-profile.html';
-                    } else {
-                        const targetPlayer = currentFolder.includes('college') ? 'collegeplayer' : 'hsplayer';
-                        baseUrl = `../${targetPlayer}/tabs/my-profile.html`;
-                    }
-                }
+            // Fallback: determine folder from role and navigate
+            let folder = 'hsplayer';
+            const isCollege = collegeDivision && collegeDivision.trim() !== '';
+            if (role === 'coach') {
+                folder = isCollege ? 'collegecoach' : 'hscoach';
+            } else if (role === 'player') {
+                folder = isCollege ? 'collegeplayer' : 'hsplayer';
+            } else if (role === 'other') {
+                folder = 'other';
             }
-
-            window.location.href = `${baseUrl}?username=${identifier}&from=feed`;
+            window.location.href = `${prefix}${folder}/tabs/my-profile.html?username=${identifier}&from=feed`;
         }
     }
 

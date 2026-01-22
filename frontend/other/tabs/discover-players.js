@@ -328,7 +328,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const weight = player.weight ? `${player.weight} lbs` : 'N/A';
         const gpaVal = player.gpa ? parseFloat(player.gpa) : null;
         const gpa = gpaVal ? gpaVal.toFixed(1) : 'N/A';
-        const school = player.high_school || 'Unknown School';
+        const school = player.team_name || 'Unknown School';
         const state = player.state || '';
         const gradYear = player.graduation_year || 'N/A';
         const offerCount = countOffers(player.offers);
@@ -398,7 +398,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // College Player Card
     function createCollegePlayerCard(player) {
         const displayName = `${player.first_name || ''} ${player.last_name || ''}`.trim() || 'Unknown Player';
-        const school = player.high_school || 'Unknown School';
+        const school = player.team_name || 'Unknown School';
         const division = player.college_division || '';
         const state = player.state || '';
         const profileImage = player.profile_image_url;
@@ -513,7 +513,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // College Coach Card
     function createCollegeCoachCard(coach) {
         const displayName = `${coach.first_name || ''} ${coach.last_name || ''}`.trim() || 'Unknown Coach';
-        const school = coach.college_name || 'Unknown School';
+        const school = coach.team_name || 'Unknown School';
         const division = coach.college_division || '';
         const state = coach.state || '';
         const profileImage = coach.profile_image_url;
@@ -612,31 +612,17 @@ document.addEventListener('DOMContentLoaded', function() {
                     return;
                 }
 
-                let profileUrl = '';
+                // Navigate to appropriate profile folder based on user type
+                let folder = 'other';
                 switch (userType) {
-                    case 'hsplayer':
-                        profileUrl = `../../hsplayer/tabs/my-profile.html?username=${username}&from=discover`;
-                        break;
-                    case 'collegeplayer':
-                        profileUrl = `../../collegeplayer/tabs/my-profile.html?username=${username}&from=discover`;
-                        break;
-                    case 'transferplayer':
-                        profileUrl = `../../transferplayer/tabs/my-profile.html?username=${username}&from=discover`;
-                        break;
-                    case 'hscoach':
-                        profileUrl = `../../hscoach/tabs/my-profile.html?username=${username}&from=discover`;
-                        break;
-                    case 'collegecoach':
-                        profileUrl = `../../collegecoach/tabs/my-profile.html?username=${username}&from=discover`;
-                        break;
-                    case 'other':
-                        profileUrl = `my-profile.html?username=${username}&from=discover`;
-                        break;
-                    default:
-                        alert('Unknown profile type.');
-                        return;
+                    case 'hsplayer': folder = 'hsplayer'; break;
+                    case 'collegeplayer': folder = 'collegeplayer'; break;
+                    case 'transferplayer': folder = 'transferplayer'; break;
+                    case 'hscoach': folder = 'hscoach'; break;
+                    case 'collegecoach': folder = 'collegecoach'; break;
+                    case 'other': folder = 'other'; break;
                 }
-                window.location.href = profileUrl;
+                window.location.href = `../../${folder}/tabs/my-profile.html?username=${username}&from=discover`;
             };
 
             if (viewBtn) {

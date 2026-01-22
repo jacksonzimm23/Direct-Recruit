@@ -42,7 +42,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiIyMmU5O
 {
   "first_name": "John",
   "last_name": "Doe",
-  "high_school": "Lincoln High School",
+  "team_name": "Lincoln High School",
   "graduation_year": 2025,
   "city": "Denver",
   "state": "Colorado",
@@ -63,7 +63,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiIxZmUwN
 {
   "first_name": "Mike",
   "last_name": "Smith",
-  "college_name": "Colorado State University",
+  "team_name": "Colorado State University",
   "college_division": "FBS",
   "position_title": "Offensive Coordinator",
   "city": "Fort Collins",

@@ -37,6 +37,12 @@ document.addEventListener('DOMContentLoaded', async function() {
         classYearSelect.appendChild(option);
     }
 
+    // Restore last viewed class year from localStorage
+    const lastViewedClassYear = localStorage.getItem('lastViewedRecruitingBoardClassYear');
+    if (lastViewedClassYear && classYearSelect.querySelector(`option[value="${lastViewedClassYear}"]`)) {
+        classYearSelect.value = lastViewedClassYear;
+    }
+
     // ==================== Board Loading Functions ====================
 
     // Initialize personal board and load shared boards list
@@ -273,9 +279,9 @@ document.addEventListener('DOMContentLoaded', async function() {
 
         let locationLine = '';
         if (isTransfer) {
-            locationLine = [player.high_school, player.college_division].filter(Boolean).join(' • ');
+            locationLine = [player.team_name, player.college_division].filter(Boolean).join(' • ');
         } else {
-            locationLine = [player.high_school, player.state].filter(Boolean).join(', ');
+            locationLine = [player.team_name, player.state].filter(Boolean).join(', ');
         }
 
         card.innerHTML = `
@@ -394,8 +400,14 @@ document.addEventListener('DOMContentLoaded', async function() {
             });
             const username = player.username;
             if (username) {
-                const folder = player.player_type === 'transfer' ? 'transferplayer' : 'hsplayer';
-                window.location.href = `/frontend/${folder}/tabs/my-profile.html?username=${username}&from=recruiting`;
+                // Determine the correct folder based on player type
+                let folder = 'hsplayer';
+                if (player.player_type === 'transfer') {
+                    folder = 'transferplayer';
+                } else if (player.college_division && ['FBS', 'FCS', 'D2', 'D3', 'NAIA', 'NJCAA', 'JUCO'].includes(player.college_division)) {
+                    folder = 'collegeplayer';
+                }
+                window.location.href = `../../${folder}/tabs/my-profile.html?username=${username}&from=recruiting`;
             }
         });
 
@@ -684,7 +696,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                     last_name: playerToMove.last_name,
                     height: playerToMove.height,
                     weight: playerToMove.weight,
-                    high_school: playerToMove.high_school,
+                    team_name: playerToMove.team_name,
                     state: playerToMove.state,
                     college_division: playerToMove.college_division,
                     profile_image_url: playerToMove.profile_image_url,
@@ -1201,7 +1213,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                         <div class="collab-result-avatar">${avatarHtml}</div>
                         <div class="collab-result-details">
                             <span class="collab-result-name">${name}</span>
-                            <span class="collab-result-username">@${coach.username || 'coach'}${coach.college_name ? ` • ${coach.college_name}` : ''}</span>
+                            <span class="collab-result-username">@${coach.username || 'coach'}${coach.team_name ? ` • ${coach.team_name}` : ''}</span>
                         </div>
                     </div>
                     <button class="btn-add-collab">Invite</button>
@@ -1669,6 +1681,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     // ==================== Class Year Change ====================
     classYearSelect.addEventListener('change', function() {
+        localStorage.setItem('lastViewedRecruitingBoardClassYear', this.value);
         loadPlayersForBoard(this.value);
     });
 
@@ -1678,11 +1691,21 @@ document.addEventListener('DOMContentLoaded', async function() {
     const offenseField = document.getElementById('offenseField');
     const defenseField = document.getElementById('defenseField');
 
+    // Restore last viewed offense/defense from localStorage
+    const lastViewedSide = localStorage.getItem('lastViewedRecruitingBoardSide');
+    if (lastViewedSide === 'defense') {
+        defenseBtn.classList.add('active');
+        offenseBtn.classList.remove('active');
+        defenseField.classList.remove('hidden');
+        offenseField.classList.add('hidden');
+    }
+
     offenseBtn.addEventListener('click', () => {
         offenseBtn.classList.add('active');
         defenseBtn.classList.remove('active');
         offenseField.classList.remove('hidden');
         defenseField.classList.add('hidden');
+        localStorage.setItem('lastViewedRecruitingBoardSide', 'offense');
         exitRemoveMode();
     });
 
@@ -1691,6 +1714,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         offenseBtn.classList.remove('active');
         defenseField.classList.remove('hidden');
         offenseField.classList.add('hidden');
+        localStorage.setItem('lastViewedRecruitingBoardSide', 'defense');
         exitRemoveMode();
     });
 

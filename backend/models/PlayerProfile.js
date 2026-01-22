@@ -3,7 +3,7 @@ const pool = require('../config/database');
 class PlayerProfile {
   static async create(userId, profileData) {
     const {
-      first_name, last_name, username, date_of_birth, high_school, graduation_year,
+      first_name, last_name, username, date_of_birth, team_name, graduation_year,
       city, state, position, height, weight, gpa, sat_score, act_score,
       highlight_video_url, bio, hudl_profile, twitter_handle, instagram_handle, player_status,
       college_division
@@ -11,13 +11,13 @@ class PlayerProfile {
 
     const result = await pool.query(
       `INSERT INTO player_profiles
-      (user_id, first_name, last_name, username, date_of_birth, high_school, graduation_year,
+      (user_id, first_name, last_name, username, date_of_birth, team_name, graduation_year,
        city, state, position, height, weight, gpa, sat_score, act_score,
        highlight_video_url, bio, hudl_profile, twitter_handle, instagram_handle, player_status,
        college_division)
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)
       RETURNING *`,
-      [userId, first_name, last_name, username, date_of_birth, high_school, graduation_year,
+      [userId, first_name, last_name, username, date_of_birth, team_name, graduation_year,
        city, state, position, height, weight, gpa, sat_score, act_score,
        highlight_video_url, bio, hudl_profile, twitter_handle, instagram_handle, player_status,
        college_division]
@@ -288,6 +288,33 @@ class PlayerProfile {
     const players = hasMore ? result.rows.slice(0, limit) : result.rows;
 
     return { players, hasMore };
+  }
+
+  static async updatePrivacySettings(userId, settings) {
+    const fields = [];
+    const values = [];
+    let paramCount = 1;
+
+    if (settings.profile_visibility !== undefined) {
+      fields.push(`profile_visibility = $${paramCount}`);
+      values.push(settings.profile_visibility);
+      paramCount++;
+    }
+
+    if (settings.message_permissions !== undefined) {
+      fields.push(`message_permissions = $${paramCount}`);
+      values.push(settings.message_permissions);
+      paramCount++;
+    }
+
+    if (fields.length === 0) {
+      return null;
+    }
+
+    values.push(userId);
+    const query = `UPDATE player_profiles SET ${fields.join(', ')} WHERE user_id = $${paramCount} RETURNING *`;
+    const result = await pool.query(query, values);
+    return result.rows[0];
   }
 }
 

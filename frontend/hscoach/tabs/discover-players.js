@@ -134,7 +134,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         // GPA comes as string from database, parse it first
         const gpaVal = player.gpa ? parseFloat(player.gpa) : null;
         const gpa = gpaVal ? gpaVal.toFixed(1) : 'N/A';
-        const school = player.high_school || 'Unknown School';
+        const school = player.team_name || 'Unknown School';
         const state = player.state || '';
         const gradYear = player.graduation_year || 'N/A';
         const offerCount = countOffers(player.offers);
@@ -311,6 +311,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             card.style.cursor = 'pointer';
             card.addEventListener('click', function() {
                 if (username) {
+                    // Navigate to HS player profile folder (hscoach discover page shows HS players)
                     window.location.href = `../../hsplayer/tabs/my-profile.html?username=${username}&from=discover`;
                 } else {
                     alert('Profile not available. User has not set up their profile yet.');
@@ -323,6 +324,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                 viewBtn.addEventListener('click', function(e) {
                     e.stopPropagation();
                     if (username) {
+                        // Navigate to HS player profile folder (hscoach discover page shows HS players)
                         window.location.href = `../../hsplayer/tabs/my-profile.html?username=${username}&from=discover`;
                     } else {
                         alert('Profile not available. User has not set up their profile yet.');
@@ -538,7 +540,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                 </h3>
                 <div class="coach-position">Position: ${positionAcronym}</div>
                 <div class="coach-school">
-                    <div class="school-name">${coach.college_name || ''}${coach.state ? ', ' + coach.state : ''}</div>
+                    <div class="school-name">${coach.team_name || ''}${coach.state ? ', ' + coach.state : ''}</div>
                     <div class="school-division">${divisionDisplay}</div>
                 </div>
                 <div class="coach-recruiting">
@@ -627,8 +629,10 @@ document.addEventListener('DOMContentLoaded', async function() {
             card.addEventListener('click', function() {
                 const username = this.dataset.username;
                 if (username) {
-                    // Navigate to college coach profile page
-                    window.location.href = `../../collegecoach/tabs/my-profile.html?username=${username}&from=discover`;
+                    // Navigate to appropriate coach profile folder
+                    const isCollegeCoach = this.dataset.isCollege === 'true' || this.querySelector('.coach-badge')?.textContent?.includes('🎓');
+                    const folder = isCollegeCoach ? 'collegecoach' : 'hscoach';
+                    window.location.href = `../../${folder}/tabs/my-profile.html?username=${username}&from=discover`;
                 } else {
                     alert('Profile not available. Coach has not set up their profile yet.');
                 }

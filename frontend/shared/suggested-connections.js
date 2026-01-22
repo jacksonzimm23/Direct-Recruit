@@ -110,12 +110,11 @@ class SuggestedConnectionsWidget {
                </div>`;
 
         return `
-            <div class="follow-item" data-user-id="${connection.user_id}" data-profile-type="${profileType}" data-role="${connection.role}">
+            <div class="follow-item" data-user-id="${connection.user_id}" data-username="${connection.username || ''}" data-profile-type="${profileType}" data-role="${connection.role}">
                 ${avatarHTML}
                 <div class="follow-info">
                     <div class="follow-name">${this.escapeHTML(fullName)}</div>
                 </div>
-                <button class="btn-follow" data-user-id="${connection.user_id}">Follow</button>
             </div>
         `;
     }
@@ -192,7 +191,7 @@ class SuggestedConnectionsWidget {
                </div>`;
 
         return `
-            <div class="connection-modal-item" data-user-id="${connection.user_id}" data-profile-type="${profileType}" data-role="${connection.role}">
+            <div class="connection-modal-item" data-user-id="${connection.user_id}" data-username="${connection.username || ''}" data-profile-type="${profileType}" data-role="${connection.role}">
                 ${avatarHTML}
                 <div class="connection-modal-info">
                     <div class="connection-modal-name">${this.escapeHTML(fullName)}</div>
@@ -220,11 +219,12 @@ class SuggestedConnectionsWidget {
                 // Don't navigate if clicking the follow button
                 if (e.target.closest('.btn-follow, .connection-modal-btn-follow')) return;
 
-                const userId = item.dataset.userId;
+                const username = item.dataset.username;
+                const profileType = item.dataset.profileType;
                 const role = item.dataset.role;
 
-                if (userId && role) {
-                    this.navigateToProfile(userId, role);
+                if (username) {
+                    this.navigateToProfile(username, profileType, role);
                 }
             });
         });
@@ -268,41 +268,29 @@ class SuggestedConnectionsWidget {
         });
     }
 
-    navigateToProfile(userId, role) {
-        // Determine the correct profile URL based on role
-        let profileUrl;
-        const currentPath = window.location.pathname;
+    navigateToProfile(username, profileType, role) {
+        // Close modal if open
+        this.closeModal();
 
-        // Determine base path based on current profile type
-        let basePath = '';
-        if (currentPath.includes('/hsplayer/')) {
-            basePath = '/frontend/hsplayer';
-        } else if (currentPath.includes('/collegeplayer/')) {
-            basePath = '/frontend/collegeplayer';
-        } else if (currentPath.includes('/transferplayer/')) {
-            basePath = '/frontend/transferplayer';
-        } else if (currentPath.includes('/hscoach/')) {
-            basePath = '/frontend/hscoach';
-        } else if (currentPath.includes('/collegecoach/')) {
-            basePath = '/frontend/collegecoach';
-        } else if (currentPath.includes('/other/')) {
-            basePath = '/frontend/other';
-        }
-
-        // Navigate to view-profile page
-        if (role === 'player') {
-            profileUrl = `${basePath}/tabs/view-profile.html?id=${userId}&type=player`;
+        // Determine the correct folder based on profile type
+        let folder;
+        if (role === 'other') {
+            folder = 'other';
         } else if (role === 'coach') {
-            profileUrl = `${basePath}/tabs/view-profile.html?id=${userId}&type=coach`;
-        } else if (role === 'other') {
-            profileUrl = `${basePath}/tabs/view-profile.html?id=${userId}&type=other`;
+            folder = profileType === 'college' ? 'collegecoach' : 'hscoach';
+        } else {
+            // Player
+            if (profileType === 'transfer') {
+                folder = 'transferplayer';
+            } else if (profileType === 'college') {
+                folder = 'collegeplayer';
+            } else {
+                folder = 'hsplayer';
+            }
         }
 
-        if (profileUrl) {
-            // Close modal if open
-            this.closeModal();
-            window.location.href = profileUrl;
-        }
+        // Navigate directly to the profile page
+        window.location.href = `/frontend/${folder}/tabs/my-profile.html?username=${encodeURIComponent(username)}&from=feed`;
     }
 
     escapeHTML(str) {

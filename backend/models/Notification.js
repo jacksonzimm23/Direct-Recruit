@@ -43,11 +43,20 @@ class Notification {
           WHEN u.role = 'other' THEN op.subheader
         END as related_user_position,
         CASE
-          WHEN u.role = 'player' THEN pp.high_school
-          WHEN u.role = 'coach' THEN cp.college_name
+          WHEN u.role = 'player' THEN pp.team_name
+          WHEN u.role = 'coach' THEN cp.team_name
           WHEN u.role = 'other' THEN op.company_name
         END as related_user_school,
-        u.role as related_user_role
+        u.role as related_user_role,
+        CASE
+          WHEN u.role = 'player' THEN pp.college_division
+          WHEN u.role = 'coach' THEN cp.college_division
+          ELSE NULL
+        END as related_user_college_division,
+        CASE
+          WHEN u.role = 'player' THEN pp.transfer
+          ELSE NULL
+        END as related_user_transfer
       FROM notifications n
       LEFT JOIN users u ON n.related_user_id = u.id
       LEFT JOIN player_profiles pp ON u.id = pp.user_id AND u.role = 'player'
@@ -219,6 +228,47 @@ class Notification {
       title: 'New Follower',
       message: `${followerName} started following you`,
       relatedUserId: followerUserId
+    });
+  }
+
+  static async createFollowRequestNotification(targetUserId, requesterUserId, requesterName) {
+    // Don't notify if requesting to follow self (shouldn't happen but safety check)
+    if (targetUserId === requesterUserId) return null;
+
+    // Check if a follow request notification already exists from this user (prevent spam)
+    const existingNotification = await pool.query(
+      `SELECT id FROM notifications
+       WHERE user_id = $1
+         AND related_user_id = $2
+         AND title = 'Follow Request'
+       LIMIT 1`,
+      [targetUserId, requesterUserId]
+    );
+
+    if (existingNotification.rows.length > 0) {
+      // Notification already exists, don't create a duplicate
+      return null;
+    }
+
+    return this.create({
+      userId: targetUserId,
+      type: 'follow',
+      title: 'Follow Request',
+      message: `${requesterName} requested to follow you`,
+      relatedUserId: requesterUserId
+    });
+  }
+
+  static async createFollowRequestAcceptedNotification(requesterUserId, accepterUserId, accepterName) {
+    // Don't notify if accepting own request (shouldn't happen but safety check)
+    if (requesterUserId === accepterUserId) return null;
+
+    return this.create({
+      userId: requesterUserId,
+      type: 'follow',
+      title: 'Follow Request Accepted',
+      message: `${accepterName} accepted your follow request`,
+      relatedUserId: accepterUserId
     });
   }
 

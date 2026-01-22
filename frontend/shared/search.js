@@ -150,22 +150,23 @@ class SearchComponent {
         resultsContainer.querySelectorAll('.search-result-item').forEach(item => {
             item.addEventListener('click', () => {
                 const username = item.dataset.username;
-                const role = item.dataset.role; // 'player' or 'coach'
+                const role = item.dataset.role;
                 const isCollege = item.dataset.isCollege === 'true';
 
-                // Determine the correct folder based on the profile being viewed
-                // This ensures we load the correct my-profile page with appropriate styling
-                let targetFolder;
-                if (role === 'player') {
-                    targetFolder = isCollege ? 'collegeplayer' : 'hsplayer';
-                } else {
-                    targetFolder = isCollege ? 'collegecoach' : 'hscoach';
+                // Determine the correct folder based on role and level
+                let folder = 'hsplayer';
+                if (role === 'coach') {
+                    folder = isCollege ? 'collegecoach' : 'hscoach';
+                } else if (role === 'player') {
+                    folder = isCollege ? 'collegeplayer' : 'hsplayer';
                 }
 
-                // Navigate to the appropriate profile folder for the user being viewed
-                // Use absolute path from site root to ensure correct navigation
-                // regardless of whether we're on mainpage or in tabs/ subfolder
-                window.location.href = `/frontend/${targetFolder}/tabs/my-profile.html?username=${username}`;
+                // Navigate to the profile type's folder with cross-folder navigation
+                const currentPath = window.location.pathname;
+                const isInTabsFolder = currentPath.includes('/tabs/');
+                const prefix = isInTabsFolder ? '../../' : '../';
+
+                window.location.href = `${prefix}${folder}/tabs/my-profile.html?username=${username}&from=search`;
             });
         });
     }
@@ -174,7 +175,7 @@ class SearchComponent {
         const imageUrl = player.profile_image_url || this.getDefaultAvatar(player.first_name);
         const subtitle = [];
         if (player.position) subtitle.push(player.position);
-        if (player.high_school) subtitle.push(player.high_school);
+        if (player.team_name) subtitle.push(player.team_name);
         if (player.graduation_year) subtitle.push(`'${String(player.graduation_year).slice(-2)}`);
 
         // Determine if this is a college player (has college_division or player_status indicates transfer portal)
@@ -197,7 +198,7 @@ class SearchComponent {
         const imageUrl = coach.profile_image_url || this.getDefaultAvatar(coach.first_name);
         const subtitle = [];
         if (coach.position_title) subtitle.push(coach.position_title);
-        if (coach.college_name) subtitle.push(coach.college_name);
+        if (coach.team_name) subtitle.push(coach.team_name);
 
         // Determine if this is a college coach (has college_division)
         const isCollegeCoach = coach.college_division && coach.college_division.trim() !== '';

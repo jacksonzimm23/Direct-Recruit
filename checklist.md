@@ -17,14 +17,19 @@ SELECT pg_size_pretty(pg_database_size('direct_recruit'));
 
 
 
-Currently working on: security 
+Currently working on: profile visibility, viewing profile without edit modals from a single view profile file 
+Critical for working website (to-do still):
+- profile visibility
+- message permisions
+
 
 To do:
+- add others as part of search 
+- store collegeplayer info from create a profile page (number, conferences, elig)
+- team account confirmation 
 
 - fix comp % for QB stats input, also fix career stats season to be descending order 
 - feed logic for your network vs discover (what posts are shown) 
-- settings page
-- google sign in 
 - scroll bars 
 - change postgres super user and its password 
 - team pages contact DR directly 
@@ -60,38 +65,116 @@ Use Amazon RDS for PostgreSQL (need to switch AWS when getting off local server)
 - security with psql stuff 
 
 
+Prompt for viewing profiles cross-folder
+Cross-Folder Profile Navigation Guide
+Overview
+When a user clicks on another user's profile, they navigate to that user's profile folder (hsplayer, collegeplayer, transferplayer, hscoach, collegecoach, or other). The from parameter tracks the originating page for sidebar highlighting and back navigation.
+
+Part 1: Profile Navigation Links
+Pattern for navigating to a profile:
 
 
+// Navigate to appropriate profile folder based on user type
+window.location.href = `../../${folder}/tabs/my-profile.html?username=${username}&from={source}`;
+Determining the folder:
 
-Prompt for view profiles and keeping that page highlighted:
 
-
-Prompt: Sidebar Highlighting When Viewing Profiles From Different Pages
-Problem: When viewing someone's profile from a specific tab (like notifications, discover, messages), the originating tab should stay highlighted in the sidebar, not feed. Solution Architecture:
-Profile Links - Use the shared/view-profile.html router with a from parameter:
-
-href="../../shared/view-profile.html?username=${username}&from=notifications"
-The router determines the correct profile folder (hsplayer, collegeplayer, collegecoach, etc.) based on the viewed user's type.
-In each my-profile.js - Update THREE locations: Location 1: Add the active variable in rebuildNavbar():
-
-let notificationsActive = '';
-Location 2: Add the case in the if/else chain:
-
-} else if (fromPage === 'notifications') {
-    notificationsActive = 'active';
+// For players - based on playerType data attribute or profile data
+let folder = 'hsplayer';
+if (playerType === 'transfer' || profile.transfer === 'y' || profile.is_transfer_player) {
+    folder = 'transferplayer';
+} else if (playerType === 'college' || (profile.college_division && 
+    ['FBS', 'FCS', 'D2', 'D3', 'NAIA', 'NJCAA', 'JUCO'].includes(profile.college_division))) {
+    folder = 'collegeplayer';
 }
-Location 3: Update the nav HTML template:
 
-<a href="/frontend/${userFolder}/tabs/notifications.html" class="nav-item ${notificationsActive}">
-Location 4: Update updateActiveNavItem() function - add selector and case:
+// For coaches - based on isCollege data attribute or college_division
+const isCollegeCoach = card.dataset.isCollege === 'true' || 
+    (profile.college_division && ['FBS', 'FCS', 'D2', 'D3', 'NAIA', 'NJCAA', 'JUCO'].includes(profile.college_division));
+const folder = isCollegeCoach ? 'collegecoach' : 'hscoach';
 
-const notificationsNavItem = document.querySelector('.nav-item[href*="notifications"]');
-// In the remove active section:
-if (notificationsNavItem) notificationsNavItem.classList.remove('active');
-// In the if/else chain:
-} else if (fromPage === 'notifications' && notificationsNavItem) {
-    notificationsNavItem.classList.add('active');
+// For other user types
+const folder = 'other';
+Valid from values: discover, messages, notifications, feed, profile, search, recruiting, transfer-portal
+
+Part 2: Sidebar Highlighting
+In sidebar-nav.js (each profile folder has its own):
+
+
+// Check for 'from' parameter to determine which nav item should be active
+const urlParams = new URLSearchParams(window.location.search);
+const fromPage = urlParams.get('from');
+
+// Map 'from' values to page names
+const fromPageMap = {
+    'notifications': 'notifications',
+    'discover': 'discover-players',
+    'messages': 'messages',
+    'feed': 'mainpage-player',  // or 'mainpage-coach' for coach folders
+    'profile': 'my-profile',
+    'search': 'discover-players',
+    'recruiting': 'recruiting-board',
+    'transfer-portal': 'transfer-portal'
+};
+
+// Use fromPage for active state if viewing another user's profile
+const activePageName = (fromPage && fromPageMap[fromPage]) ? fromPageMap[fromPage] : pageName;
+Part 3: Adding a New Source Page
+Files to modify:
+
+Source page JS file (e.g., frontend/{profile}/tabs/{source-page}.js):
+
+Add navigation with from parameter:
+
+window.location.href = `../../${folder}/tabs/my-profile.html?username=${username}&from={new-source}`;
+All sidebar-nav.js files (6 files - one per profile folder):
+
+Add mapping in fromPageMap:
+
+'{new-source}': '{nav-item-page-name}'
+Part 4: Example Implementation
+Adding profile links from a new "events" page:
+
+In events.js:
+
+// When clicking on a user's profile
+const username = card.dataset.username;
+const playerType = card.dataset.playerType;
+
+let folder = 'hsplayer';
+if (playerType === 'transfer') folder = 'transferplayer';
+else if (playerType === 'college') folder = 'collegeplayer';
+
+window.location.href = `../../${folder}/tabs/my-profile.html?username=${username}&from=events`;
+In each sidebar-nav.js, add to fromPageMap:
+
+'events': 'events'
+Part 5: Special Cases
+When you have full profile data (e.g., from API response or notification data):
+
+
+let folder = 'hsplayer';
+if (role === 'coach') {
+    const hasCollegeDivision = profile.college_division &&
+        ['FBS', 'FCS', 'D2', 'D3', 'NAIA', 'NJCAA', 'JUCO'].includes(profile.college_division);
+    folder = hasCollegeDivision ? 'collegecoach' : 'hscoach';
+} else if (role === 'other') {
+    folder = 'other';
+} else {
+    if (profile.transfer === 'y' || profile.is_transfer_player) {
+        folder = 'transferplayer';
+    } else if (profile.college_division &&
+        ['FBS', 'FCS', 'D2', 'D3', 'NAIA', 'NJCAA', 'JUCO'].includes(profile.college_division)) {
+        folder = 'collegeplayer';
+    }
 }
-Files to modify for each new "from" page:
-frontend/{profile}/tabs/{source-page}.js - Add link with from parameter
-frontend/{profile}/tabs/my-profile.js - Add variable, case, and update nav HTML
+window.location.href = `../../${folder}/tabs/my-profile.html?username=${username}&from={source}`;
+Profile Folders Reference
+User Type	Folder
+High School Player	hsplayer
+College Player	collegeplayer
+Transfer Player	transferplayer
+High School Coach	hscoach
+College Coach	collegecoach
+Other (agents, brands, etc.)	other
+

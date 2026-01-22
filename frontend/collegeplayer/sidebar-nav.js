@@ -23,10 +23,13 @@
     const fromPage = urlParams.get('from');
 
     // Map 'from' values to page names
+    // When viewing another profile, highlight the nav item they came from
     const fromPageMap = {
         'notifications': 'notifications',
         'discover': 'discover-players',
-        'messages': 'messages'
+        'messages': 'messages',
+        'feed': 'mainpage-player',
+        'profile': 'my-profile'
     };
 
     // Use fromPage for active state if viewing another user's profile

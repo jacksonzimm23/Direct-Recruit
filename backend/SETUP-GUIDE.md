@@ -170,7 +170,7 @@ Redis connected
    {
      "first_name": "John",
      "last_name": "Doe",
-     "high_school": "Lincoln High",
+     "team_name": "Lincoln High",
      "graduation_year": 2025,
      "city": "Denver",
      "state": "Colorado",
@@ -203,7 +203,7 @@ curl -X POST http://localhost:5000/api/auth/login ^
 curl -X POST http://localhost:5000/api/profile/player ^
   -H "Content-Type: application/json" ^
   -H "Authorization: Bearer YOUR_TOKEN" ^
-  -d "{\"first_name\":\"John\",\"last_name\":\"Doe\",\"high_school\":\"Lincoln High\",\"graduation_year\":2025,\"city\":\"Denver\",\"state\":\"Colorado\",\"position\":\"QB\",\"height\":74,\"weight\":205,\"gpa\":3.8,\"player_status\":\"senior\"}"
+  -d "{\"first_name\":\"John\",\"last_name\":\"Doe\",\"team_name\":\"Lincoln High\",\"graduation_year\":2025,\"city\":\"Denver\",\"state\":\"Colorado\",\"position\":\"QB\",\"height\":74,\"weight\":205,\"gpa\":3.8,\"player_status\":\"senior\"}"
 ```
 
 ## Verifying Data in Database
@@ -216,7 +216,7 @@ psql -U postgres -d direct_recruit
 SELECT id, email, role, profile_completed FROM users;
 
 # Check player profiles:
-SELECT first_name, last_name, position, high_school FROM player_profiles;
+SELECT first_name, last_name, position, team_name FROM player_profiles;
 
 # Exit:
 \q

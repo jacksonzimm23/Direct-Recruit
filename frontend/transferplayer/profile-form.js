@@ -1,6 +1,11 @@
 document.addEventListener('DOMContentLoaded', async function() {
-    // Load existing profile data if user is logged in
-    await loadExistingProfile();
+    console.log('[profile-form.js] DOMContentLoaded fired');
+    console.log('[profile-form.js] auth_token in localStorage:', localStorage.getItem('auth_token') ? 'EXISTS' : 'NONE');
+
+    // This is a CREATE profile page - do NOT load existing profile data
+    // If user is logged in and tries to create a new profile, they should start fresh
+    // The loadExistingProfile function is only for EDIT profile pages
+    // await loadExistingProfile();
 
     const schoolTypeInput = document.getElementById('schoolType');
     const profileForm = document.getElementById('playerProfileForm');
@@ -316,7 +321,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             };
 
             // High school specific fields
-            profileData.high_school = document.getElementById('highSchoolName').value;
+            profileData.team_name = document.getElementById('highSchoolName').value;
             profileData.state = document.getElementById('hsState').value;
             profileData.graduation_year = parseInt(document.getElementById('hsGradYear').value) || null;
             profileData.gpa = parseFloat(document.getElementById('gpa').value) || null;
@@ -346,25 +351,37 @@ document.addEventListener('DOMContentLoaded', async function() {
 
 // Load existing profile data for editing
 async function loadExistingProfile() {
+    console.log('[loadExistingProfile] Starting...');
     try {
         const token = localStorage.getItem('auth_token');
-        if (!token) return; // No token, user is creating new profile
+        console.log('[loadExistingProfile] Token exists:', !!token);
+        if (!token) {
+            console.log('[loadExistingProfile] No token - fresh form for new user');
+            return; // No token, user is creating new profile
+        }
 
+        console.log('[loadExistingProfile] Fetching user profile from API...');
         const response = await fetch(`${window.API_BASE_URL || 'http://localhost:5000/api'}/auth/me`, {
             headers: {
                 'Authorization': `Bearer ${token}`
             }
         });
 
+        console.log('[loadExistingProfile] API response status:', response.status);
+
         // If unauthorized, clear the invalid token and continue with new profile creation
         if (response.status === 401) {
+            console.log('[loadExistingProfile] 401 Unauthorized - clearing token');
             localStorage.removeItem('auth_token');
             return;
         }
 
         if (response.ok) {
             const data = await response.json();
+            console.log('[loadExistingProfile] Got user data:', data.user?.email);
+            console.log('[loadExistingProfile] Has profile:', !!data.profile);
             if (data.profile) {
+                console.log('[loadExistingProfile] PRE-FILLING FORM WITH EXISTING DATA');
                 // Pre-fill form with existing data
                 const profile = data.profile;
 
@@ -396,8 +413,8 @@ async function loadExistingProfile() {
                 }
 
                 // Fill in high school data
-                if (profile.high_school) {
-                    document.getElementById('highSchoolName').value = profile.high_school;
+                if (profile.team_name) {
+                    document.getElementById('highSchoolName').value = profile.team_name;
                 }
                 if (profile.state) {
                     document.getElementById('hsState').value = profile.state;
@@ -409,9 +426,18 @@ async function loadExistingProfile() {
                     document.getElementById('gpa').value = profile.gpa;
                 }
 
-                // Hide password fields when editing
+                // Hide password fields when editing AND remove required attribute to prevent validation errors
+                console.log('[loadExistingProfile] Hiding password fields for edit mode');
                 const passwordFields = document.querySelectorAll('.form-group:has(#password), .form-group:has(#confirmPassword)');
-                passwordFields.forEach(field => field.style.display = 'none');
+                passwordFields.forEach(field => {
+                    field.style.display = 'none';
+                    // Remove required from hidden inputs to prevent "not focusable" error
+                    const input = field.querySelector('input');
+                    if (input) {
+                        input.removeAttribute('required');
+                        console.log('[loadExistingProfile] Removed required from:', input.id);
+                    }
+                });
 
                 // Change submit button text
                 const submitBtn = document.querySelector('.btn-primary[type="submit"]');
@@ -419,7 +445,7 @@ async function loadExistingProfile() {
             }
         }
     } catch (error) {
-        console.log('No existing profile to load (new user)');
+        console.log('[loadExistingProfile] Error or no existing profile:', error?.message || error);
     }
 }
 

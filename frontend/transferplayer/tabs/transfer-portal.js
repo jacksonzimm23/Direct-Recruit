@@ -128,7 +128,7 @@ function initLeavePortalForm() {
 
             // Store form data
             pendingFormData = {
-                high_school: document.getElementById('newSchool').value,
+                team_name: document.getElementById('newSchool').value,
                 state: document.getElementById('newState').value,
                 college_division: document.getElementById('newDivision').value
             };
@@ -179,7 +179,7 @@ async function submitLeavePortal(data) {
         // Update profile with new school info and remove from portal
         // transfer column uses 'y' for in portal, null/empty to leave
         const response = await API.put('/profile', {
-            high_school: data.high_school,
+            team_name: data.team_name,
             state: data.state,
             college_division: data.college_division,
             transfer: null
@@ -397,7 +397,7 @@ function createPreviewPlayerCard(player) {
     const weight = player.weight ? `${player.weight} lbs` : 'N/A';
     const eligibility = player.eligibility ? `${player.eligibility} Year${player.eligibility > 1 ? 's' : ''}` : 'N/A';
     const gpa = player.gpa ? parseFloat(player.gpa).toFixed(2) : 'N/A';
-    const previousSchool = player.high_school || 'Unknown School';
+    const previousSchool = player.team_name || 'Unknown School';
     const division = formatDivision(player.college_division);
     const profileImage = player.profile_image_url;
 

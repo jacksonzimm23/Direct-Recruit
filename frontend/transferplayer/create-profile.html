@@ -48,7 +48,7 @@
                 <p>Showcase your talent and connect directly with college coaches.</p>
             </div>
 
-            <form id="playerProfileForm" class="profile-form">
+            <form id="playerProfileForm" class="profile-form" autocomplete="off">
                 <!-- Personal Information -->
                 <div class="form-section">
                     <h2 class="section-title">Personal Information</h2>
@@ -61,6 +61,7 @@
                                 id="firstName"
                                 name="firstName"
                                 required
+                                autocomplete="off"
                                 placeholder="John"
                             >
                         </div>
@@ -72,6 +73,7 @@
                                 id="lastName"
                                 name="lastName"
                                 required
+                                autocomplete="off"
                                 placeholder="Smith"
                             >
                         </div>
@@ -86,6 +88,7 @@
                             required
                             pattern="[a-zA-Z0-9_]+"
                             title="Only letters, numbers, and underscores allowed"
+                            autocomplete="off"
                             placeholder="johnsmith_26"
                         >
                         <small class="form-hint" id="usernameHint">Choose a unique username (letters, numbers, underscore only)</small>
@@ -99,6 +102,7 @@
                             id="email"
                             name="email"
                             required
+                            autocomplete="off"
                             placeholder="john.smith@email.com"
                         >
                         <small class="form-hint" id="emailHint">Enter your email address</small>
@@ -113,6 +117,7 @@
                             name="password"
                             required
                             minlength="8"
+                            autocomplete="new-password"
                             placeholder="Create a strong password"
                         >
                         <div class="password-checklist" id="passwordChecklist">
@@ -147,6 +152,7 @@
                             name="confirmPassword"
                             required
                             minlength="8"
+                            autocomplete="new-password"
                             placeholder="Re-enter password"
                         >
                         <div id="passwordMatch" class="password-match" style="display: none;"></div>

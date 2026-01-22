@@ -383,7 +383,7 @@ router.get('/search-coaches', authMiddleware, requireRole('coach'), async (req, 
 
     // Search for college coaches by name or username
     const result = await pool.query(
-      `SELECT cp.user_id, cp.first_name, cp.last_name, cp.username, cp.profile_image_url, cp.college_name
+      `SELECT cp.user_id, cp.first_name, cp.last_name, cp.username, cp.profile_image_url, cp.team_name
        FROM coach_profiles cp
        JOIN users u ON cp.user_id = u.id
        WHERE u.role = 'coach'
@@ -412,7 +412,7 @@ router.get('/shared/:boardId/pending-invites', authMiddleware, requireRole('coac
 
     const pendingResult = await pool.query(
       `SELECT n.id, n.related_user_id, n.created_at, n.is_read,
-              cp.first_name, cp.last_name, cp.profile_image_url, cp.username, cp.college_name
+              cp.first_name, cp.last_name, cp.profile_image_url, cp.username, cp.team_name
        FROM notifications n
        JOIN coach_profiles cp ON n.related_user_id = cp.user_id
        WHERE n.user_id = $1
@@ -473,7 +473,7 @@ router.post('/shared/:boardId/invite', authMiddleware, requireRole('coach'), asy
 
     // Get sender info for notification
     const senderResult = await pool.query(
-      `SELECT cp.first_name, cp.last_name, cp.college_name
+      `SELECT cp.first_name, cp.last_name, cp.team_name
        FROM coach_profiles cp
        WHERE cp.user_id = $1`,
       [req.userId]

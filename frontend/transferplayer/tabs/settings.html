@@ -246,9 +246,7 @@
                             <div class="form-group">
                                 <label for="profileVisibility">Who can see your profile</label>
                                 <select id="profileVisibility" class="form-select">
-                                    <option value="everyone">Everyone</option>
-                                    <option value="verified" selected>Verified Users Only</option>
-                                    <option value="connections">My Connections Only</option>
+                                    <option value="everyone" selected>Everyone</option>
                                     <option value="private">Private</option>
                                 </select>
                                 <small class="form-hint">Control who can see your full profile information</small>
@@ -262,9 +260,8 @@
                             <div class="form-group">
                                 <label for="messagePermissions">Who can message you</label>
                                 <select id="messagePermissions" class="form-select">
-                                    <option value="everyone">Everyone</option>
-                                    <option value="verified" selected>Verified Users Only</option>
-                                    <option value="connections">Connections Only</option>
+                                    <option value="everyone" selected>Everyone</option>
+                                    <option value="followers">Followers only</option>
                                     <option value="none">No One</option>
                                 </select>
                                 <small class="form-hint">Choose who can send you direct messages</small>
@@ -272,7 +269,10 @@
                         </div>
                     </div>
 
-                    <div class="settings-card">
+                    <div class="settings-card coming-soon-card">
+                        <div class="coming-soon-overlay">
+                            <span class="coming-soon-badge">Coming Soon</span>
+                        </div>
                         <h3 class="settings-card-title">Discoverability</h3>
                         <div class="settings-toggles">
                             <div class="toggle-item">
@@ -281,7 +281,7 @@
                                     <div class="toggle-description">Allow others to discover your profile through search</div>
                                 </div>
                                 <label class="toggle-switch">
-                                    <input type="checkbox" data-setting="showInSearch" checked>
+                                    <input type="checkbox" data-setting="showInSearch" checked disabled>
                                     <span class="toggle-slider"></span>
                                 </label>
                             </div>
@@ -292,7 +292,7 @@
                                     <div class="toggle-description">Show email and phone on your public profile</div>
                                 </div>
                                 <label class="toggle-switch">
-                                    <input type="checkbox" data-setting="showContactInfo">
+                                    <input type="checkbox" data-setting="showContactInfo" disabled>
                                     <span class="toggle-slider"></span>
                                 </label>
                             </div>
@@ -303,7 +303,7 @@
                                     <div class="toggle-description">Let others see when you're active</div>
                                 </div>
                                 <label class="toggle-switch">
-                                    <input type="checkbox" data-setting="showOnlineStatus" checked>
+                                    <input type="checkbox" data-setting="showOnlineStatus" checked disabled>
                                     <span class="toggle-slider"></span>
                                 </label>
                             </div>
@@ -314,7 +314,7 @@
                                     <div class="toggle-description">Share your posts and updates with your network</div>
                                 </div>
                                 <label class="toggle-switch">
-                                    <input type="checkbox" data-setting="showActivityFeed" checked>
+                                    <input type="checkbox" data-setting="showActivityFeed" checked disabled>
                                     <span class="toggle-slider"></span>
                                 </label>
                             </div>
@@ -345,7 +345,10 @@
                 <section class="settings-section" id="notifications">
                     <h2 class="section-heading">Notification Preferences</h2>
 
-                    <div class="settings-card">
+                    <div class="settings-card coming-soon-card">
+                        <div class="coming-soon-overlay">
+                            <span class="coming-soon-badge">Coming Soon</span>
+                        </div>
                         <h3 class="settings-card-title">Email Notifications</h3>
                         <div class="settings-toggles">
                             <div class="toggle-item">
@@ -354,7 +357,7 @@
                                     <div class="toggle-description">Get notified when you receive a new message</div>
                                 </div>
                                 <label class="toggle-switch">
-                                    <input type="checkbox" data-setting="notifyMessages" checked>
+                                    <input type="checkbox" data-setting="notifyMessages" checked disabled>
                                     <span class="toggle-slider"></span>
                                 </label>
                             </div>
@@ -365,7 +368,7 @@
                                     <div class="toggle-description">Know when someone views your profile</div>
                                 </div>
                                 <label class="toggle-switch">
-                                    <input type="checkbox" data-setting="notifyProfileViews" checked>
+                                    <input type="checkbox" data-setting="notifyProfileViews" checked disabled>
                                     <span class="toggle-slider"></span>
                                 </label>
                             </div>
@@ -376,7 +379,7 @@
                                     <div class="toggle-description">Get notified when someone follows you</div>
                                 </div>
                                 <label class="toggle-switch">
-                                    <input type="checkbox" data-setting="notifyFollowers" checked>
+                                    <input type="checkbox" data-setting="notifyFollowers" checked disabled>
                                     <span class="toggle-slider"></span>
                                 </label>
                             </div>
@@ -387,14 +390,17 @@
                                     <div class="toggle-description">Likes, comments, and shares on your posts</div>
                                 </div>
                                 <label class="toggle-switch">
-                                    <input type="checkbox" data-setting="notifyInteractions" checked>
+                                    <input type="checkbox" data-setting="notifyInteractions" checked disabled>
                                     <span class="toggle-slider"></span>
                                 </label>
                             </div>
                         </div>
                     </div>
 
-                    <div class="settings-card">
+                    <div class="settings-card coming-soon-card">
+                        <div class="coming-soon-overlay">
+                            <span class="coming-soon-badge">Coming Soon</span>
+                        </div>
                         <h3 class="settings-card-title">Push Notifications</h3>
                         <div class="settings-toggles">
                             <div class="toggle-item">
@@ -403,7 +409,7 @@
                                     <div class="toggle-description">Receive real-time notifications on your device</div>
                                 </div>
                                 <label class="toggle-switch">
-                                    <input type="checkbox" data-setting="pushEnabled">
+                                    <input type="checkbox" data-setting="pushEnabled" disabled>
                                     <span class="toggle-slider"></span>
                                 </label>
                             </div>
@@ -414,7 +420,7 @@
                                     <div class="toggle-description">Play sound for important notifications</div>
                                 </div>
                                 <label class="toggle-switch">
-                                    <input type="checkbox" data-setting="pushSound" checked>
+                                    <input type="checkbox" data-setting="pushSound" checked disabled>
                                     <span class="toggle-slider"></span>
                                 </label>
                             </div>

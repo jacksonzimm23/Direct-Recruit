@@ -409,7 +409,7 @@ function populateSidebarFooter(profile) {
     const userRole = document.querySelector('.sidebar-footer .user-role');
     if (userRole) {
         const parts = [];
-        if (profile.college_name) parts.push(profile.college_name);
+        if (profile.team_name) parts.push(profile.team_name);
         if (profile.state) parts.push(profile.state);
         userRole.textContent = parts.join(', ') || 'HS Coach';
     }

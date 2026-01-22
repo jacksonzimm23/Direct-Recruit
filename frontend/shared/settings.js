@@ -57,6 +57,24 @@ async function loadUserSettings() {
 function populateSettingsForm(data) {
     // Email is stored in user object, not profile
     // Don't overwrite the email here - it's already set from data.user.email above
+
+    // Set profile visibility if available
+    if (data.profile && data.profile.profile_visibility) {
+        const profileVisibilityEl = document.getElementById('profileVisibility');
+        if (profileVisibilityEl) {
+            profileVisibilityEl.value = data.profile.profile_visibility;
+            profileVisibilityEl.dataset.originalValue = data.profile.profile_visibility;
+        }
+    }
+
+    // Set message permissions if available
+    if (data.profile && data.profile.message_permissions) {
+        const messagePermissionsEl = document.getElementById('messagePermissions');
+        if (messagePermissionsEl) {
+            messagePermissionsEl.value = data.profile.message_permissions;
+            messagePermissionsEl.dataset.originalValue = data.profile.message_permissions;
+        }
+    }
 }
 
 // Settings Navigation
@@ -228,7 +246,7 @@ function collectSettingsData() {
 }
 
 // Save Settings
-function saveSettings() {
+async function saveSettings() {
     const saveBtn = document.getElementById('saveChangesBtn');
     const originalContent = saveBtn.innerHTML;
 
@@ -245,18 +263,32 @@ function saveSettings() {
     const formData = collectSettingsData();
     console.log('Saving settings:', formData);
 
-    // TODO: Replace with actual API call when backend is ready
-    // For now, save to localStorage as placeholder
-    localStorage.setItem('userSettings', JSON.stringify(formData));
+    try {
+        const token = localStorage.getItem('auth_token');
 
-    // Simulate API call delay
-    setTimeout(() => {
+        // Save privacy settings (profile visibility, message permissions)
+        const response = await fetch(`${window.API_BASE_URL || 'http://localhost:5000/api'}/settings/privacy`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+                profile_visibility: formData.profileVisibility,
+                message_permissions: formData.messagePermissions
+            })
+        });
+
+        if (!response.ok) {
+            const data = await response.json();
+            throw new Error(data.error || 'Failed to save settings');
+        }
+
+        // Also save to localStorage as backup
+        localStorage.setItem('userSettings', JSON.stringify(formData));
+
         // Show success message
         showNotification('Settings saved successfully!', 'success');
-
-        // Reset button
-        saveBtn.innerHTML = originalContent;
-        saveBtn.disabled = false;
 
         // Reset modified state
         resetModifiedState();
@@ -268,7 +300,14 @@ function saveSettings() {
         document.querySelectorAll('.toggle-switch input').forEach(toggle => {
             toggle.dataset.originalChecked = toggle.checked;
         });
-    }, 1000);
+    } catch (error) {
+        console.error('Error saving settings:', error);
+        showNotification(error.message || 'Failed to save settings', 'error');
+    } finally {
+        // Reset button
+        saveBtn.innerHTML = originalContent;
+        saveBtn.disabled = false;
+    }
 }
 
 // Discard Changes

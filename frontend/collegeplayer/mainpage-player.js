@@ -314,7 +314,7 @@ async function updateSidebarFooter() {
             if (userRole === 'player') {
                 // Player: Position(s), School Name, Division
                 if (profile.position) parts.push(profile.position);
-                if (profile.high_school) parts.push(profile.high_school);
+                if (profile.team_name) parts.push(profile.team_name);
                 if (profile.college_division) {
                     // Add "D1" prefix for FBS/FCS divisions
                     const div = profile.college_division;
@@ -327,7 +327,7 @@ async function updateSidebarFooter() {
             } else if (userRole === 'coach') {
                 // Coach: Position Title, College, State
                 if (profile.position_title) parts.push(profile.position_title);
-                if (profile.college_name) parts.push(profile.college_name);
+                if (profile.team_name) parts.push(profile.team_name);
                 if (profile.state) parts.push(profile.state);
             }
             const roleText = parts.join(' • ') || (userRole === 'player' ? 'Player' : 'Coach');

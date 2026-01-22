@@ -1,5 +1,28 @@
 // Notifications Page JavaScript
 
+// Helper function to determine the correct profile folder based on user data
+function getProfileFolder(notification) {
+    const role = notification.related_user_role;
+    const collegeDivision = notification.related_user_college_division;
+    const transfer = notification.related_user_transfer;
+
+    if (role === 'coach') {
+        // Coach: check if college or HS
+        const isCollege = collegeDivision && ['FBS', 'FCS', 'D2', 'D3', 'NAIA', 'NJCAA', 'JUCO'].includes(collegeDivision);
+        return isCollege ? 'collegecoach' : 'hscoach';
+    } else if (role === 'other') {
+        return 'other';
+    } else {
+        // Player: check transfer status first, then college division
+        if (transfer === 'y') {
+            return 'transferplayer';
+        } else if (collegeDivision && ['FBS', 'FCS', 'D2', 'D3', 'NAIA', 'NJCAA', 'JUCO'].includes(collegeDivision)) {
+            return 'collegeplayer';
+        }
+        return 'hsplayer';
+    }
+}
+
 document.addEventListener('DOMContentLoaded', async function() {
     // Sidebar toggle is handled by mainpage-player.js
     // Just restore the sidebar state from localStorage
@@ -214,8 +237,11 @@ function renderNotificationCard(notification) {
                      notification.type === 'follow' ? 'follows' :
                      notification.type === 'profile_view' ? 'profile-views' : 'interactions';
 
+    const isFollowRequest = notification.title === 'Follow Request';
+    const showFollowRequestActions = isFollowRequest && !notification.request_processed;
+
     return `
-        <div class="notification-card ${isUnread ? 'unread' : ''}" data-type="${dataType}" data-id="${notification.id}">
+        <div class="notification-card ${isUnread ? 'unread' : ''}" data-type="${dataType}" data-id="${notification.id}" data-related-user-id="${notification.related_user_id || ''}" data-title="${notification.title || ''}">
             <div class="notification-icon ${iconClass}">
                 ${iconSvg}
             </div>
@@ -225,9 +251,15 @@ function renderNotificationCard(notification) {
                     ${formatNotificationMessage(notification)}
                 </p>
                 <span class="notification-time">${timeAgo}</span>
+                ${showFollowRequestActions ? `
+                    <div class="follow-request-actions">
+                        <button class="btn-accept-request" data-user-id="${notification.related_user_id}">Accept</button>
+                        <button class="btn-decline-request" data-user-id="${notification.related_user_id}">Decline</button>
+                    </div>
+                ` : ''}
             </div>
             <div class="notification-actions">
-                ${isUnread ? `
+                ${isUnread && !showFollowRequestActions ? `
                     <button class="btn-notification-action" title="Mark as read">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <polyline points="20 6 9 17 4 12"></polyline>
@@ -271,10 +303,11 @@ function formatNotificationMessage(notification) {
     let message = notification.message || '';
 
     // Create a clickable link if we have a username
-    // Use shared view-profile.html to route to the correct profile type
+    // Navigate to the shared profile view page
     let nameHtml;
     if (notification.related_user_username) {
-        nameHtml = `<a href="../../shared/view-profile.html?username=${notification.related_user_username}&from=notifications" class="notification-user-link">${name}</a>`;
+        const folder = getProfileFolder(notification);
+        nameHtml = `<a href="../../${folder}/tabs/my-profile.html?username=${notification.related_user_username}&from=notifications" class="notification-user-link">${name}</a>`;
     } else {
         nameHtml = `<strong>${name}</strong>`;
     }
@@ -310,6 +343,25 @@ function setupNotificationActions() {
         });
     });
 
+    // Follow request accept/decline buttons
+    document.querySelectorAll('.btn-accept-request').forEach(btn => {
+        btn.addEventListener('click', async function(e) {
+            e.stopPropagation();
+            const userId = this.getAttribute('data-user-id');
+            const card = this.closest('.notification-card');
+            await handleAcceptFollowRequest(userId, card);
+        });
+    });
+
+    document.querySelectorAll('.btn-decline-request').forEach(btn => {
+        btn.addEventListener('click', async function(e) {
+            e.stopPropagation();
+            const userId = this.getAttribute('data-user-id');
+            const card = this.closest('.notification-card');
+            await handleDeclineFollowRequest(userId, card);
+        });
+    });
+
     // Click on notification card
     document.querySelectorAll('.notification-card').forEach(card => {
         card.addEventListener('click', async function() {
@@ -319,6 +371,78 @@ function setupNotificationActions() {
             }
         });
     });
+}
+
+// Handle accepting a follow request
+async function handleAcceptFollowRequest(userId, card) {
+    try {
+        const response = await API.post(`/follow/requests/user/${userId}/accept`);
+
+        const notificationId = card.dataset.id;
+        const notification = allNotifications.find(n => String(n.id) === String(notificationId));
+
+        if (response.requestCancelled) {
+            // Request was cancelled - delete the notification
+            await deleteNotification(notificationId, card);
+            showFeedback('Request was already cancelled');
+        } else {
+            // Update the notification to show they are now following
+            if (notification) {
+                const name = notification.related_user_first_name && notification.related_user_last_name
+                    ? `${notification.related_user_first_name} ${notification.related_user_last_name}`
+                    : 'Someone';
+
+                // Update the card content to show new follower message
+                const contentDiv = card.querySelector('.notification-content');
+                if (contentDiv) {
+                    const folder = getProfileFolder(notification);
+                    const nameLink = notification.related_user_username
+                        ? `<a href="../../${folder}/tabs/my-profile.html?username=${notification.related_user_username}&from=notifications" class="notification-user-link">${name}</a>`
+                        : `<strong>${name}</strong>`;
+
+                    contentDiv.innerHTML = `
+                        <p class="notification-text">
+                            <strong>New Follower</strong><br>
+                            ${nameLink} is now following you
+                        </p>
+                        <span class="notification-time">${formatTimeAgo(notification.created_at)}</span>
+                    `;
+                }
+
+                notification.request_processed = true;
+                notification.title = 'New Follower';
+                notification.message = `${name} is now following you`;
+            }
+
+            // Mark as read
+            await markNotificationAsRead(notificationId, card);
+            showFeedback('Follow request accepted');
+        }
+    } catch (error) {
+        console.error('Failed to accept follow request:', error);
+        showFeedback('Failed to accept follow request');
+    }
+}
+
+// Handle declining a follow request
+async function handleDeclineFollowRequest(userId, card) {
+    try {
+        const response = await API.post(`/follow/requests/user/${userId}/decline`);
+
+        const notificationId = card.dataset.id;
+
+        // Delete the notification regardless of whether request was cancelled
+        await deleteNotification(notificationId, card);
+
+        if (response.requestCancelled) {
+            showFeedback('Request was already cancelled');
+        } else {
+            showFeedback('Follow request declined');
+        }
+    } catch (error) {
+        console.error('Failed to decline follow request:', error);
+        showFeedback('Failed to decline follow request');
+    }
 }
 
 // Mark notification as read
@@ -487,6 +611,50 @@ function showFeedback(message, type = 'success') {
             @keyframes slideOutDown {
                 from { opacity: 1; transform: translateY(0); }
                 to { opacity: 0; transform: translateY(20px); }
+            }
+            .follow-request-actions {
+                display: flex;
+                gap: 8px;
+                margin-top: 10px;
+            }
+            .follow-request-actions button {
+                padding: 6px 16px;
+                border-radius: 6px;
+                font-size: 0.85rem;
+                font-weight: 600;
+                cursor: pointer;
+                transition: all 0.2s ease;
+                border: none;
+            }
+            .btn-accept-request {
+                background: var(--cerulean, #1282a2);
+                color: white;
+            }
+            .btn-accept-request:hover {
+                background: #0f6d8a;
+            }
+            .btn-decline-request {
+                background: transparent;
+                color: var(--gray, #6c757d);
+                border: 1px solid var(--gray, #6c757d) !important;
+            }
+            .btn-decline-request:hover {
+                background: rgba(108, 117, 125, 0.1);
+            }
+            .request-status {
+                font-size: 0.85rem;
+                font-weight: 600;
+                padding: 6px 0;
+            }
+            .request-status.accepted {
+                color: var(--cerulean, #1282a2);
+            }
+            .request-status.declined {
+                color: var(--gray, #6c757d);
+            }
+            .request-status.cancelled {
+                color: #856404;
+                font-style: italic;
             }
         `;
         document.head.appendChild(style);

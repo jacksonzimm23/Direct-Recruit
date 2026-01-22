@@ -73,7 +73,7 @@
 
 .dashboard-container {
     display: grid;
-    grid-template-columns: 280px 1fr 260px;
+    grid-template-columns: 280px 1fr 300px;
     max-width: 1600px;
     margin: 0 auto;
     min-height: 100vh;
@@ -82,7 +82,7 @@
 }
 
 .dashboard-container.sidebar-hidden {
-    grid-template-columns: 0px 1fr 260px;
+    grid-template-columns: 0px 1fr 300px;
 }
 
 .dashboard-container.right-sidebar-hidden {

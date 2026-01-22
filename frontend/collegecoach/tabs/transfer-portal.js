@@ -181,7 +181,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         const weight = player.weight ? `${player.weight} lbs` : 'N/A';
         const eligibility = player.eligibility ? `${player.eligibility} Year${player.eligibility > 1 ? 's' : ''}` : 'N/A';
         const gpa = player.gpa ? parseFloat(player.gpa).toFixed(2) : 'N/A';
-        const previousSchool = player.high_school || 'Unknown School';
+        const previousSchool = player.team_name || 'Unknown School';
         const division = formatDivision(player.college_division);
         const profileImage = player.profile_image_url;
 
@@ -397,6 +397,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             card.style.cursor = 'pointer';
             card.addEventListener('click', function() {
                 if (username) {
+                    // Navigate to transfer player profile (transfer portal shows transfer players)
                     window.location.href = `../../transferplayer/tabs/my-profile.html?username=${username}&from=transfer-portal`;
                 } else {
                     alert('Profile not available. User has not set up their profile yet.');
@@ -409,6 +410,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                 viewBtn.addEventListener('click', function(e) {
                     e.stopPropagation();
                     if (username) {
+                        // Navigate to transfer player profile (transfer portal shows transfer players)
                         window.location.href = `../../transferplayer/tabs/my-profile.html?username=${username}&from=transfer-portal`;
                     } else {
                         alert('Profile not available. User has not set up their profile yet.');

@@ -29,7 +29,7 @@ CREATE TABLE player_profiles (
     first_name VARCHAR(100) NOT NULL,
     last_name VARCHAR(100) NOT NULL,
     date_of_birth DATE,
-    high_school VARCHAR(255),
+    team_name VARCHAR(255),
     graduation_year INTEGER,
     city VARCHAR(100),
     state VARCHAR(50),
@@ -58,7 +58,7 @@ CREATE TABLE coach_profiles (
     user_id UUID REFERENCES users(id) ON DELETE CASCADE UNIQUE,
     first_name VARCHAR(100) NOT NULL,
     last_name VARCHAR(100) NOT NULL,
-    college_name VARCHAR(255) NOT NULL,
+    team_name VARCHAR(255) NOT NULL,
     college_division VARCHAR(50), -- FBS, FCS, D2, D3, NAIA, JUCO
     position_title VARCHAR(100), -- Head Coach, OC, DC, Position Coach, etc.
     city VARCHAR(100),

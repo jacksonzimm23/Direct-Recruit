@@ -1,6 +1,8 @@
 // Other User Profile Form JavaScript
 
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('[other-profile-form.js] DOMContentLoaded fired');
+    console.log('[other-profile-form.js] auth_token in localStorage:', localStorage.getItem('auth_token') ? 'EXISTS' : 'NONE');
     const form = document.getElementById('otherProfileForm');
     const usernameInput = document.getElementById('username');
     const passwordInput = document.getElementById('password');

@@ -438,7 +438,7 @@ function populateSidebarFooter(profile) {
     const userRole = document.querySelector('.sidebar-footer .user-role');
     if (userRole) {
         const parts = [];
-        if (profile.college_name) parts.push(profile.college_name);
+        if (profile.team_name) parts.push(profile.team_name);
         if (profile.college_division) {
             // Format FBS/FCS as D1 FBS/D1 FCS
             const divDisplay = (profile.college_division === 'FBS' || profile.college_division === 'FCS')

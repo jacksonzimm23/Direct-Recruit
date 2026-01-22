@@ -3,17 +3,17 @@ const pool = require('../config/database');
 class CoachProfile {
   static async create(userId, profileData) {
     const {
-      first_name, last_name, username, college_name, college_division,
+      first_name, last_name, username, team_name, college_division,
       position_title, city, state, phone, bio, conference
     } = profileData;
 
     const result = await pool.query(
       `INSERT INTO coach_profiles
-      (user_id, first_name, last_name, username, college_name, college_division,
+      (user_id, first_name, last_name, username, team_name, college_division,
        position_title, city, state, phone, bio, conference)
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
       RETURNING *`,
-      [userId, first_name, last_name, username, college_name, college_division,
+      [userId, first_name, last_name, username, team_name, college_division,
        position_title, city, state, phone, bio, conference]
     );
     return result.rows[0];
@@ -59,7 +59,7 @@ class CoachProfile {
       paramCount++;
     }
     if (filters.searchTerm) {
-      query += ` AND (cp.first_name ILIKE $${paramCount} OR cp.last_name ILIKE $${paramCount} OR cp.username ILIKE $${paramCount} OR cp.college_name ILIKE $${paramCount})`;
+      query += ` AND (cp.first_name ILIKE $${paramCount} OR cp.last_name ILIKE $${paramCount} OR cp.username ILIKE $${paramCount} OR cp.team_name ILIKE $${paramCount})`;
       values.push(`%${filters.searchTerm}%`);
       paramCount++;
     }
@@ -71,6 +71,33 @@ class CoachProfile {
 
   static async findByUsername(username) {
     const result = await pool.query('SELECT cp.*, u.email, u.role FROM coach_profiles cp JOIN users u ON cp.user_id = u.id WHERE cp.username = $1', [username]);
+    return result.rows[0];
+  }
+
+  static async updatePrivacySettings(userId, settings) {
+    const fields = [];
+    const values = [];
+    let paramCount = 1;
+
+    if (settings.profile_visibility !== undefined) {
+      fields.push(`profile_visibility = $${paramCount}`);
+      values.push(settings.profile_visibility);
+      paramCount++;
+    }
+
+    if (settings.message_permissions !== undefined) {
+      fields.push(`message_permissions = $${paramCount}`);
+      values.push(settings.message_permissions);
+      paramCount++;
+    }
+
+    if (fields.length === 0) {
+      return null;
+    }
+
+    values.push(userId);
+    const query = `UPDATE coach_profiles SET ${fields.join(', ')} WHERE user_id = $${paramCount} RETURNING *`;
+    const result = await pool.query(query, values);
     return result.rows[0];
   }
 }

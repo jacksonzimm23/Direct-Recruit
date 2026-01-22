@@ -17,6 +17,24 @@
     // Get current page name for active state
     const pageName = currentPath.split('/').pop().replace('.html', '');
 
+    // Check for 'from' parameter to determine which nav item should be active
+    // This is used when viewing other profiles from discover, notifications, etc.
+    const urlParams = new URLSearchParams(window.location.search);
+    const fromPage = urlParams.get('from');
+
+    // Map 'from' values to page names
+    // When viewing another profile, highlight the nav item they came from
+    const fromPageMap = {
+        'notifications': 'notifications',
+        'discover': 'discover-players',
+        'messages': 'messages',
+        'feed': 'mainpage-player',
+        'profile': 'my-profile'
+    };
+
+    // Use fromPage for active state if viewing another user's profile
+    const activePageName = (fromPage && fromPageMap[fromPage]) ? fromPageMap[fromPage] : pageName;
+
     // Define navigation items - Transfer players have Transfer Portal nav item with special styling
     const navItems = [
         {
@@ -83,7 +101,7 @@
     // Build the navigation HTML
     let navHTML = '';
     navItems.forEach(item => {
-        const isActive = item.pages.includes(pageName);
+        const isActive = item.pages.includes(activePageName);
         const activeClass = isActive ? ' active' : '';
         const extraClass = item.extraClass ? ` ${item.extraClass}` : '';
         const idAttr = item.id ? ` id="${item.id}"` : '';

@@ -522,13 +522,13 @@ function updateNavbarForLoggedInUser(user, profile) {
             } else if (userFolder === 'hsplayer') {
                 // HS Player: position • high_school • Class of graduation_year
                 if (profile.position) parts.push(profile.position);
-                if (profile.high_school) parts.push(profile.high_school);
+                if (profile.team_name) parts.push(profile.team_name);
                 if (profile.graduation_year) parts.push(`Class of ${profile.graduation_year}`);
                 userRole.textContent = parts.join(' • ') || 'Player';
             } else if (userFolder === 'collegeplayer') {
                 // College Player: position • high_school • division
                 if (profile.position) parts.push(profile.position);
-                if (profile.high_school) parts.push(profile.high_school);
+                if (profile.team_name) parts.push(profile.team_name);
                 if (profile.college_division) {
                     // Add "D1" prefix for FBS/FCS divisions
                     const div = profile.college_division;
@@ -541,12 +541,12 @@ function updateNavbarForLoggedInUser(user, profile) {
                 userRole.textContent = parts.join(' • ') || 'Player';
             } else if (userFolder === 'hscoach') {
                 // HS Coach: college_name, state (comma separator)
-                if (profile.college_name) parts.push(profile.college_name);
+                if (profile.team_name) parts.push(profile.team_name);
                 if (profile.state) parts.push(profile.state);
                 userRole.textContent = parts.join(', ') || 'HS Coach';
             } else if (userFolder === 'collegecoach') {
                 // College Coach: college_name • division
-                if (profile.college_name) parts.push(profile.college_name);
+                if (profile.team_name) parts.push(profile.team_name);
                 if (profile.college_division) {
                     // Format FBS/FCS as D1 FBS/D1 FCS
                     const divDisplay = (profile.college_division === 'FBS' || profile.college_division === 'FCS')
@@ -765,7 +765,8 @@ async function loadProfileByUsername(username) {
             currentProfile = response.profile;
             viewingUserId = response.profile.user_id;
             isOwnProfile = currentUserId === viewingUserId;
-            displayProfile(response.profile, response.type);
+            // Pass accessLevel and hasPendingRequest from API response for private profile handling
+            displayProfile(response.profile, response.type, response.accessLevel, response.hasPendingRequest);
         } else {
             showError('Profile not found');
         }
@@ -775,9 +776,12 @@ async function loadProfileByUsername(username) {
     }
 }
 
-async function displayProfile(profile, type) {
+async function displayProfile(profile, type, accessLevel = 'full', hasPendingRequest = false) {
     // Store the profile type globally
     currentProfileType = type;
+
+    // Check if this is a restricted private profile view
+    const isRestrictedView = accessLevel === 'limited';
 
     // Update profile name
     const nameElement = document.querySelector('.profile-name');
@@ -785,18 +789,18 @@ async function displayProfile(profile, type) {
         nameElement.textContent = `${profile.first_name} ${profile.last_name}`;
 
         // Check if this profile follows the current user and add badge
-        if (viewingUserId) {
+        if (viewingUserId && !isRestrictedView) {
             try {
                 const followsMeResponse = await API.get(`/follow/${viewingUserId}/follows-me`);
                 // Remove existing badge if any
-                const existingBadge = nameElement.parentElement.querySelector('.follows-you-badge');
+                const existingBadge = nameElement.querySelector('.follows-you-badge');
                 if (existingBadge) existingBadge.remove();
 
                 if (followsMeResponse.followsMe) {
                     const badge = document.createElement('span');
                     badge.className = 'follows-you-badge';
                     badge.textContent = 'Follows you';
-                    nameElement.parentElement.insertBefore(badge, nameElement.nextSibling);
+                    nameElement.appendChild(badge);
                 }
             } catch (error) {
                 console.error('Error checking if user follows me:', error);
@@ -810,23 +814,33 @@ async function displayProfile(profile, type) {
     // Add color-coded class to profile header
     const profileHeader = document.querySelector('.profile-header-simple');
     if (profileHeader) {
-        profileHeader.classList.remove('player-profile', 'coach-profile', 'portal-profile');
+        profileHeader.classList.remove('player-profile', 'coach-profile', 'portal-profile', 'other-profile');
         if (type === 'player') {
-            // Check if portal player (you can add logic here to determine portal status)
-            profileHeader.classList.add('player-profile');
+            // Check if transfer/portal player
+            const isTransfer = profile.transfer === 'y' || profile.is_transfer_player;
+            if (isTransfer) {
+                profileHeader.classList.add('portal-profile');
+            } else {
+                profileHeader.classList.add('player-profile');
+            }
         } else if (type === 'coach') {
             profileHeader.classList.add('coach-profile');
+        } else if (type === 'other') {
+            profileHeader.classList.add('other-profile');
         }
     }
 
+
     if (type === 'player') {
         displayPlayerProfile(profile);
-    } else {
+    } else if (type === 'coach') {
         displayCoachProfile(profile);
+    } else if (type === 'other') {
+        displayOtherProfile(profile);
     }
 
     // Update profile actions based on ownership
-    updateProfileActions();
+    updateProfileActions(hasPendingRequest);
 
     // Update active nav item
     updateActiveNavItem();
@@ -874,6 +888,80 @@ async function displayProfile(profile, type) {
 
     // Load follower/following counts from database
     loadFollowCounts(profile.user_id);
+
+    // If this is a private profile view (restricted), add overlay on tabs section
+    if (isRestrictedView) {
+        addPrivateProfileOverlay();
+        disableFollowLinksForPrivateProfile();
+    }
+}
+
+// Disable followers/following links for private profiles
+function disableFollowLinksForPrivateProfile() {
+    const followersLink = document.getElementById('followersLink');
+    const followingLink = document.getElementById('followingLink');
+
+    if (followersLink) {
+        followersLink.style.pointerEvents = 'none';
+        followersLink.style.cursor = 'default';
+        followersLink.style.opacity = '0.6';
+        followersLink.removeAttribute('href');
+    }
+
+    if (followingLink) {
+        followingLink.style.pointerEvents = 'none';
+        followingLink.style.cursor = 'default';
+        followingLink.style.opacity = '0.6';
+        followingLink.removeAttribute('href');
+    }
+}
+
+// Add private profile overlay over the tabs section
+function addPrivateProfileOverlay() {
+    const existingOverlay = document.querySelector('.private-profile-overlay');
+    if (existingOverlay) existingOverlay.remove();
+
+    const tabsContainer = document.querySelector('.profile-tabs-container');
+    const tabContent = document.querySelector('.profile-tab-content');
+    if (!tabsContainer) return;
+
+    const wrapper = document.createElement('div');
+    wrapper.className = 'private-profile-tabs-wrapper';
+    wrapper.style.position = 'relative';
+    tabsContainer.parentElement.insertBefore(wrapper, tabsContainer);
+    wrapper.appendChild(tabsContainer);
+    if (tabContent) wrapper.appendChild(tabContent);
+
+    const overlay = document.createElement('div');
+    overlay.className = 'private-profile-overlay';
+    overlay.innerHTML = `
+        <div class="private-profile-message">
+            <svg class="lock-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="48" height="48">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+            </svg>
+            <h3>This Account is Private</h3>
+        </div>
+    `;
+    wrapper.appendChild(overlay);
+
+    if (!document.getElementById('privateProfileStyles')) {
+        const style = document.createElement('style');
+        style.id = 'privateProfileStyles';
+        style.textContent = `
+            .private-profile-tabs-wrapper { position: relative; }
+            .private-profile-overlay {
+                position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+                display: flex; align-items: flex-start; justify-content: center;
+                background: #0a1128;
+                border-radius: 12px; z-index: 10; min-height: 300px;
+            }
+            .private-profile-message { text-align: center; padding: 30px 40px; color: white; }
+            .private-profile-message .lock-icon { color: white; margin-bottom: 16px; opacity: 0.9; }
+            .private-profile-message h3 { margin: 0; font-size: 20px; font-weight: 600; color: white; }
+        `;
+        document.head.appendChild(style);
+    }
 }
 
 // Load and display follower/following counts from the database
@@ -938,30 +1026,24 @@ function displayPlayerProfile(profile) {
         positionElement.textContent = parts.length > 0 ? parts.join(' • ') : 'Position not specified';
     }
 
-    // Row 2 & 3: Class, GPA, School info
+    // Row 2 & 3: School info, Class
     const metaElement = document.querySelector('.profile-meta');
     if (metaElement) {
         const lines = [];
 
-        // Row 2: Class of YYYY • GPA (if entered)
+        // Row 2: College Name, State
         const row2Parts = [];
-        if (profile.graduation_year) row2Parts.push(`Class of ${profile.graduation_year}`);
-        if (profile.gpa) row2Parts.push(`GPA: ${profile.gpa}`);
+        if (profile.team_name) {
+            row2Parts.push(profile.team_name);
+            if (profile.state) row2Parts.push(profile.state);
+        }
         if (row2Parts.length > 0) {
-            lines.push(row2Parts.join(' <span>•</span> '));
+            lines.push(row2Parts.join(', '));
         }
 
-        // Row 3: High School Name, State OR College Name, Division
-        const row3Parts = [];
-        if (profile.high_school) {
-            row3Parts.push(profile.high_school);
-            if (profile.state) row3Parts.push(profile.state);
-        } else if (profile.college_name) {
-            row3Parts.push(profile.college_name);
-            if (profile.college_division) row3Parts.push(profile.college_division);
-        }
-        if (row3Parts.length > 0) {
-            lines.push(row3Parts.join(', '));
+        // Row 3: Class of YYYY
+        if (profile.graduation_year) {
+            lines.push(`Class of ${profile.graduation_year}`);
         }
 
         metaElement.innerHTML = lines.join('<br>') || 'Information not provided';
@@ -991,7 +1073,7 @@ function displayCoachProfile(profile) {
     if (positionElement) {
         const parts = [];
         if (profile.position_title) parts.push(profile.position_title);
-        if (profile.college_name) parts.push(profile.college_name);
+        if (profile.team_name) parts.push(profile.team_name);
         positionElement.textContent = parts.join(' • ') || 'Position not specified';
     }
 
@@ -1017,8 +1099,40 @@ function displayCoachProfile(profile) {
 
     // Update info items for coach
     updateInfoItem('Title', profile.position_title);
-    updateInfoItem('College', profile.college_name);
+    updateInfoItem('College', profile.team_name);
     updateInfoItem('Division', profile.college_division);
+}
+
+function displayOtherProfile(profile) {
+    // Update position/title line (using subheader for "other" profiles)
+    const positionElement = document.querySelector('.profile-position');
+    if (positionElement) {
+        const parts = [];
+        if (profile.subheader) parts.push(profile.subheader);
+        if (profile.company_name) parts.push(profile.company_name);
+        positionElement.textContent = parts.join(' • ') || 'Role not specified';
+    }
+
+    // Update meta info
+    const metaElement = document.querySelector('.profile-meta');
+    if (metaElement) {
+        const parts = [];
+        if (profile.city && profile.state) parts.push(`${profile.city}, ${profile.state}`);
+        if (profile.is_nil_brand) parts.push('NIL Brand ✓');
+
+        metaElement.innerHTML = parts.join(' <span>•</span> ') || 'Information not provided';
+    }
+
+    // Update username display
+    const usernameElement = document.querySelector('.profile-username');
+    if (usernameElement) {
+        usernameElement.textContent = profile.username ? `@${profile.username}` : '';
+    }
+
+    // Update info items for other profile type
+    updateInfoItem('Role', profile.subheader);
+    updateInfoItem('Organization', profile.company_name);
+    updateInfoItem('Location', profile.city && profile.state ? `${profile.city}, ${profile.state}` : null);
 }
 
 function updateInfoItem(label, value) {
@@ -1085,7 +1199,7 @@ function updateCurrentTeamInfo(profile) {
     const numberEl = document.getElementById('teamNumber');
     const eligibilityEl = document.getElementById('teamEligibility');
 
-    if (schoolEl) schoolEl.textContent = profile.high_school || '-';
+    if (schoolEl) schoolEl.textContent = profile.team_name || '-';
     if (stateEl) stateEl.textContent = profile.state || '-';
     if (divisionEl) divisionEl.textContent = profile.college_division || '-';
     if (conferenceEl) conferenceEl.textContent = profile.conference || '-';
@@ -1188,12 +1302,12 @@ function updateSchoolInfo(profile) {
     const schoolSection = document.querySelector('.school-card');
     if (!schoolSection) return;
 
-    if (profile.high_school) {
+    if (profile.team_name) {
         const schoolName = schoolSection.querySelector('.school-name');
         const schoolLocation = schoolSection.querySelector('.school-location');
         const schoolClass = schoolSection.querySelector('.school-class');
 
-        if (schoolName) schoolName.textContent = profile.high_school;
+        if (schoolName) schoolName.textContent = profile.team_name;
         if (schoolLocation && profile.city && profile.state) {
             schoolLocation.textContent = `${profile.city}, ${profile.state}`;
         }
@@ -1203,9 +1317,12 @@ function updateSchoolInfo(profile) {
     }
 }
 
-function updateProfileActions() {
+function updateProfileActions(hasPendingRequest = false) {
     const actionsContainer = document.querySelector('.profile-actions');
     if (!actionsContainer) return;
+
+    // Store pending request status for follow button setup
+    window.hasPendingFollowRequest = hasPendingRequest;
 
     // Check if navigated to this profile (has username in URL) - always show back button in this case
     const urlParams = new URLSearchParams(window.location.search);
@@ -1335,7 +1452,7 @@ function updateProfileActions() {
                 Back
             </button>
             <button class="btn-follow" id="followBtn">Follow</button>
-            <button class="btn-message" id="messageBtn">Message</button>
+            <button class="btn-message" id="messageBtn" style="display: none;">Message</button>
         `;
 
         // Setup back button
@@ -1349,21 +1466,40 @@ function updateProfileActions() {
         // Setup follow button
         setupFollowButton();
 
-        // Setup message button
+        // Setup message button (checks permissions and shows/hides accordingly)
         setupMessageButton();
     }
 }
 
-function setupMessageButton() {
+async function setupMessageButton() {
     const messageBtn = document.getElementById('messageBtn');
     if (!messageBtn || !viewingUserId) return;
 
-    messageBtn.addEventListener('click', () => {
-        // Navigate to messages page with the userId to start/open conversation
-        // Determine the correct folder for navigation based on logged-in user
-        const folder = loggedInUserFolder || 'collegeplayer';
-        window.location.href = `/frontend/${folder}/tabs/messages.html?userId=${viewingUserId}`;
-    });
+    // Check message permissions
+    try {
+        const permissionResult = await API.get(`/follow/can-message/${viewingUserId}`);
+
+        if (permissionResult.canMessage) {
+            // Show the message button
+            messageBtn.style.display = '';
+            messageBtn.addEventListener('click', () => {
+                // Navigate to messages page with the userId to start/open conversation
+                const folder = loggedInUserFolder || 'collegeplayer';
+                window.location.href = `/frontend/${folder}/tabs/messages.html?userId=${viewingUserId}`;
+            });
+        } else {
+            // Keep the button hidden (already hidden by default)
+            messageBtn.style.display = 'none';
+        }
+    } catch (error) {
+        console.error('Error checking message permissions:', error);
+        // On error, show the button (fail open for better UX)
+        messageBtn.style.display = '';
+        messageBtn.addEventListener('click', () => {
+            const folder = loggedInUserFolder || 'collegeplayer';
+            window.location.href = `/frontend/${folder}/tabs/messages.html?userId=${viewingUserId}`;
+        });
+    }
 }
 
 async function setupFollowButton() {
@@ -1379,27 +1515,48 @@ async function setupFollowButton() {
         const isFollowing = followResponse.isFollowing;
         const theyFollowMe = followsMeResponse.followsMe;
 
-        // Determine button text: "Following", "Follow back", or "Follow"
-        const getButtonText = (following) => {
+        // Check if there's a pending follow request (passed from displayProfile)
+        let hasPendingRequest = window.hasPendingFollowRequest || false;
+
+        // Determine button text: "Following", "Requested", "Follow back", or "Follow"
+        const getButtonText = (following, pending) => {
             if (following) return 'Following';
+            if (pending) return 'Requested';
             return theyFollowMe ? 'Follow back' : 'Follow';
         };
 
-        followBtn.textContent = getButtonText(isFollowing);
+        followBtn.textContent = getButtonText(isFollowing, hasPendingRequest);
         followBtn.classList.toggle('following', isFollowing);
+        followBtn.classList.toggle('requested', hasPendingRequest && !isFollowing);
 
         followBtn.addEventListener('click', async () => {
             try {
                 const currentlyFollowing = followBtn.classList.contains('following');
+                const currentlyRequested = followBtn.classList.contains('requested');
 
                 if (currentlyFollowing) {
                     await API.delete(`/follow/${viewingUserId}`);
-                    followBtn.textContent = getButtonText(false);
+                    followBtn.textContent = getButtonText(false, false);
                     followBtn.classList.remove('following');
+                    followBtn.classList.remove('requested');
+                    hasPendingRequest = false;
+                } else if (currentlyRequested) {
+                    // Cancel the follow request
+                    await API.delete(`/follow/${viewingUserId}/request`);
+                    followBtn.textContent = getButtonText(false, false);
+                    followBtn.classList.remove('requested');
+                    hasPendingRequest = false;
                 } else {
-                    await API.post(`/follow/${viewingUserId}`);
-                    followBtn.textContent = 'Following';
-                    followBtn.classList.add('following');
+                    // Send follow request (backend handles if it's a request or direct follow)
+                    const response = await API.post(`/follow/${viewingUserId}`);
+                    if (response.requestPending) {
+                        followBtn.textContent = 'Requested';
+                        followBtn.classList.add('requested');
+                        hasPendingRequest = true;
+                    } else {
+                        followBtn.textContent = 'Following';
+                        followBtn.classList.add('following');
+                    }
                 }
 
                 // Update the follower count display after follow/unfollow
@@ -1811,7 +1968,7 @@ function populateEditForm() {
         const jerseyNumber = document.getElementById('editJerseyNumber');
         const eligibility = document.getElementById('editEligibility');
 
-        if (collegeName) collegeName.value = currentProfile.high_school || ''; // Using high_school field for college name
+        if (collegeName) collegeName.value = currentProfile.team_name || ''; // Using team_name field for college name
         if (collegeState) collegeState.value = currentProfile.state || '';
         if (division) division.value = currentProfile.college_division || '';
         if (conference) conference.value = currentProfile.conference || '';
@@ -1828,7 +1985,7 @@ function populateEditForm() {
         const highSchoolName = document.getElementById('editHighSchool');
         const hsState = document.getElementById('editHSState');
 
-        if (highSchoolName) highSchoolName.value = currentProfile.high_school || '';
+        if (highSchoolName) highSchoolName.value = currentProfile.team_name || '';
         if (hsState) hsState.value = currentProfile.state || '';
     }
 
@@ -2036,14 +2193,14 @@ async function saveProfileChanges() {
 
         // Add school fields based on type
         if (isCollegePlayer) {
-            formData.high_school = document.getElementById('editCollegeName').value;
+            formData.team_name = document.getElementById('editCollegeName').value;
             formData.state = document.getElementById('editCollegeState').value;
             formData.college_division = document.getElementById('editDivision').value;
             formData.conference = document.getElementById('editConference').value || null;
             formData.number = document.getElementById('editJerseyNumber').value ? parseInt(document.getElementById('editJerseyNumber').value) : null;
             formData.eligibility = document.getElementById('editEligibility').value ? parseInt(document.getElementById('editEligibility').value) : null;
         } else {
-            formData.high_school = document.getElementById('editHighSchool').value;
+            formData.team_name = document.getElementById('editHighSchool').value;
             formData.state = document.getElementById('editHSState').value;
             formData.college_division = null; // Clear college division for HS players
             formData.conference = null;
@@ -2440,22 +2597,27 @@ async function openFollowListModal(type) {
 
                     if (profileResponse.profile && profileResponse.profile.username) {
                         closeFollowListModal();
-                        // Navigate to the appropriate profile page based on role and type
                         const profile = profileResponse.profile;
+                        // Navigate to appropriate profile folder based on role and profile data
+                        let folder = 'hsplayer';
                         if (role === 'coach') {
-                            const isCollegeCoach = profile.college_division &&
-                                ['FBS', 'FCS', 'D2', 'D3', 'NAIA', 'NJCAA'].includes(profile.college_division);
-                            const coachFolder = isCollegeCoach ? 'collegecoach' : 'hscoach';
-                            window.location.href = `../../${coachFolder}/tabs/my-profile.html?username=${profile.username}&from=profile`;
+                            const hasCollegeDivision = profile.college_division &&
+                                ['FBS', 'FCS', 'D2', 'D3', 'NAIA', 'NJCAA', 'JUCO'].includes(profile.college_division);
+                            folder = hasCollegeDivision ? 'collegecoach' : 'hscoach';
+                        } else if (role === 'other') {
+                            folder = 'other';
                         } else {
-                            const isCollegePlayer = profile.college_division &&
-                                ['FBS', 'FCS', 'D2', 'D3', 'NAIA', 'NJCAA'].includes(profile.college_division);
-                            if (isCollegePlayer) {
-                                window.location.href = `my-profile.html?username=${profile.username}&from=profile`;
+                            // Player - check for transfer or college
+                            if (profile.transfer === 'y' || profile.is_transfer_player) {
+                                folder = 'transferplayer';
+                            } else if (profile.college_division &&
+                                ['FBS', 'FCS', 'D2', 'D3', 'NAIA', 'NJCAA', 'JUCO'].includes(profile.college_division)) {
+                                folder = 'collegeplayer';
                             } else {
-                                window.location.href = `../../hsplayer/tabs/my-profile.html?username=${profile.username}&from=profile`;
+                                folder = 'hsplayer';
                             }
                         }
+                        window.location.href = `../../${folder}/tabs/my-profile.html?username=${profile.username}&from=profile`;
                     }
                 } catch (error) {
                     console.error('Error fetching profile:', error);

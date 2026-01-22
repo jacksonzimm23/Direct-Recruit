@@ -9,7 +9,7 @@ const validateRegistration = [
 const validatePlayerProfile = [
   body('first_name').trim().notEmpty().withMessage('First name required'),
   body('last_name').trim().notEmpty().withMessage('Last name required'),
-  body('high_school').optional({ nullable: true }).trim(),
+  body('team_name').optional({ nullable: true }).trim(),
   body('graduation_year').optional({ nullable: true }).custom((value) => {
     if (value === null || value === undefined) return true;
     const year = parseInt(value);
@@ -66,7 +66,7 @@ const validatePlayerProfile = [
 const validateCoachProfile = [
   body('first_name').trim().notEmpty().withMessage('First name required'),
   body('last_name').trim().notEmpty().withMessage('Last name required'),
-  body('college_name').optional({ nullable: true }).trim(),
+  body('team_name').optional({ nullable: true }).trim(),
   body('college_division').optional({ nullable: true }).trim(),
   body('position_title').optional({ nullable: true }).trim(),
 ];

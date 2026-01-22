@@ -52,7 +52,7 @@ Content-Type: application/json
 {
   "first_name": "John",
   "last_name": "Doe",
-  "high_school": "Lincoln High",
+  "team_name": "Lincoln High",
   "graduation_year": 2025,
   "city": "Denver",
   "state": "Colorado",
@@ -78,7 +78,7 @@ Content-Type: application/json
 {
   "first_name": "Mike",
   "last_name": "Smith",
-  "college_name": "CSU",
+  "team_name": "CSU",
   "college_division": "FBS",
   "position_title": "OC",
   "city": "Fort Collins",

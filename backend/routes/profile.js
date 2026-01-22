@@ -5,6 +5,7 @@ const CoachProfile = require('../models/CoachProfile');
 const OtherProfile = require('../models/OtherProfile');
 const User = require('../models/User');
 const ProfileView = require('../models/ProfileView');
+const Follow = require('../models/Follow');
 const { authMiddleware, requireRole } = require('../middleware/auth');
 const { validatePlayerProfile, validateCoachProfile, handleValidationErrors } = require('../middleware/validation');
 const { getSignedS3Url } = require('../utils/s3');
@@ -31,6 +32,95 @@ async function addSignedUrlsToProfiles(profiles) {
   if (!profiles || !Array.isArray(profiles)) return profiles;
 
   return await Promise.all(profiles.map(profile => addSignedUrlToProfile(profile)));
+}
+
+// Helper function to filter profile data for private profiles
+// Returns only header-level information (profile picture, name, username, basic info)
+// Excludes detailed content like bio, stats, academics, social links, etc.
+function getPrivateProfileData(profile, profileType) {
+  if (!profile) return null;
+
+  // Common fields visible for all private profiles (header section only)
+  const baseFields = {
+    user_id: profile.user_id,
+    first_name: profile.first_name,
+    last_name: profile.last_name,
+    username: profile.username,
+    profile_visibility: profile.profile_visibility,
+    followers_count: profile.followers_count,
+    following_count: profile.following_count,
+    created_at: profile.created_at,
+    // Mark this as a private profile response
+    is_private_view: true
+  };
+
+  if (profileType === 'player') {
+    return {
+      ...baseFields,
+      profile_image_url: profile.profile_image_url,
+      position: profile.position,
+      team_name: profile.team_name,
+      city: profile.city,
+      state: profile.state,
+      graduation_year: profile.graduation_year,
+      college_division: profile.college_division,
+      transfer: profile.transfer,
+      player_status: profile.player_status
+    };
+  } else if (profileType === 'coach') {
+    return {
+      ...baseFields,
+      profile_image_url: profile.profile_image_url,
+      position_title: profile.position_title,
+      team_name: profile.team_name,
+      school_name: profile.school_name,
+      city: profile.city,
+      state: profile.state,
+      college_division: profile.college_division,
+      coach_type: profile.coach_type
+    };
+  } else if (profileType === 'other') {
+    return {
+      ...baseFields,
+      profile_picture_url: profile.profile_picture_url,
+      subheader: profile.subheader,
+      company_name: profile.company_name,
+      is_nil_brand: profile.is_nil_brand
+    };
+  }
+
+  return baseFields;
+}
+
+// Helper function to check if viewer can see full profile
+// Returns access info - canView: false means show overlay on tabs, but we still return full profile data
+async function canViewFullProfile(viewerId, profileUserId) {
+  // Owner can always see their own full profile
+  if (viewerId === profileUserId) {
+    return { canView: true, reason: 'owner' };
+  }
+
+  // Check if profile is private
+  const isPrivate = await Follow.isPrivateProfile(profileUserId);
+  if (!isPrivate) {
+    return { canView: true, reason: 'public' };
+  }
+
+  // Check if viewer follows the private profile
+  const isFollowing = await Follow.isFollowing(viewerId, profileUserId);
+  if (isFollowing) {
+    return { canView: true, reason: 'following' };
+  }
+
+  // Check if there's a pending follow request
+  const hasPendingRequest = await Follow.hasPendingFollowRequest(viewerId, profileUserId);
+
+  // Return limited access - frontend will show overlay on tabs but still display profile header/info
+  return {
+    canView: false,
+    reason: 'private',
+    hasPendingRequest
+  };
 }
 
 // Create/Update Player Profile
@@ -168,9 +258,20 @@ router.get('/other/:userId', authMiddleware, async (req, res) => {
     if (!profile) {
       return res.status(404).json({ error: 'Profile not found' });
     }
+
+    // Check if viewer can see full profile
+    const viewAccess = await canViewFullProfile(req.userId, req.params.userId);
+
     // Convert S3 key to signed URL
     profile = await addSignedUrlToProfile(profile);
-    res.json({ profile });
+
+    // Always return full profile data, but indicate access level for overlay
+    res.json({
+      profile,
+      accessLevel: viewAccess.canView ? 'full' : 'limited',
+      accessReason: viewAccess.reason,
+      hasPendingRequest: viewAccess.hasPendingRequest || false
+    });
   } catch (error) {
     console.error('Get other profile error:', error);
     res.status(500).json({ error: 'Failed to fetch profile' });
@@ -184,9 +285,20 @@ router.get('/player/:userId', authMiddleware, async (req, res) => {
     if (!profile) {
       return res.status(404).json({ error: 'Profile not found' });
     }
+
+    // Check if viewer can see full profile
+    const viewAccess = await canViewFullProfile(req.userId, req.params.userId);
+
     // Convert S3 key to signed URL
     profile = await addSignedUrlToProfile(profile);
-    res.json({ profile });
+
+    // Always return full profile data, but indicate access level for overlay
+    res.json({
+      profile,
+      accessLevel: viewAccess.canView ? 'full' : 'limited',
+      accessReason: viewAccess.reason,
+      hasPendingRequest: viewAccess.hasPendingRequest || false
+    });
   } catch (error) {
     console.error('Get player profile error:', error);
     res.status(500).json({ error: 'Failed to fetch profile' });
@@ -200,9 +312,20 @@ router.get('/coach/:userId', authMiddleware, async (req, res) => {
     if (!profile) {
       return res.status(404).json({ error: 'Profile not found' });
     }
+
+    // Check if viewer can see full profile
+    const viewAccess = await canViewFullProfile(req.userId, req.params.userId);
+
     // Convert S3 key to signed URL
     profile = await addSignedUrlToProfile(profile);
-    res.json({ profile });
+
+    // Always return full profile data, but indicate access level for overlay
+    res.json({
+      profile,
+      accessLevel: viewAccess.canView ? 'full' : 'limited',
+      accessReason: viewAccess.reason,
+      hasPendingRequest: viewAccess.hasPendingRequest || false
+    });
   } catch (error) {
     console.error('Get coach profile error:', error);
     res.status(500).json({ error: 'Failed to fetch profile' });
@@ -407,26 +530,56 @@ router.get('/check-email/:email', async (req, res) => {
 router.get('/username/:username', authMiddleware, async (req, res) => {
   try {
     const { username } = req.params;
+    console.log('[GET /username] Request for username:', username);
+    console.log('[GET /username] Viewer userId:', req.userId);
 
-    let profile = await PlayerProfile.findByUsername(username);
+    let profile = null;
+    let profileType = null;
+
+    // Try to find profile in each table
+    profile = await PlayerProfile.findByUsername(username);
     if (profile) {
-      profile = await addSignedUrlToProfile(profile);
-      return res.json({ profile, type: 'player' });
+      profileType = 'player';
     }
 
-    profile = await CoachProfile.findByUsername(username);
-    if (profile) {
-      profile = await addSignedUrlToProfile(profile);
-      return res.json({ profile, type: 'coach' });
+    if (!profile) {
+      profile = await CoachProfile.findByUsername(username);
+      if (profile) {
+        profileType = 'coach';
+      }
     }
 
-    profile = await OtherProfile.findByUsername(username);
-    if (profile) {
-      profile = await addSignedUrlToProfile(profile);
-      return res.json({ profile, type: 'other' });
+    if (!profile) {
+      profile = await OtherProfile.findByUsername(username);
+      if (profile) {
+        profileType = 'other';
+      }
     }
 
-    res.status(404).json({ error: 'Profile not found' });
+    if (!profile) {
+      return res.status(404).json({ error: 'Profile not found' });
+    }
+
+    console.log('[GET /username] Found profile, user_id:', profile.user_id);
+    console.log('[GET /username] Profile type:', profileType);
+    console.log('[GET /username] Profile visibility from DB:', profile.profile_visibility);
+
+    // Check if viewer can see full profile
+    const viewAccess = await canViewFullProfile(req.userId, profile.user_id);
+    console.log('[GET /username] viewAccess result:', JSON.stringify(viewAccess));
+
+    // Add signed URL to profile image
+    profile = await addSignedUrlToProfile(profile);
+
+    // Always return full profile data, but indicate access level for overlay
+    console.log('[GET /username] Returning profile with accessLevel:', viewAccess.canView ? 'full' : 'limited');
+    return res.json({
+      profile,
+      type: profileType,
+      accessLevel: viewAccess.canView ? 'full' : 'limited',
+      accessReason: viewAccess.reason,
+      hasPendingRequest: viewAccess.hasPendingRequest || false
+    });
   } catch (error) {
     console.error('Get profile by username error:', error);
     res.status(500).json({ error: 'Failed to fetch profile' });
@@ -530,8 +683,8 @@ router.get('/suggested-connections', authMiddleware, async (req, res) => {
           ELSE ''
         END as subheader_line1,
         CASE
-          WHEN u.role = 'player' THEN COALESCE(pp.high_school, '')
-          WHEN u.role = 'coach' THEN COALESCE(cp.college_name, '')
+          WHEN u.role = 'player' THEN COALESCE(pp.team_name, '')
+          WHEN u.role = 'coach' THEN COALESCE(cp.team_name, '')
           WHEN u.role = 'other' THEN ''
           ELSE ''
         END as subheader_line2,

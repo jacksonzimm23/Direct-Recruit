@@ -271,15 +271,6 @@
     color: var(--white);
     margin-bottom: 0.5rem;
     white-space: nowrap;
-    display: inline;
-}
-
-/* Container for name + stars on same line */
-.profile-name-row {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    margin-bottom: 0.5rem;
 }
 
 .profile-position {
@@ -294,7 +285,6 @@
     color: rgba(254, 252, 251, 0.7);
     font-size: 0.95rem;
     line-height: 1.6;
-    white-space: nowrap;
 }
 
 .profile-username {

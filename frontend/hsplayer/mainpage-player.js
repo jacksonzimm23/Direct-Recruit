@@ -332,7 +332,7 @@ async function updateSidebarFooter() {
             } else if (userRole === 'coach') {
                 // Coach: Position Title, College, State
                 if (profile.position_title) parts.push(profile.position_title);
-                if (profile.college_name) parts.push(profile.college_name);
+                if (profile.team_name) parts.push(profile.team_name);
                 if (profile.state) parts.push(profile.state);
             }
             const roleText = parts.join(' • ') || (userRole === 'player' ? 'HS Player' : 'Coach');

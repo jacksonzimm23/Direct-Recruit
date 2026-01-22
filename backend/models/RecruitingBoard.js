@@ -125,7 +125,7 @@ class RecruitingBoard {
               cp.first_name as owner_first_name,
               cp.last_name as owner_last_name,
               cp.profile_image_url as owner_profile_image,
-              cp.college_name as owner_college
+              cp.team_name as owner_college
        FROM recruiting_boards rb
        LEFT JOIN coach_profiles cp ON rb.owner_user_id = cp.user_id
        WHERE rb.owner_user_id = $1 AND rb.is_personal = FALSE AND rb.class_year = 0
@@ -142,7 +142,7 @@ class RecruitingBoard {
               cp.first_name as owner_first_name,
               cp.last_name as owner_last_name,
               cp.profile_image_url as owner_profile_image,
-              cp.college_name as owner_college
+              cp.team_name as owner_college
        FROM recruiting_boards rb
        JOIN coach_profiles cp ON rb.owner_user_id = cp.user_id
        WHERE rb.class_year = 0
@@ -160,7 +160,7 @@ class RecruitingBoard {
               cp.first_name as owner_first_name,
               cp.last_name as owner_last_name,
               cp.profile_image_url as owner_profile_image,
-              cp.college_name as owner_college
+              cp.team_name as owner_college
        FROM recruiting_boards rb
        LEFT JOIN coach_profiles cp ON rb.owner_user_id = cp.user_id
        WHERE rb.id = $1 AND rb.class_year = 0`,
@@ -321,7 +321,7 @@ class RecruitingBoard {
     }
 
     const result = await pool.query(
-      `SELECT cp.user_id, cp.first_name, cp.last_name, cp.profile_image_url, cp.college_name, cp.username
+      `SELECT cp.user_id, cp.first_name, cp.last_name, cp.profile_image_url, cp.team_name, cp.username
        FROM coach_profiles cp
        WHERE cp.user_id = ANY($1::uuid[])`,
       [board.collab]

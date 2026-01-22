@@ -29,8 +29,15 @@ const PORT = process.env.PORT || 5000;
 
 app.set('io', io);
 
-// Middleware
-app.use(cors());
+// CORS configuration
+const allowedOrigins = process.env.NODE_ENV === 'production'
+  ? ['https://directrecruit.net', 'https://www.directrecruit.net']
+  : true; // Allow all origins in development
+
+app.use(cors({
+  origin: allowedOrigins,
+  credentials: true
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 // Serve static uploads BEFORE helmet to avoid security headers blocking images

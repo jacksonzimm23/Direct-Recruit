@@ -1,6 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
+const PlayerProfile = require('../models/PlayerProfile');
+const CoachProfile = require('../models/CoachProfile');
+const OtherProfile = require('../models/OtherProfile');
 const PendingEmailChange = require('../models/PendingEmailChange');
 const PendingPasswordReset = require('../models/PendingPasswordReset');
 const { authMiddleware } = require('../middleware/auth');
@@ -22,6 +25,76 @@ router.get('/account', authMiddleware, async (req, res) => {
   } catch (error) {
     console.error('Get account settings error:', error);
     res.status(500).json({ error: 'Failed to fetch account settings' });
+  }
+});
+
+// Update privacy settings (profile visibility, message permissions)
+router.put('/privacy', authMiddleware, async (req, res) => {
+  try {
+    const { profile_visibility, message_permissions } = req.body;
+
+    // Debug logging
+    console.log('[Settings] Privacy update request body:', req.body);
+    console.log('[Settings] profile_visibility:', JSON.stringify(profile_visibility), 'type:', typeof profile_visibility);
+    console.log('[Settings] message_permissions:', JSON.stringify(message_permissions), 'type:', typeof message_permissions);
+
+    // Get current user to determine their role
+    const user = await User.findById(req.userId);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Validate profile_visibility
+    const validVisibilities = ['everyone', 'private'];
+    if (profile_visibility && !validVisibilities.includes(profile_visibility)) {
+      return res.status(400).json({ error: 'Invalid profile visibility value' });
+    }
+
+    // Validate message_permissions (accept multiple formats for compatibility)
+    const validPermissions = ['everyone', 'followers', 'connections', 'verified', 'none'];
+    if (message_permissions && !validPermissions.includes(message_permissions)) {
+      return res.status(400).json({ error: 'Invalid message permissions value' });
+    }
+
+    // Update the appropriate profile based on user role
+    let updatedProfile = null;
+    const updateData = {};
+
+    if (profile_visibility) {
+      updateData.profile_visibility = profile_visibility;
+    }
+    // Only include message_permissions if it's provided and not empty
+    if (message_permissions && message_permissions.trim() !== '') {
+      updateData.message_permissions = message_permissions;
+    }
+
+    // Only update if there's something to update
+    if (Object.keys(updateData).length === 0) {
+      return res.status(400).json({ error: 'No valid settings to update' });
+    }
+
+    if (user.role === 'player') {
+      updatedProfile = await PlayerProfile.updatePrivacySettings(req.userId, updateData);
+    } else if (user.role === 'coach') {
+      updatedProfile = await CoachProfile.updatePrivacySettings(req.userId, updateData);
+    } else if (user.role === 'other') {
+      updatedProfile = await OtherProfile.updatePrivacySettings(req.userId, updateData);
+    } else {
+      return res.status(400).json({ error: 'Unknown user role' });
+    }
+
+    if (!updatedProfile) {
+      return res.status(404).json({ error: 'Profile not found' });
+    }
+
+    res.json({
+      message: 'Privacy settings updated successfully',
+      profile_visibility: updatedProfile.profile_visibility,
+      message_permissions: updatedProfile.message_permissions
+    });
+  } catch (error) {
+    console.error('Update privacy settings error:', error);
+    res.status(500).json({ error: 'Failed to update privacy settings' });
   }
 });
 

@@ -102,7 +102,7 @@ async function loadCurrentUser() {
                 } else {
                     // Default format for other user types
                     if (profile.position) parts.push(profile.position);
-                    if (profile.high_school) parts.push(profile.high_school);
+                    if (profile.team_name) parts.push(profile.team_name);
                     userRole.textContent = parts.join(' • ') || 'Player';
                 }
             }
@@ -343,7 +343,7 @@ function updateThreadHeader(participant) {
             } else if (participant.college_division && ['FBS', 'FCS', 'D2', 'D3', 'NAIA', 'NJCAA'].includes(participant.college_division)) {
                 // College Player: Position • College • Division
                 if (participant.position) parts.push(participant.position);
-                if (participant.high_school) parts.push(participant.high_school);
+                if (participant.team_name) parts.push(participant.team_name);
                 const division = participant.college_division;
                 if (division === 'FBS' || division === 'FCS') {
                     parts.push(`D1 ${division}`);
@@ -360,7 +360,7 @@ function updateThreadHeader(participant) {
                 }
 
                 if (participant.position) parts.push(participant.position);
-                if (participant.high_school) parts.push(participant.high_school);
+                if (participant.team_name) parts.push(participant.team_name);
                 if (participant.graduation_year) parts.push(`Class of ${participant.graduation_year}`);
                 roleText = parts.join(' • ') || 'Player';
                 threadUserRole.style.color = '';
@@ -371,7 +371,7 @@ function updateThreadHeader(participant) {
             if (participant.college_division) {
                 // College Coach: College • Division
                 const parts = [];
-                if (participant.college_name) parts.push(participant.college_name);
+                if (participant.team_name) parts.push(participant.team_name);
                 const division = participant.college_division;
                 if (division === 'FBS' || division === 'FCS') {
                     parts.push(`D1 ${division}`);
@@ -382,7 +382,7 @@ function updateThreadHeader(participant) {
             } else {
                 // HS Coach: School, State (comma-separated like sidebar)
                 const parts = [];
-                if (participant.college_name) parts.push(participant.college_name);
+                if (participant.team_name) parts.push(participant.team_name);
                 if (participant.state) parts.push(participant.state);
                 roleText = parts.join(', ') || 'HS Coach';
             }
@@ -734,33 +734,29 @@ async function navigateToProfile(userId, role) {
             // Store conversation context for when user comes back
             sessionStorage.setItem('messagesReturnConversationId', currentConversationId);
 
-            // Navigate to the appropriate profile page based on role
+            // Navigate to the appropriate profile folder based on role and profile data
+            let folder = 'hsplayer';
             if (role === 'coach') {
-                // Determine if coach is college or hs based on their profile
-                const isCollegeCoach = response.profile.college_division &&
-                    ['FBS', 'FCS', 'D2', 'D3', 'NAIA', 'NJCAA'].includes(response.profile.college_division);
-                if (isCollegeCoach) {
-                    window.location.href = `my-profile.html?username=${response.profile.username}&from=messages`;
-                } else {
-                    window.location.href = `../../hscoach/tabs/my-profile.html?username=${response.profile.username}&from=messages`;
-                }
+                // Check if college coach based on division
+                const profile = response.profile;
+                const hasCollegeDivision = profile.college_division &&
+                    ['FBS', 'FCS', 'D2', 'D3', 'NAIA', 'NJCAA', 'JUCO'].includes(profile.college_division);
+                folder = hasCollegeDivision ? 'collegecoach' : 'hscoach';
             } else if (role === 'other') {
-                // Other profile type
-                window.location.href = `../../other/tabs/my-profile.html?username=${response.profile.username}&from=messages`;
+                folder = 'other';
             } else {
-                // For players, check if transfer player first, then college or hs
-                const isTransferPlayer = response.profile.transfer === 'y';
-                const isCollegePlayer = response.profile.college_division &&
-                    ['FBS', 'FCS', 'D2', 'D3', 'NAIA', 'NJCAA'].includes(response.profile.college_division);
-
-                if (isTransferPlayer) {
-                    window.location.href = `../../transferplayer/tabs/my-profile.html?username=${response.profile.username}&from=messages`;
-                } else if (isCollegePlayer) {
-                    window.location.href = `../../collegeplayer/tabs/my-profile.html?username=${response.profile.username}&from=messages`;
+                // Player - check for transfer or college
+                const profile = response.profile;
+                if (profile.transfer === 'y' || profile.is_transfer_player) {
+                    folder = 'transferplayer';
+                } else if (profile.college_division &&
+                    ['FBS', 'FCS', 'D2', 'D3', 'NAIA', 'NJCAA', 'JUCO'].includes(profile.college_division)) {
+                    folder = 'collegeplayer';
                 } else {
-                    window.location.href = `../../hsplayer/tabs/my-profile.html?username=${response.profile.username}&from=messages`;
+                    folder = 'hsplayer';
                 }
             }
+            window.location.href = `../../${folder}/tabs/my-profile.html?username=${response.profile.username}&from=messages`;
         }
     } catch (error) {
         console.error('Failed to get profile:', error);

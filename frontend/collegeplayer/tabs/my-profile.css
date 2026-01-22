@@ -266,6 +266,7 @@
     font-weight: 900;
     color: var(--white);
     margin-bottom: 0.5rem;
+    white-space: nowrap;
 }
 
 .profile-position {

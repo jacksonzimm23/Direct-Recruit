@@ -75,8 +75,8 @@ class ProfileView {
           WHEN u.role = 'coach' THEN cp.position_title
         END as position_or_title,
         CASE
-          WHEN u.role = 'player' THEN pp.high_school
-          WHEN u.role = 'coach' THEN cp.college_name
+          WHEN u.role = 'player' THEN pp.team_name
+          WHEN u.role = 'coach' THEN cp.team_name
         END as school_or_college,
         CASE
           WHEN u.role = 'player' THEN pp.college_division

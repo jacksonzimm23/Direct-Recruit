@@ -121,6 +121,33 @@ class OtherProfile {
       hasMore: offset + result.rows.length < total
     };
   }
+
+  static async updatePrivacySettings(userId, settings) {
+    const fields = [];
+    const values = [];
+    let paramCount = 1;
+
+    if (settings.profile_visibility !== undefined) {
+      fields.push(`profile_visibility = $${paramCount}`);
+      values.push(settings.profile_visibility);
+      paramCount++;
+    }
+
+    if (settings.message_permissions !== undefined) {
+      fields.push(`message_permissions = $${paramCount}`);
+      values.push(settings.message_permissions);
+      paramCount++;
+    }
+
+    if (fields.length === 0) {
+      return null;
+    }
+
+    values.push(userId);
+    const query = `UPDATE other_profiles SET ${fields.join(', ')} WHERE user_id = $${paramCount} RETURNING *`;
+    const result = await pool.query(query, values);
+    return result.rows[0];
+  }
 }
 
 module.exports = OtherProfile;

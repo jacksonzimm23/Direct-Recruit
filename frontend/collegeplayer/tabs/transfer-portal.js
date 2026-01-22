@@ -350,7 +350,7 @@ async function showInfoFormModal() {
                 <div class="form-row">
                     <div class="form-group">
                         <label for="transferPrevSchool">Previous School <span class="required">*</span></label>
-                        <input type="text" id="transferPrevSchool" name="prevSchool" required value="${profileData.high_school || ''}" placeholder="Enter previous school">
+                        <input type="text" id="transferPrevSchool" name="prevSchool" required value="${profileData.team_name || ''}" placeholder="Enter previous school">
                     </div>
                     <div class="form-group">
                         <label for="transferPrevDivision">Previous Division <span class="required">*</span></label>
@@ -681,7 +681,7 @@ async function showInfoFormModal() {
             position: positions.join('/'),
             height: `${heightFt}' ${heightIn}"`,
             weight: parseInt(weight),
-            high_school: prevSchool,
+            team_name: prevSchool,
             college_division: prevDivision,
             state: prevState,
             gpa: parseFloat(gpa),
