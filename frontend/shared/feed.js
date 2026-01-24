@@ -38,23 +38,30 @@ class FeedManager {
 
     async loadCurrentUser() {
         try {
-            const token = localStorage.getItem('auth_token');
-            if (!token) {
+            if (!API.isAuthenticated()) {
                 window.location.href = '../landingpage/signin.html';
                 return;
             }
 
-            const payload = JSON.parse(atob(token.split('.')[1]));
-            this.currentUserId = payload.userId;
+            // Get user data from API
+            const response = await API.get('/auth/me');
+            this.currentUserId = response.user.id;
             this.currentUserData = {
-                userId: payload.userId,
-                role: payload.role
+                userId: response.user.id,
+                role: response.user.role
             };
 
-            // Update create post avatar
-            await this.updateCreatePostAvatar();
+            // Update create post avatar using the already-fetched response
+            if (response.profile?.profile_image_url) {
+                const avatar = document.querySelector('.create-post-box .post-avatar-circle');
+                if (avatar) {
+                    avatar.innerHTML = `<img src="${response.profile.profile_image_url}" alt="Your avatar" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
+                }
+            }
         } catch (error) {
             console.error('Error loading user:', error);
+            // If API call fails (unauthorized), redirect to signin
+            window.location.href = '../landingpage/signin.html';
         }
     }
 

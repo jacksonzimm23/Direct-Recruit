@@ -156,10 +156,22 @@ function renderConversationsList() {
         const participant = conv.participants && conv.participants[0] ? conv.participants[0] : {};
         const isActive = conv.id === currentConversationId;
 
+        // Parse PostgreSQL timestamp format (e.g., "2026-01-23 04:19:51.668571+00")
+        const parseTimestamp = (ts) => {
+            if (!ts) return null;
+            // Replace space with T for ISO format compatibility and ensure timezone
+            const isoString = ts.replace(' ', 'T').replace(/\+00$/, 'Z').replace(/([^Z])$/, '$1Z');
+            return new Date(isoString);
+        };
+
         // Check if conversation has unread messages (last message is newer than last_read_at and not from current user)
-        const hasUnread = conv.last_message_time &&
-                          conv.last_message_sender_id !== currentUserId &&
-                          (!conv.last_read_at || new Date(conv.last_message_time) > new Date(conv.last_read_at));
+        const lastMsgTime = parseTimestamp(conv.last_message_time);
+        const lastReadTime = parseTimestamp(conv.last_read_at);
+        // Use string comparison for UUIDs to avoid type mismatch issues
+        const senderIsDifferent = conv.last_message_sender_id && String(conv.last_message_sender_id) !== String(currentUserId);
+        const hasUnread = lastMsgTime &&
+                          senderIsDifferent &&
+                          (!lastReadTime || lastMsgTime > lastReadTime);
 
         return `
             <div class="conversation-item ${isActive ? 'active' : ''} ${hasUnread ? 'unread' : ''}"
@@ -212,6 +224,12 @@ async function selectConversation(conversationId) {
 
     currentConversationId = conversationId;
 
+    // Update the local conversation's last_read_at to now, so it won't show as unread on re-render
+    const convIndex = conversations.findIndex(c => c.id === conversationId);
+    if (convIndex !== -1) {
+        conversations[convIndex].last_read_at = new Date().toISOString();
+    }
+
     // Show thread header and input container
     const threadHeader = document.getElementById('messageThreadHeader');
     const inputContainer = document.getElementById('messageInputContainer');
@@ -239,11 +257,14 @@ async function selectConversation(conversationId) {
     }
 }
 
-async function loadMessages(conversationId) {
+async function loadMessages(conversationId, markRead = true) {
     const messageThreadContent = document.getElementById('messageThreadContent');
 
     try {
-        const response = await API.get(`/messages/conversations/${conversationId}`);
+        const url = markRead
+            ? `/messages/conversations/${conversationId}`
+            : `/messages/conversations/${conversationId}?markRead=false`;
+        const response = await API.get(url);
         const messages = response.messages || [];
 
         renderMessages(messages.reverse()); // Reverse to show oldest first
@@ -636,13 +657,10 @@ function addMobileBackButton() {
 }
 
 function startPolling() {
-    // Poll for new messages every 5 seconds
+    // Poll for new messages every 5 seconds (only when a conversation is open)
     pollingInterval = setInterval(async () => {
-        await loadConversations();
-
-        // If we have a conversation selected, reload its messages
         if (currentConversationId) {
-            await loadMessages(currentConversationId);
+            await loadMessages(currentConversationId, false); // Don't mark as read during polling
         }
     }, 5000);
 }

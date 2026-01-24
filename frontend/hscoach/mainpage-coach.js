@@ -99,16 +99,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         });
     });
 
-    // Post options buttons
-    const postOptionBtns = document.querySelectorAll('.post-option-btn');
-    postOptionBtns.forEach(btn => {
-        btn.addEventListener('click', function() {
-            const title = this.getAttribute('title');
-            console.log('Post option clicked:', title);
-            alert(`${title} functionality will be connected to your backend.`);
-        });
-    });
-
+    // Post options buttons - handled by feed.js for media upload functionality
 
     // Trending items
     const trendingItems = document.querySelectorAll('.trending-item');
@@ -120,15 +111,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         });
     });
 
-    // Post more button
-    const postMoreBtns = document.querySelectorAll('.post-more-btn');
-    postMoreBtns.forEach(btn => {
-        btn.addEventListener('click', function(e) {
-            e.stopPropagation();
-            console.log('Post options clicked');
-            alert('Post options menu (edit, delete, report) will be implemented.');
-        });
-    });
+    // Post more button - handled by feed.js for post options menu
 
     // Auto-resize textarea
     if (postInput) {
@@ -308,15 +291,11 @@ function showLogoutModal() {
     });
 
     // Handle confirm
-    document.getElementById('logoutConfirm').addEventListener('click', () => {
-        // Clear authentication
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
+    document.getElementById('logoutConfirm').addEventListener('click', async () => {
         // Clear cached sidebar profile
         localStorage.removeItem('sidebarFooterProfile');
-        // Redirect to landing page - check if we're in the tabs folder
-        const isInTabsFolder = window.location.pathname.includes('/tabs/');
-        window.location.href = isInTabsFolder ? '../../landingpage/index.html' : '../landingpage/index.html';
+        // Clear authentication and redirect
+        await API.auth.logout();
     });
 
     // Close on overlay click
@@ -515,15 +494,11 @@ function initMobileSidebar() {
 
     // Logout button
     if (mobileSidebarLogout) {
-        mobileSidebarLogout.addEventListener('click', function() {
+        mobileSidebarLogout.addEventListener('click', async function() {
             closeMobileSidebar();
-            // Clear authentication
-            localStorage.removeItem('token');
-            localStorage.removeItem('user');
             localStorage.removeItem('sidebarFooterProfile');
-            // Redirect to landing page
-            const isInTabsFolder = window.location.pathname.includes('/tabs/');
-            window.location.href = isInTabsFolder ? '../../landingpage/index.html' : '../landingpage/index.html';
+            // Clear authentication and redirect
+            await API.auth.logout();
         });
     }
 }

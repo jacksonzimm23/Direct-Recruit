@@ -1,19 +1,9 @@
 // API Configuration
-const API_BASE_URL = 'http://localhost:5000/api';
+// Use 127.0.0.1 to match the frontend origin for proper cookie handling
+const API_BASE_URL = 'http://127.0.0.1:5000/api';
 
 // Storage keys
-const TOKEN_KEY = 'auth_token';
 const USER_KEY = 'user_data';
-
-// Get stored token
-function getToken() {
-    return localStorage.getItem(TOKEN_KEY);
-}
-
-// Store token
-function setToken(token) {
-    localStorage.setItem(TOKEN_KEY, token);
-}
 
 // Get stored user data
 function getUser() {
@@ -26,25 +16,23 @@ function setUser(user) {
     localStorage.setItem(USER_KEY, JSON.stringify(user));
 }
 
-// Clear auth data
+// Clear auth data (user data from localStorage, cookie cleared by backend)
 function clearAuth() {
-    localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
 }
 
-// Check if user is authenticated
+// Check if user is authenticated (based on cached user data)
+// For actual validation, use authAPI.getCurrentUser()
 function isAuthenticated() {
-    return !!getToken();
+    return !!getUser();
 }
 
 // API Request wrapper
 async function apiRequest(endpoint, options = {}) {
-    const token = getToken();
-
     const config = {
+        credentials: 'include',
         headers: {
             'Content-Type': 'application/json',
-            ...(token && { 'Authorization': `Bearer ${token}` }),
             ...options.headers
         },
         ...options
@@ -91,7 +79,6 @@ const authAPI = {
             body: JSON.stringify({ email, password, role })
         });
 
-        setToken(data.token);
         setUser(data.user);
         return data;
     },
@@ -102,12 +89,16 @@ const authAPI = {
             body: JSON.stringify({ email, password })
         });
 
-        setToken(data.token);
         setUser(data.user);
         return data;
     },
 
-    logout: () => {
+    logout: async () => {
+        try {
+            await apiRequest('/auth/logout', { method: 'POST' });
+        } catch (error) {
+            console.error('Logout error:', error);
+        }
         clearAuth();
         window.location.href = '/frontend/landingpage/index.html';
     },
@@ -366,33 +357,9 @@ const uploadAPI = {
         const formData = new FormData();
         formData.append('profile_image', file);
 
-        const token = getToken();
         const response = await fetch(`${API_BASE_URL}/upload/profile-image`, {
             method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${token}`
-            },
-            body: formData
-        });
-
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.error || 'Upload failed');
-        }
-
-        return await response.json();
-    },
-
-    uploadHighlightVideo: async (file) => {
-        const formData = new FormData();
-        formData.append('highlight_video', file);
-
-        const token = getToken();
-        const response = await fetch(`${API_BASE_URL}/upload/highlight-video`, {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${token}`
-            },
+            credentials: 'include',
             body: formData
         });
 
@@ -413,12 +380,9 @@ const uploadAPI = {
             formData.append('media', file);
         });
 
-        const token = getToken();
         const response = await fetch(`${API_BASE_URL}/upload/post-media`, {
             method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${token}`
-            },
+            credentials: 'include',
             body: formData
         });
 
@@ -511,8 +475,6 @@ const API = {
     notifications: notificationsAPI,
 
     // Auth helpers
-    getToken,
-    setToken,
     getUser,
     setUser,
     clearAuth,

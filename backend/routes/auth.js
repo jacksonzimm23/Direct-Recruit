@@ -11,6 +11,19 @@ const { authLimiter } = require('../middleware/rateLimit');
 const { getSignedS3Url } = require('../utils/s3');
 const cognito = require('../utils/cognito');
 
+// Cookie configuration
+const COOKIE_OPTIONS = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === 'production',
+  sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
+  maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+};
+
+// Helper to set auth cookie
+function setAuthCookie(res, token) {
+  res.cookie('token', token, COOKIE_OPTIONS);
+}
+
 // Helper function to convert S3 key to signed URL in profile
 async function addSignedUrlToProfile(profile) {
   if (!profile) return profile;
@@ -66,9 +79,10 @@ router.post('/register', authLimiter, validateRegistration, handleValidationErro
     const user = await User.create({ email, role, cognitoSub: cognitoResult.userSub });
     const token = generateToken(user.id, user.role);
 
+    setAuthCookie(res, token);
+
     res.status(201).json({
       message: 'User registered successfully. Please check your email for verification code.',
-      token,
       user: {
         id: user.id,
         email: user.email,
@@ -102,9 +116,10 @@ router.post('/verify-email', authLimiter, async (req, res) => {
       // Generate token for auto-login
       const token = generateToken(user.id, user.role);
 
+      setAuthCookie(res, token);
+
       res.json({
         message: 'Email verified successfully',
-        token,
         user: {
           id: user.id,
           email: user.email,
@@ -187,9 +202,10 @@ router.post('/login', authLimiter, async (req, res) => {
     await User.updateLastLogin(user.id);
     const token = generateToken(user.id, user.role);
 
+    setAuthCookie(res, token);
+
     res.json({
       message: 'Login successful',
-      token,
       user: {
         id: user.id,
         email: user.email,
@@ -201,6 +217,16 @@ router.post('/login', authLimiter, async (req, res) => {
     console.error('Login error:', error);
     res.status(500).json({ error: 'Login failed' });
   }
+});
+
+// Logout - clear auth cookie
+router.post('/logout', (req, res) => {
+  res.clearCookie('token', {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax'
+  });
+  res.json({ message: 'Logged out successfully' });
 });
 
 // Forgot password - initiate reset

@@ -1,9 +1,26 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
+// UUID validation regex
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+// Middleware to validate UUID parameters
+const validateUUID = (...paramNames) => {
+  return (req, res, next) => {
+    for (const paramName of paramNames) {
+      const value = req.params[paramName];
+      if (value && !UUID_REGEX.test(value)) {
+        return res.status(400).json({ error: 'Invalid ID format' });
+      }
+    }
+    next();
+  };
+};
+
 const authMiddleware = async (req, res, next) => {
   try {
-    const token = req.header('Authorization')?.replace('Bearer ', '');
+    // Read token from cookie (primary) or Authorization header (fallback for WebSocket)
+    const token = req.cookies?.token || req.header('Authorization')?.replace('Bearer ', '');
 
     if (!token) {
       return res.status(401).json({ error: 'Authentication required' });
@@ -33,4 +50,4 @@ const requireRole = (...roles) => {
   };
 };
 
-module.exports = { authMiddleware, requireRole };
+module.exports = { authMiddleware, requireRole, validateUUID };

@@ -21,9 +21,7 @@ if (document.getElementById('signinForm')) {
                 // Fetch player profile to determine if high school or college player
                 try {
                     const meResponse = await fetch(`${window.API_BASE_URL || 'http://localhost:5000/api'}/auth/me`, {
-                        headers: {
-                            'Authorization': `Bearer ${data.token}`
-                        }
+                        credentials: 'include'
                     });
                     const meData = await meResponse.json();
 
@@ -51,9 +49,7 @@ if (document.getElementById('signinForm')) {
                 // Fetch coach profile to determine if high school or college coach
                 try {
                     const meResponse = await fetch(`${window.API_BASE_URL || 'http://localhost:5000/api'}/auth/me`, {
-                        headers: {
-                            'Authorization': `Bearer ${data.token}`
-                        }
+                        credentials: 'include'
                     });
                     const meData = await meResponse.json();
 

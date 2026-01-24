@@ -1,5 +1,10 @@
-const { Pool } = require('pg');
+const { Pool, types } = require('pg');
 require('dotenv').config();
+
+// Override how pg parses TIMESTAMPTZ - return raw string without timezone conversion
+// This prevents the pg driver from misinterpreting timezone data
+types.setTypeParser(1184, (val) => val); // TIMESTAMPTZ
+types.setTypeParser(1114, (val) => val); // TIMESTAMP
 
 const pool = new Pool({
   host: process.env.DB_HOST,
@@ -10,7 +15,14 @@ const pool = new Pool({
   max: 20,
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 10000,
-  ssl: process.env.DB_HOST !== 'localhost' ? { rejectUnauthorized: false } : false,
+  ssl: process.env.DB_HOST !== 'localhost' ? {
+    rejectUnauthorized: process.env.NODE_ENV === 'production'
+  } : false,
+});
+
+// Set timezone to UTC for all connections to ensure consistent timestamp handling
+pool.on('connect', (client) => {
+  client.query("SET timezone = 'UTC'");
 });
 
 pool.on('error', (err) => {

@@ -6,7 +6,7 @@ const PlayerProfile = require('../models/PlayerProfile');
 const CoachProfile = require('../models/CoachProfile');
 const User = require('../models/User');
 const pool = require('../config/database');
-const { authMiddleware } = require('../middleware/auth');
+const { authMiddleware, validateUUID } = require('../middleware/auth');
 const { body, validationResult } = require('express-validator');
 const { messageLimiter } = require('../middleware/rateLimit');
 const { getSignedS3Url } = require('../utils/s3');
@@ -96,7 +96,7 @@ router.post('/conversations', authMiddleware, [
 });
 
 // Get messages in a conversation
-router.get('/conversations/:conversationId', authMiddleware, async (req, res) => {
+router.get('/conversations/:conversationId', authMiddleware, validateUUID('conversationId'), async (req, res) => {
   try {
     const { conversationId } = req.params;
 
@@ -107,11 +107,14 @@ router.get('/conversations/:conversationId', authMiddleware, async (req, res) =>
 
     const limit = parseInt(req.query.limit) || 50;
     const offset = parseInt(req.query.offset) || 0;
+    const markRead = req.query.markRead !== 'false'; // Default to true, only skip if explicitly 'false'
 
     const messages = await Message.getConversationMessages(conversationId, limit, offset);
 
-    // Mark conversation as read when user opens it
-    await Message.markConversationAsRead(conversationId, req.userId);
+    // Mark conversation as read when user opens it (but not during polling)
+    if (markRead) {
+      await Message.markConversationAsRead(conversationId, req.userId);
+    }
 
     res.json({ messages, count: messages.length });
   } catch (error) {
@@ -121,7 +124,7 @@ router.get('/conversations/:conversationId', authMiddleware, async (req, res) =>
 });
 
 // Send message
-router.post('/conversations/:conversationId/messages', authMiddleware, messageLimiter, [
+router.post('/conversations/:conversationId/messages', authMiddleware, validateUUID('conversationId'), messageLimiter, [
   body('content').trim().notEmpty().withMessage('Message content required')
 ], async (req, res) => {
   const errors = validationResult(req);
@@ -187,7 +190,7 @@ router.post('/conversations/:conversationId/messages', authMiddleware, messageLi
 });
 
 // Hide/delete conversation for current user only
-router.delete('/conversations/:conversationId', authMiddleware, async (req, res) => {
+router.delete('/conversations/:conversationId', authMiddleware, validateUUID('conversationId'), async (req, res) => {
   try {
     const { conversationId } = req.params;
 

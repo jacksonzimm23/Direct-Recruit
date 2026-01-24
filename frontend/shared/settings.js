@@ -21,18 +21,14 @@ document.addEventListener('DOMContentLoaded', function() {
 // Load user settings from API or localStorage
 async function loadUserSettings() {
     try {
-        const token = localStorage.getItem('auth_token');
-
-        if (!token) {
+        if (!API.isAuthenticated()) {
             return;
         }
 
         const apiUrl = `${window.API_BASE_URL || 'http://localhost:5000/api'}/auth/me`;
 
         const response = await fetch(apiUrl, {
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
+            credentials: 'include'
         });
 
         if (response.ok) {
@@ -264,14 +260,12 @@ async function saveSettings() {
     console.log('Saving settings:', formData);
 
     try {
-        const token = localStorage.getItem('auth_token');
-
         // Save privacy settings (profile visibility, message permissions)
         const response = await fetch(`${window.API_BASE_URL || 'http://localhost:5000/api'}/settings/privacy`, {
             method: 'PUT',
+            credentials: 'include',
             headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
+                'Content-Type': 'application/json'
             },
             body: JSON.stringify({
                 profile_visibility: formData.profileVisibility,
@@ -450,12 +444,11 @@ async function handleDeleteAccount() {
     clearDeleteAccountError();
 
     try {
-        const token = localStorage.getItem('auth_token');
         const response = await fetch(`${window.API_BASE_URL || 'http://localhost:5000/api'}/settings/account/delete`, {
             method: 'DELETE',
+            credentials: 'include',
             headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
+                'Content-Type': 'application/json'
             },
             body: JSON.stringify({ password })
         });
@@ -470,8 +463,7 @@ async function handleDeleteAccount() {
         closeDeleteAccountModal();
 
         // Clear all auth data
-        localStorage.removeItem('auth_token');
-        localStorage.removeItem('user_data');
+        API.clearAuth();
         localStorage.removeItem('userSettings');
 
         // Show success notification briefly then redirect
@@ -651,12 +643,11 @@ async function handlePasswordChange(button) {
     button.disabled = true;
 
     try {
-        const token = localStorage.getItem('auth_token');
         const response = await fetch(`${window.API_BASE_URL || 'http://localhost:5000/api'}/settings/password/change`, {
             method: 'POST',
+            credentials: 'include',
             headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
+                'Content-Type': 'application/json'
             },
             body: JSON.stringify({ currentPassword, newPassword })
         });
@@ -793,7 +784,6 @@ function hideEmailMatchMessage() {
 
 async function checkEmailAvailability(email) {
     try {
-        const token = localStorage.getItem('auth_token');
         const currentEmail = document.getElementById('currentEmail')?.value;
 
         // Don't check if it's the same as current email
@@ -803,9 +793,7 @@ async function checkEmailAvailability(email) {
         }
 
         const response = await fetch(`${window.API_BASE_URL || 'http://localhost:5000/api'}/settings/email/check-availability?email=${encodeURIComponent(email)}`, {
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
+            credentials: 'include'
         });
 
         const data = await response.json();
@@ -990,12 +978,11 @@ async function handleEmailChangeRequest(button) {
     button.disabled = true;
 
     try {
-        const token = localStorage.getItem('auth_token');
         const response = await fetch(`${window.API_BASE_URL || 'http://localhost:5000/api'}/settings/email/request-change`, {
             method: 'POST',
+            credentials: 'include',
             headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
+                'Content-Type': 'application/json'
             },
             body: JSON.stringify({ newEmail, password })
         });
@@ -1107,12 +1094,11 @@ async function handleEmailVerification() {
     verifyBtn.disabled = true;
 
     try {
-        const token = localStorage.getItem('auth_token');
         const response = await fetch(`${window.API_BASE_URL || 'http://localhost:5000/api'}/settings/email/verify-change`, {
             method: 'POST',
+            credentials: 'include',
             headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
+                'Content-Type': 'application/json'
             },
             body: JSON.stringify({
                 code: code
@@ -1200,12 +1186,11 @@ async function handleResendEmailCode() {
     resendBtn.disabled = true;
 
     try {
-        const token = localStorage.getItem('auth_token');
         const response = await fetch(`${window.API_BASE_URL || 'http://localhost:5000/api'}/settings/email/resend-code`, {
             method: 'POST',
+            credentials: 'include',
             headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
+                'Content-Type': 'application/json'
             }
         });
 
@@ -1689,14 +1674,13 @@ function closeForgotPasswordModal() {
 
 async function cancelPendingReset() {
     try {
-        const token = localStorage.getItem('auth_token');
-        if (!token) return;
+        if (!API.isAuthenticated()) return;
 
         await fetch(`${window.API_BASE_URL || 'http://localhost:5000/api'}/settings/password/forgot/cancel`, {
             method: 'POST',
+            credentials: 'include',
             headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
+                'Content-Type': 'application/json'
             }
         });
     } catch (error) {
@@ -1800,12 +1784,11 @@ async function handleSendResetCode() {
     clearForgotPasswordErrors();
 
     try {
-        const token = localStorage.getItem('auth_token');
         const response = await fetch(`${window.API_BASE_URL || 'http://localhost:5000/api'}/settings/password/forgot/request`, {
             method: 'POST',
+            credentials: 'include',
             headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
+                'Content-Type': 'application/json'
             }
         });
 
@@ -1858,12 +1841,11 @@ async function handleVerifyResetCode() {
     clearForgotPasswordErrors();
 
     try {
-        const token = localStorage.getItem('auth_token');
         const response = await fetch(`${window.API_BASE_URL || 'http://localhost:5000/api'}/settings/password/forgot/verify`, {
             method: 'POST',
+            credentials: 'include',
             headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
+                'Content-Type': 'application/json'
             },
             body: JSON.stringify({ code })
         });
@@ -1906,12 +1888,11 @@ async function handleResendResetCode() {
     clearForgotPasswordErrors();
 
     try {
-        const token = localStorage.getItem('auth_token');
         const response = await fetch(`${window.API_BASE_URL || 'http://localhost:5000/api'}/settings/password/forgot/resend`, {
             method: 'POST',
+            credentials: 'include',
             headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
+                'Content-Type': 'application/json'
             }
         });
 
@@ -2008,12 +1989,11 @@ async function handleSetNewPassword() {
     clearForgotPasswordErrors();
 
     try {
-        const token = localStorage.getItem('auth_token');
         const response = await fetch(`${window.API_BASE_URL || 'http://localhost:5000/api'}/settings/password/forgot/set`, {
             method: 'POST',
+            credentials: 'include',
             headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
+                'Content-Type': 'application/json'
             },
             body: JSON.stringify({ newPassword })
         });
@@ -2083,12 +2063,11 @@ async function handleVerifyCognitoCode() {
     clearForgotPasswordErrors();
 
     try {
-        const token = localStorage.getItem('auth_token');
         const response = await fetch(`${window.API_BASE_URL || 'http://localhost:5000/api'}/settings/password/forgot/set`, {
             method: 'POST',
+            credentials: 'include',
             headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
+                'Content-Type': 'application/json'
             },
             body: JSON.stringify({
                 newPassword: forgotPasswordData.newPassword,

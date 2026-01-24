@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', async function() {
     console.log('[profile-form.js] DOMContentLoaded fired');
-    console.log('[profile-form.js] auth_token in localStorage:', localStorage.getItem('auth_token') ? 'EXISTS' : 'NONE');
+    console.log('[profile-form.js] user authenticated:', API.isAuthenticated() ? 'YES' : 'NO');
 
     // This is a CREATE profile page - do NOT load existing profile data
     // If user is logged in and tries to create a new profile, they should start fresh
@@ -381,26 +381,22 @@ document.addEventListener('DOMContentLoaded', async function() {
 async function loadExistingProfile() {
     console.log('[loadExistingProfile] Starting...');
     try {
-        const token = localStorage.getItem('auth_token');
-        console.log('[loadExistingProfile] Token exists:', !!token);
-        if (!token) {
-            console.log('[loadExistingProfile] No token - fresh form for new user');
-            return; // No token, user is creating new profile
+        if (!API.isAuthenticated()) {
+            console.log('[loadExistingProfile] Not authenticated - fresh form for new user');
+            return; // Not authenticated, user is creating new profile
         }
 
         console.log('[loadExistingProfile] Fetching user profile from API...');
         const response = await fetch(`${window.API_BASE_URL || 'http://localhost:5000/api'}/auth/me`, {
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
+            credentials: 'include'
         });
 
         console.log('[loadExistingProfile] API response status:', response.status);
 
-        // If unauthorized, clear the invalid token and continue with new profile creation
+        // If unauthorized, clear auth data and continue with new profile creation
         if (response.status === 401) {
-            console.log('[loadExistingProfile] 401 Unauthorized - clearing token');
-            localStorage.removeItem('auth_token');
+            console.log('[loadExistingProfile] 401 Unauthorized - clearing auth');
+            API.clearAuth();
             return;
         }
 

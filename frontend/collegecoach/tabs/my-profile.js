@@ -704,12 +704,9 @@ function showLogoutModal(userFolder) {
     });
 
     // Handle confirm
-    document.getElementById('logoutConfirm').addEventListener('click', () => {
-        // Clear authentication
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        // Redirect to landing page
-        window.location.href = '/frontend/landingpage/index.html';
+    document.getElementById('logoutConfirm').addEventListener('click', async () => {
+        // Clear authentication and redirect
+        await API.auth.logout();
     });
 
     // Close on overlay click
@@ -745,6 +742,12 @@ async function loadProfileByUsername(username) {
             viewingUserId = response.profile.user_id;
             isOwnProfile = currentUserId === viewingUserId;
             displayProfile(response.profile, response.type, response.accessLevel, response.hasPendingRequest);
+
+            // Remove sensitive DOM elements when viewing another profile
+            // This prevents data from being visible in Elements inspector
+            if (!isOwnProfile) {
+                removeSensitiveElementsForOtherProfile();
+            }
         } else {
             showError('Profile not found');
         }
@@ -868,6 +871,63 @@ async function displayProfile(profile, type, accessLevel = 'full', hasPendingReq
         addPrivateProfileOverlay();
         disableFollowLinksForPrivateProfile();
     }
+}
+
+// Remove sensitive DOM elements when viewing another user's profile
+// This prevents data from being visible in the Elements inspector
+function removeSensitiveElementsForOtherProfile() {
+    // Remove right sidebar widget content (profile views, etc.)
+    const profileStatsWidget = document.getElementById('profileStatsWidget');
+    if (profileStatsWidget) {
+        profileStatsWidget.remove();
+    }
+
+    // Remove mobile profile views link
+    const mobileProfileViewsLink = document.getElementById('mobileProfileViewsLink');
+    if (mobileProfileViewsLink) {
+        mobileProfileViewsLink.remove();
+    }
+
+    // Remove all edit modals to prevent form data inspection
+    const modalsToRemove = [
+        'editProfileModal',
+        'addOfferModal',
+        'editOfferModal',
+        'deleteConfirmModal',
+        'seasonSelectModal',
+        'addStatsModal',
+        'editStatsModal',
+        'deleteStatsConfirmModal',
+        'addHighlightModal',
+        'deleteHighlightConfirmModal',
+        'editAcademicsModal',
+        'profileViewersModal'
+    ];
+
+    modalsToRemove.forEach(modalId => {
+        const modal = document.getElementById(modalId);
+        if (modal) {
+            modal.remove();
+        }
+    });
+
+    // Remove edit buttons
+    const editButtons = [
+        'editProfileBtn',
+        'changePhotoBtn',
+        'addOfferBtn',
+        'addStatsBtn',
+        'addSeasonHighlightBtn',
+        'addGameHighlightBtn',
+        'editAcademicsBtn'
+    ];
+
+    editButtons.forEach(btnId => {
+        const btn = document.getElementById(btnId);
+        if (btn) {
+            btn.remove();
+        }
+    });
 }
 
 // Disable followers/following links for private profiles
@@ -3897,9 +3957,7 @@ async function saveProfilePostEdit(postId) {
 
             const uploadResponse = await fetch('/api/posts/upload-media', {
                 method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
-                },
+                credentials: 'include',
                 body: formData
             });
 

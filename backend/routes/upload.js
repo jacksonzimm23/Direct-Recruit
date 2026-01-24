@@ -119,31 +119,6 @@ router.post('/profile-image', authMiddleware, s3Upload.single('profile_image'), 
   }
 });
 
-// Upload highlight video (players only)
-router.post('/highlight-video', authMiddleware, upload.single('highlight_video'), async (req, res) => {
-  try {
-    if (req.user.role !== 'player') {
-      return res.status(403).json({ error: 'Only players can upload highlight videos' });
-    }
-
-    if (!req.file) {
-      return res.status(400).json({ error: 'No file uploaded' });
-    }
-
-    const fileUrl = `/uploads/${req.userId}/${req.file.filename}`;
-
-    await PlayerProfile.update(req.userId, { highlight_video_url: fileUrl });
-
-    res.json({
-      message: 'Highlight video uploaded successfully',
-      url: fileUrl
-    });
-  } catch (error) {
-    console.error('Upload highlight video error:', error);
-    res.status(500).json({ error: 'Failed to upload video' });
-  }
-});
-
 // Upload post media to S3 (supports multiple files)
 router.post('/post-media', authMiddleware, postMediaUpload.array('media', 4), async (req, res) => {
   try {

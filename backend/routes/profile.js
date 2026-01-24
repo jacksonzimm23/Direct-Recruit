@@ -6,7 +6,7 @@ const OtherProfile = require('../models/OtherProfile');
 const User = require('../models/User');
 const ProfileView = require('../models/ProfileView');
 const Follow = require('../models/Follow');
-const { authMiddleware, requireRole } = require('../middleware/auth');
+const { authMiddleware, requireRole, validateUUID } = require('../middleware/auth');
 const { validatePlayerProfile, validateCoachProfile, handleValidationErrors } = require('../middleware/validation');
 const { getSignedS3Url } = require('../utils/s3');
 
@@ -65,7 +65,12 @@ function getPrivateProfileData(profile, profileType) {
       graduation_year: profile.graduation_year,
       college_division: profile.college_division,
       transfer: profile.transfer,
-      player_status: profile.player_status
+      player_status: profile.player_status,
+      // Include height/weight for header display (Row 1: Position • Height • Weight • Class)
+      height: profile.height,
+      weight: profile.weight,
+      // Include eligibility for transfer player header display
+      eligibility: profile.eligibility
     };
   } else if (profileType === 'coach') {
     return {
@@ -252,7 +257,7 @@ router.post('/other', authMiddleware, requireRole('other'), async (req, res) => 
 });
 
 // Get Other Profile
-router.get('/other/:userId', authMiddleware, async (req, res) => {
+router.get('/other/:userId', authMiddleware, validateUUID('userId'), async (req, res) => {
   try {
     let profile = await OtherProfile.findByUserId(req.params.userId);
     if (!profile) {
@@ -265,9 +270,13 @@ router.get('/other/:userId', authMiddleware, async (req, res) => {
     // Convert S3 key to signed URL
     profile = await addSignedUrlToProfile(profile);
 
-    // Always return full profile data, but indicate access level for overlay
+    // Filter profile data for private profiles - only return public header info
+    const responseProfile = viewAccess.canView
+      ? profile
+      : getPrivateProfileData(profile, 'other');
+
     res.json({
-      profile,
+      profile: responseProfile,
       accessLevel: viewAccess.canView ? 'full' : 'limited',
       accessReason: viewAccess.reason,
       hasPendingRequest: viewAccess.hasPendingRequest || false
@@ -279,7 +288,7 @@ router.get('/other/:userId', authMiddleware, async (req, res) => {
 });
 
 // Get Player Profile
-router.get('/player/:userId', authMiddleware, async (req, res) => {
+router.get('/player/:userId', authMiddleware, validateUUID('userId'), async (req, res) => {
   try {
     let profile = await PlayerProfile.findByUserId(req.params.userId);
     if (!profile) {
@@ -292,9 +301,13 @@ router.get('/player/:userId', authMiddleware, async (req, res) => {
     // Convert S3 key to signed URL
     profile = await addSignedUrlToProfile(profile);
 
-    // Always return full profile data, but indicate access level for overlay
+    // Filter profile data for private profiles - only return public header info
+    const responseProfile = viewAccess.canView
+      ? profile
+      : getPrivateProfileData(profile, 'player');
+
     res.json({
-      profile,
+      profile: responseProfile,
       accessLevel: viewAccess.canView ? 'full' : 'limited',
       accessReason: viewAccess.reason,
       hasPendingRequest: viewAccess.hasPendingRequest || false
@@ -306,7 +319,7 @@ router.get('/player/:userId', authMiddleware, async (req, res) => {
 });
 
 // Get Coach Profile
-router.get('/coach/:userId', authMiddleware, async (req, res) => {
+router.get('/coach/:userId', authMiddleware, validateUUID('userId'), async (req, res) => {
   try {
     let profile = await CoachProfile.findByUserId(req.params.userId);
     if (!profile) {
@@ -319,9 +332,13 @@ router.get('/coach/:userId', authMiddleware, async (req, res) => {
     // Convert S3 key to signed URL
     profile = await addSignedUrlToProfile(profile);
 
-    // Always return full profile data, but indicate access level for overlay
+    // Filter profile data for private profiles - only return public header info
+    const responseProfile = viewAccess.canView
+      ? profile
+      : getPrivateProfileData(profile, 'coach');
+
     res.json({
-      profile,
+      profile: responseProfile,
       accessLevel: viewAccess.canView ? 'full' : 'limited',
       accessReason: viewAccess.reason,
       hasPendingRequest: viewAccess.hasPendingRequest || false
@@ -571,10 +588,14 @@ router.get('/username/:username', authMiddleware, async (req, res) => {
     // Add signed URL to profile image
     profile = await addSignedUrlToProfile(profile);
 
-    // Always return full profile data, but indicate access level for overlay
+    // Filter profile data for private profiles - only return public header info
+    const responseProfile = viewAccess.canView
+      ? profile
+      : getPrivateProfileData(profile, profileType);
+
     console.log('[GET /username] Returning profile with accessLevel:', viewAccess.canView ? 'full' : 'limited');
     return res.json({
-      profile,
+      profile: responseProfile,
       type: profileType,
       accessLevel: viewAccess.canView ? 'full' : 'limited',
       accessReason: viewAccess.reason,
@@ -587,7 +608,7 @@ router.get('/username/:username', authMiddleware, async (req, res) => {
 });
 
 // Record a profile view (for HS players only)
-router.post('/view/:userId', authMiddleware, async (req, res) => {
+router.post('/view/:userId', authMiddleware, validateUUID('userId'), async (req, res) => {
   try {
     const viewedPlayerId = req.params.userId;
     const viewerId = req.userId;
@@ -616,10 +637,16 @@ router.post('/view/:userId', authMiddleware, async (req, res) => {
   }
 });
 
-// Get profile view count for a player
-router.get('/views/:userId', authMiddleware, async (req, res) => {
+// Get profile view count for a player (owner only)
+router.get('/views/:userId', authMiddleware, validateUUID('userId'), async (req, res) => {
   try {
     const playerId = req.params.userId;
+
+    // Only allow the profile owner to see their view count
+    if (req.userId !== playerId) {
+      return res.status(403).json({ error: 'Not authorized to view this information' });
+    }
+
     const viewCount = await ProfileView.getViewCount(playerId);
 
     res.json({ viewCount });
@@ -630,7 +657,7 @@ router.get('/views/:userId', authMiddleware, async (req, res) => {
 });
 
 // Get list of viewers for a player's profile
-router.get('/viewers/:userId', authMiddleware, async (req, res) => {
+router.get('/viewers/:userId', authMiddleware, validateUUID('userId'), async (req, res) => {
   try {
     const playerId = req.params.userId;
 

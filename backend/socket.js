@@ -1,19 +1,35 @@
 const { Server } = require('socket.io');
 const jwt = require('jsonwebtoken');
+const cookie = require('cookie');
 const Message = require('./models/Message');
 
 function initializeSocket(server) {
   const io = new Server(server, {
     cors: {
       origin: process.env.FRONTEND_URL || '*',
-      methods: ['GET', 'POST']
+      methods: ['GET', 'POST'],
+      credentials: true
     }
   });
 
   // Authentication middleware
   io.use(async (socket, next) => {
     try {
-      const token = socket.handshake.auth.token;
+      // Try to get token from cookie first, then fall back to auth object
+      let token = null;
+
+      // Parse cookies from handshake headers
+      const cookieHeader = socket.handshake.headers.cookie;
+      if (cookieHeader) {
+        const cookies = cookie.parse(cookieHeader);
+        token = cookies.token;
+      }
+
+      // Fallback to auth object (for backwards compatibility during transition)
+      if (!token) {
+        token = socket.handshake.auth.token;
+      }
+
       if (!token) {
         return next(new Error('Authentication required'));
       }

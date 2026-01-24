@@ -6,11 +6,29 @@ const PlayerProfile = require('../models/PlayerProfile');
 const CoachProfile = require('../models/CoachProfile');
 const OtherProfile = require('../models/OtherProfile');
 const User = require('../models/User');
+const Follow = require('../models/Follow');
 const pool = require('../config/database');
-const { authMiddleware } = require('../middleware/auth');
+const { authMiddleware, validateUUID } = require('../middleware/auth');
 const { body, validationResult } = require('express-validator');
 const { postLimiter } = require('../middleware/rateLimit');
 const { getSignedS3Url } = require('../utils/s3');
+
+// Helper function to check if viewer can access a user's content
+async function canAccessUserContent(viewerId, targetUserId) {
+  // Owner can always access their own content
+  if (viewerId === targetUserId) {
+    return true;
+  }
+
+  // Check if profile is private
+  const isPrivate = await Follow.isPrivateProfile(targetUserId);
+  if (!isPrivate) {
+    return true;
+  }
+
+  // Check if viewer follows the private profile
+  return await Follow.isFollowing(viewerId, targetUserId);
+}
 
 // Helper function to add signed URLs to posts array
 async function addSignedUrlsToPosts(posts) {
@@ -169,10 +187,16 @@ router.get('/feed', authMiddleware, async (req, res) => {
 });
 
 // Get user's posts
-router.get('/user/:userId', authMiddleware, async (req, res) => {
+router.get('/user/:userId', authMiddleware, validateUUID('userId'), async (req, res) => {
   try {
     const limit = parseInt(req.query.limit) || 20;
     const offset = parseInt(req.query.offset) || 0;
+
+    // Check if viewer can access this user's content (private profile check)
+    const canAccess = await canAccessUserContent(req.userId, req.params.userId);
+    if (!canAccess) {
+      return res.json({ posts: [], count: 0, accessDenied: true });
+    }
 
     let posts = await Post.getUserPosts(req.params.userId, req.userId, limit, offset);
     posts = await addSignedUrlsToPosts(posts);
@@ -184,10 +208,16 @@ router.get('/user/:userId', authMiddleware, async (req, res) => {
 });
 
 // Get user's replies/comments (for profile Replies tab)
-router.get('/user/:userId/replies', authMiddleware, async (req, res) => {
+router.get('/user/:userId/replies', authMiddleware, validateUUID('userId'), async (req, res) => {
   try {
     const limit = parseInt(req.query.limit) || 10;
     const offset = parseInt(req.query.offset) || 0;
+
+    // Check if viewer can access this user's content (private profile check)
+    const canAccess = await canAccessUserContent(req.userId, req.params.userId);
+    if (!canAccess) {
+      return res.json({ replies: [], count: 0, accessDenied: true });
+    }
 
     let replies = await Post.getUserReplies(req.params.userId, req.userId, limit, offset);
     replies = await addSignedUrlsToPosts(replies);
@@ -199,10 +229,16 @@ router.get('/user/:userId/replies', authMiddleware, async (req, res) => {
 });
 
 // Get user's liked posts (for profile Likes tab)
-router.get('/user/:userId/likes', authMiddleware, async (req, res) => {
+router.get('/user/:userId/likes', authMiddleware, validateUUID('userId'), async (req, res) => {
   try {
     const limit = parseInt(req.query.limit) || 10;
     const offset = parseInt(req.query.offset) || 0;
+
+    // Check if viewer can access this user's content (private profile check)
+    const canAccess = await canAccessUserContent(req.userId, req.params.userId);
+    if (!canAccess) {
+      return res.json({ posts: [], count: 0, accessDenied: true });
+    }
 
     let posts = await Post.getLikedPosts(req.params.userId, req.userId, limit, offset);
     posts = await addSignedUrlsToPosts(posts);
@@ -246,7 +282,7 @@ router.get('/reposts/mine', authMiddleware, async (req, res) => {
 // ==================== COMMENT ROUTES (non-post-specific) ====================
 
 // Get comment replies
-router.get('/comments/:commentId/replies', authMiddleware, async (req, res) => {
+router.get('/comments/:commentId/replies', authMiddleware, validateUUID('commentId'), async (req, res) => {
   try {
     const limit = parseInt(req.query.limit) || 20;
     const offset = parseInt(req.query.offset) || 0;
@@ -261,7 +297,7 @@ router.get('/comments/:commentId/replies', authMiddleware, async (req, res) => {
 });
 
 // Like comment
-router.post('/comments/:commentId/like', authMiddleware, async (req, res) => {
+router.post('/comments/:commentId/like', authMiddleware, validateUUID('commentId'), async (req, res) => {
   try {
     const result = await Post.likeComment(req.params.commentId, req.userId);
 
@@ -299,7 +335,7 @@ router.post('/comments/:commentId/like', authMiddleware, async (req, res) => {
 });
 
 // Unlike comment
-router.delete('/comments/:commentId/like', authMiddleware, async (req, res) => {
+router.delete('/comments/:commentId/like', authMiddleware, validateUUID('commentId'), async (req, res) => {
   try {
     const result = await Post.unlikeComment(req.params.commentId, req.userId);
     if (!result) {
@@ -315,7 +351,7 @@ router.delete('/comments/:commentId/like', authMiddleware, async (req, res) => {
 // ==================== SHARE ROUTES (non-post-specific) ====================
 
 // Unshare post
-router.delete('/shares/:shareId', authMiddleware, async (req, res) => {
+router.delete('/shares/:shareId', authMiddleware, validateUUID('shareId'), async (req, res) => {
   try {
     const result = await Post.unsharePost(req.params.shareId, req.userId);
     if (!result) {
@@ -352,7 +388,7 @@ router.post('/', authMiddleware, postLimiter, [
 });
 
 // Get specific post
-router.get('/:postId', authMiddleware, async (req, res) => {
+router.get('/:postId', authMiddleware, validateUUID('postId'), async (req, res) => {
   try {
     let post = await Post.getById(req.params.postId, req.userId);
     if (!post) {
@@ -369,7 +405,7 @@ router.get('/:postId', authMiddleware, async (req, res) => {
 });
 
 // Update post
-router.put('/:postId', authMiddleware, async (req, res) => {
+router.put('/:postId', authMiddleware, validateUUID('postId'), async (req, res) => {
   try {
     const post = await Post.update(req.params.postId, req.userId, req.body);
     if (!post) {
@@ -383,7 +419,7 @@ router.put('/:postId', authMiddleware, async (req, res) => {
 });
 
 // Delete post
-router.delete('/:postId', authMiddleware, async (req, res) => {
+router.delete('/:postId', authMiddleware, validateUUID('postId'), async (req, res) => {
   try {
     const post = await Post.delete(req.params.postId, req.userId);
     if (!post) {
@@ -399,7 +435,7 @@ router.delete('/:postId', authMiddleware, async (req, res) => {
 // ==================== LIKES ====================
 
 // Like post
-router.post('/:postId/like', authMiddleware, async (req, res) => {
+router.post('/:postId/like', authMiddleware, validateUUID('postId'), async (req, res) => {
   try {
     const result = await Post.like(req.params.postId, req.userId);
 
@@ -424,7 +460,7 @@ router.post('/:postId/like', authMiddleware, async (req, res) => {
 });
 
 // Unlike post
-router.delete('/:postId/like', authMiddleware, async (req, res) => {
+router.delete('/:postId/like', authMiddleware, validateUUID('postId'), async (req, res) => {
   try {
     const result = await Post.unlike(req.params.postId, req.userId);
     if (!result) {
@@ -438,7 +474,7 @@ router.delete('/:postId/like', authMiddleware, async (req, res) => {
 });
 
 // Get post likes
-router.get('/:postId/likes', authMiddleware, async (req, res) => {
+router.get('/:postId/likes', authMiddleware, validateUUID('postId'), async (req, res) => {
   try {
     const limit = parseInt(req.query.limit) || 50;
     const offset = parseInt(req.query.offset) || 0;
@@ -453,7 +489,7 @@ router.get('/:postId/likes', authMiddleware, async (req, res) => {
 });
 
 // Get post shares (reposts and quotes)
-router.get('/:postId/shares', authMiddleware, async (req, res) => {
+router.get('/:postId/shares', authMiddleware, validateUUID('postId'), async (req, res) => {
   try {
     const limit = parseInt(req.query.limit) || 50;
     const offset = parseInt(req.query.offset) || 0;
@@ -473,7 +509,7 @@ router.get('/:postId/shares', authMiddleware, async (req, res) => {
 // ==================== COMMENTS ====================
 
 // Add comment
-router.post('/:postId/comments', authMiddleware, [
+router.post('/:postId/comments', authMiddleware, validateUUID('postId'), [
   body('content').trim().notEmpty().withMessage('Comment content required'),
   body('parent_comment_id').optional().isUUID()
 ], async (req, res) => {
@@ -534,7 +570,7 @@ router.post('/:postId/comments', authMiddleware, [
 });
 
 // Get comments
-router.get('/:postId/comments', authMiddleware, async (req, res) => {
+router.get('/:postId/comments', authMiddleware, validateUUID('postId'), async (req, res) => {
   try {
     const limit = parseInt(req.query.limit) || 50;
     const offset = parseInt(req.query.offset) || 0;
@@ -549,7 +585,7 @@ router.get('/:postId/comments', authMiddleware, async (req, res) => {
 });
 
 // Delete comment
-router.delete('/:postId/comments/:commentId', authMiddleware, async (req, res) => {
+router.delete('/:postId/comments/:commentId', authMiddleware, validateUUID('postId', 'commentId'), async (req, res) => {
   try {
     const result = await Post.deleteComment(req.params.commentId, req.userId, req.params.postId);
     if (!result) {
@@ -563,7 +599,7 @@ router.delete('/:postId/comments/:commentId', authMiddleware, async (req, res) =
 });
 
 // Edit comment
-router.put('/:postId/comments/:commentId', authMiddleware, async (req, res) => {
+router.put('/:postId/comments/:commentId', authMiddleware, validateUUID('postId', 'commentId'), async (req, res) => {
   try {
     const { content } = req.body;
     if (!content || !content.trim()) {
@@ -583,7 +619,7 @@ router.put('/:postId/comments/:commentId', authMiddleware, async (req, res) => {
 // ==================== SAVES (BOOKMARKS) ====================
 
 // Save post
-router.post('/:postId/save', authMiddleware, async (req, res) => {
+router.post('/:postId/save', authMiddleware, validateUUID('postId'), async (req, res) => {
   try {
     const result = await Post.savePost(req.params.postId, req.userId);
     res.json({ message: 'Post saved', saved: !!result });
@@ -594,7 +630,7 @@ router.post('/:postId/save', authMiddleware, async (req, res) => {
 });
 
 // Unsave post
-router.delete('/:postId/save', authMiddleware, async (req, res) => {
+router.delete('/:postId/save', authMiddleware, validateUUID('postId'), async (req, res) => {
   try {
     const result = await Post.unsavePost(req.params.postId, req.userId);
     if (!result) {
@@ -610,7 +646,7 @@ router.delete('/:postId/save', authMiddleware, async (req, res) => {
 // ==================== SHARES ====================
 
 // Share post (repost)
-router.post('/:postId/share', authMiddleware, [
+router.post('/:postId/share', authMiddleware, validateUUID('postId'), [
   body('share_type').optional().isIn(['repost', 'quote']),
   body('quote_content').optional().trim()
 ], async (req, res) => {
@@ -652,7 +688,7 @@ router.post('/:postId/share', authMiddleware, [
 });
 
 // Unrepost post (by post ID, for toggle)
-router.delete('/:postId/repost', authMiddleware, async (req, res) => {
+router.delete('/:postId/repost', authMiddleware, validateUUID('postId'), async (req, res) => {
   try {
     const result = await Post.unrepostByPostId(req.params.postId, req.userId);
     if (!result) {
@@ -668,7 +704,7 @@ router.delete('/:postId/repost', authMiddleware, async (req, res) => {
 // ==================== PIN POST ====================
 
 // Pin post
-router.post('/:postId/pin', authMiddleware, async (req, res) => {
+router.post('/:postId/pin', authMiddleware, validateUUID('postId'), async (req, res) => {
   try {
     const result = await Post.pinPost(req.params.postId, req.userId);
     if (!result) {
@@ -682,7 +718,7 @@ router.post('/:postId/pin', authMiddleware, async (req, res) => {
 });
 
 // Unpin post
-router.delete('/:postId/pin', authMiddleware, async (req, res) => {
+router.delete('/:postId/pin', authMiddleware, validateUUID('postId'), async (req, res) => {
   try {
     const result = await Post.unpinPost(req.params.postId, req.userId);
     if (!result) {

@@ -1,6 +1,7 @@
 const express = require('express');
 const http = require('http');
 const cors = require('cors');
+const cookieParser = require('cookie-parser');
 const helmet = require('helmet');
 const path = require('path');
 require('dotenv').config();
@@ -17,7 +18,6 @@ const highlightsRoutes = require('./routes/highlights');
 const coachesRoutes = require('./routes/coaches');
 const notificationsRoutes = require('./routes/notifications');
 const recruitingBoardRoutes = require('./routes/recruiting-board');
-const starsRoutes = require('./routes/stars');
 const settingsRoutes = require('./routes/settings');
 const initializeSocket = require('./socket');
 const { apiLimiter } = require('./middleware/rateLimit');
@@ -38,6 +38,7 @@ app.use(cors({
   origin: allowedOrigins,
   credentials: true
 }));
+app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 // Serve static uploads BEFORE helmet to avoid security headers blocking images
@@ -60,7 +61,6 @@ app.use('/api/highlights', highlightsRoutes);
 app.use('/api/coaches', coachesRoutes);
 app.use('/api/notifications', notificationsRoutes);
 app.use('/api/recruiting-board', recruitingBoardRoutes);
-app.use('/api/stars', starsRoutes);
 app.use('/api/settings', settingsRoutes);
 
 // Health check

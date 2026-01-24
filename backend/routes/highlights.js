@@ -2,15 +2,16 @@ const express = require('express');
 const router = express.Router();
 const multer = require('multer');
 const pool = require('../config/database');
-const { authMiddleware } = require('../middleware/auth');
+const { authMiddleware, validateUUID } = require('../middleware/auth');
 const { uploadToS3, getSignedVideoUrl, deleteFromS3, generateHighlightVideoKey } = require('../utils/s3');
+const Follow = require('../models/Follow');
 
 // Configure multer for video uploads
 const storage = multer.memoryStorage();
 const upload = multer({
   storage: storage,
   limits: {
-    fileSize: 100 * 1024 * 1024 // 100MB limit for videos
+    fileSize: 500 * 1024 * 1024 // 500MB limit for videos (supports up to ~10 min videos)
   },
   fileFilter: (req, file, cb) => {
     // Accept video files only
@@ -101,9 +102,28 @@ router.post('/upload', authMiddleware, upload.single('video_file'), async (req, 
 });
 
 // Get all highlights for a user by user_id
-router.get('/:userId', authMiddleware, async (req, res) => {
+router.get('/:userId', authMiddleware, validateUUID('userId'), async (req, res) => {
   try {
     const { userId } = req.params;
+    const viewerId = req.userId;
+
+    // Owner can always see their own highlights
+    if (viewerId !== userId) {
+      // Check if profile is private
+      const isPrivate = await Follow.isPrivateProfile(userId);
+      if (isPrivate) {
+        // Check if viewer follows the private profile
+        const isFollowing = await Follow.isFollowing(viewerId, userId);
+        if (!isFollowing) {
+          // Return empty highlights for private profiles the viewer doesn't follow
+          return res.json({
+            success: true,
+            highlights: [],
+            accessDenied: true
+          });
+        }
+      }
+    }
 
     const result = await pool.query(
       `SELECT id, highlight_type, title, hudl_link, video_url, created_at
@@ -159,7 +179,7 @@ router.post('/', authMiddleware, async (req, res) => {
 });
 
 // Update a highlight
-router.put('/:highlightId', authMiddleware, async (req, res) => {
+router.put('/:highlightId', authMiddleware, validateUUID('highlightId'), async (req, res) => {
   try {
     const { highlightId } = req.params;
     const { title, hudl_link } = req.body;
@@ -202,7 +222,7 @@ router.put('/:highlightId', authMiddleware, async (req, res) => {
 });
 
 // Delete a highlight
-router.delete('/:highlightId', authMiddleware, async (req, res) => {
+router.delete('/:highlightId', authMiddleware, validateUUID('highlightId'), async (req, res) => {
   try {
     const { highlightId } = req.params;
 

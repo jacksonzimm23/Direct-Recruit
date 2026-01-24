@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const RecruitingBoard = require('../models/RecruitingBoard');
 const Notification = require('../models/Notification');
-const { authMiddleware, requireRole } = require('../middleware/auth');
+const { authMiddleware, requireRole, validateUUID } = require('../middleware/auth');
 const pool = require('../config/database');
 const { getSignedS3Url } = require('../utils/s3');
 
@@ -108,7 +108,7 @@ router.post('/personal/:classYear/players', authMiddleware, requireRole('coach')
 });
 
 // Remove player from personal board
-router.delete('/personal/:classYear/players/:playerId', authMiddleware, requireRole('coach'), async (req, res) => {
+router.delete('/personal/:classYear/players/:playerId', authMiddleware, requireRole('coach'), validateUUID('playerId'), async (req, res) => {
   try {
     const { classYear, playerId } = req.params;
     const { position } = req.query;
@@ -122,7 +122,7 @@ router.delete('/personal/:classYear/players/:playerId', authMiddleware, requireR
 });
 
 // Update player position on personal board
-router.put('/personal/:classYear/players/:playerId/position', authMiddleware, requireRole('coach'), async (req, res) => {
+router.put('/personal/:classYear/players/:playerId/position', authMiddleware, requireRole('coach'), validateUUID('playerId'), async (req, res) => {
   try {
     const { classYear, playerId } = req.params;
     const { oldPosition, newPosition } = req.body;
@@ -175,7 +175,7 @@ router.get('/shared', authMiddleware, requireRole('coach'), async (req, res) => 
 });
 
 // Get a specific shared board by ID
-router.get('/shared/:boardId', authMiddleware, requireRole('coach'), async (req, res) => {
+router.get('/shared/:boardId', authMiddleware, requireRole('coach'), validateUUID('boardId'), async (req, res) => {
   try {
     const { boardId } = req.params;
 
@@ -203,7 +203,7 @@ router.get('/shared/:boardId', authMiddleware, requireRole('coach'), async (req,
 });
 
 // Update shared board name
-router.put('/shared/:boardId/name', authMiddleware, requireRole('coach'), async (req, res) => {
+router.put('/shared/:boardId/name', authMiddleware, requireRole('coach'), validateUUID('boardId'), async (req, res) => {
   try {
     const { boardId } = req.params;
     const { boardName } = req.body;
@@ -226,7 +226,7 @@ router.put('/shared/:boardId/name', authMiddleware, requireRole('coach'), async 
 });
 
 // Delete a shared board
-router.delete('/shared/:boardId', authMiddleware, requireRole('coach'), async (req, res) => {
+router.delete('/shared/:boardId', authMiddleware, requireRole('coach'), validateUUID('boardId'), async (req, res) => {
   try {
     const { boardId } = req.params;
     await RecruitingBoard.deleteSharedBoard(boardId, req.userId);
@@ -238,7 +238,7 @@ router.delete('/shared/:boardId', authMiddleware, requireRole('coach'), async (r
 });
 
 // Save shared board config
-router.put('/shared/:boardId/config', authMiddleware, requireRole('coach'), async (req, res) => {
+router.put('/shared/:boardId/config', authMiddleware, requireRole('coach'), validateUUID('boardId'), async (req, res) => {
   try {
     const { boardId } = req.params;
     const { offensePositions, defensePositions } = req.body;
@@ -267,7 +267,7 @@ router.put('/shared/:boardId/config', authMiddleware, requireRole('coach'), asyn
 });
 
 // Get players for shared board by class year
-router.get('/shared/:boardId/:classYear/players', authMiddleware, requireRole('coach'), async (req, res) => {
+router.get('/shared/:boardId/:classYear/players', authMiddleware, requireRole('coach'), validateUUID('boardId'), async (req, res) => {
   try {
     const { boardId, classYear } = req.params;
 
@@ -287,7 +287,7 @@ router.get('/shared/:boardId/:classYear/players', authMiddleware, requireRole('c
 });
 
 // Add player to shared board
-router.post('/shared/:boardId/:classYear/players', authMiddleware, requireRole('coach'), async (req, res) => {
+router.post('/shared/:boardId/:classYear/players', authMiddleware, requireRole('coach'), validateUUID('boardId'), async (req, res) => {
   try {
     const { boardId, classYear } = req.params;
     const playerData = req.body;
@@ -318,7 +318,7 @@ router.post('/shared/:boardId/:classYear/players', authMiddleware, requireRole('
 });
 
 // Remove player from shared board
-router.delete('/shared/:boardId/:classYear/players/:playerId', authMiddleware, requireRole('coach'), async (req, res) => {
+router.delete('/shared/:boardId/:classYear/players/:playerId', authMiddleware, requireRole('coach'), validateUUID('boardId', 'playerId'), async (req, res) => {
   try {
     const { boardId, classYear, playerId } = req.params;
     const { position } = req.query;
@@ -338,7 +338,7 @@ router.delete('/shared/:boardId/:classYear/players/:playerId', authMiddleware, r
 });
 
 // Update player position on shared board
-router.put('/shared/:boardId/:classYear/players/:playerId/position', authMiddleware, requireRole('coach'), async (req, res) => {
+router.put('/shared/:boardId/:classYear/players/:playerId/position', authMiddleware, requireRole('coach'), validateUUID('boardId', 'playerId'), async (req, res) => {
   try {
     const { boardId, classYear, playerId } = req.params;
     const { oldPosition, newPosition } = req.body;
@@ -406,7 +406,7 @@ router.get('/search-coaches', authMiddleware, requireRole('coach'), async (req, 
 });
 
 // Get pending invites for a board
-router.get('/shared/:boardId/pending-invites', authMiddleware, requireRole('coach'), async (req, res) => {
+router.get('/shared/:boardId/pending-invites', authMiddleware, requireRole('coach'), validateUUID('boardId'), async (req, res) => {
   try {
     const { boardId } = req.params;
 
@@ -431,7 +431,7 @@ router.get('/shared/:boardId/pending-invites', authMiddleware, requireRole('coac
 });
 
 // Send collaboration invite for a shared board
-router.post('/shared/:boardId/invite', authMiddleware, requireRole('coach'), async (req, res) => {
+router.post('/shared/:boardId/invite', authMiddleware, requireRole('coach'), validateUUID('boardId'), async (req, res) => {
   try {
     const { boardId } = req.params;
     const { inviteeUserId } = req.body;
@@ -651,7 +651,7 @@ router.post('/invite/decline', authMiddleware, requireRole('coach'), async (req,
 });
 
 // Remove a collaborator from shared board
-router.delete('/shared/:boardId/collaborator/:collaboratorId', authMiddleware, requireRole('coach'), async (req, res) => {
+router.delete('/shared/:boardId/collaborator/:collaboratorId', authMiddleware, requireRole('coach'), validateUUID('boardId', 'collaboratorId'), async (req, res) => {
   try {
     const { boardId, collaboratorId } = req.params;
 
@@ -691,7 +691,7 @@ router.delete('/shared/:boardId/collaborator/:collaboratorId', authMiddleware, r
 });
 
 // Leave a shared board
-router.post('/shared/:boardId/leave', authMiddleware, requireRole('coach'), async (req, res) => {
+router.post('/shared/:boardId/leave', authMiddleware, requireRole('coach'), validateUUID('boardId'), async (req, res) => {
   try {
     const { boardId } = req.params;
 
@@ -731,7 +731,7 @@ router.post('/shared/:boardId/leave', authMiddleware, requireRole('coach'), asyn
 });
 
 // Transfer ownership of shared board
-router.post('/shared/:boardId/transfer-ownership', authMiddleware, requireRole('coach'), async (req, res) => {
+router.post('/shared/:boardId/transfer-ownership', authMiddleware, requireRole('coach'), validateUUID('boardId'), async (req, res) => {
   try {
     const { boardId } = req.params;
     const { newOwnerUserId } = req.body;
@@ -773,7 +773,7 @@ router.post('/shared/:boardId/transfer-ownership', authMiddleware, requireRole('
 });
 
 // Cancel a pending invite
-router.delete('/shared/:boardId/invite/:inviteeId', authMiddleware, requireRole('coach'), async (req, res) => {
+router.delete('/shared/:boardId/invite/:inviteeId', authMiddleware, requireRole('coach'), validateUUID('boardId', 'inviteeId'), async (req, res) => {
   try {
     const { boardId, inviteeId } = req.params;
 
@@ -807,7 +807,7 @@ router.delete('/shared/:boardId/invite/:inviteeId', authMiddleware, requireRole(
 // ==================== Utility Routes ====================
 
 // Check if a player is on the coach's recruiting boards
-router.get('/check/:playerId', authMiddleware, requireRole('coach'), async (req, res) => {
+router.get('/check/:playerId', authMiddleware, requireRole('coach'), validateUUID('playerId'), async (req, res) => {
   try {
     const { playerId } = req.params;
     const result = await RecruitingBoard.checkPlayerOnBoards(req.userId, playerId);

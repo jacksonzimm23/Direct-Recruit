@@ -162,9 +162,11 @@ class Message {
   }
 
   static async markConversationAsRead(conversationId, userId) {
+    // Use NOW() which respects the database timezone setting
+    // rather than passing a JavaScript timestamp which may be interpreted differently
     await pool.query(
       `UPDATE conversation_participants
-       SET last_read_at = CURRENT_TIMESTAMP
+       SET last_read_at = NOW()
        WHERE conversation_id = $1 AND user_id = $2`,
       [conversationId, userId]
     );

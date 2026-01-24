@@ -64,10 +64,10 @@ class PendingEmailChange {
   static async setCooldown(userId, minutes) {
     const result = await pool.query(
       `UPDATE pending_email_changes
-       SET cooldown_until = NOW() + INTERVAL '${minutes} minutes'
+       SET cooldown_until = NOW() + ($2 * INTERVAL '1 minute')
        WHERE user_id = $1
        RETURNING *`,
-      [userId]
+      [userId, minutes]
     );
     return result.rows[0];
   }

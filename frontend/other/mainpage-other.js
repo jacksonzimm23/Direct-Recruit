@@ -265,13 +265,9 @@ function showLogoutModal() {
     });
 
     // Handle confirm
-    document.getElementById('logoutConfirm').addEventListener('click', () => {
-        // Clear authentication
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        // Redirect to landing page - check if we're in tabs folder or main folder
-        const isInTabsFolder = window.location.pathname.includes('/tabs/');
-        window.location.href = isInTabsFolder ? '../../landingpage/index.html' : '../landingpage/index.html';
+    document.getElementById('logoutConfirm').addEventListener('click', async () => {
+        // Clear authentication and redirect
+        await API.auth.logout();
     });
 
     // Close on overlay click

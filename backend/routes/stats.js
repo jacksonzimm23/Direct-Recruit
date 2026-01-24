@@ -1,7 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const PlayerGameStats = require('../models/PlayerGameStats');
-const { authMiddleware } = require('../middleware/auth');
+const PlayerProfile = require('../models/PlayerProfile');
+const Follow = require('../models/Follow');
+const { authMiddleware, validateUUID } = require('../middleware/auth');
 
 // Get all games/stats for the logged-in player
 router.get('/my-games', authMiddleware, async (req, res) => {
@@ -17,6 +19,24 @@ router.get('/my-games', authMiddleware, async (req, res) => {
 // Get games/stats for a player by username (for viewing profiles)
 router.get('/player/:username', authMiddleware, async (req, res) => {
   try {
+    // Get the player's profile to check privacy
+    const profile = await PlayerProfile.findByUsername(req.params.username);
+    if (!profile) {
+      return res.status(404).json({ error: 'Player not found' });
+    }
+
+    // Check if viewer can access this user's content (private profile check)
+    const targetUserId = profile.user_id;
+    if (req.userId !== targetUserId) {
+      const isPrivate = await Follow.isPrivateProfile(targetUserId);
+      if (isPrivate) {
+        const isFollowing = await Follow.isFollowing(req.userId, targetUserId);
+        if (!isFollowing) {
+          return res.json({ games: [], accessDenied: true });
+        }
+      }
+    }
+
     const games = await PlayerGameStats.getByUsername(req.params.username);
     res.json({ games });
   } catch (error) {
@@ -26,7 +46,7 @@ router.get('/player/:username', authMiddleware, async (req, res) => {
 });
 
 // Get a single game by ID
-router.get('/game/:gameId', authMiddleware, async (req, res) => {
+router.get('/game/:gameId', authMiddleware, validateUUID('gameId'), async (req, res) => {
   try {
     const game = await PlayerGameStats.getGameById(req.params.gameId);
     if (!game) {
@@ -75,7 +95,7 @@ router.post('/', authMiddleware, async (req, res) => {
 });
 
 // Update a game and its stats
-router.put('/:gameId', authMiddleware, async (req, res) => {
+router.put('/:gameId', authMiddleware, validateUUID('gameId'), async (req, res) => {
   try {
     const { game_date, season_year, opponent, result, positions } = req.body;
 
@@ -106,7 +126,7 @@ router.put('/:gameId', authMiddleware, async (req, res) => {
 });
 
 // Delete a game and all its stats
-router.delete('/:gameId', authMiddleware, async (req, res) => {
+router.delete('/:gameId', authMiddleware, validateUUID('gameId'), async (req, res) => {
   try {
     const result = await PlayerGameStats.delete(req.userId, req.params.gameId);
 

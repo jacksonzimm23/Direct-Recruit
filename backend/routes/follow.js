@@ -5,7 +5,7 @@ const Notification = require('../models/Notification');
 const PlayerProfile = require('../models/PlayerProfile');
 const CoachProfile = require('../models/CoachProfile');
 const User = require('../models/User');
-const { authMiddleware } = require('../middleware/auth');
+const { authMiddleware, validateUUID } = require('../middleware/auth');
 const { getSignedS3Url } = require('../utils/s3');
 
 // Helper function to add signed URLs to profiles array
@@ -42,7 +42,7 @@ async function getUserName(userId) {
 }
 
 // Follow a user (or send follow request if private)
-router.post('/:userId', authMiddleware, async (req, res) => {
+router.post('/:userId', authMiddleware, validateUUID('userId'), async (req, res) => {
   try {
     const { userId } = req.params;
 
@@ -99,7 +99,7 @@ router.post('/:userId', authMiddleware, async (req, res) => {
 });
 
 // Unfollow a user
-router.delete('/:userId', authMiddleware, async (req, res) => {
+router.delete('/:userId', authMiddleware, validateUUID('userId'), async (req, res) => {
   try {
     const { userId } = req.params;
 
@@ -116,7 +116,7 @@ router.delete('/:userId', authMiddleware, async (req, res) => {
 });
 
 // Get user's followers
-router.get('/:userId/followers', authMiddleware, async (req, res) => {
+router.get('/:userId/followers', authMiddleware, validateUUID('userId'), async (req, res) => {
   try {
     const { userId } = req.params;
     const limit = parseInt(req.query.limit) || 50;
@@ -140,7 +140,7 @@ router.get('/:userId/followers', authMiddleware, async (req, res) => {
 });
 
 // Get user's following
-router.get('/:userId/following', authMiddleware, async (req, res) => {
+router.get('/:userId/following', authMiddleware, validateUUID('userId'), async (req, res) => {
   try {
     const { userId } = req.params;
     const limit = parseInt(req.query.limit) || 50;
@@ -164,7 +164,7 @@ router.get('/:userId/following', authMiddleware, async (req, res) => {
 });
 
 // Get follow counts for a user
-router.get('/:userId/counts', authMiddleware, async (req, res) => {
+router.get('/:userId/counts', authMiddleware, validateUUID('userId'), async (req, res) => {
   try {
     const { userId } = req.params;
     const counts = await Follow.getFollowCounts(userId);
@@ -176,7 +176,7 @@ router.get('/:userId/counts', authMiddleware, async (req, res) => {
 });
 
 // Check if current user follows another user
-router.get('/:userId/check', authMiddleware, async (req, res) => {
+router.get('/:userId/check', authMiddleware, validateUUID('userId'), async (req, res) => {
   try {
     const { userId } = req.params;
     const isFollowing = await Follow.isFollowing(req.userId, userId);
@@ -188,7 +188,7 @@ router.get('/:userId/check', authMiddleware, async (req, res) => {
 });
 
 // Check if another user follows the current user (reverse check)
-router.get('/:userId/follows-me', authMiddleware, async (req, res) => {
+router.get('/:userId/follows-me', authMiddleware, validateUUID('userId'), async (req, res) => {
   try {
     const { userId } = req.params;
     const followsMe = await Follow.isFollowing(userId, req.userId);
@@ -200,7 +200,7 @@ router.get('/:userId/follows-me', authMiddleware, async (req, res) => {
 });
 
 // Check follow request status for a user
-router.get('/:userId/request-status', authMiddleware, async (req, res) => {
+router.get('/:userId/request-status', authMiddleware, validateUUID('userId'), async (req, res) => {
   try {
     const { userId } = req.params;
     const hasPending = await Follow.hasPendingFollowRequest(req.userId, userId);
@@ -213,7 +213,7 @@ router.get('/:userId/request-status', authMiddleware, async (req, res) => {
 });
 
 // Cancel an outgoing follow request
-router.delete('/:userId/request', authMiddleware, async (req, res) => {
+router.delete('/:userId/request', authMiddleware, validateUUID('userId'), async (req, res) => {
   try {
     const { userId } = req.params;
     const result = await Follow.cancelFollowRequest(req.userId, userId);
@@ -267,7 +267,7 @@ router.get('/requests/count', authMiddleware, async (req, res) => {
 });
 
 // Accept a follow request
-router.post('/requests/:requestId/accept', authMiddleware, async (req, res) => {
+router.post('/requests/:requestId/accept', authMiddleware, validateUUID('requestId'), async (req, res) => {
   try {
     const { requestId } = req.params;
 
@@ -301,7 +301,7 @@ router.post('/requests/:requestId/accept', authMiddleware, async (req, res) => {
 });
 
 // Decline a follow request
-router.post('/requests/:requestId/decline', authMiddleware, async (req, res) => {
+router.post('/requests/:requestId/decline', authMiddleware, validateUUID('requestId'), async (req, res) => {
   try {
     const { requestId } = req.params;
 
@@ -326,7 +326,7 @@ router.post('/requests/:requestId/decline', authMiddleware, async (req, res) => 
 });
 
 // Accept a follow request by requester user ID (for use from notifications)
-router.post('/requests/user/:userId/accept', authMiddleware, async (req, res) => {
+router.post('/requests/user/:userId/accept', authMiddleware, validateUUID('userId'), async (req, res) => {
   try {
     const { userId } = req.params;
 
@@ -356,7 +356,7 @@ router.post('/requests/user/:userId/accept', authMiddleware, async (req, res) =>
 });
 
 // Decline a follow request by requester user ID (for use from notifications)
-router.post('/requests/user/:userId/decline', authMiddleware, async (req, res) => {
+router.post('/requests/user/:userId/decline', authMiddleware, validateUUID('userId'), async (req, res) => {
   try {
     const { userId } = req.params;
 
@@ -377,7 +377,7 @@ router.post('/requests/user/:userId/decline', authMiddleware, async (req, res) =
 });
 
 // Check if current user can message another user
-router.get('/can-message/:userId', authMiddleware, async (req, res) => {
+router.get('/can-message/:userId', authMiddleware, validateUUID('userId'), async (req, res) => {
   try {
     const { userId } = req.params;
     const result = await Follow.canMessage(req.userId, userId);

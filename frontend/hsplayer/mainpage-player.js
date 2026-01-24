@@ -267,13 +267,9 @@ function showLogoutModal() {
     });
 
     // Handle confirm
-    document.getElementById('logoutConfirm').addEventListener('click', () => {
-        // Clear authentication
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        // Redirect to landing page - check if we're in tabs folder or main folder
-        const isInTabsFolder = window.location.pathname.includes('/tabs/');
-        window.location.href = isInTabsFolder ? '../../landingpage/index.html' : '../landingpage/index.html';
+    document.getElementById('logoutConfirm').addEventListener('click', async () => {
+        // Clear authentication and redirect
+        await API.auth.logout();
     });
 
     // Close on overlay click
@@ -422,14 +418,10 @@ function initMobileSidebar() {
 
     // Logout button
     if (mobileSidebarLogout) {
-        mobileSidebarLogout.addEventListener('click', function() {
+        mobileSidebarLogout.addEventListener('click', async function() {
             closeMobileSidebar();
-            // Clear authentication
-            localStorage.removeItem('token');
-            localStorage.removeItem('user');
-            // Redirect to landing page
-            const isInTabsFolder = window.location.pathname.includes('/tabs/');
-            window.location.href = isInTabsFolder ? '../../landingpage/index.html' : '../landingpage/index.html';
+            // Clear authentication and redirect
+            await API.auth.logout();
         });
     }
 }
@@ -437,13 +429,10 @@ function initMobileSidebar() {
 // Load and display star rating in sidebar footer
 async function loadSidebarFooterStars() {
     try {
-        const token = localStorage.getItem('auth_token');
-        if (!token) return;
+        if (!API.isAuthenticated()) return;
 
         const response = await fetch(`${API_BASE_URL}/stars/my-rating`, {
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
+            credentials: 'include'
         });
 
         if (response.ok) {

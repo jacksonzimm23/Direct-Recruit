@@ -724,12 +724,9 @@ function showLogoutModal(userFolder) {
     });
 
     // Handle confirm
-    document.getElementById('logoutConfirm').addEventListener('click', () => {
-        // Clear authentication
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        // Redirect to landing page
-        window.location.href = '/frontend/landingpage/index.html';
+    document.getElementById('logoutConfirm').addEventListener('click', async () => {
+        // Clear authentication and redirect
+        await API.auth.logout();
     });
 
     // Close on overlay click
@@ -768,6 +765,12 @@ async function loadProfileByUsername(username) {
             viewingUserId = response.profile.user_id;
             isOwnProfile = currentUserId === viewingUserId;
             displayProfile(response.profile, response.type, response.accessLevel, response.hasPendingRequest);
+
+            // Remove sensitive DOM elements when viewing another profile
+            // This prevents data from being visible in Elements inspector
+            if (!isOwnProfile) {
+                removeSensitiveElementsForOtherProfile();
+            }
 
             // Record profile view if viewing someone else's HS player profile
             if (!isOwnProfile && response.type === 'player') {
@@ -916,6 +919,63 @@ async function displayProfile(profile, type, accessLevel = 'full', hasPendingReq
         addPrivateProfileOverlay();
         disableFollowLinksForPrivateProfile();
     }
+}
+
+// Remove sensitive DOM elements when viewing another user's profile
+// This prevents data from being visible in the Elements inspector
+function removeSensitiveElementsForOtherProfile() {
+    // Remove right sidebar widget content (profile views, etc.)
+    const profileStatsWidget = document.getElementById('profileStatsWidget');
+    if (profileStatsWidget) {
+        profileStatsWidget.remove();
+    }
+
+    // Remove mobile profile views link
+    const mobileProfileViewsLink = document.getElementById('mobileProfileViewsLink');
+    if (mobileProfileViewsLink) {
+        mobileProfileViewsLink.remove();
+    }
+
+    // Remove all edit modals to prevent form data inspection
+    const modalsToRemove = [
+        'editProfileModal',
+        'addOfferModal',
+        'editOfferModal',
+        'deleteConfirmModal',
+        'seasonSelectModal',
+        'addStatsModal',
+        'editStatsModal',
+        'deleteStatsConfirmModal',
+        'addHighlightModal',
+        'deleteHighlightConfirmModal',
+        'editAcademicsModal',
+        'profileViewersModal'
+    ];
+
+    modalsToRemove.forEach(modalId => {
+        const modal = document.getElementById(modalId);
+        if (modal) {
+            modal.remove();
+        }
+    });
+
+    // Remove edit buttons (these should already be hidden but remove from DOM for safety)
+    const editButtons = [
+        'editProfileBtn',
+        'changePhotoBtn',
+        'addOfferBtn',
+        'addStatsBtn',
+        'addSeasonHighlightBtn',
+        'addGameHighlightBtn',
+        'editAcademicsBtn'
+    ];
+
+    editButtons.forEach(btnId => {
+        const btn = document.getElementById(btnId);
+        if (btn) {
+            btn.remove();
+        }
+    });
 }
 
 // Disable followers/following links for private profiles
@@ -6419,7 +6479,7 @@ function setupHighlightsModal() {
     }
 
     // Helper function to update progress bar
-    function updateProgressBar(percent) {
+    function updateProgressBar(percent, status = 'uploading') {
         const progressContainer = document.getElementById('videoUploadProgress');
         const progressBar = document.getElementById('videoProgressBar');
         const progressText = document.getElementById('videoProgressText');
@@ -6427,14 +6487,16 @@ function setupHighlightsModal() {
         if (progressContainer && progressBar && progressText) {
             progressContainer.style.display = 'flex';
             progressBar.style.width = `${percent}%`;
-            progressText.textContent = `${Math.round(percent)}%`;
 
-            // Add complete class when done
-            if (percent >= 100) {
+            if (status === 'ready') {
                 progressBar.classList.add('complete');
                 progressText.textContent = 'Ready!';
+            } else if (status === 'processing') {
+                progressBar.classList.remove('complete');
+                progressText.textContent = 'Processing...';
             } else {
                 progressBar.classList.remove('complete');
+                progressText.textContent = `${Math.round(percent)}%`;
             }
         }
     }
@@ -6481,9 +6543,9 @@ function setupHighlightsModal() {
                 return;
             }
 
-            // Validate video file size (100MB max)
-            if (videoFile && videoFile.size > 100 * 1024 * 1024) {
-                showHighlightError('Video file is too large. Maximum size is 100MB.');
+            // Validate video file size (500MB max)
+            if (videoFile && videoFile.size > 500 * 1024 * 1024) {
+                showHighlightError('Video file is too large. Maximum size is 500MB.');
                 return;
             }
 
@@ -6508,13 +6570,19 @@ function setupHighlightsModal() {
                         xhr.upload.addEventListener('progress', (e) => {
                             if (e.lengthComputable) {
                                 const percent = (e.loaded / e.total) * 100;
-                                updateProgressBar(percent);
+                                updateProgressBar(percent, 'uploading');
                             }
+                        });
+
+                        // When upload completes, show processing status
+                        xhr.upload.addEventListener('load', () => {
+                            updateProgressBar(100, 'processing');
                         });
 
                         xhr.addEventListener('load', () => {
                             if (xhr.status >= 200 && xhr.status < 300) {
                                 try {
+                                    updateProgressBar(100, 'ready');
                                     resolve(JSON.parse(xhr.responseText));
                                 } catch (e) {
                                     reject(new Error('Invalid response'));
@@ -6526,9 +6594,8 @@ function setupHighlightsModal() {
 
                         xhr.addEventListener('error', () => reject(new Error('Network error')));
 
-                        const token = localStorage.getItem('auth_token');
                         xhr.open('POST', `${API_BASE_URL}/highlights/upload`);
-                        xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+                        xhr.withCredentials = true;
                         xhr.send(formData);
                     });
                 } else {
@@ -8398,9 +8465,7 @@ async function saveProfilePostEdit(postId) {
 
             const uploadResponse = await fetch('/api/posts/upload-media', {
                 method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
-                },
+                credentials: 'include',
                 body: formData
             });
 

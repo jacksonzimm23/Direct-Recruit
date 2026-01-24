@@ -95,15 +95,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         });
     }
 
-    // Post options buttons
-    const postOptionBtns = document.querySelectorAll('.post-option-btn');
-    postOptionBtns.forEach(btn => {
-        btn.addEventListener('click', function() {
-            const title = this.getAttribute('title');
-            console.log('Post option clicked:', title);
-            alert(`${title} functionality will be connected to your backend.`);
-        });
-    });
+    // Post options buttons - handled by feed.js for media upload functionality
 
     // User menu
     const userMenu = document.querySelector('.user-menu');
@@ -210,15 +202,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         });
     });
 
-    // Post more button
-    const postMoreBtns = document.querySelectorAll('.post-more-btn');
-    postMoreBtns.forEach(btn => {
-        btn.addEventListener('click', function(e) {
-            e.stopPropagation();
-            console.log('Post options clicked');
-            alert('Post options menu will be implemented.');
-        });
-    });
+    // Post more button - handled by feed.js for post options menu
 
     // Auto-resize textarea
     if (postInput) {
@@ -274,13 +258,9 @@ function showLogoutModal() {
     });
 
     // Handle confirm
-    document.getElementById('logoutConfirm').addEventListener('click', () => {
-        // Clear authentication
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        // Redirect to landing page - check if we're in tabs folder or main folder
-        const isInTabsFolder = window.location.pathname.includes('/tabs/');
-        window.location.href = isInTabsFolder ? '../../landingpage/index.html' : '../landingpage/index.html';
+    document.getElementById('logoutConfirm').addEventListener('click', async () => {
+        // Clear authentication and redirect
+        await API.auth.logout();
     });
 
     // Close on overlay click
@@ -399,13 +379,10 @@ async function updateSidebarFooter() {
 // Load and display star rating in sidebar footer
 async function loadSidebarFooterStars() {
     try {
-        const token = localStorage.getItem('auth_token');
-        if (!token) return;
+        if (!API.isAuthenticated()) return;
 
         const response = await fetch(`${API_BASE_URL}/stars/my-rating`, {
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
+            credentials: 'include'
         });
 
         if (response.ok) {
@@ -542,14 +519,10 @@ function initMobileSidebar() {
 
     // Logout button
     if (mobileSidebarLogout) {
-        mobileSidebarLogout.addEventListener('click', function() {
+        mobileSidebarLogout.addEventListener('click', async function() {
             closeMobileSidebar();
-            // Clear authentication
-            localStorage.removeItem('token');
-            localStorage.removeItem('user');
-            // Redirect to landing page
-            const isInTabsFolder = window.location.pathname.includes('/tabs/');
-            window.location.href = isInTabsFolder ? '../../landingpage/index.html' : '../landingpage/index.html';
+            // Clear authentication and redirect
+            await API.auth.logout();
         });
     }
 }

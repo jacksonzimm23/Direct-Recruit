@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const PlayerOffer = require('../models/PlayerOffer');
+const PlayerProfile = require('../models/PlayerProfile');
+const Follow = require('../models/Follow');
 const { authMiddleware } = require('../middleware/auth');
 
 // Get all offers for the logged-in player
@@ -17,6 +19,24 @@ router.get('/my-offers', authMiddleware, async (req, res) => {
 // Get offers for a player by username (for viewing profiles)
 router.get('/player/:username', authMiddleware, async (req, res) => {
   try {
+    // Get the player's profile to check privacy
+    const profile = await PlayerProfile.findByUsername(req.params.username);
+    if (!profile) {
+      return res.status(404).json({ error: 'Player not found' });
+    }
+
+    // Check if viewer can access this user's content (private profile check)
+    const targetUserId = profile.user_id;
+    if (req.userId !== targetUserId) {
+      const isPrivate = await Follow.isPrivateProfile(targetUserId);
+      if (isPrivate) {
+        const isFollowing = await Follow.isFollowing(req.userId, targetUserId);
+        if (!isFollowing) {
+          return res.json({ offers: [], accessDenied: true });
+        }
+      }
+    }
+
     const offers = await PlayerOffer.getByUsername(req.params.username);
     res.json({ offers });
   } catch (error) {

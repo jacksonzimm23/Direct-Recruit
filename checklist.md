@@ -6,9 +6,31 @@ Small schools using AI to match to recruiting areas / hs pipelines
 Big schools know who the big time recruitsare , benefit more from transfer portal 
 
 
-My Recommendation
-Later: Add AWS Secrets Manager when you deploy to production
-Much later: Private VPC when you have paying customers and need compliance
+
+
+
+
+What needs fixing before production:
+
+CORS - This is critical. Any malicious website can currently make API requests on behalf of logged-in users. Fix with:
+
+
+cors({ origin: ['https://yourdomain.com'] })
+Rate limiting in dev - Attackers don't care about your NODE_ENV
+
+Token invalidation - Without a logout endpoint and token blacklist, stolen tokens remain valid for 7 days
+
+File uploads - Only checking file extension is dangerous (attackers rename malware to .jpg)
+
+Before Deploying
+Make sure your production environment has:
+
+
+NODE_ENV=production
+This tells the server to use your domain whitelist instead of localhost. Without this, it will default to development mode.
+
+
+
 
 
 psql "host=direct-recruit-db.c6t02cia6f8p.us-east-1.rds.amazonaws.com user=dr_admin dbname=direct_recruit sslmode=require"
@@ -24,6 +46,9 @@ Critical for working website (to-do still):
 
 
 To do:
+- multiple accounts for multi-sport athletes 
+- CORS for domain
+- move "follows you" label to right of name 
 - add others as part of search 
 - store collegeplayer info from create a profile page (number, conferences, elig)
 - team account confirmation 

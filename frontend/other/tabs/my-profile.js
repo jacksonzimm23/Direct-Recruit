@@ -99,6 +99,12 @@ async function loadProfileByUsername(username) {
             isOwnProfile = currentUserId === viewingUserId;
             displayProfile(response.profile, response.type, response.accessLevel, response.hasPendingRequest);
 
+            // Remove sensitive DOM elements when viewing another profile
+            // This prevents data from being visible in Elements inspector
+            if (!isOwnProfile) {
+                removeSensitiveElementsForOtherProfile();
+            }
+
             // Hide Likes tab if viewing someone else's profile
             const likesTab = document.querySelector('.profile-tab[data-tab="likes"]');
             if (likesTab) {
@@ -223,6 +229,63 @@ function displayProfile(profile, type, accessLevel = 'full', hasPendingRequest =
         addPrivateProfileOverlay();
         disableFollowLinksForPrivateProfile();
     }
+}
+
+// Remove sensitive DOM elements when viewing another user's profile
+// This prevents data from being visible in the Elements inspector
+function removeSensitiveElementsForOtherProfile() {
+    // Remove right sidebar widget content (profile views, etc.)
+    const profileStatsWidget = document.getElementById('profileStatsWidget');
+    if (profileStatsWidget) {
+        profileStatsWidget.remove();
+    }
+
+    // Remove mobile profile views link
+    const mobileProfileViewsLink = document.getElementById('mobileProfileViewsLink');
+    if (mobileProfileViewsLink) {
+        mobileProfileViewsLink.remove();
+    }
+
+    // Remove all edit modals to prevent form data inspection
+    const modalsToRemove = [
+        'editProfileModal',
+        'addOfferModal',
+        'editOfferModal',
+        'deleteConfirmModal',
+        'seasonSelectModal',
+        'addStatsModal',
+        'editStatsModal',
+        'deleteStatsConfirmModal',
+        'addHighlightModal',
+        'deleteHighlightConfirmModal',
+        'editAcademicsModal',
+        'profileViewersModal'
+    ];
+
+    modalsToRemove.forEach(modalId => {
+        const modal = document.getElementById(modalId);
+        if (modal) {
+            modal.remove();
+        }
+    });
+
+    // Remove edit buttons
+    const editButtons = [
+        'editProfileBtn',
+        'changePhotoBtn',
+        'addOfferBtn',
+        'addStatsBtn',
+        'addSeasonHighlightBtn',
+        'addGameHighlightBtn',
+        'editAcademicsBtn'
+    ];
+
+    editButtons.forEach(btnId => {
+        const btn = document.getElementById(btnId);
+        if (btn) {
+            btn.remove();
+        }
+    });
 }
 
 // Disable followers/following links for private profiles
@@ -2190,9 +2253,7 @@ async function saveProfilePostEdit(postId) {
 
             const uploadResponse = await fetch('/api/posts/upload-media', {
                 method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
-                },
+                credentials: 'include',
                 body: formData
             });
 

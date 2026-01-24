@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Notification = require('../models/Notification');
-const { authMiddleware } = require('../middleware/auth');
+const { authMiddleware, validateUUID } = require('../middleware/auth');
 const { getSignedS3Url } = require('../utils/s3');
 
 // Helper function to add signed URLs to notifications with profile images
@@ -65,7 +65,7 @@ router.get('/counts', authMiddleware, async (req, res) => {
 });
 
 // Mark single notification as read
-router.put('/:notificationId/read', authMiddleware, async (req, res) => {
+router.put('/:notificationId/read', authMiddleware, validateUUID('notificationId'), async (req, res) => {
   try {
     const { notificationId } = req.params;
 
@@ -94,7 +94,7 @@ router.put('/read-all', authMiddleware, async (req, res) => {
 });
 
 // Delete single notification
-router.delete('/:notificationId', authMiddleware, async (req, res) => {
+router.delete('/:notificationId', authMiddleware, validateUUID('notificationId'), async (req, res) => {
   try {
     const { notificationId } = req.params;
 
