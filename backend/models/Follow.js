@@ -377,7 +377,21 @@ class Follow {
               COALESCE(pp.first_name, cp.first_name, op.first_name) as first_name,
               COALESCE(pp.last_name, cp.last_name, op.last_name) as last_name,
               COALESCE(pp.profile_image_url, cp.profile_image_url, op.profile_picture_url) as profile_image_url,
-              f.created_at as followed_at
+              f.created_at as followed_at,
+              pp.position as player_position,
+              pp.height as player_height,
+              pp.weight as player_weight,
+              pp.graduation_year,
+              pp.team_name as player_team_name,
+              pp.state as player_state,
+              pp.college_division as player_college_division,
+              pp.transfer as is_transfer,
+              pp.eligibility as years_of_eligibility,
+              cp.position_title as coach_position_title,
+              cp.team_name as coach_team_name,
+              cp.state as coach_state,
+              cp.college_division as coach_college_division,
+              op.subheader as other_subheader
        FROM follows f
        JOIN users u ON f.follower_id = u.id
        LEFT JOIN player_profiles pp ON u.id = pp.user_id
@@ -397,7 +411,21 @@ class Follow {
               COALESCE(pp.first_name, cp.first_name, op.first_name) as first_name,
               COALESCE(pp.last_name, cp.last_name, op.last_name) as last_name,
               COALESCE(pp.profile_image_url, cp.profile_image_url, op.profile_picture_url) as profile_image_url,
-              f.created_at as followed_at
+              f.created_at as followed_at,
+              pp.position as player_position,
+              pp.height as player_height,
+              pp.weight as player_weight,
+              pp.graduation_year,
+              pp.team_name as player_team_name,
+              pp.state as player_state,
+              pp.college_division as player_college_division,
+              pp.transfer as is_transfer,
+              pp.eligibility as years_of_eligibility,
+              cp.position_title as coach_position_title,
+              cp.team_name as coach_team_name,
+              cp.state as coach_state,
+              cp.college_division as coach_college_division,
+              op.subheader as other_subheader
        FROM follows f
        JOIN users u ON f.following_id = u.id
        LEFT JOIN player_profiles pp ON u.id = pp.user_id

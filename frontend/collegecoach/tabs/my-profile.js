@@ -442,6 +442,9 @@ function updateNavbarForLoggedInUser(user, profile) {
         `;
         document.head.appendChild(styleTag);
 
+        // Mark sidebar as ready to show (removes opacity:0 for cross-profile viewing)
+        document.documentElement.classList.add('sidebar-ready');
+
         // Update unread messages badge after navbar is rebuilt
         if (typeof updateUnreadMessagesBadge === 'function') {
             updateUnreadMessagesBadge();
@@ -524,8 +527,14 @@ function updateNavbarForLoggedInUser(user, profile) {
                 if (profile.state) parts.push(profile.state);
                 userRole.textContent = parts.join(', ') || 'HS Coach';
             } else if (userFolder === 'collegecoach') {
-                // College Coach: college_name • division
-                if (profile.team_name) parts.push(profile.team_name);
+                // College Coach: college_name, state • division
+                if (profile.team_name && profile.state) {
+                    parts.push(`${profile.team_name}, ${profile.state}`);
+                } else if (profile.team_name) {
+                    parts.push(profile.team_name);
+                } else if (profile.state) {
+                    parts.push(profile.state);
+                }
                 if (profile.college_division) {
                     // Format FBS/FCS as D1 FBS/D1 FCS
                     const divDisplay = (profile.college_division === 'FBS' || profile.college_division === 'FCS')
@@ -2582,6 +2591,94 @@ function setupFollowListModal() {
     }
 }
 
+// Helper function to format height from inches to ft'in" format
+function formatHeightForDisplay(height) {
+    if (!height) return null;
+    if (typeof height === 'string' && height.includes("'")) return height;
+    const totalInches = typeof height === 'string' ? parseInt(height) : height;
+    if (isNaN(totalInches)) return null;
+    const feet = Math.floor(totalInches / 12);
+    const inches = totalInches % 12;
+    return `${feet}'${inches}"`;
+}
+
+// Helper function to get role subheader text and color for follow list
+function getFollowListRoleInfo(user) {
+    const role = user.role;
+    let text = '';
+    let colorClass = '';
+
+    if (role === 'player') {
+        // Determine player type
+        const isTransfer = user.is_transfer === 'y' || user.is_transfer === true;
+        const hasCollegeDivision = user.player_college_division &&
+            ['FBS', 'FCS', 'D2', 'D3', 'NAIA', 'NJCAA', 'JUCO'].includes(user.player_college_division);
+
+        if (isTransfer) {
+            // Transfer Player: position • height • weight • YOE
+            colorClass = 'role-transfer';
+            const parts = [];
+            if (user.player_position) parts.push(user.player_position);
+            const heightStr = formatHeightForDisplay(user.player_height);
+            if (heightStr) parts.push(heightStr);
+            if (user.player_weight) parts.push(`${user.player_weight} lbs`);
+            if (user.years_of_eligibility) parts.push(`${user.years_of_eligibility} YOE`);
+            text = parts.join(' • ') || 'Transfer Player';
+        } else if (hasCollegeDivision) {
+            // College Player: position • school, state • division
+            colorClass = 'role-college-player';
+            const parts = [];
+            if (user.player_position) parts.push(user.player_position);
+            const schoolParts = [];
+            if (user.player_team_name) schoolParts.push(user.player_team_name);
+            if (user.player_state) schoolParts.push(user.player_state);
+            if (schoolParts.length > 0) parts.push(schoolParts.join(', '));
+            if (user.player_college_division) parts.push(user.player_college_division);
+            text = parts.join(' • ') || 'College Player';
+        } else {
+            // HS Player: position • height • weight • class
+            colorClass = 'role-hs-player';
+            const parts = [];
+            if (user.player_position) parts.push(user.player_position);
+            const heightStr = formatHeightForDisplay(user.player_height);
+            if (heightStr) parts.push(heightStr);
+            if (user.player_weight) parts.push(`${user.player_weight} lbs`);
+            if (user.graduation_year) parts.push(user.graduation_year);
+            text = parts.join(' • ') || 'HS Player';
+        }
+    } else if (role === 'coach') {
+        const hasCollegeDivision = user.coach_college_division &&
+            ['FBS', 'FCS', 'D2', 'D3', 'NAIA', 'NJCAA', 'JUCO'].includes(user.coach_college_division);
+
+        if (hasCollegeDivision) {
+            // College Coach: team, state • division
+            colorClass = 'role-college-coach';
+            const parts = [];
+            const teamParts = [];
+            if (user.coach_team_name) teamParts.push(user.coach_team_name);
+            if (user.coach_state) teamParts.push(user.coach_state);
+            if (teamParts.length > 0) parts.push(teamParts.join(', '));
+            if (user.coach_college_division) parts.push(user.coach_college_division);
+            text = parts.join(' • ') || 'College Coach';
+        } else {
+            // HS Coach: team, state
+            colorClass = 'role-hs-coach';
+            const parts = [];
+            if (user.coach_team_name) parts.push(user.coach_team_name);
+            if (user.coach_state) parts.push(user.coach_state);
+            text = parts.join(', ') || 'HS Coach';
+        }
+    } else if (role === 'other') {
+        // Other: subheader
+        colorClass = 'role-other';
+        text = user.other_subheader || 'Other';
+    } else {
+        text = role || 'User';
+    }
+
+    return { text, colorClass };
+}
+
 async function openFollowListModal(type) {
     const modal = document.getElementById('followListModal');
     const modalTitle = document.getElementById('followListModalTitle');
@@ -2617,7 +2714,9 @@ async function openFollowListModal(type) {
         }
 
         // Render the list
-        modalBody.innerHTML = users.map(user => `
+        modalBody.innerHTML = users.map(user => {
+            const roleInfo = getFollowListRoleInfo(user);
+            return `
             <div class="follow-list-item" data-user-id="${user.id}" data-role="${user.role}">
                 <div class="follow-list-avatar">
                     ${user.profile_image_url
@@ -2630,10 +2729,10 @@ async function openFollowListModal(type) {
                 </div>
                 <div class="follow-list-info">
                     <div class="follow-list-name">${user.first_name} ${user.last_name}</div>
-                    <div class="follow-list-role">${user.role}</div>
+                    <div class="follow-list-role ${roleInfo.colorClass}">${roleInfo.text}</div>
                 </div>
             </div>
-        `).join('');
+        `}).join('');
 
         // Add click handlers to navigate to profiles
         modalBody.querySelectorAll('.follow-list-item').forEach(item => {
@@ -2901,6 +3000,50 @@ function formatPostContent(content) {
     return formatted;
 }
 
+// Build media HTML for profile posts (used when updating DOM after edit)
+// Build media HTML for profile posts (used when updating DOM after edit and displaying posts)
+// This matches the feed's grid layout with all images displayed
+function buildMediaGridHTML(mediaUrls, mediaType) {
+    if (!mediaUrls || mediaUrls.length === 0) return '';
+
+    const urls = mediaUrls.slice(0, 4);
+    const mediaCount = urls.length;
+
+    const isVideoUrl = (url, index) => {
+        if (mediaType === 'video') return true;
+        return url && url.toLowerCase().match(/\.(mp4|mov|avi|webm)$/);
+    };
+
+    let gridCells = '';
+    for (let i = 0; i < mediaCount; i++) {
+        const url = urls[i];
+        const isVideo = isVideoUrl(url, i);
+        const videoIndicator = isVideo ? `
+            <div class="video-indicator">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                    <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                </svg>
+            </div>
+        ` : '';
+
+        gridCells += `
+            <div class="media-grid-cell" onclick="event.stopPropagation(); openProfileMediaSlideshowFromElement(this);">
+                ${isVideo ?
+                    `<video src="${url}" muted preload="metadata"></video>` :
+                    `<img src="${url}" alt="Post media ${i + 1}">`
+                }
+                ${videoIndicator}
+            </div>
+        `;
+    }
+
+    return `
+        <div class="post-media-grid media-count-${mediaCount}" onclick="event.stopPropagation();">
+            ${gridCells}
+        </div>
+    `;
+}
+
 // Build meta info for post author
 function buildPostMetaInfo(post) {
     let metaInfo = '';
@@ -2972,8 +3115,14 @@ function buildPostMetaInfo(post) {
         // Coach
         const parts = [];
         if (post.author_division) {
-            // College Coach: College • Division
-            if (post.author_school) parts.push(post.author_school);
+            // College Coach: College, State • Division
+            if (post.author_school && post.author_state) {
+                parts.push(`${post.author_school}, ${post.author_state}`);
+            } else if (post.author_school) {
+                parts.push(post.author_school);
+            } else if (post.author_state) {
+                parts.push(post.author_state);
+            }
             const div = post.author_division;
             if (div === 'FBS' || div === 'FCS') {
                 parts.push(`D1 ${div}`);
@@ -3000,28 +3149,12 @@ function createProfilePostElement(post) {
     const metaInfo = buildPostMetaInfo(post);
     const isOwnPost = post.user_id === currentUserId;
     const isPinned = post.is_pinned || false;
+    const isLiked = post.user_liked || false;
+    const isSaved = post.user_saved || false;
+    const isReposted = post.user_reposted || false;
 
-    // Build media HTML
-    let mediaHtml = '';
-    if (post.media_urls && post.media_urls.length > 0) {
-        const mediaCount = post.media_urls.length;
-        const isVideo = post.media_type === 'video' || (post.media_urls[0] && post.media_urls[0].toLowerCase().match(/\.(mp4|mov|avi|webm)$/));
-
-        if (isVideo) {
-            mediaHtml = `
-                <div class="profile-post-media">
-                    <video controls src="${post.media_urls[0]}"></video>
-                </div>
-            `;
-        } else {
-            mediaHtml = `
-                <div class="profile-post-media">
-                    <img src="${post.media_urls[0]}" alt="Post media">
-                    ${mediaCount > 1 ? `<span class="media-count-badge"><span>1 / ${mediaCount}</span></span>` : ''}
-                </div>
-            `;
-        }
-    }
+    // Build media HTML using the grid layout (same as feed)
+    const mediaHtml = buildMediaGridHTML(post.media_urls, post.media_type);
 
     // Pinned badge HTML
     const pinnedBadge = isPinned ? `
@@ -3067,7 +3200,7 @@ function createProfilePostElement(post) {
                             </svg>
                         ` : ''}
                     </div>
-                    <div class="profile-post-meta ${post.author_role === 'coach' ? 'coach-meta' : (post.author_transfer === 'y' ? 'transfer-player-meta' : '')}">${metaInfo}</div>
+                    <div class="profile-post-meta ${post.author_role === 'coach' ? 'coach-meta' : (post.author_role === 'other' ? 'other-meta' : (post.author_transfer === 'y' ? 'transfer-player-meta' : 'player-meta'))}">${metaInfo}</div>
                 </div>
                 <div class="profile-post-header-actions">
                     ${optionsButton}
@@ -3082,6 +3215,132 @@ function createProfilePostElement(post) {
                 <p>${formatPostContent(post.content)}</p>
                 ${mediaHtml}
             </div>
+            <div class="profile-post-stats" onclick="event.stopPropagation();">
+                <span class="profile-likes-count" onclick="showPostLikes('${post.id}')" style="cursor: pointer;">${post.likes_count || 0} ${post.likes_count === 1 ? 'like' : 'likes'}</span>
+                <span class="profile-comments-count" onclick="togglePostComments('${post.id}')" style="cursor: pointer;">${post.comments_count || 0} ${post.comments_count === 1 ? 'comment' : 'comments'}</span>
+                <span>${post.shares_count || 0} ${(post.shares_count || 0) === 1 ? 'share' : 'shares'}</span>
+            </div>
+            <div class="profile-post-actions" onclick="event.stopPropagation();">
+                <button class="profile-action-btn ${isLiked ? 'liked' : ''}" onclick="togglePostLike('${post.id}', this)">
+                    <svg viewBox="0 0 24 24" fill="${isLiked ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2">
+                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                    </svg>
+                    <span>${isLiked ? 'Liked' : 'Like'}</span>
+                </button>
+                <button class="profile-action-btn" onclick="togglePostComments('${post.id}')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                    <span>Comment</span>
+                </button>
+                <button class="profile-action-btn ${isSaved ? 'saved' : ''}" onclick="togglePostSave('${post.id}', this)">
+                    <svg viewBox="0 0 24 24" fill="${isSaved ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2">
+                        <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                    <span>${isSaved ? 'Saved' : 'Save'}</span>
+                </button>
+                <button class="profile-action-btn ${isReposted ? 'reposted' : ''}" onclick="profileSharePost('${post.id}', event)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="17 1 21 5 17 9"></polyline>
+                        <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
+                        <polyline points="7 23 3 19 7 15"></polyline>
+                        <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
+                    </svg>
+                    <span>Share</span>
+                </button>
+            </div>
+        </article>
+    `;
+}
+
+// Create repost card HTML (simple repost without added content)
+function createProfileRepostElement(post) {
+    const reposterId = post.author_user_id || post.user_id;
+    const reposterName = `${post.author_first_name || ''} ${post.author_last_name || ''}`.trim() || 'Unknown User';
+    const originalAuthorName = `${post.original_author_first_name || ''} ${post.original_author_last_name || ''}`.trim() || 'Unknown User';
+    const originalMetaInfo = buildOriginalPostMetaInfo(post);
+    const timeAgo = formatTimeAgo(post.created_at);
+    const isOwnRepost = reposterId === currentUserId;
+
+    // Build media HTML for original post
+    let mediaHtml = '';
+    if (post.original_media_urls && post.original_media_urls.length > 0) {
+        const mediaCount = post.original_media_urls.length;
+        const isVideo = post.original_media_type === 'video' || (post.original_media_urls[0] && post.original_media_urls[0].toLowerCase().match(/\.(mp4|mov|avi|webm)$/));
+
+        if (isVideo) {
+            mediaHtml = `
+                <div class="profile-post-media">
+                    <video controls src="${post.original_media_urls[0]}"></video>
+                </div>
+            `;
+        } else {
+            mediaHtml = `
+                <div class="profile-post-media">
+                    <img src="${post.original_media_urls[0]}" alt="Post media">
+                    ${mediaCount > 1 ? `<span class="media-count-badge"><span>1 / ${mediaCount}</span></span>` : ''}
+                </div>
+            `;
+        }
+    }
+
+    // Options button (only for own reposts)
+    const optionsButton = isOwnRepost ? `
+        <button class="profile-post-more-btn" onclick="event.stopPropagation(); showRepostMenu('${post.share_id}', '${post.id}', event)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="1"></circle>
+                <circle cx="19" cy="12" r="1"></circle>
+                <circle cx="5" cy="12" r="1"></circle>
+            </svg>
+        </button>
+    ` : '';
+
+    return `
+        <div class="profile-repost-indicator">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                <polyline points="17 1 21 5 17 9"></polyline>
+                <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
+                <polyline points="7 23 3 19 7 15"></polyline>
+                <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
+            </svg>
+            <span>${isOwnRepost ? 'You' : reposterName} reposted</span>
+            <span class="repost-time">${timeAgo}</span>
+        </div>
+        <article class="profile-post-card profile-repost-card" data-post-id="${post.id}" data-share-id="${post.share_id}" onclick="navigateToPost('${post.id}')">
+            <div class="profile-post-header">
+                <div class="profile-post-avatar">
+                    ${post.original_author_image
+                        ? `<img src="${post.original_author_image}" alt="${originalAuthorName}">`
+                        : `<svg viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="12" cy="7" r="4"></circle>
+                          </svg>`
+                    }
+                </div>
+                <div class="profile-post-info">
+                    <div class="profile-post-author">
+                        ${originalAuthorName}
+                        ${post.original_author_verified ? `
+                            <svg class="verified-badge" viewBox="0 0 24 24" fill="#1DA1F2" width="16" height="16">
+                                <path d="M22.5 12.5c0-1.58-.875-2.95-2.148-3.6.154-.435.238-.905.238-1.4 0-2.21-1.71-3.998-3.818-3.998-.47 0-.92.084-1.336.25C14.818 2.415 13.51 1.5 12 1.5s-2.816.917-3.437 2.25c-.415-.165-.866-.25-1.336-.25-2.11 0-3.818 1.79-3.818 4 0 .494.083.964.237 1.4-1.272.65-2.147 2.018-2.147 3.6 0 1.495.782 2.798 1.942 3.486-.02.17-.032.34-.032.514 0 2.21 1.708 4 3.818 4 .47 0 .92-.086 1.335-.25.62 1.334 1.926 2.25 3.437 2.25 1.512 0 2.818-.916 3.437-2.25.415.163.865.248 1.336.248 2.11 0 3.818-1.79 3.818-4 0-.174-.012-.344-.033-.513 1.158-.687 1.943-1.99 1.943-3.484zm-6.616-3.334l-4.334 6.5c-.145.217-.382.334-.625.334-.143 0-.288-.04-.416-.126l-.115-.094-2.415-2.415c-.293-.293-.293-.768 0-1.06s.768-.294 1.06 0l1.77 1.767 3.825-5.74c.23-.345.696-.436 1.04-.207.346.23.44.696.21 1.04z"/>
+                            </svg>
+                        ` : ''}
+                    </div>
+                    <div class="profile-post-meta ${post.original_author_role === 'coach' ? 'coach-meta' : (post.original_author_role === 'other' ? 'other-meta' : (post.original_author_transfer === 'y' ? 'transfer-player-meta' : 'player-meta'))}">${originalMetaInfo}</div>
+                </div>
+                <div class="profile-post-header-actions">
+                    ${optionsButton}
+                    <div class="profile-post-view-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="9 18 15 12 9 6"></polyline>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+            <div class="profile-post-content">
+                <p>${formatPostContent(post.original_content || '')}</p>
+                ${mediaHtml}
+            </div>
             <div class="profile-post-stats">
                 <span>${post.likes_count || 0} ${post.likes_count === 1 ? 'like' : 'likes'}</span>
                 <span>${post.comments_count || 0} ${post.comments_count === 1 ? 'comment' : 'comments'}</span>
@@ -3089,6 +3348,383 @@ function createProfilePostElement(post) {
             </div>
         </article>
     `;
+}
+
+// Create quote post card HTML (repost with added commentary)
+function createProfileQuotePostElement(post) {
+    const quoterId = post.author_user_id || post.user_id;
+    const quoterName = `${post.author_first_name || ''} ${post.author_last_name || ''}`.trim() || 'Unknown User';
+    const quoterMetaInfo = buildPostMetaInfo(post);
+    const originalAuthorName = `${post.original_author_first_name || ''} ${post.original_author_last_name || ''}`.trim() || 'Unknown User';
+    const originalTimeAgo = formatTimeAgo(post.original_created_at);
+    const quoteTimeAgo = formatTimeAgo(post.created_at);
+    const isOwnQuote = quoterId === currentUserId;
+    const originalPostId = post.original_post_id || post.id;
+    const isLiked = post.user_liked || false;
+    const isSaved = post.user_saved || false;
+    const isReposted = post.user_reposted || false;
+
+    // Build media HTML for original post using grid layout (matches feed styling)
+    let originalMediaHtml = '';
+    if (post.original_media_urls && post.original_media_urls.length > 0) {
+        const urls = post.original_media_urls;
+        const mediaCount = Math.min(urls.length, 4);
+        const isVideoUrl = (url) => {
+            if (post.original_media_type === 'video') return true;
+            return url && url.toLowerCase().match(/\.(mp4|mov|avi|webm)$/);
+        };
+
+        let gridCells = '';
+        for (let i = 0; i < mediaCount; i++) {
+            const url = urls[i];
+            const isVideo = isVideoUrl(url);
+            const videoIndicator = isVideo ? `
+                <div class="video-indicator">
+                    <svg viewBox="0 0 24 24" fill="currentColor">
+                        <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                    </svg>
+                </div>
+            ` : '';
+
+            gridCells += `
+                <div class="quoted-media-item" onclick="event.stopPropagation(); openProfileMediaSlideshowFromElement(this);">
+                    ${isVideo ?
+                        `<video src="${url}" muted preload="metadata"></video>` :
+                        `<img src="${url}" alt="Post media ${i + 1}">`
+                    }
+                    ${videoIndicator}
+                </div>
+            `;
+        }
+
+        originalMediaHtml = `<div class="quoted-post-media media-count-${mediaCount}">${gridCells}</div>`;
+    }
+
+    // Build media HTML for the quote post's own media
+    const quoteMediaHtml = buildMediaGridHTML(post.quote_media_urls, post.quote_media_type);
+
+    // Options button - show for all users (owner gets edit/delete, others get report)
+    const optionsButton = `
+        <button class="profile-post-more-btn" onclick="event.stopPropagation(); showQuoteMenu('${post.share_id}', '${originalPostId}', ${isOwnQuote}, event)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="1"></circle>
+                <circle cx="19" cy="12" r="1"></circle>
+                <circle cx="5" cy="12" r="1"></circle>
+            </svg>
+        </button>
+    `;
+
+    return `
+        <article class="profile-post-card profile-quote-card" data-post-id="${originalPostId}" data-share-id="${post.share_id}" onclick="navigateToQuotePost('${post.share_id}')" style="cursor: pointer;">
+            <div class="profile-post-header">
+                <div class="profile-post-avatar" onclick="event.stopPropagation(); goToProfile('${post.author_username || quoterId}', '${post.author_role || 'player'}', '${post.author_division || ''}', '${quoterId}', ${post.author_transfer === 'y'})" style="cursor: pointer;">
+                    ${post.author_image
+                        ? `<img src="${post.author_image}" alt="${quoterName}">`
+                        : `<svg viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="12" cy="7" r="4"></circle>
+                          </svg>`
+                    }
+                </div>
+                <div class="profile-post-info">
+                    <div class="profile-post-author" onclick="event.stopPropagation(); goToProfile('${post.author_username || quoterId}', '${post.author_role || 'player'}', '${post.author_division || ''}', '${quoterId}', ${post.author_transfer === 'y'})" style="cursor: pointer;">
+                        ${quoterName}
+                        ${post.author_username ? `<span class="profile-post-handle">@${post.author_username}</span>` : ''}
+                        ${post.author_verified ? `
+                            <svg class="verified-badge" viewBox="0 0 24 24" fill="#1DA1F2" width="16" height="16">
+                                <path d="M22.5 12.5c0-1.58-.875-2.95-2.148-3.6.154-.435.238-.905.238-1.4 0-2.21-1.71-3.998-3.818-3.998-.47 0-.92.084-1.336.25C14.818 2.415 13.51 1.5 12 1.5s-2.816.917-3.437 2.25c-.415-.165-.866-.25-1.336-.25-2.11 0-3.818 1.79-3.818 4 0 .494.083.964.237 1.4-1.272.65-2.147 2.018-2.147 3.6 0 1.495.782 2.798 1.942 3.486-.02.17-.032.34-.032.514 0 2.21 1.708 4 3.818 4 .47 0 .92-.086 1.335-.25.62 1.334 1.926 2.25 3.437 2.25 1.512 0 2.818-.916 3.437-2.25.415.163.865.248 1.336.248 2.11 0 3.818-1.79 3.818-4 0-.174-.012-.344-.033-.513 1.158-.687 1.943-1.99 1.943-3.484zm-6.616-3.334l-4.334 6.5c-.145.217-.382.334-.625.334-.143 0-.288-.04-.416-.126l-.115-.094-2.415-2.415c-.293-.293-.293-.768 0-1.06s.768-.294 1.06 0l1.77 1.767 3.825-5.74c.23-.345.696-.436 1.04-.207.346.23.44.696.21 1.04z"/>
+                            </svg>
+                        ` : ''}
+                    </div>
+                    <div class="profile-post-meta ${post.author_role === 'coach' ? 'coach-meta' : (post.author_role === 'other' ? 'other-meta' : (post.author_transfer === 'y' ? 'transfer-player-meta' : 'player-meta'))}">${quoterMetaInfo}</div>
+                </div>
+                <div class="profile-post-header-actions">
+                    ${optionsButton}
+                    <div class="profile-post-view-icon" onclick="navigateToQuotePost('${post.share_id}')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="9 18 15 12 9 6"></polyline>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+            <div class="profile-post-content" onclick="navigateToQuotePost('${post.share_id}')" style="cursor: pointer;">
+                <p>${formatPostContent(post.quote_content || '')}</p>
+            </div>
+            ${quoteMediaHtml ? `<div onclick="event.stopPropagation();">${quoteMediaHtml}</div>` : ''}
+            <!-- Embedded original post -->
+            <div class="profile-quote-embedded" onclick="event.stopPropagation(); navigateToPost('${originalPostId}')">
+                <div class="quote-embedded-header">
+                    <div class="quote-embedded-avatar" onclick="event.stopPropagation(); goToProfile('${post.original_author_username || post.original_author_user_id}', '${post.original_author_role || 'player'}', '${post.original_author_division || ''}', '${post.original_author_user_id}', ${post.original_author_transfer === 'y'})" style="cursor: pointer;">
+                        ${post.original_author_image
+                            ? `<img src="${post.original_author_image}" alt="${originalAuthorName}">`
+                            : `<svg viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="12" cy="7" r="4"></circle>
+                              </svg>`
+                        }
+                    </div>
+                    <div class="quote-embedded-info">
+                        <span class="quote-embedded-author">${originalAuthorName}</span>
+                        <span class="quote-embedded-time">${originalTimeAgo}</span>
+                    </div>
+                </div>
+                <div class="quote-embedded-content">
+                    <p>${formatPostContent(post.original_content || '')}</p>
+                    ${originalMediaHtml}
+                </div>
+            </div>
+            <div class="profile-post-stats">
+                <span class="profile-likes-count" onclick="event.stopPropagation(); showShareLikes('${post.share_id}')" style="cursor: pointer;">${post.likes_count || 0} ${post.likes_count === 1 ? 'like' : 'likes'}</span>
+                <span class="profile-comments-count" onclick="event.stopPropagation(); toggleShareComments('${post.share_id}')" style="cursor: pointer;">${post.comments_count || 0} ${post.comments_count === 1 ? 'comment' : 'comments'}</span>
+                <span>${post.shares_count || 0} ${(post.shares_count || 0) === 1 ? 'share' : 'shares'}</span>
+            </div>
+            <div class="profile-post-actions">
+                <button class="profile-action-btn ${isLiked ? 'liked' : ''}" onclick="event.stopPropagation(); toggleShareLike('${post.share_id}', this)">
+                    <svg viewBox="0 0 24 24" fill="${isLiked ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2">
+                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                    </svg>
+                    <span>${isLiked ? 'Liked' : 'Like'}</span>
+                </button>
+                <button class="profile-action-btn" onclick="event.stopPropagation(); toggleShareComments('${post.share_id}')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                    <span>Comment</span>
+                </button>
+                <button class="profile-action-btn ${isSaved ? 'saved' : ''}" onclick="event.stopPropagation(); toggleShareSave('${post.share_id}', this)">
+                    <svg viewBox="0 0 24 24" fill="${isSaved ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2">
+                        <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                    <span>${isSaved ? 'Saved' : 'Save'}</span>
+                </button>
+                <button class="profile-action-btn ${isReposted ? 'reposted' : ''}" onclick="event.stopPropagation(); profileSharePost('${originalPostId}', event)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="17 1 21 5 17 9"></polyline>
+                        <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
+                        <polyline points="7 23 3 19 7 15"></polyline>
+                        <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
+                    </svg>
+                    <span>${isReposted ? 'Shared' : 'Share'}</span>
+                </button>
+            </div>
+            <div class="profile-comments-section" id="share-comments-${post.share_id}" style="display: none;">
+                <div class="comments-list"></div>
+                <div class="comment-input-container">
+                    <input type="text" placeholder="Write a comment..." class="comment-input" id="share-comment-input-${post.share_id}" onkeypress="if(event.key==='Enter') addShareComment('${post.share_id}')">
+                    <button onclick="addShareComment('${post.share_id}')">Post</button>
+                </div>
+            </div>
+        </article>
+    `;
+}
+
+// Build meta info for original post in reposts/quotes
+function buildOriginalPostMetaInfo(post) {
+    const timeAgo = formatTimeAgo(post.original_created_at);
+    let starsHtml = '';
+
+    if (post.original_author_role === 'player' && post.original_author_star_rating && post.original_author_star_rating >= 1 && post.original_author_star_rating <= 5) {
+        const isHSPlayer = !post.original_author_division && post.original_author_transfer !== 'y';
+        const isTransferPlayer = post.original_author_transfer === 'y';
+        if (isHSPlayer || isTransferPlayer) {
+            starsHtml = `<span class="post-meta-stars" style="color: #ffd700; font-weight: 600;">${post.original_author_star_rating}★</span> `;
+        }
+    }
+
+    if (post.original_author_role === 'player') {
+        const parts = [];
+        if (post.original_author_transfer === 'y') {
+            if (post.original_author_position) parts.push(post.original_author_position);
+            if (post.original_author_height) {
+                const heightStr = String(post.original_author_height);
+                if (heightStr.includes("'") || heightStr.includes('-')) {
+                    parts.push(heightStr.replace('-', "'") + '"');
+                } else {
+                    const feet = Math.floor(parseInt(heightStr) / 12);
+                    const inches = parseInt(heightStr) % 12;
+                    parts.push(`${feet}'${inches}"`);
+                }
+            }
+            if (post.original_author_weight) parts.push(`${post.original_author_weight} lbs`);
+            if (post.original_author_eligibility) {
+                const yearText = post.original_author_eligibility === 1 ? 'year' : 'years';
+                parts.push(`YOE: ${post.original_author_eligibility} ${yearText}`);
+            }
+        } else if (post.original_author_division) {
+            if (post.original_author_position) parts.push(post.original_author_position);
+            if (post.original_author_school) parts.push(post.original_author_school);
+            const div = post.original_author_division;
+            const divLabel = div === 'D1' ? 'D1' : div === 'D2' ? 'D2' : div === 'D3' ? 'D3' : div === 'NAIA' ? 'NAIA' : div === 'JUCO' ? 'JUCO' : '';
+            if (divLabel) parts.push(divLabel);
+        } else {
+            if (post.original_author_position) parts.push(post.original_author_position);
+            if (post.original_author_school) parts.push(post.original_author_school);
+            if (post.original_author_grad_year) parts.push(`'${String(post.original_author_grad_year).slice(-2)}`);
+        }
+        return starsHtml + parts.join(' · ') + (parts.length > 0 ? ' · ' : '') + timeAgo;
+    } else if (post.original_author_role === 'coach') {
+        const parts = [];
+        if (post.original_author_position) parts.push(post.original_author_position);
+        if (post.original_author_school) parts.push(post.original_author_school);
+        if (post.original_author_division) {
+            const div = post.original_author_division;
+            const divLabel = div === 'D1' ? 'D1' : div === 'D2' ? 'D2' : div === 'D3' ? 'D3' : div === 'NAIA' ? 'NAIA' : div === 'JUCO' ? 'JUCO' : div === 'High School' ? 'HS' : '';
+            if (divLabel) parts.push(divLabel);
+        }
+        return parts.join(' · ') + (parts.length > 0 ? ' · ' : '') + timeAgo;
+    } else if (post.original_author_role === 'other') {
+        const parts = [];
+        if (post.original_author_subheader) parts.push(post.original_author_subheader);
+        return parts.join(' · ') + (parts.length > 0 ? ' · ' : '') + timeAgo;
+    }
+    return timeAgo;
+}
+
+// Show repost menu (delete option)
+function showRepostMenu(shareId, postId, event) {
+    event.stopPropagation();
+
+    // Remove existing menu
+    const existing = document.querySelector('.repost-dropdown-menu');
+    if (existing) existing.remove();
+
+    const menu = document.createElement('div');
+    menu.className = 'repost-dropdown-menu';
+    menu.innerHTML = `
+        <div class="dropdown-item dropdown-item-danger" onclick="deleteRepost('${shareId}', '${postId}')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+            </svg>
+            <span>Undo Repost</span>
+        </div>
+    `;
+
+    // Position menu
+    const rect = event.target.closest('button').getBoundingClientRect();
+    menu.style.position = 'fixed';
+    menu.style.top = `${rect.bottom + 5}px`;
+    menu.style.right = `${window.innerWidth - rect.right}px`;
+    menu.style.zIndex = '1000';
+
+    document.body.appendChild(menu);
+
+    // Close on outside click
+    setTimeout(() => {
+        document.addEventListener('click', function closeMenu(e) {
+            if (!menu.contains(e.target)) {
+                menu.remove();
+                document.removeEventListener('click', closeMenu);
+            }
+        });
+    }, 0);
+}
+
+// Show quote menu (delete option)
+function showQuoteMenu(shareId, postId, isOwner, event) {
+    event.stopPropagation();
+
+    // Remove existing menu
+    const existing = document.querySelector('.profile-post-dropdown-menu');
+    if (existing) existing.remove();
+
+    const menu = document.createElement('div');
+    menu.className = 'profile-post-dropdown-menu';
+    menu.innerHTML = `
+        ${isOwner ? `
+            <div class="dropdown-item" onclick="event.stopPropagation(); editQuote('${shareId}')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                </svg>
+                Edit Quote
+            </div>
+            <div class="dropdown-item dropdown-item-danger" onclick="event.stopPropagation(); deleteQuote('${shareId}', '${postId}')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="3 6 5 6 21 6"></polyline>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                </svg>
+                Delete Quote
+            </div>
+        ` : `
+            <div class="dropdown-item" onclick="event.stopPropagation(); reportQuote('${shareId}')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
+                    <line x1="4" y1="22" x2="4" y2="15"></line>
+                </svg>
+                Report Quote
+            </div>
+        `}
+    `;
+
+    document.body.appendChild(menu);
+
+    // Position menu
+    const btn = event.target.closest('button');
+    const rect = btn.getBoundingClientRect();
+    menu.style.top = rect.bottom + 5 + 'px';
+    menu.style.right = window.innerWidth - rect.right + 'px';
+
+    // Close on outside click or scroll
+    setTimeout(() => {
+        function closeMenu() {
+            menu.remove();
+            document.removeEventListener('click', closeMenu);
+            window.removeEventListener('scroll', closeMenu, true);
+        }
+        document.addEventListener('click', closeMenu);
+        window.addEventListener('scroll', closeMenu, true);
+    }, 0);
+}
+
+// Delete repost
+async function deleteRepost(shareId, postId) {
+    // Remove menu
+    const menu = document.querySelector('.repost-dropdown-menu');
+    if (menu) menu.remove();
+
+    if (!confirm('Remove this repost from your profile?')) return;
+
+    try {
+        await API.delete(`/posts/shares/${shareId}`);
+
+        // Remove the repost indicator and card from the page
+        const card = document.querySelector(`[data-share-id="${shareId}"]`);
+        if (card) {
+            const indicator = card.previousElementSibling;
+            if (indicator && indicator.classList.contains('profile-repost-indicator')) {
+                indicator.remove();
+            }
+            card.remove();
+        }
+
+        showToast('Repost removed');
+    } catch (error) {
+        console.error('Error deleting repost:', error);
+        showToast('Failed to remove repost', 'error');
+    }
+}
+
+// Delete quote post
+async function deleteQuote(shareId, postId) {
+    // Remove menu
+    const menu = document.querySelector('.quote-dropdown-menu');
+    if (menu) menu.remove();
+
+    if (!confirm('Delete this quote post?')) return;
+
+    try {
+        await API.delete(`/posts/shares/${shareId}`);
+
+        // Remove the card from the page
+        const card = document.querySelector(`[data-share-id="${shareId}"]`);
+        if (card) card.remove();
+
+        showToast('Quote post deleted');
+    } catch (error) {
+        console.error('Error deleting quote:', error);
+        showToast('Failed to delete quote post', 'error');
+    }
 }
 
 // Create reply card HTML
@@ -3404,6 +4040,1036 @@ function navigateToPost(postId) {
     window.location.href = `post-view.html?id=${postId}&ref=profile`;
 }
 
+// Navigate to quote post single page
+function navigateToQuotePost(shareId) {
+    window.location.href = `post-view.html?share=${shareId}`;
+}
+
+// Open media slideshow (simple lightbox for profile page)
+function openProfileMediaSlideshow(mediaUrls, startIndex = 0) {
+    if (!mediaUrls || mediaUrls.length === 0) return;
+    const urls = typeof mediaUrls === 'string' ? JSON.parse(mediaUrls) : mediaUrls;
+    let currentIndex = startIndex;
+    const overlay = document.createElement('div');
+    overlay.className = 'media-slideshow-overlay';
+    overlay.innerHTML = `
+        <div class="media-slideshow-container">
+            <button class="slideshow-close" onclick="closeProfileMediaSlideshow()">&times;</button>
+            ${urls.length > 1 ? `
+                <button class="slideshow-nav slideshow-prev" onclick="navigateProfileSlideshow(-1)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                </button>
+                <button class="slideshow-nav slideshow-next" onclick="navigateProfileSlideshow(1)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                </button>
+            ` : ''}
+            <div class="slideshow-media-container"></div>
+            ${urls.length > 1 ? `<div class="slideshow-counter">${currentIndex + 1} / ${urls.length}</div>` : ''}
+        </div>
+    `;
+    document.body.appendChild(overlay);
+    document.body.style.overflow = 'hidden';
+    window.profileSlideshowData = { urls, currentIndex };
+    updateProfileSlideshowMedia();
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) closeProfileMediaSlideshow(); });
+    document.addEventListener('keydown', handleProfileSlideshowKeydown);
+}
+
+function updateProfileSlideshowMedia() {
+    const data = window.profileSlideshowData;
+    if (!data) return;
+    const container = document.querySelector('.slideshow-media-container');
+    const counter = document.querySelector('.slideshow-counter');
+    const url = data.urls[data.currentIndex];
+    const isVideo = url.toLowerCase().match(/\.(mp4|mov|avi|webm)$/);
+    if (isVideo) {
+        container.innerHTML = `<video src="${url}" controls autoplay style="max-width: 90vw; max-height: 90vh;"></video>`;
+    } else {
+        container.innerHTML = `<img src="${url}" alt="Media" style="max-width: 90vw; max-height: 90vh; object-fit: contain;">`;
+    }
+    if (counter) counter.textContent = `${data.currentIndex + 1} / ${data.urls.length}`;
+}
+
+function navigateProfileSlideshow(direction) {
+    const data = window.profileSlideshowData;
+    if (!data) return;
+    data.currentIndex = (data.currentIndex + direction + data.urls.length) % data.urls.length;
+    updateProfileSlideshowMedia();
+}
+
+function closeProfileMediaSlideshow() {
+    const overlay = document.querySelector('.media-slideshow-overlay');
+    if (overlay) { overlay.remove(); document.body.style.overflow = ''; }
+    document.removeEventListener('keydown', handleProfileSlideshowKeydown);
+    window.profileSlideshowData = null;
+}
+
+function handleProfileSlideshowKeydown(e) {
+    if (e.key === 'Escape') closeProfileMediaSlideshow();
+    if (e.key === 'ArrowLeft') navigateProfileSlideshow(-1);
+    if (e.key === 'ArrowRight') navigateProfileSlideshow(1);
+}
+
+function openProfileMediaSlideshowFromElement(clickedElement) {
+    const mediaContainer = clickedElement.closest('.quoted-post-media');
+    if (!mediaContainer) return;
+    const mediaItems = mediaContainer.querySelectorAll('.quoted-media-item');
+    const urls = [];
+    let startIndex = 0;
+    mediaItems.forEach((item, index) => {
+        const img = item.querySelector('img');
+        const video = item.querySelector('video');
+        if (img) urls.push(img.src);
+        else if (video) urls.push(video.src);
+        if (item === clickedElement) startIndex = index;
+    });
+    if (urls.length > 0) openProfileMediaSlideshow(urls, startIndex);
+}
+
+// ============================================
+// Post Engagement Functions
+// ============================================
+
+async function togglePostLike(postId, button) {
+    const isLiked = button.classList.contains('liked');
+    const svg = button.querySelector('svg');
+    const span = button.querySelector('span');
+    const statsEl = button.closest('.profile-post-card').querySelector('.profile-likes-count');
+
+    try {
+        if (isLiked) {
+            await API.delete(`/posts/${postId}/like`);
+            button.classList.remove('liked');
+            svg.setAttribute('fill', 'none');
+            span.textContent = 'Like';
+            if (statsEl) {
+                const count = parseInt(statsEl.textContent) - 1;
+                statsEl.textContent = `${count} ${count === 1 ? 'like' : 'likes'}`;
+            }
+        } else {
+            await API.post(`/posts/${postId}/like`);
+            button.classList.add('liked');
+            svg.setAttribute('fill', 'currentColor');
+            span.textContent = 'Liked';
+            if (statsEl) {
+                const count = parseInt(statsEl.textContent) + 1;
+                statsEl.textContent = `${count} ${count === 1 ? 'like' : 'likes'}`;
+            }
+        }
+    } catch (error) {
+        console.error('Error toggling like:', error);
+    }
+}
+
+async function togglePostSave(postId, button) {
+    const isSaved = button.classList.contains('saved');
+    const span = button.querySelector('span');
+    const svg = button.querySelector('svg');
+
+    try {
+        if (isSaved) {
+            await API.delete(`/posts/${postId}/save`);
+            button.classList.remove('saved');
+            svg.setAttribute('fill', 'none');
+            span.textContent = 'Save';
+        } else {
+            await API.post(`/posts/${postId}/save`);
+            button.classList.add('saved');
+            svg.setAttribute('fill', 'currentColor');
+            span.textContent = 'Saved';
+        }
+    } catch (error) {
+        console.error('Error toggling save:', error);
+    }
+}
+
+async function togglePostComments(postId) {
+    const postCard = document.querySelector(`[data-post-id="${postId}"]`);
+    if (!postCard) return;
+
+    let commentsSection = postCard.querySelector('.profile-comments-section');
+
+    if (commentsSection) {
+        commentsSection.remove();
+        return;
+    }
+
+    commentsSection = document.createElement('div');
+    commentsSection.className = 'profile-comments-section';
+    commentsSection.innerHTML = `
+        <div class="comments-list" id="comments-${postId}">
+            <div class="comments-loading">Loading comments...</div>
+        </div>
+        <div class="comment-input-container">
+            <input type="text" class="comment-input" placeholder="Write a comment..." id="comment-input-${postId}">
+            <button class="comment-submit-btn" onclick="event.stopPropagation(); addPostComment('${postId}')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="22" y1="2" x2="11" y2="13"></line>
+                    <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                </svg>
+            </button>
+        </div>
+    `;
+
+    const actionsBar = postCard.querySelector('.profile-post-actions');
+    if (actionsBar) {
+        actionsBar.after(commentsSection);
+    } else {
+        postCard.appendChild(commentsSection);
+    }
+
+    // Load comments
+    await loadPostComments(postId);
+
+    // Add enter key listener for comment input
+    const input = document.getElementById(`comment-input-${postId}`);
+    if (input) {
+        input.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                e.stopPropagation();
+                addPostComment(postId);
+            }
+        });
+        input.addEventListener('click', (e) => e.stopPropagation());
+    }
+}
+
+async function loadPostComments(postId) {
+    const commentsList = document.getElementById(`comments-${postId}`);
+    if (!commentsList) return;
+
+    try {
+        const response = await API.get(`/posts/${postId}/comments`);
+        const comments = response.comments || [];
+
+        if (comments.length === 0) {
+            commentsList.innerHTML = '<div class="no-comments">No comments yet. Be the first to comment!</div>';
+            return;
+        }
+
+        commentsList.innerHTML = comments.map(comment => {
+            const commentAuthorName = `${comment.first_name || ''} ${comment.last_name || ''}`.trim() || 'Unknown';
+            const isOwnComment = comment.user_id === currentUserId;
+            return `
+                <div class="comment" data-comment-id="${comment.id}">
+                    <div class="comment-avatar">
+                        ${comment.profile_image_url
+                            ? `<img src="${comment.profile_image_url}" alt="${commentAuthorName}">`
+                            : `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>`
+                        }
+                    </div>
+                    <div class="comment-body">
+                        <div class="comment-header">
+                            <span class="comment-author">${commentAuthorName}</span>
+                            <span class="comment-time">${formatTimeAgo(comment.created_at)}</span>
+                        </div>
+                        <div class="comment-content">${comment.content}</div>
+                        <div class="comment-actions">
+                            <button class="comment-like-btn ${comment.user_liked ? 'liked' : ''}" onclick="event.stopPropagation(); likePostComment('${comment.id}', this)">
+                                <svg viewBox="0 0 24 24" fill="${comment.user_liked ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2" width="14" height="14">
+                                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                                </svg>
+                                <span>${comment.likes_count || 0}</span>
+                            </button>
+                            ${isOwnComment ? `
+                                <button class="comment-delete-btn" onclick="event.stopPropagation(); deletePostComment('${postId}', '${comment.id}')">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                                        <polyline points="3 6 5 6 21 6"></polyline>
+                                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                    </svg>
+                                </button>
+                            ` : ''}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    } catch (error) {
+        console.error('Error loading comments:', error);
+        commentsList.innerHTML = '<div class="comments-error">Failed to load comments</div>';
+    }
+}
+
+async function addPostComment(postId) {
+    const input = document.getElementById(`comment-input-${postId}`);
+    if (!input) return;
+
+    const content = input.value.trim();
+    if (!content) return;
+
+    try {
+        await API.post(`/posts/${postId}/comments`, { content });
+        input.value = '';
+        await loadPostComments(postId);
+
+        // Update comment count in stats
+        const postCard = document.querySelector(`[data-post-id="${postId}"]`);
+        const statsEl = postCard?.querySelector('.profile-comments-count');
+        if (statsEl) {
+            const count = parseInt(statsEl.textContent) + 1;
+            statsEl.textContent = `${count} ${count === 1 ? 'comment' : 'comments'}`;
+        }
+    } catch (error) {
+        console.error('Error adding comment:', error);
+    }
+}
+
+async function deletePostComment(postId, commentId) {
+    if (!confirm('Delete this comment?')) return;
+
+    try {
+        await API.delete(`/posts/comments/${commentId}`);
+        await loadPostComments(postId);
+
+        // Update comment count in stats
+        const postCard = document.querySelector(`[data-post-id="${postId}"]`);
+        const statsEl = postCard?.querySelector('.profile-comments-count');
+        if (statsEl) {
+            const count = Math.max(0, parseInt(statsEl.textContent) - 1);
+            statsEl.textContent = `${count} ${count === 1 ? 'comment' : 'comments'}`;
+        }
+    } catch (error) {
+        console.error('Error deleting comment:', error);
+    }
+}
+
+async function likePostComment(commentId, button) {
+    const isLiked = button.classList.contains('liked');
+    const svg = button.querySelector('svg');
+    const countSpan = button.querySelector('span');
+
+    try {
+        if (isLiked) {
+            await API.delete(`/posts/comments/${commentId}/like`);
+            button.classList.remove('liked');
+            svg.setAttribute('fill', 'none');
+            countSpan.textContent = Math.max(0, parseInt(countSpan.textContent) - 1);
+        } else {
+            await API.post(`/posts/comments/${commentId}/like`);
+            button.classList.add('liked');
+            svg.setAttribute('fill', 'currentColor');
+            countSpan.textContent = parseInt(countSpan.textContent) + 1;
+        }
+    } catch (error) {
+        console.error('Error liking comment:', error);
+    }
+}
+
+function showPostLikes(postId) {
+    showLikesModalForPost(postId);
+}
+
+async function showLikesModalForPost(postId) {
+    try {
+        const response = await API.get(`/posts/${postId}/likes`);
+        const likes = response.likes || [];
+        showLikesModal(likes, 'Likes');
+    } catch (error) {
+        console.error('Error fetching likes:', error);
+    }
+}
+
+async function profileSharePost(postId, event) {
+    event.stopPropagation();
+
+    const existingMenu = document.querySelector('.share-menu');
+    if (existingMenu) {
+        existingMenu.remove();
+        return;
+    }
+
+    // Check if user has already reposted
+    let hasReposted = false;
+    try {
+        const reposts = await API.get('/posts/reposts/mine?limit=100');
+        hasReposted = reposts.reposts?.some(r => r.original_post_id === postId && r.share_type === 'repost');
+    } catch (e) {
+        console.error('Error checking repost status:', e);
+    }
+
+    const menu = document.createElement('div');
+    menu.className = 'share-menu';
+    menu.innerHTML = `
+        <div class="share-menu-item" onclick="event.stopPropagation(); profileRepostPost('${postId}')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                <polyline points="17 1 21 5 17 9"></polyline>
+                <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
+                <polyline points="7 23 3 19 7 15"></polyline>
+                <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
+            </svg>
+            <span>${hasReposted ? 'Undo Repost' : 'Repost'}</span>
+        </div>
+        <div class="share-menu-item" onclick="event.stopPropagation(); profileQuotePost('${postId}')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+            </svg>
+            <span>Quote</span>
+        </div>
+    `;
+
+    document.body.appendChild(menu);
+
+    const button = event.target.closest('button');
+    const rect = button.getBoundingClientRect();
+    menu.style.position = 'fixed';
+    menu.style.top = `${rect.bottom + 5}px`;
+    menu.style.left = `${rect.left}px`;
+
+    setTimeout(() => {
+        document.addEventListener('click', function closeMenu(e) {
+            if (!menu.contains(e.target)) {
+                menu.remove();
+                document.removeEventListener('click', closeMenu);
+            }
+        });
+    }, 0);
+}
+
+async function profileRepostPost(postId) {
+    document.querySelector('.share-menu')?.remove();
+
+    try {
+        // Check if already reposted
+        const reposts = await API.get('/posts/reposts/mine?limit=100');
+        const existingRepost = reposts.reposts?.find(r => r.original_post_id === postId && r.share_type === 'repost');
+
+        if (existingRepost) {
+            await API.delete(`/posts/${postId}/repost`);
+            showToast('Repost removed');
+        } else {
+            await API.post(`/posts/${postId}/share`, { share_type: 'repost' });
+            showToast('Reposted!');
+        }
+    } catch (error) {
+        console.error('Error toggling repost:', error);
+        showToast('Failed to repost', true);
+    }
+}
+
+function profileQuotePost(postId) {
+    document.querySelector('.share-menu')?.remove();
+
+    const modal = document.createElement('div');
+    modal.className = 'modal-overlay';
+    modal.id = 'quote-modal';
+    modal.innerHTML = `
+        <div class="modal-content" style="max-width: 500px;">
+            <button class="modal-close" onclick="document.getElementById('quote-modal').remove()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+            <h3 style="margin-bottom: 1rem;">Quote Post</h3>
+            <textarea id="quote-content" placeholder="Add your thoughts..." style="width: 100%; min-height: 100px; padding: 0.75rem; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; background: rgba(255,255,255,0.05); color: white; resize: vertical;"></textarea>
+            <div style="display: flex; gap: 0.5rem; margin-top: 1rem; justify-content: flex-end;">
+                <button class="btn-secondary" onclick="document.getElementById('quote-modal').remove()">Cancel</button>
+                <button class="btn-primary" onclick="submitProfileQuote('${postId}')">Quote</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+    modal.querySelector('#quote-content').focus();
+}
+
+async function submitProfileQuote(postId) {
+    const content = document.getElementById('quote-content')?.value.trim();
+
+    try {
+        await API.post(`/posts/${postId}/share`, { share_type: 'quote', quote_content: content });
+        document.getElementById('quote-modal')?.remove();
+        showToast('Quote posted!');
+    } catch (error) {
+        console.error('Error creating quote:', error);
+        showToast('Failed to create quote', true);
+    }
+}
+
+// ============================================
+// Share (Quote Post) Engagement Functions
+// ============================================
+
+async function toggleShareLike(shareId, button) {
+    const isLiked = button.classList.contains('liked');
+    const svg = button.querySelector('svg');
+    const span = button.querySelector('span');
+    const statsEl = button.closest('.profile-post-card, .profile-quote-card').querySelector('.profile-likes-count');
+
+    try {
+        if (isLiked) {
+            await API.delete(`/posts/share/${shareId}/like`);
+            button.classList.remove('liked');
+            svg.setAttribute('fill', 'none');
+            span.textContent = 'Like';
+            if (statsEl) {
+                const count = parseInt(statsEl.textContent) - 1;
+                statsEl.textContent = `${count} ${count === 1 ? 'like' : 'likes'}`;
+            }
+        } else {
+            await API.post(`/posts/share/${shareId}/like`);
+            button.classList.add('liked');
+            svg.setAttribute('fill', 'currentColor');
+            span.textContent = 'Liked';
+            if (statsEl) {
+                const count = parseInt(statsEl.textContent) + 1;
+                statsEl.textContent = `${count} ${count === 1 ? 'like' : 'likes'}`;
+            }
+        }
+    } catch (error) {
+        console.error('Error toggling share like:', error);
+        showToast('Failed to update like', 'error');
+    }
+}
+
+async function toggleShareSave(shareId, button) {
+    const isSaved = button.classList.contains('saved');
+    const svg = button.querySelector('svg');
+    const span = button.querySelector('span');
+
+    try {
+        if (isSaved) {
+            await API.delete(`/posts/share/${shareId}/save`);
+            button.classList.remove('saved');
+            svg.setAttribute('fill', 'none');
+            span.textContent = 'Save';
+            showToast('Quote post removed from saved', 'success');
+        } else {
+            await API.post(`/posts/share/${shareId}/save`);
+            button.classList.add('saved');
+            svg.setAttribute('fill', 'currentColor');
+            span.textContent = 'Saved';
+            showToast('Quote post saved!', 'success');
+        }
+    } catch (error) {
+        console.error('Error toggling share save:', error);
+        showToast('Failed to update save', 'error');
+    }
+}
+
+async function toggleShareComments(shareId) {
+    const section = document.getElementById(`share-comments-${shareId}`);
+    if (!section) return;
+
+    if (section.style.display === 'none') {
+        await loadShareComments(shareId);
+        section.style.display = 'block';
+        const input = section.querySelector('.comment-input');
+        if (input) input.focus();
+    } else {
+        section.style.display = 'none';
+    }
+}
+
+async function loadShareComments(shareId) {
+    try {
+        const response = await API.get(`/posts/share/${shareId}/comments`);
+        const listEl = document.querySelector(`#share-comments-${shareId} .comments-list`);
+        if (!listEl) return;
+
+        if (response.comments && response.comments.length > 0) {
+            listEl.innerHTML = response.comments.map(comment => `
+                <div class="comment" data-comment-id="${comment.id}">
+                    <div class="comment-avatar" onclick="goToProfile('${comment.username || comment.user_id}', '${comment.role || 'player'}', '${comment.division || ''}', '${comment.user_id}', ${comment.transfer === 'y'})" style="cursor: pointer;">
+                        ${comment.profile_image ?
+                            `<img src="${comment.profile_image}" alt="">` :
+                            `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>`
+                        }
+                    </div>
+                    <div class="comment-content">
+                        <div class="comment-header">
+                            <span class="comment-author" onclick="goToProfile('${comment.username || comment.user_id}', '${comment.role || 'player'}', '${comment.division || ''}', '${comment.user_id}', ${comment.transfer === 'y'})" style="cursor: pointer;">${comment.first_name} ${comment.last_name}</span>
+                            <span class="comment-time">${formatTimeAgo(comment.created_at)}</span>
+                        </div>
+                        <p>${formatPostContent(comment.content)}</p>
+                        <div class="comment-actions">
+                            <button onclick="likeShareComment('${comment.id}', this)">
+                                Like ${comment.likes_count > 0 ? `(${comment.likes_count})` : ''}
+                            </button>
+                            ${comment.user_id === currentUserId ?
+                                `<button onclick="deleteShareComment('${shareId}', '${comment.id}')">Delete</button>` :
+                                ''
+                            }
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        } else {
+            listEl.innerHTML = '<p class="no-comments">No comments yet. Be the first to comment!</p>';
+        }
+    } catch (error) {
+        console.error('Error loading share comments:', error);
+    }
+}
+
+async function addShareComment(shareId) {
+    const input = document.getElementById(`share-comment-input-${shareId}`);
+    const content = input?.value.trim();
+    if (!content) return;
+
+    try {
+        await API.post(`/posts/share/${shareId}/comments`, { content });
+        input.value = '';
+        await loadShareComments(shareId);
+
+        // Update comment count
+        const statsEl = document.querySelector(`[data-share-id="${shareId}"] .profile-comments-count`);
+        if (statsEl) {
+            const count = parseInt(statsEl.textContent) + 1;
+            statsEl.textContent = `${count} ${count === 1 ? 'comment' : 'comments'}`;
+        }
+    } catch (error) {
+        console.error('Error adding share comment:', error);
+        showToast('Failed to add comment', 'error');
+    }
+}
+
+async function deleteShareComment(shareId, commentId) {
+    try {
+        await API.delete(`/posts/share/comments/${commentId}`);
+
+        // Remove comment from DOM
+        const commentEl = document.querySelector(`[data-comment-id="${commentId}"]`);
+        if (commentEl) commentEl.remove();
+
+        // Update comment count
+        const statsEl = document.querySelector(`[data-share-id="${shareId}"] .profile-comments-count`);
+        if (statsEl) {
+            const count = Math.max(0, parseInt(statsEl.textContent) - 1);
+            statsEl.textContent = `${count} ${count === 1 ? 'comment' : 'comments'}`;
+        }
+
+        showToast('Comment deleted', 'success');
+    } catch (error) {
+        console.error('Error deleting share comment:', error);
+        showToast('Failed to delete comment', 'error');
+    }
+}
+
+async function likeShareComment(commentId, button) {
+    try {
+        await API.post(`/posts/share/comments/${commentId}/like`);
+        const match = button.textContent.match(/\((\d+)\)/);
+        const currentCount = match ? parseInt(match[1]) : 0;
+        button.textContent = `Like (${currentCount + 1})`;
+    } catch (error) {
+        console.error('Error liking share comment:', error);
+    }
+}
+
+async function showShareLikes(shareId) {
+    try {
+        const response = await API.get(`/posts/share/${shareId}/likes`);
+        const likes = response.likes || [];
+
+        if (likes.length === 0) {
+            showToast('No likes yet', 'info');
+            return;
+        }
+
+        showLikesModal(likes, 'Quote Post Likes');
+    } catch (error) {
+        console.error('Error fetching share likes:', error);
+        showToast('Failed to load likes', 'error');
+    }
+}
+
+function showLikesModal(likes, title) {
+    // Remove existing modal
+    const existing = document.querySelector('.likes-modal-overlay');
+    if (existing) existing.remove();
+
+    const modal = document.createElement('div');
+    modal.className = 'likes-modal-overlay';
+    modal.innerHTML = `
+        <div class="likes-modal">
+            <div class="likes-modal-header">
+                <h3>${title}</h3>
+                <button class="likes-modal-close" onclick="this.closest('.likes-modal-overlay').remove()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="likes-modal-list">
+                ${likes.map(like => `
+                    <div class="likes-modal-item" onclick="goToProfile('${like.username || like.user_id}', '${like.role || 'player'}', '${like.division || ''}', '${like.user_id}', ${like.transfer === 'y'})" style="cursor: pointer;">
+                        <div class="likes-modal-avatar">
+                            ${like.profile_image ?
+                                `<img src="${like.profile_image}" alt="">` :
+                                `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>`
+                            }
+                        </div>
+                        <div class="likes-modal-info">
+                            <span class="likes-modal-name">${like.first_name} ${like.last_name}</span>
+                            ${like.username ? `<span class="likes-modal-username">@${like.username}</span>` : ''}
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+    `;
+
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) modal.remove();
+    });
+
+    document.body.appendChild(modal);
+}
+
+// Edit quote post content
+async function editQuote(shareId) {
+    // Close menu
+    const menu = document.querySelector('.profile-post-dropdown-menu');
+    if (menu) menu.remove();
+
+    try {
+        // Fetch the current quote post data
+        const response = await API.get(`/posts/share/${shareId}`);
+        const share = response.share;
+
+        if (!share) {
+            showToast('Quote post not found', 'error');
+            return;
+        }
+
+        // Initialize edit media state - use quote_media_urls (the quote's own media, not the original post's media)
+        const existingMediaKeys = share.quote_media_urls_keys || [];
+        const existingMediaType = share.quote_media_type || null;
+        const signedUrls = share.quote_media_urls || share.signed_quote_media_urls || [];
+        let currentMediaKeys = [...existingMediaKeys];
+        let newMediaFiles = [];
+        let newMediaPreviews = [];
+        const maxMedia = 4;
+        const hasMedia = existingMediaKeys.length > 0;
+
+        // Helper to render media items with CSS classes
+        const renderEditMediaItems = () => {
+            let html = '';
+            currentMediaKeys.forEach((key, index) => {
+                const signedUrl = signedUrls[existingMediaKeys.indexOf(key)] || key;
+                const isVideo = existingMediaType === 'video' || key.includes('video') || key.match(/\.(mp4|mov|webm)$/i);
+                html += `
+                    <div class="edit-media-item" data-type="existing" data-index="${index}">
+                        ${isVideo ? `
+                            <video src="${signedUrl}" muted></video>
+                            <div class="media-type-badge">
+                                <svg viewBox="0 0 24 24" fill="currentColor">
+                                    <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                                </svg>
+                            </div>
+                        ` : `
+                            <img src="${signedUrl}" alt="Media">
+                        `}
+                        <button class="edit-media-remove-btn" data-type="existing" data-index="${index}" title="Remove">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="18" y1="6" x2="6" y2="18"></line>
+                                <line x1="6" y1="6" x2="18" y2="18"></line>
+                            </svg>
+                        </button>
+                    </div>
+                `;
+            });
+            newMediaPreviews.forEach((preview, index) => {
+                html += `
+                    <div class="edit-media-item" data-type="new" data-index="${index}">
+                        ${preview.type === 'video' ? `
+                            <video src="${preview.url}" muted></video>
+                            <div class="media-type-badge">
+                                <svg viewBox="0 0 24 24" fill="currentColor">
+                                    <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                                </svg>
+                            </div>
+                        ` : `
+                            <img src="${preview.url}" alt="Preview">
+                        `}
+                        <button class="edit-media-remove-btn" data-type="new" data-index="${index}" title="Remove">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="18" y1="6" x2="6" y2="18"></line>
+                                <line x1="6" y1="6" x2="18" y2="18"></line>
+                            </svg>
+                        </button>
+                    </div>
+                `;
+            });
+            return html;
+        };
+
+        // Create edit modal with CSS classes
+        const modal = document.createElement('div');
+        modal.className = 'feed-modal-overlay';
+        modal.id = 'edit-quote-modal';
+        modal.innerHTML = `
+            <div class="feed-modal edit-modal ${hasMedia ? 'with-media' : ''}">
+                <div class="feed-modal-header">
+                    <h3>Edit Quote</h3>
+                    <button class="feed-modal-close" onclick="document.getElementById('edit-quote-modal').remove()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
+                </div>
+                <div class="feed-modal-body">
+                    <textarea id="edit-quote-textarea" class="edit-post-textarea" placeholder="Add your comment...">${share.quote_content || ''}</textarea>
+
+                    <div class="edit-modal-media-section">
+                        <div class="edit-modal-media-header">
+                            <div class="edit-modal-media-label">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                    <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                                    <polyline points="21 15 16 10 5 21"></polyline>
+                                </svg>
+                                <span>Media</span>
+                                <span class="edit-modal-media-counter" id="edit-quote-media-counter">${existingMediaKeys.length}/${maxMedia}</span>
+                            </div>
+                            <label class="edit-modal-add-media-btn ${existingMediaKeys.length >= maxMedia ? 'disabled' : ''}" id="edit-quote-add-media-btn">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                                </svg>
+                                Add
+                                <input type="file" id="edit-quote-media-input" accept="image/*,video/*" multiple style="display: none;">
+                            </label>
+                        </div>
+                        <div class="edit-modal-media-grid" id="edit-quote-media-grid">
+                            ${renderEditMediaItems()}
+                        </div>
+                    </div>
+
+                    <div class="edit-modal-actions">
+                        <button class="edit-modal-btn edit-modal-btn-cancel" onclick="document.getElementById('edit-quote-modal').remove()">Cancel</button>
+                        <button class="edit-modal-btn edit-modal-btn-save" id="save-quote-btn">Save</button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+        document.getElementById('edit-quote-textarea').focus();
+
+        // Update modal class based on media presence
+        const updateModalSize = () => {
+            const modalEl = modal.querySelector('.feed-modal');
+            if (currentMediaKeys.length > 0 || newMediaFiles.length > 0) {
+                modalEl.classList.add('with-media');
+            } else {
+                modalEl.classList.remove('with-media');
+            }
+        };
+
+        // Update media counter and button state
+        const updateMediaCounter = () => {
+            const totalCount = currentMediaKeys.length + newMediaFiles.length;
+            const counter = document.getElementById('edit-quote-media-counter');
+            const addBtn = document.getElementById('edit-quote-add-media-btn');
+
+            if (counter) {
+                counter.textContent = `${totalCount}/${maxMedia}`;
+                counter.classList.toggle('at-max', totalCount >= maxMedia);
+            }
+            if (addBtn) {
+                addBtn.classList.toggle('disabled', totalCount >= maxMedia);
+            }
+            updateModalSize();
+        };
+
+        // Re-render media grid
+        const renderMediaGrid = () => {
+            const grid = document.getElementById('edit-quote-media-grid');
+            if (!grid) return;
+            grid.innerHTML = renderEditMediaItems();
+            updateMediaCounter();
+        };
+
+        // Handle remove button clicks
+        modal.addEventListener('click', (e) => {
+            const removeBtn = e.target.closest('.edit-media-remove-btn');
+            if (removeBtn) {
+                e.stopPropagation();
+                const type = removeBtn.dataset.type;
+                const index = parseInt(removeBtn.dataset.index);
+                if (type === 'existing') {
+                    currentMediaKeys.splice(index, 1);
+                } else if (type === 'new') {
+                    URL.revokeObjectURL(newMediaPreviews[index].url);
+                    newMediaFiles.splice(index, 1);
+                    newMediaPreviews.splice(index, 1);
+                }
+                renderMediaGrid();
+            }
+        });
+
+        // Handle adding new media
+        document.getElementById('edit-quote-media-input').addEventListener('change', (e) => {
+            const files = Array.from(e.target.files);
+            const totalCount = currentMediaKeys.length + newMediaFiles.length;
+            const remaining = maxMedia - totalCount;
+
+            if (remaining <= 0) {
+                showToast(`Maximum ${maxMedia} media files allowed`, 'error');
+                e.target.value = '';
+                return;
+            }
+
+            const filesToAdd = files.slice(0, remaining);
+            for (const file of filesToAdd) {
+                const isVideo = file.type.startsWith('video/');
+                const isImage = file.type.startsWith('image/');
+                if (!isVideo && !isImage) continue;
+
+                const previewUrl = URL.createObjectURL(file);
+                newMediaFiles.push(file);
+                newMediaPreviews.push({
+                    url: previewUrl,
+                    type: isVideo ? 'video' : 'image',
+                    name: file.name
+                });
+            }
+            renderMediaGrid();
+            e.target.value = '';
+        });
+
+        // Close on overlay click
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                newMediaPreviews.forEach(p => URL.revokeObjectURL(p.url));
+                modal.remove();
+            }
+        });
+
+        // Handle save
+        document.getElementById('save-quote-btn').onclick = async () => {
+            const newContent = document.getElementById('edit-quote-textarea').value.trim();
+            const saveBtn = document.getElementById('save-quote-btn');
+
+            try {
+                saveBtn.disabled = true;
+                saveBtn.textContent = 'Saving...';
+
+                let finalMediaUrls = [...currentMediaKeys];
+                let finalMediaType = existingMediaType;
+
+                // Upload new media if any
+                if (newMediaFiles.length > 0) {
+                    saveBtn.textContent = 'Uploading...';
+                    try {
+                        const uploadResult = await uploadAPI.uploadPostMedia(newMediaFiles);
+                        if (uploadResult.media && uploadResult.media.length > 0) {
+                            finalMediaUrls = [...finalMediaUrls, ...uploadResult.media.map(m => m.s3Key)];
+                            finalMediaType = uploadResult.media_type;
+                        } else if (uploadResult.s3Key) {
+                            finalMediaUrls.push(uploadResult.s3Key);
+                            finalMediaType = uploadResult.media_type;
+                        }
+                    } catch (uploadError) {
+                        console.error('Media upload failed:', uploadError);
+                        showToast('Failed to upload media', 'error');
+                        saveBtn.disabled = false;
+                        saveBtn.textContent = 'Save';
+                        return;
+                    }
+                }
+
+                if (finalMediaUrls.length === 0) {
+                    finalMediaUrls = null;
+                    finalMediaType = null;
+                }
+
+                await API.put(`/posts/share/${shareId}`, {
+                    quote_content: newContent,
+                    media_urls: finalMediaUrls,
+                    media_type: finalMediaType
+                });
+
+                // Cleanup blob URLs
+                newMediaPreviews.forEach(p => URL.revokeObjectURL(p.url));
+
+                // Fetch updated share data to get signed URLs for media
+                const updatedResponse = await API.get(`/posts/share/${shareId}`);
+                const updatedShare = updatedResponse.share;
+
+                // Update the quote post in the DOM
+                const quoteCard = document.querySelector(`[data-share-id="${shareId}"]`);
+                if (quoteCard) {
+                    // Update content text
+                    const contentEl = quoteCard.querySelector('.profile-post-content');
+                    if (contentEl) {
+                        contentEl.innerHTML = formatPostContent(newContent);
+                    }
+
+                    // Update media - find or create media container
+                    const existingMediaGrid = quoteCard.querySelector('.post-media-grid');
+                    if (existingMediaGrid) {
+                        existingMediaGrid.remove();
+                    }
+
+                    // Add new media if present
+                    if (updatedShare.quote_media_urls && updatedShare.quote_media_urls.length > 0) {
+                        const newMediaHtml = buildMediaGridHTML(updatedShare.quote_media_urls, updatedShare.quote_media_type);
+                        const contentContainer = quoteCard.querySelector('.profile-post-content');
+                        if (contentContainer) {
+                            contentContainer.insertAdjacentHTML('afterend', newMediaHtml);
+                        }
+                    }
+                }
+
+                modal.remove();
+                showToast('Quote updated', 'success');
+            } catch (error) {
+                console.error('Error updating quote:', error);
+                showToast('Failed to update quote', 'error');
+                saveBtn.disabled = false;
+                saveBtn.textContent = 'Save';
+            }
+        };
+    } catch (error) {
+        console.error('Error fetching quote post:', error);
+        showToast('Failed to load quote post', 'error');
+    }
+}
+
+// Report quote post
+function reportQuote(shareId) {
+    const menu = document.querySelector('.quote-dropdown-menu');
+    if (menu) menu.remove();
+    showToast('Quote post reported. We will review it shortly.', 'info');
+}
+
+// Navigate to user profile (cross-folder navigation)
+function goToProfile(identifier, role, collegeDivision, userId, isTransfer) {
+    // Check if clicking on own profile - just go to my-profile.html
+    if (userId === currentUserId) {
+        window.location.href = 'my-profile.html';
+        return;
+    }
+
+    // Determine folder based on role and attributes
+    let folder;
+    if (role === 'coach') {
+        folder = collegeDivision ? 'collegecoach' : 'hscoach';
+    } else if (role === 'other') {
+        folder = 'other';
+    } else {
+        // Player role
+        if (isTransfer) {
+            folder = 'transferplayer';
+        } else if (collegeDivision) {
+            folder = 'collegeplayer';
+        } else {
+            folder = 'hsplayer';
+        }
+    }
+
+    // Navigate using username if available, otherwise user ID
+    const param = identifier && !identifier.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)
+        ? `username=${identifier}`
+        : `id=${userId}`;
+
+    window.location.href = `../../${folder}/tabs/my-profile.html?${param}&from=profile`;
+}
+
 // Load profile posts
 async function loadProfilePosts(loadMore = false) {
     const container = document.getElementById('profilePostsContainer');
@@ -3449,9 +5115,15 @@ async function loadProfilePosts(loadMore = false) {
             `;
             if (loadMoreContainer) loadMoreContainer.style.display = 'none';
         } else {
-            // Render posts
+            // Render posts (including reposts and quote posts)
             posts.forEach(post => {
-                container.innerHTML += createProfilePostElement(post);
+                if (post.is_repost) {
+                    container.innerHTML += createProfileRepostElement(post);
+                } else if (post.is_quote) {
+                    container.innerHTML += createProfileQuotePostElement(post);
+                } else {
+                    container.innerHTML += createProfilePostElement(post);
+                }
             });
 
             profilePostsOffset += posts.length;
@@ -3601,9 +5273,13 @@ async function loadProfileLikes(loadMore = false) {
             `;
             if (loadMoreContainer) loadMoreContainer.style.display = 'none';
         } else {
-            // Render liked posts
+            // Render liked posts (including liked quote posts)
             posts.forEach(post => {
-                container.innerHTML += createProfileLikedPostElement(post);
+                if (post.is_quote) {
+                    container.innerHTML += createProfileLikedQuotePostElement(post);
+                } else {
+                    container.innerHTML += createProfileLikedPostElement(post);
+                }
             });
 
             profileLikesOffset += posts.length;
@@ -3637,6 +5313,9 @@ function createProfileLikedPostElement(post) {
     const authorName = `${post.author_first_name || ''} ${post.author_last_name || ''}`.trim() || 'Unknown User';
     const metaInfo = buildPostMetaInfo(post);
     const isOwnPost = post.user_id === currentUserId;
+    const isLiked = post.user_liked !== false; // For liked posts, default to true since user liked it
+    const isSaved = post.user_saved || false;
+    const isReposted = post.user_reposted || false;
 
     // Build media HTML
     let mediaHtml = '';
@@ -3692,7 +5371,7 @@ function createProfileLikedPostElement(post) {
                             </svg>
                         ` : ''}
                     </div>
-                    <div class="profile-post-meta ${post.author_role === 'coach' ? 'coach-meta' : (post.author_transfer === 'y' ? 'transfer-player-meta' : '')}">${metaInfo}</div>
+                    <div class="profile-post-meta ${post.author_role === 'coach' ? 'coach-meta' : (post.author_role === 'other' ? 'other-meta' : (post.author_transfer === 'y' ? 'transfer-player-meta' : 'player-meta'))}">${metaInfo}</div>
                 </div>
                 <div class="profile-post-header-actions">
                     ${optionsButton}
@@ -3707,10 +5386,193 @@ function createProfileLikedPostElement(post) {
                 <p>${formatPostContent(post.content)}</p>
                 ${mediaHtml}
             </div>
-            <div class="profile-post-stats">
-                <span>${post.likes_count || 0} ${post.likes_count === 1 ? 'like' : 'likes'}</span>
-                <span>${post.comments_count || 0} ${post.comments_count === 1 ? 'comment' : 'comments'}</span>
+            <div class="profile-post-stats" onclick="event.stopPropagation();">
+                <span class="profile-likes-count" onclick="showPostLikes('${post.id}')" style="cursor: pointer;">${post.likes_count || 0} ${post.likes_count === 1 ? 'like' : 'likes'}</span>
+                <span class="profile-comments-count" onclick="togglePostComments('${post.id}')" style="cursor: pointer;">${post.comments_count || 0} ${post.comments_count === 1 ? 'comment' : 'comments'}</span>
                 <span>${post.shares_count || 0} ${(post.shares_count || 0) === 1 ? 'share' : 'shares'}</span>
+            </div>
+            <div class="profile-post-actions" onclick="event.stopPropagation();">
+                <button class="profile-action-btn ${isLiked ? 'liked' : ''}" onclick="togglePostLike('${post.id}', this)">
+                    <svg viewBox="0 0 24 24" fill="${isLiked ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2">
+                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                    </svg>
+                    <span>${isLiked ? 'Liked' : 'Like'}</span>
+                </button>
+                <button class="profile-action-btn" onclick="togglePostComments('${post.id}')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                    <span>Comment</span>
+                </button>
+                <button class="profile-action-btn ${isSaved ? 'saved' : ''}" onclick="togglePostSave('${post.id}', this)">
+                    <svg viewBox="0 0 24 24" fill="${isSaved ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2">
+                        <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                    <span>${isSaved ? 'Saved' : 'Save'}</span>
+                </button>
+                <button class="profile-action-btn ${isReposted ? 'reposted' : ''}" onclick="profileSharePost('${post.id}', event)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="17 1 21 5 17 9"></polyline>
+                        <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
+                        <polyline points="7 23 3 19 7 15"></polyline>
+                        <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
+                    </svg>
+                    <span>Share</span>
+                </button>
+            </div>
+        </article>
+    `;
+}
+
+// Create liked quote post card HTML (for quote posts the user has liked)
+function createProfileLikedQuotePostElement(post) {
+    const quoterId = post.author_user_id || post.user_id;
+    const quoterName = `${post.author_first_name || ''} ${post.author_last_name || ''}`.trim() || 'Unknown User';
+    const quoterMetaInfo = buildPostMetaInfo(post);
+    const originalAuthorName = `${post.original_author_first_name || ''} ${post.original_author_last_name || ''}`.trim() || 'Unknown User';
+    const originalTimeAgo = formatTimeAgo(post.original_created_at);
+    const originalPostId = post.original_post_id || post.id;
+    const isLiked = post.user_liked !== false;
+    const isSaved = post.user_saved || false;
+    const isReposted = post.user_reposted || false;
+
+    // Build media HTML for original post using grid layout
+    let originalMediaHtml = '';
+    if (post.original_media_urls && post.original_media_urls.length > 0) {
+        const urls = post.original_media_urls;
+        const mediaCount = Math.min(urls.length, 4);
+        const isVideoUrl = (url) => {
+            if (post.original_media_type === 'video') return true;
+            return url && url.toLowerCase().match(/\.(mp4|mov|avi|webm)$/);
+        };
+
+        let gridCells = '';
+        for (let i = 0; i < mediaCount; i++) {
+            const url = urls[i];
+            const isVideo = isVideoUrl(url);
+            const videoIndicator = isVideo ? `
+                <div class="video-indicator">
+                    <svg viewBox="0 0 24 24" fill="currentColor">
+                        <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                    </svg>
+                </div>
+            ` : '';
+
+            gridCells += `
+                <div class="quoted-media-item" onclick="event.stopPropagation(); openProfileMediaSlideshowFromElement(this);">
+                    ${isVideo ?
+                        `<video src="${url}" muted preload="metadata"></video>` :
+                        `<img src="${url}" alt="Post media ${i + 1}">`
+                    }
+                    ${videoIndicator}
+                </div>
+            `;
+        }
+
+        originalMediaHtml = `<div class="quoted-post-media media-count-${mediaCount}">${gridCells}</div>`;
+    }
+
+    // Build media HTML for the quote post's own media
+    const quoteMediaHtml = buildMediaGridHTML(post.quote_media_urls, post.quote_media_type);
+
+    return `
+        <article class="profile-post-card profile-quote-card" data-post-id="${originalPostId}" data-share-id="${post.share_id}" onclick="navigateToQuotePost('${post.share_id}')" style="cursor: pointer;">
+            <div class="profile-post-header">
+                <div class="profile-post-avatar" onclick="event.stopPropagation(); goToProfile('${post.author_username || quoterId}', '${post.author_role || 'player'}', '${post.author_division || ''}', '${quoterId}', ${post.author_transfer === 'y'})" style="cursor: pointer;">
+                    ${post.author_image
+                        ? `<img src="${post.author_image}" alt="${quoterName}">`
+                        : `<svg viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="12" cy="7" r="4"></circle>
+                          </svg>`
+                    }
+                </div>
+                <div class="profile-post-info">
+                    <div class="profile-post-author" onclick="event.stopPropagation(); goToProfile('${post.author_username || quoterId}', '${post.author_role || 'player'}', '${post.author_division || ''}', '${quoterId}', ${post.author_transfer === 'y'})" style="cursor: pointer;">
+                        ${quoterName}
+                        ${post.author_username ? `<span class="profile-post-handle">@${post.author_username}</span>` : ''}
+                        ${post.author_verified ? `
+                            <svg class="verified-badge" viewBox="0 0 24 24" fill="#1DA1F2" width="16" height="16">
+                                <path d="M22.5 12.5c0-1.58-.875-2.95-2.148-3.6.154-.435.238-.905.238-1.4 0-2.21-1.71-3.998-3.818-3.998-.47 0-.92.084-1.336.25C14.818 2.415 13.51 1.5 12 1.5s-2.816.917-3.437 2.25c-.415-.165-.866-.25-1.336-.25-2.11 0-3.818 1.79-3.818 4 0 .494.083.964.237 1.4-1.272.65-2.147 2.018-2.147 3.6 0 1.495.782 2.798 1.942 3.486-.02.17-.032.34-.032.514 0 2.21 1.708 4 3.818 4 .47 0 .92-.086 1.335-.25.62 1.334 1.926 2.25 3.437 2.25 1.512 0 2.818-.916 3.437-2.25.415.163.865.248 1.336.248 2.11 0 3.818-1.79 3.818-4 0-.174-.012-.344-.033-.513 1.158-.687 1.943-1.99 1.943-3.484zm-6.616-3.334l-4.334 6.5c-.145.217-.382.334-.625.334-.143 0-.288-.04-.416-.126l-.115-.094-2.415-2.415c-.293-.293-.293-.768 0-1.06s.768-.294 1.06 0l1.77 1.767 3.825-5.74c.23-.345.696-.436 1.04-.207.346.23.44.696.21 1.04z"/>
+                            </svg>
+                        ` : ''}
+                    </div>
+                    <div class="profile-post-meta ${post.author_role === 'coach' ? 'coach-meta' : (post.author_role === 'other' ? 'other-meta' : (post.author_transfer === 'y' ? 'transfer-player-meta' : 'player-meta'))}">${quoterMetaInfo}</div>
+                </div>
+                <div class="profile-post-header-actions">
+                    <div class="profile-post-view-icon" onclick="navigateToQuotePost('${post.share_id}')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="9 18 15 12 9 6"></polyline>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+            <div class="profile-post-content" onclick="navigateToQuotePost('${post.share_id}')" style="cursor: pointer;">
+                <p>${formatPostContent(post.quote_content || '')}</p>
+            </div>
+            ${quoteMediaHtml ? `<div onclick="event.stopPropagation();">${quoteMediaHtml}</div>` : ''}
+            <!-- Embedded original post -->
+            <div class="profile-quote-embedded" onclick="event.stopPropagation(); navigateToPost('${originalPostId}')">
+                <div class="quote-embedded-header">
+                    <div class="quote-embedded-avatar" onclick="event.stopPropagation(); goToProfile('${post.original_author_username || post.original_author_user_id}', '${post.original_author_role || 'player'}', '${post.original_author_division || ''}', '${post.original_author_user_id}', ${post.original_author_transfer === 'y'})" style="cursor: pointer;">
+                        ${post.original_author_image
+                            ? `<img src="${post.original_author_image}" alt="${originalAuthorName}">`
+                            : `<svg viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="12" cy="7" r="4"></circle>
+                              </svg>`
+                        }
+                    </div>
+                    <div class="quote-embedded-info">
+                        <span class="quote-embedded-author">${originalAuthorName}</span>
+                        <span class="quote-embedded-time">${originalTimeAgo}</span>
+                    </div>
+                </div>
+                <div class="quote-embedded-content">
+                    <p>${formatPostContent(post.original_content || '')}</p>
+                    ${originalMediaHtml}
+                </div>
+            </div>
+            <div class="profile-post-stats">
+                <span class="profile-likes-count" onclick="event.stopPropagation(); showShareLikes('${post.share_id}')" style="cursor: pointer;">${post.likes_count || 0} ${post.likes_count === 1 ? 'like' : 'likes'}</span>
+                <span class="profile-comments-count" onclick="event.stopPropagation(); toggleShareComments('${post.share_id}')" style="cursor: pointer;">${post.comments_count || 0} ${post.comments_count === 1 ? 'comment' : 'comments'}</span>
+                <span>${post.shares_count || 0} ${(post.shares_count || 0) === 1 ? 'share' : 'shares'}</span>
+            </div>
+            <div class="profile-post-actions">
+                <button class="profile-action-btn ${isLiked ? 'liked' : ''}" onclick="event.stopPropagation(); toggleShareLike('${post.share_id}', this)">
+                    <svg viewBox="0 0 24 24" fill="${isLiked ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2">
+                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                    </svg>
+                    <span>${isLiked ? 'Liked' : 'Like'}</span>
+                </button>
+                <button class="profile-action-btn" onclick="event.stopPropagation(); toggleShareComments('${post.share_id}')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                    <span>Comment</span>
+                </button>
+                <button class="profile-action-btn ${isSaved ? 'saved' : ''}" onclick="event.stopPropagation(); toggleShareSave('${post.share_id}', this)">
+                    <svg viewBox="0 0 24 24" fill="${isSaved ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2">
+                        <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                    <span>${isSaved ? 'Saved' : 'Save'}</span>
+                </button>
+                <button class="profile-action-btn ${isReposted ? 'reposted' : ''}" onclick="event.stopPropagation(); profileSharePost('${originalPostId}', event)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="17 1 21 5 17 9"></polyline>
+                        <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
+                        <polyline points="7 23 3 19 7 15"></polyline>
+                        <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
+                    </svg>
+                    <span>${isReposted ? 'Shared' : 'Share'}</span>
+                </button>
+            </div>
+            <div class="profile-comments-section" id="share-comments-${post.share_id}" style="display: none;">
+                <div class="comments-list"></div>
+                <div class="comment-input-container">
+                    <input type="text" placeholder="Write a comment..." class="comment-input" id="share-comment-input-${post.share_id}" onkeypress="if(event.key==='Enter') addShareComment('${post.share_id}')">
+                    <button onclick="addShareComment('${post.share_id}')">Post</button>
+                </div>
             </div>
         </article>
     `;
@@ -3796,225 +5658,320 @@ async function editProfilePost(postId) {
     // Close dropdown menu
     document.querySelector('.profile-post-dropdown-menu')?.remove();
 
-    // Get current post content and media
-    const postCard = document.querySelector(`[data-post-id="${postId}"]`);
-    const currentContent = postCard?.querySelector('.profile-post-content p')?.innerText || '';
+    try {
+        // Fetch the current post data to get media info
+        const response = await API.get(`/posts/${postId}`);
+        const post = response.post;
 
-    // Get current media
-    const mediaElement = postCard?.querySelector('.profile-post-media img, .profile-post-media video');
-    const currentMediaUrl = mediaElement?.src || '';
-    const currentMediaType = mediaElement?.tagName?.toLowerCase() === 'video' ? 'video' : 'image';
+        if (!post) {
+            showToast('Post not found', 'error');
+            return;
+        }
 
-    // Create edit modal
-    const modal = document.createElement('div');
-    modal.className = 'profile-post-modal-overlay';
-    modal.id = 'edit-profile-post-modal';
-    modal.innerHTML = `
-        <div class="profile-post-modal edit-modal">
-            <div class="profile-post-modal-header">
-                <h3>Edit Post</h3>
-                <button class="profile-post-modal-close" onclick="closeProfilePostModal('edit-profile-post-modal')">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="18" y1="6" x2="6" y2="18"></line>
-                        <line x1="6" y1="6" x2="18" y2="18"></line>
-                    </svg>
-                </button>
-            </div>
-            <div class="profile-post-modal-body">
-                <textarea class="edit-post-textarea" id="edit-profile-post-content" placeholder="What's on your mind?">${escapeHtml(currentContent)}</textarea>
+        // Initialize edit media state
+        const existingMediaKeys = post.media_urls_keys || [];
+        const existingMediaType = post.media_type || null;
+        const signedUrls = post.media_urls || post.signed_media_urls || [];
+        let currentMediaKeys = [...existingMediaKeys];
+        let newMediaFiles = [];
+        let newMediaPreviews = [];
+        const maxMedia = 4;
+        const hasMedia = existingMediaKeys.length > 0;
 
-                <div class="edit-post-media-section">
-                    <div class="edit-post-media-preview" id="edit-media-preview" style="${currentMediaUrl ? '' : 'display: none;'}">
-                        ${currentMediaUrl ? (currentMediaType === 'video'
-                            ? `<video src="${currentMediaUrl}" controls></video>`
-                            : `<img src="${currentMediaUrl}" alt="Post media">`)
-                        : ''}
-                        <button class="remove-media-btn" onclick="removeEditMedia()">
+        // Helper to render media items with CSS classes
+        const renderEditMediaItems = () => {
+            let html = '';
+            currentMediaKeys.forEach((key, index) => {
+                const signedUrl = signedUrls[existingMediaKeys.indexOf(key)] || key;
+                const isVideo = existingMediaType === 'video' || key.includes('video') || key.match(/\.(mp4|mov|webm)$/i);
+                html += `
+                    <div class="edit-media-item" data-type="existing" data-index="${index}">
+                        ${isVideo ? `
+                            <video src="${signedUrl}" muted></video>
+                            <div class="media-type-badge">
+                                <svg viewBox="0 0 24 24" fill="currentColor">
+                                    <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                                </svg>
+                            </div>
+                        ` : `
+                            <img src="${signedUrl}" alt="Media">
+                        `}
+                        <button class="edit-media-remove-btn" data-type="existing" data-index="${index}" title="Remove">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <line x1="18" y1="6" x2="6" y2="18"></line>
                                 <line x1="6" y1="6" x2="18" y2="18"></line>
                             </svg>
                         </button>
                     </div>
-                    <div class="edit-post-media-actions">
-                        <label class="add-media-btn">
+                `;
+            });
+            newMediaPreviews.forEach((preview, index) => {
+                html += `
+                    <div class="edit-media-item" data-type="new" data-index="${index}">
+                        ${preview.type === 'video' ? `
+                            <video src="${preview.url}" muted></video>
+                            <div class="media-type-badge">
+                                <svg viewBox="0 0 24 24" fill="currentColor">
+                                    <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                                </svg>
+                            </div>
+                        ` : `
+                            <img src="${preview.url}" alt="Preview">
+                        `}
+                        <button class="edit-media-remove-btn" data-type="new" data-index="${index}" title="Remove">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                                <circle cx="8.5" cy="8.5" r="1.5"></circle>
-                                <polyline points="21 15 16 10 5 21"></polyline>
+                                <line x1="18" y1="6" x2="6" y2="18"></line>
+                                <line x1="6" y1="6" x2="18" y2="18"></line>
                             </svg>
-                            <span>${currentMediaUrl ? 'Change Media' : 'Add Media'}</span>
-                            <input type="file" id="edit-media-input" accept="image/*,video/*" style="display: none;" onchange="handleEditMediaSelect(event)">
-                        </label>
+                        </button>
+                    </div>
+                `;
+            });
+            return html;
+        };
+
+        // Create edit modal with CSS classes
+        const modal = document.createElement('div');
+        modal.className = 'feed-modal-overlay';
+        modal.id = 'edit-profile-post-modal';
+        modal.innerHTML = `
+            <div class="feed-modal edit-modal ${hasMedia ? 'with-media' : ''}">
+                <div class="feed-modal-header">
+                    <h3>Edit Post</h3>
+                    <button class="feed-modal-close" onclick="document.getElementById('edit-profile-post-modal').remove()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
+                </div>
+                <div class="feed-modal-body">
+                    <textarea id="edit-profile-post-content" class="edit-post-textarea" placeholder="What's on your mind?">${escapeHtml(post.content || '')}</textarea>
+
+                    <div class="edit-modal-media-section">
+                        <div class="edit-modal-media-header">
+                            <div class="edit-modal-media-label">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                    <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                                    <polyline points="21 15 16 10 5 21"></polyline>
+                                </svg>
+                                <span>Media</span>
+                                <span class="edit-modal-media-counter" id="edit-post-media-counter">${existingMediaKeys.length}/${maxMedia}</span>
+                            </div>
+                            <label class="edit-modal-add-media-btn ${existingMediaKeys.length >= maxMedia ? 'disabled' : ''}" id="edit-post-add-media-btn">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                                </svg>
+                                Add
+                                <input type="file" id="edit-post-media-input" accept="image/*,video/*" multiple style="display: none;">
+                            </label>
+                        </div>
+                        <div class="edit-modal-media-grid" id="edit-post-media-grid">
+                            ${renderEditMediaItems()}
+                        </div>
+                    </div>
+
+                    <div class="edit-modal-actions">
+                        <button class="edit-modal-btn edit-modal-btn-cancel" onclick="document.getElementById('edit-profile-post-modal').remove()">Cancel</button>
+                        <button class="edit-modal-btn edit-modal-btn-save" id="save-edit-btn">Save Changes</button>
                     </div>
                 </div>
-
-                <div class="edit-modal-actions">
-                    <button class="edit-modal-btn edit-modal-btn-cancel" onclick="closeProfilePostModal('edit-profile-post-modal')">Cancel</button>
-                    <button class="edit-modal-btn edit-modal-btn-save" id="save-edit-btn" onclick="saveProfilePostEdit('${postId}')">Save Changes</button>
-                </div>
             </div>
-        </div>
-    `;
+        `;
 
-    document.body.appendChild(modal);
+        document.body.appendChild(modal);
 
-    // Store original media URL for comparison
-    modal.dataset.originalMediaUrl = currentMediaUrl;
-    modal.dataset.newMediaFile = '';
+        // Focus on textarea
+        setTimeout(() => {
+            const textarea = document.getElementById('edit-profile-post-content');
+            textarea.focus();
+            textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+        }, 100);
 
-    // Focus on textarea
-    setTimeout(() => {
-        const textarea = document.getElementById('edit-profile-post-content');
-        textarea.focus();
-        textarea.setSelectionRange(textarea.value.length, textarea.value.length);
-    }, 100);
-
-    // Close on overlay click
-    modal.addEventListener('click', (e) => {
-        if (e.target === modal) {
-            closeProfilePostModal('edit-profile-post-modal');
-        }
-    });
-}
-
-// Handle media selection in edit modal
-let editMediaFile = null;
-function handleEditMediaSelect(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    editMediaFile = file;
-    const previewContainer = document.getElementById('edit-media-preview');
-    const isVideo = file.type.startsWith('video/');
-    const url = URL.createObjectURL(file);
-
-    previewContainer.innerHTML = `
-        ${isVideo
-            ? `<video src="${url}" controls></video>`
-            : `<img src="${url}" alt="New media">`
-        }
-        <button class="remove-media-btn" onclick="removeEditMedia()">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <line x1="18" y1="6" x2="6" y2="18"></line>
-                <line x1="6" y1="6" x2="18" y2="18"></line>
-            </svg>
-        </button>
-    `;
-    previewContainer.style.display = 'block';
-
-    // Update button text
-    const addMediaSpan = document.querySelector('.add-media-btn span');
-    if (addMediaSpan) addMediaSpan.textContent = 'Change Media';
-}
-
-// Remove media in edit modal
-function removeEditMedia() {
-    editMediaFile = null;
-    const previewContainer = document.getElementById('edit-media-preview');
-    previewContainer.innerHTML = '';
-    previewContainer.style.display = 'none';
-
-    // Reset file input
-    const input = document.getElementById('edit-media-input');
-    if (input) input.value = '';
-
-    // Update button text
-    const addMediaSpan = document.querySelector('.add-media-btn span');
-    if (addMediaSpan) addMediaSpan.textContent = 'Add Media';
-
-    // Mark media as removed
-    const modal = document.getElementById('edit-profile-post-modal');
-    if (modal) modal.dataset.mediaRemoved = 'true';
-}
-
-// Save post edit
-async function saveProfilePostEdit(postId) {
-    const content = document.getElementById('edit-profile-post-content')?.value.trim();
-    if (!content) {
-        showProfileToast('Post content cannot be empty', 'error');
-        return;
-    }
-
-    const saveBtn = document.getElementById('save-edit-btn');
-    if (saveBtn) {
-        saveBtn.disabled = true;
-        saveBtn.textContent = 'Saving...';
-    }
-
-    try {
-        const modal = document.getElementById('edit-profile-post-modal');
-        const mediaRemoved = modal?.dataset.mediaRemoved === 'true';
-
-        // Prepare update data
-        const updateData = { content };
-
-        // Handle media changes
-        if (editMediaFile) {
-            // Upload new media
-            const formData = new FormData();
-            formData.append('media', editMediaFile);
-
-            const uploadResponse = await fetch('/api/posts/upload-media', {
-                method: 'POST',
-                credentials: 'include',
-                body: formData
-            });
-
-            if (uploadResponse.ok) {
-                const uploadResult = await uploadResponse.json();
-                updateData.media_urls = [uploadResult.url];
-                updateData.media_type = editMediaFile.type.startsWith('video/') ? 'video' : 'image';
-            }
-        } else if (mediaRemoved) {
-            // Media was removed
-            updateData.media_urls = [];
-            updateData.media_type = null;
-        }
-
-        await API.put(`/posts/${postId}`, updateData);
-
-        // Update the post content in the DOM
-        const postCard = document.querySelector(`[data-post-id="${postId}"]`);
-        const contentEl = postCard?.querySelector('.profile-post-content p');
-        if (contentEl) {
-            contentEl.innerHTML = formatPostContent(content);
-        }
-
-        // Update media if changed
-        const mediaContainer = postCard?.querySelector('.profile-post-media');
-        if (editMediaFile && updateData.media_urls?.length > 0) {
-            const isVideo = editMediaFile.type.startsWith('video/');
-            if (mediaContainer) {
-                mediaContainer.innerHTML = isVideo
-                    ? `<video controls src="${updateData.media_urls[0]}"></video>`
-                    : `<img src="${updateData.media_urls[0]}" alt="Post media">`;
+        // Update modal class based on media presence
+        const updateModalSize = () => {
+            const modalEl = modal.querySelector('.feed-modal');
+            if (currentMediaKeys.length > 0 || newMediaFiles.length > 0) {
+                modalEl.classList.add('with-media');
             } else {
-                // Add new media container
-                const contentDiv = postCard?.querySelector('.profile-post-content');
-                if (contentDiv) {
-                    const newMediaDiv = document.createElement('div');
-                    newMediaDiv.className = 'profile-post-media';
-                    newMediaDiv.innerHTML = isVideo
-                        ? `<video controls src="${updateData.media_urls[0]}"></video>`
-                        : `<img src="${updateData.media_urls[0]}" alt="Post media">`;
-                    contentDiv.appendChild(newMediaDiv);
-                }
+                modalEl.classList.remove('with-media');
             }
-        } else if (mediaRemoved && mediaContainer) {
-            mediaContainer.remove();
-        }
+        };
 
-        closeProfilePostModal('edit-profile-post-modal');
-        showProfileToast('Post updated!', 'success');
-        editMediaFile = null;
+        // Update media counter and button state
+        const updateMediaCounter = () => {
+            const totalCount = currentMediaKeys.length + newMediaFiles.length;
+            const counter = document.getElementById('edit-post-media-counter');
+            const addBtn = document.getElementById('edit-post-add-media-btn');
+
+            if (counter) {
+                counter.textContent = `${totalCount}/${maxMedia}`;
+                counter.classList.toggle('at-max', totalCount >= maxMedia);
+            }
+            if (addBtn) {
+                addBtn.classList.toggle('disabled', totalCount >= maxMedia);
+            }
+            updateModalSize();
+        };
+
+        // Re-render media grid
+        const renderMediaGrid = () => {
+            const grid = document.getElementById('edit-post-media-grid');
+            if (!grid) return;
+            grid.innerHTML = renderEditMediaItems();
+            updateMediaCounter();
+        };
+
+        // Handle remove button clicks
+        modal.addEventListener('click', (e) => {
+            const removeBtn = e.target.closest('.edit-media-remove-btn');
+            if (removeBtn) {
+                e.stopPropagation();
+                const type = removeBtn.dataset.type;
+                const index = parseInt(removeBtn.dataset.index);
+                if (type === 'existing') {
+                    currentMediaKeys.splice(index, 1);
+                } else if (type === 'new') {
+                    URL.revokeObjectURL(newMediaPreviews[index].url);
+                    newMediaFiles.splice(index, 1);
+                    newMediaPreviews.splice(index, 1);
+                }
+                renderMediaGrid();
+            }
+        });
+
+        // Handle adding new media
+        document.getElementById('edit-post-media-input').addEventListener('change', (e) => {
+            const files = Array.from(e.target.files);
+            const totalCount = currentMediaKeys.length + newMediaFiles.length;
+            const remaining = maxMedia - totalCount;
+
+            if (remaining <= 0) {
+                showToast(`Maximum ${maxMedia} media files allowed`, 'error');
+                e.target.value = '';
+                return;
+            }
+
+            const filesToAdd = files.slice(0, remaining);
+            for (const file of filesToAdd) {
+                const isVideo = file.type.startsWith('video/');
+                const isImage = file.type.startsWith('image/');
+                if (!isVideo && !isImage) continue;
+
+                const previewUrl = URL.createObjectURL(file);
+                newMediaFiles.push(file);
+                newMediaPreviews.push({
+                    url: previewUrl,
+                    type: isVideo ? 'video' : 'image',
+                    name: file.name
+                });
+            }
+            renderMediaGrid();
+            e.target.value = '';
+        });
+
+        // Close on overlay click
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                newMediaPreviews.forEach(p => URL.revokeObjectURL(p.url));
+                modal.remove();
+            }
+        });
+
+        // Handle save
+        document.getElementById('save-edit-btn').onclick = async () => {
+            const content = document.getElementById('edit-profile-post-content')?.value.trim();
+            if (!content) {
+                showToast('Post content cannot be empty', 'error');
+                return;
+            }
+
+            const saveBtn = document.getElementById('save-edit-btn');
+            saveBtn.disabled = true;
+            saveBtn.textContent = 'Saving...';
+
+            try {
+                let finalMediaUrls = [...currentMediaKeys];
+                let finalMediaType = existingMediaType;
+
+                // Upload new media if any
+                if (newMediaFiles.length > 0) {
+                    saveBtn.textContent = 'Uploading...';
+                    try {
+                        const uploadResult = await uploadAPI.uploadPostMedia(newMediaFiles);
+                        if (uploadResult.media && uploadResult.media.length > 0) {
+                            finalMediaUrls = [...finalMediaUrls, ...uploadResult.media.map(m => m.s3Key)];
+                            finalMediaType = uploadResult.media_type;
+                        } else if (uploadResult.s3Key) {
+                            finalMediaUrls.push(uploadResult.s3Key);
+                            finalMediaType = uploadResult.media_type;
+                        }
+                    } catch (uploadError) {
+                        console.error('Media upload failed:', uploadError);
+                        showToast('Failed to upload media', 'error');
+                        saveBtn.disabled = false;
+                        saveBtn.textContent = 'Save Changes';
+                        return;
+                    }
+                }
+
+                if (finalMediaUrls.length === 0) {
+                    finalMediaUrls = null;
+                    finalMediaType = null;
+                }
+
+                await API.put(`/posts/${postId}`, {
+                    content,
+                    media_urls: finalMediaUrls,
+                    media_type: finalMediaType
+                });
+
+                // Cleanup blob URLs
+                newMediaPreviews.forEach(p => URL.revokeObjectURL(p.url));
+
+                // Fetch updated post data to get signed URLs for media
+                const updatedResponse = await API.get(`/posts/${postId}`);
+                const updatedPost = updatedResponse.post;
+
+                // Update the post in the DOM
+                const postCard = document.querySelector(`[data-post-id="${postId}"]`);
+                if (postCard) {
+                    // Update content text
+                    const contentEl = postCard.querySelector('.profile-post-content');
+                    if (contentEl) {
+                        contentEl.innerHTML = formatPostContent(content);
+                    }
+
+                    // Update media - find or create media container
+                    const existingMediaGrid = postCard.querySelector('.post-media-grid');
+                    if (existingMediaGrid) {
+                        existingMediaGrid.remove();
+                    }
+
+                    // Add new media if present
+                    if (updatedPost.media_urls && updatedPost.media_urls.length > 0) {
+                        const newMediaHtml = buildMediaGridHTML(updatedPost.media_urls, updatedPost.media_type);
+                        const contentContainer = postCard.querySelector('.profile-post-content');
+                        if (contentContainer) {
+                            contentContainer.insertAdjacentHTML('afterend', newMediaHtml);
+                        }
+                    }
+                }
+
+                modal.remove();
+                showToast('Post updated!', 'success');
+            } catch (error) {
+                console.error('Error updating post:', error);
+                showToast('Failed to update post', 'error');
+                saveBtn.disabled = false;
+                saveBtn.textContent = 'Save Changes';
+            }
+        };
     } catch (error) {
-        console.error('Error updating post:', error);
-        showProfileToast('Failed to update post', 'error');
-        if (saveBtn) {
-            saveBtn.disabled = false;
-            saveBtn.textContent = 'Save Changes';
-        }
+        console.error('Error fetching post:', error);
+        showToast('Failed to load post', 'error');
     }
 }
 
