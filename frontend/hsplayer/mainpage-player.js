@@ -377,10 +377,6 @@ async function updateSidebarFooter() {
                 mobileSidebarAvatar.innerHTML = `<img src="${profile.profile_image_url}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
             }
 
-            // Load star rating for sidebar footer (players only)
-            if (userRole === 'player') {
-                loadSidebarFooterStars();
-            }
         }
     } catch (error) {
         console.error('Error updating sidebar footer:', error);
@@ -423,41 +419,6 @@ function initMobileSidebar() {
             // Clear authentication and redirect
             await API.auth.logout();
         });
-    }
-}
-
-// Load and display star rating in sidebar footer
-async function loadSidebarFooterStars() {
-    try {
-        if (!API.isAuthenticated()) return;
-
-        const response = await fetch(`${API_BASE_URL}/stars/my-rating`, {
-            credentials: 'include'
-        });
-
-        if (response.ok) {
-            const data = await response.json();
-            if (data.stars !== null && data.stars >= 1 && data.stars <= 5) {
-                // Add stars to sidebar footer
-                const userRoleElement = document.querySelector('.sidebar-footer .user-role');
-                if (userRoleElement) {
-                    // Remove existing stars if any
-                    const existingStars = userRoleElement.querySelector('.sidebar-stars');
-                    if (existingStars) existingStars.remove();
-
-                    // Create and insert stars
-                    const starsEl = document.createElement('span');
-                    starsEl.className = 'sidebar-stars';
-                    starsEl.innerHTML = `<span class="star-count">${data.stars}</span><span class="star-icon">★</span>`;
-                    starsEl.style.color = '#ffd700';
-                    starsEl.style.fontWeight = '600';
-                    starsEl.style.marginRight = '0.35em';
-                    userRoleElement.insertBefore(starsEl, userRoleElement.firstChild);
-                }
-            }
-        }
-    } catch (error) {
-        console.error('Error loading sidebar footer stars:', error);
     }
 }
 

@@ -48,6 +48,14 @@
         .viewing-other-profile .main-content {
             max-width: 100% !important;
         }
+        /* Hide left sidebar initially when viewing other profile to prevent flash */
+        .viewing-other-profile .sidebar {
+            opacity: 0;
+            transition: opacity 0.15s ease;
+        }
+        .viewing-other-profile.sidebar-ready .sidebar {
+            opacity: 1;
+        }
         /* Prevent nav flash by hiding nav items until correct one is shown */
         /* Note: Nav highlight colors are controlled by JavaScript based on logged-in user type */
         .nav-item { background: transparent !important; }

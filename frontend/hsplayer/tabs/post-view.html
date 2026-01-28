@@ -378,13 +378,12 @@
     <script src="../../shared/feed.js"></script>
     <script src="../mainpage-player.js"></script>
     <script>
-        // Get post ID from URL
         const urlParams = new URLSearchParams(window.location.search);
         const postId = urlParams.get('id');
+        const shareId = urlParams.get('share'); // For quote/repost posts
         const referrer = urlParams.get('ref') || 'feed';
 
         function goBack() {
-            // Try to go back in history, or redirect based on referrer
             if (window.history.length > 1) {
                 window.history.back();
             } else if (referrer === 'profile') {
@@ -394,14 +393,11 @@
             }
         }
 
-        // Highlight the correct sidebar nav item based on referrer
         function highlightSidebarNav() {
-            // Remove active class from all nav items
             document.querySelectorAll('.nav-item').forEach(item => {
                 item.classList.remove('active');
             });
 
-            // Highlight based on referrer
             let targetHref = '';
             if (referrer === 'profile') {
                 targetHref = 'my-profile.html';
@@ -409,7 +405,6 @@
                 targetHref = '../mainpage-player.html';
             }
 
-            // Find and highlight the matching nav item
             document.querySelectorAll('.nav-item').forEach(item => {
                 const href = item.getAttribute('href');
                 if (href && (href.includes(targetHref) || (referrer === 'feed' && href.includes('mainpage')))) {
@@ -421,7 +416,7 @@
         async function loadPost() {
             const container = document.getElementById('postViewContent');
 
-            if (!postId) {
+            if (!postId && !shareId) {
                 container.innerHTML = `
                     <div class="error-state">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -436,53 +431,45 @@
             }
 
             try {
-                const response = await API.get(`/posts/${postId}`);
+                let postElement;
+                let targetPostId;
 
-                if (!response.post) {
-                    throw new Error('Post not found');
-                }
-
-                // Create a minimal feed manager for rendering single post
                 if (typeof FeedManager !== 'undefined') {
-                    // Create feedManager with skipInit flag to prevent automatic feed loading
-                    feedManager = new FeedManager(true); // Pass true to skip init
+                    feedManager = new FeedManager(true);
                     feedManager.feedContainer = container;
-
-                    // Manually load current user for authentication context
                     await feedManager.loadCurrentUser();
 
-                    // Render ONLY the single post
-                    const postElement = feedManager.createPostElement(response.post);
-                    container.innerHTML = ''; // Clear any existing content
+                    if (shareId) {
+                        // Load a share (quote/repost)
+                        const response = await API.get(`/posts/share/${shareId}`);
+                        if (!response.share) {
+                            throw new Error('Share not found');
+                        }
+
+                        const share = response.share;
+                        targetPostId = share.original_post_id;
+
+                        if (share.is_quote) {
+                            postElement = feedManager.createSingleQuotePostElement(share);
+                        } else {
+                            postElement = feedManager.createPostElement(share);
+                        }
+                    } else {
+                        const response = await API.get(`/posts/${postId}`);
+                        if (!response.post) {
+                            throw new Error('Post not found');
+                        }
+                        targetPostId = postId;
+                        postElement = feedManager.createPostElement(response.post);
+                    }
+
+                    container.innerHTML = '';
                     container.appendChild(postElement);
 
-                    // Remove click navigation from post content since we're already on the single post view
-                    const postContent = postElement.querySelector('.post-content');
-                    if (postContent) {
-                        postContent.style.cursor = 'default';
-                        postContent.style.pointerEvents = 'none';
-                        // Re-enable pointer events for interactive elements inside
-                        const mediaElements = postContent.querySelectorAll('.post-media, img, video');
-                        mediaElements.forEach(el => {
-                            el.style.pointerEvents = 'auto';
-                        });
-                    }
-
-                    // Remove the post card click functionality
-                    postElement.style.cursor = 'default';
-
-                    // Hide the arrow icon
-                    const viewIcon = postElement.querySelector('.post-view-icon');
-                    if (viewIcon) {
-                        viewIcon.style.display = 'none';
-                    }
-
-                    // Auto-expand comments section
                     const commentsSection = postElement.querySelector('.post-comments-section');
                     if (commentsSection) {
                         commentsSection.style.display = 'block';
-                        // Load comments
-                        feedManager.loadComments(postId);
+                        feedManager.loadComments(targetPostId);
                     }
                 } else {
                     throw new Error('Feed manager not available');
@@ -503,7 +490,6 @@
             }
         }
 
-        // Initialize on page load
         document.addEventListener('DOMContentLoaded', () => {
             highlightSidebarNav();
             loadPost();

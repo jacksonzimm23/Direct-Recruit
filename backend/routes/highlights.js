@@ -92,9 +92,9 @@ router.post('/upload', authMiddleware, upload.single('video_file'), async (req, 
   } catch (error) {
     console.error('Upload highlight error:', error);
 
-    // Handle multer errors
+    // Handle multer errors - return generic message
     if (error.message && error.message.includes('Invalid file type')) {
-      return res.status(400).json({ error: error.message });
+      return res.status(400).json({ error: 'Invalid file type. Please upload a valid video file.' });
     }
 
     res.status(500).json({ error: 'Failed to upload highlight' });

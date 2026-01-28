@@ -12,6 +12,32 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <!-- Hide sidebars immediately if viewing another profile to prevent flash -->
+    <script>
+        if (new URLSearchParams(window.location.search).has('username')) {
+            document.documentElement.classList.add('viewing-other-profile');
+        }
+    </script>
+    <style>
+        .viewing-other-profile .right-sidebar,
+        .viewing-other-profile .right-sidebar-toggle {
+            display: none !important;
+        }
+        .viewing-other-profile .dashboard-container {
+            grid-template-columns: 280px 1fr !important;
+        }
+        .viewing-other-profile .main-content {
+            max-width: 100% !important;
+        }
+        /* Hide left sidebar initially when viewing other profile to prevent flash */
+        .viewing-other-profile .sidebar {
+            opacity: 0;
+            transition: opacity 0.15s ease;
+        }
+        .viewing-other-profile.sidebar-ready .sidebar {
+            opacity: 1;
+        }
+    </style>
 </head>
 <body class="dashboard-body profile-type-player">
     <!-- Mobile Header (visible only on mobile) -->

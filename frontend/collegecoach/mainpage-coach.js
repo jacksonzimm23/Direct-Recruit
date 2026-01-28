@@ -413,11 +413,18 @@ function populateSidebarFooter(profile) {
         userName.textContent = `${profile.first_name} ${profile.last_name}`;
     }
 
-    // Update school and division (second row) - for college coaches show college_name • division
+    // Update school and division (second row) - for college coaches show team_name, state • division
     const userRole = document.querySelector('.sidebar-footer .user-role');
     if (userRole) {
         const parts = [];
-        if (profile.team_name) parts.push(profile.team_name);
+        // Team name and state are comma-separated
+        if (profile.team_name && profile.state) {
+            parts.push(`${profile.team_name}, ${profile.state}`);
+        } else if (profile.team_name) {
+            parts.push(profile.team_name);
+        } else if (profile.state) {
+            parts.push(profile.state);
+        }
         if (profile.college_division) {
             // Format FBS/FCS as D1 FBS/D1 FCS
             const divDisplay = (profile.college_division === 'FBS' || profile.college_division === 'FCS')

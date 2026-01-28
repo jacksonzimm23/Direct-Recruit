@@ -183,7 +183,7 @@ router.post('/post-media', authMiddleware, postMediaUpload.array('media', 4), as
   } catch (error) {
     console.error('Upload post media error:', error);
     if (error.message && error.message.includes('Only image files')) {
-      return res.status(400).json({ error: error.message });
+      return res.status(400).json({ error: 'Only image files are allowed' });
     }
     res.status(500).json({ error: 'Failed to upload media' });
   }

@@ -91,9 +91,8 @@ router.post('/register', authLimiter, validateRegistration, handleValidationErro
       requiresVerification: !cognitoResult.userConfirmed
     });
   } catch (error) {
-    console.error('Registration error:', error.name, error.message);
-    console.error('Full error:', error);
-    res.status(500).json({ error: 'Registration failed: ' + error.message });
+    console.error('Registration error:', error.name);
+    res.status(500).json({ error: 'Registration failed. Please try again.' });
   }
 });
 

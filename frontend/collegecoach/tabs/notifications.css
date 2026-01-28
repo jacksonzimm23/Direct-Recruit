@@ -184,6 +184,24 @@
     height: 24px;
 }
 
+/* Notification Profile Image */
+.notification-profile-link {
+    flex-shrink: 0;
+}
+
+.notification-profile-img {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid rgba(18, 130, 162, 0.3);
+    transition: border-color 0.2s ease;
+}
+
+.notification-profile-img:hover {
+    border-color: var(--cerulean);
+}
+
 .profile-view-icon {
     background: rgba(18, 130, 162, 0.15);
     color: var(--cerulean);
@@ -621,6 +639,63 @@
 .board-invite-icon {
     background: rgba(18, 130, 162, 0.15);
     color: var(--cerulean);
+}
+
+/* ==================== Follow Request Action Buttons ==================== */
+.follow-request-actions {
+    display: inline-flex;
+    gap: 0.5rem;
+    align-items: center;
+    margin-left: 0.75rem;
+    vertical-align: middle;
+}
+
+.btn-accept-request,
+.btn-decline-request {
+    padding: 0.3rem 0.75rem;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: 'Inter', sans-serif;
+    white-space: nowrap;
+}
+
+.btn-accept-request {
+    background: rgba(18, 130, 162, 0.15);
+    color: var(--cerulean);
+    border: 1px solid rgba(18, 130, 162, 0.3);
+}
+
+.btn-accept-request:hover {
+    background: rgba(18, 130, 162, 0.25);
+    border-color: var(--cerulean);
+}
+
+.btn-decline-request {
+    background: transparent;
+    color: rgba(254, 252, 251, 0.6);
+    border: 1px solid rgba(254, 252, 251, 0.2);
+}
+
+.btn-decline-request:hover {
+    background: rgba(254, 252, 251, 0.1);
+    border-color: rgba(254, 252, 251, 0.4);
+}
+
+@media (max-width: 600px) {
+    .follow-request-actions {
+        display: flex;
+        margin-left: 0;
+        margin-top: 0.5rem;
+    }
+
+    .btn-accept-request,
+    .btn-decline-request {
+        padding: 0.35rem 0.75rem;
+        font-size: 0.75rem;
+    }
 }
 
 /* Board Invite Confirmation Modal */

@@ -7,6 +7,7 @@ const OtherProfile = require('../models/OtherProfile');
 const PendingEmailChange = require('../models/PendingEmailChange');
 const PendingPasswordReset = require('../models/PendingPasswordReset');
 const { authMiddleware } = require('../middleware/auth');
+const { authLimiter } = require('../middleware/rateLimit');
 const cognito = require('../utils/cognito');
 const email = require('../utils/email');
 
@@ -32,11 +33,6 @@ router.get('/account', authMiddleware, async (req, res) => {
 router.put('/privacy', authMiddleware, async (req, res) => {
   try {
     const { profile_visibility, message_permissions } = req.body;
-
-    // Debug logging
-    console.log('[Settings] Privacy update request body:', req.body);
-    console.log('[Settings] profile_visibility:', JSON.stringify(profile_visibility), 'type:', typeof profile_visibility);
-    console.log('[Settings] message_permissions:', JSON.stringify(message_permissions), 'type:', typeof message_permissions);
 
     // Get current user to determine their role
     const user = await User.findById(req.userId);
@@ -122,7 +118,7 @@ router.get('/email/check-availability', authMiddleware, async (req, res) => {
 
 // Initiate email change - verifies password and sends verification email via SES
 // IMPORTANT: This does NOT change Cognito until verification is complete
-router.post('/email/request-change', authMiddleware, async (req, res) => {
+router.post('/email/request-change', authMiddleware, authLimiter, async (req, res) => {
   try {
     const { newEmail, password } = req.body;
 
@@ -155,11 +151,8 @@ router.post('/email/request-change', authMiddleware, async (req, res) => {
     // Verify password by signing in with Cognito
     // This ONLY validates the password - does NOT change anything
     try {
-      console.log('[Settings] Verifying password for email:', currentUser.email);
       await cognito.signIn(currentUser.email, password);
-      console.log('[Settings] Password verified successfully');
     } catch (cognitoError) {
-      console.error('[Settings] Password verification error:', cognitoError.name, cognitoError.message);
       if (cognitoError.name === 'NotAuthorizedException') {
         return res.status(401).json({ error: 'Invalid password' });
       }
@@ -177,12 +170,10 @@ router.post('/email/request-change', authMiddleware, async (req, res) => {
 
     // Store the pending email change in the database
     await PendingEmailChange.create(req.userId, currentUser.email, newEmail, verificationCode);
-    console.log('[Settings] Pending email change stored for user:', req.userId);
 
     // Send verification email via SES
     try {
       await email.sendEmailChangeVerification(newEmail, verificationCode);
-      console.log('[Settings] Verification email sent to:', newEmail);
     } catch (emailError) {
       console.error('[Settings] Failed to send verification email:', emailError);
       // Clean up the pending change
@@ -232,25 +223,21 @@ router.post('/email/verify-change', authMiddleware, async (req, res) => {
     // NOW update the email in Cognito using admin API
     // This happens ONLY after successful verification
     try {
-      console.log('[Settings] Updating Cognito email from', pendingChange.current_email, 'to', pendingChange.new_email);
       await cognito.adminUpdateUserEmail(pendingChange.current_email, pendingChange.new_email);
-      console.log('[Settings] Cognito email updated successfully');
     } catch (cognitoError) {
-      console.error('[Settings] Cognito email update error:', cognitoError);
+      console.error('Cognito email update error:', cognitoError.name);
       return res.status(500).json({ error: 'Failed to update email in authentication system' });
     }
 
     // Update email in PostgreSQL
     const updatedUser = await User.updateEmail(req.userId, pendingChange.new_email);
-    console.log('[Settings] PostgreSQL email updated to:', pendingChange.new_email);
 
     // Delete the pending change record
     await PendingEmailChange.delete(req.userId);
 
     // Send confirmation email to the new address (non-blocking)
     email.sendEmailChangeConfirmation(pendingChange.new_email)
-      .then(() => console.log('[Settings] Confirmation email sent to:', pendingChange.new_email))
-      .catch(err => console.error('[Settings] Failed to send confirmation email:', err));
+      .catch(err => console.error('Failed to send confirmation email:', err.name));
 
     res.json({
       message: 'Email changed successfully',
@@ -308,9 +295,8 @@ router.post('/email/resend-code', authMiddleware, async (req, res) => {
     // Send new verification email via SES
     try {
       await email.sendEmailChangeVerification(pendingChange.new_email, verificationCode);
-      console.log('[Settings] Resent verification email to:', pendingChange.new_email, 'Resend count:', currentResendCount + 1);
     } catch (emailError) {
-      console.error('[Settings] Failed to resend verification email:', emailError);
+      console.error('Failed to resend verification email:', emailError.name);
       throw emailError;
     }
 
@@ -377,11 +363,8 @@ router.post('/password/change', authMiddleware, async (req, res) => {
     // This also gives us the access token needed for changePassword
     let cognitoTokens;
     try {
-      console.log('[Settings] Verifying current password for:', currentUser.email);
       cognitoTokens = await cognito.signIn(currentUser.email, currentPassword);
-      console.log('[Settings] Current password verified successfully');
     } catch (cognitoError) {
-      console.error('[Settings] Password verification error:', cognitoError.name, cognitoError.message);
       if (cognitoError.name === 'NotAuthorizedException') {
         return res.status(401).json({ error: 'Current password is incorrect' });
       }
@@ -396,11 +379,8 @@ router.post('/password/change', authMiddleware, async (req, res) => {
 
     // Now change the password using the access token
     try {
-      console.log('[Settings] Changing password for:', currentUser.email);
       await cognito.changePassword(cognitoTokens.accessToken, currentPassword, newPassword);
-      console.log('[Settings] Password changed successfully in Cognito');
     } catch (cognitoError) {
-      console.error('[Settings] Password change error:', cognitoError.name, cognitoError.message);
       if (cognitoError.name === 'InvalidPasswordException') {
         return res.status(400).json({ error: 'New password does not meet requirements' });
       }
@@ -412,12 +392,11 @@ router.post('/password/change', authMiddleware, async (req, res) => {
 
     // Send confirmation email (non-blocking)
     email.sendPasswordChangeConfirmation(currentUser.email)
-      .then(() => console.log('[Settings] Password change confirmation email sent to:', currentUser.email))
-      .catch(err => console.error('[Settings] Failed to send password change confirmation email:', err));
+      .catch(err => console.error('Failed to send password change confirmation email:', err.name));
 
     res.json({ message: 'Password changed successfully' });
   } catch (error) {
-    console.error('Password change error:', error);
+    console.error('Password change error:', error.name);
     res.status(500).json({ error: 'Failed to change password' });
   }
 });
@@ -438,14 +417,12 @@ router.post('/password/forgot/request', authMiddleware, async (req, res) => {
 
     // Store the pending password reset in the database
     await PendingPasswordReset.create(req.userId, currentUser.email, verificationCode);
-    console.log('[Settings] Pending password reset stored for user:', req.userId);
 
     // Send verification email via SES
     try {
       await email.sendPasswordResetVerification(currentUser.email, verificationCode);
-      console.log('[Settings] Password reset verification email sent to:', currentUser.email);
     } catch (emailError) {
-      console.error('[Settings] Failed to send password reset email:', emailError);
+      console.error('Failed to send password reset email:', emailError.name);
       // Clean up the pending reset
       await PendingPasswordReset.delete(req.userId);
 
@@ -526,25 +503,18 @@ router.post('/password/forgot/set', authMiddleware, async (req, res) => {
 
     // Check if new password is the same as current password
     try {
-      console.log('[Settings] Checking if new password matches current password for:', pendingReset.email);
       await cognito.signIn(pendingReset.email, newPassword);
       // If sign-in succeeds, the new password is the same as the current one
-      console.log('[Settings] Sign-in succeeded - user is trying to use same password');
       return res.status(400).json({ error: 'New password must be different from your current password' });
     } catch (signInError) {
-      console.log('[Settings] Sign-in check result:', signInError.name);
-      if (signInError.name !== 'NotAuthorizedException') {
-        console.log('[Settings] Password check error (non-blocking):', signInError.name);
-      }
+      // NotAuthorizedException means password is different (which is what we want)
       // Password is different, continue
     }
 
     // If no Cognito code provided, initiate Cognito's forgot password to send code
     if (!cognitoCode) {
       try {
-        console.log('[Settings] Initiating Cognito forgot password for:', pendingReset.email);
         await cognito.forgotPassword(pendingReset.email);
-        console.log('[Settings] Cognito forgot password initiated');
 
         return res.json({
           message: 'A verification code has been sent to your email',
@@ -552,7 +522,6 @@ router.post('/password/forgot/set', authMiddleware, async (req, res) => {
           email: pendingReset.email
         });
       } catch (cognitoError) {
-        console.error('[Settings] Cognito forgot password error:', cognitoError.name, cognitoError.message);
 
         if (cognitoError.name === 'LimitExceededException') {
           return res.status(429).json({ error: 'Too many attempts. Please try again later.' });
@@ -564,11 +533,8 @@ router.post('/password/forgot/set', authMiddleware, async (req, res) => {
 
     // Cognito code provided - complete the password reset
     try {
-      console.log('[Settings] Confirming forgot password with Cognito code for:', pendingReset.email);
       await cognito.confirmForgotPassword(pendingReset.email, cognitoCode, newPassword);
-      console.log('[Settings] Password reset successfully via Cognito');
     } catch (cognitoError) {
-      console.error('[Settings] Cognito confirm forgot password error:', cognitoError.name, cognitoError.message);
 
       const errorName = cognitoError.name || '';
       const errorMessage = (cognitoError.message || '').toLowerCase();
@@ -600,12 +566,11 @@ router.post('/password/forgot/set', authMiddleware, async (req, res) => {
 
     // Send confirmation email (non-blocking)
     email.sendPasswordChangeConfirmation(pendingReset.email)
-      .then(() => console.log('[Settings] Password reset confirmation email sent to:', pendingReset.email))
-      .catch(err => console.error('[Settings] Failed to send password reset confirmation email:', err));
+      .catch(err => console.error('Failed to send password reset confirmation email:', err.name));
 
     res.json({ message: 'Password reset successfully' });
   } catch (error) {
-    console.error('Password reset set error:', error.name, error.message);
+    console.error('Password reset set error:', error.name);
     res.status(500).json({ error: 'Failed to reset password' });
   }
 });
@@ -656,9 +621,8 @@ router.post('/password/forgot/resend', authMiddleware, async (req, res) => {
     // Send new verification email via SES
     try {
       await email.sendPasswordResetVerification(pendingReset.email, verificationCode);
-      console.log('[Settings] Resent password reset email to:', pendingReset.email, 'Resend count:', currentResendCount + 1);
     } catch (emailError) {
-      console.error('[Settings] Failed to resend password reset email:', emailError);
+      console.error('Failed to resend password reset email:', emailError.name);
       throw emailError;
     }
 
@@ -703,11 +667,8 @@ router.delete('/account/delete', authMiddleware, async (req, res) => {
 
     // Verify password by signing in with Cognito
     try {
-      console.log('[Settings] Verifying password for account deletion:', currentUser.email);
       await cognito.signIn(currentUser.email, password);
-      console.log('[Settings] Password verified successfully');
     } catch (cognitoError) {
-      console.error('[Settings] Password verification error:', cognitoError.name, cognitoError.message);
       if (cognitoError.name === 'NotAuthorizedException') {
         return res.status(401).json({ error: 'Incorrect password' });
       }
@@ -722,28 +683,22 @@ router.delete('/account/delete', authMiddleware, async (req, res) => {
 
     // Delete from Cognito FIRST (so we can fail gracefully if it doesn't work)
     try {
-      console.log('[Settings] Deleting user from Cognito:', userEmail);
       await cognito.adminDeleteUser(userEmail);
-      console.log('[Settings] User deleted from Cognito');
     } catch (cognitoError) {
-      console.error('[Settings] Cognito deletion error:', cognitoError.name, cognitoError.message);
       // Only fail if it's not a "user not found" error (already deleted)
       if (cognitoError.name !== 'UserNotFoundException') {
+        console.error('Cognito deletion error:', cognitoError.name);
         return res.status(500).json({ error: 'Failed to delete account from authentication system' });
       }
       // User not found in Cognito is fine - continue with PostgreSQL deletion
-      console.log('[Settings] User not found in Cognito (may already be deleted), continuing...');
     }
 
     // Delete from PostgreSQL (cascades to all related tables)
-    console.log('[Settings] Deleting user from PostgreSQL:', req.userId);
     await User.delete(req.userId);
-    console.log('[Settings] User deleted from PostgreSQL');
 
     // Send goodbye email (non-blocking)
     email.sendAccountDeletionConfirmation(userEmail)
-      .then(() => console.log('[Settings] Account deletion email sent to:', userEmail))
-      .catch(err => console.error('[Settings] Failed to send account deletion email:', err));
+      .catch(err => console.error('Failed to send account deletion email:', err.name));
 
     res.json({ message: 'Account deleted successfully' });
   } catch (error) {

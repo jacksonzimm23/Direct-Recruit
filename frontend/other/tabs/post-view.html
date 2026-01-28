@@ -372,6 +372,7 @@
         // Get post ID from URL
         const urlParams = new URLSearchParams(window.location.search);
         const postId = urlParams.get('id');
+        const shareId = urlParams.get('share'); // For quote/repost posts
         const referrer = urlParams.get('ref') || 'feed';
 
         function goBack() {
@@ -412,7 +413,7 @@
         async function loadPost() {
             const container = document.getElementById('postViewContent');
 
-            if (!postId) {
+            if (!postId && !shareId) {
                 container.innerHTML = `
                     <div class="error-state">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -427,11 +428,8 @@
             }
 
             try {
-                const response = await API.get(`/posts/${postId}`);
-
-                if (!response.post) {
-                    throw new Error('Post not found');
-                }
+                let postElement;
+                let targetPostId = postId;
 
                 // Create a minimal feed manager for rendering single post
                 if (typeof FeedManager !== 'undefined') {
@@ -442,38 +440,44 @@
                     // Manually load current user for authentication context
                     await feedManager.loadCurrentUser();
 
-                    // Render ONLY the single post
-                    const postElement = feedManager.createPostElement(response.post);
+                    if (shareId) {
+                        // Fetch the share (quote/repost) by share ID
+                        const response = await API.get(`/posts/share/${shareId}`);
+                        const share = response.share;
+
+                        if (!share) {
+                            throw new Error('Share not found');
+                        }
+
+                        targetPostId = share.original_post_id;
+
+                        // Check if it's a quote post
+                        if (share.is_quote) {
+                            postElement = feedManager.createSingleQuotePostElement(share);
+                        } else {
+                            // Regular repost - render original post
+                            postElement = feedManager.createPostElement(share);
+                        }
+                    } else {
+                        // Regular post by ID
+                        const response = await API.get(`/posts/${postId}`);
+
+                        if (!response.post) {
+                            throw new Error('Post not found');
+                        }
+
+                        postElement = feedManager.createPostElement(response.post);
+                    }
+
                     container.innerHTML = ''; // Clear any existing content
                     container.appendChild(postElement);
-
-                    // Remove click navigation from post content since we're already on the single post view
-                    const postContent = postElement.querySelector('.post-content');
-                    if (postContent) {
-                        postContent.style.cursor = 'default';
-                        postContent.style.pointerEvents = 'none';
-                        // Re-enable pointer events for interactive elements inside
-                        const mediaElements = postContent.querySelectorAll('.post-media, img, video');
-                        mediaElements.forEach(el => {
-                            el.style.pointerEvents = 'auto';
-                        });
-                    }
-
-                    // Remove the post card click functionality
-                    postElement.style.cursor = 'default';
-
-                    // Hide the arrow icon
-                    const viewIcon = postElement.querySelector('.post-view-icon');
-                    if (viewIcon) {
-                        viewIcon.style.display = 'none';
-                    }
 
                     // Auto-expand comments section
                     const commentsSection = postElement.querySelector('.post-comments-section');
                     if (commentsSection) {
                         commentsSection.style.display = 'block';
                         // Load comments
-                        feedManager.loadComments(postId);
+                        feedManager.loadComments(targetPostId);
                     }
                 } else {
                     throw new Error('Feed manager not available');

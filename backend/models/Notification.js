@@ -410,6 +410,49 @@ class Notification {
       relatedEntityType: 'post'
     });
   }
+
+  // Create notification when someone likes a share (quote post)
+  static async createShareLikeNotification(shareOwnerId, likerUserId, likerName, shareId) {
+    // Don't notify if liking own share
+    if (shareOwnerId === likerUserId) return null;
+
+    // Check if notification exists within last hour
+    const exists = await this.exists({
+      userId: shareOwnerId,
+      type: 'interaction',
+      relatedUserId: likerUserId,
+      relatedEntityId: shareId,
+      withinHours: 1
+    });
+
+    if (exists) return null;
+
+    return this.create({
+      userId: shareOwnerId,
+      type: 'interaction',
+      title: 'New Like',
+      message: `${likerName} liked your quote post`,
+      relatedUserId: likerUserId,
+      relatedEntityId: shareId,
+      relatedEntityType: 'share'
+    });
+  }
+
+  // Create notification when someone comments on a share (quote post)
+  static async createShareCommentNotification(shareOwnerId, commenterUserId, commenterName, shareId) {
+    // Don't notify if commenting on own share
+    if (shareOwnerId === commenterUserId) return null;
+
+    return this.create({
+      userId: shareOwnerId,
+      type: 'interaction',
+      title: 'New Comment',
+      message: `${commenterName} commented on your quote post`,
+      relatedUserId: commenterUserId,
+      relatedEntityId: shareId,
+      relatedEntityType: 'share'
+    });
+  }
 }
 
 module.exports = Notification;

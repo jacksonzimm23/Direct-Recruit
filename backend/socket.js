@@ -18,16 +18,11 @@ function initializeSocket(server) {
       // Try to get token from cookie first, then fall back to auth object
       let token = null;
 
-      // Parse cookies from handshake headers
+      // Parse cookies from handshake headers (HTTPOnly cookies only - no fallback)
       const cookieHeader = socket.handshake.headers.cookie;
       if (cookieHeader) {
         const cookies = cookie.parse(cookieHeader);
         token = cookies.token;
-      }
-
-      // Fallback to auth object (for backwards compatibility during transition)
-      if (!token) {
-        token = socket.handshake.auth.token;
       }
 
       if (!token) {

@@ -6,7 +6,7 @@ class PlayerProfile {
       first_name, last_name, username, date_of_birth, team_name, graduation_year,
       city, state, position, height, weight, gpa, sat_score, act_score,
       highlight_video_url, bio, hudl_profile, twitter_handle, instagram_handle, player_status,
-      college_division
+      college_division, conference, number, eligibility
     } = profileData;
 
     const result = await pool.query(
@@ -14,13 +14,13 @@ class PlayerProfile {
       (user_id, first_name, last_name, username, date_of_birth, team_name, graduation_year,
        city, state, position, height, weight, gpa, sat_score, act_score,
        highlight_video_url, bio, hudl_profile, twitter_handle, instagram_handle, player_status,
-       college_division)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)
+       college_division, conference, number, eligibility)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25)
       RETURNING *`,
       [userId, first_name, last_name, username, date_of_birth, team_name, graduation_year,
        city, state, position, height, weight, gpa, sat_score, act_score,
        highlight_video_url, bio, hudl_profile, twitter_handle, instagram_handle, player_status,
-       college_division]
+       college_division, conference, number, eligibility]
     );
     return result.rows[0];
   }

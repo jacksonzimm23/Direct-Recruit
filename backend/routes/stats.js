@@ -119,7 +119,7 @@ router.put('/:gameId', authMiddleware, validateUUID('gameId'), async (req, res) 
   } catch (error) {
     console.error('Update game stats error:', error);
     if (error.message === 'Game not found or unauthorized') {
-      return res.status(404).json({ error: error.message });
+      return res.status(404).json({ error: 'Game not found or unauthorized' });
     }
     res.status(500).json({ error: 'Failed to update game stats' });
   }

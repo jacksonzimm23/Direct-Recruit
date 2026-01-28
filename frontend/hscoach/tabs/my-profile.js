@@ -519,8 +519,14 @@ function updateNavbarForLoggedInUser(user, profile) {
                 if (profile.state) parts.push(profile.state);
                 userRole.textContent = parts.join(', ') || 'HS Coach';
             } else if (userFolder === 'collegecoach') {
-                // College Coach: college_name • division
-                if (profile.team_name) parts.push(profile.team_name);
+                // College Coach: college_name, state • division
+                if (profile.team_name && profile.state) {
+                    parts.push(`${profile.team_name}, ${profile.state}`);
+                } else if (profile.team_name) {
+                    parts.push(profile.team_name);
+                } else if (profile.state) {
+                    parts.push(profile.state);
+                }
                 if (profile.college_division) {
                     // Format FBS/FCS as D1 FBS/D1 FCS
                     const divDisplay = (profile.college_division === 'FBS' || profile.college_division === 'FCS')

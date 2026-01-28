@@ -42,6 +42,52 @@
     color: white;
 }
 
+/* ==================== NEW POSTS BUTTON ==================== */
+.new-posts-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    width: 100%;
+    padding: 0.75rem 1rem;
+    margin-bottom: 1rem;
+    background: linear-gradient(135deg, var(--cerulean), #0ea5e9);
+    border: none;
+    border-radius: 25px;
+    color: white;
+    font-size: 0.9375rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 8px rgba(18, 130, 162, 0.3);
+    animation: slideDown 0.3s ease-out;
+}
+
+.new-posts-button:hover {
+    background: linear-gradient(135deg, #0ea5e9, var(--cerulean));
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(18, 130, 162, 0.4);
+}
+
+.new-posts-button:active {
+    transform: translateY(0);
+}
+
+.new-posts-button svg {
+    flex-shrink: 0;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
 /* ==================== FEED SECTIONS ==================== */
 .feed-sections {
     position: relative;
@@ -560,6 +606,12 @@
     flex-shrink: 0;
 }
 
+.repost-indicator .repost-time {
+    margin-left: auto;
+    color: var(--text-muted);
+    font-weight: 400;
+}
+
 .quote-indicator {
     color: var(--cerulean);
 }
@@ -644,6 +696,115 @@
 
 .quote-post-card .post-content {
     margin-bottom: 0;
+}
+
+/* Quoted post media in embeds - matches original post media grid sizing */
+.quoted-post-media {
+    margin-top: 0.75rem;
+    border-radius: 8px;
+    overflow: hidden;
+    width: 50%;
+    height: 200px;
+    background: rgba(0, 0, 0, 0.2);
+    display: grid;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Grid layouts based on media count */
+.quoted-post-media.media-count-1 {
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr;
+}
+
+.quoted-post-media.media-count-2 {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr;
+}
+
+.quoted-post-media.media-count-3 {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+}
+
+.quoted-post-media.media-count-4 {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+}
+
+.quoted-media-item {
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+
+.quoted-media-item:hover {
+    opacity: 0.9;
+}
+
+/* Grid cell borders for quoted media */
+.quoted-post-media.media-count-2 .quoted-media-item:first-child {
+    border-right: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+.quoted-post-media.media-count-3 .quoted-media-item:first-child {
+    grid-row: span 2;
+    border-right: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+.quoted-post-media.media-count-3 .quoted-media-item:nth-child(2) {
+    border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+.quoted-post-media.media-count-4 .quoted-media-item:nth-child(1),
+.quoted-post-media.media-count-4 .quoted-media-item:nth-child(3) {
+    border-right: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+.quoted-post-media.media-count-4 .quoted-media-item:nth-child(1),
+.quoted-post-media.media-count-4 .quoted-media-item:nth-child(2) {
+    border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+.quoted-media-item img,
+.quoted-media-item video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.quoted-media-item .video-indicator {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 40px;
+    height: 40px;
+    background: rgba(0, 0, 0, 0.6);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.quoted-media-item .video-indicator svg {
+    width: 16px;
+    height: 16px;
+    fill: white;
+    margin-left: 2px;
+}
+
+.quoted-media-more {
+    position: absolute;
+    bottom: 8px;
+    right: 8px;
+    background: rgba(0, 0, 0, 0.7);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
 }
 
 /* ==================== QUOTE POST PREVIEW ==================== */
@@ -1847,6 +2008,168 @@
 .edit-modal-btn-save:disabled {
     opacity: 0.6;
     cursor: not-allowed;
+}
+
+/* Edit Modal Media Section */
+.edit-modal-media-section {
+    margin-top: 1rem;
+}
+
+.edit-modal-media-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+}
+
+.edit-modal-media-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.875rem;
+}
+
+.edit-modal-media-counter {
+    background: rgba(18, 130, 162, 0.2);
+    color: var(--cerulean);
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.edit-modal-media-counter.at-max {
+    background: rgba(255, 107, 107, 0.2);
+    color: #ff6b6b;
+}
+
+.edit-modal-add-media-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: rgba(18, 130, 162, 0.15);
+    border: 1px solid rgba(18, 130, 162, 0.3);
+    color: var(--cerulean);
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.875rem;
+    transition: all 0.2s;
+}
+
+.edit-modal-add-media-btn:hover {
+    background: rgba(18, 130, 162, 0.25);
+}
+
+.edit-modal-add-media-btn.disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.edit-modal-add-media-btn svg {
+    width: 18px;
+    height: 18px;
+}
+
+.edit-modal-media-grid {
+    display: grid;
+    gap: 0.5rem;
+    grid-template-columns: repeat(2, 1fr);
+}
+
+.edit-modal-media-grid:has(.edit-media-item:nth-child(1):last-child) {
+    grid-template-columns: 1fr;
+}
+
+.edit-modal-media-grid:has(.edit-media-item:nth-child(1):last-child) .edit-media-item {
+    aspect-ratio: auto;
+    max-height: 200px;
+}
+
+.edit-modal-media-grid:has(.edit-media-item:nth-child(1):last-child) .edit-media-item img,
+.edit-modal-media-grid:has(.edit-media-item:nth-child(1):last-child) .edit-media-item video {
+    object-fit: contain;
+    max-height: 200px;
+    width: auto;
+    max-width: 100%;
+    margin: 0 auto;
+    display: block;
+}
+
+.edit-media-item {
+    position: relative;
+    aspect-ratio: 1;
+    border-radius: 8px;
+    overflow: hidden;
+    background: rgba(0, 0, 0, 0.3);
+}
+
+.edit-media-item img,
+.edit-media-item video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.edit-media-item .media-type-badge {
+    position: absolute;
+    bottom: 0.5rem;
+    left: 0.5rem;
+    background: rgba(0, 0, 0, 0.7);
+    color: white;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.edit-media-item .media-type-badge svg {
+    width: 14px;
+    height: 14px;
+}
+
+.edit-media-remove-btn {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    width: 28px;
+    height: 28px;
+    background: rgba(0, 0, 0, 0.7);
+    border: none;
+    border-radius: 50%;
+    color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    opacity: 0;
+}
+
+.edit-media-item:hover .edit-media-remove-btn {
+    opacity: 1;
+}
+
+.edit-media-remove-btn:hover {
+    background: #e74c3c;
+    transform: scale(1.1);
+}
+
+.edit-media-remove-btn svg {
+    width: 16px;
+    height: 16px;
+}
+
+/* Larger edit modal to accommodate media */
+.edit-modal.with-media {
+    max-width: 650px;
+    max-height: 85vh;
+}
+
+.edit-modal.with-media .feed-modal-body {
+    overflow-y: auto;
 }
 
 /* ==================== RESPONSIVE ==================== */

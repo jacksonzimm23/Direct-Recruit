@@ -366,6 +366,7 @@
     <script>
         const urlParams = new URLSearchParams(window.location.search);
         const postId = urlParams.get('id');
+        const shareId = urlParams.get('share'); // For quote/repost posts
         const referrer = urlParams.get('ref') || 'feed';
 
         function goBack() {
@@ -401,7 +402,7 @@
         async function loadPost() {
             const container = document.getElementById('postViewContent');
 
-            if (!postId) {
+            if (!postId && !shareId) {
                 container.innerHTML = `
                     <div class="error-state">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -416,26 +417,49 @@
             }
 
             try {
-                const response = await API.get(`/posts/${postId}`);
-
-                if (!response.post) {
-                    throw new Error('Post not found');
-                }
+                let postElement;
+                let targetPostId;
 
                 if (typeof FeedManager !== 'undefined') {
-                    feedManager = new FeedManager();
+                    // Pass true to skip init - we only want to use helper methods, not load the full feed
+                    feedManager = new FeedManager(true);
                     feedManager.feedContainer = container;
-
                     await feedManager.loadCurrentUser();
 
-                    const postElement = feedManager.createPostElement(response.post);
+                    if (shareId) {
+                        // Load a share (quote/repost)
+                        const response = await API.get(`/posts/share/${shareId}`);
+                        if (!response.share) {
+                            throw new Error('Share not found');
+                        }
+
+                        const share = response.share;
+                        targetPostId = share.original_post_id;
+
+                        if (share.is_quote) {
+                            // Create quote post element for single view
+                            postElement = feedManager.createSingleQuotePostElement(share);
+                        } else {
+                            // For reposts, show the original post
+                            postElement = feedManager.createPostElement(share);
+                        }
+                    } else {
+                        // Load regular post
+                        const response = await API.get(`/posts/${postId}`);
+                        if (!response.post) {
+                            throw new Error('Post not found');
+                        }
+                        targetPostId = postId;
+                        postElement = feedManager.createPostElement(response.post);
+                    }
+
                     container.innerHTML = '';
                     container.appendChild(postElement);
 
                     const commentsSection = postElement.querySelector('.post-comments-section');
                     if (commentsSection) {
                         commentsSection.style.display = 'block';
-                        feedManager.loadComments(postId);
+                        feedManager.loadComments(targetPostId);
                     }
                 } else {
                     throw new Error('Feed manager not available');

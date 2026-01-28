@@ -289,8 +289,12 @@ class SuggestedConnectionsWidget {
             }
         }
 
-        // Navigate directly to the profile page
-        window.location.href = `/frontend/${folder}/tabs/my-profile.html?username=${encodeURIComponent(username)}&from=feed`;
+        // Navigate using relative path (same pattern as feed.js)
+        const currentPath = window.location.pathname;
+        const isInTabsFolder = currentPath.includes('/tabs/');
+        const prefix = isInTabsFolder ? '../../' : '../';
+
+        window.location.href = `${prefix}${folder}/tabs/my-profile.html?username=${encodeURIComponent(username)}&from=feed`;
     }
 
     escapeHTML(str) {

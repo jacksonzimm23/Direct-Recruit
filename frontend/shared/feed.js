@@ -11,7 +11,7 @@ class FeedManager {
         this.postInput = document.querySelector('textarea.post-input');
         this.currentUserId = null;
         this.currentUserData = null;
-        this.currentFeedType = 'following'; // 'following' or 'discover'
+        this.currentFeedType = 'discover'; // 'following' or 'discover'
         this.followingOffset = 0;
         this.discoverOffset = 0;
         this.isLoading = false;
@@ -23,6 +23,12 @@ class FeedManager {
         this.maxFileSize = 200 * 1024 * 1024; // 200MB for videos (~5 min at 1080p)
         this.maxImageSize = 10 * 1024 * 1024; // 10MB for images
 
+        // New posts polling state
+        this.lastFeedLoadTime = null;
+        this.newPostsPollingInterval = null;
+        this.newPostsCount = { discover: 0, following: 0 };
+        this.pollingIntervalMs = 45000; // Check every 45 seconds
+
         // Skip init for single post view pages
         if (!skipInit) {
             this.init();
@@ -33,6 +39,7 @@ class FeedManager {
         await this.loadCurrentUser();
         this.setupEventListeners();
         await this.loadFeed();
+        this.startNewPostsPolling();
         console.log('Feed initialized with Option 4: Two-Section Feed');
     }
 
@@ -307,18 +314,20 @@ class FeedManager {
         this.showLoading();
 
         try {
-            // Load feeds and user's reposts
-            const [followingResponse, discoverResponse, repostsResponse] = await Promise.all([
-                postsAPI.getFollowingFeed(10, 0),
-                postsAPI.getDiscoverFeed(10, 0),
-                postsAPI.getMyReposts(5, 0)
+            // Load feeds - reposts/quotes are now included in getFollowingFeed
+            const [followingResponse, discoverResponse] = await Promise.all([
+                postsAPI.getFollowingFeed(20, 0),
+                postsAPI.getDiscoverFeed(10, 0)
             ]);
+
+            // Record when feed was loaded for new posts polling
+            this.lastFeedLoadTime = new Date().toISOString();
+            this.newPostsCount = { discover: 0, following: 0 };
 
             this.hideLoading();
             this.renderTwoSectionFeed(
                 followingResponse.posts || [],
-                discoverResponse.posts || [],
-                repostsResponse.posts || []
+                discoverResponse.posts || []
             );
 
         } catch (error) {
@@ -328,12 +337,19 @@ class FeedManager {
         }
     }
 
-    renderTwoSectionFeed(followingPosts, discoverPosts, repostedPosts = []) {
+    renderTwoSectionFeed(followingPosts, discoverPosts) {
         this.feedContainer.innerHTML = '';
 
         // Feed tabs
         const tabsHtml = `
             <div class="feed-tabs">
+                <button class="feed-tab ${this.currentFeedType === 'discover' ? 'active' : ''}" data-feed="discover">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon>
+                    </svg>
+                    Discover
+                </button>
                 <button class="feed-tab ${this.currentFeedType === 'following' ? 'active' : ''}" data-feed="following">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
@@ -342,13 +358,6 @@ class FeedManager {
                         <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
                     </svg>
                     Your Network
-                </button>
-                <button class="feed-tab ${this.currentFeedType === 'discover' ? 'active' : ''}" data-feed="discover">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="12" cy="12" r="10"></circle>
-                        <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon>
-                    </svg>
-                    Discover
                 </button>
             </div>
         `;
@@ -364,31 +373,22 @@ class FeedManager {
         followingSection.className = `feed-section ${this.currentFeedType === 'following' ? 'active' : ''}`;
         followingSection.id = 'following-section';
 
-        // Add reposts and quote posts at top of following section
-        if (repostedPosts.length > 0) {
-            // Filter out reposts that are already in the following posts to avoid duplicates
-            const followingPostIds = new Set(followingPosts.map(p => p.id));
-            const uniqueReposts = repostedPosts.filter(p => !followingPostIds.has(p.original_post_id || p.id));
-
-            uniqueReposts.forEach(post => {
-                if (post.share_type === 'quote') {
-                    // Render quote post with user's comment and embedded original
-                    const postEl = this.createQuotePostElement(post);
-                    followingSection.appendChild(postEl);
-                } else {
-                    // Simple repost - show "You reposted" indicator
-                    const postEl = this.createPostElement(post, true);
-                    followingSection.appendChild(postEl);
-                }
-            });
-        }
-
         if (followingPosts.length > 0) {
             followingPosts.forEach(post => {
-                followingSection.appendChild(this.createPostElement(post));
+                if (post.is_quote) {
+                    // Quote post from someone you follow
+                    const postEl = this.createFeedQuotePostElement(post);
+                    followingSection.appendChild(postEl);
+                } else if (post.is_repost) {
+                    // Repost from someone you follow
+                    const postEl = this.createFeedRepostElement(post);
+                    followingSection.appendChild(postEl);
+                } else {
+                    // Regular post
+                    followingSection.appendChild(this.createPostElement(post));
+                }
             });
-        } else if (repostedPosts.length === 0) {
-            // Only show empty message if no reposts either
+        } else {
             followingSection.innerHTML = `
                 <div class="empty-section">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -411,7 +411,18 @@ class FeedManager {
 
         if (discoverPosts.length > 0) {
             discoverPosts.forEach(post => {
-                discoverSection.appendChild(this.createPostElement(post));
+                if (post.is_quote) {
+                    // Quote post from someone in discover
+                    const postEl = this.createFeedQuotePostElement(post);
+                    discoverSection.appendChild(postEl);
+                } else if (post.is_repost) {
+                    // Repost from someone in discover
+                    const postEl = this.createFeedRepostElement(post);
+                    discoverSection.appendChild(postEl);
+                } else {
+                    // Regular post
+                    discoverSection.appendChild(this.createPostElement(post));
+                }
             });
         } else {
             discoverSection.innerHTML = `
@@ -440,15 +451,136 @@ class FeedManager {
         document.querySelectorAll('.feed-section').forEach(section => {
             section.classList.toggle('active', section.id === `${feedType}-section`);
         });
+
+        // Hide "new posts" button for the current tab when switching (it will show count for that tab)
+        this.updateNewPostsButton();
+    }
+
+    // ==================== NEW POSTS POLLING ====================
+
+    startNewPostsPolling() {
+        // Clear any existing interval
+        if (this.newPostsPollingInterval) {
+            clearInterval(this.newPostsPollingInterval);
+        }
+
+        // Start polling for new posts
+        this.newPostsPollingInterval = setInterval(() => {
+            this.checkForNewPosts();
+        }, this.pollingIntervalMs);
+
+        // Also check when tab becomes visible again
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden && this.lastFeedLoadTime) {
+                this.checkForNewPosts();
+            }
+        });
+    }
+
+    stopNewPostsPolling() {
+        if (this.newPostsPollingInterval) {
+            clearInterval(this.newPostsPollingInterval);
+            this.newPostsPollingInterval = null;
+        }
+    }
+
+    async checkForNewPosts() {
+        if (!this.lastFeedLoadTime) return;
+
+        try {
+            // Check for new posts in the current feed type
+            const response = await API.get(`/posts/feed/new-posts-count?since=${encodeURIComponent(this.lastFeedLoadTime)}&feedType=${this.currentFeedType}`);
+
+            if (response.newPostsCount > 0) {
+                this.newPostsCount[this.currentFeedType] = response.newPostsCount;
+                this.showNewPostsButton(response.newPostsCount);
+            }
+        } catch (error) {
+            console.error('Error checking for new posts:', error);
+        }
+    }
+
+    showNewPostsButton(count) {
+        // Remove existing button if any
+        const existingBtn = document.querySelector('.new-posts-button');
+        if (existingBtn) {
+            existingBtn.remove();
+        }
+
+        // Create the "New posts available" button
+        const button = document.createElement('button');
+        button.className = 'new-posts-button';
+        button.innerHTML = `
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                <polyline points="18 15 12 9 6 15"></polyline>
+            </svg>
+            ${count} new post${count !== 1 ? 's' : ''} available
+        `;
+        button.addEventListener('click', () => this.refreshFeed());
+
+        // Insert after the feed tabs
+        const feedTabs = document.querySelector('.feed-tabs');
+        if (feedTabs) {
+            feedTabs.insertAdjacentElement('afterend', button);
+        }
+    }
+
+    hideNewPostsButton() {
+        const existingBtn = document.querySelector('.new-posts-button');
+        if (existingBtn) {
+            existingBtn.remove();
+        }
+    }
+
+    updateNewPostsButton() {
+        // Show button if there are new posts for the current tab
+        const count = this.newPostsCount[this.currentFeedType];
+        if (count > 0) {
+            this.showNewPostsButton(count);
+        } else {
+            this.hideNewPostsButton();
+        }
+    }
+
+    async refreshFeed() {
+        // Hide the button immediately
+        this.hideNewPostsButton();
+
+        // Reset offsets
+        this.followingOffset = 0;
+        this.discoverOffset = 0;
+
+        // Scroll to top smoothly
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+
+        // Reload the feed
+        await this.loadFeed();
     }
 
     createPostElement(post, showRepostIndicator = false) {
+        // Debug logging for post navigation data
+        if (post.author_role === 'coach') {
+            console.log('Coach post data:', {
+                author_username: post.author_username,
+                author_role: post.author_role,
+                author_division: post.author_division,
+                author_school: post.author_school,
+                author_state: post.author_state
+            });
+        }
+
         const article = document.createElement('article');
         article.className = 'post-card';
-        article.dataset.postId = post.id;
+        // For reposts, use original_post_id for actions, but keep share id for data attribute
+        const postId = post.original_post_id || post.id;
+        article.dataset.postId = postId;
         article.dataset.userReposted = post.user_reposted ? 'true' : 'false';
+        if (showRepostIndicator && post.id !== postId) {
+            // Store share ID for unrepost functionality
+            article.dataset.shareId = post.id;
+        }
 
-        const timeAgo = this.getTimeAgo(post.created_at);
+        const timeAgo = this.getTimeAgo(post.original_created_at || post.created_at);
         const isLiked = post.user_liked || false;
         const isSaved = post.user_saved || false;
         const isReposted = post.user_reposted || false;
@@ -550,8 +682,14 @@ class FeedManager {
 
             // Check if college coach (has division) or HS coach (no division)
             if (post.author_division) {
-                // College Coach: College • Division
-                if (post.author_school) parts.push(post.author_school);
+                // College Coach: College, State • Division
+                if (post.author_school && post.author_state) {
+                    parts.push(`${post.author_school}, ${post.author_state}`);
+                } else if (post.author_school) {
+                    parts.push(post.author_school);
+                } else if (post.author_state) {
+                    parts.push(post.author_state);
+                }
                 // Format FBS/FCS as D1 FBS/D1 FCS
                 const div = post.author_division;
                 if (div === 'FBS' || div === 'FCS') {
@@ -605,7 +743,7 @@ class FeedManager {
                 ` : '';
 
                 return `
-                    <div class="media-grid-cell" onclick="feedManager.openMediaSlideshow(${mediaUrlsJson}, ${index}, ${mediaTypesJson})">
+                    <div class="media-grid-cell" onclick="event.stopPropagation(); feedManager.openMediaSlideshow(${mediaUrlsJson}, ${index}, ${mediaTypesJson})">
                         ${isVideo ?
                             `<video src="${url}" muted preload="metadata"></video>` :
                             `<img src="${url}" alt="Post media ${index + 1}">`
@@ -622,7 +760,7 @@ class FeedManager {
             }
 
             mediaHtml = `
-                <div class="post-media-grid media-count-${mediaCount}">
+                <div class="post-media-grid media-count-${mediaCount}" onclick="event.stopPropagation();">
                     ${gridCells}
                 </div>
             `;
@@ -631,7 +769,7 @@ class FeedManager {
         article.innerHTML = `
             ${repostIndicator}
             <div class="post-header">
-                <a href="#" class="post-avatar-link" onclick="feedManager.goToProfile('${post.author_username || post.user_id}', '${post.author_role}', null, '${post.user_id}'); return false;">
+                <a href="#" class="post-avatar-link" onclick="feedManager.goToProfile('${post.author_username || post.user_id}', '${post.author_role}', '${post.author_division || ''}', '${post.user_id}', ${post.author_transfer === 'y'}); return false;">
                     <div class="post-avatar-circle">
                         ${post.author_image ?
                             `<img src="${post.author_image}" alt="${authorName}">` :
@@ -644,7 +782,7 @@ class FeedManager {
                 </a>
                 <div class="post-user-info">
                     <div class="post-user-name-row">
-                        <a href="#" class="post-user-name" onclick="feedManager.goToProfile('${post.author_username || post.user_id}', '${post.author_role}', null, '${post.user_id}'); return false;">
+                        <a href="#" class="post-user-name" onclick="feedManager.goToProfile('${post.author_username || post.user_id}', '${post.author_role}', '${post.author_division || ''}', '${post.user_id}', ${post.author_transfer === 'y'}); return false;">
                             ${authorName}
                             ${post.author_verified ? `
                                 <svg class="verified-badge" viewBox="0 0 24 24" fill="#1DA1F2">
@@ -662,49 +800,49 @@ class FeedManager {
                     ${!isOwnPost && !post.is_following ? `
                         <button class="btn-follow-small" onclick="feedManager.followUser('${post.user_id}', this)">Follow</button>
                     ` : ''}
-                    <button class="post-more-btn" onclick="feedManager.showPostMenu('${post.id}', ${isOwnPost}, event)">
+                    <button class="post-more-btn" onclick="feedManager.showPostMenu('${postId}', ${isOwnPost}, event)">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <circle cx="12" cy="12" r="1"></circle>
                             <circle cx="19" cy="12" r="1"></circle>
                             <circle cx="5" cy="12" r="1"></circle>
                         </svg>
                     </button>
-                    <div class="post-view-icon" data-post-id="${post.id}">
+                    <div class="post-view-icon" data-post-id="${postId}">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <polyline points="9 18 15 12 9 6"></polyline>
                         </svg>
                     </div>
                 </div>
             </div>
-            <div class="post-content" data-post-id="${post.id}" style="cursor: pointer;">
+            <div class="post-content" data-post-id="${postId}" style="cursor: pointer;">
                 <p>${this.formatContent(post.content)}</p>
                 ${mediaHtml}
             </div>
             <div class="post-stats">
-                <span class="likes-count" onclick="feedManager.showLikes('${post.id}')">${post.likes_count || 0} ${post.likes_count === 1 ? 'like' : 'likes'}</span>
-                <span class="comments-count" onclick="feedManager.toggleComments('${post.id}')">${post.comments_count || 0} ${post.comments_count === 1 ? 'comment' : 'comments'}</span>
-                <span class="post-shares-count" onclick="feedManager.showShares('${post.id}')">${post.shares_count || 0} ${(post.shares_count || 0) === 1 ? 'share' : 'shares'}</span>
+                <span class="likes-count" onclick="feedManager.showLikes('${postId}')">${post.likes_count || 0} ${post.likes_count === 1 ? 'like' : 'likes'}</span>
+                <span class="comments-count" onclick="feedManager.toggleComments('${postId}')">${post.comments_count || 0} ${post.comments_count === 1 ? 'comment' : 'comments'}</span>
+                <span class="post-shares-count" onclick="feedManager.showShares('${postId}')">${post.shares_count || 0} ${(post.shares_count || 0) === 1 ? 'share' : 'shares'}</span>
             </div>
             <div class="post-actions-bar">
-                <button class="post-action-btn ${isLiked ? 'liked' : ''}" onclick="feedManager.toggleLike('${post.id}', this)">
+                <button class="post-action-btn ${isLiked ? 'liked' : ''}" onclick="feedManager.toggleLike('${postId}', this)">
                     <svg viewBox="0 0 24 24" fill="${isLiked ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2">
                         <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
                     </svg>
                     <span>${isLiked ? 'Liked' : 'Like'}</span>
                 </button>
-                <button class="post-action-btn" onclick="feedManager.toggleComments('${post.id}')">
+                <button class="post-action-btn" onclick="feedManager.toggleComments('${postId}')">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
                     </svg>
                     <span>Comment</span>
                 </button>
-                <button class="post-action-btn ${isSaved ? 'saved' : ''}" onclick="feedManager.toggleSave('${post.id}', this)">
+                <button class="post-action-btn ${isSaved ? 'saved' : ''}" onclick="feedManager.toggleSave('${postId}', this)">
                     <svg viewBox="0 0 24 24" fill="${isSaved ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2">
                         <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
                     </svg>
                     <span>${isSaved ? 'Saved' : 'Save'}</span>
                 </button>
-                <button class="post-action-btn ${isReposted ? 'reposted' : ''}" onclick="feedManager.sharePost('${post.id}', event)">
+                <button class="post-action-btn ${isReposted ? 'reposted' : ''}" onclick="feedManager.sharePost('${postId}', event)">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <polyline points="17 1 21 5 17 9"></polyline>
                         <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
@@ -714,11 +852,11 @@ class FeedManager {
                     <span class="shares-count">${isReposted ? 'Reposted' : ((post.shares_count || 0) + ' ' + ((post.shares_count || 0) === 1 ? 'share' : 'shares'))}</span>
                 </button>
             </div>
-            <div class="post-comments-section" id="comments-${post.id}" style="display: none;">
+            <div class="post-comments-section" id="comments-${postId}" style="display: none;">
                 <div class="comments-list"></div>
                 <div class="comment-input-container">
-                    <input type="text" placeholder="Write a comment..." class="comment-input" id="comment-input-${post.id}" onkeypress="if(event.key==='Enter') feedManager.addComment('${post.id}')">
-                    <button onclick="feedManager.addComment('${post.id}')">Post</button>
+                    <input type="text" placeholder="Write a comment..." class="comment-input" id="comment-input-${postId}" onkeypress="if(event.key==='Enter') feedManager.addComment('${postId}')">
+                    <button onclick="feedManager.addComment('${postId}')">Post</button>
                 </div>
             </div>
         `;
@@ -729,53 +867,207 @@ class FeedManager {
         return article;
     }
 
-    // Create a quote post element (user's comment with embedded original post)
-    createQuotePostElement(post) {
+    // Create a repost element for the feed (from someone you follow)
+    createFeedRepostElement(post) {
         const article = document.createElement('article');
-        article.className = 'post-card quote-post-card';
-        article.dataset.postId = post.id;
-        article.dataset.originalPostId = post.original_post_id;
+        article.className = 'post-card feed-repost-card';
+        const postId = post.original_post_id || post.id;
+        article.dataset.postId = postId;
+        article.dataset.shareId = post.share_id;
+        article.dataset.userReposted = post.user_reposted ? 'true' : 'false';
 
-        const timeAgo = this.getTimeAgo(post.reposted_at || post.created_at);
-        const quoterName = `${post.quoter_first_name || ''} ${post.quoter_last_name || ''}`.trim() || 'You';
-        const originalAuthorName = `${post.author_first_name || ''} ${post.author_last_name || ''}`.trim() || 'Unknown User';
-        const originalTimeAgo = this.getTimeAgo(post.original_created_at);
+        const reposterName = `${post.reposter_first_name || ''} ${post.reposter_last_name || ''}`.trim() || 'Someone';
+        const isOwnRepost = post.reposter_user_id === this.currentUserId;
+        const timeAgo = this.getTimeAgo(post.original_created_at || post.created_at);
+        const repostTimeAgo = this.getTimeAgo(post.sort_date);
+        const isLiked = post.user_liked || false;
+        const isSaved = post.user_saved || false;
+        const isReposted = post.user_reposted || false;
+        const isOwnPost = post.user_id === this.currentUserId;
+        const authorName = `${post.author_first_name || ''} ${post.author_last_name || ''}`.trim() || 'Unknown User';
+
+        // Build meta info for original author
+        let metaInfo = this.buildAuthorMetaInfo(post, timeAgo);
+
+        // Build media HTML
+        let mediaHtml = this.buildMediaHtml(post);
 
         article.innerHTML = `
-            <div class="repost-indicator quote-indicator">
+            <div class="repost-indicator">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
-                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                    <polyline points="17 1 21 5 17 9"></polyline>
+                    <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
+                    <polyline points="7 23 3 19 7 15"></polyline>
+                    <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
                 </svg>
-                <span>You quote posted</span>
+                <span>${isOwnRepost ? 'You' : reposterName} reposted</span>
+                <span class="repost-time">${repostTimeAgo}</span>
             </div>
             <div class="post-header">
-                <div class="post-avatar-circle">
-                    ${post.quoter_image ?
-                        `<img src="${post.quoter_image}" alt="${quoterName}">` :
-                        `<svg viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                            <circle cx="12" cy="7" r="4"></circle>
-                        </svg>`
-                    }
-                </div>
+                <a href="#" class="post-avatar-link" onclick="feedManager.goToProfile('${post.author_username || post.user_id}', '${post.author_role}', '${post.author_division || ''}', '${post.user_id}', ${post.author_transfer === 'y'}); return false;">
+                    <div class="post-avatar-circle">
+                        ${post.author_image ?
+                            `<img src="${post.author_image}" alt="${authorName}">` :
+                            `<svg viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="12" cy="7" r="4"></circle>
+                            </svg>`
+                        }
+                    </div>
+                </a>
                 <div class="post-user-info">
-                    <div class="post-user-name">${quoterName}</div>
-                    <div class="post-meta">${timeAgo}</div>
+                    <div class="post-user-name-row">
+                        <a href="#" class="post-user-name" onclick="feedManager.goToProfile('${post.author_username || post.user_id}', '${post.author_role}', '${post.author_division || ''}', '${post.user_id}', ${post.author_transfer === 'y'}); return false;">
+                            ${authorName}
+                            ${post.author_verified ? `
+                                <svg class="verified-badge" viewBox="0 0 24 24" fill="#1DA1F2">
+                                    <path d="M22.5 12.5c0-1.58-.875-2.95-2.148-3.6.154-.435.238-.905.238-1.4 0-2.21-1.71-3.998-3.818-3.998-.47 0-.92.084-1.336.25C14.818 2.415 13.51 1.5 12 1.5s-2.816.917-3.437 2.25c-.415-.165-.866-.25-1.336-.25-2.11 0-3.818 1.79-3.818 4 0 .494.083.964.237 1.4-1.272.65-2.147 2.018-2.147 3.6 0 1.495.782 2.798 1.942 3.486-.02.17-.032.34-.032.514 0 2.21 1.708 4 3.818 4 .47 0 .92-.086 1.335-.25.62 1.334 1.926 2.25 3.437 2.25 1.512 0 2.818-.916 3.437-2.25.415.163.865.248 1.336.248 2.11 0 3.818-1.79 3.818-4 0-.174-.012-.344-.033-.513 1.158-.687 1.943-1.99 1.943-3.484zm-6.616-3.334l-4.334 6.5c-.145.217-.382.334-.625.334-.143 0-.288-.04-.416-.126l-.115-.094-2.415-2.415c-.293-.293-.293-.768 0-1.06s.768-.294 1.06 0l1.77 1.767 3.825-5.74c.23-.345.696-.436 1.04-.207.346.23.44.696.21 1.04z"/>
+                                </svg>
+                            ` : ''}
+                        </a>
+                        ${post.author_username ? `<span class="post-user-handle">@${post.author_username}</span>` : ''}
+                    </div>
+                    <div class="post-meta ${post.author_role === 'coach' ? 'coach-meta' : (post.author_role === 'other' ? 'other-meta' : (post.author_transfer === 'y' ? 'transfer-player-meta' : 'player-meta'))}">
+                        ${metaInfo}
+                    </div>
                 </div>
                 <div class="post-header-actions">
-                    <button class="post-more-btn" onclick="feedManager.showQuotePostMenu('${post.id}', event)">
+                    <button class="post-more-btn" onclick="feedManager.showPostMenu('${postId}', ${isOwnPost}, event)">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <circle cx="12" cy="12" r="1"></circle>
                             <circle cx="19" cy="12" r="1"></circle>
                             <circle cx="5" cy="12" r="1"></circle>
                         </svg>
                     </button>
+                    <div class="post-view-icon" data-post-id="${postId}">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="9 18 15 12 9 6"></polyline>
+                        </svg>
+                    </div>
                 </div>
             </div>
-            <div class="post-content">
-                <p>${this.formatContent(post.quote_content)}</p>
+            <div class="post-content" data-post-id="${postId}" style="cursor: pointer;">
+                <p>${this.formatContent(post.content)}</p>
+                ${mediaHtml}
             </div>
-            <div class="quoted-post-embed">
+            <div class="post-stats">
+                <span class="likes-count" onclick="feedManager.showLikes('${postId}')">${post.likes_count || 0} ${post.likes_count === 1 ? 'like' : 'likes'}</span>
+                <span class="comments-count" onclick="feedManager.toggleComments('${postId}')">${post.comments_count || 0} ${post.comments_count === 1 ? 'comment' : 'comments'}</span>
+                <span class="post-shares-count" onclick="feedManager.showShares('${postId}')">${post.shares_count || 0} ${(post.shares_count || 0) === 1 ? 'share' : 'shares'}</span>
+            </div>
+            <div class="post-actions-bar">
+                <button class="post-action-btn ${isLiked ? 'liked' : ''}" onclick="feedManager.toggleLike('${postId}', this)">
+                    <svg viewBox="0 0 24 24" fill="${isLiked ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2">
+                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                    </svg>
+                    <span>${isLiked ? 'Liked' : 'Like'}</span>
+                </button>
+                <button class="post-action-btn" onclick="feedManager.toggleComments('${postId}')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                    <span>Comment</span>
+                </button>
+                <button class="post-action-btn ${isSaved ? 'saved' : ''}" onclick="feedManager.toggleSave('${postId}', this)">
+                    <svg viewBox="0 0 24 24" fill="${isSaved ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2">
+                        <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                    <span>${isSaved ? 'Saved' : 'Save'}</span>
+                </button>
+                <button class="post-action-btn ${isReposted ? 'reposted' : ''}" onclick="feedManager.sharePost('${postId}', event)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="17 1 21 5 17 9"></polyline>
+                        <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
+                        <polyline points="7 23 3 19 7 15"></polyline>
+                        <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
+                    </svg>
+                    <span class="shares-count">${isReposted ? 'Reposted' : ((post.shares_count || 0) + ' ' + ((post.shares_count || 0) === 1 ? 'share' : 'shares'))}</span>
+                </button>
+            </div>
+            <div class="post-comments-section" id="comments-${postId}" style="display: none;">
+                <div class="comments-list"></div>
+                <div class="comment-input-container">
+                    <input type="text" placeholder="Write a comment..." class="comment-input" id="comment-input-${postId}" onkeypress="if(event.key==='Enter') feedManager.addComment('${postId}')">
+                    <button onclick="feedManager.addComment('${postId}')">Post</button>
+                </div>
+            </div>
+        `;
+
+        return article;
+    }
+
+    // Create a quote post element for the feed (from someone you follow)
+    createFeedQuotePostElement(post) {
+        const article = document.createElement('article');
+        article.className = 'post-card quote-post-card feed-quote-card';
+        const postId = post.original_post_id || post.id;
+        article.dataset.postId = postId;
+        article.dataset.shareId = post.share_id;
+
+        const reposterName = `${post.reposter_first_name || ''} ${post.reposter_last_name || ''}`.trim() || 'Someone';
+        const repostTimeAgo = this.getTimeAgo(post.sort_date);
+        const originalAuthorName = `${post.author_first_name || ''} ${post.author_last_name || ''}`.trim() || 'Unknown User';
+        const originalTimeAgo = this.getTimeAgo(post.original_created_at || post.created_at);
+        const isLiked = post.user_liked || false;
+        const isSaved = post.user_saved || false;
+        const isReposted = post.user_reposted || false;
+        const isOwnQuote = post.reposter_user_id === this.currentUserId;
+
+        // Build meta info for quoter (reposter) using similar logic to buildAuthorMetaInfo
+        const quoterMetaInfo = this.buildReposterMetaInfo(post, repostTimeAgo);
+
+        // Build media HTML for the quote's own media (user's attached media)
+        const quoteMediaHtml = post.quote_media_urls ? this.buildMediaHtml({ media_urls: post.quote_media_urls, media_type: post.quote_media_type }) : '';
+
+        // Build media HTML for original post in the embed
+        const originalMediaUrls = post.original_media_urls || post.media_urls;
+        const originalMediaType = post.original_media_type || post.media_type;
+        const quotedMediaHtml = this.buildQuotedMediaHtml(originalMediaUrls, originalMediaType);
+
+        article.innerHTML = `
+            <div class="post-header">
+                <a href="#" class="post-avatar-link" onclick="feedManager.goToProfile('${post.reposter_username || post.reposter_user_id}', '${post.reposter_role}', '${post.reposter_division || ''}', '${post.reposter_user_id}', ${post.reposter_transfer === 'y'}); return false;">
+                    <div class="post-avatar-circle">
+                        ${post.reposter_image ?
+                            `<img src="${post.reposter_image}" alt="${reposterName}">` :
+                            `<svg viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="12" cy="7" r="4"></circle>
+                            </svg>`
+                        }
+                    </div>
+                </a>
+                <div class="post-user-info">
+                    <div class="post-user-name-row">
+                        <a href="#" class="post-user-name" onclick="event.stopPropagation(); feedManager.goToProfile('${post.reposter_username || post.reposter_user_id}', '${post.reposter_role}', '${post.reposter_division || ''}', '${post.reposter_user_id}', ${post.reposter_transfer === 'y'}); return false;">
+                            ${reposterName}
+                        </a>
+                        ${post.reposter_username ? `<span class="post-user-handle">@${post.reposter_username}</span>` : ''}
+                    </div>
+                    <div class="post-meta ${post.reposter_role === 'coach' ? 'coach-meta' : (post.reposter_role === 'other' ? 'other-meta' : (post.reposter_transfer === 'y' ? 'transfer-player-meta' : 'player-meta'))}">
+                        ${quoterMetaInfo}
+                    </div>
+                </div>
+                <div class="post-header-actions">
+                    <button class="post-more-btn" onclick="event.stopPropagation(); feedManager.showQuotePostMenu('${post.share_id}', ${isOwnQuote}, event)">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="1"></circle>
+                            <circle cx="19" cy="12" r="1"></circle>
+                            <circle cx="5" cy="12" r="1"></circle>
+                        </svg>
+                    </button>
+                    <div class="post-view-icon" data-post-id="${postId}" data-share-id="${post.share_id}" onclick="event.stopPropagation(); feedManager.navigateToPostView(null, event, '${post.share_id}')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="9 18 15 12 9 6"></polyline>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+            <div class="post-content" data-post-id="${postId}" data-share-id="${post.share_id}" style="cursor: pointer;">
+                <p>${this.formatContent(post.quote_content || '')}</p>
+            </div>
+            <div onclick="event.stopPropagation();">${quoteMediaHtml}</div>
+            <div class="quoted-post-embed" onclick="event.stopPropagation(); feedManager.navigateToPostView('${postId}', event)" style="cursor: pointer;">
                 <div class="quoted-post-header">
                     <div class="quoted-post-avatar">
                         ${post.author_image ?
@@ -792,8 +1084,625 @@ class FeedManager {
                     </div>
                 </div>
                 <div class="quoted-post-content">
+                    ${this.formatContent(post.original_content || post.content || '')}
+                </div>
+                ${quotedMediaHtml}
+            </div>
+            <div class="post-stats">
+                <span class="likes-count" onclick="feedManager.showLikes('${postId}')">${post.likes_count || 0} ${post.likes_count === 1 ? 'like' : 'likes'}</span>
+                <span class="comments-count" onclick="feedManager.toggleComments('${postId}')">${post.comments_count || 0} ${post.comments_count === 1 ? 'comment' : 'comments'}</span>
+                <span class="post-shares-count" onclick="feedManager.showShareLikes('${post.share_id}')">${post.shares_count || 0} ${(post.shares_count || 0) === 1 ? 'share' : 'shares'}</span>
+            </div>
+            <div class="post-actions-bar">
+                <button class="post-action-btn ${isLiked ? 'liked' : ''}" onclick="feedManager.toggleShareLike('${post.share_id}', this)">
+                    <svg viewBox="0 0 24 24" fill="${isLiked ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2">
+                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                    </svg>
+                    <span>${isLiked ? 'Liked' : 'Like'}</span>
+                </button>
+                <button class="post-action-btn" onclick="feedManager.toggleShareComments('${post.share_id}')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                    <span>Comment</span>
+                </button>
+                <button class="post-action-btn ${isSaved ? 'saved' : ''}" onclick="feedManager.toggleShareSave('${post.share_id}', this)">
+                    <svg viewBox="0 0 24 24" fill="${isSaved ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2">
+                        <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                    <span>${isSaved ? 'Saved' : 'Save'}</span>
+                </button>
+                <button class="post-action-btn ${isReposted ? 'reposted' : ''}" onclick="feedManager.sharePost('${postId}', event)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="17 1 21 5 17 9"></polyline>
+                        <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
+                        <polyline points="7 23 3 19 7 15"></polyline>
+                        <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
+                    </svg>
+                    <span class="shares-count">${isReposted ? 'Reposted' : ((post.shares_count || 0) + ' ' + ((post.shares_count || 0) === 1 ? 'share' : 'shares'))}</span>
+                </button>
+            </div>
+            <div class="post-comments-section" id="share-comments-${post.share_id}" style="display: none;">
+                <div class="comments-list"></div>
+                <div class="comment-input-container">
+                    <input type="text" placeholder="Write a comment..." class="comment-input" id="share-comment-input-${post.share_id}" onkeypress="if(event.key==='Enter') feedManager.addShareComment('${post.share_id}')">
+                    <button onclick="feedManager.addShareComment('${post.share_id}')">Post</button>
+                </div>
+            </div>
+        `;
+
+        return article;
+    }
+
+    // Create a quote post element for single post view (with quoter's full details)
+    createSingleQuotePostElement(share) {
+        const article = document.createElement('article');
+        article.className = 'post-card quote-post-card single-quote-view';
+        const postId = share.original_post_id;
+        article.dataset.postId = postId;
+        article.dataset.shareId = share.share_id;
+
+        const quoterName = `${share.quoter_first_name || ''} ${share.quoter_last_name || ''}`.trim() || 'Someone';
+        const isOwnQuote = share.quoter_user_id === this.currentUserId;
+        const quoteTimeAgo = this.getTimeAgo(share.share_created_at || share.sort_date);
+        const originalAuthorName = `${share.author_first_name || ''} ${share.author_last_name || ''}`.trim() || 'Unknown User';
+        const originalTimeAgo = this.getTimeAgo(share.original_created_at);
+        // Use share-specific engagement status for quote posts
+        const isLiked = share.user_liked_share || false;
+        const isSaved = share.user_saved_share || false;
+        const isReposted = share.user_reposted || false;
+        // Use share's own engagement counts
+        const likesCount = share.share_likes_count || 0;
+        const commentsCount = share.share_comments_count || 0;
+        const sharesCount = share.share_shares_count || 0;
+
+        // Build meta info for quoter
+        const quoterMetaInfo = this.buildQuoterMetaInfo(share, quoteTimeAgo);
+
+        // Build media HTML for the quote's own media (user's attached media)
+        const quoteMediaHtml = share.quote_media_urls ? this.buildMediaHtml({ media_urls: share.quote_media_urls, media_type: share.quote_media_type }) : '';
+
+        // Build quoted media HTML for original post (uses quoted post sizing)
+        const quotedMediaHtml = this.buildQuotedMediaHtml(share.media_urls, share.media_type);
+
+        article.innerHTML = `
+            <div class="post-header">
+                <a href="#" class="post-avatar-link" onclick="feedManager.goToProfile('${share.quoter_username || share.quoter_user_id}', '${share.quoter_role}', '${share.quoter_division || ''}', '${share.quoter_user_id}', ${share.quoter_transfer === 'y'}); return false;">
+                    <div class="post-avatar-circle">
+                        ${share.quoter_image ?
+                            `<img src="${share.quoter_image}" alt="${quoterName}">` :
+                            `<svg viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="12" cy="7" r="4"></circle>
+                            </svg>`
+                        }
+                    </div>
+                </a>
+                <div class="post-user-info">
+                    <div class="post-user-name-row">
+                        <a href="#" class="post-user-name" onclick="feedManager.goToProfile('${share.quoter_username || share.quoter_user_id}', '${share.quoter_role}', '${share.quoter_division || ''}', '${share.quoter_user_id}', ${share.quoter_transfer === 'y'}); return false;">
+                            ${quoterName}
+                        </a>
+                        ${share.quoter_username ? `<span class="post-user-handle">@${share.quoter_username}</span>` : ''}
+                    </div>
+                    <div class="post-meta ${share.quoter_role === 'coach' ? 'coach-meta' : (share.quoter_role === 'other' ? 'other-meta' : (share.quoter_transfer === 'y' ? 'transfer-player-meta' : 'player-meta'))}">
+                        ${quoterMetaInfo}
+                    </div>
+                </div>
+                <div class="post-header-actions">
+                    <button class="post-more-btn" onclick="feedManager.showQuotePostMenu('${share.share_id}', ${isOwnQuote}, event)">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="1"></circle>
+                            <circle cx="19" cy="12" r="1"></circle>
+                            <circle cx="5" cy="12" r="1"></circle>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <div class="post-content">
+                <p>${this.formatContent(share.quote_content || '')}</p>
+            </div>
+            <div onclick="event.stopPropagation();">${quoteMediaHtml}</div>
+            <div class="quoted-post-embed" onclick="feedManager.navigateToPostView('${postId}', event)" style="cursor: pointer;">
+                <div class="quoted-post-header">
+                    <a href="#" onclick="feedManager.goToProfile('${share.author_username || share.author_user_id}', '${share.author_role}', '${share.author_division || ''}', '${share.author_user_id}', ${share.author_transfer === 'y'}); event.stopPropagation(); return false;">
+                        <div class="quoted-post-avatar">
+                            ${share.author_image ?
+                                `<img src="${share.author_image}" alt="${originalAuthorName}">` :
+                                `<svg viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                    <circle cx="12" cy="7" r="4"></circle>
+                                </svg>`
+                            }
+                        </div>
+                    </a>
+                    <div class="quoted-post-info">
+                        <span class="quoted-post-author">${originalAuthorName}</span>
+                        <span class="quoted-post-time">${originalTimeAgo}</span>
+                    </div>
+                </div>
+                <div class="quoted-post-content">
+                    ${this.formatContent(share.content || '')}
+                </div>
+                ${quotedMediaHtml}
+            </div>
+            <div class="post-stats">
+                <span class="likes-count" onclick="feedManager.showShareLikes('${share.share_id}')">${likesCount} ${likesCount === 1 ? 'like' : 'likes'}</span>
+                <span class="comments-count" onclick="feedManager.toggleShareComments('${share.share_id}')">${commentsCount} ${commentsCount === 1 ? 'comment' : 'comments'}</span>
+                <span class="post-shares-count">${sharesCount} ${sharesCount === 1 ? 'share' : 'shares'}</span>
+            </div>
+            <div class="post-actions-bar">
+                <button class="post-action-btn ${isLiked ? 'liked' : ''}" onclick="feedManager.toggleShareLike('${share.share_id}', this)">
+                    <svg viewBox="0 0 24 24" fill="${isLiked ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2">
+                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                    </svg>
+                    <span>${isLiked ? 'Liked' : 'Like'}</span>
+                </button>
+                <button class="post-action-btn" onclick="feedManager.toggleShareComments('${share.share_id}')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                    <span>Comment</span>
+                </button>
+                <button class="post-action-btn ${isSaved ? 'saved' : ''}" onclick="feedManager.toggleShareSave('${share.share_id}', this)">
+                    <svg viewBox="0 0 24 24" fill="${isSaved ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2">
+                        <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                    <span>${isSaved ? 'Saved' : 'Save'}</span>
+                </button>
+                <button class="post-action-btn ${isReposted ? 'reposted' : ''}" onclick="feedManager.sharePost('${postId}', event)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="17 1 21 5 17 9"></polyline>
+                        <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
+                        <polyline points="7 23 3 19 7 15"></polyline>
+                        <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
+                    </svg>
+                    <span class="shares-count">${isReposted ? 'Reposted' : (sharesCount + ' ' + (sharesCount === 1 ? 'share' : 'shares'))}</span>
+                </button>
+            </div>
+            <div class="post-comments-section" id="share-comments-${share.share_id}" style="display: none;">
+                <div class="comments-list"></div>
+                <div class="comment-input-container">
+                    <input type="text" placeholder="Write a comment..." class="comment-input" id="share-comment-input-${share.share_id}" onkeypress="if(event.key==='Enter') feedManager.addShareComment('${share.share_id}')">
+                    <button onclick="feedManager.addShareComment('${share.share_id}')">Post</button>
+                </div>
+            </div>
+        `;
+
+        return article;
+    }
+
+    // Helper to build quoter meta info (for single quote post view)
+    buildQuoterMetaInfo(share, timeAgo) {
+        let metaInfo = '';
+        let starsHtml = '';
+
+        // Add star rating for HS players and transfer players
+        if (share.quoter_role === 'player' && share.quoter_star_rating && share.quoter_star_rating >= 1 && share.quoter_star_rating <= 5) {
+            const isHSPlayer = !share.quoter_division && share.quoter_transfer !== 'y';
+            const isTransferPlayer = share.quoter_transfer === 'y';
+            if (isHSPlayer || isTransferPlayer) {
+                starsHtml = `<span class="post-meta-stars" style="color: #ffd700; font-weight: 600;">${share.quoter_star_rating}★</span> `;
+            }
+        }
+
+        if (share.quoter_role === 'player') {
+            const parts = [];
+            if (share.quoter_transfer === 'y') {
+                // Transfer Player: Position • Height • Weight • YOE
+                if (share.quoter_position) parts.push(share.quoter_position);
+                if (share.quoter_height) {
+                    const heightStr = String(share.quoter_height);
+                    if (heightStr.includes("'")) {
+                        parts.push(heightStr);
+                    } else {
+                        const totalInches = parseInt(heightStr);
+                        if (!isNaN(totalInches) && totalInches > 0) {
+                            const feet = Math.floor(totalInches / 12);
+                            const inches = totalInches % 12;
+                            parts.push(`${feet}'${inches}"`);
+                        }
+                    }
+                }
+                if (share.quoter_weight) parts.push(`${share.quoter_weight} lbs`);
+                if (share.quoter_eligibility) {
+                    const yearText = share.quoter_eligibility === 1 ? 'year' : 'years';
+                    parts.push(`YOE: ${share.quoter_eligibility} ${yearText}`);
+                }
+            } else if (share.quoter_division) {
+                // College player
+                if (share.quoter_position) parts.push(share.quoter_position);
+                if (share.quoter_school) parts.push(share.quoter_school);
+                const div = share.quoter_division;
+                if (div === 'FBS' || div === 'FCS') {
+                    parts.push(`D1 ${div}`);
+                } else {
+                    parts.push(div);
+                }
+            } else {
+                // HS player
+                if (share.quoter_position) parts.push(share.quoter_position);
+                if (share.quoter_school) parts.push(share.quoter_school);
+                if (share.quoter_grad_year) parts.push(share.quoter_grad_year);
+            }
+            parts.push(timeAgo);
+            metaInfo = starsHtml + parts.join(' • ');
+        } else if (share.quoter_role === 'other') {
+            if (share.quoter_subheader) {
+                metaInfo = `<span style="color: #d4a017;">${share.quoter_subheader} • ${timeAgo}</span>`;
+            } else {
+                metaInfo = timeAgo;
+            }
+        } else if (share.quoter_role === 'coach') {
+            const parts = [];
+            if (share.quoter_division) {
+                if (share.quoter_school) parts.push(share.quoter_school);
+                const div = share.quoter_division;
+                if (div === 'FBS' || div === 'FCS') {
+                    parts.push(`D1 ${div}`);
+                } else {
+                    parts.push(div);
+                }
+                parts.push(timeAgo);
+                metaInfo = parts.join(' • ');
+            } else {
+                if (share.quoter_school) parts.push(share.quoter_school);
+                if (share.quoter_state) parts.push(share.quoter_state);
+                const schoolState = parts.join(', ');
+                metaInfo = schoolState ? `${schoolState} • ${timeAgo}` : timeAgo;
+            }
+        } else {
+            metaInfo = timeAgo;
+        }
+
+        return metaInfo;
+    }
+
+    // Helper to build author meta info string
+    buildAuthorMetaInfo(post, timeAgo) {
+        let metaInfo = '';
+        let starsHtml = '';
+
+        if (post.author_role === 'player' && post.author_star_rating && post.author_star_rating >= 1 && post.author_star_rating <= 5) {
+            const isHSPlayer = !post.author_division && post.author_transfer !== 'y';
+            const isTransferPlayer = post.author_transfer === 'y';
+            if (isHSPlayer || isTransferPlayer) {
+                starsHtml = `<span class="post-meta-stars" style="color: #ffd700; font-weight: 600;">${post.author_star_rating}★</span> `;
+            }
+        }
+
+        if (post.author_role === 'player') {
+            const parts = [];
+            if (post.author_transfer === 'y') {
+                if (post.author_position) parts.push(post.author_position);
+                if (post.author_height) {
+                    const heightStr = String(post.author_height);
+                    if (heightStr.includes("'")) {
+                        parts.push(heightStr);
+                    } else {
+                        const totalInches = parseInt(heightStr);
+                        if (!isNaN(totalInches) && totalInches > 0) {
+                            const feet = Math.floor(totalInches / 12);
+                            const inches = totalInches % 12;
+                            parts.push(`${feet}'${inches}"`);
+                        }
+                    }
+                }
+                if (post.author_weight) parts.push(`${post.author_weight} lbs`);
+                if (post.author_eligibility) {
+                    const yearText = post.author_eligibility === 1 ? 'year' : 'years';
+                    parts.push(`YOE: ${post.author_eligibility} ${yearText}`);
+                }
+            } else if (post.author_division) {
+                if (post.author_position) parts.push(post.author_position);
+                if (post.author_school) parts.push(post.author_school);
+                const div = post.author_division;
+                if (div === 'FBS' || div === 'FCS') {
+                    parts.push(`D1 ${div}`);
+                } else {
+                    parts.push(div);
+                }
+            } else {
+                if (post.author_position) parts.push(post.author_position);
+                if (post.author_school) parts.push(post.author_school);
+                if (post.author_grad_year) parts.push(post.author_grad_year);
+            }
+            parts.push(timeAgo);
+            metaInfo = starsHtml + parts.join(' • ');
+        } else if (post.author_role === 'other') {
+            if (post.author_subheader) {
+                metaInfo = `<span style="color: #d4a017;">${post.author_subheader} • ${timeAgo}</span>`;
+            } else {
+                metaInfo = timeAgo;
+            }
+        } else if (post.author_role === 'coach') {
+            const parts = [];
+            if (post.author_division) {
+                if (post.author_school) parts.push(post.author_school);
+                const div = post.author_division;
+                if (div === 'FBS' || div === 'FCS') {
+                    parts.push(`D1 ${div}`);
+                } else {
+                    parts.push(div);
+                }
+                parts.push(timeAgo);
+                metaInfo = parts.join(' • ');
+            } else {
+                if (post.author_school) parts.push(post.author_school);
+                if (post.author_state) parts.push(post.author_state);
+                const schoolState = parts.join(', ');
+                metaInfo = schoolState ? `${schoolState} • ${timeAgo}` : timeAgo;
+            }
+        } else {
+            metaInfo = timeAgo;
+        }
+
+        return metaInfo;
+    }
+
+    // Helper to build reposter/quoter meta info string (for repost and quote posts in feed)
+    // Uses same format as buildAuthorMetaInfo but for the reposter/quoter
+    buildReposterMetaInfo(post, timeAgo) {
+        let metaInfo = '';
+        const role = post.reposter_role;
+
+        if (role === 'player') {
+            // Check if college player (has division) vs HS player
+            if (post.reposter_division) {
+                // College player or transfer player
+                const parts = [];
+                if (post.reposter_position) parts.push(post.reposter_position);
+                if (post.reposter_school) parts.push(post.reposter_school);
+                const div = post.reposter_division;
+                if (div === 'FBS' || div === 'FCS') {
+                    parts.push(`D1 ${div}`);
+                } else {
+                    parts.push(div);
+                }
+                parts.push(timeAgo);
+                metaInfo = parts.join(' • ');
+            } else {
+                // HS player
+                const parts = [];
+                if (post.reposter_position) parts.push(post.reposter_position);
+                if (post.reposter_school && post.reposter_state) {
+                    parts.push(`${post.reposter_school}, ${post.reposter_state}`);
+                } else if (post.reposter_school) {
+                    parts.push(post.reposter_school);
+                } else if (post.reposter_state) {
+                    parts.push(post.reposter_state);
+                }
+                if (post.reposter_grad_year) parts.push(`'${String(post.reposter_grad_year).slice(-2)}`);
+                parts.push(timeAgo);
+                metaInfo = parts.join(' • ');
+            }
+        } else if (role === 'coach') {
+            const parts = [];
+            if (post.reposter_division) {
+                if (post.reposter_school) parts.push(post.reposter_school);
+                const div = post.reposter_division;
+                if (div === 'FBS' || div === 'FCS') {
+                    parts.push(`D1 ${div}`);
+                } else {
+                    parts.push(div);
+                }
+                parts.push(timeAgo);
+                metaInfo = parts.join(' • ');
+            } else {
+                if (post.reposter_school) parts.push(post.reposter_school);
+                if (post.reposter_state) parts.push(post.reposter_state);
+                const schoolState = parts.join(', ');
+                metaInfo = schoolState ? `${schoolState} • ${timeAgo}` : timeAgo;
+            }
+        } else if (role === 'other') {
+            // Other role - use subheader if available
+            if (post.reposter_subheader) {
+                metaInfo = `${post.reposter_subheader} • ${timeAgo}`;
+            } else {
+                metaInfo = timeAgo;
+            }
+        } else {
+            metaInfo = timeAgo;
+        }
+
+        return metaInfo;
+    }
+
+    // Helper to build media HTML
+    buildMediaHtml(post) {
+        let mediaHtml = '';
+        if (post.media_urls && post.media_urls.length > 0) {
+            const mediaUrls = post.media_urls.slice(0, 4);
+            const mediaCount = mediaUrls.length;
+            const mediaUrlsJson = JSON.stringify(post.media_urls).replace(/'/g, "\\'").replace(/"/g, '&quot;');
+            const mediaTypesJson = JSON.stringify(post.media_types || []).replace(/'/g, "\\'").replace(/"/g, '&quot;');
+
+            const isVideoUrl = (url, index) => {
+                if (post.media_types && post.media_types[index]) {
+                    return post.media_types[index] === 'video';
+                }
+                if (post.media_type === 'video') return true;
+                const videoExtensions = ['.mp4', '.mov', '.avi', '.webm'];
+                return videoExtensions.some(ext => url.toLowerCase().includes(ext));
+            };
+
+            const renderGridCell = (url, index) => {
+                const isVideo = isVideoUrl(url, index);
+                const videoIndicator = isVideo ? `
+                    <div class="video-indicator">
+                        <svg viewBox="0 0 24 24" fill="currentColor">
+                            <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                        </svg>
+                    </div>
+                ` : '';
+
+                return `
+                    <div class="media-grid-cell" onclick="event.stopPropagation(); feedManager.openMediaSlideshow(${mediaUrlsJson}, ${index}, ${mediaTypesJson})">
+                        ${isVideo ?
+                            `<video src="${url}" muted preload="metadata"></video>` :
+                            `<img src="${url}" alt="Post media ${index + 1}">`
+                        }
+                        ${videoIndicator}
+                    </div>
+                `;
+            };
+
+            let gridCells = '';
+            for (let i = 0; i < mediaCount; i++) {
+                gridCells += renderGridCell(mediaUrls[i], i);
+            }
+
+            mediaHtml = `
+                <div class="post-media-grid media-count-${mediaCount}" onclick="event.stopPropagation();">
+                    ${gridCells}
+                </div>
+            `;
+        }
+        return mediaHtml;
+    }
+
+    // Helper to build media HTML for quoted post embeds (matches original post media grid sizing)
+    buildQuotedMediaHtml(mediaUrls, mediaType) {
+        let mediaHtml = '';
+        if (mediaUrls && mediaUrls.length > 0) {
+            const urls = Array.isArray(mediaUrls) ? mediaUrls : [mediaUrls];
+            const mediaCount = Math.min(urls.length, 4);
+            const mediaUrlsJson = JSON.stringify(urls).replace(/'/g, "\\'").replace(/"/g, '&quot;');
+
+            const isVideo = (url) => {
+                if (mediaType === 'video') return true;
+                const videoExtensions = ['.mp4', '.mov', '.avi', '.webm'];
+                return videoExtensions.some(ext => url.toLowerCase().includes(ext));
+            };
+
+            const renderGridCell = (url, index) => {
+                const isVideoUrl = isVideo(url);
+                const videoIndicator = isVideoUrl ? `
+                    <div class="video-indicator">
+                        <svg viewBox="0 0 24 24" fill="currentColor">
+                            <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                        </svg>
+                    </div>
+                ` : '';
+
+                return `
+                    <div class="quoted-media-item" onclick="feedManager.openMediaSlideshow(${mediaUrlsJson}, ${index}); event.stopPropagation();">
+                        ${isVideoUrl ?
+                            `<video src="${url}" muted preload="metadata"></video>` :
+                            `<img src="${url}" alt="Quoted post media ${index + 1}">`
+                        }
+                        ${videoIndicator}
+                    </div>
+                `;
+            };
+
+            let gridCells = '';
+            for (let i = 0; i < mediaCount; i++) {
+                gridCells += renderGridCell(urls[i], i);
+            }
+
+            mediaHtml = `<div class="quoted-post-media media-count-${mediaCount}">${gridCells}</div>`;
+        }
+        return mediaHtml;
+    }
+
+    // Create a quote post element (user's comment with embedded original post)
+    createQuotePostElement(post) {
+        const article = document.createElement('article');
+        article.className = 'post-card quote-post-card';
+        article.dataset.postId = post.id;
+        article.dataset.shareId = post.id; // For quote posts, share_id is the same as id
+        article.dataset.originalPostId = post.original_post_id;
+
+        const timeAgo = this.getTimeAgo(post.reposted_at || post.created_at);
+        const quoterName = `${post.quoter_first_name || ''} ${post.quoter_last_name || ''}`.trim() || 'You';
+        const originalAuthorName = `${post.author_first_name || ''} ${post.author_last_name || ''}`.trim() || 'Unknown User';
+        const originalTimeAgo = this.getTimeAgo(post.original_created_at);
+
+        // Check if current user owns this quote post
+        const isOwnQuote = post.quoter_user_id === this.currentUserId;
+
+        // Build media HTML for the quote's own media (user's attached media)
+        const quoteMediaHtml = post.quote_media_urls ? this.buildMediaHtml({ media_urls: post.quote_media_urls, media_type: post.quote_media_type }) : '';
+
+        // Build media HTML for original post in the embed
+        const originalMediaUrls = post.original_media_urls || post.media_urls;
+        const originalMediaType = post.original_media_type || post.media_type;
+        const quotedMediaHtml = this.buildQuotedMediaHtml(originalMediaUrls, originalMediaType);
+
+        // Add click handler to navigate to quote post page
+        article.style.cursor = 'pointer';
+        article.onclick = (e) => {
+            // Don't navigate if clicking on interactive elements or media
+            if (e.target.closest('a, button, .post-actions-bar, .post-comments-section, .quoted-post-embed, .post-stats, .post-media-grid, .media-grid-cell, video, img')) {
+                return;
+            }
+            this.navigateToPostView(null, e, post.id);
+        };
+
+        article.innerHTML = `
+            <div class="post-header">
+                <a href="#" class="post-avatar-link" onclick="event.stopPropagation(); feedManager.goToProfile('${post.quoter_username || post.quoter_user_id}', '${post.quoter_role || 'player'}', '${post.quoter_division || ''}', '${post.quoter_user_id}', ${post.quoter_transfer === 'y'}); return false;">
+                    <div class="post-avatar-circle">
+                        ${post.quoter_image ?
+                            `<img src="${post.quoter_image}" alt="${quoterName}">` :
+                            `<svg viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="12" cy="7" r="4"></circle>
+                            </svg>`
+                        }
+                    </div>
+                </a>
+                <div class="post-user-info">
+                    <div class="post-user-name-row">
+                        <a href="#" class="post-user-name" onclick="event.stopPropagation(); feedManager.goToProfile('${post.quoter_username || post.quoter_user_id}', '${post.quoter_role || 'player'}', '${post.quoter_division || ''}', '${post.quoter_user_id}', ${post.quoter_transfer === 'y'}); return false;">
+                            ${quoterName}
+                        </a>
+                        ${post.quoter_username ? `<span class="post-user-handle">@${post.quoter_username}</span>` : ''}
+                    </div>
+                    <div class="post-meta">${timeAgo}</div>
+                </div>
+                <div class="post-header-actions">
+                    <button class="post-more-btn" onclick="event.stopPropagation(); feedManager.showQuotePostMenu('${post.id}', ${isOwnQuote}, event)">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="1"></circle>
+                            <circle cx="19" cy="12" r="1"></circle>
+                            <circle cx="5" cy="12" r="1"></circle>
+                        </svg>
+                    </button>
+                    <div class="post-view-icon" data-post-id="${post.original_post_id}" data-share-id="${post.id}" onclick="event.stopPropagation(); feedManager.navigateToPostView(null, event, '${post.id}')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="9 18 15 12 9 6"></polyline>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+            <div class="post-content" data-post-id="${post.original_post_id}" data-share-id="${post.id}" style="cursor: pointer;">
+                <p>${this.formatContent(post.quote_content)}</p>
+            </div>
+            <div onclick="event.stopPropagation();">${quoteMediaHtml}</div>
+            <div class="quoted-post-embed" onclick="event.stopPropagation(); feedManager.navigateToPostView('${post.original_post_id}', event)" style="cursor: pointer;">
+                <div class="quoted-post-header">
+                    <a href="#" onclick="feedManager.goToProfile('${post.author_username || post.author_user_id}', '${post.author_role || 'player'}', '${post.author_division || ''}', '${post.author_user_id}', ${post.author_transfer === 'y'}); event.stopPropagation(); return false;">
+                        <div class="quoted-post-avatar">
+                            ${post.author_image ?
+                                `<img src="${post.author_image}" alt="${originalAuthorName}">` :
+                                `<svg viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                    <circle cx="12" cy="7" r="4"></circle>
+                                </svg>`
+                            }
+                        </div>
+                    </a>
+                    <div class="quoted-post-info">
+                        <span class="quoted-post-author">${originalAuthorName}</span>
+                        <span class="quoted-post-time">${originalTimeAgo}</span>
+                    </div>
+                </div>
+                <div class="quoted-post-content">
                     ${this.formatContent(post.original_content || post.content)}
                 </div>
+                ${quotedMediaHtml}
             </div>
             <div class="post-stats">
                 <span class="likes-count" onclick="feedManager.showLikes('${post.original_post_id}')">${post.likes_count || 0} ${post.likes_count === 1 ? 'like' : 'likes'}</span>
@@ -828,8 +1737,8 @@ class FeedManager {
         return article;
     }
 
-    // Menu for quote posts (delete quote)
-    showQuotePostMenu(shareId, event) {
+    // Menu for quote posts (edit/delete quote for owner, report for non-owner)
+    showQuotePostMenu(shareId, isOwner, event) {
         event.stopPropagation();
 
         // Remove existing menu
@@ -839,13 +1748,30 @@ class FeedManager {
         const menu = document.createElement('div');
         menu.className = 'post-dropdown-menu';
         menu.innerHTML = `
-            <div class="dropdown-item dropdown-item-danger" onclick="feedManager.deleteQuotePost('${shareId}')">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <polyline points="3 6 5 6 21 6"></polyline>
-                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                </svg>
-                Delete Quote Post
-            </div>
+            ${isOwner ? `
+                <div class="dropdown-item" onclick="feedManager.editQuotePost('${shareId}')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#1282a2" stroke-width="2">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                    </svg>
+                    <span>Edit Quote</span>
+                </div>
+                <div class="dropdown-item dropdown-item-danger" onclick="feedManager.deleteQuotePost('${shareId}')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    </svg>
+                    <span>Delete Quote Post</span>
+                </div>
+            ` : `
+                <div class="dropdown-item" onclick="feedManager.reportQuotePost('${shareId}')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#1282a2" stroke-width="2">
+                        <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
+                        <line x1="4" y1="22" x2="4" y2="15"></line>
+                    </svg>
+                    <span>Report Quote Post</span>
+                </div>
+            `}
         `;
 
         document.body.appendChild(menu);
@@ -868,9 +1794,370 @@ class FeedManager {
         }, 0);
     }
 
+    // Edit quote post content
+    async editQuotePost(shareId) {
+        // Close menu
+        document.querySelector('.post-dropdown-menu')?.remove();
+
+        try {
+            // Fetch the current quote post data
+            const response = await API.get(`/posts/share/${shareId}`);
+            const share = response.share;
+
+            if (!share) {
+                this.showToast('Quote post not found', 'error');
+                return;
+            }
+
+            // Initialize edit media state - use quote_media_urls (the quote's own media, not the original post's media)
+            // quote_media_urls_keys contains original S3 keys, quote_media_urls contains signed URLs for display
+            const existingMediaKeys = share.quote_media_urls_keys || [];
+            const existingMediaType = share.quote_media_type || null;
+            const signedUrls = share.quote_media_urls || share.signed_quote_media_urls || [];
+
+            // Track current media state (existing S3 keys to keep, new files to upload)
+            let currentMediaKeys = [...existingMediaKeys]; // S3 keys of existing media
+            let newMediaFiles = []; // New files to upload
+            let newMediaPreviews = []; // Preview URLs for new files
+            const maxMedia = 4;
+
+            // Determine if quote has media
+            const hasMedia = existingMediaKeys.length > 0;
+
+            // Create edit modal
+            const modal = document.createElement('div');
+            modal.className = 'feed-modal-overlay';
+            modal.id = 'edit-quote-modal';
+            modal.innerHTML = `
+                <div class="feed-modal edit-modal ${hasMedia ? 'with-media' : ''}">
+                    <div class="feed-modal-header">
+                        <h3>Edit Quote</h3>
+                        <button class="feed-modal-close" onclick="document.getElementById('edit-quote-modal').remove()">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="18" y1="6" x2="6" y2="18"></line>
+                                <line x1="6" y1="6" x2="18" y2="18"></line>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="feed-modal-body">
+                        <textarea id="edit-quote-textarea" class="edit-post-textarea" placeholder="Add your comment...">${share.quote_content || ''}</textarea>
+
+                        <div class="edit-modal-media-section">
+                            <div class="edit-modal-media-header">
+                                <div class="edit-modal-media-label">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                        <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                                        <polyline points="21 15 16 10 5 21"></polyline>
+                                    </svg>
+                                    <span>Media</span>
+                                    <span class="edit-modal-media-counter" id="edit-quote-media-counter">${existingMediaKeys.length}/${maxMedia}</span>
+                                </div>
+                                <label class="edit-modal-add-media-btn ${existingMediaKeys.length >= maxMedia ? 'disabled' : ''}" id="edit-quote-add-media-btn">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                                    </svg>
+                                    Add
+                                    <input type="file" id="edit-quote-media-input" accept="image/*,video/*" multiple style="display: none;">
+                                </label>
+                            </div>
+                            <div class="edit-modal-media-grid" id="edit-quote-media-grid">
+                                ${this.renderEditMediaItems(existingMediaKeys, signedUrls, existingMediaType, 'quote')}
+                            </div>
+                        </div>
+
+                        <div class="edit-modal-actions">
+                            <button class="edit-modal-btn edit-modal-btn-cancel" onclick="document.getElementById('edit-quote-modal').remove()">Cancel</button>
+                            <button class="edit-modal-btn edit-modal-btn-save" id="save-quote-btn">Save</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            document.body.appendChild(modal);
+
+            // Focus textarea
+            document.getElementById('edit-quote-textarea').focus();
+
+            // Update modal class based on media presence
+            const updateModalSize = () => {
+                const modalEl = modal.querySelector('.feed-modal');
+                if (currentMediaKeys.length > 0 || newMediaFiles.length > 0) {
+                    modalEl.classList.add('with-media');
+                } else {
+                    modalEl.classList.remove('with-media');
+                }
+            };
+
+            // Update media counter and button state
+            const updateMediaCounter = () => {
+                const totalCount = currentMediaKeys.length + newMediaFiles.length;
+                const counter = document.getElementById('edit-quote-media-counter');
+                const addBtn = document.getElementById('edit-quote-add-media-btn');
+
+                if (counter) {
+                    counter.textContent = `${totalCount}/${maxMedia}`;
+                    counter.classList.toggle('at-max', totalCount >= maxMedia);
+                }
+                if (addBtn) {
+                    addBtn.classList.toggle('disabled', totalCount >= maxMedia);
+                }
+                updateModalSize();
+            };
+
+            // Re-render media grid
+            const renderMediaGrid = () => {
+                const grid = document.getElementById('edit-quote-media-grid');
+                if (!grid) return;
+
+                // Build HTML for existing media (using signed URLs)
+                let html = '';
+                currentMediaKeys.forEach((key, index) => {
+                    const signedUrl = signedUrls[existingMediaKeys.indexOf(key)] || key;
+                    const isVideo = existingMediaType === 'video' || key.includes('video') || key.match(/\.(mp4|mov|webm)$/i);
+                    html += `
+                        <div class="edit-media-item" data-type="existing" data-index="${index}">
+                            ${isVideo ? `
+                                <video src="${signedUrl}" muted></video>
+                                <div class="media-type-badge">
+                                    <svg viewBox="0 0 24 24" fill="currentColor">
+                                        <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                                    </svg>
+                                </div>
+                            ` : `
+                                <img src="${signedUrl}" alt="Media">
+                            `}
+                            <button class="edit-media-remove-btn" data-type="existing" data-index="${index}" title="Remove">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                                </svg>
+                            </button>
+                        </div>
+                    `;
+                });
+
+                // Build HTML for new media (using blob URLs)
+                newMediaPreviews.forEach((preview, index) => {
+                    html += `
+                        <div class="edit-media-item" data-type="new" data-index="${index}">
+                            ${preview.type === 'video' ? `
+                                <video src="${preview.url}" muted></video>
+                                <div class="media-type-badge">
+                                    <svg viewBox="0 0 24 24" fill="currentColor">
+                                        <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                                    </svg>
+                                </div>
+                            ` : `
+                                <img src="${preview.url}" alt="Preview">
+                            `}
+                            <button class="edit-media-remove-btn" data-type="new" data-index="${index}" title="Remove">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                                </svg>
+                            </button>
+                        </div>
+                    `;
+                });
+
+                grid.innerHTML = html;
+                updateMediaCounter();
+            };
+
+            // Handle remove button clicks
+            modal.addEventListener('click', (e) => {
+                const removeBtn = e.target.closest('.edit-media-remove-btn');
+                if (removeBtn) {
+                    e.stopPropagation();
+                    const type = removeBtn.dataset.type;
+                    const index = parseInt(removeBtn.dataset.index);
+
+                    if (type === 'existing') {
+                        currentMediaKeys.splice(index, 1);
+                    } else if (type === 'new') {
+                        URL.revokeObjectURL(newMediaPreviews[index].url);
+                        newMediaFiles.splice(index, 1);
+                        newMediaPreviews.splice(index, 1);
+                    }
+                    renderMediaGrid();
+                }
+            });
+
+            // Handle adding new media
+            const mediaInput = document.getElementById('edit-quote-media-input');
+            mediaInput.addEventListener('change', (e) => {
+                const files = Array.from(e.target.files);
+                const totalCount = currentMediaKeys.length + newMediaFiles.length;
+                const remaining = maxMedia - totalCount;
+
+                if (remaining <= 0) {
+                    this.showToast(`Maximum ${maxMedia} media files allowed`, 'error');
+                    e.target.value = '';
+                    return;
+                }
+
+                const filesToAdd = files.slice(0, remaining);
+                for (const file of filesToAdd) {
+                    if (!this.validateMediaFile(file)) continue;
+
+                    const isVideo = file.type.startsWith('video/');
+                    const previewUrl = URL.createObjectURL(file);
+                    newMediaFiles.push(file);
+                    newMediaPreviews.push({
+                        url: previewUrl,
+                        type: isVideo ? 'video' : 'image',
+                        name: file.name
+                    });
+                }
+
+                renderMediaGrid();
+                e.target.value = '';
+            });
+
+            // Handle save
+            document.getElementById('save-quote-btn').onclick = async () => {
+                const newContent = document.getElementById('edit-quote-textarea').value.trim();
+                const saveBtn = document.getElementById('save-quote-btn');
+
+                try {
+                    saveBtn.disabled = true;
+                    saveBtn.textContent = 'Saving...';
+
+                    let finalMediaUrls = [...currentMediaKeys];
+                    let finalMediaType = existingMediaType;
+
+                    // Upload new media if any
+                    if (newMediaFiles.length > 0) {
+                        saveBtn.textContent = 'Uploading media...';
+                        try {
+                            const uploadResult = await uploadAPI.uploadPostMedia(newMediaFiles);
+                            if (uploadResult.media && uploadResult.media.length > 0) {
+                                finalMediaUrls = [...finalMediaUrls, ...uploadResult.media.map(m => m.s3Key)];
+                                finalMediaType = uploadResult.media_type;
+                            } else if (uploadResult.s3Key) {
+                                finalMediaUrls.push(uploadResult.s3Key);
+                                finalMediaType = uploadResult.media_type;
+                            }
+                        } catch (uploadError) {
+                            console.error('Media upload failed:', uploadError);
+                            this.showToast('Failed to upload media: ' + uploadError.message, 'error');
+                            saveBtn.disabled = false;
+                            saveBtn.textContent = 'Save';
+                            return;
+                        }
+                    }
+
+                    // If all media removed, set to null
+                    if (finalMediaUrls.length === 0) {
+                        finalMediaUrls = null;
+                        finalMediaType = null;
+                    }
+
+                    await API.put(`/posts/share/${shareId}`, {
+                        quote_content: newContent,
+                        media_urls: finalMediaUrls,
+                        media_type: finalMediaType
+                    });
+
+                    // Cleanup blob URLs
+                    newMediaPreviews.forEach(p => URL.revokeObjectURL(p.url));
+
+                    // Fetch updated share data to get signed URLs for media
+                    const updatedResponse = await API.get(`/posts/share/${shareId}`);
+                    const updatedShare = updatedResponse.share;
+
+                    // Update the quote content and media in the DOM
+                    const quoteCard = document.querySelector(`[data-share-id="${shareId}"]`) ||
+                                      document.querySelector(`.quote-post-card[data-post-id="${shareId}"]`);
+                    if (quoteCard) {
+                        // Update content
+                        const contentP = quoteCard.querySelector('.post-content p');
+                        if (contentP) {
+                            contentP.innerHTML = this.formatContent(newContent);
+                        }
+
+                        // Update media - find the media container (the div after .post-content)
+                        const postContent = quoteCard.querySelector('.post-content');
+                        if (postContent && postContent.nextElementSibling) {
+                            const mediaContainer = postContent.nextElementSibling;
+                            // Only update if it's the media wrapper (not the quoted-post-embed)
+                            if (!mediaContainer.classList.contains('quoted-post-embed')) {
+                                // Build new media HTML
+                                const newMediaHtml = updatedShare.quote_media_urls && updatedShare.quote_media_urls.length > 0
+                                    ? this.buildMediaHtml({ media_urls: updatedShare.quote_media_urls, media_type: updatedShare.quote_media_type })
+                                    : '';
+                                mediaContainer.innerHTML = newMediaHtml;
+                            }
+                        }
+                    }
+
+                    modal.remove();
+                    this.showToast('Quote updated', 'success');
+                } catch (error) {
+                    console.error('Error updating quote:', error);
+                    this.showToast('Failed to update quote', 'error');
+                    saveBtn.disabled = false;
+                    saveBtn.textContent = 'Save';
+                }
+            };
+
+            // Close on overlay click
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    newMediaPreviews.forEach(p => URL.revokeObjectURL(p.url));
+                    modal.remove();
+                }
+            });
+        } catch (error) {
+            console.error('Error fetching quote post:', error);
+            this.showToast('Failed to load quote post', 'error');
+        }
+    }
+
+    // Helper to render edit media items
+    renderEditMediaItems(mediaKeys, signedUrls, mediaType, prefix) {
+        if (!mediaKeys || mediaKeys.length === 0) return '';
+
+        return mediaKeys.map((key, index) => {
+            const signedUrl = signedUrls[index] || key;
+            const isVideo = mediaType === 'video' || key.includes('video') || key.match(/\.(mp4|mov|webm)$/i);
+            return `
+                <div class="edit-media-item" data-type="existing" data-index="${index}">
+                    ${isVideo ? `
+                        <video src="${signedUrl}" muted></video>
+                        <div class="media-type-badge">
+                            <svg viewBox="0 0 24 24" fill="currentColor">
+                                <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                            </svg>
+                        </div>
+                    ` : `
+                        <img src="${signedUrl}" alt="Media">
+                    `}
+                    <button class="edit-media-remove-btn" data-type="existing" data-index="${index}" title="Remove">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
+                </div>
+            `;
+        }).join('');
+    }
+
+    // Report quote post
+    reportQuotePost(shareId) {
+        document.querySelector('.post-dropdown-menu')?.remove();
+        this.showToast('Quote post reported. We will review it shortly.', 'info');
+    }
+
     async deleteQuotePost(shareId) {
         // Close menu
         document.querySelector('.post-dropdown-menu')?.remove();
+
+        // Remove any existing delete modal
+        document.getElementById('delete-quote-modal')?.remove();
 
         // Create delete confirmation modal
         const modal = document.createElement('div');
@@ -907,7 +2194,8 @@ class FeedManager {
     async confirmDeleteQuote(shareId) {
         try {
             await postsAPI.unsharePost(shareId);
-            document.querySelector(`[data-post-id="${shareId}"]`)?.remove();
+            // Quote posts have data-share-id attribute
+            document.querySelector(`[data-share-id="${shareId}"]`)?.remove();
             this.closeModal('delete-quote-modal');
             this.showToast('Quote post deleted', 'success');
         } catch (error) {
@@ -950,8 +2238,35 @@ class FeedManager {
             const quotedPostId = this.postInput.dataset.quotedPost;
 
             if (quotedPostId) {
-                // Create a quote post (share with quote content)
-                await postsAPI.sharePost(quotedPostId, 'quote', content);
+                // Create a quote post (share with quote content and optional media)
+                let mediaUrls = [];
+                let mediaType = null;
+
+                if (hasMedia) {
+                    // Upload media files to S3
+                    this.createPostBtn.textContent = 'Uploading media...';
+
+                    try {
+                        const uploadResult = await uploadAPI.uploadPostMedia(this.pendingMediaFiles);
+
+                        // Extract S3 keys from upload result
+                        if (uploadResult.media && uploadResult.media.length > 0) {
+                            mediaUrls = uploadResult.media.map(m => m.s3Key);
+                            mediaType = uploadResult.media_type;
+                        } else if (uploadResult.s3Key) {
+                            // Single file fallback
+                            mediaUrls = [uploadResult.s3Key];
+                            mediaType = uploadResult.media_type;
+                        }
+                    } catch (uploadError) {
+                        console.error('Media upload failed:', uploadError);
+                        this.showToast('Failed to upload media: ' + uploadError.message, 'error');
+                        return;
+                    }
+                }
+
+                this.createPostBtn.textContent = 'Posting...';
+                await postsAPI.sharePost(quotedPostId, 'quote', content, mediaUrls.length > 0 ? mediaUrls : null, mediaType);
                 this.showToast('Quote posted!', 'success');
 
                 // Clean up quote preview
@@ -1071,10 +2386,14 @@ class FeedManager {
 
     async toggleComments(postId) {
         const section = document.getElementById(`comments-${postId}`);
+        if (!section) {
+            console.warn(`Comments section not found for post ${postId}`);
+            return;
+        }
         if (section.style.display === 'none') {
             await this.loadComments(postId);
             section.style.display = 'block';
-            section.querySelector('.comment-input').focus();
+            section.querySelector('.comment-input')?.focus();
         } else {
             section.style.display = 'none';
         }
@@ -1085,11 +2404,16 @@ class FeedManager {
             const response = await postsAPI.getComments(postId);
             const listEl = document.querySelector(`#comments-${postId} .comments-list`);
 
+            if (!listEl) {
+                console.warn(`Comments list element not found for post ${postId}`);
+                return;
+            }
+
             if (response.comments && response.comments.length > 0) {
                 const isOwnComment = (userId) => userId === this.currentUserId;
                 listEl.innerHTML = response.comments.map(comment => `
                     <div class="comment" data-comment-id="${comment.id}">
-                        <div class="comment-avatar clickable-profile" onclick="feedManager.goToProfile('${comment.author_username || comment.user_id}', '${comment.author_role || 'player'}')">
+                        <div class="comment-avatar clickable-profile" onclick="feedManager.goToProfile('${comment.author_username || comment.user_id}', '${comment.author_role || 'player'}', '${comment.author_division || ''}', '${comment.user_id}', ${comment.author_transfer === 'y'})">
                             ${comment.author_image ?
                                 `<img src="${comment.author_image}" alt="">` :
                                 `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>`
@@ -1097,7 +2421,7 @@ class FeedManager {
                         </div>
                         <div class="comment-body">
                             <div class="comment-header">
-                                <span class="comment-author clickable-profile" onclick="feedManager.goToProfile('${comment.author_username || comment.user_id}', '${comment.author_role || 'player'}')">${comment.author_first_name || ''} ${comment.author_last_name || ''}</span>
+                                <span class="comment-author clickable-profile" onclick="feedManager.goToProfile('${comment.author_username || comment.user_id}', '${comment.author_role || 'player'}', '${comment.author_division || ''}', '${comment.user_id}', ${comment.author_transfer === 'y'})">${comment.author_first_name || ''} ${comment.author_last_name || ''}</span>
                                 <span class="comment-time">${this.getTimeAgo(comment.created_at)}</span>
                             </div>
                             <div class="comment-content">${this.escapeHtml(comment.content)}</div>
@@ -1214,6 +2538,202 @@ class FeedManager {
     repostComment(postId, commentId) {
         // Create a repost modal or redirect to create post with quoted comment
         this.showToast('Repost feature coming soon!', 'info');
+    }
+
+    // ==================== SHARE ENGAGEMENT (for quote posts) ====================
+
+    async toggleShareLike(shareId, button) {
+        const isLiked = button.classList.contains('liked');
+        const svg = button.querySelector('svg');
+        const span = button.querySelector('span');
+        const statsEl = button.closest('.post-card').querySelector('.likes-count');
+
+        try {
+            if (isLiked) {
+                await API.delete(`/posts/share/${shareId}/like`);
+                button.classList.remove('liked');
+                svg.setAttribute('fill', 'none');
+                span.textContent = 'Like';
+                // Update count
+                if (statsEl) {
+                    const count = parseInt(statsEl.textContent) - 1;
+                    statsEl.textContent = `${count} ${count === 1 ? 'like' : 'likes'}`;
+                }
+            } else {
+                await API.post(`/posts/share/${shareId}/like`);
+                button.classList.add('liked');
+                svg.setAttribute('fill', 'currentColor');
+                span.textContent = 'Liked';
+                // Update count
+                if (statsEl) {
+                    const count = parseInt(statsEl.textContent) + 1;
+                    statsEl.textContent = `${count} ${count === 1 ? 'like' : 'likes'}`;
+                }
+            }
+        } catch (error) {
+            console.error('Error toggling share like:', error);
+            this.showToast('Failed to update like', 'error');
+        }
+    }
+
+    async toggleShareSave(shareId, button) {
+        const isSaved = button.classList.contains('saved');
+        const svg = button.querySelector('svg');
+        const span = button.querySelector('span');
+
+        try {
+            if (isSaved) {
+                await API.delete(`/posts/share/${shareId}/save`);
+                button.classList.remove('saved');
+                svg.setAttribute('fill', 'none');
+                span.textContent = 'Save';
+                this.showToast('Quote post removed from saved', 'success');
+            } else {
+                await API.post(`/posts/share/${shareId}/save`);
+                button.classList.add('saved');
+                svg.setAttribute('fill', 'currentColor');
+                span.textContent = 'Saved';
+                this.showToast('Quote post saved!', 'success');
+            }
+        } catch (error) {
+            console.error('Error toggling share save:', error);
+            this.showToast('Failed to update save', 'error');
+        }
+    }
+
+    async toggleShareComments(shareId) {
+        const section = document.getElementById(`share-comments-${shareId}`);
+        if (!section) {
+            console.warn(`Comments section not found for share ${shareId}`);
+            return;
+        }
+        if (section.style.display === 'none') {
+            await this.loadShareComments(shareId);
+            section.style.display = 'block';
+            section.querySelector('.comment-input')?.focus();
+        } else {
+            section.style.display = 'none';
+        }
+    }
+
+    async loadShareComments(shareId) {
+        try {
+            const response = await API.get(`/posts/share/${shareId}/comments`);
+            const listEl = document.querySelector(`#share-comments-${shareId} .comments-list`);
+
+            if (!listEl) {
+                console.warn(`Comments list element not found for share ${shareId}`);
+                return;
+            }
+
+            if (response.comments && response.comments.length > 0) {
+                const isOwnComment = (userId) => userId === this.currentUserId;
+                listEl.innerHTML = response.comments.map(comment => `
+                    <div class="comment" data-comment-id="${comment.id}">
+                        <div class="comment-avatar clickable-profile" onclick="feedManager.goToProfile('${comment.username || comment.user_id}', '${comment.role || 'player'}', '${comment.division || ''}', '${comment.user_id}', ${comment.transfer === 'y'})">
+                            ${comment.profile_image ?
+                                `<img src="${comment.profile_image}" alt="">` :
+                                `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>`
+                            }
+                        </div>
+                        <div class="comment-content">
+                            <div class="comment-header">
+                                <span class="comment-author clickable-profile" onclick="feedManager.goToProfile('${comment.username || comment.user_id}', '${comment.role || 'player'}', '${comment.division || ''}', '${comment.user_id}', ${comment.transfer === 'y'})">${comment.first_name} ${comment.last_name}</span>
+                                <span class="comment-time">${this.getTimeAgo(comment.created_at)}</span>
+                            </div>
+                            <p>${this.formatContent(comment.content)}</p>
+                            <div class="comment-actions">
+                                <button onclick="feedManager.likeShareComment('${comment.id}', this)">
+                                    Like ${comment.likes_count > 0 ? `(${comment.likes_count})` : ''}
+                                </button>
+                                ${isOwnComment(comment.user_id) ?
+                                    `<button onclick="feedManager.deleteShareComment('${shareId}', '${comment.id}')">Delete</button>` :
+                                    ''
+                                }
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                listEl.innerHTML = '<p class="no-comments">No comments yet. Be the first to comment!</p>';
+            }
+        } catch (error) {
+            console.error('Error loading share comments:', error);
+        }
+    }
+
+    async addShareComment(shareId) {
+        const input = document.getElementById(`share-comment-input-${shareId}`);
+        const content = input?.value.trim();
+        if (!content) return;
+
+        try {
+            await API.post(`/posts/share/${shareId}/comments`, { content });
+            input.value = '';
+            await this.loadShareComments(shareId);
+
+            // Update comment count
+            const statsEl = document.querySelector(`[data-share-id="${shareId}"] .comments-count`);
+            if (statsEl) {
+                const count = parseInt(statsEl.textContent) + 1;
+                statsEl.textContent = `${count} ${count === 1 ? 'comment' : 'comments'}`;
+            }
+        } catch (error) {
+            console.error('Error adding share comment:', error);
+            this.showToast('Failed to add comment', 'error');
+        }
+    }
+
+    async deleteShareComment(shareId, commentId) {
+        try {
+            await API.delete(`/posts/share/comments/${commentId}`);
+
+            // Remove comment from DOM
+            const commentEl = document.querySelector(`[data-comment-id="${commentId}"]`);
+            if (commentEl) commentEl.remove();
+
+            // Update comment count
+            const statsEl = document.querySelector(`[data-share-id="${shareId}"] .comments-count`);
+            if (statsEl) {
+                const count = Math.max(0, parseInt(statsEl.textContent) - 1);
+                statsEl.textContent = `${count} ${count === 1 ? 'comment' : 'comments'}`;
+            }
+
+            this.showToast('Comment deleted', 'success');
+        } catch (error) {
+            console.error('Error deleting share comment:', error);
+            this.showToast('Failed to delete comment', 'error');
+        }
+    }
+
+    async likeShareComment(commentId, button) {
+        try {
+            await API.post(`/posts/share/comments/${commentId}/like`);
+            // Update button text
+            const match = button.textContent.match(/\((\d+)\)/);
+            const currentCount = match ? parseInt(match[1]) : 0;
+            button.textContent = `Like (${currentCount + 1})`;
+        } catch (error) {
+            console.error('Error liking share comment:', error);
+        }
+    }
+
+    async showShareLikes(shareId) {
+        try {
+            const response = await API.get(`/posts/share/${shareId}/likes`);
+            const likes = response.likes || [];
+
+            if (likes.length === 0) {
+                this.showToast('No likes yet', 'info');
+                return;
+            }
+
+            // Create modal to show likes
+            this.showLikesModal(likes, 'Quote Post Likes');
+        } catch (error) {
+            console.error('Error fetching share likes:', error);
+            this.showToast('Failed to load likes', 'error');
+        }
     }
 
     async sharePost(postId, event) {
@@ -1547,7 +3067,7 @@ class FeedManager {
         }
     }
 
-    async goToProfile(identifier, role, collegeDivision = null, userId = null) {
+    async goToProfile(identifier, role, collegeDivision = null, userId = null, isTransfer = false) {
         // Check if clicking on own profile - just go to my-profile.html
         const targetUserId = userId || identifier;
         if (targetUserId === this.currentUserId) {
@@ -1581,14 +3101,18 @@ class FeedManager {
                 }
             }
 
-            // Determine the correct folder based on role and college division
+            // Determine the correct folder based on role, college division, and transfer status
             let folder = 'hsplayer';
             const isCollege = collegeDivision && collegeDivision.trim() !== '';
 
             if (role === 'coach') {
                 folder = isCollege ? 'collegecoach' : 'hscoach';
             } else if (role === 'player') {
-                folder = isCollege ? 'collegeplayer' : 'hsplayer';
+                if (isTransfer) {
+                    folder = 'transferplayer';
+                } else {
+                    folder = isCollege ? 'collegeplayer' : 'hsplayer';
+                }
             } else if (role === 'other') {
                 folder = 'other';
             }
@@ -1603,7 +3127,11 @@ class FeedManager {
             if (role === 'coach') {
                 folder = isCollege ? 'collegecoach' : 'hscoach';
             } else if (role === 'player') {
-                folder = isCollege ? 'collegeplayer' : 'hsplayer';
+                if (isTransfer) {
+                    folder = 'transferplayer';
+                } else {
+                    folder = isCollege ? 'collegeplayer' : 'hsplayer';
+                }
             } else if (role === 'other') {
                 folder = 'other';
             }
@@ -1633,7 +3161,13 @@ class FeedManager {
 
             if (posts && posts.length > 0) {
                 posts.forEach(post => {
-                    section.appendChild(this.createPostElement(post));
+                    if (post.is_quote) {
+                        section.appendChild(this.createFeedQuotePostElement(post));
+                    } else if (post.is_repost) {
+                        section.appendChild(this.createFeedRepostElement(post));
+                    } else {
+                        section.appendChild(this.createPostElement(post));
+                    }
                 });
             }
         } catch (error) {
@@ -1901,86 +3435,319 @@ class FeedManager {
         // Close post menu
         document.querySelector('.post-dropdown-menu')?.remove();
 
-        // Get current post content
-        const postCard = document.querySelector(`[data-post-id="${postId}"]`);
-        const currentContent = postCard?.querySelector('.post-content p')?.innerText || '';
+        try {
+            // Fetch the current post data to get media info
+            const response = await API.get(`/posts/${postId}`);
+            const post = response.post;
 
-        // Create edit modal
-        const modal = document.createElement('div');
-        modal.className = 'feed-modal-overlay';
-        modal.id = 'edit-post-modal';
-        modal.innerHTML = `
-            <div class="feed-modal edit-modal">
-                <div class="feed-modal-header">
-                    <h3>Edit Post</h3>
-                    <button class="feed-modal-close" onclick="feedManager.closeModal('edit-post-modal')">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <line x1="18" y1="6" x2="6" y2="18"></line>
-                            <line x1="6" y1="6" x2="18" y2="18"></line>
-                        </svg>
-                    </button>
-                </div>
-                <div class="feed-modal-body">
-                    <textarea class="edit-post-textarea" id="edit-post-content" placeholder="What's on your mind?">${this.escapeHtml(currentContent)}</textarea>
-                    <div class="edit-modal-actions">
-                        <button class="edit-modal-btn edit-modal-btn-cancel" onclick="feedManager.closeModal('edit-post-modal')">Cancel</button>
-                        <button class="edit-modal-btn edit-modal-btn-save" id="save-edit-btn" onclick="feedManager.saveEditPost('${postId}')">Save Changes</button>
+            if (!post) {
+                this.showToast('Post not found', 'error');
+                return;
+            }
+
+            // Initialize edit media state
+            // media_urls_keys contains original S3 keys, media_urls contains signed URLs for display
+            const existingMediaKeys = post.media_urls_keys || [];
+            const existingMediaType = post.media_type || null;
+            const signedUrls = post.media_urls || post.signed_media_urls || [];
+
+            // Track current media state (S3 keys to keep)
+            let currentMediaKeys = [...existingMediaKeys];
+            let newMediaFiles = [];
+            let newMediaPreviews = [];
+            const maxMedia = 4;
+
+            const hasMedia = existingMediaKeys.length > 0;
+
+            // Create edit modal
+            const modal = document.createElement('div');
+            modal.className = 'feed-modal-overlay';
+            modal.id = 'edit-post-modal';
+            modal.innerHTML = `
+                <div class="feed-modal edit-modal ${hasMedia ? 'with-media' : ''}">
+                    <div class="feed-modal-header">
+                        <h3>Edit Post</h3>
+                        <button class="feed-modal-close" onclick="feedManager.closeModal('edit-post-modal')">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="18" y1="6" x2="6" y2="18"></line>
+                                <line x1="6" y1="6" x2="18" y2="18"></line>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="feed-modal-body">
+                        <textarea class="edit-post-textarea" id="edit-post-content" placeholder="What's on your mind?">${this.escapeHtml(post.content || '')}</textarea>
+
+                        <div class="edit-modal-media-section">
+                            <div class="edit-modal-media-header">
+                                <div class="edit-modal-media-label">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                        <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                                        <polyline points="21 15 16 10 5 21"></polyline>
+                                    </svg>
+                                    <span>Media</span>
+                                    <span class="edit-modal-media-counter" id="edit-post-media-counter">${existingMediaKeys.length}/${maxMedia}</span>
+                                </div>
+                                <label class="edit-modal-add-media-btn ${existingMediaKeys.length >= maxMedia ? 'disabled' : ''}" id="edit-post-add-media-btn">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                                    </svg>
+                                    Add
+                                    <input type="file" id="edit-post-media-input" accept="image/*,video/*" multiple style="display: none;">
+                                </label>
+                            </div>
+                            <div class="edit-modal-media-grid" id="edit-post-media-grid">
+                                ${this.renderEditMediaItems(existingMediaKeys, signedUrls, existingMediaType, 'post')}
+                            </div>
+                        </div>
+
+                        <div class="edit-modal-actions">
+                            <button class="edit-modal-btn edit-modal-btn-cancel" onclick="feedManager.closeModal('edit-post-modal')">Cancel</button>
+                            <button class="edit-modal-btn edit-modal-btn-save" id="save-edit-btn">Save Changes</button>
+                        </div>
                     </div>
                 </div>
-            </div>
-        `;
+            `;
 
-        document.body.appendChild(modal);
+            document.body.appendChild(modal);
 
-        // Focus on textarea
-        setTimeout(() => {
-            const textarea = document.getElementById('edit-post-content');
-            textarea.focus();
-            textarea.setSelectionRange(textarea.value.length, textarea.value.length);
-        }, 100);
+            // Focus on textarea
+            setTimeout(() => {
+                const textarea = document.getElementById('edit-post-content');
+                textarea.focus();
+                textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+            }, 100);
 
-        // Close on overlay click
-        modal.addEventListener('click', (e) => {
-            if (e.target === modal) {
-                this.closeModal('edit-post-modal');
-            }
-        });
-    }
+            // Update modal class based on media presence
+            const updateModalSize = () => {
+                const modalEl = modal.querySelector('.feed-modal');
+                if (currentMediaKeys.length > 0 || newMediaFiles.length > 0) {
+                    modalEl.classList.add('with-media');
+                } else {
+                    modalEl.classList.remove('with-media');
+                }
+            };
 
-    async saveEditPost(postId) {
-        const content = document.getElementById('edit-post-content')?.value.trim();
-        if (!content) {
-            this.showToast('Post content cannot be empty', 'error');
-            return;
-        }
+            // Update media counter and button state
+            const updateMediaCounter = () => {
+                const totalCount = currentMediaKeys.length + newMediaFiles.length;
+                const counter = document.getElementById('edit-post-media-counter');
+                const addBtn = document.getElementById('edit-post-add-media-btn');
 
-        const saveBtn = document.getElementById('save-edit-btn');
-        if (saveBtn) {
-            saveBtn.disabled = true;
-            saveBtn.textContent = 'Saving...';
-        }
+                if (counter) {
+                    counter.textContent = `${totalCount}/${maxMedia}`;
+                    counter.classList.toggle('at-max', totalCount >= maxMedia);
+                }
+                if (addBtn) {
+                    addBtn.classList.toggle('disabled', totalCount >= maxMedia);
+                }
+                updateModalSize();
+            };
 
-        try {
-            await postsAPI.updatePost(postId, { content });
+            // Re-render media grid
+            const renderMediaGrid = () => {
+                const grid = document.getElementById('edit-post-media-grid');
+                if (!grid) return;
 
-            // Update the post content in the DOM
-            const postCard = document.querySelector(`[data-post-id="${postId}"]`);
-            const contentEl = postCard?.querySelector('.post-content p');
-            if (contentEl) {
-                contentEl.innerHTML = this.formatContent(content);
-            }
+                let html = '';
+                currentMediaKeys.forEach((key, index) => {
+                    const signedUrl = signedUrls[existingMediaKeys.indexOf(key)] || key;
+                    const isVideo = existingMediaType === 'video' || key.includes('video') || key.match(/\.(mp4|mov|webm)$/i);
+                    html += `
+                        <div class="edit-media-item" data-type="existing" data-index="${index}">
+                            ${isVideo ? `
+                                <video src="${signedUrl}" muted></video>
+                                <div class="media-type-badge">
+                                    <svg viewBox="0 0 24 24" fill="currentColor">
+                                        <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                                    </svg>
+                                </div>
+                            ` : `
+                                <img src="${signedUrl}" alt="Media">
+                            `}
+                            <button class="edit-media-remove-btn" data-type="existing" data-index="${index}" title="Remove">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                                </svg>
+                            </button>
+                        </div>
+                    `;
+                });
 
-            this.closeModal('edit-post-modal');
-            this.showToast('Post updated!', 'success');
+                newMediaPreviews.forEach((preview, index) => {
+                    html += `
+                        <div class="edit-media-item" data-type="new" data-index="${index}">
+                            ${preview.type === 'video' ? `
+                                <video src="${preview.url}" muted></video>
+                                <div class="media-type-badge">
+                                    <svg viewBox="0 0 24 24" fill="currentColor">
+                                        <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                                    </svg>
+                                </div>
+                            ` : `
+                                <img src="${preview.url}" alt="Preview">
+                            `}
+                            <button class="edit-media-remove-btn" data-type="new" data-index="${index}" title="Remove">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                                </svg>
+                            </button>
+                        </div>
+                    `;
+                });
+
+                grid.innerHTML = html;
+                updateMediaCounter();
+            };
+
+            // Handle remove button clicks
+            modal.addEventListener('click', (e) => {
+                const removeBtn = e.target.closest('.edit-media-remove-btn');
+                if (removeBtn) {
+                    e.stopPropagation();
+                    const type = removeBtn.dataset.type;
+                    const index = parseInt(removeBtn.dataset.index);
+
+                    if (type === 'existing') {
+                        currentMediaKeys.splice(index, 1);
+                    } else if (type === 'new') {
+                        URL.revokeObjectURL(newMediaPreviews[index].url);
+                        newMediaFiles.splice(index, 1);
+                        newMediaPreviews.splice(index, 1);
+                    }
+                    renderMediaGrid();
+                }
+            });
+
+            // Handle adding new media
+            const mediaInput = document.getElementById('edit-post-media-input');
+            mediaInput.addEventListener('change', (e) => {
+                const files = Array.from(e.target.files);
+                const totalCount = currentMediaKeys.length + newMediaFiles.length;
+                const remaining = maxMedia - totalCount;
+
+                if (remaining <= 0) {
+                    this.showToast(`Maximum ${maxMedia} media files allowed`, 'error');
+                    e.target.value = '';
+                    return;
+                }
+
+                const filesToAdd = files.slice(0, remaining);
+                for (const file of filesToAdd) {
+                    if (!this.validateMediaFile(file)) continue;
+
+                    const isVideo = file.type.startsWith('video/');
+                    const previewUrl = URL.createObjectURL(file);
+                    newMediaFiles.push(file);
+                    newMediaPreviews.push({
+                        url: previewUrl,
+                        type: isVideo ? 'video' : 'image',
+                        name: file.name
+                    });
+                }
+
+                renderMediaGrid();
+                e.target.value = '';
+            });
+
+            // Handle save
+            document.getElementById('save-edit-btn').onclick = async () => {
+                const content = document.getElementById('edit-post-content')?.value.trim();
+                if (!content) {
+                    this.showToast('Post content cannot be empty', 'error');
+                    return;
+                }
+
+                const saveBtn = document.getElementById('save-edit-btn');
+                saveBtn.disabled = true;
+                saveBtn.textContent = 'Saving...';
+
+                try {
+                    let finalMediaUrls = [...currentMediaKeys];
+                    let finalMediaType = existingMediaType;
+
+                    // Upload new media if any
+                    if (newMediaFiles.length > 0) {
+                        saveBtn.textContent = 'Uploading media...';
+                        try {
+                            const uploadResult = await uploadAPI.uploadPostMedia(newMediaFiles);
+                            if (uploadResult.media && uploadResult.media.length > 0) {
+                                finalMediaUrls = [...finalMediaUrls, ...uploadResult.media.map(m => m.s3Key)];
+                                finalMediaType = uploadResult.media_type;
+                            } else if (uploadResult.s3Key) {
+                                finalMediaUrls.push(uploadResult.s3Key);
+                                finalMediaType = uploadResult.media_type;
+                            }
+                        } catch (uploadError) {
+                            console.error('Media upload failed:', uploadError);
+                            this.showToast('Failed to upload media: ' + uploadError.message, 'error');
+                            saveBtn.disabled = false;
+                            saveBtn.textContent = 'Save Changes';
+                            return;
+                        }
+                    }
+
+                    // If all media removed, set to null
+                    if (finalMediaUrls.length === 0) {
+                        finalMediaUrls = null;
+                        finalMediaType = null;
+                    }
+
+                    await postsAPI.updatePost(postId, {
+                        content,
+                        media_urls: finalMediaUrls,
+                        media_type: finalMediaType
+                    });
+
+                    // Cleanup blob URLs
+                    newMediaPreviews.forEach(p => URL.revokeObjectURL(p.url));
+
+                    // Fetch updated post data to get signed URLs for media
+                    const updatedResponse = await API.get(`/posts/${postId}`);
+                    const updatedPost = updatedResponse.post;
+
+                    // Update the post content and media in the DOM
+                    const postCard = document.querySelector(`[data-post-id="${postId}"]`);
+                    if (postCard) {
+                        const postContent = postCard.querySelector('.post-content');
+                        if (postContent) {
+                            // Build new media HTML
+                            const newMediaHtml = updatedPost.media_urls && updatedPost.media_urls.length > 0
+                                ? this.buildMediaHtml({ media_urls: updatedPost.media_urls, media_type: updatedPost.media_type })
+                                : '';
+
+                            // Rebuild the entire post-content innerHTML (text + media)
+                            postContent.innerHTML = `<p>${this.formatContent(content)}</p>${newMediaHtml}`;
+                        }
+                    }
+
+                    this.closeModal('edit-post-modal');
+                    this.showToast('Post updated!', 'success');
+                } catch (error) {
+                    console.error('Error updating post:', error);
+                    this.showToast('Failed to update post', 'error');
+                    saveBtn.disabled = false;
+                    saveBtn.textContent = 'Save Changes';
+                }
+            };
+
+            // Close on overlay click
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    newMediaPreviews.forEach(p => URL.revokeObjectURL(p.url));
+                    this.closeModal('edit-post-modal');
+                }
+            });
         } catch (error) {
-            console.error('Error updating post:', error);
-            this.showToast('Failed to update post', 'error');
-            if (saveBtn) {
-                saveBtn.disabled = false;
-                saveBtn.textContent = 'Save Changes';
-            }
+            console.error('Error fetching post:', error);
+            this.showToast('Failed to load post', 'error');
         }
     }
+
+    // saveEditPost is no longer needed as the save handler is now inline in editPost
 
     async deletePost(postId) {
         // Close post menu
@@ -2146,7 +3913,7 @@ class FeedManager {
         }
 
         return shares.map(share => `
-            <div class="share-item" onclick="feedManager.goToProfile('${share.username || share.user_id}', '${share.role}'); feedManager.closeModal('shares-modal');">
+            <div class="share-item" onclick="feedManager.goToProfile('${share.username || share.user_id}', '${share.role}', '${share.college_division || ''}', '${share.user_id}', ${share.transfer === 'y'}); feedManager.closeModal('shares-modal');">
                 <div class="share-item-avatar">
                     ${share.profile_image_url ?
                         `<img src="${share.profile_image_url}" alt="${share.first_name}">` :
@@ -2223,7 +3990,7 @@ class FeedManager {
             modalBody.innerHTML = `
                 <div class="shares-list">
                     ${data.likes.map(like => `
-                        <div class="share-item" onclick="feedManager.goToProfile('${like.username || like.id}', '${like.role}'); feedManager.closeModal('likes-modal');">
+                        <div class="share-item" onclick="feedManager.goToProfile('${like.username || like.id}', '${like.role}', '${like.college_division || ''}', '${like.id}', ${like.transfer === 'y'}); feedManager.closeModal('likes-modal');">
                             <div class="share-item-avatar">
                                 ${like.profile_image_url ?
                                     `<img src="${like.profile_image_url}" alt="${like.first_name}">` :
@@ -2271,10 +4038,11 @@ class FeedManager {
     }
 
     // Navigate to single post view page
-    navigateToPostView(postId, event) {
+    // For quote posts, pass shareId to view the quote post itself (not just the original)
+    navigateToPostView(postId, event, shareId = null) {
         // Safety check - if there's no postId, don't navigate
-        if (!postId) {
-            console.warn('navigateToPostView called without postId');
+        if (!postId && !shareId) {
+            console.warn('navigateToPostView called without postId or shareId');
             return;
         }
 
@@ -2296,7 +4064,12 @@ class FeedManager {
             basePath = currentPath.includes('/tabs/') ? '' : 'tabs/';
         }
 
-        window.location.href = `${basePath}post-view.html?id=${postId}&ref=feed`;
+        // If shareId is provided (quote post), navigate with share parameter
+        if (shareId) {
+            window.location.href = `${basePath}post-view.html?share=${shareId}&ref=feed`;
+        } else {
+            window.location.href = `${basePath}post-view.html?id=${postId}&ref=feed`;
+        }
     }
 }
 
@@ -2325,10 +4098,11 @@ document.addEventListener('click', (event) => {
     const viewIcon = event.target.closest('.post-view-icon');
     if (viewIcon) {
         const postId = viewIcon.dataset.postId;
-        if (postId && feedManager) {
+        const shareId = viewIcon.dataset.shareId; // For quote posts
+        if ((postId || shareId) && feedManager) {
             event.preventDefault();
             event.stopPropagation();
-            feedManager.navigateToPostView(postId, event);
+            feedManager.navigateToPostView(postId, event, shareId);
             return;
         }
     }
@@ -2350,9 +4124,37 @@ document.addEventListener('click', (event) => {
         }
 
         const postId = postContent.dataset.postId;
-        if (postId) {
+        const shareId = postContent.dataset.shareId; // For quote posts
+        if (postId || shareId) {
             event.preventDefault();
-            feedManager.navigateToPostView(postId, event);
+            feedManager.navigateToPostView(postId, event, shareId);
+        }
+        return;
+    }
+
+    // Handle clicks anywhere on feed quote post cards (for areas outside post-content)
+    const quoteCard = event.target.closest('.feed-quote-card');
+    if (quoteCard && feedManager) {
+        // Don't navigate if clicking on interactive elements
+        const isButton = event.target.closest('button');
+        const isLink = event.target.closest('a');
+        const isInput = event.target.closest('input');
+        const isStats = event.target.closest('.post-stats');
+        const isActions = event.target.closest('.post-actions-bar');
+        const isComments = event.target.closest('.post-comments-section');
+        // Also exclude media elements to allow slideshow to work
+        const isMedia = event.target.closest('.media-grid-cell, .post-media-grid, video, img');
+        const isQuotedPost = event.target.closest('.quoted-post-embed');
+
+        if (isButton || isLink || isInput || isStats || isActions || isComments || isMedia || isQuotedPost) {
+            return;
+        }
+
+        const postId = quoteCard.dataset.postId;
+        const shareId = quoteCard.dataset.shareId;
+        if (shareId) {
+            event.preventDefault();
+            feedManager.navigateToPostView(postId, event, shareId);
         }
     }
 }, true); // Use capture phase

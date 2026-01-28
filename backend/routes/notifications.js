@@ -9,12 +9,22 @@ async function addSignedUrlsToNotifications(notifications) {
   if (!notifications || !Array.isArray(notifications)) return notifications;
 
   return await Promise.all(notifications.map(async (notification) => {
+    // Handle actor_profile_image_url (legacy)
     if (notification.actor_profile_image_url && notification.actor_profile_image_url.startsWith('profiles/')) {
       try {
         notification.actor_profile_image_url = await getSignedS3Url(notification.actor_profile_image_url);
       } catch (error) {
-        console.error('Error generating signed URL:', error);
+        console.error('Error generating signed URL for actor_profile_image_url:', error);
         notification.actor_profile_image_url = null;
+      }
+    }
+    // Handle related_user_profile_image (current)
+    if (notification.related_user_profile_image && notification.related_user_profile_image.startsWith('profiles/')) {
+      try {
+        notification.related_user_profile_image = await getSignedS3Url(notification.related_user_profile_image);
+      } catch (error) {
+        console.error('Error generating signed URL for related_user_profile_image:', error);
+        notification.related_user_profile_image = null;
       }
     }
     return notification;

@@ -101,7 +101,7 @@ router.post('/personal/:classYear/players', authMiddleware, requireRole('coach')
   } catch (error) {
     console.error('Error adding player to personal board:', error);
     if (error.message === 'Player already on board for this position') {
-      return res.status(400).json({ error: error.message });
+      return res.status(400).json({ error: 'Player is already on the board for this position' });
     }
     res.status(500).json({ error: 'Failed to add player to recruiting board' });
   }
@@ -311,7 +311,7 @@ router.post('/shared/:boardId/:classYear/players', authMiddleware, requireRole('
   } catch (error) {
     console.error('Error adding player to shared board:', error);
     if (error.message === 'Player already on board for this position') {
-      return res.status(400).json({ error: error.message });
+      return res.status(400).json({ error: 'Player is already on the board for this position' });
     }
     res.status(500).json({ error: 'Failed to add player to recruiting board' });
   }
@@ -686,7 +686,7 @@ router.delete('/shared/:boardId/collaborator/:collaboratorId', authMiddleware, r
     res.json({ success: true, message: 'Collaborator removed' });
   } catch (error) {
     console.error('Error removing collaborator:', error);
-    res.status(500).json({ error: error.message || 'Failed to remove collaborator' });
+    res.status(500).json({ error: 'Failed to remove collaborator' });
   }
 });
 
@@ -768,7 +768,7 @@ router.post('/shared/:boardId/transfer-ownership', authMiddleware, requireRole('
     res.json({ success: true, message: 'Ownership transferred successfully' });
   } catch (error) {
     console.error('Error transferring ownership:', error);
-    res.status(500).json({ error: error.message || 'Failed to transfer ownership' });
+    res.status(500).json({ error: 'Failed to transfer ownership' });
   }
 });
 

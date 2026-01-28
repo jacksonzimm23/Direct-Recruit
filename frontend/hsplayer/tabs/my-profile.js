@@ -551,8 +551,14 @@ function updateNavbarForLoggedInUser(user, profile) {
                 if (profile.state) parts.push(profile.state);
                 userRole.textContent = parts.join(', ') || 'HS Coach';
             } else if (userFolder === 'collegecoach') {
-                // College Coach: college_name • division
-                if (profile.team_name) parts.push(profile.team_name);
+                // College Coach: college_name, state • division
+                if (profile.team_name && profile.state) {
+                    parts.push(`${profile.team_name}, ${profile.state}`);
+                } else if (profile.team_name) {
+                    parts.push(profile.team_name);
+                } else if (profile.state) {
+                    parts.push(profile.state);
+                }
                 if (profile.college_division) {
                     // Format FBS/FCS as D1 FBS/D1 FCS
                     const divDisplay = (profile.college_division === 'FBS' || profile.college_division === 'FCS')
@@ -3973,11 +3979,11 @@ function setupAddStatsModal() {
             const positionStats = {};
 
             stats.forEach(stat => {
-                const fieldId = `stat_${position}_${stat.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase()}`;
+                const fieldId = `stat_${position}_${stat.replace(/[^a-zA-Z0-9%]/g, '_').toLowerCase()}`;
                 const input = document.getElementById(fieldId);
                 if (input && input.value) {
                     // Convert stat name to snake_case for storage
-                    const statKey = stat.toLowerCase().replace(/[^a-z0-9]/g, '_');
+                    const statKey = stat.toLowerCase().replace(/[^a-z0-9%]/g, '_');
                     positionStats[statKey] = parseFloat(input.value) || 0;
                 }
             });
@@ -4252,7 +4258,7 @@ function addPositionStatsFields(position) {
         // Create the stats grid
         html += '<div class="stats-fields-grid">';
         stats.forEach(stat => {
-            const fieldId = `stat_${position}_${stat.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase()}`;
+            const fieldId = `stat_${position}_${stat.replace(/[^a-zA-Z0-9%]/g, '_').toLowerCase()}`;
             html += `
                 <div class="stat-field-group">
                     <label for="${fieldId}">${stat}</label>
@@ -4457,7 +4463,7 @@ function displayGameStats(games, filterYear = null) {
 
     // Define stats by category (keys must match how they're stored in DB via POSITION_STATS conversion)
     // POSITION_STATS uses uppercase labels that get converted: 'RUSH YDS' -> 'rush_yds', 'TACKLES' -> 'tackles', etc.
-    const offensiveStats = ['rush_yds', 'rush_tds', 'pass_yds', 'pass_tds', 'ints', 'comp___', 'rec', 'rec_yds', 'rec_td', 'rec_tds', 'total_tds'];
+    const offensiveStats = ['rush_yds', 'rush_tds', 'pass_yds', 'pass_tds', 'ints', 'comp_%', 'rec', 'rec_yds', 'rec_td', 'rec_tds', 'total_tds'];
     const defensiveStats = ['tackles', 'tfls', 'sacks', 'pbu', 'ff', 'int'];
     const specialStats = ['att', 'm', 'blk', 'long', 'pats', 'avg', 'tb', 'fc', 'i20', '50_'];
 
@@ -4540,6 +4546,7 @@ function displayGameStats(games, filterYear = null) {
         // Build body rows and track totals
         const totals = {};
         sortedStats.forEach(stat => { totals[stat] = 0; });
+        let rowCount = 0;
 
         let bodyHtml = '';
         filteredGames.forEach(game => {
@@ -4553,6 +4560,7 @@ function displayGameStats(games, filterYear = null) {
 
             if (!hasStatsForCategory) return; // Skip games with no stats for this category
 
+            rowCount++;
             const opponent = game.opponent || '-';
             const clickableClass = isOwnProfile ? 'clickable-row' : '';
             bodyHtml += `<tr class="${clickableClass}" data-game-id="${game.game_id}">`;
@@ -4583,7 +4591,8 @@ function displayGameStats(games, filterYear = null) {
                 const displayValue = (value !== null && !isNaN(value)) ? value : 0;
                 totals[stat] += displayValue;
 
-                bodyHtml += `<td>${displayValue}</td>`;
+                const suffix = stat === 'comp_%' ? '%' : '';
+                bodyHtml += `<td>${displayValue}${suffix}</td>`;
             });
 
             bodyHtml += '</tr>';
@@ -4596,9 +4605,14 @@ function displayGameStats(games, filterYear = null) {
         bodyHtml += '<tr class="totals-row">';
         bodyHtml += '<td><strong>TOTAL</strong></td>';
         sortedStats.forEach(stat => {
-            const total = totals[stat];
+            let total = totals[stat];
+            // Comp % should show average, not sum
+            if (stat === 'comp_%' && rowCount > 0) {
+                total = total / rowCount;
+            }
+            const suffix = stat === 'comp_%' ? '%' : '';
             const displayTotal = Number.isInteger(total) ? total : total.toFixed(1);
-            bodyHtml += `<td><strong>${displayTotal}</strong></td>`;
+            bodyHtml += `<td><strong>${displayTotal}${suffix}</strong></td>`;
         });
         bodyHtml += '</tr>';
 
@@ -4679,7 +4693,7 @@ function displayCareerStats(games) {
     const specialPositions = ['K', 'P', 'LS'];
 
     // Define stats by category
-    const offensiveStats = ['rush_yds', 'rush_tds', 'pass_yds', 'pass_tds', 'ints', 'comp___', 'rec', 'rec_yds', 'rec_td', 'rec_tds', 'total_tds'];
+    const offensiveStats = ['rush_yds', 'rush_tds', 'pass_yds', 'pass_tds', 'ints', 'comp_%', 'rec', 'rec_yds', 'rec_td', 'rec_tds', 'total_tds'];
     const defensiveStats = ['tackles', 'tfls', 'sacks', 'pbu', 'ff', 'int'];
     const specialStats = ['att', 'm', 'blk', 'long', 'pats', 'avg', 'tb', 'fc', 'i20', '50_'];
 
@@ -4713,8 +4727,8 @@ function displayCareerStats(games) {
         gamesBySeason[year].push(game);
     });
 
-    // Get sorted season years (descending)
-    const seasonYears = Object.keys(gamesBySeason).sort((a, b) => b - a);
+    // Get sorted season years (ascending - latest at bottom)
+    const seasonYears = Object.keys(gamesBySeason).sort((a, b) => a - b);
 
     // Collect stats used across all seasons
     const usedStats = { offense: new Set(), defense: new Set(), special: new Set() };
@@ -4812,6 +4826,7 @@ function displayCareerStats(games) {
         const careerTotals = {};
         sortedStats.forEach(stat => { careerTotals[stat] = 0; });
         let careerGamesCount = 0;
+        let seasonCount = 0;
 
         let bodyHtml = '';
         seasonYears.forEach(year => {
@@ -4820,16 +4835,24 @@ function displayCareerStats(games) {
             if (gamesCount === 0) return; // Skip seasons with no games for this category
 
             careerGamesCount += gamesCount;
+            seasonCount++;
 
             bodyHtml += `<tr>`;
             bodyHtml += `<td>${year}</td>`;
             bodyHtml += `<td>${gamesCount}</td>`;
 
             sortedStats.forEach(stat => {
-                const value = totals[stat];
-                careerTotals[stat] += value;
-                const displayValue = Number.isInteger(value) ? value : value.toFixed(1);
-                bodyHtml += `<td>${displayValue}</td>`;
+                let displayVal = totals[stat];
+                if (stat === 'comp_%' && gamesCount > 0) {
+                    // Average comp % for this season, accumulate season average for career
+                    displayVal = displayVal / gamesCount;
+                    careerTotals[stat] += displayVal;
+                } else {
+                    careerTotals[stat] += totals[stat];
+                }
+                const suffix = stat === 'comp_%' ? '%' : '';
+                const displayValue = Number.isInteger(displayVal) ? displayVal : displayVal.toFixed(1);
+                bodyHtml += `<td>${displayValue}${suffix}</td>`;
             });
 
             bodyHtml += '</tr>';
@@ -4843,9 +4866,14 @@ function displayCareerStats(games) {
         bodyHtml += '<td><strong>CAREER</strong></td>';
         bodyHtml += `<td><strong>${careerGamesCount}</strong></td>`;
         sortedStats.forEach(stat => {
-            const total = careerTotals[stat];
+            let total = careerTotals[stat];
+            // Comp % career total = average of season averages
+            if (stat === 'comp_%' && seasonCount > 0) {
+                total = total / seasonCount;
+            }
+            const suffix = stat === 'comp_%' ? '%' : '';
             const displayTotal = Number.isInteger(total) ? total : total.toFixed(1);
-            bodyHtml += `<td><strong>${displayTotal}</strong></td>`;
+            bodyHtml += `<td><strong>${displayTotal}${suffix}</strong></td>`;
         });
         bodyHtml += '</tr>';
 
@@ -5076,12 +5104,17 @@ function displayOverviewStats(games) {
 
         // Add regular stats first
         regularStats.forEach(stat => {
-            const value = totals[stat];
+            let value = totals[stat];
+            // Comp % should show average, not sum
+            if (stat === 'comp_%' && gamesCount > 0) {
+                value = value / gamesCount;
+            }
+            const suffix = stat === 'comp_%' ? '%' : '';
             const displayValue = Number.isInteger(value) ? value : value.toFixed(1);
             const label = statLabels[stat] || stat.replace(/_/g, ' ').toUpperCase();
             html += `
                 <div class="stat-box">
-                    <div class="stat-value">${displayValue}</div>
+                    <div class="stat-value">${displayValue}${suffix}</div>
                     <div class="stat-label">${label}</div>
                 </div>
             `;
@@ -5278,8 +5311,8 @@ function addEditPositionStatsFields(position, existingStats = {}) {
         // Create the stats grid
         html += '<div class="stats-fields-grid">';
         stats.forEach(stat => {
-            const fieldId = `edit_stat_${position}_${stat.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase()}`;
-            const statKey = stat.toLowerCase().replace(/[^a-z0-9]/g, '_');
+            const fieldId = `edit_stat_${position}_${stat.replace(/[^a-zA-Z0-9%]/g, '_').toLowerCase()}`;
+            const statKey = stat.toLowerCase().replace(/[^a-z0-9%]/g, '_');
             const existingValue = existingStats[statKey] ?? '';
             html += `
                 <div class="stat-field-group">
@@ -5308,10 +5341,10 @@ async function saveEditedGameStats() {
         const positionStats = {};
 
         stats.forEach(stat => {
-            const fieldId = `edit_stat_${position}_${stat.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase()}`;
+            const fieldId = `edit_stat_${position}_${stat.replace(/[^a-zA-Z0-9%]/g, '_').toLowerCase()}`;
             const input = document.getElementById(fieldId);
             if (input && input.value) {
-                const statKey = stat.toLowerCase().replace(/[^a-z0-9]/g, '_');
+                const statKey = stat.toLowerCase().replace(/[^a-z0-9%]/g, '_');
                 positionStats[statKey] = parseFloat(input.value) || 0;
             }
         });

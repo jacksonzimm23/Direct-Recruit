@@ -386,9 +386,15 @@ function updateThreadHeader(participant) {
         } else if (participant.role === 'coach') {
             // Check if college coach (has division) or HS coach (no division)
             if (participant.college_division) {
-                // College Coach: College • Division
+                // College Coach: College, State • Division
                 const parts = [];
-                if (participant.team_name) parts.push(participant.team_name);
+                if (participant.team_name && participant.state) {
+                    parts.push(`${participant.team_name}, ${participant.state}`);
+                } else if (participant.team_name) {
+                    parts.push(participant.team_name);
+                } else if (participant.state) {
+                    parts.push(participant.state);
+                }
                 const division = participant.college_division;
                 if (division === 'FBS' || division === 'FCS') {
                     parts.push(`D1 ${division}`);

@@ -288,11 +288,10 @@ function renderNotificationCard(notification) {
     let followRequestButtons = '';
     if (showFollowRequestActions) {
         followRequestButtons = `
-            <div class="follow-request-actions">
-                <button class="btn-accept-request" data-user-id="${notification.related_user_id}">Accept</button>
-                <button class="btn-decline-request" data-user-id="${notification.related_user_id}">Decline</button>
-            </div>
-        `;
+                    <span class="follow-request-actions">
+                        <button class="btn-accept-request" data-user-id="${notification.related_user_id}">Accept</button>
+                        <button class="btn-decline-request" data-user-id="${notification.related_user_id}">Decline</button>
+                    </span>`;
     }
 
     const dataType = notification.type === 'interaction' ? 'interactions' :
@@ -300,18 +299,28 @@ function renderNotificationCard(notification) {
                      notification.type === 'follow' ? 'follows' :
                      notification.type === 'profile_view' ? 'profile-views' : 'interactions';
 
+    // Use profile picture if available, otherwise fall back to icon
+    const hasProfileImage = notification.related_user_profile_image && notification.related_user_username;
+    let iconHtml;
+    if (hasProfileImage) {
+        const folder = getProfileFolder(notification);
+        iconHtml = `
+            <a href="../../${folder}/tabs/my-profile.html?username=${notification.related_user_username}&from=notifications" class="notification-profile-link">
+                <img src="${notification.related_user_profile_image}" alt="" class="notification-profile-img">
+            </a>`;
+    } else {
+        iconHtml = `<div class="notification-icon ${iconClass}">${iconSvg}</div>`;
+    }
+
     return `
         <div class="notification-card ${isUnread ? 'unread' : ''}" data-type="${dataType}" data-id="${notification.id}" data-related-user-id="${notification.related_user_id || ''}" data-title="${notification.title || ''}">
-            <div class="notification-icon ${iconClass}">
-                ${iconSvg}
-            </div>
+            ${iconHtml}
             <div class="notification-content">
                 <p class="notification-text">
                     <strong>${notification.title || 'Notification'}</strong><br>
-                    ${formatNotificationMessage(notification)}
+                    ${formatNotificationMessage(notification)}${followRequestButtons}
                 </p>
                 ${actionButtons}
-                ${followRequestButtons}
                 <span class="notification-time">${timeAgo}</span>
             </div>
             <div class="notification-actions">
@@ -351,15 +360,14 @@ function formatTimeAgo(dateStr) {
 }
 
 // Format notification message with clickable name link
+// Uses current profile data (fetched via JOIN) rather than stored message to handle profile changes
 function formatNotificationMessage(notification) {
     const name = notification.related_user_first_name && notification.related_user_last_name
         ? `${notification.related_user_first_name} ${notification.related_user_last_name}`
         : 'Someone';
 
-    let message = notification.message || '';
-
     // Create a clickable link if we have a username
-    // Navigate to the shared profile view page
+    // Navigate to the appropriate profile folder based on user type
     let nameHtml;
     if (notification.related_user_username) {
         const folder = getProfileFolder(notification);
@@ -368,13 +376,54 @@ function formatNotificationMessage(notification) {
         nameHtml = `<strong>${name}</strong>`;
     }
 
-    if (message.startsWith(name)) {
-        message = `${nameHtml}${message.substring(name.length)}`;
-    } else if (message.includes(name)) {
-        message = message.replace(name, nameHtml);
-    }
+    // Rebuild message based on notification type/title using current profile data
+    // This ensures updated profile names are reflected in old notifications
+    const title = notification.title || '';
 
-    return message;
+    switch (title) {
+        case 'Profile View':
+            const schoolText = notification.related_user_school ? ` from ${notification.related_user_school}` : '';
+            return `${nameHtml}${schoolText} viewed your profile`;
+        case 'New Follower':
+            return `${nameHtml} started following you`;
+        case 'Follow Request':
+            return `${nameHtml} requested to follow you`;
+        case 'Follow Request Accepted':
+            return `${nameHtml} accepted your follow request`;
+        case 'New Message':
+            return `${nameHtml} sent you a message`;
+        case 'Post Liked':
+            return `${nameHtml} liked your post`;
+        case 'Comment Liked':
+            return `${nameHtml} liked your comment`;
+        case 'New Comment':
+            // Extract the comment preview from the original message if available
+            const commentMatch = notification.message?.match(/: "(.+)"$/);
+            const commentPreview = commentMatch ? `: "${commentMatch[1]}"` : '';
+            return `${nameHtml} commented on your post${commentPreview}`;
+        case 'Post Shared':
+            const isQuote = notification.message?.includes('quoted');
+            return `${nameHtml} ${isQuote ? 'quoted' : 'shared'} your post`;
+        case 'New Reply':
+            // Extract the reply preview from the original message if available
+            const replyMatch = notification.message?.match(/: "(.+)"$/);
+            const replyPreview = replyMatch ? `: "${replyMatch[1]}"` : '';
+            return `${nameHtml} replied to your comment${replyPreview}`;
+        case 'Board Invite':
+            // Extract board name if available
+            const boardMatch = notification.message?.match(/to collaborate on "(.+)"/);
+            const boardName = boardMatch ? boardMatch[1] : 'a recruiting board';
+            return `${nameHtml} invited you to collaborate on "${boardName}"`;
+        default:
+            // Fallback: try to replace any name pattern in the original message
+            let message = notification.message || '';
+            // If the message contains any name-like pattern at the start, replace with current name
+            if (message && name !== 'Someone') {
+                // Replace the first word(s) that look like a name (capitalized words at start)
+                message = message.replace(/^[A-Z][a-z]+ [A-Z][a-z]+/, nameHtml);
+            }
+            return message || `${nameHtml} interacted with you`;
+    }
 }
 
 // Setup notification action buttons

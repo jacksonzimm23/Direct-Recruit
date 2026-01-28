@@ -39,25 +39,18 @@ SELECT pg_size_pretty(pg_database_size('direct_recruit'));
 
 
 
-Currently working on: profile visibility, viewing profile without edit modals from a single view profile file 
-Critical for working website (to-do still):
-- profile visibility
-- message permisions
+Currently working on: feed page 
 
 
 To do:
-- multiple accounts for multi-sport athletes 
-- CORS for domain
-- move "follows you" label to right of name 
-- add others as part of search 
-- store collegeplayer info from create a profile page (number, conferences, elig)
-- team account confirmation 
-
 - fix comp % for QB stats input, also fix career stats season to be descending order 
-- feed logic for your network vs discover (what posts are shown) 
+- transfer portal analysis page, personality test with spider map? 
 - scroll bars 
-- change postgres super user and its password 
-- team pages contact DR directly 
+- landing page 
+- multiple accounts for multi-sport athletes 
+- team account confirmation, team pages contact DR directly 
+- change account type 
+
 
 GAMEPLANS TO SUCCESS
 - Step 1: implement final prototype features (right sidebar, NIL Opportunity Match for college players)

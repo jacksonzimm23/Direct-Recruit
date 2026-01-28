@@ -294,10 +294,15 @@ const postsAPI = {
     },
 
     // Shares
-    sharePost: async (postId, shareType = 'repost', quoteContent = null) => {
+    sharePost: async (postId, shareType = 'repost', quoteContent = null, mediaUrls = null, mediaType = null) => {
+        const body = { share_type: shareType, quote_content: quoteContent };
+        if (mediaUrls && mediaUrls.length > 0) {
+            body.media_urls = mediaUrls;
+            body.media_type = mediaType;
+        }
         return await apiRequest(`/posts/${postId}/share`, {
             method: 'POST',
-            body: JSON.stringify({ share_type: shareType, quote_content: quoteContent })
+            body: JSON.stringify(body)
         });
     },
 

@@ -9,6 +9,7 @@ const Follow = require('../models/Follow');
 const { authMiddleware, requireRole, validateUUID } = require('../middleware/auth');
 const { validatePlayerProfile, validateCoachProfile, handleValidationErrors } = require('../middleware/validation');
 const { getSignedS3Url } = require('../utils/s3');
+const { apiLimiter } = require('../middleware/rateLimit');
 
 // Helper function to convert S3 key to signed URL in profile
 async function addSignedUrlToProfile(profile) {
@@ -476,30 +477,36 @@ router.get('/search/coaches', authMiddleware, async (req, res) => {
   }
 });
 
-// Universal search (both players and coaches)
+// Universal search (players, coaches, and other profiles)
 router.get('/search', authMiddleware, async (req, res) => {
   try {
     const searchTerm = req.query.q;
-    console.log('Search request received for term:', searchTerm);
 
     if (!searchTerm) {
-      return res.json({ players: [], coaches: [] });
+      return res.json({ results: [] });
     }
 
-    let [players, coaches] = await Promise.all([
+    let [players, coaches, others] = await Promise.all([
       PlayerProfile.search({ searchTerm }),
-      CoachProfile.search({ searchTerm })
+      CoachProfile.search({ searchTerm }),
+      OtherProfile.search({ searchTerm })
     ]);
 
     // Add signed URLs to profile images
-    [players, coaches] = await Promise.all([
+    [players, coaches, others] = await Promise.all([
       addSignedUrlsToProfiles(players),
-      addSignedUrlsToProfiles(coaches)
+      addSignedUrlsToProfiles(coaches),
+      addSignedUrlsToProfiles(others)
     ]);
 
-    console.log(`Search results: ${players.length} players, ${coaches.length} coaches`);
+    // Combine all results into a single array with role indicator
+    const results = [
+      ...players.map(p => ({ ...p, role: 'player' })),
+      ...coaches.map(c => ({ ...c, role: 'coach' })),
+      ...others.map(o => ({ ...o, role: 'other' }))
+    ];
 
-    res.json({ players, coaches });
+    res.json({ results });
   } catch (error) {
     console.error('Universal search error:', error);
     res.status(500).json({ error: 'Search failed' });
@@ -507,7 +514,7 @@ router.get('/search', authMiddleware, async (req, res) => {
 });
 
 // Check username availability
-router.get('/check-username/:username', async (req, res) => {
+router.get('/check-username/:username', apiLimiter, async (req, res) => {
   try {
     const { username } = req.params;
 
@@ -526,7 +533,7 @@ router.get('/check-username/:username', async (req, res) => {
 });
 
 // Check email availability
-router.get('/check-email/:email', async (req, res) => {
+router.get('/check-email/:email', apiLimiter, async (req, res) => {
   try {
     const { email } = req.params;
 
@@ -547,8 +554,6 @@ router.get('/check-email/:email', async (req, res) => {
 router.get('/username/:username', authMiddleware, async (req, res) => {
   try {
     const { username } = req.params;
-    console.log('[GET /username] Request for username:', username);
-    console.log('[GET /username] Viewer userId:', req.userId);
 
     let profile = null;
     let profileType = null;
@@ -577,13 +582,8 @@ router.get('/username/:username', authMiddleware, async (req, res) => {
       return res.status(404).json({ error: 'Profile not found' });
     }
 
-    console.log('[GET /username] Found profile, user_id:', profile.user_id);
-    console.log('[GET /username] Profile type:', profileType);
-    console.log('[GET /username] Profile visibility from DB:', profile.profile_visibility);
-
     // Check if viewer can see full profile
     const viewAccess = await canViewFullProfile(req.userId, profile.user_id);
-    console.log('[GET /username] viewAccess result:', JSON.stringify(viewAccess));
 
     // Add signed URL to profile image
     profile = await addSignedUrlToProfile(profile);
@@ -593,7 +593,6 @@ router.get('/username/:username', authMiddleware, async (req, res) => {
       ? profile
       : getPrivateProfileData(profile, profileType);
 
-    console.log('[GET /username] Returning profile with accessLevel:', viewAccess.canView ? 'full' : 'limited');
     return res.json({
       profile: responseProfile,
       type: profileType,
@@ -722,7 +721,11 @@ router.get('/suggested-connections', authMiddleware, async (req, res) => {
               WHEN pp.college_division IS NOT NULL AND pp.college_division != '' THEN 'college'
               ELSE 'hs'
             END
-          WHEN u.role = 'coach' THEN 'coach'
+          WHEN u.role = 'coach' THEN
+            CASE
+              WHEN cp.college_division IS NOT NULL AND cp.college_division != '' THEN 'college'
+              ELSE 'hs'
+            END
           WHEN u.role = 'other' THEN 'other'
           ELSE 'unknown'
         END as profile_type

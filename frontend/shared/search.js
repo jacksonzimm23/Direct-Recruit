@@ -97,14 +97,11 @@ class SearchComponent {
             const response = await API.get(`/profile/search?q=${encodeURIComponent(query)}`);
             console.log('Search response:', response);
 
-            this.searchResults = {
-                players: response.players || [],
-                coaches: response.coaches || []
-            };
+            // Handle new unified results format
+            this.searchResults = response.results || [];
 
             console.log('Search results:', this.searchResults);
-            console.log('Players found:', this.searchResults.players.length);
-            console.log('Coaches found:', this.searchResults.coaches.length);
+            console.log('Total results found:', this.searchResults.length);
 
             this.displayResults();
         } catch (error) {
@@ -116,9 +113,9 @@ class SearchComponent {
 
     displayResults() {
         const resultsContainer = document.getElementById('searchResults');
-        const { players, coaches } = this.searchResults;
+        const results = this.searchResults;
 
-        if (players.length === 0 && coaches.length === 0) {
+        if (results.length === 0) {
             resultsContainer.innerHTML = `
                 <div class="search-no-results">
                     <p>No results found</p>
@@ -130,19 +127,9 @@ class SearchComponent {
 
         let html = '';
 
-        if (players.length > 0) {
-            html += '<div class="search-section"><h3>Players</h3></div>';
-            players.forEach(player => {
-                html += this.renderPlayerResult(player);
-            });
-        }
-
-        if (coaches.length > 0) {
-            html += '<div class="search-section"><h3>Coaches</h3></div>';
-            coaches.forEach(coach => {
-                html += this.renderCoachResult(coach);
-            });
-        }
+        results.forEach(result => {
+            html += this.renderResult(result);
+        });
 
         resultsContainer.innerHTML = html;
         this.showResults();
@@ -152,13 +139,20 @@ class SearchComponent {
                 const username = item.dataset.username;
                 const role = item.dataset.role;
                 const isCollege = item.dataset.isCollege === 'true';
+                const isTransfer = item.dataset.isTransfer === 'true';
 
                 // Determine the correct folder based on role and level
                 let folder = 'hsplayer';
                 if (role === 'coach') {
                     folder = isCollege ? 'collegecoach' : 'hscoach';
                 } else if (role === 'player') {
-                    folder = isCollege ? 'collegeplayer' : 'hsplayer';
+                    if (isTransfer) {
+                        folder = 'transferplayer';
+                    } else {
+                        folder = isCollege ? 'collegeplayer' : 'hsplayer';
+                    }
+                } else if (role === 'other') {
+                    folder = 'other';
                 }
 
                 // Navigate to the profile type's folder with cross-folder navigation
@@ -171,47 +165,116 @@ class SearchComponent {
         });
     }
 
-    renderPlayerResult(player) {
-        const imageUrl = player.profile_image_url || this.getDefaultAvatar(player.first_name);
+    renderResult(result) {
+        const imageUrl = result.profile_image_url || result.profile_picture_url || this.getDefaultAvatar(result.first_name);
         const subtitle = [];
-        if (player.position) subtitle.push(player.position);
-        if (player.team_name) subtitle.push(player.team_name);
-        if (player.graduation_year) subtitle.push(`'${String(player.graduation_year).slice(-2)}`);
+        const role = result.role;
 
-        // Determine if this is a college player (has college_division or player_status indicates transfer portal)
-        const isCollegePlayer = player.college_division && player.college_division.trim() !== '';
+        // Determine if this is a college player/coach or transfer
+        const isCollege = result.college_division && result.college_division.trim() !== '';
+        const isTransfer = result.transfer === 'y';
+
+        // Determine username color based on profile type
+        let usernameColor = '#1282A2'; // Default blue for HS players
+        if (role === 'player') {
+            if (isTransfer) {
+                usernameColor = '#b91c1c'; // Transfer player red
+            } else {
+                usernameColor = '#1282A2'; // Regular player blue
+            }
+        } else if (role === 'coach') {
+            usernameColor = '#E07C24'; // Coach orange
+        } else if (role === 'other') {
+            usernameColor = '#d4a017'; // Other gold
+        }
+
+        // Build subtitle based on profile type (matching sidebar-footer format)
+        if (role === 'player') {
+            if (isTransfer) {
+                // Transfer Player: Position • Height • Weight • YOE
+                if (result.position) subtitle.push(result.position);
+                if (result.height) {
+                    if (typeof result.height === 'string' && (result.height.includes("'") || result.height.includes('"'))) {
+                        subtitle.push(result.height);
+                    } else {
+                        const totalInches = parseInt(result.height);
+                        const feet = Math.floor(totalInches / 12);
+                        const inches = totalInches % 12;
+                        subtitle.push(`${feet}'${inches}"`);
+                    }
+                }
+                if (result.weight) subtitle.push(`${result.weight} lbs`);
+                if (result.eligibility) {
+                    const yearText = result.eligibility === 1 ? 'year' : 'years';
+                    subtitle.push(`YOE: ${result.eligibility} ${yearText}`);
+                }
+            } else if (isCollege) {
+                // College Player: Position • School Name • Division
+                if (result.position) subtitle.push(result.position);
+                if (result.team_name) subtitle.push(result.team_name);
+                if (result.college_division) {
+                    const div = result.college_division;
+                    if (div === 'FBS' || div === 'FCS') {
+                        subtitle.push(`D1 ${div}`);
+                    } else {
+                        subtitle.push(div);
+                    }
+                }
+            } else {
+                // HS Player: Position • Height • Weight • Graduation Year
+                if (result.position) subtitle.push(result.position);
+                if (result.height) {
+                    if (typeof result.height === 'string' && (result.height.includes("'") || result.height.includes('"'))) {
+                        subtitle.push(result.height);
+                    } else {
+                        const totalInches = parseInt(result.height);
+                        const feet = Math.floor(totalInches / 12);
+                        const inches = totalInches % 12;
+                        subtitle.push(`${feet}'${inches}"`);
+                    }
+                }
+                if (result.weight) subtitle.push(`${result.weight} lbs`);
+                if (result.graduation_year) subtitle.push(result.graduation_year);
+            }
+        } else if (role === 'coach') {
+            if (isCollege) {
+                // College Coach: Team Name, State • Division
+                if (result.team_name && result.state) {
+                    subtitle.push(`${result.team_name}, ${result.state}`);
+                } else if (result.team_name) {
+                    subtitle.push(result.team_name);
+                } else if (result.state) {
+                    subtitle.push(result.state);
+                }
+                if (result.college_division) {
+                    const div = result.college_division;
+                    if (div === 'FBS' || div === 'FCS') {
+                        subtitle.push(`D1 ${div}`);
+                    } else {
+                        subtitle.push(div);
+                    }
+                }
+            } else {
+                // HS Coach: Position Title • Team Name • State
+                if (result.position_title) subtitle.push(result.position_title);
+                if (result.team_name) subtitle.push(result.team_name);
+                if (result.state) subtitle.push(result.state);
+            }
+        } else if (role === 'other') {
+            // Other: Subheader only
+            if (result.subheader) subtitle.push(result.subheader);
+        }
 
         return `
-            <div class="search-result-item" data-username="${player.username || ''}" data-role="player" data-is-college="${isCollegePlayer}">
-                <img src="${imageUrl}" alt="${player.first_name} ${player.last_name}" class="result-avatar">
+            <div class="search-result-item" data-username="${result.username || ''}" data-role="${role}" data-is-college="${isCollege}" data-is-transfer="${isTransfer}">
+                <img src="${imageUrl}" alt="${result.first_name} ${result.last_name}" class="result-avatar" onerror="this.src='${this.getDefaultAvatar(result.first_name)}'">
                 <div class="result-info">
-                    <div class="result-name">${player.first_name} ${player.last_name}</div>
-                    <div class="result-username">@${player.username || 'no-username'}</div>
+                    <div class="result-name-row">
+                        <span class="result-name">${result.first_name} ${result.last_name}</span>
+                        <span class="result-username" style="color: ${usernameColor};">@${result.username || 'no-username'}</span>
+                    </div>
                     ${subtitle.length > 0 ? `<div class="result-subtitle">${subtitle.join(' • ')}</div>` : ''}
                 </div>
-                <span class="result-badge player-badge">Player</span>
-            </div>
-        `;
-    }
-
-    renderCoachResult(coach) {
-        const imageUrl = coach.profile_image_url || this.getDefaultAvatar(coach.first_name);
-        const subtitle = [];
-        if (coach.position_title) subtitle.push(coach.position_title);
-        if (coach.team_name) subtitle.push(coach.team_name);
-
-        // Determine if this is a college coach (has college_division)
-        const isCollegeCoach = coach.college_division && coach.college_division.trim() !== '';
-
-        return `
-            <div class="search-result-item" data-username="${coach.username || ''}" data-role="coach" data-is-college="${isCollegeCoach}">
-                <img src="${imageUrl}" alt="${coach.first_name} ${coach.last_name}" class="result-avatar">
-                <div class="result-info">
-                    <div class="result-name">${coach.first_name} ${coach.last_name}</div>
-                    <div class="result-username">@${coach.username || 'no-username'}</div>
-                    ${subtitle.length > 0 ? `<div class="result-subtitle">${subtitle.join(' • ')}</div>` : ''}
-                </div>
-                <span class="result-badge coach-badge">Coach</span>
             </div>
         `;
     }
