@@ -3,6 +3,9 @@
 > **Rule:** If you identify something important or necessary that should be added to this file, ask the user for permission before making any changes to CLAUDE.md.
 
 ---
+ **Rule:** DO NOT EVER read .env file without asking permission
+
+---
 
 ## Project Overview
 

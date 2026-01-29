@@ -6526,44 +6526,70 @@ async function openProfileViewersModal() {
             return;
         }
 
-        // Render the list
+        // Render the list using same format as followers/following modal
         modalBody.innerHTML = viewers.map(viewer => {
-            const displayName = `${viewer.first_name || ''} ${viewer.last_name || ''}`.trim() || 'Unknown';
-            const roleDisplay = viewer.role === 'coach' ? 'Coach' : 'Player';
-            const subtitle = viewer.role === 'coach'
-                ? (viewer.school_or_college || '')
-                : (viewer.position_or_title || '');
-
+            const roleInfo = getFollowListRoleInfo(viewer);
             return `
-                <div class="follow-list-item" data-username="${viewer.username || ''}" data-role="${viewer.role}" data-division="${viewer.college_division || ''}">
-                    <div class="follow-list-avatar">
-                        ${viewer.profile_image_url
-                            ? `<img src="${viewer.profile_image_url}" alt="${displayName}">`
-                            : `<svg viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                                <circle cx="12" cy="7" r="4"></circle>
-                               </svg>`
-                        }
-                    </div>
-                    <div class="follow-list-info">
-                        <div class="follow-list-name">${displayName}</div>
-                        <div class="follow-list-role">${roleDisplay}${subtitle ? ' - ' + subtitle : ''}</div>
-                    </div>
+            <div class="follow-list-item" data-user-id="${viewer.id}" data-role="${viewer.role}">
+                <div class="follow-list-avatar">
+                    ${viewer.profile_image_url
+                        ? `<img src="${viewer.profile_image_url}" alt="${viewer.first_name}">`
+                        : `<svg viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="12" cy="7" r="4"></circle>
+                           </svg>`
+                    }
                 </div>
-            `;
-        }).join('');
+                <div class="follow-list-info">
+                    <div class="follow-list-name">${viewer.first_name} ${viewer.last_name}</div>
+                    <div class="follow-list-role ${roleInfo.colorClass}">${roleInfo.text}</div>
+                </div>
+            </div>
+        `}).join('');
 
         // Add click handlers to navigate to profiles
         modalBody.querySelectorAll('.follow-list-item').forEach(item => {
-            item.addEventListener('click', () => {
-                const username = item.dataset.username;
-                if (username) {
-                    closeProfileViewersModal();
-                    // Navigate to profile (profile viewers are usually coaches viewing HS players)
-                    const role = item.dataset.role || 'coach';
-                    let folder = 'hscoach'; // Most viewers are coaches
-                    if (role === 'player') folder = 'hsplayer';
-                    window.location.href = `../../${folder}/tabs/my-profile.html?username=${username}&from=profile`;
+            item.addEventListener('click', async () => {
+                const visitorUserId = item.dataset.userId;
+                const role = item.dataset.role;
+
+                // Fetch the user's profile to navigate correctly
+                try {
+                    let profileResponse;
+                    if (role === 'player') {
+                        profileResponse = await API.get(`/profile/player/${visitorUserId}`);
+                    } else if (role === 'coach') {
+                        profileResponse = await API.get(`/profile/coach/${visitorUserId}`);
+                    } else {
+                        profileResponse = await API.get(`/profile/other/${visitorUserId}`);
+                    }
+
+                    if (profileResponse.profile && profileResponse.profile.username) {
+                        closeProfileViewersModal();
+                        const profile = profileResponse.profile;
+                        // Navigate to appropriate profile folder based on role and profile data
+                        let folder = 'hsplayer';
+                        if (role === 'coach') {
+                            const hasCollegeDivision = profile.college_division &&
+                                ['FBS', 'FCS', 'D2', 'D3', 'NAIA', 'NJCAA', 'JUCO'].includes(profile.college_division);
+                            folder = hasCollegeDivision ? 'collegecoach' : 'hscoach';
+                        } else if (role === 'other') {
+                            folder = 'other';
+                        } else {
+                            // Player - check for transfer or college
+                            if (profile.transfer === 'y' || profile.is_transfer_player) {
+                                folder = 'transferplayer';
+                            } else if (profile.college_division &&
+                                ['FBS', 'FCS', 'D2', 'D3', 'NAIA', 'NJCAA', 'JUCO'].includes(profile.college_division)) {
+                                folder = 'collegeplayer';
+                            } else {
+                                folder = 'hsplayer';
+                            }
+                        }
+                        window.location.href = `../../${folder}/tabs/my-profile.html?username=${profile.username}&from=profile`;
+                    }
+                } catch (error) {
+                    console.error('Error fetching profile:', error);
                 }
             });
         });

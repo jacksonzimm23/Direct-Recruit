@@ -4,9 +4,13 @@ const cookie = require('cookie');
 const Message = require('./models/Message');
 
 function initializeSocket(server) {
+  const allowedOrigins = process.env.NODE_ENV === 'production'
+    ? ['https://directrecruit.net', 'https://www.directrecruit.net']
+    : true;
+
   const io = new Server(server, {
     cors: {
-      origin: process.env.FRONTEND_URL || '*',
+      origin: allowedOrigins,
       methods: ['GET', 'POST'],
       credentials: true
     }
