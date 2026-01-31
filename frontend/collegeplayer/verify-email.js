@@ -1,4 +1,5 @@
 // Verify Email Page JavaScript
+const API_BASE = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? 'http://localhost:5000' : window.location.origin;
 
 document.addEventListener('DOMContentLoaded', function() {
     const codeInputs = document.querySelectorAll('.code-input');
@@ -113,7 +114,7 @@ document.addEventListener('DOMContentLoaded', function() {
         verifyBtn.innerHTML = 'Verifying...';
 
         try {
-            const response = await fetch('http://localhost:5000/api/auth/verify-email', {
+            const response = await fetch(`${API_BASE}/api/auth/verify-email`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -164,7 +165,7 @@ document.addEventListener('DOMContentLoaded', function() {
         resendBtn.textContent = 'Sending...';
 
         try {
-            const response = await fetch('http://localhost:5000/api/auth/resend-verification', {
+            const response = await fetch(`${API_BASE}/api/auth/resend-verification`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'

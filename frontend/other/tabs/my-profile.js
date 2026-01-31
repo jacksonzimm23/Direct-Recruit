@@ -6,6 +6,7 @@ let currentUserId = null;
 let viewingUserId = null;
 let isOwnProfile = true;
 let originalUsername = '';
+let loggedInUserFolder = '';
 
 // Profile posts, replies, and likes state
 let profilePostsLoaded = false;
@@ -51,10 +52,559 @@ async function loadCurrentUser() {
         const response = await API.get('/auth/me');
         if (response.user) {
             currentUserId = response.user.id;
+
+            // Update navbar links to match logged-in user's folder (not the viewed profile's folder)
+            updateNavbarForLoggedInUser(response.user, response.profile);
         }
     } catch (error) {
         console.error('Failed to load current user:', error);
+    } finally {
+        document.documentElement.classList.add('sidebar-ready');
     }
+}
+
+// Rebuild the entire navbar to match the logged-in user's profile type
+// This ensures the navbar stays consistent when viewing other profiles
+function updateNavbarForLoggedInUser(user, profile) {
+    let userFolder;
+    let isCollege = false;
+    const role = user.role;
+    let isTransferPlayer = false;
+
+    if (role === 'player') {
+        isTransferPlayer = user.is_transfer_player || (profile && profile.transfer === 'y');
+        if (isTransferPlayer) {
+            userFolder = 'transferplayer';
+            isCollege = true;
+        } else {
+            isCollege = profile && profile.college_division && profile.college_division.trim() !== '';
+            userFolder = isCollege ? 'collegeplayer' : 'hsplayer';
+        }
+    } else if (role === 'coach') {
+        isCollege = profile && profile.college_division && profile.college_division.trim() !== '';
+        userFolder = isCollege ? 'collegecoach' : 'hscoach';
+    } else if (role === 'other') {
+        userFolder = 'other';
+    } else {
+        return;
+    }
+
+    if (isTransferPlayer) {
+        document.body.classList.add('transfer-player-viewer');
+    }
+
+    loggedInUserFolder = userFolder;
+
+    const mainPage = role === 'player' ? 'mainpage-player.html' : (role === 'coach' ? 'mainpage-coach.html' : 'mainpage-other.html');
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const fromPage = urlParams.get('from');
+    const hasUsername = urlParams.get('username');
+
+    let feedActive = '';
+    let discoverActive = '';
+    let profileActive = '';
+    let messagesActive = '';
+    let notificationsActive = '';
+
+    if (!hasUsername) {
+        profileActive = 'active';
+    } else if (fromPage === 'messages') {
+        messagesActive = 'active';
+    } else if (fromPage === 'discover') {
+        discoverActive = 'active';
+    } else if (fromPage === 'notifications') {
+        notificationsActive = 'active';
+    } else if (fromPage === 'profile') {
+        profileActive = 'active';
+    } else if (fromPage === 'feed') {
+        feedActive = 'active';
+    } else {
+        feedActive = 'active';
+    }
+
+    const sidebarNav = document.querySelector('.sidebar-nav');
+    if (sidebarNav) {
+        let navHTML = '';
+
+        if (role === 'player') {
+            navHTML = `
+                <a href="/frontend/${userFolder}/${mainPage}" class="nav-item ${feedActive}" id="feedNavItem">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                        <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                    </svg>
+                    <span>Feed</span>
+                </a>
+                <a href="/frontend/${userFolder}/tabs/discover-players.html" class="nav-item ${discoverActive}">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                    </svg>
+                    <span>Discover</span>
+                </a>
+                <a href="/frontend/${userFolder}/tabs/my-profile.html" class="nav-item ${profileActive}" id="profileNavItem">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                    <span>My Profile</span>
+                </a>
+                <a href="/frontend/${userFolder}/tabs/messages.html" class="nav-item ${messagesActive}" id="messagesNavItem">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                    <span>Messages</span>
+                    <span class="notification-badge" style="display: none;"></span>
+                </a>
+                <a href="/frontend/${userFolder}/tabs/notifications.html" class="nav-item ${notificationsActive}">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                    </svg>
+                    <span>Notifications</span>
+                    <span class="notification-badge" style="display: none;"></span>
+                </a>
+                ${isCollege ? `
+                <a href="/frontend/${userFolder}/tabs/transfer-portal.html" class="nav-item${isTransferPlayer ? ' nav-item-portal' : ''}" id="transferPortalNav">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <path d="M8 12h8"></path>
+                        <path d="M12 8v8"></path>
+                        <circle cx="12" cy="12" r="3"></circle>
+                    </svg>
+                    <span>Transfer Portal</span>
+                </a>
+                ` : ''}
+                <a href="/frontend/${userFolder}/tabs/settings.html" class="nav-item">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                    </svg>
+                    <span>Settings</span>
+                </a>
+            `;
+        } else if (role === 'coach') {
+            navHTML = `
+                <a href="/frontend/${userFolder}/${mainPage}" class="nav-item ${feedActive}" id="feedNavItem">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                        <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                    </svg>
+                    <span>Feed</span>
+                </a>
+                <a href="/frontend/${userFolder}/tabs/discover-players.html" class="nav-item ${discoverActive}">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                    </svg>
+                    <span>Discover</span>
+                </a>
+                <a href="/frontend/${userFolder}/tabs/my-profile.html" class="nav-item ${profileActive}" id="profileNavItem">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                    <span>My Profile</span>
+                </a>
+                <a href="/frontend/${userFolder}/tabs/messages.html" class="nav-item ${messagesActive}" id="messagesNavItem">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                    <span>Messages</span>
+                    <span class="notification-badge" style="display: none;"></span>
+                </a>
+                <a href="/frontend/${userFolder}/tabs/notifications.html" class="nav-item ${notificationsActive}">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                    </svg>
+                    <span>Notifications</span>
+                    <span class="notification-badge" style="display: none;"></span>
+                </a>
+                ${isCollege ? `
+                <a href="/frontend/${userFolder}/tabs/recruiting-board.html" class="nav-item" id="recruitingBoardNav">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="9" y1="3" x2="9" y2="21"></line>
+                        <line x1="15" y1="3" x2="15" y2="21"></line>
+                        <line x1="3" y1="9" x2="21" y2="9"></line>
+                        <line x1="3" y1="15" x2="21" y2="15"></line>
+                    </svg>
+                    <span>Recruiting Board</span>
+                </a>
+                <a href="/frontend/${userFolder}/tabs/transfer-portal.html" class="nav-item" id="transferPortalNav">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <path d="M8 12h8"></path>
+                        <path d="M12 8v8"></path>
+                        <circle cx="12" cy="12" r="3"></circle>
+                    </svg>
+                    <span>Transfer Portal</span>
+                </a>
+                ` : ''}
+                <a href="/frontend/${userFolder}/tabs/settings.html" class="nav-item">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                    </svg>
+                    <span>Settings</span>
+                </a>
+            `;
+        } else if (role === 'other') {
+            const otherMainPage = 'mainpage-other.html';
+            navHTML = `
+                <a href="/frontend/other/${otherMainPage}" class="nav-item ${feedActive}" id="feedNavItem">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                        <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                    </svg>
+                    <span>Feed</span>
+                </a>
+                <a href="/frontend/other/tabs/discover-players.html" class="nav-item ${discoverActive}">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                    </svg>
+                    <span>Discover</span>
+                </a>
+                <a href="/frontend/other/tabs/my-profile.html" class="nav-item ${profileActive}" id="profileNavItem">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                    <span>My Profile</span>
+                </a>
+                <a href="/frontend/other/tabs/messages.html" class="nav-item ${messagesActive}" id="messagesNavItem">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                    <span>Messages</span>
+                    <span class="notification-badge" style="display: none;"></span>
+                </a>
+                <a href="/frontend/other/tabs/notifications.html" class="nav-item ${notificationsActive}">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                    </svg>
+                    <span>Notifications</span>
+                    <span class="notification-badge" style="display: none;"></span>
+                </a>
+                <a href="/frontend/other/tabs/settings.html" class="nav-item">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                    </svg>
+                    <span>Settings</span>
+                </a>
+            `;
+        }
+
+        sidebarNav.innerHTML = navHTML;
+
+        // Theme colors based on logged-in user's folder
+        let navActiveColor, navActiveBg, navHoverBg;
+
+        if (userFolder === 'transferplayer') {
+            navActiveColor = '#b91c1c';
+            navActiveBg = 'rgba(185, 28, 28, 0.2)';
+            navHoverBg = 'rgba(185, 28, 28, 0.1)';
+        } else if (userFolder === 'collegecoach' || userFolder === 'hscoach') {
+            navActiveColor = '#1282a2';
+            navActiveBg = 'rgba(18, 130, 162, 0.2)';
+            navHoverBg = 'rgba(18, 130, 162, 0.1)';
+        } else {
+            navActiveColor = '#1282a2';
+            navActiveBg = 'rgba(18, 130, 162, 0.2)';
+            navHoverBg = 'rgba(18, 130, 162, 0.1)';
+        }
+
+        const existingStyle = document.getElementById('nav-theme-override');
+        if (existingStyle) existingStyle.remove();
+
+        const styleTag = document.createElement('style');
+        styleTag.id = 'nav-theme-override';
+        styleTag.textContent = `
+            .sidebar .sidebar-nav .nav-item,
+            .sidebar .sidebar-nav a.nav-item {
+                color: var(--white, #ffffff) !important;
+            }
+            .sidebar .sidebar-nav .nav-item .nav-icon,
+            .sidebar .sidebar-nav a.nav-item .nav-icon {
+                color: var(--white, #ffffff) !important;
+            }
+            ${userFolder === 'transferplayer' ? `
+            .sidebar .sidebar-nav .nav-item.nav-item-portal,
+            .sidebar .sidebar-nav a.nav-item.nav-item-portal {
+                color: #b91c1c !important;
+            }
+            .sidebar .sidebar-nav .nav-item.nav-item-portal .nav-icon,
+            .sidebar .sidebar-nav a.nav-item.nav-item-portal .nav-icon {
+                color: #b91c1c !important;
+            }
+            ` : ''}
+            .sidebar .sidebar-nav .nav-item:hover,
+            .sidebar .sidebar-nav a.nav-item:hover {
+                background: ${navHoverBg} !important;
+            }
+            .sidebar .sidebar-nav .nav-item.active,
+            .sidebar .sidebar-nav a.nav-item.active {
+                background: ${navActiveBg} !important;
+                color: ${navActiveColor} !important;
+                border-left: 3px solid ${navActiveColor} !important;
+            }
+            .sidebar .sidebar-nav .nav-item.active .nav-icon,
+            .sidebar .sidebar-nav a.nav-item.active .nav-icon {
+                color: ${navActiveColor} !important;
+            }
+        `;
+        document.head.appendChild(styleTag);
+
+        document.documentElement.classList.add('sidebar-ready');
+
+        if (typeof updateUnreadMessagesBadge === 'function') {
+            updateUnreadMessagesBadge();
+        }
+        if (typeof updateUnreadNotificationsBadge === 'function') {
+            updateUnreadNotificationsBadge();
+        }
+    }
+
+    // Update sidebar footer with logged-in user's info
+    if (profile) {
+        const userRoleColor = role === 'other' ? '#d4a017' : (role === 'player' ? '#1282a2' : '#ff6b35');
+
+        const userName = document.querySelector('.sidebar-footer .user-name');
+        if (userName) {
+            userName.textContent = `${profile.first_name} ${profile.last_name}`;
+        }
+
+        const userRole = document.querySelector('.sidebar-footer .user-role');
+        if (userRole) {
+            userRole.style.color = userRoleColor;
+
+            const parts = [];
+            if (userFolder === 'transferplayer') {
+                if (profile.position) parts.push(profile.position);
+                if (profile.height) {
+                    if (typeof profile.height === 'string' && (profile.height.includes("'") || profile.height.includes('"'))) {
+                        parts.push(profile.height);
+                    } else {
+                        const totalInches = parseInt(profile.height);
+                        const feet = Math.floor(totalInches / 12);
+                        const inches = totalInches % 12;
+                        parts.push(`${feet}'${inches}"`);
+                    }
+                }
+                if (profile.weight) parts.push(`${profile.weight} lbs`);
+                if (profile.eligibility) {
+                    const yearText = profile.eligibility === 1 ? 'year' : 'years';
+                    parts.push(`YOE: ${profile.eligibility} ${yearText}`);
+                }
+                userRole.textContent = parts.join(' • ') || 'Transfer Player';
+                userRole.style.color = '#b91c1c';
+            } else if (userFolder === 'hsplayer') {
+                if (profile.position) parts.push(profile.position);
+                if (profile.team_name) parts.push(profile.team_name);
+                if (profile.graduation_year) parts.push(`Class of ${profile.graduation_year}`);
+                userRole.textContent = parts.join(' • ') || 'Player';
+            } else if (userFolder === 'collegeplayer') {
+                if (profile.position) parts.push(profile.position);
+                if (profile.team_name) parts.push(profile.team_name);
+                if (profile.college_division) {
+                    const div = profile.college_division;
+                    if (div === 'FBS' || div === 'FCS') {
+                        parts.push(`D1 ${div}`);
+                    } else {
+                        parts.push(div);
+                    }
+                }
+                userRole.textContent = parts.join(' • ') || 'Player';
+            } else if (userFolder === 'hscoach') {
+                if (profile.team_name) parts.push(profile.team_name);
+                if (profile.state) parts.push(profile.state);
+                userRole.textContent = parts.join(', ') || 'HS Coach';
+            } else if (userFolder === 'collegecoach') {
+                if (profile.team_name && profile.state) {
+                    parts.push(`${profile.team_name}, ${profile.state}`);
+                } else if (profile.team_name) {
+                    parts.push(profile.team_name);
+                } else if (profile.state) {
+                    parts.push(profile.state);
+                }
+                if (profile.college_division) {
+                    const divDisplay = (profile.college_division === 'FBS' || profile.college_division === 'FCS')
+                        ? `D1 ${profile.college_division}`
+                        : profile.college_division;
+                    parts.push(divDisplay);
+                }
+                userRole.textContent = parts.join(' • ') || 'College Coach';
+            } else if (userFolder === 'other') {
+                userRole.textContent = profile.subheader || '';
+                userRole.style.color = '#d4a017';
+            }
+        }
+
+        // Update avatar (other profiles use profile_picture_url)
+        const avatarUrl = profile.profile_image_url || profile.profile_picture_url;
+        if (avatarUrl) {
+            const avatarElement = document.querySelector('.sidebar-footer .user-avatar-circle');
+            if (avatarElement) {
+                avatarElement.innerHTML = `<img src="${avatarUrl}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
+                avatarElement.style.visibility = 'visible';
+            }
+        }
+
+        // Show sidebar footer
+        const sidebarFooter = document.querySelector('.sidebar-footer');
+        if (sidebarFooter) {
+            sidebarFooter.style.opacity = '1';
+            sidebarFooter.style.transition = 'opacity 0.2s ease';
+        }
+    }
+
+    setupUserMenuDropdown(userFolder);
+}
+
+// Setup the user menu dropdown with proper event listeners
+function setupUserMenuDropdown(userFolder) {
+    const userMenu = document.querySelector('.user-menu');
+    if (!userMenu) return;
+
+    const newUserMenu = userMenu.cloneNode(true);
+    userMenu.parentNode.replaceChild(newUserMenu, userMenu);
+    newUserMenu.setAttribute('data-dropdown-initialized', 'true');
+
+    newUserMenu.addEventListener('click', function(e) {
+        e.stopPropagation();
+
+        const existingMenu = document.querySelector('.user-dropdown-menu');
+        if (existingMenu) {
+            existingMenu.remove();
+            return;
+        }
+
+        const dropdown = document.createElement('div');
+        dropdown.className = 'user-dropdown-menu';
+        dropdown.style.cssText = `
+            background: rgba(10, 17, 40, 0.98);
+            border: 1px solid rgba(18, 130, 162, 0.3);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+            z-index: 1001;
+            backdrop-filter: blur(10px);
+        `;
+
+        dropdown.innerHTML = `
+            <div class="dropdown-item" data-action="profile" style="display: flex; align-items: center; gap: 0.75rem; padding: 0.85rem 1rem; color: white; cursor: pointer; font-size: 0.95rem; font-weight: 600;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#1282a2" stroke-width="2" style="width: 20px; height: 20px; flex-shrink: 0;">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+                <span>My Profile</span>
+            </div>
+            <div class="dropdown-item" data-action="settings" style="display: flex; align-items: center; gap: 0.75rem; padding: 0.85rem 1rem; color: white; cursor: pointer; font-size: 0.95rem; font-weight: 600;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#1282a2" stroke-width="2" style="width: 20px; height: 20px; flex-shrink: 0;">
+                    <circle cx="12" cy="12" r="3"></circle>
+                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                </svg>
+                <span>Settings</span>
+            </div>
+            <div style="height: 1px; background: rgba(18, 130, 162, 0.2); margin: 0.25rem 0;"></div>
+            <div class="dropdown-item" data-action="logout" style="display: flex; align-items: center; gap: 0.75rem; padding: 0.85rem 1rem; color: #ff6b6b; cursor: pointer; font-size: 0.95rem; font-weight: 600;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#ff6b6b" stroke-width="2" style="width: 20px; height: 20px; flex-shrink: 0;">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                    <polyline points="16 17 21 12 16 7"></polyline>
+                    <line x1="21" y1="12" x2="9" y2="12"></line>
+                </svg>
+                <span>Logout</span>
+            </div>
+        `;
+
+        const rect = newUserMenu.getBoundingClientRect();
+        dropdown.style.position = 'fixed';
+        dropdown.style.bottom = (window.innerHeight - rect.top + 10) + 'px';
+        dropdown.style.left = rect.left + 'px';
+        dropdown.style.width = rect.width + 'px';
+
+        document.body.appendChild(dropdown);
+
+        dropdown.querySelectorAll('.dropdown-item').forEach(item => {
+            item.addEventListener('mouseenter', function() {
+                if (this.dataset.action === 'logout') {
+                    this.style.background = 'rgba(255, 107, 107, 0.1)';
+                } else {
+                    this.style.background = 'rgba(18, 130, 162, 0.15)';
+                }
+            });
+            item.addEventListener('mouseleave', function() {
+                this.style.background = 'transparent';
+            });
+        });
+
+        dropdown.querySelectorAll('.dropdown-item').forEach(item => {
+            item.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const action = this.dataset.action;
+
+                if (action === 'logout') {
+                    dropdown.remove();
+                    showLogoutModal(userFolder);
+                } else if (action === 'profile') {
+                    window.location.href = `/frontend/${userFolder}/tabs/my-profile.html`;
+                } else if (action === 'settings') {
+                    window.location.href = `/frontend/${userFolder}/tabs/settings.html`;
+                }
+
+                dropdown.remove();
+            });
+        });
+    });
+
+    document.addEventListener('click', function(e) {
+        const dropdown = document.querySelector('.user-dropdown-menu');
+        const currentUserMenu = document.querySelector('.user-menu');
+        if (dropdown && !dropdown.contains(e.target) && currentUserMenu && !currentUserMenu.contains(e.target)) {
+            dropdown.remove();
+        }
+    });
+}
+
+// Logout modal function
+function showLogoutModal(userFolder) {
+    const modal = document.createElement('div');
+    modal.className = 'logout-modal-overlay';
+    modal.innerHTML = `
+        <div class="logout-modal">
+            <div class="logout-modal-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                    <polyline points="16 17 21 12 16 7"></polyline>
+                    <line x1="21" y1="12" x2="9" y2="12"></line>
+                </svg>
+            </div>
+            <h2 class="logout-modal-title">Logout</h2>
+            <p class="logout-modal-text">Are you sure you want to logout?</p>
+            <div class="logout-modal-actions">
+                <button class="logout-modal-btn logout-modal-btn-cancel" id="logoutCancel">Cancel</button>
+                <button class="logout-modal-btn logout-modal-btn-confirm" id="logoutConfirm">Logout</button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    document.getElementById('logoutCancel').addEventListener('click', () => {
+        modal.remove();
+    });
+
+    document.getElementById('logoutConfirm').addEventListener('click', async () => {
+        await API.auth.logout();
+    });
+
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            modal.remove();
+        }
+    });
 }
 
 // ============ LOAD PROFILE FROM BACKEND ============

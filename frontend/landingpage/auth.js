@@ -1,4 +1,5 @@
 // Sign In Form Handler
+const API_BASE = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? 'http://localhost:5000/api' : window.location.origin + '/api';
 if (document.getElementById('signinForm')) {
     const form = document.getElementById('signinForm');
 
@@ -20,7 +21,7 @@ if (document.getElementById('signinForm')) {
             if (data.user.role === 'player') {
                 // Fetch player profile to determine if high school or college player
                 try {
-                    const meResponse = await fetch(`${window.API_BASE_URL || 'http://localhost:5000/api'}/auth/me`, {
+                    const meResponse = await fetch(`${API_BASE}/auth/me`, {
                         credentials: 'include'
                     });
                     const meData = await meResponse.json();
@@ -48,7 +49,7 @@ if (document.getElementById('signinForm')) {
             } else if (data.user.role === 'coach') {
                 // Fetch coach profile to determine if high school or college coach
                 try {
-                    const meResponse = await fetch(`${window.API_BASE_URL || 'http://localhost:5000/api'}/auth/me`, {
+                    const meResponse = await fetch(`${API_BASE}/auth/me`, {
                         credentials: 'include'
                     });
                     const meData = await meResponse.json();

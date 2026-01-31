@@ -12,7 +12,7 @@ const apiLimiter = rateLimit({
     prefix: 'rl:api:'
   }),
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: isDevelopment ? 10000 : 500, // Much higher limit for development
+  max: isDevelopment ? 10000 : 2000, // 2000 requests per 15 minutes per IP
   message: 'Too many requests, please try again later',
   standardHeaders: true,
   legacyHeaders: false,

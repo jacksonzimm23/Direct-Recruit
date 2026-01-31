@@ -158,6 +158,8 @@ async function loadCurrentUser() {
         }
     } catch (error) {
         console.error('Failed to load current user:', error);
+    } finally {
+        document.documentElement.classList.add('sidebar-ready');
     }
 }
 
@@ -183,6 +185,8 @@ function updateNavbarForLoggedInUser(user, profile) {
     } else if (role === 'coach') {
         isCollege = profile && profile.college_division && profile.college_division.trim() !== '';
         userFolder = isCollege ? 'collegecoach' : 'hscoach';
+    } else if (role === 'other') {
+        userFolder = 'other';
     } else {
         return; // Unknown role, don't modify
     }
@@ -360,6 +364,51 @@ function updateNavbarForLoggedInUser(user, profile) {
                     <span>Settings</span>
                 </a>
             `;
+        } else if (role === 'other') {
+            navHTML = `
+                <a href="/frontend/other/mainpage-other.html" class="nav-item ${feedActive}" id="feedNavItem">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                        <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                    </svg>
+                    <span>Feed</span>
+                </a>
+                <a href="/frontend/other/tabs/discover-players.html" class="nav-item ${discoverActive}">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                    </svg>
+                    <span>Discover</span>
+                </a>
+                <a href="/frontend/other/tabs/my-profile.html" class="nav-item ${profileActive}" id="profileNavItem">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                    <span>My Profile</span>
+                </a>
+                <a href="/frontend/other/tabs/messages.html" class="nav-item ${messagesActive}" id="messagesNavItem">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                    <span>Messages</span>
+                    <span class="notification-badge" style="display: none;"></span>
+                </a>
+                <a href="/frontend/other/tabs/notifications.html" class="nav-item ${notificationsActive}">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                    </svg>
+                    <span>Notifications</span>
+                    <span class="notification-badge" style="display: none;"></span>
+                </a>
+                <a href="/frontend/other/tabs/settings.html" class="nav-item">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                    </svg>
+                    <span>Settings</span>
+                </a>
+            `;
         }
 
         sidebarNav.innerHTML = navHTML;
@@ -451,7 +500,7 @@ function updateNavbarForLoggedInUser(user, profile) {
     // Apply inline styles to ensure consistent appearance regardless of which page's CSS is loaded
     if (profile) {
         // Define color based on logged-in user's role (players = cerulean/blue, coaches = orange)
-        const userRoleColor = role === 'player' ? '#1282a2' : '#ff6b35';
+        const userRoleColor = role === 'other' ? '#d4a017' : (role === 'player' ? '#1282a2' : '#ff6b35');
 
         // Update name
         const userName = document.querySelector('.sidebar-footer .user-name');
@@ -535,14 +584,18 @@ function updateNavbarForLoggedInUser(user, profile) {
                     parts.push(divDisplay);
                 }
                 userRole.textContent = parts.join(' • ') || 'College Coach';
+            } else if (userFolder === 'other') {
+                userRole.textContent = profile.subheader || '';
+                userRole.style.color = '#d4a017';
             }
         }
 
-        // Update avatar if available
-        if (profile.profile_image_url) {
+        // Update avatar if available (other profiles use profile_picture_url)
+        const avatarUrl = profile.profile_image_url || profile.profile_picture_url;
+        if (avatarUrl) {
             const avatarElement = document.querySelector('.sidebar-footer .user-avatar-circle');
             if (avatarElement) {
-                avatarElement.innerHTML = `<img src="${profile.profile_image_url}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
+                avatarElement.innerHTML = `<img src="${avatarUrl}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
             }
         }
 

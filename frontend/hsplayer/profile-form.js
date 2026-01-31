@@ -90,7 +90,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                 // Debounce API call by 500ms
                 emailCheckTimeout = setTimeout(async () => {
                     try {
-                        const response = await fetch(`http://localhost:5000/api/profile/check-email/${encodeURIComponent(email)}`);
+                        const response = await fetch(`${API_BASE_URL}/profile/check-email/${encodeURIComponent(email)}`);
                         const data = await response.json();
 
                         if (!data.available) {
@@ -201,7 +201,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                 // Debounce API call by 500ms
                 usernameCheckTimeout = setTimeout(async () => {
                     try {
-                        const response = await fetch(`http://localhost:5000/api/profile/check-username/${username}`);
+                        const response = await fetch(`${API_BASE_URL}/profile/check-username/${username}`);
                         const data = await response.json();
 
                         if (!data.available) {
@@ -384,7 +384,7 @@ async function loadExistingProfile() {
         }
 
         console.log('[loadExistingProfile] Fetching user profile from API...');
-        const response = await fetch(`${window.API_BASE_URL || 'http://localhost:5000/api'}/auth/me`, {
+        const response = await fetch(`${API_BASE_URL}/auth/me`, {
             credentials: 'include'
         });
 

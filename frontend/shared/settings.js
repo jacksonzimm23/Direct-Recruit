@@ -1,4 +1,5 @@
 // Shared Settings Page JavaScript
+const SETTINGS_API_BASE = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? 'http://localhost:5000/api' : window.location.origin + '/api';
 
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize settings functionality
@@ -25,7 +26,7 @@ async function loadUserSettings() {
             return;
         }
 
-        const apiUrl = `${window.API_BASE_URL || 'http://localhost:5000/api'}/auth/me`;
+        const apiUrl = `${SETTINGS_API_BASE}/auth/me`;
 
         const response = await fetch(apiUrl, {
             credentials: 'include'
@@ -261,7 +262,7 @@ async function saveSettings() {
 
     try {
         // Save privacy settings (profile visibility, message permissions)
-        const response = await fetch(`${window.API_BASE_URL || 'http://localhost:5000/api'}/settings/privacy`, {
+        const response = await fetch(`${SETTINGS_API_BASE}/settings/privacy`, {
             method: 'PUT',
             credentials: 'include',
             headers: {
@@ -444,7 +445,7 @@ async function handleDeleteAccount() {
     clearDeleteAccountError();
 
     try {
-        const response = await fetch(`${window.API_BASE_URL || 'http://localhost:5000/api'}/settings/account/delete`, {
+        const response = await fetch(`${SETTINGS_API_BASE}/settings/account/delete`, {
             method: 'DELETE',
             credentials: 'include',
             headers: {
@@ -643,7 +644,7 @@ async function handlePasswordChange(button) {
     button.disabled = true;
 
     try {
-        const response = await fetch(`${window.API_BASE_URL || 'http://localhost:5000/api'}/settings/password/change`, {
+        const response = await fetch(`${SETTINGS_API_BASE}/settings/password/change`, {
             method: 'POST',
             credentials: 'include',
             headers: {
@@ -792,7 +793,7 @@ async function checkEmailAvailability(email) {
             return;
         }
 
-        const response = await fetch(`${window.API_BASE_URL || 'http://localhost:5000/api'}/settings/email/check-availability?email=${encodeURIComponent(email)}`, {
+        const response = await fetch(`${SETTINGS_API_BASE}/settings/email/check-availability?email=${encodeURIComponent(email)}`, {
             credentials: 'include'
         });
 
@@ -978,7 +979,7 @@ async function handleEmailChangeRequest(button) {
     button.disabled = true;
 
     try {
-        const response = await fetch(`${window.API_BASE_URL || 'http://localhost:5000/api'}/settings/email/request-change`, {
+        const response = await fetch(`${SETTINGS_API_BASE}/settings/email/request-change`, {
             method: 'POST',
             credentials: 'include',
             headers: {
@@ -1094,7 +1095,7 @@ async function handleEmailVerification() {
     verifyBtn.disabled = true;
 
     try {
-        const response = await fetch(`${window.API_BASE_URL || 'http://localhost:5000/api'}/settings/email/verify-change`, {
+        const response = await fetch(`${SETTINGS_API_BASE}/settings/email/verify-change`, {
             method: 'POST',
             credentials: 'include',
             headers: {
@@ -1186,7 +1187,7 @@ async function handleResendEmailCode() {
     resendBtn.disabled = true;
 
     try {
-        const response = await fetch(`${window.API_BASE_URL || 'http://localhost:5000/api'}/settings/email/resend-code`, {
+        const response = await fetch(`${SETTINGS_API_BASE}/settings/email/resend-code`, {
             method: 'POST',
             credentials: 'include',
             headers: {
@@ -1676,7 +1677,7 @@ async function cancelPendingReset() {
     try {
         if (!API.isAuthenticated()) return;
 
-        await fetch(`${window.API_BASE_URL || 'http://localhost:5000/api'}/settings/password/forgot/cancel`, {
+        await fetch(`${SETTINGS_API_BASE}/settings/password/forgot/cancel`, {
             method: 'POST',
             credentials: 'include',
             headers: {
@@ -1784,7 +1785,7 @@ async function handleSendResetCode() {
     clearForgotPasswordErrors();
 
     try {
-        const response = await fetch(`${window.API_BASE_URL || 'http://localhost:5000/api'}/settings/password/forgot/request`, {
+        const response = await fetch(`${SETTINGS_API_BASE}/settings/password/forgot/request`, {
             method: 'POST',
             credentials: 'include',
             headers: {
@@ -1841,7 +1842,7 @@ async function handleVerifyResetCode() {
     clearForgotPasswordErrors();
 
     try {
-        const response = await fetch(`${window.API_BASE_URL || 'http://localhost:5000/api'}/settings/password/forgot/verify`, {
+        const response = await fetch(`${SETTINGS_API_BASE}/settings/password/forgot/verify`, {
             method: 'POST',
             credentials: 'include',
             headers: {
@@ -1888,7 +1889,7 @@ async function handleResendResetCode() {
     clearForgotPasswordErrors();
 
     try {
-        const response = await fetch(`${window.API_BASE_URL || 'http://localhost:5000/api'}/settings/password/forgot/resend`, {
+        const response = await fetch(`${SETTINGS_API_BASE}/settings/password/forgot/resend`, {
             method: 'POST',
             credentials: 'include',
             headers: {
@@ -1989,7 +1990,7 @@ async function handleSetNewPassword() {
     clearForgotPasswordErrors();
 
     try {
-        const response = await fetch(`${window.API_BASE_URL || 'http://localhost:5000/api'}/settings/password/forgot/set`, {
+        const response = await fetch(`${SETTINGS_API_BASE}/settings/password/forgot/set`, {
             method: 'POST',
             credentials: 'include',
             headers: {
@@ -2063,7 +2064,7 @@ async function handleVerifyCognitoCode() {
     clearForgotPasswordErrors();
 
     try {
-        const response = await fetch(`${window.API_BASE_URL || 'http://localhost:5000/api'}/settings/password/forgot/set`, {
+        const response = await fetch(`${SETTINGS_API_BASE}/settings/password/forgot/set`, {
             method: 'POST',
             credentials: 'include',
             headers: {

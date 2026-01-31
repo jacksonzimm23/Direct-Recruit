@@ -25,6 +25,16 @@ async function addSignedUrlToProfile(profile) {
     }
   }
 
+  // Also check profile_picture_url for other profiles
+  if (profile.profile_picture_url && profile.profile_picture_url.startsWith('profiles/')) {
+    try {
+      profile.profile_picture_url = await getSignedS3Url(profile.profile_picture_url);
+    } catch (error) {
+      console.error('Error generating signed URL for profile_picture_url:', error);
+      profile.profile_picture_url = null;
+    }
+  }
+
   return profile;
 }
 
