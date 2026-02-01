@@ -1808,7 +1808,8 @@ async function showFollowListModal(type) {
                                 folder = 'hsplayer';
                             }
                         }
-                        window.location.href = `../../${folder}/tabs/my-profile.html?username=${profile.username}&from=profile`;
+                        const currentFrom = new URLSearchParams(window.location.search).get('from') || 'feed';
+                        window.location.href = `../../${folder}/tabs/my-profile.html?username=${profile.username}&from=${currentFrom}`;
                     }
                 } catch (error) {
                     console.error('Error fetching profile:', error);
@@ -3334,7 +3335,8 @@ function goToProfile(identifier, role, collegeDivision, userId, isTransfer) {
         ? `username=${identifier}`
         : `id=${userId}`;
 
-    window.location.href = `../../${folder}/tabs/my-profile.html?${param}&from=profile`;
+    const navFrom = new URLSearchParams(window.location.search).get('from') || 'feed';
+    window.location.href = `../../${folder}/tabs/my-profile.html?${param}&from=${navFrom}`;
 }
 
 // Build meta info for post author (handles all profile types)
