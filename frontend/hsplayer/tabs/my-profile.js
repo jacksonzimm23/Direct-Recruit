@@ -838,10 +838,10 @@ async function loadProfileByUsername(username) {
             isOwnProfile = currentUserId === viewingUserId;
             displayProfile(response.profile, response.type, response.accessLevel, response.hasPendingRequest);
 
-            // Hide Likes tab if viewing someone else's profile
+            // Show Likes tab for all profiles
             const likesTab = document.querySelector('.profile-tab[data-tab="likes"]');
             if (likesTab) {
-                likesTab.style.display = isOwnProfile ? '' : 'none';
+                likesTab.style.display = '';
             }
 
             // Remove sensitive DOM elements when viewing another profile

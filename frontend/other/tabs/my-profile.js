@@ -658,10 +658,10 @@ async function loadProfileByUsername(username) {
                 removeSensitiveElementsForOtherProfile();
             }
 
-            // Hide Likes tab if viewing someone else's profile
+            // Show Likes tab for all profiles
             const likesTab = document.querySelector('.profile-tab[data-tab="likes"]');
             if (likesTab) {
-                likesTab.style.display = isOwnProfile ? '' : 'none';
+                likesTab.style.display = '';
             }
 
             // Load follower/following counts
@@ -1183,21 +1183,8 @@ function updateProfileActions(hasPendingRequest = false) {
                 </svg>
                 Back
             </button>
-            <button class="btn-follow" id="followBtn">
-                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                    <circle cx="8.5" cy="7" r="4"></circle>
-                    <line x1="20" y1="8" x2="20" y2="14"></line>
-                    <line x1="23" y1="11" x2="17" y2="11"></line>
-                </svg>
-                Follow
-            </button>
-            <button class="btn-message" id="messageBtn" style="display: none;">
-                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-                </svg>
-                Message
-            </button>
+            <button class="btn-follow" id="followBtn">Follow</button>
+            <button class="btn-message" id="messageBtn" style="display: none;">Message</button>
         `;
 
         // Setup back button
@@ -1209,12 +1196,7 @@ function updateProfileActions(hasPendingRequest = false) {
         }
 
         // Setup follow button
-        const followBtn = document.getElementById('followBtn');
-        if (followBtn) {
-            // Check if already following
-            checkFollowStatus(followBtn);
-            followBtn.addEventListener('click', () => toggleFollow(followBtn));
-        }
+        setupFollowButton();
 
         // Setup message button (checks permissions and shows/hides accordingly)
         setupMessageButton();
@@ -1250,109 +1232,72 @@ async function setupMessageButton() {
     }
 }
 
-// Check if currently following this user
-async function checkFollowStatus(followBtn) {
-    try {
-        const response = await followAPI.checkFollowing(viewingUserId);
-        const hasPendingRequest = window.hasPendingFollowRequest || false;
+async function setupFollowButton() {
+    const followBtn = document.getElementById('followBtn');
+    if (!followBtn || !viewingUserId) return;
 
-        if (response.isFollowing) {
-            followBtn.classList.add('following');
-            followBtn.classList.remove('requested');
-            followBtn.innerHTML = `
-                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                    <circle cx="8.5" cy="7" r="4"></circle>
-                    <polyline points="17 11 19 13 23 9"></polyline>
-                </svg>
-                Following
-            `;
-        } else if (hasPendingRequest) {
-            followBtn.classList.add('requested');
-            followBtn.classList.remove('following');
-            followBtn.innerHTML = `
-                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                    <circle cx="8.5" cy="7" r="4"></circle>
-                    <circle cx="20" cy="11" r="3"></circle>
-                </svg>
-                Requested
-            `;
-        }
+    // Check follow status and if they follow us
+    try {
+        const [followResponse, followsMeResponse] = await Promise.all([
+            API.get(`/follow/${viewingUserId}/check`),
+            API.get(`/follow/${viewingUserId}/follows-me`)
+        ]);
+        const isFollowing = followResponse.isFollowing;
+        const theyFollowMe = followsMeResponse.followsMe;
+
+        // Check if there's a pending follow request (passed from displayProfile)
+        let hasPendingRequest = window.hasPendingFollowRequest || false;
+
+        // Determine button text: "Following", "Requested", "Follow back", or "Follow"
+        const getButtonText = (following, pending) => {
+            if (following) return 'Following';
+            if (pending) return 'Requested';
+            return theyFollowMe ? 'Follow back' : 'Follow';
+        };
+
+        followBtn.textContent = getButtonText(isFollowing, hasPendingRequest);
+        followBtn.classList.toggle('following', isFollowing);
+        followBtn.classList.toggle('requested', hasPendingRequest && !isFollowing);
+
+        followBtn.addEventListener('click', async () => {
+            try {
+                const currentlyFollowing = followBtn.classList.contains('following');
+                const currentlyRequested = followBtn.classList.contains('requested');
+
+                if (currentlyFollowing) {
+                    await API.delete(`/follow/${viewingUserId}`);
+                    followBtn.textContent = getButtonText(false, false);
+                    followBtn.classList.remove('following');
+                    followBtn.classList.remove('requested');
+                    hasPendingRequest = false;
+                } else if (currentlyRequested) {
+                    // Cancel the follow request
+                    await API.delete(`/follow/${viewingUserId}/request`);
+                    followBtn.textContent = getButtonText(false, false);
+                    followBtn.classList.remove('requested');
+                    hasPendingRequest = false;
+                } else {
+                    // Send follow request (backend handles if it's a request or direct follow)
+                    const response = await API.post(`/follow/${viewingUserId}`);
+                    if (response.requestPending) {
+                        followBtn.textContent = 'Requested';
+                        followBtn.classList.add('requested');
+                        hasPendingRequest = true;
+                    } else {
+                        followBtn.textContent = 'Following';
+                        followBtn.classList.add('following');
+                    }
+                }
+
+                // Update the follower count display after follow/unfollow
+                loadFollowCounts(viewingUserId);
+            } catch (error) {
+                console.error('Error toggling follow:', error);
+                showToast('Failed to update follow status');
+            }
+        });
     } catch (error) {
         console.error('Error checking follow status:', error);
-    }
-}
-
-// Toggle follow/unfollow
-async function toggleFollow(followBtn) {
-    const isFollowing = followBtn.classList.contains('following');
-    const isRequested = followBtn.classList.contains('requested');
-
-    try {
-        if (isFollowing) {
-            await followAPI.unfollow(viewingUserId);
-            followBtn.classList.remove('following');
-            followBtn.classList.remove('requested');
-            followBtn.innerHTML = `
-                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                    <circle cx="8.5" cy="7" r="4"></circle>
-                    <line x1="20" y1="8" x2="20" y2="14"></line>
-                    <line x1="23" y1="11" x2="17" y2="11"></line>
-                </svg>
-                Follow
-            `;
-            showToast('Unfollowed');
-            window.hasPendingFollowRequest = false;
-        } else if (isRequested) {
-            // Cancel the follow request
-            await API.delete(`/follow/${viewingUserId}/request`);
-            followBtn.classList.remove('requested');
-            followBtn.innerHTML = `
-                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                    <circle cx="8.5" cy="7" r="4"></circle>
-                    <line x1="20" y1="8" x2="20" y2="14"></line>
-                    <line x1="23" y1="11" x2="17" y2="11"></line>
-                </svg>
-                Follow
-            `;
-            showToast('Request cancelled');
-            window.hasPendingFollowRequest = false;
-        } else {
-            const response = await followAPI.follow(viewingUserId);
-            if (response.requestPending) {
-                followBtn.classList.add('requested');
-                followBtn.innerHTML = `
-                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                        <circle cx="8.5" cy="7" r="4"></circle>
-                        <circle cx="20" cy="11" r="3"></circle>
-                    </svg>
-                    Requested
-                `;
-                showToast('Follow request sent');
-                window.hasPendingFollowRequest = true;
-            } else {
-                followBtn.classList.add('following');
-                followBtn.innerHTML = `
-                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                        <circle cx="8.5" cy="7" r="4"></circle>
-                        <polyline points="17 11 19 13 23 9"></polyline>
-                    </svg>
-                    Following
-                `;
-                showToast('Following');
-            }
-        }
-
-        // Update follower count
-        loadFollowCounts(viewingUserId);
-    } catch (error) {
-        console.error('Error toggling follow:', error);
-        showToast('Failed to update follow status');
     }
 }
 
