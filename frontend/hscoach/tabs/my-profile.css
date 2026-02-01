@@ -472,6 +472,7 @@
 .follow-list-role {
     color: rgba(254, 252, 251, 0.5);
     font-size: 0.85rem;
+    font-weight: 600;
     text-transform: none;
 }
 
