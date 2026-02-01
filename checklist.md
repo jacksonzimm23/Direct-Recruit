@@ -13,6 +13,8 @@ Currently working on:
 
 
 To do:
+- fix viewing other page 
+- profile navigation on followers/following modals
 - when a person follows a private account, unrequests, they cannot click follow again since the follow notification sent to the private account
 - transfer portal analysis page, personality test with spider map? 
 - team logos for offers tab 
