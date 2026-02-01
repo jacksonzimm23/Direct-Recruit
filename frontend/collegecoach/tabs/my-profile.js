@@ -2798,8 +2798,10 @@ async function openFollowListModal(type) {
                     let profileResponse;
                     if (role === 'player') {
                         profileResponse = await API.get(`/profile/player/${visitorUserId}`);
-                    } else {
+                    } else if (role === 'coach') {
                         profileResponse = await API.get(`/profile/coach/${visitorUserId}`);
+                    } else {
+                        profileResponse = await API.get(`/profile/other/${visitorUserId}`);
                     }
 
                     if (profileResponse.profile && profileResponse.profile.username) {
