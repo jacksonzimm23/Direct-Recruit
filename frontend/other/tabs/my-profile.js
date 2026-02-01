@@ -1808,7 +1808,7 @@ async function showFollowListModal(type) {
                                 folder = 'hsplayer';
                             }
                         }
-                        const currentFrom = new URLSearchParams(window.location.search).get('from') || 'feed';
+                        const currentFrom = new URLSearchParams(window.location.search).get('from') || 'profile';
                         window.location.href = `../../${folder}/tabs/my-profile.html?username=${profile.username}&from=${currentFrom}`;
                     }
                 } catch (error) {
@@ -3335,7 +3335,7 @@ function goToProfile(identifier, role, collegeDivision, userId, isTransfer) {
         ? `username=${identifier}`
         : `id=${userId}`;
 
-    const navFrom = new URLSearchParams(window.location.search).get('from') || 'feed';
+    const navFrom = new URLSearchParams(window.location.search).get('from') || 'profile';
     window.location.href = `../../${folder}/tabs/my-profile.html?${param}&from=${navFrom}`;
 }
 
