@@ -777,6 +777,9 @@ function displayProfile(profile, type, accessLevel = 'full', hasPendingRequest =
     // Update profile actions based on ownership
     updateProfileActions();
 
+    // Update active nav item based on context
+    updateActiveNavItem();
+
     // If this is a private profile view (restricted), add overlay on tabs section
     if (isRestrictedView) {
         addPrivateProfileOverlay();
@@ -1642,7 +1645,7 @@ function formatHeightForDisplay(height) {
 function getFollowListRoleInfo(user) {
     const role = user.role;
     let text = '';
-    let color = '#666'; // Default gray
+    let colorClass = '';
 
     if (role === 'player') {
         // Determine player type
@@ -1652,7 +1655,7 @@ function getFollowListRoleInfo(user) {
 
         if (isTransfer) {
             // Transfer Player: position • height • weight • YOE
-            color = '#b91c1c';
+            colorClass = 'role-transfer';
             const parts = [];
             if (user.player_position) parts.push(user.player_position);
             const heightStr = formatHeightForDisplay(user.player_height);
@@ -1662,7 +1665,7 @@ function getFollowListRoleInfo(user) {
             text = parts.join(' • ') || 'Transfer Player';
         } else if (hasCollegeDivision) {
             // College Player: position • school, state • division
-            color = '#1282a2';
+            colorClass = 'role-college-player';
             const parts = [];
             if (user.player_position) parts.push(user.player_position);
             const schoolParts = [];
@@ -1673,7 +1676,7 @@ function getFollowListRoleInfo(user) {
             text = parts.join(' • ') || 'College Player';
         } else {
             // HS Player: position • height • weight • class
-            color = '#1282a2';
+            colorClass = 'role-hs-player';
             const parts = [];
             if (user.player_position) parts.push(user.player_position);
             const heightStr = formatHeightForDisplay(user.player_height);
@@ -1688,7 +1691,7 @@ function getFollowListRoleInfo(user) {
 
         if (hasCollegeDivision) {
             // College Coach: team, state • division
-            color = '#666';
+            colorClass = 'role-college-coach';
             const parts = [];
             const teamParts = [];
             if (user.coach_team_name) teamParts.push(user.coach_team_name);
@@ -1698,7 +1701,7 @@ function getFollowListRoleInfo(user) {
             text = parts.join(' • ') || 'College Coach';
         } else {
             // HS Coach: team, state
-            color = '#666';
+            colorClass = 'role-hs-coach';
             const parts = [];
             if (user.coach_team_name) parts.push(user.coach_team_name);
             if (user.coach_state) parts.push(user.coach_state);
@@ -1706,13 +1709,13 @@ function getFollowListRoleInfo(user) {
         }
     } else if (role === 'other') {
         // Other: subheader
-        color = '#d4a017';
+        colorClass = 'role-other';
         text = user.other_subheader || 'Other';
     } else {
         text = role || 'User';
     }
 
-    return { text, color };
+    return { text, colorClass };
 }
 
 async function showFollowListModal(type) {
@@ -1727,18 +1730,21 @@ async function showFollowListModal(type) {
     modal.classList.add('active');
     document.body.style.overflow = 'hidden';
 
+    // Determine which user's followers/following to load
+    const userId = viewingUserId || currentUserId;
+
     try {
         let users = [];
         if (type === 'followers') {
-            const response = await followAPI.getFollowers(currentUserId);
+            const response = await followAPI.getFollowers(userId);
             users = response.followers || response || [];
         } else {
-            const response = await followAPI.getFollowing(currentUserId);
+            const response = await followAPI.getFollowing(userId);
             users = response.following || response || [];
         }
 
         if (users.length === 0) {
-            body.innerHTML = `<div class="follow-list-empty" style="text-align: center; padding: 2rem; color: #666;">No ${type} yet</div>`;
+            body.innerHTML = `<div class="follow-list-empty">No ${type} yet</div>`;
             return;
         }
 
@@ -1746,19 +1752,19 @@ async function showFollowListModal(type) {
         body.innerHTML = users.map(user => {
             const roleInfo = getFollowListRoleInfo(user);
             return `
-            <div class="follow-list-item" data-user-id="${user.id}" data-role="${user.role}" style="display: flex; align-items: center; padding: 12px; cursor: pointer; border-bottom: 1px solid #eee;">
-                <div class="follow-list-avatar" style="width: 48px; height: 48px; border-radius: 50%; overflow: hidden; margin-right: 12px; background: #f0f0f0; display: flex; align-items: center; justify-content: center;">
+            <div class="follow-list-item" data-user-id="${user.id}" data-role="${user.role}">
+                <div class="follow-list-avatar">
                     ${user.profile_image_url
-                        ? `<img src="${user.profile_image_url}" alt="${user.first_name}" style="width: 100%; height: 100%; object-fit: cover;">`
-                        : `<svg viewBox="0 0 24 24" fill="#999" width="24" height="24">
+                        ? `<img src="${user.profile_image_url}" alt="${user.first_name}">`
+                        : `<svg viewBox="0 0 24 24" fill="currentColor">
                             <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
                             <circle cx="12" cy="7" r="4"></circle>
                            </svg>`
                     }
                 </div>
                 <div class="follow-list-info">
-                    <div class="follow-list-name" style="font-weight: 600; color: #1a1a2e;">${user.first_name} ${user.last_name}</div>
-                    <div class="follow-list-role" style="font-size: 0.85rem; color: ${roleInfo.color};">${roleInfo.text}</div>
+                    <div class="follow-list-name">${user.first_name} ${user.last_name}</div>
+                    <div class="follow-list-role ${roleInfo.colorClass}">${roleInfo.text}</div>
                 </div>
             </div>
         `}).join('');
@@ -1812,7 +1818,45 @@ async function showFollowListModal(type) {
 
     } catch (error) {
         console.error('Error loading follow list:', error);
-        body.innerHTML = '<div class="follow-list-empty" style="text-align: center; padding: 2rem; color: #666;">Failed to load</div>';
+        body.innerHTML = '<div class="follow-list-empty">Failed to load</div>';
+    }
+}
+
+function updateActiveNavItem() {
+    const feedNavItem = document.getElementById('feedNavItem');
+    const profileNavItem = document.getElementById('profileNavItem');
+    const messagesNavItem = document.getElementById('messagesNavItem');
+    const discoverNavItem = document.querySelector('.nav-item[href*="discover"]');
+    const notificationsNavItem = document.querySelector('.nav-item[href*="notifications"]');
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const fromPage = urlParams.get('from');
+    const hasUsername = urlParams.get('username');
+
+    if (feedNavItem && profileNavItem) {
+        // Remove active from all first
+        feedNavItem.classList.remove('active');
+        profileNavItem.classList.remove('active');
+        if (messagesNavItem) messagesNavItem.classList.remove('active');
+        if (discoverNavItem) discoverNavItem.classList.remove('active');
+        if (notificationsNavItem) notificationsNavItem.classList.remove('active');
+
+        if (!hasUsername || isOwnProfile) {
+            // Viewing own profile - highlight My Profile
+            profileNavItem.classList.add('active');
+        } else if (fromPage === 'messages' && messagesNavItem) {
+            messagesNavItem.classList.add('active');
+        } else if (fromPage === 'discover' && discoverNavItem) {
+            discoverNavItem.classList.add('active');
+        } else if (fromPage === 'notifications' && notificationsNavItem) {
+            notificationsNavItem.classList.add('active');
+        } else if (fromPage === 'profile' && profileNavItem) {
+            profileNavItem.classList.add('active');
+        } else if (fromPage === 'feed') {
+            feedNavItem.classList.add('active');
+        } else {
+            feedNavItem.classList.add('active');
+        }
     }
 }
 
