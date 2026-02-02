@@ -331,6 +331,11 @@ body {
     animation: fadeInUp 1s ease-out 0.8s both;
 }
 
+/* Scroll indicator - hidden on desktop, shown on mobile */
+.scroll-indicator {
+    display: none;
+}
+
 /* Stats Section */
 .stats-container {
     display: flex;
@@ -2661,7 +2666,10 @@ body {
 
     .hero {
         padding: 5.5rem 1.25rem 2.5rem;
-        min-height: auto;
+        min-height: 100vh;
+        min-height: 100dvh;
+        align-items: flex-start;
+        padding-top: 18vh;
     }
 
     .hero-badge {
@@ -2694,6 +2702,33 @@ body {
         justify-content: center;
         padding: 0.9rem 2rem;
         font-size: 0.95rem;
+    }
+
+    .scroll-indicator {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.4rem;
+        position: absolute;
+        bottom: 1.5rem;
+        left: 0;
+        right: 0;
+        z-index: 3;
+        cursor: pointer;
+        color: rgba(255, 255, 255, 0.6);
+        animation: bounceDown 2s ease-in-out infinite;
+    }
+
+    .scroll-indicator-text {
+        font-size: 0.7rem;
+        font-weight: 500;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+    }
+
+    @keyframes bounceDown {
+        0%, 100% { transform: translateY(0); opacity: 0.6; }
+        50% { transform: translateY(8px); opacity: 1; }
     }
 
     .stats-container {
@@ -3003,7 +3038,12 @@ body {
     }
 
     .hero {
-        padding: 5rem 1rem 2rem;
+        padding-top: 16vh;
+        padding-left: 1rem;
+        padding-right: 1rem;
+        padding-bottom: 2rem;
+        min-height: 100vh;
+        min-height: 100dvh;
     }
 
     .hero-badge {
