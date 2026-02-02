@@ -773,23 +773,242 @@
 
 @media (max-width: 768px) {
     .about-hero {
-        padding: 7rem 5% 3rem;
+        padding: 6rem 5% 2.5rem;
+        min-height: auto;
+    }
+
+    .about-hero-title {
+        font-size: clamp(1.8rem, 7vw, 2.8rem);
+        margin-bottom: 1rem;
+    }
+
+    .about-hero-subtitle {
+        font-size: clamp(0.95rem, 2.5vw, 1.15rem);
+    }
+
+    /* Section headers */
+    .section-header {
+        margin-bottom: 2.5rem;
+    }
+
+    .section-header h2 {
+        font-size: clamp(1.6rem, 6vw, 2.2rem);
+    }
+
+    .section-header p {
+        font-size: 0.95rem;
+    }
+
+    /* Problem section */
+    .problem-section {
+        padding: 3.5rem 0;
     }
 
     .problem-grid {
         grid-template-columns: 1fr;
+        gap: 1.25rem;
+    }
+
+    .problem-card {
+        padding: 1.75rem;
+    }
+
+    .problem-card h3 {
+        font-size: 1.25rem;
+    }
+
+    .problem-card p {
+        font-size: 0.9rem;
+    }
+
+    /* Solution section */
+    .solution-section {
+        padding: 3.5rem 0;
+    }
+
+    .solution-content {
+        gap: 3rem;
+    }
+
+    .feature-text h3 {
+        font-size: 1.5rem;
+        margin-bottom: 1rem;
+    }
+
+    .feature-text p {
+        font-size: 0.95rem;
+        margin-bottom: 1rem;
+    }
+
+    .feature-list li {
+        font-size: 0.9rem;
+        padding: 0.5rem 0;
+        padding-left: 1.5rem;
+    }
+
+    .feature-list li::before {
+        font-size: 1rem;
+    }
+
+    /* Highschool section */
+    .highschool-section {
+        padding: 3.5rem 0;
+    }
+
+    .highschool-info h3 {
+        font-size: 1.5rem;
+        margin-bottom: 1rem;
+    }
+
+    .highschool-info > p {
+        font-size: 0.95rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .info-card {
+        padding: 1.25rem;
+    }
+
+    .card-number {
+        font-size: 2rem;
+    }
+
+    .info-card h4 {
+        font-size: 1.1rem;
+    }
+
+    .info-card p {
+        font-size: 0.88rem;
+    }
+
+    /* Transfer portal section */
+    .transfer-portal-section {
+        padding: 4rem 0;
+    }
+
+    .transfer-portal-header {
+        margin-bottom: 2.5rem;
+    }
+
+    .transfer-portal-header h2 {
+        font-size: clamp(1.8rem, 6vw, 2.5rem);
+    }
+
+    .portal-subtitle {
+        font-size: 0.95rem;
+    }
+
+    .portal-icon {
+        width: 70px;
+        height: 70px;
+    }
+
+    .portal-info h3 {
+        font-size: 1.5rem;
+        margin-bottom: 1rem;
+    }
+
+    .portal-info > p {
+        font-size: 0.95rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .portal-steps {
+        grid-template-columns: 1fr;
+        gap: 1.25rem;
+    }
+
+    .portal-step {
+        padding: 1.5rem;
+    }
+
+    .portal-benefits {
+        padding: 1.5rem;
+    }
+
+    .portal-benefits h4 {
+        font-size: 1.25rem;
+    }
+
+    .portal-benefits li {
+        font-size: 0.9rem;
+        padding-left: 1.5rem;
+    }
+
+    /* Coaches section */
+    .coaches-section {
+        padding: 3.5rem 0;
     }
 
     .coaches-grid {
         grid-template-columns: 1fr;
+        gap: 1.25rem;
     }
 
+    .coach-feature-card {
+        padding: 1.75rem;
+    }
+
+    .coach-feature-card h3 {
+        font-size: 1.2rem;
+    }
+
+    .coach-feature-card p {
+        font-size: 0.88rem;
+    }
+
+    /* Stats section */
     .stats-grid {
         grid-template-columns: repeat(2, 1fr);
+        gap: 1.25rem;
+    }
+
+    .stat-card {
+        padding: 1.75rem;
+    }
+
+    /* Mission section */
+    .mission-section {
+        padding: 3.5rem 0;
+    }
+
+    .mission-content h2 {
+        font-size: clamp(1.8rem, 6vw, 2.5rem);
+    }
+
+    .mission-text {
+        font-size: 1rem;
     }
 
     .mission-values {
         grid-template-columns: 1fr;
+        gap: 1.25rem;
+    }
+
+    .value-card {
+        padding: 1.5rem;
+    }
+
+    .value-card h4 {
+        font-size: 1.1rem;
+    }
+
+    .value-card p {
+        font-size: 0.88rem;
+    }
+
+    /* CTA section */
+    .cta-section {
+        padding: 4rem 0;
+    }
+
+    .cta-content h2 {
+        font-size: clamp(1.8rem, 6vw, 2.5rem);
+    }
+
+    .cta-content p {
+        font-size: 1rem;
+        margin-bottom: 2rem;
     }
 
     .cta-buttons {
@@ -800,49 +1019,259 @@
     .btn-primary-large,
     .btn-secondary-large {
         width: 100%;
-        max-width: 400px;
+        max-width: 320px;
+        padding: 1rem 2rem;
+        font-size: 1rem;
+    }
+
+    /* Footer */
+    .footer-content {
+        grid-template-columns: 1fr;
+        gap: 2rem;
     }
 
     .footer-links {
-        grid-template-columns: 1fr;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
     }
 
     .feature-image-placeholder {
-        height: 250px;
+        height: 220px;
+    }
+
+    /* Mockup discover filters on about page */
+    .mockup-discover-filter-row {
+        flex-wrap: wrap;
+        gap: 0.35rem;
+    }
+
+    .mockup-discover-select {
+        min-width: 0;
+        flex: 1 1 calc(50% - 0.35rem);
+    }
+
+    .mockup-discover-btn-row {
+        flex-wrap: wrap;
     }
 }
 
 @media (max-width: 480px) {
     .about-hero {
-        padding: 6rem 5% 2rem;
+        padding: 5rem 4% 2rem;
+    }
+
+    .about-hero-title {
+        font-size: clamp(1.5rem, 8vw, 2.2rem);
+    }
+
+    .about-hero-subtitle {
+        font-size: 0.9rem;
     }
 
     .container {
-        padding: 0 1rem;
+        padding: 0 0.75rem;
+    }
+
+    /* Section headers tighter */
+    .section-header {
+        margin-bottom: 2rem;
+    }
+
+    .section-header h2 {
+        font-size: clamp(1.4rem, 7vw, 1.8rem);
+    }
+
+    .section-header p {
+        font-size: 0.88rem;
+    }
+
+    /* Section padding */
+    .problem-section,
+    .solution-section,
+    .highschool-section,
+    .coaches-section,
+    .stats-section,
+    .mission-section {
+        padding: 2.5rem 0;
+    }
+
+    .transfer-portal-section {
+        padding: 3rem 0;
     }
 
     .problem-card,
     .coach-feature-card,
     .portal-step {
-        padding: 1.5rem;
+        padding: 1.25rem;
+    }
+
+    .problem-card h3,
+    .coach-feature-card h3 {
+        font-size: 1.1rem;
+    }
+
+    .problem-card p,
+    .coach-feature-card p {
+        font-size: 0.85rem;
     }
 
     .portal-logo {
         flex-direction: column;
-        gap: 1rem;
+        gap: 0.75rem;
     }
 
     .portal-icon {
-        width: 70px;
-        height: 70px;
+        width: 60px;
+        height: 60px;
+    }
+
+    .transfer-portal-header h2 {
+        font-size: clamp(1.5rem, 7vw, 2rem);
+    }
+
+    .portal-subtitle {
+        font-size: 0.88rem;
+    }
+
+    .feature-text h3 {
+        font-size: 1.3rem;
+    }
+
+    .feature-text p {
+        font-size: 0.88rem;
+    }
+
+    .feature-list li {
+        font-size: 0.85rem;
+        padding-left: 1.25rem;
+    }
+
+    .highschool-info h3,
+    .portal-info h3 {
+        font-size: 1.3rem;
+    }
+
+    .highschool-info > p,
+    .portal-info > p {
+        font-size: 0.88rem;
+    }
+
+    .info-card {
+        padding: 1rem;
+    }
+
+    .card-number {
+        font-size: 1.75rem;
+    }
+
+    .info-card h4 {
+        font-size: 1rem;
+    }
+
+    .info-card p {
+        font-size: 0.82rem;
+    }
+
+    .portal-benefits {
+        padding: 1.25rem;
+    }
+
+    .portal-benefits h4 {
+        font-size: 1.1rem;
+    }
+
+    .portal-benefits li {
+        font-size: 0.85rem;
     }
 
     .stats-grid {
         grid-template-columns: 1fr;
+        gap: 1rem;
     }
 
     .stat-card {
-        padding: 1.5rem;
+        padding: 1.25rem;
+    }
+
+    .mission-content h2 {
+        font-size: clamp(1.5rem, 7vw, 2rem);
+    }
+
+    .mission-text {
+        font-size: 0.92rem;
+    }
+
+    .value-card {
+        padding: 1.25rem;
+    }
+
+    .value-card h4 {
+        font-size: 1rem;
+    }
+
+    .value-card p {
+        font-size: 0.82rem;
+    }
+
+    /* CTA tighter */
+    .cta-section {
+        padding: 3rem 0;
+    }
+
+    .cta-content h2 {
+        font-size: clamp(1.5rem, 7vw, 2rem);
+    }
+
+    .cta-content p {
+        font-size: 0.9rem;
+    }
+
+    .btn-primary-large,
+    .btn-secondary-large {
+        padding: 0.9rem 1.75rem;
+        font-size: 0.95rem;
+    }
+
+    /* Footer */
+    .footer {
+        padding: 2.5rem 0 1.25rem;
+    }
+
+    .footer-links {
+        grid-template-columns: 1fr;
+        gap: 1.25rem;
+    }
+
+    .footer-column a {
+        font-size: 0.85rem;
+    }
+
+    .feature-image-placeholder {
+        height: 180px;
+    }
+
+    /* Discover filter panels - about page specific */
+    .mockup-discover-filter-row {
+        gap: 0.25rem;
+    }
+
+    .mockup-discover-select {
+        flex: 1 1 100%;
+    }
+
+    .mockup-discover-slider-label {
+        font-size: 0.6rem;
+    }
+
+    .mockup-discover-btn-row {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.35rem;
+    }
+
+    .mockup-discover-apply,
+    .mockup-discover-reset {
+        text-align: center;
     }
 }
 

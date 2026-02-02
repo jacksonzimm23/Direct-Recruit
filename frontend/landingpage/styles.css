@@ -2626,67 +2626,209 @@ body {
     .nav-links {
         display: none;
     }
-    
-    .nav-buttons {
+
+    .nav-container {
+        padding: 0.9rem 1.25rem;
+    }
+
+    .logo {
         gap: 0.5rem;
     }
-    
+
+    .logo-icon {
+        width: 42px;
+        height: 42px;
+    }
+
+    .logo-title {
+        font-size: 1.05rem;
+    }
+
+    .logo-subtitle {
+        font-size: 0.55rem;
+    }
+
+    .nav-buttons {
+        gap: 0.4rem;
+        flex-shrink: 0;
+    }
+
     .btn-primary, .btn-secondary {
-        padding: 0.6rem 1.2rem;
-        font-size: 0.85rem;
+        padding: 0.45rem 0.85rem;
+        font-size: 0.75rem;
+        white-space: nowrap;
     }
-    
+
     .hero {
-        padding: 6rem 1.5rem 3rem;
+        padding: 5.5rem 1.25rem 2.5rem;
+        min-height: auto;
     }
-    
+
+    .hero-badge {
+        font-size: 0.72rem;
+        padding: 0.4rem 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .hero-title {
+        font-size: clamp(2rem, 8vw, 3rem);
+        margin-bottom: 0.75rem;
+    }
+
+    .hero-description {
+        font-size: 0.95rem;
+        margin: 0 auto 1.5rem;
+        line-height: 1.5;
+    }
+
     .hero-buttons {
         flex-direction: column;
         align-items: center;
+        margin-bottom: 2rem;
+        gap: 1rem;
     }
-    
+
     .btn-cta, .btn-secondary-large {
         width: 100%;
         max-width: 300px;
         justify-content: center;
+        padding: 0.9rem 2rem;
+        font-size: 0.95rem;
     }
-    
+
     .stats-container {
         gap: 2rem;
     }
 
+    /* Sections padding */
+    .features-section,
+    .differentiators-section,
+    .how-it-works-section,
+    .why-not-social-section {
+        padding: 4rem 1.25rem;
+    }
+
+    .section-title {
+        font-size: clamp(1.6rem, 6vw, 2.2rem);
+        margin-bottom: 0.75rem;
+    }
+
+    .section-subtitle {
+        font-size: 0.95rem;
+        margin-bottom: 2.5rem;
+    }
+
     .features-grid {
         grid-template-columns: 1fr;
+        gap: 1.25rem;
     }
 
     .audience-grid {
         grid-template-columns: 1fr;
     }
 
+    .feature-card {
+        padding: 1.75rem 1.5rem;
+    }
+
+    .feature-card h3 {
+        font-size: 1.25rem;
+    }
+
+    .feature-card p,
+    .audience-benefits li {
+        font-size: 0.9rem;
+    }
+
     .differentiators-grid {
         grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+
+    .differentiator-text {
+        padding: 1.25rem 1.5rem;
+    }
+
+    .differentiator-text h3 {
+        font-size: 1.15rem;
+    }
+
+    .differentiator-text p {
+        font-size: 0.88rem;
+    }
+
+    /* Mockup containers - tighter on mobile */
+    .mockup-container {
+        padding: 0.85rem;
+        font-size: 0.65rem;
     }
 
     .comparison-grid {
         grid-template-columns: 1fr;
+        gap: 1.25rem;
+    }
+
+    .comparison-column {
+        padding: 1.75rem 1.5rem;
+    }
+
+    .comparison-column h3 {
+        font-size: 1.2rem;
+    }
+
+    .comparison-column li {
+        font-size: 0.88rem;
+        padding: 0.6rem 0;
+        padding-left: 1.5rem;
     }
 
     .steps-container {
         flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    .step-card {
+        min-width: unset;
+        max-width: 100%;
+        padding: 2rem 1.5rem;
+    }
+
+    .step-card h3 {
+        font-size: 1.2rem;
+    }
+
+    .step-card p {
+        font-size: 0.9rem;
     }
 
     .step-arrow {
         transform: rotate(90deg);
-        margin: 1rem 0;
+        margin: 0.5rem 0;
+        font-size: 2rem;
     }
 
     .final-cta-section {
-        padding: 5rem 2rem;
+        padding: 4rem 1.5rem;
+    }
+
+    .final-cta-content h2 {
+        font-size: clamp(1.8rem, 6vw, 2.5rem);
+    }
+
+    .final-cta-content p {
+        font-size: 1rem;
+        margin-bottom: 2rem;
     }
 
     .btn-cta-large {
         width: 100%;
         max-width: 320px;
+        padding: 1rem 2rem;
+        font-size: 1rem;
+    }
+
+    .footer {
+        padding: 3rem 1.25rem 1.5rem;
     }
 
     .footer-content {
@@ -2699,11 +2841,13 @@ body {
     }
 
     .footer-column {
-        min-width: 150px;
+        min-width: 120px;
     }
 
+    /* Mockup grids */
     .mockup-portal-grid {
         grid-template-columns: repeat(2, 1fr);
+        gap: 0.5rem;
     }
 
     .mockup-about-portal-wrap {
@@ -2725,30 +2869,70 @@ body {
     .mockup-real-grid-2col {
         grid-template-columns: 1fr;
     }
-}
 
-@media (max-width: 480px) {
-    .logo-title {
-        font-size: 1rem;
+    /* Mockup feed post mobile tweaks */
+    .mockup-post {
+        padding: 0.6rem;
     }
-    
-    .logo-subtitle {
+
+    .mockup-post-content {
+        font-size: 0.7rem;
+        line-height: 1.4;
+    }
+
+    .mockup-post-actions {
+        gap: 0.4rem;
+    }
+
+    .mockup-action {
+        font-size: 0.6rem;
+    }
+
+    /* Transfer portal cards - shrink text */
+    .mockup-tp-card {
+        padding: 0.6rem;
+    }
+
+    .mockup-tp-name {
+        font-size: 0.72rem;
+    }
+
+    .mockup-tp-pos {
+        font-size: 0.6rem;
+    }
+
+    .mockup-tp-stat-val {
+        font-size: 0.7rem;
+    }
+
+    .mockup-tp-stat-lbl {
+        font-size: 0.5rem;
+    }
+
+    .mockup-tp-prev {
+        font-size: 0.58rem;
+    }
+
+    .mockup-tp-btn {
+        font-size: 0.6rem;
+        padding: 0.3rem;
+    }
+
+    /* Recruiting board mobile */
+    .mockup-board-columns {
+        gap: 0.5rem;
+    }
+
+    .mockup-recruit-name {
+        font-size: 0.65rem;
+    }
+
+    .mockup-recruit-detail,
+    .mockup-recruit-school {
         font-size: 0.55rem;
     }
-    
-    .logo-icon {
-        width: 40px;
-        height: 40px;
-    }
 
-    .feature-card, .step-card {
-        padding: 2rem 1.5rem;
-    }
-
-    .feature-icon, .step-icon {
-        font-size: 2.5rem;
-    }
-
+    /* Messages mockup */
     .mockup-msg-sidebar {
         display: none;
     }
@@ -2757,8 +2941,180 @@ body {
         width: 100%;
     }
 
-    .mockup-board-columns {
+    .mockup-bubble {
+        font-size: 0.68rem;
+        padding: 0.5rem 0.65rem;
+        max-width: 85%;
+    }
+
+    /* DB filters row */
+    .mockup-db-filters {
+        flex-wrap: wrap;
+        gap: 0.3rem;
+    }
+
+    .mockup-db-filter {
+        font-size: 0.6rem;
+        padding: 0.25rem 0.45rem;
+    }
+
+    .mockup-db-btn-apply,
+    .mockup-db-btn-reset {
+        font-size: 0.6rem;
+        padding: 0.25rem 0.5rem;
+    }
+
+    .mockup-db-results-count {
+        font-size: 0.6rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .nav-container {
+        padding: 0.7rem 0.75rem;
+    }
+
+    .logo {
+        gap: 0.4rem;
+    }
+
+    .logo-title {
+        font-size: 0.9rem;
+    }
+
+    .logo-subtitle {
+        font-size: 0.45rem;
+    }
+
+    .logo-icon {
+        width: 32px;
+        height: 32px;
+    }
+
+    /* Hide Get Started on small phones, keep Sign In */
+    .nav-buttons a:has(.btn-primary),
+    .nav-buttons .btn-primary {
+        display: none;
+    }
+
+    .btn-secondary {
+        padding: 0.5rem 1rem;
+        font-size: 0.78rem;
+    }
+
+    .hero {
+        padding: 5rem 1rem 2rem;
+    }
+
+    .hero-badge {
+        font-size: 0.65rem;
+        padding: 0.35rem 0.85rem;
+    }
+
+    .hero-title {
+        font-size: clamp(1.75rem, 9vw, 2.5rem);
+    }
+
+    .hero-description {
+        font-size: 0.88rem;
+        line-height: 1.5;
+    }
+
+    .btn-cta, .btn-secondary-large {
+        padding: 0.85rem 1.75rem;
+        font-size: 0.9rem;
+    }
+
+    /* Sections tighter */
+    .features-section,
+    .differentiators-section,
+    .how-it-works-section,
+    .why-not-social-section {
+        padding: 3rem 1rem;
+    }
+
+    .section-title {
+        font-size: clamp(1.4rem, 7vw, 1.8rem);
+    }
+
+    .section-subtitle {
+        font-size: 0.88rem;
+        margin-bottom: 2rem;
+    }
+
+    .feature-card, .step-card {
+        padding: 1.5rem 1.25rem;
+    }
+
+    .feature-card h3 {
+        font-size: 1.15rem;
+    }
+
+    .feature-icon, .step-icon {
+        font-size: 2.5rem;
+    }
+
+    .step-card h3 {
+        font-size: 1.1rem;
+    }
+
+    .step-number {
+        width: 38px;
+        height: 38px;
+        font-size: 0.95rem;
+        top: -12px;
+    }
+
+    .comparison-column {
+        padding: 1.5rem 1.25rem;
+    }
+
+    .comparison-column h3 {
+        font-size: 1.1rem;
+    }
+
+    .comparison-column li {
+        font-size: 0.82rem;
+    }
+
+    .final-cta-section {
+        padding: 3rem 1rem;
+    }
+
+    .final-cta-content h2 {
+        font-size: clamp(1.5rem, 7vw, 2rem);
+    }
+
+    .final-cta-content p {
+        font-size: 0.9rem;
+    }
+
+    .btn-cta-large {
+        padding: 0.9rem 1.75rem;
+        font-size: 0.95rem;
+    }
+
+    .footer {
+        padding: 2.5rem 1rem 1.25rem;
+    }
+
+    .footer-brand p {
+        font-size: 0.85rem;
+    }
+
+    .footer-links {
         flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    .footer-column a {
+        font-size: 0.85rem;
+    }
+
+    /* Mockup containers even tighter */
+    .mockup-container {
+        padding: 0.65rem;
+        font-size: 0.6rem;
     }
 
     .mockup-post-content,
@@ -2767,12 +3123,75 @@ body {
         padding-left: 0;
     }
 
+    .mockup-post-content {
+        font-size: 0.62rem;
+    }
+
+    .mockup-post-stats span {
+        font-size: 0.55rem;
+    }
+
+    .mockup-action {
+        font-size: 0.55rem;
+        gap: 0.15rem;
+    }
+
+    .mockup-action svg {
+        width: 10px;
+        height: 10px;
+    }
+
+    /* Portal grid - single column on small phones */
     .mockup-portal-grid {
-        grid-template-columns: repeat(2, 1fr);
+        grid-template-columns: 1fr 1fr;
+        gap: 0.35rem;
     }
 
     .mockup-portal-grid-2col {
         grid-template-columns: 1fr;
+    }
+
+    .mockup-tp-card {
+        padding: 0.45rem;
+    }
+
+    .mockup-tp-name {
+        font-size: 0.65rem;
+    }
+
+    .mockup-tp-pos {
+        font-size: 0.55rem;
+    }
+
+    .mockup-tp-stat-val {
+        font-size: 0.6rem;
+    }
+
+    .mockup-tp-stat-lbl {
+        font-size: 0.45rem;
+    }
+
+    .mockup-tp-prev {
+        font-size: 0.52rem;
+    }
+
+    .mockup-tp-season-stats {
+        display: none;
+    }
+
+    .mockup-tp-btn {
+        font-size: 0.55rem;
+        padding: 0.25rem;
+    }
+
+    .mockup-tp-badge {
+        font-size: 0.5rem;
+        padding: 0.15rem 0.35rem;
+    }
+
+    .mockup-tp-avatar svg {
+        width: 16px;
+        height: 16px;
     }
 
     .mockup-about-portal-wrap {
@@ -2789,15 +3208,176 @@ body {
     }
 
     .mockup-db-filters {
-        gap: 0.25rem;
+        gap: 0.2rem;
     }
 
+    .mockup-db-filter {
+        font-size: 0.55rem;
+        padding: 0.2rem 0.35rem;
+    }
+
+    .mockup-board-columns {
+        flex-direction: column;
+    }
+
+    .mockup-col-header {
+        font-size: 0.65rem;
+    }
+
+    .mockup-recruit-name {
+        font-size: 0.6rem;
+    }
+
+    .mockup-recruit-detail,
+    .mockup-recruit-school {
+        font-size: 0.5rem;
+    }
+
+    .mockup-rank {
+        font-size: 0.6rem;
+        width: 16px;
+        height: 16px;
+    }
+
+    .mockup-bubble {
+        font-size: 0.6rem;
+        padding: 0.4rem 0.5rem;
+    }
+
+    .mockup-msg-input {
+        font-size: 0.6rem;
+    }
+
+    /* Real card mockups at 480px */
     .mockup-real-grid-3col {
         grid-template-columns: 1fr;
     }
 
-    .footer-links {
-        flex-direction: column;
-        gap: 2rem;
+    .mockup-real-grid-2col {
+        grid-template-columns: 1fr;
+    }
+
+    .mockup-real-card,
+    .mockup-real-coach-card {
+        padding: 1rem;
+    }
+
+    .mockup-real-avatar,
+    .mockup-real-coach-avatar {
+        width: 55px;
+        height: 55px;
+    }
+
+    .mockup-real-avatar svg,
+    .mockup-real-coach-avatar svg {
+        width: 28px;
+        height: 28px;
+    }
+
+    .mockup-real-name,
+    .mockup-real-coach-name {
+        font-size: 1rem;
+    }
+
+    .mockup-real-pos-badge {
+        font-size: 0.7rem;
+        padding: 0.25rem 0.6rem;
+    }
+
+    .mockup-real-stats {
+        gap: 0.5rem;
+        padding: 0.65rem;
+    }
+
+    .mockup-real-stat-value {
+        font-size: 0.9rem;
+    }
+
+    .mockup-real-stat-label {
+        font-size: 0.6rem;
+    }
+
+    .mockup-real-detail {
+        font-size: 0.78rem;
+    }
+
+    .mockup-real-btn {
+        font-size: 0.85rem;
+        padding: 0.7rem;
+    }
+
+    .mockup-real-header-badge,
+    .mockup-real-portal-badge,
+    .mockup-real-coach-badge {
+        font-size: 0.6rem;
+        padding: 0.3rem 0.6rem;
+    }
+
+    .mockup-real-coach-position {
+        font-size: 0.82rem;
+    }
+
+    .mockup-real-coach-school {
+        padding: 0.65rem;
+    }
+
+    .mockup-real-school-name {
+        font-size: 0.85rem;
+    }
+
+    .mockup-real-school-div {
+        font-size: 0.75rem;
+    }
+
+    .mockup-real-pos-tag {
+        font-size: 0.65rem;
+        padding: 0.25rem 0.5rem;
+    }
+
+    /* Standalone card max-width for mobile */
+    .mockup-container-about > .mockup-real-card {
+        max-width: 280px;
+    }
+
+    /* Transfer real cards - tighten stats sections */
+    .mockup-real-highlights span {
+        font-size: 0.65rem;
+        padding: 0.3rem 0.5rem;
+    }
+
+    .mockup-real-stats-title {
+        font-size: 0.6rem;
+    }
+
+    .mockup-real-gpa-row {
+        font-size: 0.75rem;
+        padding: 0.3rem 0.75rem;
+    }
+
+    /* Discover filter panels on about page */
+    .mockup-discover-select {
+        padding: 0.2rem 0.35rem;
+    }
+
+    .mockup-discover-select-label {
+        font-size: 0.55rem;
+    }
+
+    .mockup-discover-select-val {
+        font-size: 0.6rem;
+    }
+
+    .mockup-discover-apply,
+    .mockup-discover-reset {
+        font-size: 0.6rem;
+        padding: 0.25rem 0.5rem;
+    }
+
+    .mockup-discover-results {
+        font-size: 0.55rem;
+    }
+
+    .mockup-discover-slider-label {
+        font-size: 0.55rem;
     }
 }
