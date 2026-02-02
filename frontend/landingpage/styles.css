@@ -557,6 +557,1949 @@ body {
     line-height: 1.6;
 }
 
+/* Audience Cards */
+.audience-grid {
+    grid-template-columns: repeat(3, 1fr);
+}
+
+.audience-card {
+    display: flex;
+    flex-direction: column;
+}
+
+.audience-card .feature-icon {
+    color: var(--cerulean);
+    margin-bottom: 1rem;
+}
+
+.audience-card .feature-icon svg {
+    stroke: var(--cerulean);
+}
+
+.audience-benefits {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 1.5rem 0;
+    flex: 1;
+}
+
+.audience-benefits li {
+    color: rgba(254, 252, 251, 0.75);
+    line-height: 1.5;
+    font-size: 0.95rem;
+    padding: 0.4rem 0;
+    padding-left: 1.25rem;
+    position: relative;
+}
+
+.audience-benefits li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0.7rem;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--cerulean);
+}
+
+.audience-cta {
+    color: var(--accent-orange);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.95rem;
+    transition: all 0.3s ease;
+    margin-top: auto;
+}
+
+.audience-cta:hover {
+    color: #ff7d4d;
+    transform: translateX(4px);
+    display: inline-block;
+}
+
+/* Differentiators Section */
+.differentiators-section {
+    padding: 6rem 2rem;
+    background: linear-gradient(180deg, var(--penn-blue) 0%, var(--indigo-dye) 100%);
+}
+
+.differentiators-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 2rem;
+}
+
+.differentiator-card {
+    background: rgba(254, 252, 251, 0.05);
+    border: 1px solid rgba(18, 130, 162, 0.2);
+    border-radius: 16px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.differentiator-card:hover {
+    border-color: var(--cerulean);
+    transform: translateY(-4px);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.3);
+}
+
+.differentiator-image-placeholder {
+    background: rgba(3, 64, 120, 0.3);
+    border-bottom: 1px solid rgba(18, 130, 162, 0.15);
+    padding: 3rem 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 180px;
+}
+
+.placeholder-label {
+    color: rgba(254, 252, 251, 0.4);
+    font-size: 0.9rem;
+    font-weight: 500;
+    font-style: italic;
+}
+
+.differentiator-text {
+    padding: 1.75rem 2rem;
+}
+
+.differentiator-text h3 {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--white);
+    margin-bottom: 0.75rem;
+}
+
+.differentiator-text p {
+    color: rgba(254, 252, 251, 0.75);
+    line-height: 1.6;
+    font-size: 0.95rem;
+}
+
+/* Why Not Social Media Section */
+.why-not-social-section {
+    padding: 6rem 2rem;
+    background: linear-gradient(180deg, var(--oxford-blue) 0%, var(--penn-blue) 100%);
+}
+
+.comparison-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.comparison-column {
+    background: rgba(254, 252, 251, 0.05);
+    border-radius: 16px;
+    padding: 2.5rem;
+}
+
+.comparison-column h3 {
+    font-size: 1.4rem;
+    font-weight: 700;
+    margin-bottom: 1.5rem;
+    text-align: center;
+}
+
+.social-media-col {
+    border: 1px solid rgba(230, 57, 70, 0.3);
+}
+
+.social-media-col h3 {
+    color: rgba(254, 252, 251, 0.6);
+}
+
+.direct-recruit-col {
+    border: 1px solid rgba(18, 130, 162, 0.4);
+}
+
+.direct-recruit-col h3 {
+    color: var(--cerulean);
+}
+
+.comparison-column ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.comparison-column li {
+    padding: 0.75rem 0;
+    padding-left: 1.75rem;
+    position: relative;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    color: rgba(254, 252, 251, 0.8);
+    border-bottom: 1px solid rgba(254, 252, 251, 0.05);
+}
+
+.comparison-column li:last-child {
+    border-bottom: none;
+}
+
+.comparison-column li.con::before {
+    content: '\2717';
+    position: absolute;
+    left: 0;
+    color: var(--accent-red);
+    font-weight: 700;
+}
+
+.comparison-column li.pro::before {
+    content: '\2713';
+    position: absolute;
+    left: 0;
+    color: #22c55e;
+    font-weight: 700;
+}
+
+/* Step icon SVG sizing */
+.step-icon svg {
+    stroke: var(--cerulean);
+}
+
+/* ========================================
+   MOCKUP UI COMPONENTS
+   ======================================== */
+
+.mockup-container {
+    background: rgba(10, 17, 40, 0.6);
+    border-bottom: 1px solid rgba(18, 130, 162, 0.15);
+    padding: 1.25rem;
+    overflow: hidden;
+    font-size: 0.75rem;
+}
+
+.mockup-container-about {
+    border-bottom: none;
+    border-radius: 12px;
+    border: 1px solid rgba(18, 130, 162, 0.2);
+}
+
+/* --- Feed Mockup --- */
+.mockup-feed {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.mockup-post {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(18, 130, 162, 0.2);
+    border-radius: 10px;
+    padding: 0.75rem;
+}
+
+.mockup-post-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.mockup-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: rgba(18, 130, 162, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    color: var(--cerulean);
+}
+
+.mockup-avatar-coach {
+    background: rgba(255, 107, 53, 0.2);
+    color: var(--accent-orange);
+}
+
+.mockup-avatar-coach svg {
+    stroke: var(--accent-orange);
+}
+
+.mockup-user-info {
+    min-width: 0;
+}
+
+.mockup-name {
+    font-weight: 700;
+    color: var(--white);
+    font-size: 0.8rem;
+}
+
+.mockup-handle {
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 0.7rem;
+    margin-left: 0.35rem;
+}
+
+.mockup-meta {
+    font-size: 0.65rem;
+    font-weight: 700;
+    margin-top: 0.1rem;
+}
+
+.mockup-meta-player {
+    color: var(--cerulean);
+}
+
+.mockup-meta-coach {
+    color: var(--accent-orange);
+}
+
+.mockup-post-content {
+    color: rgba(255, 255, 255, 0.85);
+    font-size: 0.75rem;
+    line-height: 1.45;
+    margin-bottom: 0.5rem;
+    padding-left: 2.5rem;
+}
+
+.mockup-post-stats {
+    display: flex;
+    gap: 0.75rem;
+    padding: 0.4rem 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    font-size: 0.65rem;
+    color: rgba(255, 255, 255, 0.4);
+    padding-left: 2.5rem;
+}
+
+.mockup-post-actions {
+    display: flex;
+    gap: 0.25rem;
+    padding-top: 0.4rem;
+    padding-left: 2.5rem;
+}
+
+.mockup-action {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.65rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 6px;
+}
+
+.mockup-liked {
+    color: #e74c3c;
+}
+
+.mockup-saved {
+    color: var(--cerulean);
+}
+
+/* --- Transfer Portal / Filter Mockup --- */
+.mockup-portal {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.mockup-search-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(18, 130, 162, 0.25);
+    border-radius: 8px;
+    padding: 0.5rem 0.75rem;
+    color: rgba(255, 255, 255, 0.35);
+    font-size: 0.75rem;
+}
+
+.mockup-search-bar svg {
+    stroke: rgba(255, 255, 255, 0.35);
+    flex-shrink: 0;
+}
+
+.mockup-filters {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.mockup-filter-item {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(18, 130, 162, 0.25);
+    border-radius: 6px;
+    padding: 0.35rem 0.65rem;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.7rem;
+}
+
+.mockup-filter-arrow {
+    font-size: 0.6rem;
+    color: rgba(255, 255, 255, 0.4);
+}
+
+.mockup-filter-reset {
+    border-color: rgba(230, 57, 70, 0.3);
+    color: var(--accent-red);
+}
+
+.mockup-player-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.mockup-player-card {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(18, 130, 162, 0.2);
+    border-radius: 10px;
+    padding: 0.6rem;
+}
+
+.mockup-player-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: rgba(18, 130, 162, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    color: var(--cerulean);
+}
+
+.mockup-player-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.mockup-player-name {
+    font-weight: 700;
+    color: var(--white);
+    font-size: 0.8rem;
+}
+
+.mockup-position-badge {
+    display: inline-block;
+    background: var(--cerulean);
+    color: var(--white);
+    padding: 0.15rem 0.5rem;
+    border-radius: 50px;
+    font-size: 0.6rem;
+    font-weight: 700;
+    margin: 0.2rem 0;
+}
+
+.mockup-player-stats-row {
+    display: flex;
+    gap: 0.5rem;
+    font-size: 0.65rem;
+    color: rgba(255, 255, 255, 0.6);
+    font-weight: 600;
+}
+
+.mockup-player-school {
+    font-size: 0.65rem;
+    color: var(--cerulean);
+    font-weight: 600;
+}
+
+.mockup-transfer-school {
+    color: #b91c1c;
+}
+
+.mockup-transfer-badge {
+    background: rgba(185, 28, 28, 0.2);
+    color: #ef4444;
+    padding: 0.2rem 0.5rem;
+    border-radius: 50px;
+    font-size: 0.6rem;
+    font-weight: 700;
+    flex-shrink: 0;
+    border: 1px solid rgba(185, 28, 28, 0.3);
+}
+
+/* --- Recruiting Board Mockup --- */
+.mockup-board {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+}
+
+.mockup-board-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.mockup-board-toggle {
+    display: flex;
+    gap: 0.25rem;
+    background: rgba(18, 130, 162, 0.1);
+    padding: 0.2rem;
+    border-radius: 50px;
+    border: 1px solid rgba(18, 130, 162, 0.25);
+}
+
+.mockup-toggle-btn {
+    padding: 0.3rem 0.75rem;
+    border-radius: 50px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.mockup-toggle-active {
+    background: var(--accent-orange);
+    color: var(--white);
+}
+
+.mockup-class-select {
+    font-size: 0.65rem;
+    color: rgba(255, 255, 255, 0.6);
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(18, 130, 162, 0.25);
+    border-radius: 6px;
+    padding: 0.3rem 0.6rem;
+}
+
+.mockup-board-columns {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.mockup-board-col {
+    flex: 1;
+    min-width: 0;
+}
+
+.mockup-col-header {
+    background: var(--cerulean);
+    color: var(--white);
+    text-align: center;
+    padding: 0.35rem;
+    border-radius: 6px;
+    font-weight: 800;
+    font-size: 0.7rem;
+    margin-bottom: 0.4rem;
+}
+
+.mockup-col-list {
+    background: rgba(11, 37, 69, 0.3);
+    border: 1px dashed rgba(18, 130, 162, 0.25);
+    border-radius: 6px;
+    padding: 0.35rem;
+    min-height: 100px;
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+
+.mockup-recruit {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.4rem;
+    background: rgba(18, 130, 162, 0.12);
+    border: 1px solid rgba(18, 130, 162, 0.25);
+    border-radius: 6px;
+    padding: 0.4rem;
+}
+
+.mockup-rank {
+    background: var(--accent-orange);
+    color: var(--white);
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 0.6rem;
+    flex-shrink: 0;
+}
+
+.mockup-recruit-name {
+    font-weight: 700;
+    color: var(--white);
+    font-size: 0.7rem;
+    line-height: 1.2;
+}
+
+.mockup-recruit-detail {
+    font-size: 0.6rem;
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.mockup-recruit-school {
+    font-size: 0.55rem;
+    color: var(--cerulean);
+    font-weight: 600;
+}
+
+/* --- Messaging Mockup --- */
+.mockup-messages {
+    display: flex;
+    gap: 0;
+    height: 220px;
+}
+
+.mockup-msg-sidebar {
+    width: 45%;
+    border-right: 1px solid rgba(18, 130, 162, 0.15);
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    overflow: hidden;
+}
+
+.mockup-msg-conversation {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.5rem;
+    border-bottom: 1px solid rgba(18, 130, 162, 0.1);
+}
+
+.mockup-msg-active {
+    background: rgba(18, 130, 162, 0.12);
+    border-left: 2px solid var(--cerulean);
+}
+
+.mockup-msg-avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: rgba(18, 130, 162, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    color: var(--cerulean);
+    position: relative;
+}
+
+.mockup-online-dot {
+    position: absolute;
+    bottom: -1px;
+    right: -1px;
+    width: 8px;
+    height: 8px;
+    background: #10b981;
+    border-radius: 50%;
+    border: 1.5px solid rgba(10, 17, 40, 0.9);
+}
+
+.mockup-msg-preview {
+    flex: 1;
+    min-width: 0;
+}
+
+.mockup-msg-conv-name {
+    font-weight: 700;
+    color: var(--white);
+    font-size: 0.7rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.mockup-msg-last {
+    font-size: 0.6rem;
+    color: rgba(255, 255, 255, 0.4);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.mockup-msg-time {
+    font-size: 0.55rem;
+    color: rgba(255, 255, 255, 0.35);
+    flex-shrink: 0;
+}
+
+.mockup-msg-thread {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 0.6rem;
+    gap: 0.4rem;
+    overflow: hidden;
+}
+
+.mockup-msg-thread-full {
+    width: 100%;
+}
+
+.mockup-bubble {
+    padding: 0.45rem 0.65rem;
+    border-radius: 12px;
+    font-size: 0.7rem;
+    line-height: 1.4;
+    max-width: 80%;
+    color: var(--white);
+}
+
+.mockup-bubble-received {
+    background: rgba(18, 130, 162, 0.15);
+    align-self: flex-start;
+    border-bottom-left-radius: 4px;
+}
+
+.mockup-bubble-sent {
+    background: var(--cerulean);
+    align-self: flex-end;
+    border-bottom-right-radius: 4px;
+}
+
+.mockup-msg-input-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-top: auto;
+    padding-top: 0.4rem;
+}
+
+.mockup-msg-input {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(18, 130, 162, 0.2);
+    border-radius: 20px;
+    padding: 0.35rem 0.7rem;
+    font-size: 0.65rem;
+    color: rgba(255, 255, 255, 0.35);
+}
+
+.mockup-msg-send {
+    width: 24px;
+    height: 24px;
+    background: var(--cerulean);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    color: var(--white);
+}
+
+.mockup-messages-compact {
+    height: auto;
+}
+
+.mockup-messages-compact .mockup-msg-thread {
+    padding: 0.75rem;
+}
+
+/* --- Profile Card Mockup (about page) --- */
+.mockup-profile-card-large {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.mockup-profile-header-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.mockup-profile-avatar-lg {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: rgba(18, 130, 162, 0.2);
+    border: 2px solid rgba(18, 130, 162, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    color: var(--cerulean);
+}
+
+.mockup-profile-info-lg {
+    min-width: 0;
+}
+
+.mockup-profile-name-lg {
+    font-weight: 800;
+    color: var(--white);
+    font-size: 1rem;
+}
+
+.mockup-profile-handle-lg {
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.4);
+}
+
+.mockup-profile-stats-bar {
+    display: flex;
+    gap: 0.75rem;
+    background: rgba(18, 130, 162, 0.1);
+    border-radius: 8px;
+    padding: 0.6rem;
+}
+
+.mockup-profile-stat {
+    flex: 1;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+}
+
+.mockup-stat-val {
+    font-weight: 800;
+    color: var(--white);
+    font-size: 0.95rem;
+}
+
+.mockup-stat-lbl {
+    font-size: 0.6rem;
+    color: rgba(255, 255, 255, 0.5);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.mockup-profile-follow-bar {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.mockup-follow-btn {
+    margin-left: auto;
+    background: var(--cerulean);
+    color: var(--white);
+    border: none;
+    padding: 0.35rem 1rem;
+    border-radius: 6px;
+    font-weight: 700;
+    font-size: 0.75rem;
+    cursor: default;
+}
+
+.mockup-profile-tabs {
+    display: flex;
+    gap: 0.25rem;
+    border-top: 1px solid rgba(18, 130, 162, 0.15);
+    padding-top: 0.6rem;
+}
+
+.mockup-profile-tabs span {
+    padding: 0.3rem 0.75rem;
+    font-size: 0.7rem;
+    color: rgba(255, 255, 255, 0.5);
+    font-weight: 600;
+    border-radius: 6px;
+}
+
+.mockup-tab-active {
+    background: rgba(18, 130, 162, 0.15);
+    color: var(--cerulean) !important;
+}
+
+/* --- Transfer Portal Database Mockup (Coach's View) --- */
+.mockup-portal-db {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.mockup-db-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    align-items: center;
+}
+
+.mockup-db-filter {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(18, 130, 162, 0.25);
+    border-radius: 6px;
+    padding: 0.3rem 0.55rem;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.65rem;
+    font-weight: 500;
+}
+
+.mockup-db-filter-active {
+    border-color: var(--cerulean);
+    color: var(--cerulean);
+}
+
+.mockup-db-btn-apply {
+    background: var(--accent-orange);
+    color: var(--white);
+    padding: 0.3rem 0.65rem;
+    border-radius: 6px;
+    font-size: 0.65rem;
+    font-weight: 700;
+}
+
+.mockup-db-btn-reset {
+    background: transparent;
+    border: 1px solid var(--cerulean);
+    color: var(--cerulean);
+    padding: 0.3rem 0.55rem;
+    border-radius: 6px;
+    font-size: 0.65rem;
+    font-weight: 600;
+}
+
+.mockup-db-results-count {
+    font-size: 0.65rem;
+    color: rgba(255, 255, 255, 0.4);
+    font-weight: 500;
+}
+
+.mockup-portal-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+}
+
+.mockup-portal-grid-2col {
+    grid-template-columns: repeat(2, 1fr);
+}
+
+.mockup-tp-card {
+    background: rgba(220, 38, 38, 0.03);
+    border: 1px solid rgba(220, 38, 38, 0.35);
+    border-radius: 10px;
+    padding: 0.6rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+
+.mockup-tp-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.mockup-tp-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--cerulean), var(--accent-orange));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--white);
+    flex-shrink: 0;
+}
+
+.mockup-tp-avatar-lg {
+    width: 52px;
+    height: 52px;
+}
+
+.mockup-tp-badge {
+    background: #dc2626;
+    color: var(--white);
+    padding: 0.2rem 0.5rem;
+    border-radius: 50px;
+    font-size: 0.55rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+
+.mockup-tp-name {
+    font-weight: 800;
+    color: var(--white);
+    font-size: 0.8rem;
+}
+
+.mockup-tp-pos {
+    background: #dc2626;
+    color: var(--white);
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    display: inline-block;
+}
+
+.mockup-tp-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.3rem;
+    background: rgba(11, 37, 69, 0.3);
+    border-radius: 6px;
+    padding: 0.4rem;
+}
+
+.mockup-tp-stat {
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 0.05rem;
+}
+
+.mockup-tp-stat-val {
+    font-weight: 800;
+    color: var(--white);
+    font-size: 0.75rem;
+}
+
+.mockup-tp-stat-lbl {
+    font-size: 0.55rem;
+    color: rgba(255, 255, 255, 0.5);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    font-weight: 600;
+}
+
+.mockup-tp-gpa-row {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.25rem 0.4rem;
+    background: rgba(11, 37, 69, 0.3);
+    border-radius: 4px;
+    font-size: 0.7rem;
+}
+
+.mockup-tp-gpa-lbl {
+    color: rgba(255, 255, 255, 0.5);
+    font-weight: 600;
+}
+
+.mockup-tp-gpa-val {
+    color: var(--white);
+    font-weight: 800;
+}
+
+.mockup-tp-prev {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.65rem;
+    color: #dc2626;
+    font-weight: 600;
+}
+
+.mockup-tp-prev svg {
+    stroke: #dc2626;
+    flex-shrink: 0;
+}
+
+.mockup-tp-season-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+
+.mockup-tp-season-title {
+    font-size: 0.55rem;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.45);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.mockup-tp-highlights {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+}
+
+.mockup-tp-highlights span {
+    background: rgba(220, 38, 38, 0.1);
+    border: 1px solid rgba(220, 38, 38, 0.3);
+    color: #dc2626;
+    padding: 0.15rem 0.4rem;
+    border-radius: 4px;
+    font-size: 0.6rem;
+    font-weight: 700;
+}
+
+.mockup-tp-btn {
+    background: #dc2626;
+    color: var(--white);
+    text-align: center;
+    padding: 0.4rem;
+    border-radius: 6px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    margin-top: 0.15rem;
+}
+
+.mockup-tp-card-sm {
+    padding: 0.5rem;
+    gap: 0.2rem;
+}
+
+.mockup-tp-card-sm .mockup-tp-avatar {
+    width: 32px;
+    height: 32px;
+}
+
+.mockup-tp-card-sm .mockup-tp-name {
+    font-size: 0.7rem;
+}
+
+.mockup-tp-card-sm .mockup-tp-pos {
+    font-size: 0.6rem;
+    padding: 0.15rem 0.4rem;
+}
+
+.mockup-tp-card-sm .mockup-tp-stats-grid {
+    padding: 0.3rem;
+}
+
+.mockup-tp-card-sm .mockup-tp-stat-val {
+    font-size: 0.65rem;
+}
+
+.mockup-tp-card-sm .mockup-tp-stat-lbl {
+    font-size: 0.5rem;
+}
+
+.mockup-tp-card-sm .mockup-tp-prev {
+    font-size: 0.6rem;
+}
+
+.mockup-tp-card-sm .mockup-tp-btn {
+    font-size: 0.6rem;
+    padding: 0.3rem;
+}
+
+/* About page portal layout: grid + detail card side by side */
+.mockup-about-portal-wrap {
+    display: flex;
+    gap: 1rem;
+    padding: 1rem;
+}
+
+.mockup-portal-db-about {
+    flex: 1.2;
+    min-width: 0;
+}
+
+.mockup-tp-card-detail {
+    flex: 0.8;
+    background: rgba(220, 38, 38, 0.03);
+    border: 1px solid rgba(220, 38, 38, 0.35);
+    border-radius: 10px;
+    padding: 0.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    align-self: flex-start;
+}
+
+/* --- Discover Players Card Mockup --- */
+.mockup-discover-card {
+    background: rgba(254, 252, 251, 0.03);
+    border: 1px solid rgba(18, 130, 162, 0.2);
+    border-radius: 12px;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 0.4rem;
+}
+
+.mockup-dc-header {
+    margin-bottom: 0.25rem;
+}
+
+.mockup-dc-avatar {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--cerulean), var(--accent-orange));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--white);
+}
+
+.mockup-dc-name {
+    font-weight: 800;
+    color: var(--white);
+    font-size: 0.85rem;
+}
+
+.mockup-dc-positions {
+    margin: 0.1rem 0;
+}
+
+.mockup-dc-pos-badge {
+    background: var(--accent-orange);
+    color: var(--white);
+    padding: 0.25rem 0.6rem;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 700;
+}
+
+.mockup-dc-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+    background: rgba(11, 37, 69, 0.3);
+    border-radius: 6px;
+    padding: 0.5rem;
+    width: 100%;
+}
+
+.mockup-dc-stat {
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+}
+
+.mockup-dc-stat-lbl {
+    font-size: 0.55rem;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.5);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.mockup-dc-stat-val {
+    font-size: 0.85rem;
+    font-weight: 800;
+    color: var(--white);
+}
+
+.mockup-dc-details {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    margin-top: 0.25rem;
+}
+
+.mockup-dc-detail {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    font-size: 0.7rem;
+    color: rgba(255, 255, 255, 0.7);
+    font-weight: 500;
+}
+
+.mockup-dc-detail svg {
+    stroke: var(--cerulean);
+    flex-shrink: 0;
+}
+
+.mockup-dc-offers {
+    color: var(--accent-orange);
+}
+
+.mockup-dc-offers svg {
+    stroke: var(--accent-orange);
+}
+
+.mockup-dc-btn {
+    background: var(--cerulean);
+    color: var(--white);
+    width: 100%;
+    text-align: center;
+    padding: 0.45rem;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    margin-top: 0.25rem;
+}
+
+/* --- Discover Page Full Mockup (Filters + Grid) --- */
+.mockup-discover-page {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.mockup-discover-filters {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.mockup-discover-filter-row {
+    display: flex;
+    gap: 0.4rem;
+}
+
+.mockup-discover-select {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(18, 130, 162, 0.25);
+    border-radius: 6px;
+    padding: 0.35rem 0.5rem;
+    position: relative;
+}
+
+.mockup-discover-select-label {
+    font-size: 0.55rem;
+    color: rgba(255, 255, 255, 0.45);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.mockup-discover-select-val {
+    font-size: 0.7rem;
+    color: var(--white);
+    font-weight: 600;
+}
+
+.mockup-discover-select .mockup-filter-arrow {
+    position: absolute;
+    right: 0.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 0.55rem;
+    color: rgba(255, 255, 255, 0.4);
+}
+
+.mockup-discover-slider-row {
+    display: flex;
+    gap: 0.4rem;
+}
+
+.mockup-discover-slider {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.mockup-discover-slider-label {
+    font-size: 0.6rem;
+    color: rgba(255, 255, 255, 0.6);
+    font-weight: 500;
+}
+
+.mockup-discover-slider-track {
+    height: 4px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 2px;
+    position: relative;
+}
+
+.mockup-discover-slider-fill {
+    height: 100%;
+    background: var(--cerulean);
+    border-radius: 2px;
+}
+
+.mockup-discover-slider-thumb {
+    position: absolute;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 10px;
+    height: 10px;
+    background: var(--cerulean);
+    border: 2px solid var(--white);
+    border-radius: 50%;
+}
+
+.mockup-discover-btn-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.mockup-discover-apply {
+    background: var(--accent-orange);
+    color: var(--white);
+    padding: 0.35rem 0.75rem;
+    border-radius: 6px;
+    font-size: 0.7rem;
+    font-weight: 700;
+}
+
+.mockup-discover-reset {
+    background: transparent;
+    border: 1px solid var(--cerulean);
+    color: var(--cerulean);
+    padding: 0.35rem 0.65rem;
+    border-radius: 6px;
+    font-size: 0.7rem;
+    font-weight: 600;
+}
+
+.mockup-discover-results {
+    font-size: 0.65rem;
+    color: rgba(255, 255, 255, 0.4);
+    margin-left: auto;
+}
+
+.mockup-discover-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+}
+
+/* --- Real Card Mockups (About Page - Matching Discover Page Exactly) --- */
+.mockup-real-grid {
+    display: grid;
+    gap: 0.75rem;
+}
+
+.mockup-real-grid-3col {
+    grid-template-columns: repeat(3, 1fr);
+}
+
+.mockup-real-grid-2col {
+    grid-template-columns: repeat(2, 1fr);
+}
+
+/* Player Card - matches .player-card exactly */
+.mockup-real-card {
+    background: rgba(254, 252, 251, 0.03);
+    border: 1px solid rgba(18, 130, 162, 0.2);
+    border-radius: 16px;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    transition: all 0.3s ease;
+}
+
+.mockup-real-card:hover {
+    background: rgba(254, 252, 251, 0.05);
+    border-color: var(--cerulean);
+    transform: translateY(-5px);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.3);
+}
+
+/* Header: avatar left, badge right */
+.mockup-real-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+}
+
+.mockup-real-avatar {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: rgba(18, 130, 162, 0.2);
+    border: 3px solid rgba(18, 130, 162, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--cerulean);
+}
+
+.mockup-real-avatar svg {
+    width: 40px;
+    height: 40px;
+}
+
+.mockup-real-header-badge {
+    background: var(--accent-orange);
+    color: var(--white);
+    padding: 0.4rem 0.8rem;
+    border-radius: 50px;
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+
+.mockup-real-name {
+    font-size: 1.3rem;
+    font-weight: 800;
+    color: var(--white);
+    margin: 0.5rem 0 0.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.mockup-real-positions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.mockup-real-pos-badge {
+    background: var(--cerulean);
+    color: var(--white);
+    padding: 0.35rem 0.75rem;
+    border-radius: 50px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+
+.mockup-real-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    margin-bottom: 1rem;
+    padding: 1rem;
+    background: rgba(18, 130, 162, 0.1);
+    border-radius: 8px;
+}
+
+.mockup-real-stat-item {
+    text-align: center;
+}
+
+.mockup-real-stat-label {
+    font-size: 0.75rem;
+    color: rgba(254, 252, 251, 0.6);
+    margin-bottom: 0.25rem;
+}
+
+.mockup-real-stat-value {
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: var(--white);
+}
+
+.mockup-real-details {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.mockup-real-detail {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    color: rgba(254, 252, 251, 0.8);
+}
+
+.mockup-real-detail svg {
+    width: 16px;
+    height: 16px;
+    color: var(--cerulean);
+    flex-shrink: 0;
+}
+
+.mockup-real-offers {
+    color: var(--accent-orange) !important;
+    font-weight: 600;
+}
+
+.mockup-real-offers svg {
+    color: var(--accent-orange) !important;
+}
+
+.mockup-real-btn {
+    width: 100%;
+    background: var(--cerulean);
+    color: var(--white);
+    border: none;
+    padding: 0.85rem;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    text-align: center;
+    cursor: default;
+    margin-top: auto;
+}
+
+/* Standalone card (not in a grid) - constrain width */
+.mockup-container-about > .mockup-real-card {
+    max-width: 320px;
+    margin: 0 auto;
+}
+
+/* Remove dark bg from standalone card wrapper */
+.mockup-container-about.mockup-card-bare {
+    background: transparent;
+    border: none;
+    padding: 0;
+}
+
+/* Mini card variant for grids */
+.mockup-real-card-mini {
+    padding: 1rem;
+}
+
+.mockup-real-card-mini .mockup-real-avatar {
+    width: 60px;
+    height: 60px;
+}
+
+.mockup-real-card-mini .mockup-real-avatar svg {
+    width: 28px;
+    height: 28px;
+}
+
+.mockup-real-card-mini .mockup-real-name {
+    font-size: 1rem;
+    margin: 0.25rem 0 0.15rem;
+}
+
+.mockup-real-card-mini .mockup-real-card-header {
+    margin-bottom: 0.5rem;
+}
+
+.mockup-real-card-mini .mockup-real-pos-badge {
+    font-size: 0.7rem;
+    padding: 0.25rem 0.6rem;
+}
+
+.mockup-real-card-mini .mockup-real-positions {
+    margin-bottom: 0.5rem;
+}
+
+.mockup-real-card-mini .mockup-real-stats {
+    gap: 0.5rem;
+    padding: 0.6rem;
+    margin-bottom: 0.5rem;
+}
+
+.mockup-real-card-mini .mockup-real-stat-value {
+    font-size: 0.85rem;
+}
+
+.mockup-real-card-mini .mockup-real-stat-label {
+    font-size: 0.6rem;
+}
+
+.mockup-real-card-mini .mockup-real-detail {
+    font-size: 0.75rem;
+    gap: 0.35rem;
+}
+
+.mockup-real-card-mini .mockup-real-detail svg {
+    width: 14px;
+    height: 14px;
+}
+
+.mockup-real-card-mini .mockup-real-details {
+    gap: 0.35rem;
+    margin-bottom: 0.5rem;
+}
+
+.mockup-real-card-mini .mockup-real-btn {
+    font-size: 0.8rem;
+    padding: 0.6rem;
+}
+
+/* --- Transfer Portal Card --- */
+.mockup-real-card-transfer {
+    background: rgba(220, 38, 38, 0.03);
+    border-color: rgba(220, 38, 38, 0.4);
+}
+
+.mockup-real-card-transfer:hover {
+    border-color: #dc2626;
+    box-shadow: 0 8px 24px rgba(220, 38, 38, 0.2);
+}
+
+.mockup-real-card-transfer .mockup-real-avatar {
+    border-color: rgba(220, 38, 38, 0.4);
+    background: rgba(220, 38, 38, 0.15);
+    color: #dc2626;
+}
+
+.mockup-real-portal-badge {
+    background: #dc2626;
+    color: var(--white);
+    padding: 0.35rem 0.75rem;
+    border-radius: 50px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    letter-spacing: 0.5px;
+}
+
+.mockup-real-portal-icon {
+    width: 16px;
+    height: 16px;
+    color: #dc2626;
+    flex-shrink: 0;
+}
+
+.mockup-real-pos-transfer {
+    background: #dc2626;
+}
+
+.mockup-real-stats-box {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    margin-bottom: 1rem;
+}
+
+.mockup-real-card-transfer .mockup-real-stats {
+    background: rgba(11, 37, 69, 0.3);
+    margin-bottom: 0;
+}
+
+.mockup-real-gpa-row {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.4rem 1rem;
+    background: rgba(11, 37, 69, 0.3);
+    border-radius: 6px;
+    font-size: 0.85rem;
+}
+
+.mockup-real-gpa-label {
+    color: rgba(255, 255, 255, 0.6);
+    font-weight: 600;
+}
+
+.mockup-real-gpa-value {
+    color: var(--white);
+    font-weight: 800;
+}
+
+.mockup-real-portal-prev {
+    color: #dc2626 !important;
+    font-weight: 600 !important;
+}
+
+.mockup-real-portal-prev svg {
+    color: #dc2626 !important;
+}
+
+.mockup-real-stats-section {
+    margin-bottom: 0.75rem;
+}
+
+.mockup-real-stats-title {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.5);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    margin-bottom: 0.35rem;
+}
+
+.mockup-real-highlights {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.mockup-real-highlights span {
+    background: rgba(220, 38, 38, 0.15);
+    color: #dc2626;
+    padding: 0.4rem 0.75rem;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+
+.mockup-real-btn-transfer {
+    background: #dc2626;
+}
+
+/* --- Coach Card - matches .coach-card exactly --- */
+.mockup-real-coach-card {
+    background: rgba(254, 252, 251, 0.03);
+    border: 1px solid rgba(18, 130, 162, 0.2);
+    border-radius: 16px;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    transition: all 0.3s ease;
+}
+
+.mockup-real-coach-card:hover {
+    transform: translateY(-4px);
+    border-color: var(--cerulean);
+    background: rgba(254, 252, 251, 0.05);
+    box-shadow: 0 8px 24px rgba(18, 130, 162, 0.2);
+}
+
+/* Header: avatar left, badge right */
+.mockup-real-coach-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+}
+
+.mockup-real-coach-avatar {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: rgba(255, 107, 53, 0.2);
+    border: 3px solid rgba(255, 107, 53, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--accent-orange);
+}
+
+.mockup-real-coach-avatar svg {
+    width: 40px;
+    height: 40px;
+}
+
+.mockup-real-coach-badge {
+    background: var(--cerulean);
+    color: var(--white);
+    padding: 0.4rem 0.8rem;
+    border-radius: 50px;
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+
+.mockup-real-coach-name {
+    font-size: 1.3rem;
+    font-weight: 800;
+    color: var(--white);
+    margin: 0.5rem 0 0.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.mockup-real-verified {
+    width: 18px;
+    height: 18px;
+    color: var(--cerulean);
+    flex-shrink: 0;
+}
+
+.mockup-real-coach-position {
+    font-size: 0.95rem;
+    color: var(--accent-orange);
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+.mockup-real-coach-school {
+    background: rgba(18, 130, 162, 0.1);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.mockup-real-school-name {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--white);
+    margin-bottom: 0.25rem;
+}
+
+.mockup-real-school-div {
+    font-size: 0.85rem;
+    color: rgba(254, 252, 251, 0.7);
+}
+
+.mockup-real-coach-recruiting {
+    margin-bottom: 1rem;
+}
+
+.mockup-real-recruiting-label {
+    font-size: 0.85rem;
+    color: rgba(254, 252, 251, 0.6);
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+}
+
+.mockup-real-pos-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.mockup-real-pos-tag {
+    background: rgba(255, 107, 53, 0.15);
+    color: var(--accent-orange);
+    padding: 0.35rem 0.65rem;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+.mockup-real-btn-coach {
+    background: var(--accent-orange);
+}
+
+/* Mini coach card for grids */
+.mockup-real-coach-card-mini {
+    padding: 1rem;
+}
+
+.mockup-real-coach-card-mini .mockup-real-coach-avatar {
+    width: 60px;
+    height: 60px;
+}
+
+.mockup-real-coach-card-mini .mockup-real-coach-avatar svg {
+    width: 28px;
+    height: 28px;
+}
+
+.mockup-real-coach-card-mini .mockup-real-coach-header {
+    margin-bottom: 0.5rem;
+}
+
+.mockup-real-coach-card-mini .mockup-real-coach-name {
+    font-size: 1rem;
+    margin: 0.25rem 0 0.15rem;
+}
+
+.mockup-real-coach-card-mini .mockup-real-coach-position {
+    font-size: 0.8rem;
+    margin-bottom: 0.5rem;
+}
+
+.mockup-real-coach-card-mini .mockup-real-coach-school {
+    padding: 0.6rem;
+    margin-bottom: 0.5rem;
+}
+
+.mockup-real-coach-card-mini .mockup-real-school-name {
+    font-size: 0.85rem;
+}
+
+.mockup-real-coach-card-mini .mockup-real-school-div {
+    font-size: 0.75rem;
+}
+
+.mockup-real-coach-card-mini .mockup-real-coach-recruiting {
+    margin-bottom: 0.5rem;
+}
+
+.mockup-real-coach-card-mini .mockup-real-recruiting-label {
+    font-size: 0.75rem;
+    margin-bottom: 0.35rem;
+}
+
+.mockup-real-coach-card-mini .mockup-real-pos-tag {
+    font-size: 0.7rem;
+    padding: 0.25rem 0.5rem;
+}
+
+.mockup-real-coach-card-mini .mockup-real-btn {
+    font-size: 0.8rem;
+    padding: 0.6rem;
+}
+
 /* Responsive Design */
 /* Laptop screens (standard laptops 1366x768 and smaller) */
 @media (max-width: 1366px) and (min-width: 769px) {
@@ -716,6 +2659,18 @@ body {
         grid-template-columns: 1fr;
     }
 
+    .audience-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .differentiators-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .comparison-grid {
+        grid-template-columns: 1fr;
+    }
+
     .steps-container {
         flex-direction: column;
     }
@@ -746,6 +2701,30 @@ body {
     .footer-column {
         min-width: 150px;
     }
+
+    .mockup-portal-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .mockup-about-portal-wrap {
+        flex-direction: column;
+    }
+
+    .mockup-discover-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .mockup-discover-slider-row {
+        flex-direction: column;
+    }
+
+    .mockup-real-grid-3col {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .mockup-real-grid-2col {
+        grid-template-columns: 1fr;
+    }
 }
 
 @media (max-width: 480px) {
@@ -768,6 +2747,53 @@ body {
 
     .feature-icon, .step-icon {
         font-size: 2.5rem;
+    }
+
+    .mockup-msg-sidebar {
+        display: none;
+    }
+
+    .mockup-msg-thread {
+        width: 100%;
+    }
+
+    .mockup-board-columns {
+        flex-direction: column;
+    }
+
+    .mockup-post-content,
+    .mockup-post-stats,
+    .mockup-post-actions {
+        padding-left: 0;
+    }
+
+    .mockup-portal-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .mockup-portal-grid-2col {
+        grid-template-columns: 1fr;
+    }
+
+    .mockup-about-portal-wrap {
+        flex-direction: column;
+    }
+
+    .mockup-discover-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .mockup-discover-filter-row,
+    .mockup-discover-slider-row {
+        flex-direction: column;
+    }
+
+    .mockup-db-filters {
+        gap: 0.25rem;
+    }
+
+    .mockup-real-grid-3col {
+        grid-template-columns: 1fr;
     }
 
     .footer-links {
