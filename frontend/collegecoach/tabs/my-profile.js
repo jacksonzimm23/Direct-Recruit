@@ -431,12 +431,17 @@ function updateNavbarForLoggedInUser(user, profile) {
             navActiveBg = 'rgba(185, 28, 28, 0.2)';
             navHoverBg = 'rgba(185, 28, 28, 0.1)';
         } else if (userFolder === 'collegecoach' || userFolder === 'hscoach') {
-            // Coaches use blue/cerulean theme
-            navActiveColor = '#1282a2';
-            navActiveBg = 'rgba(18, 130, 162, 0.2)';
-            navHoverBg = 'rgba(18, 130, 162, 0.1)';
+            // Coaches use orange theme
+            navActiveColor = '#ff6b35';
+            navActiveBg = 'rgba(255, 107, 53, 0.2)';
+            navHoverBg = 'rgba(255, 107, 53, 0.1)';
+        } else if (userFolder === 'other') {
+            // Other users use gold theme
+            navActiveColor = '#d4a017';
+            navActiveBg = 'rgba(212, 160, 23, 0.2)';
+            navHoverBg = 'rgba(212, 160, 23, 0.1)';
         } else {
-            // Other players use blue/cerulean theme
+            // Players use cerulean theme
             navActiveColor = '#1282a2';
             navActiveBg = 'rgba(18, 130, 162, 0.2)';
             navHoverBg = 'rgba(18, 130, 162, 0.1)';

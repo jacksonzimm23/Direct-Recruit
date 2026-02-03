@@ -1547,6 +1547,8 @@ class Post {
   static async getNewPostsCount(userId, sinceDate, feedType = 'discover') {
     let query;
 
+    let params;
+
     if (feedType === 'discover') {
       // Count new posts in Discover feed (all public posts)
       query = `
@@ -1555,7 +1557,7 @@ class Post {
           SELECT p.id FROM posts p
           WHERE p.visibility = 'public'
           AND (p.is_deleted = false OR p.is_deleted IS NULL)
-          AND p.created_at > $2
+          AND p.created_at > $1
 
           UNION ALL
 
@@ -1564,9 +1566,10 @@ class Post {
           JOIN posts p ON ps.original_post_id = p.id
           WHERE p.visibility = 'public'
           AND (p.is_deleted = false OR p.is_deleted IS NULL)
-          AND ps.created_at > $2
+          AND ps.created_at > $1
         ) new_posts
       `;
+      params = [sinceDate];
     } else {
       // Count new posts in Following feed (posts from followed users + own posts)
       query = `
@@ -1592,9 +1595,10 @@ class Post {
           AND ps.created_at > $2
         ) new_posts
       `;
+      params = [userId, sinceDate];
     }
 
-    const result = await pool.query(query, [userId, sinceDate]);
+    const result = await pool.query(query, params);
     return parseInt(result.rows[0].count);
   }
 
