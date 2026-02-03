@@ -338,6 +338,22 @@
     margin: 0 auto;
 }
 
+.portal-content-split {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4rem;
+    align-items: center;
+}
+
+.portal-visual {
+    display: flex;
+    justify-content: center;
+}
+
+.portal-visual .mockup-container-about > .mockup-real-card {
+    max-width: 360px;
+}
+
 .portal-feature {
     display: flex;
     flex-direction: column;
@@ -744,9 +760,18 @@
     }
 
     .solution-feature,
-    .highschool-content {
+    .highschool-content,
+    .portal-content-split {
         grid-template-columns: 1fr;
         gap: 3rem;
+    }
+
+    .portal-content-split .portal-info {
+        order: 1;
+    }
+
+    .portal-content-split .portal-visual {
+        order: 2;
     }
 
     .solution-feature.reverse {

@@ -47,6 +47,7 @@ body {
     display: flex;
     align-items: center;
     gap: 0;
+    text-decoration: none;
 }
 
 .logo-icon {
@@ -2262,6 +2263,7 @@ body {
 .mockup-real-gpa-row {
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 0.4rem;
     padding: 0.4rem 1rem;
     background: rgba(11, 37, 69, 0.3);
@@ -2318,6 +2320,110 @@ body {
 
 .mockup-real-btn-transfer {
     background: #dc2626;
+}
+
+/* Landing page transfer cards - compact sizing for differentiator section */
+.mockup-real-card-landing {
+    padding: 1rem;
+}
+
+.mockup-real-card-landing .mockup-real-avatar {
+    width: 50px;
+    height: 50px;
+}
+
+.mockup-real-card-landing .mockup-real-avatar svg {
+    width: 24px;
+    height: 24px;
+}
+
+.mockup-real-card-landing .mockup-real-card-header {
+    margin-bottom: 0.5rem;
+}
+
+.mockup-real-card-landing .mockup-real-name {
+    font-size: 0.95rem;
+    margin: 0.25rem 0 0.15rem;
+}
+
+.mockup-real-card-landing .mockup-real-portal-icon {
+    width: 12px;
+    height: 12px;
+}
+
+.mockup-real-card-landing .mockup-real-portal-badge {
+    font-size: 0.6rem;
+    padding: 0.25rem 0.5rem;
+}
+
+.mockup-real-card-landing .mockup-real-pos-badge {
+    font-size: 0.65rem;
+    padding: 0.2rem 0.5rem;
+}
+
+.mockup-real-card-landing .mockup-real-positions {
+    margin-bottom: 0.5rem;
+}
+
+.mockup-real-card-landing .mockup-real-stats {
+    gap: 0.4rem;
+    padding: 0.5rem;
+    margin-bottom: 0;
+}
+
+.mockup-real-card-landing .mockup-real-stat-value {
+    font-size: 0.8rem;
+}
+
+.mockup-real-card-landing .mockup-real-stat-label {
+    font-size: 0.6rem;
+}
+
+.mockup-real-card-landing .mockup-real-gpa-row {
+    font-size: 0.7rem;
+    padding: 0.3rem 0.5rem;
+}
+
+.mockup-real-card-landing .mockup-real-stats-box {
+    margin-bottom: 0.5rem;
+}
+
+.mockup-real-card-landing .mockup-real-details {
+    gap: 0.3rem;
+    margin-bottom: 0.5rem;
+}
+
+.mockup-real-card-landing .mockup-real-detail {
+    font-size: 0.7rem;
+    gap: 0.3rem;
+}
+
+.mockup-real-card-landing .mockup-real-detail svg {
+    width: 12px;
+    height: 12px;
+}
+
+.mockup-real-card-landing .mockup-real-stats-section {
+    margin-bottom: 0.4rem;
+}
+
+.mockup-real-card-landing .mockup-real-stats-title {
+    font-size: 0.6rem;
+    margin-bottom: 0.2rem;
+}
+
+.mockup-real-card-landing .mockup-real-highlights {
+    gap: 0.3rem;
+}
+
+.mockup-real-card-landing .mockup-real-highlights span {
+    font-size: 0.6rem;
+    padding: 0.25rem 0.5rem;
+}
+
+.mockup-real-card-landing .mockup-real-btn {
+    font-size: 0.75rem;
+    padding: 0.5rem;
 }
 
 /* --- Coach Card - matches .coach-card exactly --- */
