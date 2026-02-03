@@ -96,7 +96,7 @@
     }
 
     .mobile-header-logo {
-        height: 32px;
+        height: 35px;
         width: auto;
     }
 
@@ -354,10 +354,10 @@
 
     .mobile-sidebar-footer .mobile-sidebar-logo,
     .mobile-sidebar-footer img {
-        height: 28px;
+        height: 31px;
         width: auto;
         opacity: 0.6;
-        max-width: 100px;
+        max-width: 110px;
     }
 
     .mobile-sidebar-logout-btn {
