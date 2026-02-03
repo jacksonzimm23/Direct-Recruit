@@ -699,7 +699,7 @@ async function loadFollowCounts(userId) {
     }
 }
 
-function displayProfile(profile, type, accessLevel = 'full', hasPendingRequest = false) {
+async function displayProfile(profile, type, accessLevel = 'full', hasPendingRequest = false) {
     console.log('displayProfile called with type:', type, 'accessLevel:', accessLevel);
 
     // Use passed profile or fall back to currentProfile
@@ -716,6 +716,25 @@ function displayProfile(profile, type, accessLevel = 'full', hasPendingRequest =
         const firstName = profileData.first_name || '';
         const lastName = profileData.last_name || '';
         nameElement.textContent = `${firstName} ${lastName}`.trim() || 'Your Name';
+
+        // Check if this profile follows the current user and add badge
+        if (viewingUserId) {
+            try {
+                const followsMeResponse = await API.get(`/follow/${viewingUserId}/follows-me`);
+                // Remove existing badge if any
+                const existingBadge = nameElement.querySelector('.follows-you-badge');
+                if (existingBadge) existingBadge.remove();
+
+                if (followsMeResponse.followsMe) {
+                    const badge = document.createElement('span');
+                    badge.className = 'follows-you-badge';
+                    badge.textContent = 'Follows you';
+                    nameElement.appendChild(badge);
+                }
+            } catch (error) {
+                console.error('Error checking if user follows me:', error);
+            }
+        }
     }
 
     // Display type-specific content
