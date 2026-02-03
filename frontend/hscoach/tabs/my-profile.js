@@ -196,10 +196,15 @@ function updateNavbarForLoggedInUser(user, profile) {
         document.body.classList.add('transfer-player-viewer');
     }
 
+    // Update profile-type body class to match logged-in user (not the page being viewed)
+    document.body.classList.remove('profile-type-player', 'profile-type-coach', 'profile-type-transfer', 'profile-type-other');
+    const profileTypeMap = { transferplayer: 'transfer', hsplayer: 'player', collegeplayer: 'player', hscoach: 'coach', collegecoach: 'coach', other: 'other' };
+    document.body.classList.add(`profile-type-${profileTypeMap[userFolder] || 'player'}`);
+
     // Save to global for use in setupUI navigation handlers
     loggedInUserFolder = userFolder;
 
-    const mainPage = role === 'player' ? 'mainpage-player.html' : 'mainpage-coach.html';
+    const mainPage = role === 'player' ? 'mainpage-player.html' : (role === 'coach' ? 'mainpage-coach.html' : 'mainpage-other.html');
 
     // Determine which nav item should be active based on context
     // Note: Don't use isOwnProfile here - it's not set yet when this function runs

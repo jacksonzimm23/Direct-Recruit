@@ -203,6 +203,14 @@
     border-left: 3px solid #d4a017;
 }
 
+/* Profile-type overrides for cross-profile viewing */
+.profile-type-player .nav-item:hover { background: rgba(18, 130, 162, 0.1); }
+.profile-type-player .nav-item.active { background: rgba(18, 130, 162, 0.2); color: var(--cerulean); border-left: 3px solid var(--cerulean); }
+.profile-type-transfer .nav-item:hover { background: rgba(185, 28, 28, 0.1); }
+.profile-type-transfer .nav-item.active { background: rgba(185, 28, 28, 0.2); color: #b91c1c; border-left: 3px solid #b91c1c; }
+.profile-type-coach .nav-item:hover { background: rgba(255, 107, 53, 0.1); }
+.profile-type-coach .nav-item.active { background: rgba(255, 107, 53, 0.2); color: #ff6b35; border-left: 3px solid #ff6b35; }
+
 .nav-icon {
     width: 26px;
     height: 26px;

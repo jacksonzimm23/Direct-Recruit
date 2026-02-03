@@ -203,6 +203,14 @@
     border-left: 3px solid var(--cerulean);
 }
 
+/* Profile-type overrides for cross-profile viewing */
+.profile-type-transfer .nav-item:hover { background: rgba(185, 28, 28, 0.1); }
+.profile-type-transfer .nav-item.active { background: rgba(185, 28, 28, 0.2); color: #b91c1c; border-left: 3px solid #b91c1c; }
+.profile-type-coach .nav-item:hover { background: rgba(255, 107, 53, 0.1); }
+.profile-type-coach .nav-item.active { background: rgba(255, 107, 53, 0.2); color: #ff6b35; border-left: 3px solid #ff6b35; }
+.profile-type-other .nav-item:hover { background: rgba(212, 160, 23, 0.1); }
+.profile-type-other .nav-item.active { background: rgba(212, 160, 23, 0.2); color: #d4a017; border-left: 3px solid #d4a017; }
+
 .nav-icon {
     width: 26px;
     height: 26px;
