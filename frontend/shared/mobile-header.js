@@ -127,6 +127,40 @@ async function updateMobileHeader() {
             if (mobileSidebarAvatar && profileImgUrl) {
                 mobileSidebarAvatar.innerHTML = `<img src="${profileImgUrl}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
             }
+
+            // Fix mobile sidebar nav links to point to logged-in user's role folder
+            let userFolder = 'hsplayer';
+            if (user.role === 'player') {
+                if (user.is_transfer_player) userFolder = 'transferplayer';
+                else if (profile.college_division && ['FBS', 'FCS', 'D2', 'D3', 'NAIA', 'NJCAA'].includes(profile.college_division)) userFolder = 'collegeplayer';
+                else userFolder = 'hsplayer';
+            } else if (user.role === 'coach') {
+                userFolder = user.is_college_coach ? 'collegecoach' : 'hscoach';
+            } else {
+                userFolder = 'other';
+            }
+
+            // Check if we're on a different role's page
+            const currentPath = window.location.pathname;
+            const pathParts = currentPath.split('/');
+            const frontendIdx = pathParts.indexOf('frontend');
+            if (frontendIdx !== -1 && pathParts[frontendIdx + 1] !== userFolder) {
+                // We're on a different role's page — rewrite mobile sidebar links
+                const correctBase = `../../${userFolder}/tabs/`;
+                const profileLink = document.getElementById('mobileSidebarProfileLink');
+                if (profileLink) profileLink.href = correctBase + 'my-profile.html';
+
+                const sidebarNavItems = document.querySelectorAll('.mobile-sidebar-nav .mobile-sidebar-nav-item');
+                sidebarNavItems.forEach(item => {
+                    const href = item.getAttribute('href');
+                    if (!href || item.tagName === 'BUTTON') return;
+                    if (href.includes('my-profile.html')) {
+                        item.href = correctBase + 'my-profile.html';
+                    } else if (href.includes('settings.html')) {
+                        item.href = correctBase + 'settings.html';
+                    }
+                });
+            }
         }
     } catch (error) {
         console.error('Error updating mobile header:', error);
