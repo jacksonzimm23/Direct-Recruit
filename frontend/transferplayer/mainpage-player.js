@@ -340,50 +340,7 @@ async function updateSidebarFooter() {
                 avatarElement.style.visibility = 'visible';
             }
 
-            // Build mobile role text: Position • Height • Weight • YOE
-            const fullName = `${profile.first_name} ${profile.last_name}`;
-            const mobileParts = [];
-            if (profile.position) mobileParts.push(profile.position);
-            if (profile.height) {
-                if (typeof profile.height === 'string' && (profile.height.includes("'") || profile.height.includes('"'))) {
-                    mobileParts.push(profile.height);
-                } else {
-                    const ti = parseInt(profile.height);
-                    const ft = Math.floor(ti / 12);
-                    const inc = ti % 12;
-                    mobileParts.push(`${ft}'${inc}"`);
-                }
-            }
-            if (profile.weight) mobileParts.push(`${profile.weight} lbs`);
-            if (profile.eligibility) {
-                const yt = profile.eligibility === 1 ? 'year' : 'years';
-                mobileParts.push(`YOE: ${profile.eligibility} ${yt}`);
-            }
-            const roleText = mobileParts.join(' • ') || 'Transfer Player';
-
-            // Update mobile header user info
-            const mobileUserName = document.getElementById('mobileUserName');
-            const mobileUserRole = document.getElementById('mobileUserRole');
-            if (mobileUserName) mobileUserName.textContent = fullName;
-            if (mobileUserRole) mobileUserRole.textContent = roleText;
-
-            // Update mobile header avatar
-            const mobileProfilePic = document.getElementById('mobileProfilePic');
-            if (mobileProfilePic && profile.profile_image_url) {
-                mobileProfilePic.innerHTML = `<img src="${profile.profile_image_url}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
-            }
-
-            // Update mobile sidebar user info
-            const mobileSidebarUserName = document.getElementById('mobileSidebarUserName');
-            const mobileSidebarUserRole = document.getElementById('mobileSidebarUserRole');
-            if (mobileSidebarUserName) mobileSidebarUserName.textContent = fullName;
-            if (mobileSidebarUserRole) mobileSidebarUserRole.textContent = roleText;
-
-            // Update mobile sidebar avatar
-            const mobileSidebarAvatar = document.getElementById('mobileSidebarAvatar');
-            if (mobileSidebarAvatar && profile.profile_image_url) {
-                mobileSidebarAvatar.innerHTML = `<img src="${profile.profile_image_url}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
-            }
+            // Mobile header/sidebar user info is handled by mobile-header.js
 
         }
     } catch (error) {

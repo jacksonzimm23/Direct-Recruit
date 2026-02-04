@@ -1054,45 +1054,7 @@ function updateSidebarFooter() {
         sidebarAvatar.style.visibility = 'visible';
     }
 
-    // === MOBILE HEADER UPDATES ===
-    // Update mobile header profile picture
-    const mobileProfilePic = document.getElementById('mobileProfilePic');
-    if (mobileProfilePic) {
-        if (currentProfile.profile_picture_url) {
-            mobileProfilePic.innerHTML = `<img src="${currentProfile.profile_picture_url}" alt="Profile" class="mobile-profile-pic">`;
-        }
-    }
-
-    // Update mobile header user name
-    const mobileUserName = document.getElementById('mobileUserName');
-    if (mobileUserName) {
-        mobileUserName.textContent = fullName;
-    }
-
-    // Update mobile header user role/subheader
-    const mobileUserRole = document.getElementById('mobileUserRole');
-    if (mobileUserRole) {
-        mobileUserRole.textContent = subheaderText;
-    }
-
-    // === MOBILE SIDEBAR UPDATES ===
-    // Update mobile sidebar avatar
-    const mobileSidebarAvatar = document.getElementById('mobileSidebarAvatar');
-    if (mobileSidebarAvatar && currentProfile.profile_picture_url) {
-        mobileSidebarAvatar.innerHTML = `<img src="${currentProfile.profile_picture_url}" alt="Profile" class="mobile-sidebar-avatar">`;
-    }
-
-    // Update mobile sidebar user name
-    const mobileSidebarUserName = document.getElementById('mobileSidebarUserName');
-    if (mobileSidebarUserName) {
-        mobileSidebarUserName.textContent = fullName;
-    }
-
-    // Update mobile sidebar user role
-    const mobileSidebarUserRole = document.getElementById('mobileSidebarUserRole');
-    if (mobileSidebarUserRole) {
-        mobileSidebarUserRole.textContent = subheaderText;
-    }
+    // Mobile header/sidebar user info is handled by mobile-header.js
 }
 
 // Update profile actions (edit/share/follow buttons) based on ownership

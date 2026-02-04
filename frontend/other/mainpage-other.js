@@ -323,40 +323,7 @@ async function updateSidebarFooter() {
                 postAvatarElement.innerHTML = `<img src="${profile.profile_picture_url}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
             }
 
-            // Update mobile header profile picture
-            const mobileProfilePic = document.getElementById('mobileProfilePic');
-            if (mobileProfilePic && profile.profile_picture_url) {
-                mobileProfilePic.innerHTML = `<img src="${profile.profile_picture_url}" alt="Profile" class="mobile-profile-pic">`;
-            }
-
-            // Update mobile header user info
-            const mobileUserName = document.getElementById('mobileUserName');
-            const fullName = `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || 'User';
-            if (mobileUserName) {
-                mobileUserName.textContent = fullName;
-            }
-
-            const mobileUserRole = document.getElementById('mobileUserRole');
-            const roleText = profile.subheader || '';
-            if (mobileUserRole) {
-                mobileUserRole.textContent = roleText;
-            }
-
-            // Update mobile sidebar user info
-            const mobileSidebarAvatar = document.getElementById('mobileSidebarAvatar');
-            if (mobileSidebarAvatar && profile.profile_picture_url) {
-                mobileSidebarAvatar.innerHTML = `<img src="${profile.profile_picture_url}" alt="Profile" class="mobile-sidebar-avatar">`;
-            }
-
-            const mobileSidebarUserName = document.getElementById('mobileSidebarUserName');
-            if (mobileSidebarUserName) {
-                mobileSidebarUserName.textContent = fullName;
-            }
-
-            const mobileSidebarUserRole = document.getElementById('mobileSidebarUserRole');
-            if (mobileSidebarUserRole) {
-                mobileSidebarUserRole.textContent = roleText;
-            }
+            // Mobile header/sidebar user info is handled by mobile-header.js
         }
     } catch (error) {
         console.error('Error updating sidebar footer:', error);

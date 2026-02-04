@@ -402,36 +402,7 @@ function populateSidebarFooter(profile) {
         avatarElement.style.visibility = 'visible';
     }
 
-    // Build mobile role text: Team, State
-    const fullName = `${profile.first_name} ${profile.last_name}`;
-    const mobileParts = [];
-    if (profile.team_name) mobileParts.push(profile.team_name);
-    if (profile.state) mobileParts.push(profile.state);
-    const roleText = mobileParts.join(', ') || 'HS Coach';
-
-    // Update mobile header user info
-    const mobileUserName = document.getElementById('mobileUserName');
-    const mobileUserRole = document.getElementById('mobileUserRole');
-    if (mobileUserName) mobileUserName.textContent = fullName;
-    if (mobileUserRole) mobileUserRole.textContent = roleText;
-
-    // Update mobile header avatar
-    const mobileProfilePic = document.getElementById('mobileProfilePic');
-    if (mobileProfilePic && profile.profile_image_url) {
-        mobileProfilePic.innerHTML = `<img src="${profile.profile_image_url}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
-    }
-
-    // Update mobile sidebar user info
-    const mobileSidebarUserName = document.getElementById('mobileSidebarUserName');
-    const mobileSidebarUserRole = document.getElementById('mobileSidebarUserRole');
-    if (mobileSidebarUserName) mobileSidebarUserName.textContent = fullName;
-    if (mobileSidebarUserRole) mobileSidebarUserRole.textContent = roleText;
-
-    // Update mobile sidebar avatar
-    const mobileSidebarAvatar = document.getElementById('mobileSidebarAvatar');
-    if (mobileSidebarAvatar && profile.profile_image_url) {
-        mobileSidebarAvatar.innerHTML = `<img src="${profile.profile_image_url}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
-    }
+    // Mobile header/sidebar user info is handled by mobile-header.js
 }
 
 // Immediately populate sidebar footer from cache (called on script load, before DOMContentLoaded)
