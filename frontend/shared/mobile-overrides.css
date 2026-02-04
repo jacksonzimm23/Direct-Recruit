@@ -441,10 +441,10 @@
         min-width: 55px !important;
         border-radius: 12px !important;
         flex: 1 !important;
-        border-left: none !important; /* Remove desktop left border */
+        border: 1.5px solid transparent !important; /* Transparent border to prevent layout shift */
         background: transparent !important;
         color: rgba(254, 252, 251, 0.6) !important;
-        transition: color 0.2s ease, background 0.2s ease !important;
+        transition: color 0.2s ease, background 0.2s ease, border-color 0.2s ease !important;
     }
 
     .nav-item .nav-icon {
@@ -459,7 +459,7 @@
     .nav-item.active {
         background: rgba(18, 130, 162, 0.15) !important;
         color: var(--cerulean, #1282A2) !important;
-        border-left: none !important; /* Override desktop border-left */
+        border: 1.5px solid rgba(18, 130, 162, 0.5) !important;
     }
 
     .sidebar .sidebar-nav .nav-item.active .nav-icon,
@@ -475,6 +475,7 @@
     .profile-type-transfer .nav-item.active {
         background: rgba(230, 57, 70, 0.15) !important;
         color: #e63946 !important;
+        border: 1.5px solid rgba(230, 57, 70, 0.5) !important;
     }
 
     .profile-type-transfer .sidebar .sidebar-nav .nav-item.active .nav-icon,
@@ -489,6 +490,7 @@
     .profile-type-coach .nav-item.active {
         background: rgba(255, 107, 53, 0.15) !important;
         color: #ff6b35 !important;
+        border: 1.5px solid rgba(255, 107, 53, 0.5) !important;
     }
 
     .profile-type-coach .sidebar .sidebar-nav .nav-item.active .nav-icon,
@@ -503,6 +505,7 @@
     .profile-type-other .nav-item.active {
         background: rgba(212, 160, 23, 0.15) !important;
         color: #d4a017 !important;
+        border: 1.5px solid rgba(212, 160, 23, 0.5) !important;
     }
 
     .profile-type-other .sidebar .sidebar-nav .nav-item.active .nav-icon,
