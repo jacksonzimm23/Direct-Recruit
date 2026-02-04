@@ -126,8 +126,68 @@ document.addEventListener('DOMContentLoaded', async function() {
         return `${feet}'${inches}"`;
     }
 
+    // ============ MOBILE DETECTION ============
+    function isMobile() { return window.innerWidth <= 768; }
+
+    // ============ MOBILE ROW TEMPLATES ============
+
+    function createMobilePlayerRow(player) {
+        const displayName = `${player.first_name || ''} ${player.last_name || ''}`.trim() || 'Unknown Player';
+        const height = formatHeight(player.height);
+        const weight = player.weight ? `${player.weight} lbs` : '';
+        const gpaVal = player.gpa ? parseFloat(player.gpa) : null;
+        const gpa = gpaVal ? `GPA: ${gpaVal.toFixed(1)}` : '';
+        const school = player.team_name || '';
+        const state = player.state || '';
+        const gradYear = player.graduation_year ? `Class of ${player.graduation_year}` : '';
+        const offerCount = countOffers(player.offers);
+        const profileImage = player.profile_image_url;
+        const position = player.position ? player.position.split(/[,\/]/)[0].trim() : '';
+        const line2Parts = [position, height, weight, gpa].filter(p => p);
+        const schoolState = school + (state ? `, ${state}` : '');
+        const line3Parts = [schoolState, gradYear].filter(p => p);
+        const offersHtml = ` • <span class="discover-row-offers">Offers: ${offerCount}</span>`;
+        return `
+            <div class="discover-row" data-username="${player.username || ''}">
+                <div class="discover-row-avatar player-border">
+                    ${profileImage ? `<img src="${profileImage}" alt="${displayName}">` : `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>`}
+                </div>
+                <div class="discover-row-info">
+                    <div class="discover-row-name">${displayName}</div>
+                    <div class="discover-row-details player-details-color">${line2Parts.join(' • ')}</div>
+                    <div class="discover-row-details discover-row-line3">${line3Parts.join(' • ')}${offersHtml}</div>
+                </div>
+            </div>`;
+    }
+
+    function createMobileCoachRow(coach) {
+        const displayName = `${coach.first_name || ''} ${coach.last_name || ''}`.trim() || 'Unknown Coach';
+        const school = coach.team_name || '';
+        const state = coach.state || '';
+        const division = coach.college_division || '';
+        const shortDiv = getShortDivision(division);
+        const profileImage = coach.profile_image_url;
+        const positionAcronym = getPositionAcronym(coach.position_title);
+        let recruiting = '';
+        if (coach.cc_pos && coach.cc_pos.trim()) {
+            recruiting = coach.cc_pos.split(',').map(p => p.trim()).filter(p => p).join(', ');
+        }
+        const line2Parts = [positionAcronym, school + (state ? `, ${state}` : ''), shortDiv, recruiting ? `Recruiting: ${recruiting}` : ''].filter(p => p);
+        return `
+            <div class="discover-row" data-username="${coach.username || ''}">
+                <div class="discover-row-avatar coach-border">
+                    ${profileImage ? `<img src="${profileImage}" alt="${displayName}">` : `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>`}
+                </div>
+                <div class="discover-row-info">
+                    <div class="discover-row-name">${displayName}</div>
+                    <div class="discover-row-details coach-details-color">${line2Parts.join(' • ')}</div>
+                </div>
+            </div>`;
+    }
+
     // Create player card HTML
     function createPlayerCard(player) {
+        if (isMobile()) return createMobilePlayerRow(player);
         const displayName = `${player.first_name || ''} ${player.last_name || ''}`.trim() || 'Unknown Player';
         const height = formatHeight(player.height);
         const weight = player.weight ? `${player.weight} lbs` : 'N/A';
@@ -213,7 +273,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             loadMoreContainer.style.display = 'none';
 
             // Clear existing player cards (but keep loading/empty states)
-            const existingCards = playersGrid.querySelectorAll('.player-card');
+            const existingCards = playersGrid.querySelectorAll('.player-card, .discover-row');
             existingCards.forEach(card => card.remove());
 
             // Reset pagination state
@@ -303,7 +363,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     // Setup view profile button handlers and make cards clickable
     function setupViewProfileButtons() {
-        const playerCards = playersGrid.querySelectorAll('.player-card');
+        const playerCards = playersGrid.querySelectorAll('.player-card, .discover-row');
         playerCards.forEach(card => {
             const username = card.dataset.username;
 
@@ -500,6 +560,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     // Create coach card HTML
     function createCoachCard(coach) {
+        if (isMobile()) return createMobileCoachRow(coach);
         const positionAcronym = getPositionAcronym(coach.position_title);
         const divisionDisplay = formatDivision(coach.college_division);
         const shortDivision = getShortDivision(coach.college_division);

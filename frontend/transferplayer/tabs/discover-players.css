@@ -509,6 +509,7 @@
     font-size: 1.1rem;
     font-weight: 800;
     color: var(--white);
+    white-space: nowrap;
 }
 
 .btn-view-profile {
@@ -626,4 +627,102 @@
     .discover-section:first-of-type .section-title-row {
         padding-top: 0;
     }
+
+    /* === MOBILE DISCOVER ROW LAYOUT === */
+    .players-grid,
+    .coaches-grid {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 0 !important;
+        padding: 0 !important;
+    }
+
+    .discover-row {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.625rem 1rem;
+        cursor: pointer;
+        border-bottom: 1px solid rgba(254, 252, 251, 0.06);
+        min-height: 68px;
+        box-sizing: border-box;
+    }
+
+    .discover-row:active {
+        background: rgba(254, 252, 251, 0.05);
+    }
+
+    .discover-row-avatar {
+        width: 40px;
+        height: 40px;
+        min-width: 40px;
+        border-radius: 50%;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 2px solid;
+    }
+
+    .discover-row-avatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .discover-row-avatar svg {
+        width: 20px;
+        height: 20px;
+    }
+
+    .discover-row-avatar.player-border {
+        border-color: #1282a2;
+        background: rgba(18, 130, 162, 0.15);
+    }
+
+    .discover-row-avatar.transfer-border {
+        border-color: #dc3545;
+        background: rgba(220, 53, 69, 0.15);
+    }
+
+    .discover-row-avatar.coach-border {
+        border-color: #ff6b35;
+        background: rgba(255, 107, 53, 0.15);
+    }
+
+    .discover-row-info {
+        flex: 1;
+        min-width: 0;
+        overflow: hidden;
+    }
+
+    .discover-row-name {
+        font-weight: 800;
+        font-size: 0.875rem;
+        color: var(--white);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .discover-row-details {
+        font-size: 0.7rem;
+        font-weight: 700;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .discover-row-line3 {
+        color: rgba(254, 252, 251, 0.6);
+    }
+
+    .discover-row-offers {
+        color: #ff6b35;
+        font-weight: 700;
+    }
+
+    .discover-row-details.player-details-color { color: #1282a2; }
+    .discover-row-details.transfer-details-color { color: #dc3545; }
+    .discover-row-details.coach-details-color { color: #ff6b35; }
 }

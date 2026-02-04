@@ -319,10 +319,155 @@ document.addEventListener('DOMContentLoaded', function() {
         return acronyms.join('/');
     }
 
+    // ============ MOBILE DETECTION ============
+    function isMobile() { return window.innerWidth <= 768; }
+
+    // ============ MOBILE ROW TEMPLATES ============
+
+    function createMobileHSPlayerRow(player) {
+        const displayName = `${player.first_name || ''} ${player.last_name || ''}`.trim() || 'Unknown Player';
+        const height = formatHeight(player.height);
+        const weight = player.weight ? `${player.weight} lbs` : '';
+        const gpaVal = player.gpa ? parseFloat(player.gpa) : null;
+        const gpa = gpaVal ? `GPA: ${gpaVal.toFixed(1)}` : '';
+        const school = player.team_name || '';
+        const state = player.state || '';
+        const gradYear = player.graduation_year ? `Class of ${player.graduation_year}` : '';
+        const offerCount = countOffers(player.offers);
+        const profileImage = player.profile_image_url;
+        const position = player.position ? player.position.split(/[,\/]/)[0].trim() : '';
+        const line2Parts = [position, height, weight, gpa].filter(p => p);
+        const schoolState = school + (state ? `, ${state}` : '');
+        const line3Parts = [schoolState, gradYear].filter(p => p);
+        const offersHtml = ` • <span class="discover-row-offers">Offers: ${offerCount}</span>`;
+        return `
+            <div class="discover-row" data-username="${player.username || ''}" data-user-type="hsplayer">
+                <div class="discover-row-avatar player-border">
+                    ${profileImage ? `<img src="${profileImage}" alt="${displayName}">` : `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>`}
+                </div>
+                <div class="discover-row-info">
+                    <div class="discover-row-name">${displayName}</div>
+                    <div class="discover-row-details player-details-color">${line2Parts.join(' • ')}</div>
+                    <div class="discover-row-details discover-row-line3">${line3Parts.join(' • ')}${offersHtml}</div>
+                </div>
+            </div>`;
+    }
+
+    function createMobileCollegePlayerRow(player) {
+        const displayName = `${player.first_name || ''} ${player.last_name || ''}`.trim() || 'Unknown Player';
+        const school = player.team_name || '';
+        const state = player.state || '';
+        const division = player.college_division || '';
+        const shortDiv = getShortDivision(division);
+        const profileImage = player.profile_image_url;
+        const position = player.position ? player.position.split(/[,\/]/)[0].trim() : '';
+
+        const line2Parts = [position, school + (state ? `, ${state}` : ''), shortDiv].filter(p => p);
+
+        return `
+            <div class="discover-row" data-username="${player.username || ''}" data-user-type="collegeplayer">
+                <div class="discover-row-avatar player-border">
+                    ${profileImage ? `<img src="${profileImage}" alt="${displayName}">` : `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>`}
+                </div>
+                <div class="discover-row-info">
+                    <div class="discover-row-name">${displayName}</div>
+                    <div class="discover-row-details player-details-color">${line2Parts.join(' • ')}</div>
+                </div>
+            </div>`;
+    }
+
+    function createMobileTransferPlayerRow(player) {
+        const displayName = `${player.first_name || ''} ${player.last_name || ''}`.trim() || 'Unknown Player';
+        const height = formatHeight(player.height);
+        const weight = player.weight ? `${player.weight} lbs` : '';
+        const profileImage = player.profile_image_url;
+        const position = player.position ? player.position.split(/[,\/]/)[0].trim() : '';
+        const eligibility = player.eligibility ? `${player.eligibility} yr eligibility` : '';
+
+        const line2Parts = [position, height, weight, eligibility].filter(p => p);
+
+        return `
+            <div class="discover-row" data-username="${player.username || ''}" data-user-type="transferplayer">
+                <div class="discover-row-avatar transfer-border">
+                    ${profileImage ? `<img src="${profileImage}" alt="${displayName}">` : `<svg viewBox="0 0 24 24" fill="currentColor" style="color:#dc3545;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>`}
+                </div>
+                <div class="discover-row-info">
+                    <div class="discover-row-name">${displayName}</div>
+                    <div class="discover-row-details transfer-details-color">${line2Parts.join(' • ')}</div>
+                </div>
+            </div>`;
+    }
+
+    function createMobileHSCoachRow(coach) {
+        const displayName = `${coach.first_name || ''} ${coach.last_name || ''}`.trim() || 'Unknown Coach';
+        const school = coach.high_school || coach.school_name || '';
+        const state = coach.state || '';
+        const profileImage = coach.profile_image_url;
+        const positionAcronym = getPositionAcronym(coach.position_title);
+
+        const line2Parts = [positionAcronym, school + (state ? `, ${state}` : '')].filter(p => p);
+
+        return `
+            <div class="discover-row" data-username="${coach.username || ''}" data-user-type="hscoach">
+                <div class="discover-row-avatar coach-border">
+                    ${profileImage ? `<img src="${profileImage}" alt="${displayName}">` : `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>`}
+                </div>
+                <div class="discover-row-info">
+                    <div class="discover-row-name">${displayName}</div>
+                    <div class="discover-row-details coach-details-color">${line2Parts.join(' • ')}</div>
+                </div>
+            </div>`;
+    }
+
+    function createMobileCollegeCoachRow(coach) {
+        const displayName = `${coach.first_name || ''} ${coach.last_name || ''}`.trim() || 'Unknown Coach';
+        const school = coach.team_name || '';
+        const state = coach.state || '';
+        const division = coach.college_division || '';
+        const shortDiv = getShortDivision(division);
+        const profileImage = coach.profile_image_url;
+        const positionAcronym = getPositionAcronym(coach.position_title);
+        let recruiting = '';
+        if (coach.cc_pos && coach.cc_pos.trim()) {
+            recruiting = coach.cc_pos.split(',').map(p => p.trim()).filter(p => p).join(', ');
+        }
+
+        const line2Parts = [positionAcronym, school + (state ? `, ${state}` : ''), shortDiv, recruiting ? `Recruiting: ${recruiting}` : ''].filter(p => p);
+
+        return `
+            <div class="discover-row" data-username="${coach.username || ''}" data-user-type="collegecoach">
+                <div class="discover-row-avatar coach-border">
+                    ${profileImage ? `<img src="${profileImage}" alt="${displayName}">` : `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>`}
+                </div>
+                <div class="discover-row-info">
+                    <div class="discover-row-name">${displayName}</div>
+                    <div class="discover-row-details coach-details-color">${line2Parts.join(' • ')}</div>
+                </div>
+            </div>`;
+    }
+
+    function createMobileOtherRow(profile) {
+        const displayName = `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || 'Unknown User';
+        const subheader = profile.subheader || 'Direct Recruit User';
+        const profileImage = profile.profile_picture_url || profile.profile_image_url;
+
+        return `
+            <div class="discover-row" data-username="${profile.username || ''}" data-user-type="other">
+                <div class="discover-row-avatar other-border">
+                    ${profileImage ? `<img src="${profileImage}" alt="${displayName}">` : `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>`}
+                </div>
+                <div class="discover-row-info">
+                    <div class="discover-row-name">${displayName}</div>
+                    <div class="discover-row-details other-details-color">${subheader}</div>
+                </div>
+            </div>`;
+    }
+
     // ============ CARD TEMPLATES ============
 
     // HS Player Card
     function createHSPlayerCard(player) {
+        if (isMobile()) return createMobileHSPlayerRow(player);
         const displayName = `${player.first_name || ''} ${player.last_name || ''}`.trim() || 'Unknown Player';
         const height = formatHeight(player.height);
         const weight = player.weight ? `${player.weight} lbs` : 'N/A';
@@ -397,6 +542,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // College Player Card
     function createCollegePlayerCard(player) {
+        if (isMobile()) return createMobileCollegePlayerRow(player);
         const displayName = `${player.first_name || ''} ${player.last_name || ''}`.trim() || 'Unknown Player';
         const school = player.team_name || 'Unknown School';
         const division = player.college_division || '';
@@ -434,6 +580,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Transfer Player Card
     function createTransferPlayerCard(player) {
+        if (isMobile()) return createMobileTransferPlayerRow(player);
         const displayName = `${player.first_name || ''} ${player.last_name || ''}`.trim() || 'Unknown Player';
         const height = formatHeight(player.height);
         const weight = player.weight ? `${player.weight} lbs` : 'N/A';
@@ -479,6 +626,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // HS Coach Card
     function createHSCoachCard(coach) {
+        if (isMobile()) return createMobileHSCoachRow(coach);
         const displayName = `${coach.first_name || ''} ${coach.last_name || ''}`.trim() || 'Unknown Coach';
         const school = coach.high_school || coach.school_name || 'Unknown School';
         const state = coach.state || '';
@@ -512,6 +660,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // College Coach Card
     function createCollegeCoachCard(coach) {
+        if (isMobile()) return createMobileCollegeCoachRow(coach);
         const displayName = `${coach.first_name || ''} ${coach.last_name || ''}`.trim() || 'Unknown Coach';
         const school = coach.team_name || 'Unknown School';
         const division = coach.college_division || '';
@@ -570,6 +719,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Other Profile Card (Yellow Theme)
     function createOtherCard(profile) {
+        if (isMobile()) return createMobileOtherRow(profile);
         const displayName = `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || 'Unknown User';
         const subheader = profile.subheader || '';
         const profileImage = profile.profile_picture_url || profile.profile_image_url;
@@ -596,7 +746,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Attach click listeners to user cards
     function attachUserCardListeners() {
-        const userCards = document.querySelectorAll('.player-card, .coach-card, .other-card');
+        const userCards = document.querySelectorAll('.player-card, .coach-card, .other-card, .discover-row');
         userCards.forEach(card => {
             // Remove existing listeners by cloning
             const newCard = card.cloneNode(true);
