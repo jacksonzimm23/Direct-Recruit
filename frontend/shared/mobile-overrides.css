@@ -882,24 +882,22 @@
         align-items: center !important;
         gap: 0.4rem !important;
         width: 100% !important;
+        overflow: hidden !important;
     }
 
-    /* Name gets priority - shows full name, only truncates if very long */
+    /* Name always shows in full, never truncates */
     .post-user-name {
         display: inline-flex !important;
         align-items: center !important;
         gap: 0.25rem !important;
-        flex: 0 1 auto !important;
-        max-width: none !important;
-        overflow: visible !important;
-        text-overflow: clip !important;
+        flex: 0 0 auto !important;
         white-space: nowrap !important;
     }
 
-    /* Username/handle shrinks and truncates first */
+    /* Username truncates with ellipsis when space is tight */
     .post-user-handle {
         flex: 0 1 auto !important;
-        min-width: 30px !important;
+        min-width: 0 !important;
         overflow: hidden !important;
         text-overflow: ellipsis !important;
         white-space: nowrap !important;
@@ -911,6 +909,25 @@
         text-overflow: ellipsis !important;
         white-space: nowrap !important;
         margin-top: 0.125rem !important;
+    }
+
+    /* === SEARCH RESULT NAME/USERNAME - NO WRAP === */
+    .result-name-row {
+        flex-wrap: nowrap !important;
+        overflow: hidden !important;
+    }
+
+    .result-name {
+        flex: 0 0 auto !important;
+        white-space: nowrap !important;
+    }
+
+    .result-username {
+        flex: 0 1 auto !important;
+        min-width: 0 !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        white-space: nowrap !important;
     }
 
     .post-card {
