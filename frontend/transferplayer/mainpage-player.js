@@ -340,9 +340,28 @@ async function updateSidebarFooter() {
                 avatarElement.style.visibility = 'visible';
             }
 
-            // Update mobile header user info
+            // Build mobile role text: Position • Height • Weight • YOE
             const fullName = `${profile.first_name} ${profile.last_name}`;
-            const roleText = 'Transfer Player';
+            const mobileParts = [];
+            if (profile.position) mobileParts.push(profile.position);
+            if (profile.height) {
+                if (typeof profile.height === 'string' && (profile.height.includes("'") || profile.height.includes('"'))) {
+                    mobileParts.push(profile.height);
+                } else {
+                    const ti = parseInt(profile.height);
+                    const ft = Math.floor(ti / 12);
+                    const inc = ti % 12;
+                    mobileParts.push(`${ft}'${inc}"`);
+                }
+            }
+            if (profile.weight) mobileParts.push(`${profile.weight} lbs`);
+            if (profile.eligibility) {
+                const yt = profile.eligibility === 1 ? 'year' : 'years';
+                mobileParts.push(`YOE: ${profile.eligibility} ${yt}`);
+            }
+            const roleText = mobileParts.join(' • ') || 'Transfer Player';
+
+            // Update mobile header user info
             const mobileUserName = document.getElementById('mobileUserName');
             const mobileUserRole = document.getElementById('mobileUserRole');
             if (mobileUserName) mobileUserName.textContent = fullName;

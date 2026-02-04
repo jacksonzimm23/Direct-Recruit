@@ -444,9 +444,25 @@ function populateSidebarFooter(profile) {
         avatarElement.style.visibility = 'visible';
     }
 
-    // Update mobile header user info
+    // Build mobile role text: Team, State • Division
     const fullName = `${profile.first_name} ${profile.last_name}`;
-    const roleText = 'College Coach';
+    const mobileParts = [];
+    if (profile.team_name && profile.state) {
+        mobileParts.push(`${profile.team_name}, ${profile.state}`);
+    } else if (profile.team_name) {
+        mobileParts.push(profile.team_name);
+    } else if (profile.state) {
+        mobileParts.push(profile.state);
+    }
+    if (profile.college_division) {
+        const divDisplay = (profile.college_division === 'FBS' || profile.college_division === 'FCS')
+            ? `D1 ${profile.college_division}`
+            : profile.college_division;
+        mobileParts.push(divDisplay);
+    }
+    const roleText = mobileParts.join(' • ') || 'College Coach';
+
+    // Update mobile header user info
     const mobileUserName = document.getElementById('mobileUserName');
     const mobileUserRole = document.getElementById('mobileUserRole');
     if (mobileUserName) mobileUserName.textContent = fullName;

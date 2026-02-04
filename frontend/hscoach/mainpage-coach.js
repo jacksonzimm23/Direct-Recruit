@@ -402,9 +402,14 @@ function populateSidebarFooter(profile) {
         avatarElement.style.visibility = 'visible';
     }
 
-    // Update mobile header user info
+    // Build mobile role text: Team, State
     const fullName = `${profile.first_name} ${profile.last_name}`;
-    const roleText = 'HS Coach';
+    const mobileParts = [];
+    if (profile.team_name) mobileParts.push(profile.team_name);
+    if (profile.state) mobileParts.push(profile.state);
+    const roleText = mobileParts.join(', ') || 'HS Coach';
+
+    // Update mobile header user info
     const mobileUserName = document.getElementById('mobileUserName');
     const mobileUserRole = document.getElementById('mobileUserRole');
     if (mobileUserName) mobileUserName.textContent = fullName;
