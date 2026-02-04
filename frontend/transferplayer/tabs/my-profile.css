@@ -7132,107 +7132,160 @@ input[type="file"]::file-selector-button:hover {
         padding-bottom: 90px !important;
     }
 
-    /* === PROFILE HEADER - CENTERED MOBILE LAYOUT === */
+    /* === PROFILE HEADER - MOBILE LAYOUT === */
     .profile-header-simple {
         margin-bottom: 1rem;
         padding: 1rem;
     }
 
     .profile-header-top {
-        flex-direction: column;
-        align-items: center;
-        text-align: center;
-        gap: 1rem;
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: flex-start;
+        text-align: left;
+        gap: 0;
         padding-bottom: 1rem;
     }
 
-    /* Avatar - centered and smaller */
+    /* Avatar - left-aligned */
     .profile-avatar-container {
-        display: flex;
-        justify-content: center;
+        flex-shrink: 0;
+        order: 1;
     }
 
     .profile-avatar-large {
-        width: 90px;
-        height: 90px;
+        width: 80px;
+        height: 80px;
     }
 
     .profile-avatar-large svg {
-        width: 45px;
-        height: 45px;
+        width: 40px;
+        height: 40px;
     }
 
     .btn-change-photo {
-        width: 32px;
-        height: 32px;
+        width: 28px;
+        height: 28px;
         border-width: 2px;
     }
 
     .btn-change-photo svg {
-        width: 16px;
-        height: 16px;
+        width: 14px;
+        height: 14px;
     }
 
-    /* Profile info - centered */
+    /* Actions - inline with avatar, pushed to far right */
+    .profile-actions {
+        order: 2;
+        margin-left: auto;
+        justify-content: flex-end;
+        padding-top: 0.25rem;
+        gap: 0.4rem;
+        flex-shrink: 0;
+    }
+
+    .btn-edit-profile {
+        height: 26px;
+        padding: 0 0.5rem;
+        font-size: 0.7rem;
+        border-radius: 6px;
+        gap: 0.2rem;
+        align-items: center;
+    }
+
+    .btn-edit-profile svg {
+        width: 10px !important;
+        height: 10px !important;
+        flex-shrink: 0;
+    }
+
+    .btn-share-profile {
+        width: 26px;
+        height: 26px;
+        padding: 0;
+        border-radius: 6px;
+    }
+
+    .btn-share-profile svg {
+        width: 12px !important;
+        height: 12px !important;
+        flex-shrink: 0;
+    }
+
+    /* Other-profile action buttons (Back, Follow, Message) */
+    .btn-back {
+        height: 26px;
+        padding: 0 0.5rem;
+        font-size: 0.7rem;
+        border-radius: 6px;
+        gap: 0.2rem;
+        align-items: center;
+    }
+
+    .btn-back svg {
+        width: 10px !important;
+        height: 10px !important;
+        flex-shrink: 0;
+    }
+
+    .btn-follow {
+        height: 26px;
+        padding: 0 0.5rem;
+        font-size: 0.7rem;
+        border-radius: 6px;
+    }
+
+    .btn-message {
+        height: 26px;
+        padding: 0 0.5rem;
+        font-size: 0.7rem;
+        border-radius: 6px;
+    }
+
+    /* Profile info - left-aligned below avatar row, full width */
     .profile-header-info {
-        text-align: center;
+        order: 3;
+        text-align: left;
         width: 100%;
+        margin-top: 0.5rem;
     }
 
     .profile-name {
-        font-size: 1.5rem;
+        font-size: 1.2rem;
         display: block;
         margin-bottom: 0.25rem;
     }
 
     .profile-name-row {
-        justify-content: center;
+        justify-content: flex-start;
         flex-wrap: wrap;
     }
 
     .profile-position {
-        font-size: 0.95rem;
+        font-size: 0.85rem;
         margin-bottom: 0.25rem;
     }
 
     .profile-meta {
-        font-size: 0.85rem;
+        font-size: 0.8rem;
         white-space: normal;
         line-height: 1.4;
     }
 
     .profile-username {
-        font-size: 0.85rem;
+        font-size: 0.8rem;
         margin-top: 0.25rem;
     }
 
-    /* Follow stats - centered */
+    /* Follow stats - left-aligned */
     .profile-follow-stats {
-        justify-content: center;
-        gap: 1.5rem;
-        margin-top: 0.75rem;
+        justify-content: flex-start;
+        gap: 1.25rem;
+        margin-top: 0.25rem;
     }
 
     .follow-stat-link {
-        font-size: 0.9rem;
-    }
-
-    /* Actions - centered row */
-    .profile-actions {
-        justify-content: center;
-        padding-top: 1rem;
-        gap: 0.75rem;
-    }
-
-    .btn-edit-profile {
-        padding: 0.6rem 1.25rem;
         font-size: 0.85rem;
-    }
-
-    .btn-share-profile {
-        width: 40px;
-        height: 40px;
-        padding: 0;
     }
 
     /* === ABOUT & CONTACT INFO SECTION === */
