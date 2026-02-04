@@ -124,6 +124,15 @@
     border-color: var(--accent-red);
 }
 
+/* Other - Gold */
+.profile-header-simple.other-profile .profile-position {
+    color: #d4a017;
+}
+
+.profile-header-simple.other-profile .profile-avatar-large {
+    border-color: #d4a017;
+}
+
 /* All names stay white */
 .profile-name {
     color: var(--white) !important;

@@ -121,6 +121,7 @@ async function loadCurrentUser() {
                 if (response.profile && response.profile.profile_image_url) {
                     avatarElement.innerHTML = `<img src="${response.profile.profile_image_url}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
                 }
+                avatarElement.style.border = `2px solid ${getRoleBorderColor(response.user.role, response.user.is_transfer_player, response.profile?.college_division)}`;
                 avatarElement.style.visibility = 'visible';
             }
         }
@@ -182,7 +183,7 @@ function renderConversationsList() {
                  data-participant-id="${participant.id || ''}">
                 <div class="unread-indicator"></div>
                 <div class="conversation-avatar">
-                    <div class="avatar-circle">
+                    <div class="avatar-circle" style="border: 2px solid ${getRoleBorderColor(participant.role, participant.transfer === 'y', participant.college_division)}">
                         ${participant.profile_image
                             ? `<img src="${participant.profile_image}" alt="${participant.first_name}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`
                             : `<svg viewBox="0 0 24 24" fill="currentColor">
@@ -434,8 +435,11 @@ function updateThreadHeader(participant) {
         threadUserRole.innerHTML = starsPrefix + roleText;
     }
 
-    if (threadAvatarCircle && participant.profile_image) {
-        threadAvatarCircle.innerHTML = `<img src="${participant.profile_image}" alt="${participant.first_name}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
+    if (threadAvatarCircle) {
+        threadAvatarCircle.style.border = `2px solid ${getRoleBorderColor(participant.role, participant.transfer === 'y', participant.college_division)}`;
+        if (participant.profile_image) {
+            threadAvatarCircle.innerHTML = `<img src="${participant.profile_image}" alt="${participant.first_name}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
+        }
     }
 }
 

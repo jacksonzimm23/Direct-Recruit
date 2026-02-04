@@ -105,15 +105,11 @@ async function updateMobileHeader() {
             }
 
             // Set color based on logged-in user's role, not the page's profile-type class
-            let roleColor = '#1282A2'; // default blue (HS/college player)
-            if (user.role === 'player' && user.is_transfer_player) {
-                roleColor = '#e63946'; // Transfer red
-            } else if (user.role === 'coach') {
-                roleColor = '#ff6b35'; // Coach orange
-            } else if (user.role === 'other') {
-                roleColor = '#d4a017'; // Other gold
-            }
+            const roleColor = getRoleBorderColor(user.role, user.is_transfer_player, profile.college_division);
             if (mobileUserRole) mobileUserRole.style.color = roleColor;
+
+            // Set role-colored border on mobile header avatar
+            if (mobileProfilePic) mobileProfilePic.style.border = `2px solid ${roleColor}`;
 
             // Also update mobile sidebar user info if present
             const mobileSidebarUserName = document.getElementById('mobileSidebarUserName');
@@ -124,8 +120,11 @@ async function updateMobileHeader() {
                 mobileSidebarUserRole.textContent = mobileUserRole ? mobileUserRole.textContent : '';
                 mobileSidebarUserRole.style.color = roleColor;
             }
-            if (mobileSidebarAvatar && profileImgUrl) {
-                mobileSidebarAvatar.innerHTML = `<img src="${profileImgUrl}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
+            if (mobileSidebarAvatar) {
+                if (profileImgUrl) {
+                    mobileSidebarAvatar.innerHTML = `<img src="${profileImgUrl}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
+                }
+                mobileSidebarAvatar.style.border = `2px solid ${roleColor}`;
             }
 
             // Fix mobile sidebar nav links to point to logged-in user's role folder

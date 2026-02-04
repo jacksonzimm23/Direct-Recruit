@@ -746,6 +746,24 @@ async function displayProfile(profile, type, accessLevel = 'full', hasPendingReq
         }
     }
 
+    // Add color-coded class to profile header
+    const profileHeader = document.querySelector('.profile-header-simple');
+    if (profileHeader) {
+        profileHeader.classList.remove('player-profile', 'coach-profile', 'portal-profile', 'other-profile');
+        if (type === 'player') {
+            const isTransfer = profileData.transfer === 'y' || profileData.is_transfer_player;
+            if (isTransfer) {
+                profileHeader.classList.add('portal-profile');
+            } else {
+                profileHeader.classList.add('player-profile');
+            }
+        } else if (type === 'coach') {
+            profileHeader.classList.add('coach-profile');
+        } else if (type === 'other') {
+            profileHeader.classList.add('other-profile');
+        }
+    }
+
     // Display type-specific content
     if (type === 'player') {
         displayPlayerProfile(profileData);

@@ -456,6 +456,18 @@ const notificationsAPI = {
     }
 };
 
+// Role-based avatar border color utility
+function getRoleBorderColor(role, isTransfer, collegeDivision) {
+    if (role === 'player') {
+        if (isTransfer === true || isTransfer === 'y') return '#e63946';
+        return '#1282a2';
+    }
+    if (role === 'coach') return '#ff6b35';
+    if (role === 'other') return '#d4a017';
+    return '#1282a2';
+}
+window.getRoleBorderColor = getRoleBorderColor;
+
 // Unified API object for convenience
 const API = {
     // Direct access to apiRequest for custom endpoints

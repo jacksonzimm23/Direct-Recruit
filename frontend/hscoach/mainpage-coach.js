@@ -399,6 +399,7 @@ function populateSidebarFooter(profile) {
         if (profile.profile_image_url) {
             avatarElement.innerHTML = `<img src="${profile.profile_image_url}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
         }
+        avatarElement.style.border = `2px solid ${getRoleBorderColor('coach', false, profile.college_division)}`;
         avatarElement.style.visibility = 'visible';
     }
 

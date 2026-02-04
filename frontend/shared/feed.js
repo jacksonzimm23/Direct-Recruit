@@ -1,4 +1,4 @@
-// Feed System - Option 4: Two-Section Feed (Following + Discover)
+﻿// Feed System - Option 4: Two-Section Feed (Following + Discover)
 // This file handles all feed-related functionality for all profile dashboards
 
 // Global feedManager variable - declared at top to ensure it's always accessible
@@ -63,6 +63,7 @@ class FeedManager {
                 const avatar = document.querySelector('.create-post-box .post-avatar-circle');
                 if (avatar) {
                     avatar.innerHTML = `<img src="${response.profile.profile_image_url}" alt="Your avatar" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
+                    avatar.style.border = `2px solid ${getRoleBorderColor(response.user.role, response.user.is_transfer_player, response.profile.college_division)}`;
                 }
             }
         } catch (error) {
@@ -79,6 +80,7 @@ class FeedManager {
                 const avatar = document.querySelector('.create-post-box .post-avatar-circle');
                 if (avatar) {
                     avatar.innerHTML = `<img src="${response.profile.profile_image_url}" alt="Your avatar" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
+                    avatar.style.border = `2px solid ${getRoleBorderColor(response.user.role, response.user.is_transfer_player, response.profile.college_division)}`;
                 }
             }
         } catch (error) {
@@ -610,7 +612,7 @@ class FeedManager {
             const isHSPlayer = !post.author_division && post.author_transfer !== 'y';
             const isTransferPlayer = post.author_transfer === 'y';
             if (isHSPlayer || isTransferPlayer) {
-                starsHtml = `<span class="post-meta-stars" style="color: #ffd700; font-weight: 600;">${post.author_star_rating}★</span> `;
+                starsHtml = `<span class="post-meta-stars" style="color: #ffd700; font-weight: 600;">${post.author_star_rating}â˜…</span> `;
             }
         }
 
@@ -619,7 +621,7 @@ class FeedManager {
 
             // Check if transfer player (transfer = 'y')
             if (post.author_transfer === 'y') {
-                // Transfer Player: Position • Height • Weight • YOE
+                // Transfer Player: Position â€¢ Height â€¢ Weight â€¢ YOE
                 if (post.author_position) parts.push(post.author_position);
 
                 if (post.author_height) {
@@ -648,7 +650,7 @@ class FeedManager {
                     parts.push(`YOE: ${post.author_eligibility} ${yearText}`);
                 }
             } else if (post.author_division) {
-                // College Player: Position • College • Division
+                // College Player: Position â€¢ College â€¢ Division
                 if (post.author_position) parts.push(post.author_position);
                 if (post.author_school) parts.push(post.author_school);
                 // Format FBS/FCS as D1 FBS/D1 FCS
@@ -659,7 +661,7 @@ class FeedManager {
                     parts.push(div);
                 }
             } else {
-                // HS Player: Position • High School • Year
+                // HS Player: Position â€¢ High School â€¢ Year
                 if (post.author_position) parts.push(post.author_position);
                 if (post.author_school) parts.push(post.author_school);
                 if (post.author_grad_year) {
@@ -668,11 +670,11 @@ class FeedManager {
             }
 
             parts.push(timeAgo);
-            metaInfo = starsHtml + parts.join(' • ');
+            metaInfo = starsHtml + parts.join(' â€¢ ');
         } else if (post.author_role === 'other') {
             // Other profile: entire meta info in yellow
             if (post.author_subheader) {
-                metaInfo = `<span style="color: #d4a017;">${post.author_subheader} • ${timeAgo}</span>`;
+                metaInfo = `<span style="color: #d4a017;">${post.author_subheader} â€¢ ${timeAgo}</span>`;
             } else {
                 metaInfo = `<span style="color: #d4a017;">${timeAgo}</span>`;
             }
@@ -682,7 +684,7 @@ class FeedManager {
 
             // Check if college coach (has division) or HS coach (no division)
             if (post.author_division) {
-                // College Coach: College, State • Division
+                // College Coach: College, State â€¢ Division
                 if (post.author_school && post.author_state) {
                     parts.push(`${post.author_school}, ${post.author_state}`);
                 } else if (post.author_school) {
@@ -698,14 +700,14 @@ class FeedManager {
                     parts.push(div);
                 }
                 parts.push(timeAgo);
-                metaInfo = parts.join(' • ');
+                metaInfo = parts.join(' â€¢ ');
             } else {
                 // HS Coach: School, State (comma-separated like sidebar)
                 if (post.author_school) parts.push(post.author_school);
                 if (post.author_state) parts.push(post.author_state);
                 // Use comma separator for HS Coach to match sidebar, then add timeAgo with bullet
                 const schoolState = parts.join(', ');
-                metaInfo = schoolState ? `${schoolState} • ${timeAgo}` : timeAgo;
+                metaInfo = schoolState ? `${schoolState} â€¢ ${timeAgo}` : timeAgo;
             }
         }
 
@@ -770,7 +772,7 @@ class FeedManager {
             ${repostIndicator}
             <div class="post-header">
                 <a href="#" class="post-avatar-link" onclick="feedManager.goToProfile('${post.author_username || post.user_id}', '${post.author_role}', '${post.author_division || ''}', '${post.user_id}', ${post.author_transfer === 'y'}); return false;">
-                    <div class="post-avatar-circle">
+                    <div class="post-avatar-circle" style="border: 2px solid ${getRoleBorderColor(post.author_role, post.author_transfer === 'y', post.author_division)}">
                         ${post.author_image ?
                             `<img src="${post.author_image}" alt="${authorName}">` :
                             `<svg viewBox="0 0 24 24" fill="currentColor">
@@ -905,7 +907,7 @@ class FeedManager {
             </div>
             <div class="post-header">
                 <a href="#" class="post-avatar-link" onclick="feedManager.goToProfile('${post.author_username || post.user_id}', '${post.author_role}', '${post.author_division || ''}', '${post.user_id}', ${post.author_transfer === 'y'}); return false;">
-                    <div class="post-avatar-circle">
+                    <div class="post-avatar-circle" style="border: 2px solid ${getRoleBorderColor(post.author_role, post.author_transfer === 'y', post.author_division)}">
                         ${post.author_image ?
                             `<img src="${post.author_image}" alt="${authorName}">` :
                             `<svg viewBox="0 0 24 24" fill="currentColor">
@@ -1027,7 +1029,7 @@ class FeedManager {
         article.innerHTML = `
             <div class="post-header">
                 <a href="#" class="post-avatar-link" onclick="feedManager.goToProfile('${post.reposter_username || post.reposter_user_id}', '${post.reposter_role}', '${post.reposter_division || ''}', '${post.reposter_user_id}', ${post.reposter_transfer === 'y'}); return false;">
-                    <div class="post-avatar-circle">
+                    <div class="post-avatar-circle" style="border: 2px solid ${getRoleBorderColor(post.reposter_role, post.reposter_transfer === 'y', post.reposter_division)}">
                         ${post.reposter_image ?
                             `<img src="${post.reposter_image}" alt="${reposterName}">` :
                             `<svg viewBox="0 0 24 24" fill="currentColor">
@@ -1069,7 +1071,7 @@ class FeedManager {
             <div onclick="event.stopPropagation();">${quoteMediaHtml}</div>
             <div class="quoted-post-embed" onclick="event.stopPropagation(); feedManager.navigateToPostView('${postId}', event)" style="cursor: pointer;">
                 <div class="quoted-post-header">
-                    <div class="quoted-post-avatar">
+                    <div class="quoted-post-avatar" style="border: 2px solid ${getRoleBorderColor(post.author_role, post.author_transfer === 'y', post.author_division)}">
                         ${post.author_image ?
                             `<img src="${post.author_image}" alt="${originalAuthorName}">` :
                             `<svg viewBox="0 0 24 24" fill="currentColor">
@@ -1168,7 +1170,7 @@ class FeedManager {
         article.innerHTML = `
             <div class="post-header">
                 <a href="#" class="post-avatar-link" onclick="feedManager.goToProfile('${share.quoter_username || share.quoter_user_id}', '${share.quoter_role}', '${share.quoter_division || ''}', '${share.quoter_user_id}', ${share.quoter_transfer === 'y'}); return false;">
-                    <div class="post-avatar-circle">
+                    <div class="post-avatar-circle" style="border: 2px solid ${getRoleBorderColor(share.quoter_role, share.quoter_transfer === 'y', share.quoter_division)}">
                         ${share.quoter_image ?
                             `<img src="${share.quoter_image}" alt="${quoterName}">` :
                             `<svg viewBox="0 0 24 24" fill="currentColor">
@@ -1206,7 +1208,7 @@ class FeedManager {
             <div class="quoted-post-embed" onclick="feedManager.navigateToPostView('${postId}', event)" style="cursor: pointer;">
                 <div class="quoted-post-header">
                     <a href="#" onclick="feedManager.goToProfile('${share.author_username || share.author_user_id}', '${share.author_role}', '${share.author_division || ''}', '${share.author_user_id}', ${share.author_transfer === 'y'}); event.stopPropagation(); return false;">
-                        <div class="quoted-post-avatar">
+                        <div class="quoted-post-avatar" style="border: 2px solid ${getRoleBorderColor(share.author_role, share.author_transfer === 'y', share.author_division)}">
                             ${share.author_image ?
                                 `<img src="${share.author_image}" alt="${originalAuthorName}">` :
                                 `<svg viewBox="0 0 24 24" fill="currentColor">
@@ -1282,14 +1284,14 @@ class FeedManager {
             const isHSPlayer = !share.quoter_division && share.quoter_transfer !== 'y';
             const isTransferPlayer = share.quoter_transfer === 'y';
             if (isHSPlayer || isTransferPlayer) {
-                starsHtml = `<span class="post-meta-stars" style="color: #ffd700; font-weight: 600;">${share.quoter_star_rating}★</span> `;
+                starsHtml = `<span class="post-meta-stars" style="color: #ffd700; font-weight: 600;">${share.quoter_star_rating}â˜…</span> `;
             }
         }
 
         if (share.quoter_role === 'player') {
             const parts = [];
             if (share.quoter_transfer === 'y') {
-                // Transfer Player: Position • Height • Weight • YOE
+                // Transfer Player: Position â€¢ Height â€¢ Weight â€¢ YOE
                 if (share.quoter_position) parts.push(share.quoter_position);
                 if (share.quoter_height) {
                     const heightStr = String(share.quoter_height);
@@ -1326,10 +1328,10 @@ class FeedManager {
                 if (share.quoter_grad_year) parts.push(share.quoter_grad_year);
             }
             parts.push(timeAgo);
-            metaInfo = starsHtml + parts.join(' • ');
+            metaInfo = starsHtml + parts.join(' â€¢ ');
         } else if (share.quoter_role === 'other') {
             if (share.quoter_subheader) {
-                metaInfo = `<span style="color: #d4a017;">${share.quoter_subheader} • ${timeAgo}</span>`;
+                metaInfo = `<span style="color: #d4a017;">${share.quoter_subheader} â€¢ ${timeAgo}</span>`;
             } else {
                 metaInfo = timeAgo;
             }
@@ -1344,12 +1346,12 @@ class FeedManager {
                     parts.push(div);
                 }
                 parts.push(timeAgo);
-                metaInfo = parts.join(' • ');
+                metaInfo = parts.join(' â€¢ ');
             } else {
                 if (share.quoter_school) parts.push(share.quoter_school);
                 if (share.quoter_state) parts.push(share.quoter_state);
                 const schoolState = parts.join(', ');
-                metaInfo = schoolState ? `${schoolState} • ${timeAgo}` : timeAgo;
+                metaInfo = schoolState ? `${schoolState} â€¢ ${timeAgo}` : timeAgo;
             }
         } else {
             metaInfo = timeAgo;
@@ -1367,7 +1369,7 @@ class FeedManager {
             const isHSPlayer = !post.author_division && post.author_transfer !== 'y';
             const isTransferPlayer = post.author_transfer === 'y';
             if (isHSPlayer || isTransferPlayer) {
-                starsHtml = `<span class="post-meta-stars" style="color: #ffd700; font-weight: 600;">${post.author_star_rating}★</span> `;
+                starsHtml = `<span class="post-meta-stars" style="color: #ffd700; font-weight: 600;">${post.author_star_rating}â˜…</span> `;
             }
         }
 
@@ -1408,10 +1410,10 @@ class FeedManager {
                 if (post.author_grad_year) parts.push(post.author_grad_year);
             }
             parts.push(timeAgo);
-            metaInfo = starsHtml + parts.join(' • ');
+            metaInfo = starsHtml + parts.join(' â€¢ ');
         } else if (post.author_role === 'other') {
             if (post.author_subheader) {
-                metaInfo = `<span style="color: #d4a017;">${post.author_subheader} • ${timeAgo}</span>`;
+                metaInfo = `<span style="color: #d4a017;">${post.author_subheader} â€¢ ${timeAgo}</span>`;
             } else {
                 metaInfo = timeAgo;
             }
@@ -1426,12 +1428,12 @@ class FeedManager {
                     parts.push(div);
                 }
                 parts.push(timeAgo);
-                metaInfo = parts.join(' • ');
+                metaInfo = parts.join(' â€¢ ');
             } else {
                 if (post.author_school) parts.push(post.author_school);
                 if (post.author_state) parts.push(post.author_state);
                 const schoolState = parts.join(', ');
-                metaInfo = schoolState ? `${schoolState} • ${timeAgo}` : timeAgo;
+                metaInfo = schoolState ? `${schoolState} â€¢ ${timeAgo}` : timeAgo;
             }
         } else {
             metaInfo = timeAgo;
@@ -1460,7 +1462,7 @@ class FeedManager {
                     parts.push(div);
                 }
                 parts.push(timeAgo);
-                metaInfo = parts.join(' • ');
+                metaInfo = parts.join(' â€¢ ');
             } else {
                 // HS player
                 const parts = [];
@@ -1474,7 +1476,7 @@ class FeedManager {
                 }
                 if (post.reposter_grad_year) parts.push(`'${String(post.reposter_grad_year).slice(-2)}`);
                 parts.push(timeAgo);
-                metaInfo = parts.join(' • ');
+                metaInfo = parts.join(' â€¢ ');
             }
         } else if (role === 'coach') {
             const parts = [];
@@ -1487,17 +1489,17 @@ class FeedManager {
                     parts.push(div);
                 }
                 parts.push(timeAgo);
-                metaInfo = parts.join(' • ');
+                metaInfo = parts.join(' â€¢ ');
             } else {
                 if (post.reposter_school) parts.push(post.reposter_school);
                 if (post.reposter_state) parts.push(post.reposter_state);
                 const schoolState = parts.join(', ');
-                metaInfo = schoolState ? `${schoolState} • ${timeAgo}` : timeAgo;
+                metaInfo = schoolState ? `${schoolState} â€¢ ${timeAgo}` : timeAgo;
             }
         } else if (role === 'other') {
             // Other role - use subheader if available
             if (post.reposter_subheader) {
-                metaInfo = `${post.reposter_subheader} • ${timeAgo}`;
+                metaInfo = `${post.reposter_subheader} â€¢ ${timeAgo}`;
             } else {
                 metaInfo = timeAgo;
             }
@@ -1643,7 +1645,7 @@ class FeedManager {
         article.innerHTML = `
             <div class="post-header">
                 <a href="#" class="post-avatar-link" onclick="event.stopPropagation(); feedManager.goToProfile('${post.quoter_username || post.quoter_user_id}', '${post.quoter_role || 'player'}', '${post.quoter_division || ''}', '${post.quoter_user_id}', ${post.quoter_transfer === 'y'}); return false;">
-                    <div class="post-avatar-circle">
+                    <div class="post-avatar-circle" style="border: 2px solid ${getRoleBorderColor(post.quoter_role || 'player', post.quoter_transfer === 'y', post.quoter_division)}">
                         ${post.quoter_image ?
                             `<img src="${post.quoter_image}" alt="${quoterName}">` :
                             `<svg viewBox="0 0 24 24" fill="currentColor">
@@ -1684,7 +1686,7 @@ class FeedManager {
             <div class="quoted-post-embed" onclick="event.stopPropagation(); feedManager.navigateToPostView('${post.original_post_id}', event)" style="cursor: pointer;">
                 <div class="quoted-post-header">
                     <a href="#" onclick="feedManager.goToProfile('${post.author_username || post.author_user_id}', '${post.author_role || 'player'}', '${post.author_division || ''}', '${post.author_user_id}', ${post.author_transfer === 'y'}); event.stopPropagation(); return false;">
-                        <div class="quoted-post-avatar">
+                        <div class="quoted-post-avatar" style="border: 2px solid ${getRoleBorderColor(post.author_role || 'player', post.author_transfer === 'y', post.author_division)}">
                             ${post.author_image ?
                                 `<img src="${post.author_image}" alt="${originalAuthorName}">` :
                                 `<svg viewBox="0 0 24 24" fill="currentColor">
@@ -2413,7 +2415,7 @@ class FeedManager {
                 const isOwnComment = (userId) => userId === this.currentUserId;
                 listEl.innerHTML = response.comments.map(comment => `
                     <div class="comment" data-comment-id="${comment.id}">
-                        <div class="comment-avatar clickable-profile" onclick="feedManager.goToProfile('${comment.author_username || comment.user_id}', '${comment.author_role || 'player'}', '${comment.author_division || ''}', '${comment.user_id}', ${comment.author_transfer === 'y'})">
+                        <div class="comment-avatar clickable-profile" onclick="feedManager.goToProfile('${comment.author_username || comment.user_id}', '${comment.author_role || 'player'}', '${comment.author_division || ''}', '${comment.user_id}', ${comment.author_transfer === 'y'})" style="border: 2px solid ${getRoleBorderColor(comment.author_role || 'player', comment.author_transfer === 'y', comment.author_division)}">
                             ${comment.author_image ?
                                 `<img src="${comment.author_image}" alt="">` :
                                 `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>`
@@ -2630,7 +2632,7 @@ class FeedManager {
                 const isOwnComment = (userId) => userId === this.currentUserId;
                 listEl.innerHTML = response.comments.map(comment => `
                     <div class="comment" data-comment-id="${comment.id}">
-                        <div class="comment-avatar clickable-profile" onclick="feedManager.goToProfile('${comment.username || comment.user_id}', '${comment.role || 'player'}', '${comment.division || ''}', '${comment.user_id}', ${comment.transfer === 'y'})">
+                        <div class="comment-avatar clickable-profile" onclick="feedManager.goToProfile('${comment.username || comment.user_id}', '${comment.role || 'player'}', '${comment.division || ''}', '${comment.user_id}', ${comment.transfer === 'y'})" style="border: 2px solid ${getRoleBorderColor(comment.role || 'player', comment.transfer === 'y', comment.division)}">
                             ${comment.profile_image ?
                                 `<img src="${comment.profile_image}" alt="">` :
                                 `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>`
@@ -2915,7 +2917,7 @@ class FeedManager {
                     <button class="quote-post-preview-close" onclick="feedManager.cancelQuote()">&times;</button>
                 </div>
                 <div class="quote-post-preview-content">
-                    <div class="quote-post-preview-avatar">
+                    <div class="quote-post-preview-avatar" style="border: 2px solid ${postCard.querySelector('.post-avatar-circle')?.style.borderColor || '#1282a2'}">
                         ${authorImage ?
                             `<img src="${authorImage}" alt="${authorName}">` :
                             `<svg viewBox="0 0 24 24" fill="currentColor">
@@ -3914,7 +3916,7 @@ class FeedManager {
 
         return shares.map(share => `
             <div class="share-item" onclick="feedManager.goToProfile('${share.username || share.user_id}', '${share.role}', '${share.college_division || ''}', '${share.user_id}', ${share.transfer === 'y'}); feedManager.closeModal('shares-modal');">
-                <div class="share-item-avatar">
+                <div class="share-item-avatar" style="border: 2px solid ${getRoleBorderColor(share.role, share.transfer === 'y', share.college_division)}">
                     ${share.profile_image_url ?
                         `<img src="${share.profile_image_url}" alt="${share.first_name}">` :
                         `<svg viewBox="0 0 24 24" fill="currentColor">
@@ -3926,8 +3928,8 @@ class FeedManager {
                 <div class="share-item-info">
                     <div class="share-item-name">${share.first_name || ''} ${share.last_name || ''}</div>
                     <div class="share-item-meta">
-                        ${share.position ? share.position + ' • ' : ''}${share.school || ''}
-                        ${share.share_type === 'quote' ? ' • Quote' : ' • Repost'}
+                        ${share.position ? share.position + ' â€¢ ' : ''}${share.school || ''}
+                        ${share.share_type === 'quote' ? ' â€¢ Quote' : ' â€¢ Repost'}
                     </div>
                     ${share.share_type === 'quote' && share.quote_content ? `
                         <div class="share-item-quote">"${this.escapeHtml(share.quote_content.substring(0, 100))}${share.quote_content.length > 100 ? '...' : ''}"</div>
@@ -3991,7 +3993,7 @@ class FeedManager {
                 <div class="shares-list">
                     ${data.likes.map(like => `
                         <div class="share-item" onclick="feedManager.goToProfile('${like.username || like.id}', '${like.role}', '${like.college_division || ''}', '${like.id}', ${like.transfer === 'y'}); feedManager.closeModal('likes-modal');">
-                            <div class="share-item-avatar">
+                            <div class="share-item-avatar" style="border: 2px solid ${getRoleBorderColor(like.role, like.transfer === 'y', like.college_division)}">
                                 ${like.profile_image_url ?
                                     `<img src="${like.profile_image_url}" alt="${like.first_name}">` :
                                     `<svg viewBox="0 0 24 24" fill="currentColor">

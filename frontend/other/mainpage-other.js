@@ -314,6 +314,7 @@ async function updateSidebarFooter() {
                 if (profile.profile_picture_url) {
                     avatarElement.innerHTML = `<img src="${profile.profile_picture_url}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
                 }
+                avatarElement.style.border = `2px solid ${getRoleBorderColor(response.user.role, response.user.is_transfer_player, profile.college_division)}`;
                 avatarElement.style.visibility = 'visible';
             }
 

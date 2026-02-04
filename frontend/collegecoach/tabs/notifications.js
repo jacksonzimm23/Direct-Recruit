@@ -306,7 +306,7 @@ function renderNotificationCard(notification) {
         const folder = getProfileFolder(notification);
         iconHtml = `
             <a href="../../${folder}/tabs/my-profile.html?username=${notification.related_user_username}&from=notifications" class="notification-profile-link">
-                <img src="${notification.related_user_profile_image}" alt="" class="notification-profile-img">
+                <img src="${notification.related_user_profile_image}" alt="" class="notification-profile-img" style="border: 2px solid ${getRoleBorderColor(notification.related_user_role, notification.related_user_transfer === 'y', notification.related_user_college_division)}">
             </a>`;
     } else {
         iconHtml = `<div class="notification-icon ${iconClass}">${iconSvg}</div>`;

@@ -120,12 +120,21 @@
 }
 
 .profile-header-simple.portal-profile .profile-avatar-large {
-    border-color: #b91c1c;
-    background: rgba(185, 28, 28, 0.3);
+    border-color: var(--accent-red);
+    background: rgba(230, 57, 70, 0.3);
 }
 
 .profile-header-simple.portal-profile .profile-avatar-large svg {
-    color: #b91c1c;
+    color: var(--accent-red);
+}
+
+/* Other - Gold */
+.profile-header-simple.other-profile .profile-position {
+    color: #d4a017;
+}
+
+.profile-header-simple.other-profile .profile-avatar-large {
+    border-color: #d4a017;
 }
 
 /* All names stay white */
