@@ -801,6 +801,20 @@
         font-size: 1.5rem;
     }
 
+    .leave-portal-btn {
+        padding: 0.4rem 0.65rem;
+        font-size: 0.7rem;
+        gap: 0.3rem;
+        top: 0.75rem;
+        right: 0.75rem;
+        border-width: 1.5px;
+    }
+
+    .leave-portal-btn svg {
+        width: 12px;
+        height: 12px;
+    }
+
     .portal-info-section {
         grid-template-columns: 1fr;
         padding: 1.5rem;
