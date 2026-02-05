@@ -6632,11 +6632,11 @@ input[type="file"]::file-selector-button:hover {
     /* Actions - inline with avatar, pushed to far right */
     .profile-actions {
         order: 2;
-        margin-left: auto;
+        flex-shrink: 0;
         justify-content: flex-end;
         padding-top: 0.25rem;
         gap: 0.4rem;
-        flex-shrink: 0;
+        margin-left: auto;
     }
 
     .btn-edit-profile {
@@ -6695,6 +6695,29 @@ input[type="file"]::file-selector-button:hover {
         padding: 0 0.5rem;
         font-size: 0.7rem;
         border-radius: 6px;
+    }
+
+    /* Disable desktop line-break pseudo-element */
+    .profile-actions:has(.btn-recruiting-board)::before {
+        display: none;
+    }
+
+    /* Recruiting board button - icon-only square, inline with other buttons */
+    .btn-recruiting-board {
+        width: 26px;
+        height: 26px;
+        padding: 0;
+        border-radius: 6px;
+        font-size: 0;
+        flex-basis: auto;
+        gap: 0;
+        order: unset;
+        margin-top: 0;
+    }
+
+    .btn-recruiting-board svg {
+        width: 14px !important;
+        height: 14px !important;
     }
 
     /* Profile info - left-aligned below avatar row, full width */
