@@ -485,6 +485,12 @@
         stroke: #e63946 !important;
     }
 
+    /* Transfer Portal nav icon - always red (not just when active) to show portal status */
+    .nav-item-portal .nav-icon {
+        color: #b91c1c !important;
+        stroke: #b91c1c !important;
+    }
+
     .profile-type-coach .sidebar .sidebar-nav .nav-item.active,
     .profile-type-coach .sidebar .sidebar-nav a.nav-item.active,
     .profile-type-coach .nav-item.active {
