@@ -464,6 +464,97 @@ document.addEventListener('DOMContentLoaded', async function() {
         fetchPlayers(filters, false);
     });
 
+    // ========== MOBILE FILTER MODAL ==========
+    function initMobileFilters() {
+        if (!isMobile()) return;
+
+        const mobileFilterBtn = document.getElementById('mobileFilterBtn');
+        const mobileFilterModal = document.getElementById('mobileFilterModal');
+        const mobileFilterOverlay = document.getElementById('mobileFilterOverlay');
+        const mobileFilterCloseBtn = document.getElementById('mobileFilterCloseBtn');
+        const mobileFilterApplyBtn = document.getElementById('mobileFilterApplyBtn');
+        const mobileFilterResetBtn = document.getElementById('mobileFilterResetBtn');
+        const mobileFilterModalBody = document.getElementById('mobileFilterModalBody');
+        const filterCountBadge = document.getElementById('filterCountBadge');
+
+        if (!mobileFilterBtn || !mobileFilterModal) return;
+
+        // Show the mobile filter button
+        mobileFilterBtn.style.display = '';
+
+        // Move filter groups from desktop container into the modal body
+        const filtersGrid = document.querySelector('.filters-grid');
+        if (filtersGrid && mobileFilterModalBody) {
+            const filterGroups = filtersGrid.querySelectorAll('.filter-group');
+            filterGroups.forEach(group => {
+                group.classList.add('mobile-filter-group');
+                mobileFilterModalBody.appendChild(group);
+            });
+        }
+
+        function openFilterModal() {
+            mobileFilterModal.classList.add('active');
+            mobileFilterOverlay.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeFilterModal() {
+            mobileFilterModal.classList.remove('active');
+            mobileFilterOverlay.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        function countActiveFilters() {
+            let count = 0;
+            if (positionFilter.value) count++;
+            if (gradYearFilter.value) count++;
+            if (stateFilter.value) count++;
+            if (parseInt(heightSlider.value) > 60) count++;
+            if (parseInt(weightSlider.value) > 150) count++;
+            if (parseFloat(sliderToGPA(gpaSlider.value)) > 0) count++;
+            return count;
+        }
+
+        function updateFilterBadge() {
+            const count = countActiveFilters();
+            if (count > 0) {
+                filterCountBadge.textContent = count;
+                filterCountBadge.style.display = '';
+            } else {
+                filterCountBadge.style.display = 'none';
+            }
+        }
+
+        mobileFilterBtn.addEventListener('click', openFilterModal);
+        mobileFilterCloseBtn.addEventListener('click', closeFilterModal);
+        mobileFilterOverlay.addEventListener('click', closeFilterModal);
+
+        mobileFilterApplyBtn.addEventListener('click', function() {
+            const filters = getCurrentFilters();
+            fetchPlayers(filters, false);
+            updateFilterBadge();
+            closeFilterModal();
+        });
+
+        mobileFilterResetBtn.addEventListener('click', function() {
+            positionFilter.value = '';
+            stateFilter.value = '';
+            heightSlider.value = 60;
+            weightSlider.value = 150;
+            gpaSlider.value = 0;
+            gradYearFilter.value = '';
+            heightValue.textContent = inchesToDisplay(60);
+            weightValue.textContent = '150';
+            gpaValue.textContent = '0.0';
+            updateFilterBadge();
+        });
+
+        // Initial badge state
+        updateFilterBadge();
+    }
+
+    initMobileFilters();
+
     // Initial load - fetch first 9 HS players
     fetchPlayers({}, false);
 
