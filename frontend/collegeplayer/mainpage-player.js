@@ -88,7 +88,6 @@ document.addEventListener('DOMContentLoaded', async function() {
             if (e.key === 'Enter') {
                 const query = this.value.trim();
                 if (query) {
-                    console.log('Searching for:', query);
                     alert('Search functionality will be connected to your backend.');
                 }
             }
@@ -188,7 +187,6 @@ document.addEventListener('DOMContentLoaded', async function() {
     trendingItems.forEach(item => {
         item.addEventListener('click', function() {
             const name = this.querySelector('.trending-name').textContent;
-            console.log('Viewing profile:', name);
             alert(`Viewing ${name}'s profile...`);
         });
     });
@@ -197,7 +195,6 @@ document.addEventListener('DOMContentLoaded', async function() {
     const showMoreBtns = document.querySelectorAll('.widget-show-more');
     showMoreBtns.forEach(btn => {
         btn.addEventListener('click', function() {
-            console.log('Show more clicked');
             alert('Show more functionality will be implemented.');
         });
     });
@@ -218,13 +215,11 @@ document.addEventListener('DOMContentLoaded', async function() {
         // Infinite scroll placeholder
         window.addEventListener('scroll', function() {
             if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 500) {
-                console.log('Near bottom - load more posts');
                 // This is where you'd load more posts from your backend
             }
         });
     }
 
-    console.log('Direct Recruit Player Dashboard Loaded');
 });
 
 // Logout modal function - Global so it can be called from mobile sidebar
@@ -396,7 +391,6 @@ async function verifyPlayerType() {
             // Check if user is a transfer player first - they should go to transferplayer folder
             const isTransferPlayer = response.user.is_transfer_player;
             if (isTransferPlayer) {
-                console.log('Transfer player detected on college page, redirecting to transfer portal...');
                 window.location.href = '../transferplayer/mainpage-player.html';
                 return;
             }
@@ -408,7 +402,6 @@ async function verifyPlayerType() {
             const isCollegePlayer = collegeDivision && collegeDivisions.includes(collegeDivision);
 
             if (!isCollegePlayer) {
-                console.log('HS player detected on college page, redirecting...');
                 window.location.href = '../hsplayer/mainpage-player.html';
                 return;
             }

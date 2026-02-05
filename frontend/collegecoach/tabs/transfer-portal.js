@@ -426,7 +426,6 @@ document.addEventListener('DOMContentLoaded', async function() {
             }
 
         } catch (error) {
-            console.error('Error fetching transfer players:', error);
             loadingState.style.display = 'none';
             if (!append) {
                 emptyState.style.display = 'flex';
@@ -640,7 +639,6 @@ document.addEventListener('DOMContentLoaded', async function() {
     // Initial load - fetch first 9 transfer players
     fetchTransferPlayers({}, false);
 
-    console.log('Transfer Portal Page Loaded');
 });
 
 // Function to show/hide college-specific navigation based on user role
@@ -665,6 +663,5 @@ async function setupCollegeCoachNav() {
             }
         }
     } catch (error) {
-        console.error('Error setting up college coach navigation:', error);
     }
 }

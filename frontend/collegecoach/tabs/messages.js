@@ -51,7 +51,6 @@ document.addEventListener('DOMContentLoaded', async function() {
     setupEventListeners();
     startPolling();
 
-    console.log('Direct Recruit Messages Page Loaded');
 });
 
 async function loadCurrentUser() {

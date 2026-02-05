@@ -81,7 +81,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
         } catch (error) {
-            console.error('Error loading players:', error);
             if (!append) {
                 playersGrid.innerHTML = '<p class="no-results-message">Unable to load players.</p>';
             }
@@ -518,7 +517,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
         } catch (error) {
-            console.error('Error loading coaches:', error);
             if (!append) {
                 coachesGrid.innerHTML = '<p class="no-results-message">Unable to load coaches.</p>';
             }
@@ -583,7 +581,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     window.location.href = `../../${folder}/tabs/my-profile.html?username=${username}&from=discover`;
                 } else {
                     const coachName = this.querySelector('.coach-name').textContent.trim();
-                    console.log('No username for coach:', coachName);
                     alert('Profile not available. Coach has not set up their profile yet.');
                 }
             });

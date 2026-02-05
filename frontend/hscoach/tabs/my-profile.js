@@ -822,7 +822,6 @@ async function loadProfileByUsername(username) {
 }
 
 async function displayProfile(profile, type, accessLevel = 'full', hasPendingRequest = false) {
-    console.log('displayProfile called with type:', type, 'accessLevel:', accessLevel);
 
     // Check if this is a restricted (private) profile view
     const isRestrictedView = accessLevel === 'limited';
@@ -1392,10 +1391,8 @@ function updateProfileActions(hasPendingRequest = false) {
 
         // Re-attach event listeners after updating DOM
         const editProfileBtn = document.getElementById('editProfileBtn');
-        console.log('Edit button found:', editProfileBtn);
         if (editProfileBtn) {
             editProfileBtn.addEventListener('click', function() {
-                console.log('Edit button clicked!');
                 showEditProfileModal();
             });
         } else {
@@ -1703,9 +1700,6 @@ function setupUI() {
     const recruitingPane = document.getElementById('recruiting');
 
     // Debug logging
-    console.log('Setting up recruiting tab visibility:');
-    console.log('Current Profile:', currentProfile);
-    console.log('College Division:', currentProfile?.college_division);
 
     // Show recruiting tab ONLY if viewing profile has a college_division (college coaches)
     // High school coaches won't have a college division (FBS, FCS, D2, D3, NAIA, JUCO)
@@ -1714,7 +1708,6 @@ function setupUI() {
                                    currentProfile.college_division.trim() !== '';
 
     if (isCollegeCoachProfile) {
-        console.log('Showing recruiting tab - this is a college coach with division:', currentProfile.college_division);
         if (recruitingTab) {
             recruitingTab.style.display = '';
         }
@@ -1723,7 +1716,6 @@ function setupUI() {
             displayRecruitingInfo(currentProfile);
         }
     } else {
-        console.log('Hiding recruiting tab - this is a high school coach (no college division)');
         // Explicitly hide for high school coaches
         if (recruitingTab) {
             recruitingTab.style.display = 'none';
@@ -2008,7 +2000,6 @@ function updateCharCounter(fieldName, maxLength) {
 }
 
 function showEditProfileModal() {
-    console.log('showEditProfileModal called');
     const modal = document.getElementById('editProfileModal');
     if (!modal) {
         console.error('Edit profile modal not found');
@@ -2019,7 +2010,6 @@ function showEditProfileModal() {
     populateEditForm();
     modal.classList.add('active');
     document.body.style.overflow = 'hidden'; // Prevent background scrolling
-    console.log('Modal should now be visible');
 }
 
 function populateEditForm() {
@@ -2538,7 +2528,6 @@ async function validateUsername(username, isFinalCheck = false) {
     }
 }
 
-console.log('My Profile page loaded (dynamic version)');
 
 // Followers/Following Modal Functions
 function setupFollowListModal() {

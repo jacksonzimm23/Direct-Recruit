@@ -135,6 +135,4 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Console log for debugging
-    console.log('Direct Recruit About Page Loaded - No Parallax');
 });

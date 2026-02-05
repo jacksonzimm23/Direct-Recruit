@@ -134,7 +134,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
         } catch (error) {
-            console.error('Error loading users:', error);
             if (!append) {
                 usersGrid.innerHTML = '<p class="no-results-message">Unable to load users.</p>';
             }

@@ -5,7 +5,6 @@ document.addEventListener('DOMContentLoaded', async function() {
     const urlParams = new URLSearchParams(window.location.search);
     const username = urlParams.get('username');
 
-    console.log('View Profile: Loading profile for username:', username);
 
     if (!username) {
         showError('No username specified');
@@ -15,20 +14,16 @@ document.addEventListener('DOMContentLoaded', async function() {
     try {
         // Check if user is authenticated (use API helper which knows the correct token key)
         if (!API.isAuthenticated()) {
-            console.log('View Profile: No token found, redirecting to login');
             window.location.href = '../landingpage/index.html';
             return;
         }
 
-        console.log('View Profile: Token found, fetching profile...');
 
         // Fetch the profile to determine its type
         const response = await API.get(`/profile/username/${username}`);
 
-        console.log('View Profile: API response:', response);
 
         if (!response.profile) {
-            console.log('View Profile: No profile in response');
             showError('Profile not found');
             return;
         }
@@ -36,7 +31,6 @@ document.addEventListener('DOMContentLoaded', async function() {
         // Determine the correct folder based on profile type and division
         const targetFolder = getTargetFolder(response.profile, response.type);
 
-        console.log('View Profile: Target folder:', targetFolder);
 
         // Redirect to the appropriate my-profile page with the username
         // Preserve the 'from' parameter if present
@@ -45,11 +39,9 @@ document.addEventListener('DOMContentLoaded', async function() {
         if (fromParam) {
             targetUrl += `&from=${encodeURIComponent(fromParam)}`;
         }
-        console.log('View Profile: Redirecting to:', targetUrl);
         window.location.replace(targetUrl);
 
     } catch (error) {
-        console.error('View Profile: Error loading profile:', error);
         // Don't redirect to login for all errors - only for auth errors
         // Show error message instead and let user go back
         showError('Failed to load profile: ' + (error.message || 'Unknown error'));

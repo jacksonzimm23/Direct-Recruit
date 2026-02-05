@@ -33,7 +33,6 @@ if (document.getElementById('signinForm')) {
                     const collegeDivisions = ['FBS', 'FCS', 'D2', 'D3', 'NAIA', 'NJCAA'];
                     const isCollegePlayer = collegeDivision && collegeDivisions.includes(collegeDivision);
 
-                    console.log('Player login routing - collegeDivision:', collegeDivision, 'isCollegePlayer:', isCollegePlayer);
 
                     if (isCollegePlayer) {
                         window.location.href = '../collegeplayer/mainpage-player.html';
@@ -43,7 +42,6 @@ if (document.getElementById('signinForm')) {
                     }
                 } catch (profileError) {
                     // If profile fetch fails, default to HS player (safer default)
-                    console.error('Failed to fetch player profile:', profileError);
                     window.location.href = '../hsplayer/mainpage-player.html';
                 }
             } else if (data.user.role === 'coach') {
@@ -58,7 +56,6 @@ if (document.getElementById('signinForm')) {
                     const schoolType = meData.profile?.school_type;
                     const collegeDivision = meData.profile?.college_division;
 
-                    console.log('Login routing - schoolType:', schoolType, 'collegeDivision:', collegeDivision);
 
                     // College coach: school_type = 'college' OR college_division is a real division (FBS, FCS, D2, D3, NAIA, NJCAA)
                     const collegeDivisions = ['FBS', 'FCS', 'D2', 'D3', 'NAIA', 'NJCAA'];
@@ -75,7 +72,6 @@ if (document.getElementById('signinForm')) {
                     }
                 } catch (profileError) {
                     // If profile fetch fails, default to HS coach (safer default)
-                    console.error('Failed to fetch profile:', profileError);
                     window.location.href = '../hscoach/mainpage-coach.html';
                 }
             } else if (data.user.role === 'other') {

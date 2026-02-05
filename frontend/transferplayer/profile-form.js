@@ -1,7 +1,4 @@
 document.addEventListener('DOMContentLoaded', async function() {
-    console.log('[profile-form.js] DOMContentLoaded fired');
-    console.log('[profile-form.js] user authenticated:', API.isAuthenticated() ? 'YES' : 'NO');
-
     // This is a CREATE profile page - do NOT load existing profile data
     // If user is logged in and tries to create a new profile, they should start fresh
     // The loadExistingProfile function is only for EDIT profile pages
@@ -351,33 +348,24 @@ document.addEventListener('DOMContentLoaded', async function() {
 
 // Load existing profile data for editing
 async function loadExistingProfile() {
-    console.log('[loadExistingProfile] Starting...');
     try {
         if (!API.isAuthenticated()) {
-            console.log('[loadExistingProfile] Not authenticated - fresh form for new user');
             return; // Not authenticated, user is creating new profile
         }
 
-        console.log('[loadExistingProfile] Fetching user profile from API...');
         const response = await fetch(`${API_BASE_URL}/auth/me`, {
             credentials: 'include'
         });
 
-        console.log('[loadExistingProfile] API response status:', response.status);
-
         // If unauthorized, clear auth data and continue with new profile creation
         if (response.status === 401) {
-            console.log('[loadExistingProfile] 401 Unauthorized - clearing auth');
             API.clearAuth();
             return;
         }
 
         if (response.ok) {
             const data = await response.json();
-            console.log('[loadExistingProfile] Got user data:', data.user?.email);
-            console.log('[loadExistingProfile] Has profile:', !!data.profile);
             if (data.profile) {
-                console.log('[loadExistingProfile] PRE-FILLING FORM WITH EXISTING DATA');
                 // Pre-fill form with existing data
                 const profile = data.profile;
 
@@ -423,7 +411,6 @@ async function loadExistingProfile() {
                 }
 
                 // Hide password fields when editing AND remove required attribute to prevent validation errors
-                console.log('[loadExistingProfile] Hiding password fields for edit mode');
                 const passwordFields = document.querySelectorAll('.form-group:has(#password), .form-group:has(#confirmPassword)');
                 passwordFields.forEach(field => {
                     field.style.display = 'none';
@@ -431,7 +418,6 @@ async function loadExistingProfile() {
                     const input = field.querySelector('input');
                     if (input) {
                         input.removeAttribute('required');
-                        console.log('[loadExistingProfile] Removed required from:', input.id);
                     }
                 });
 
@@ -441,7 +427,7 @@ async function loadExistingProfile() {
             }
         }
     } catch (error) {
-        console.log('[loadExistingProfile] Error or no existing profile:', error?.message || error);
+        // silently ignore
     }
 }
 

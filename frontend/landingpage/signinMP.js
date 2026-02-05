@@ -11,13 +11,6 @@ document.addEventListener('DOMContentLoaded', function() {
             const password = document.getElementById('password').value;
             const remember = document.getElementById('remember').checked;
             
-            // Log the form data (in production, this would send to your backend)
-            console.log('Sign In Attempt:', {
-                email: email,
-                password: '***hidden***',
-                remember: remember
-            });
-            
             // Redirect to main dashboard
             window.location.href = 'mainpage.html';
         });
@@ -27,8 +20,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const googleBtn = document.querySelector('.btn-social.google');
     if (googleBtn) {
         googleBtn.addEventListener('click', function() {
-            console.log('Google Sign In clicked');
-            
+
             // Redirect to main dashboard
             window.location.href = 'mainpage.html';
         });

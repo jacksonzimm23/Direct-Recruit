@@ -83,7 +83,6 @@ document.addEventListener('DOMContentLoaded', async function() {
             this.classList.add('active');
 
             const filterType = this.querySelector('span').textContent;
-            console.log('Filter changed to:', filterType);
             alert(`Filtering by: ${filterType}`);
         });
     });
@@ -95,7 +94,6 @@ document.addEventListener('DOMContentLoaded', async function() {
             if (e.key === 'Enter') {
                 const query = this.value.trim();
                 if (query) {
-                    console.log('Searching for:', query);
                     alert('Search functionality will be connected to your backend.');
                 }
             }
@@ -109,7 +107,6 @@ document.addEventListener('DOMContentLoaded', async function() {
     trendingItems.forEach(item => {
         item.addEventListener('click', function() {
             const topic = this.querySelector('.trending-topic').textContent;
-            console.log('Viewing topic:', topic);
             alert(`Viewing posts for ${topic}...`);
         });
     });
@@ -129,7 +126,6 @@ document.addEventListener('DOMContentLoaded', async function() {
     tags.forEach(tag => {
         tag.addEventListener('click', function() {
             const tagName = this.textContent;
-            console.log('Tag clicked:', tagName);
             alert(`Viewing posts tagged with ${tagName}...`);
         });
     });
@@ -139,7 +135,6 @@ document.addEventListener('DOMContentLoaded', async function() {
     statItems.forEach(item => {
         item.addEventListener('click', function() {
             const label = this.querySelector('.stat-label-sm').textContent;
-            console.log('Stat clicked:', label);
             alert(`Viewing ${label} details...`);
         });
     });
@@ -150,7 +145,6 @@ document.addEventListener('DOMContentLoaded', async function() {
         // Infinite scroll placeholder
         window.addEventListener('scroll', function() {
             if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 500) {
-                console.log('Near bottom - load more posts');
                 // This is where you'd load more posts from your backend
             }
         });
@@ -258,7 +252,6 @@ document.addEventListener('DOMContentLoaded', async function() {
         });
     }
 
-    console.log('Direct Recruit Coach Dashboard Loaded');
 });
 
 // Logout modal function
@@ -325,7 +318,6 @@ async function verifyCoachType() {
             const isCollegeCoach = collegeDivision && collegeDivisions.includes(collegeDivision);
 
             if (!isCollegeCoach) {
-                console.log('HS coach detected on college page, redirecting...');
                 window.location.href = '../hscoach/mainpage-coach.html';
                 return;
             }
@@ -466,10 +458,8 @@ async function updateSidebarFooter() {
     try {
         // Fetch fresh data from API
         const response = await API.get('/auth/me');
-        console.log('Sidebar footer API response:', response);
         if (response.user && response.profile) {
             const profile = response.profile;
-            console.log('Profile data:', profile);
 
             // Cache the profile data for next page load
             localStorage.setItem('sidebarFooterProfile', JSON.stringify(profile));

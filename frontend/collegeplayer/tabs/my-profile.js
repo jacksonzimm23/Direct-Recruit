@@ -1378,7 +1378,6 @@ function updateSocialMedia(profile) {
                 ? JSON.parse(profile.socials)
                 : profile.socials;
         } catch (e) {
-            console.log('Could not parse socials:', e);
         }
     }
 
@@ -1888,7 +1887,6 @@ async function handlePhotoUpload(event) {
 }
 
 async function uploadCroppedImage(file) {
-    console.log('uploadCroppedImage called with file:', file);
 
     // Show loading state
     const avatarElement = document.getElementById('profileAvatar');
@@ -1909,10 +1907,8 @@ async function uploadCroppedImage(file) {
     changePhotoBtn.style.opacity = '0.5';
 
     try {
-        console.log('Calling uploadAPI.uploadProfileImage...');
         // Upload to server
         const response = await uploadAPI.uploadProfileImage(file);
-        console.log('Upload response:', response);
 
         if (response.imageUrl || response.url) {
             const imageUrl = response.imageUrl || response.url;
@@ -2161,7 +2157,6 @@ function populateEditForm() {
                 ? JSON.parse(currentProfile.socials)
                 : currentProfile.socials;
         } catch (e) {
-            console.log('Could not parse socials:', e);
         }
     }
 
@@ -2627,7 +2622,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-console.log('My Profile page loaded (dynamic version)');
 
 // Followers/Following Modal Functions
 function setupFollowListModal() {

@@ -46,7 +46,6 @@ async function loadUserSettings() {
             populateSettingsForm(data);
         }
     } catch (error) {
-        console.error('Error loading settings:', error);
     }
 }
 
@@ -258,7 +257,6 @@ async function saveSettings() {
 
     // Collect form data
     const formData = collectSettingsData();
-    console.log('Saving settings:', formData);
 
     try {
         // Save privacy settings (profile visibility, message permissions)
@@ -296,7 +294,6 @@ async function saveSettings() {
             toggle.dataset.originalChecked = toggle.checked;
         });
     } catch (error) {
-        console.error('Error saving settings:', error);
         showNotification(error.message || 'Failed to save settings', 'error');
     } finally {
         // Reset button
@@ -479,7 +476,6 @@ async function handleDeleteAccount() {
         }, 2000);
 
     } catch (error) {
-        console.error('Delete account error:', error);
         showDeleteAccountError(error.message || 'Failed to delete account');
     } finally {
         confirmBtn.textContent = originalText;
@@ -670,7 +666,6 @@ async function handlePasswordChange(button) {
         resetPasswordChecklist();
 
     } catch (error) {
-        console.error('Password change error:', error);
         showNotification(error.message || 'Failed to change password', 'error');
     } finally {
         button.textContent = originalText;
@@ -810,7 +805,6 @@ async function checkEmailAvailability(email) {
             showEmailAvailabilityMessage('This email is already in use', 'unavailable');
         }
     } catch (error) {
-        console.error('Email availability check error:', error);
         hideEmailAvailabilityMessage();
     }
 }
@@ -1006,7 +1000,6 @@ async function handleEmailChangeRequest(button) {
         document.getElementById('emailChangePassword').value = '';
 
     } catch (error) {
-        console.error('Email change request error:', error);
         showNotification(error.message || 'Failed to request email change', 'error');
     } finally {
         button.textContent = originalText;
@@ -1131,7 +1124,6 @@ async function handleEmailVerification() {
         emailChangeData = null;
 
     } catch (error) {
-        console.error('Email verification error:', error);
         showVerificationError(error.message || 'Invalid verification code');
     } finally {
         verifyBtn.textContent = originalText;
@@ -1228,7 +1220,6 @@ async function handleResendEmailCode() {
         clearVerificationError();
 
     } catch (error) {
-        console.error('Resend code error:', error);
         clearVerificationSuccess();
         showVerificationError(error.message || 'Failed to resend code');
     } finally {
@@ -1686,7 +1677,6 @@ async function cancelPendingReset() {
         });
     } catch (error) {
         // Ignore errors for cancel
-        console.log('Cancel pending reset:', error);
     }
 }
 
@@ -1817,7 +1807,6 @@ async function handleSendResetCode() {
         }
 
     } catch (error) {
-        console.error('Send reset code error:', error);
         showForgotPasswordError('forgotPasswordError', error.message);
     } finally {
         sendBtn.textContent = originalText;
@@ -1867,7 +1856,6 @@ async function handleVerifyResetCode() {
         }
 
     } catch (error) {
-        console.error('Verify reset code error:', error);
         showForgotPasswordError('forgotPasswordCodeError', error.message);
     } finally {
         verifyBtn.textContent = originalText;
@@ -1925,7 +1913,6 @@ async function handleResendResetCode() {
         showNotification('Verification code resent!', 'success');
 
     } catch (error) {
-        console.error('Resend reset code error:', error);
         showForgotPasswordError('forgotPasswordCodeError', error.message);
     } finally {
         if (!resendBtn.dataset.cooldownInterval) {
@@ -2030,7 +2017,6 @@ async function handleSetNewPassword() {
         }
 
     } catch (error) {
-        console.error('Set new password error:', error);
         showForgotPasswordError('forgotPasswordSetError', error.message);
     } finally {
         setBtn.textContent = originalText;
@@ -2086,7 +2072,6 @@ async function handleVerifyCognitoCode() {
         showForgotPasswordStep(5);
 
     } catch (error) {
-        console.error('Verify Cognito code error:', error);
         showForgotPasswordError('forgotPasswordCognitoCodeError', error.message);
     } finally {
         verifyBtn.textContent = originalText;

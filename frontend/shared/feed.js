@@ -40,7 +40,6 @@ class FeedManager {
         this.setupEventListeners();
         await this.loadFeed();
         this.startNewPostsPolling();
-        console.log('Feed initialized with Option 4: Two-Section Feed');
     }
 
     async loadCurrentUser() {
@@ -67,7 +66,6 @@ class FeedManager {
                 }
             }
         } catch (error) {
-            console.error('Error loading user:', error);
             // If API call fails (unauthorized), redirect to signin
             window.location.href = '../landingpage/signin.html';
         }
@@ -84,7 +82,6 @@ class FeedManager {
                 }
             }
         } catch (error) {
-            console.error('Error updating avatar:', error);
         }
     }
 
@@ -333,7 +330,6 @@ class FeedManager {
             );
 
         } catch (error) {
-            console.error('Error loading feed:', error);
             this.hideLoading();
             this.showError('Failed to load feed. Please refresh the page.');
         }
@@ -498,7 +494,6 @@ class FeedManager {
                 this.showNewPostsButton(response.newPostsCount);
             }
         } catch (error) {
-            console.error('Error checking for new posts:', error);
         }
     }
 
@@ -560,16 +555,6 @@ class FeedManager {
     }
 
     createPostElement(post, showRepostIndicator = false) {
-        // Debug logging for post navigation data
-        if (post.author_role === 'coach') {
-            console.log('Coach post data:', {
-                author_username: post.author_username,
-                author_role: post.author_role,
-                author_division: post.author_division,
-                author_school: post.author_school,
-                author_state: post.author_state
-            });
-        }
 
         const article = document.createElement('article');
         article.className = 'post-card';
@@ -2043,7 +2028,6 @@ class FeedManager {
                                 finalMediaType = uploadResult.media_type;
                             }
                         } catch (uploadError) {
-                            console.error('Media upload failed:', uploadError);
                             this.showToast('Failed to upload media: ' + uploadError.message, 'error');
                             saveBtn.disabled = false;
                             saveBtn.textContent = 'Save';
@@ -2098,7 +2082,6 @@ class FeedManager {
                     modal.remove();
                     this.showToast('Quote updated', 'success');
                 } catch (error) {
-                    console.error('Error updating quote:', error);
                     this.showToast('Failed to update quote', 'error');
                     saveBtn.disabled = false;
                     saveBtn.textContent = 'Save';
@@ -2113,7 +2096,6 @@ class FeedManager {
                 }
             });
         } catch (error) {
-            console.error('Error fetching quote post:', error);
             this.showToast('Failed to load quote post', 'error');
         }
     }
@@ -2201,7 +2183,6 @@ class FeedManager {
             this.closeModal('delete-quote-modal');
             this.showToast('Quote post deleted', 'success');
         } catch (error) {
-            console.error('Error deleting quote post:', error);
             this.showToast('Failed to delete quote post', 'error');
         }
     }
@@ -2261,7 +2242,6 @@ class FeedManager {
                             mediaType = uploadResult.media_type;
                         }
                     } catch (uploadError) {
-                        console.error('Media upload failed:', uploadError);
                         this.showToast('Failed to upload media: ' + uploadError.message, 'error');
                         return;
                     }
@@ -2295,7 +2275,6 @@ class FeedManager {
                             mediaType = uploadResult.media_type;
                         }
                     } catch (uploadError) {
-                        console.error('Media upload failed:', uploadError);
                         this.showToast('Failed to upload media: ' + uploadError.message, 'error');
                         return;
                     }
@@ -2323,7 +2302,6 @@ class FeedManager {
             window.scrollTo({ top: 0, behavior: 'smooth' });
 
         } catch (error) {
-            console.error('Error creating post:', error);
             this.showToast('Failed to create post', 'error');
         } finally {
             this.createPostBtn.disabled = false;
@@ -2356,7 +2334,6 @@ class FeedManager {
                 statsEl.textContent = `${count} ${count === 1 ? 'like' : 'likes'}`;
             }
         } catch (error) {
-            console.error('Error toggling like:', error);
             this.showToast('Failed to update like', 'error');
         }
     }
@@ -2381,7 +2358,6 @@ class FeedManager {
                 this.showToast('Post saved!', 'success');
             }
         } catch (error) {
-            console.error('Error toggling save:', error);
             this.showToast('Failed to update save', 'error');
         }
     }
@@ -2389,7 +2365,6 @@ class FeedManager {
     async toggleComments(postId) {
         const section = document.getElementById(`comments-${postId}`);
         if (!section) {
-            console.warn(`Comments section not found for post ${postId}`);
             return;
         }
         if (section.style.display === 'none') {
@@ -2407,7 +2382,6 @@ class FeedManager {
             const listEl = document.querySelector(`#comments-${postId} .comments-list`);
 
             if (!listEl) {
-                console.warn(`Comments list element not found for post ${postId}`);
                 return;
             }
 
@@ -2445,7 +2419,6 @@ class FeedManager {
                 listEl.innerHTML = '<div class="no-comments">No comments yet. Be the first!</div>';
             }
         } catch (error) {
-            console.error('Error loading comments:', error);
         }
     }
 
@@ -2475,7 +2448,6 @@ class FeedManager {
                 statsEl.textContent = `${count} ${count === 1 ? 'comment' : 'comments'}`;
             }
         } catch (error) {
-            console.error('Error adding comment:', error);
             this.showToast('Failed to add comment', 'error');
         }
     }
@@ -2532,7 +2504,6 @@ class FeedManager {
             this.closeModal('delete-comment-modal');
             this.showToast('Comment deleted', 'success');
         } catch (error) {
-            console.error('Error deleting comment:', error);
             this.showToast('Failed to delete comment', 'error');
         }
     }
@@ -2573,7 +2544,6 @@ class FeedManager {
                 }
             }
         } catch (error) {
-            console.error('Error toggling share like:', error);
             this.showToast('Failed to update like', 'error');
         }
     }
@@ -2598,7 +2568,6 @@ class FeedManager {
                 this.showToast('Quote post saved!', 'success');
             }
         } catch (error) {
-            console.error('Error toggling share save:', error);
             this.showToast('Failed to update save', 'error');
         }
     }
@@ -2606,7 +2575,6 @@ class FeedManager {
     async toggleShareComments(shareId) {
         const section = document.getElementById(`share-comments-${shareId}`);
         if (!section) {
-            console.warn(`Comments section not found for share ${shareId}`);
             return;
         }
         if (section.style.display === 'none') {
@@ -2624,7 +2592,6 @@ class FeedManager {
             const listEl = document.querySelector(`#share-comments-${shareId} .comments-list`);
 
             if (!listEl) {
-                console.warn(`Comments list element not found for share ${shareId}`);
                 return;
             }
 
@@ -2660,7 +2627,6 @@ class FeedManager {
                 listEl.innerHTML = '<p class="no-comments">No comments yet. Be the first to comment!</p>';
             }
         } catch (error) {
-            console.error('Error loading share comments:', error);
         }
     }
 
@@ -2681,7 +2647,6 @@ class FeedManager {
                 statsEl.textContent = `${count} ${count === 1 ? 'comment' : 'comments'}`;
             }
         } catch (error) {
-            console.error('Error adding share comment:', error);
             this.showToast('Failed to add comment', 'error');
         }
     }
@@ -2703,7 +2668,6 @@ class FeedManager {
 
             this.showToast('Comment deleted', 'success');
         } catch (error) {
-            console.error('Error deleting share comment:', error);
             this.showToast('Failed to delete comment', 'error');
         }
     }
@@ -2716,7 +2680,6 @@ class FeedManager {
             const currentCount = match ? parseInt(match[1]) : 0;
             button.textContent = `Like (${currentCount + 1})`;
         } catch (error) {
-            console.error('Error liking share comment:', error);
         }
     }
 
@@ -2733,7 +2696,6 @@ class FeedManager {
             // Create modal to show likes
             this.showLikesModal(likes, 'Quote Post Likes');
         } catch (error) {
-            console.error('Error fetching share likes:', error);
             this.showToast('Failed to load likes', 'error');
         }
     }
@@ -2871,7 +2833,6 @@ class FeedManager {
                 this.showToast('Reposted!', 'success');
             }
         } catch (error) {
-            console.error('Error toggling repost:', error);
             this.showToast('Failed to update repost', 'error');
         }
     }
@@ -2964,7 +2925,6 @@ class FeedManager {
             this.showToast('Link copied!', 'success');
             document.querySelector('.share-menu')?.remove();
         } catch (error) {
-            console.error('Error copying link:', error);
             this.showToast('Failed to copy link', 'error');
         }
     }
@@ -2977,7 +2937,6 @@ class FeedManager {
             button.onclick = () => this.unfollowUser(userId, button);
             this.showToast('Followed!', 'success');
         } catch (error) {
-            console.error('Error following:', error);
             this.showToast('Failed to follow', 'error');
         }
     }
@@ -2989,7 +2948,6 @@ class FeedManager {
             button.classList.remove('following');
             button.onclick = () => this.followUser(userId, button);
         } catch (error) {
-            console.error('Error unfollowing:', error);
         }
     }
 
@@ -3064,7 +3022,6 @@ class FeedManager {
             document.querySelector(`[data-post-id="${postId}"]`).remove();
             this.showToast('Post deleted', 'success');
         } catch (error) {
-            console.error('Error deleting post:', error);
             this.showToast('Failed to delete post', 'error');
         }
     }
@@ -3122,7 +3079,6 @@ class FeedManager {
             // Navigate to the profile type's folder with cross-folder navigation
             window.location.href = `${prefix}${folder}/tabs/my-profile.html?username=${username}&from=feed`;
         } catch (error) {
-            console.error('Error navigating to profile:', error);
             // Fallback: determine folder from role and navigate
             let folder = 'hsplayer';
             const isCollege = collegeDivision && collegeDivision.trim() !== '';
@@ -3173,7 +3129,6 @@ class FeedManager {
                 });
             }
         } catch (error) {
-            console.error('Error loading more posts:', error);
         } finally {
             this.isLoading = false;
         }
@@ -3396,7 +3351,6 @@ class FeedManager {
             }
             countSpan.textContent = count;
         } catch (error) {
-            console.error('Error toggling comment like:', error);
         }
     }
 
@@ -3684,7 +3638,6 @@ class FeedManager {
                                 finalMediaType = uploadResult.media_type;
                             }
                         } catch (uploadError) {
-                            console.error('Media upload failed:', uploadError);
                             this.showToast('Failed to upload media: ' + uploadError.message, 'error');
                             saveBtn.disabled = false;
                             saveBtn.textContent = 'Save Changes';
@@ -3729,7 +3682,6 @@ class FeedManager {
                     this.closeModal('edit-post-modal');
                     this.showToast('Post updated!', 'success');
                 } catch (error) {
-                    console.error('Error updating post:', error);
                     this.showToast('Failed to update post', 'error');
                     saveBtn.disabled = false;
                     saveBtn.textContent = 'Save Changes';
@@ -3744,7 +3696,6 @@ class FeedManager {
                 }
             });
         } catch (error) {
-            console.error('Error fetching post:', error);
             this.showToast('Failed to load post', 'error');
         }
     }
@@ -3797,7 +3748,6 @@ class FeedManager {
             this.closeModal('delete-post-modal');
             this.showToast('Post deleted', 'success');
         } catch (error) {
-            console.error('Error deleting post:', error);
             this.showToast('Failed to delete post', 'error');
         }
     }
@@ -3889,7 +3839,6 @@ class FeedManager {
             });
 
         } catch (error) {
-            console.error('Error loading shares:', error);
             const modalBody = modal.querySelector('.feed-modal-body');
             modalBody.innerHTML = `
                 <div class="shares-empty">
@@ -4012,7 +3961,6 @@ class FeedManager {
             `;
 
         } catch (error) {
-            console.error('Error loading likes:', error);
             const modalBody = modal.querySelector('.feed-modal-body');
             modalBody.innerHTML = `
                 <div class="shares-empty">
@@ -4044,7 +3992,6 @@ class FeedManager {
     navigateToPostView(postId, event, shareId = null) {
         // Safety check - if there's no postId, don't navigate
         if (!postId && !shareId) {
-            console.warn('navigateToPostView called without postId or shareId');
             return;
         }
 

@@ -102,20 +102,17 @@ window.addEventListener('scroll', () => {
 
 // Button click handlers (placeholder - you'll connect these to your actual functionality)
 document.querySelector('.btn-cta')?.addEventListener('click', () => {
-    console.log('Create Profile clicked');
     // Add your profile creation logic here
 });
 
 document.querySelectorAll('.btn-primary').forEach(btn => {
     btn.addEventListener('click', () => {
-        console.log('Get Started clicked');
         // Add your navigation logic here
     });
 });
 
 document.querySelectorAll('.btn-secondary-large').forEach(btn => {
     btn.addEventListener('click', () => {
-        console.log('Learn More clicked');
         // Add your learn more logic here
     });
 });

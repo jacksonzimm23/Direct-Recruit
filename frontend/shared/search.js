@@ -20,7 +20,6 @@ class SearchComponent {
                 this.currentUserRole = response.user.role;
             }
         } catch (error) {
-            console.error('Error loading current user role:', error);
         }
     }
 
@@ -93,20 +92,14 @@ class SearchComponent {
         }
 
         try {
-            console.log('Performing search for:', query);
             const response = await API.get(`/profile/search?q=${encodeURIComponent(query)}`);
-            console.log('Search response:', response);
 
             // Handle new unified results format
             this.searchResults = response.results || [];
 
-            console.log('Search results:', this.searchResults);
-            console.log('Total results found:', this.searchResults.length);
 
             this.displayResults();
         } catch (error) {
-            console.error('Search error:', error);
-            console.error('Error details:', error.response || error.message);
             this.displayError('Failed to search. Please try again.');
         }
     }

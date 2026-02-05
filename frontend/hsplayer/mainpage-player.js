@@ -88,7 +88,6 @@ document.addEventListener('DOMContentLoaded', async function() {
             if (e.key === 'Enter') {
                 const query = this.value.trim();
                 if (query) {
-                    console.log('Searching for:', query);
                     alert('Search functionality will be connected to your backend.');
                 }
             }
@@ -198,7 +197,6 @@ document.addEventListener('DOMContentLoaded', async function() {
     trendingItems.forEach(item => {
         item.addEventListener('click', function() {
             const name = this.querySelector('.trending-name').textContent;
-            console.log('Viewing profile:', name);
             alert(`Viewing ${name}'s profile...`);
         });
     });
@@ -207,7 +205,6 @@ document.addEventListener('DOMContentLoaded', async function() {
     const showMoreBtns = document.querySelectorAll('.widget-show-more');
     showMoreBtns.forEach(btn => {
         btn.addEventListener('click', function() {
-            console.log('Show more clicked');
             alert('Show more functionality will be implemented.');
         });
     });
@@ -227,13 +224,11 @@ document.addEventListener('DOMContentLoaded', async function() {
         // Infinite scroll placeholder
         window.addEventListener('scroll', function() {
             if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 500) {
-                console.log('Near bottom - load more posts');
                 // This is where you'd load more posts from your backend
             }
         });
     }
 
-    console.log('Direct Recruit Player Dashboard Loaded');
 });
 
 // Logout modal function - Global so it can be called from mobile sidebar
@@ -421,7 +416,6 @@ async function verifyPlayerType() {
             const isCollegePlayer = collegeDivision && collegeDivisions.includes(collegeDivision);
 
             if (isCollegePlayer) {
-                console.log('College player detected on HS page, redirecting...');
                 window.location.href = '../collegeplayer/mainpage-player.html';
                 return;
             }

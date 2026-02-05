@@ -22,7 +22,6 @@ const LIKES_PER_PAGE = 10;
 // ============ INITIALIZATION ============
 
 document.addEventListener('DOMContentLoaded', async function() {
-    console.log('My Profile page loaded (other profile type)');
 
     // Initialize UI components
     initializeTabs();
@@ -709,7 +708,6 @@ async function loadFollowCounts(userId) {
 }
 
 async function displayProfile(profile, type, accessLevel = 'full', hasPendingRequest = false) {
-    console.log('displayProfile called with type:', type, 'accessLevel:', accessLevel);
 
     // Use passed profile or fall back to currentProfile
     const profileData = profile || currentProfile;
@@ -1472,7 +1470,6 @@ function initializeEditProfileModal() {
             const username = this.value.trim();
 
             // TODO: Add backend check for username availability
-            console.log('Check username availability:', username);
         });
     }
 }
@@ -1927,7 +1924,6 @@ async function handlePhotoUpload(event) {
 }
 
 async function uploadCroppedImage(file) {
-    console.log('uploadCroppedImage called with file:', file);
 
     // Show loading state
     const avatarElement = document.getElementById('profileAvatar');
@@ -1950,10 +1946,8 @@ async function uploadCroppedImage(file) {
     }
 
     try {
-        console.log('Calling uploadAPI.uploadProfileImage...');
         // Upload to server
         const response = await uploadAPI.uploadProfileImage(file);
-        console.log('Upload response:', response);
 
         if (response.imageUrl || response.url) {
             const imageUrl = response.imageUrl || response.url;

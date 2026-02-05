@@ -3,7 +3,6 @@ const pool = require('../config/database');
 class Follow {
   // Check if a user has a private profile
   static async isPrivateProfile(userId) {
-    console.log('[isPrivateProfile] Checking userId:', userId);
 
     // Check player_profiles first
     let result = await pool.query(
@@ -12,7 +11,6 @@ class Follow {
     );
 
     if (result.rows.length > 0) {
-      console.log('[isPrivateProfile] Found in player_profiles, visibility:', result.rows[0].profile_visibility);
       return result.rows[0].profile_visibility === 'private';
     }
 
@@ -23,7 +21,6 @@ class Follow {
     );
 
     if (result.rows.length > 0) {
-      console.log('[isPrivateProfile] Found in coach_profiles, visibility:', result.rows[0].profile_visibility);
       return result.rows[0].profile_visibility === 'private';
     }
 
@@ -34,12 +31,10 @@ class Follow {
     );
 
     if (result.rows.length > 0) {
-      console.log('[isPrivateProfile] Found in other_profiles, visibility:', result.rows[0].profile_visibility);
       return result.rows[0].profile_visibility === 'private';
     }
 
     // Default to public if no profile found
-    console.log('[isPrivateProfile] No profile found, defaulting to public');
     return false;
   }
 

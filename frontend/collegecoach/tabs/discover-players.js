@@ -344,7 +344,6 @@ document.addEventListener('DOMContentLoaded', async function() {
             }
 
         } catch (error) {
-            console.error('Error fetching players:', error);
             loadingState.style.display = 'none';
             if (!append) {
                 emptyState.style.display = 'flex';
@@ -760,7 +759,6 @@ document.addEventListener('DOMContentLoaded', async function() {
                 }
             }
         } catch (error) {
-            console.error('Error loading coaches:', error);
             if (!append) {
                 coachesGrid.innerHTML = '<p class="no-results-message">Unable to load coaches.</p>';
             }
@@ -805,7 +803,6 @@ document.addEventListener('DOMContentLoaded', async function() {
     // Load initial coaches
     loadCollegeCoaches();
 
-    console.log('Discover Players Page Loaded');
 });
 
 // Function to show/hide college-specific navigation based on user role
@@ -832,6 +829,5 @@ async function setupCollegeCoachNav() {
             }
         }
     } catch (error) {
-        console.error('Error setting up college coach navigation:', error);
     }
 }

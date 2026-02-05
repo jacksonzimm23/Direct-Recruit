@@ -863,7 +863,6 @@ async function loadProfileByUsername(username) {
 }
 
 async function displayProfile(profile, type, accessLevel = 'full', hasPendingRequest = false) {
-    console.log('displayProfile called with type:', type, 'accessLevel:', accessLevel);
     // Store the profile type globally
     currentProfileType = type;
     viewedProfileType = type;
@@ -1417,7 +1416,6 @@ function updateSocialMedia(profile) {
                 ? JSON.parse(profile.socials)
                 : profile.socials;
         } catch (e) {
-            console.log('Could not parse socials:', e);
         }
     }
 
@@ -2504,7 +2502,6 @@ async function handlePhotoUpload(event) {
 }
 
 async function uploadCroppedImage(file) {
-    console.log('uploadCroppedImage called with file:', file);
 
     // Show loading state
     const avatarElement = document.getElementById('profileAvatar');
@@ -2525,10 +2522,8 @@ async function uploadCroppedImage(file) {
     changePhotoBtn.style.opacity = '0.5';
 
     try {
-        console.log('Calling uploadAPI.uploadProfileImage...');
         // Upload to server
         const response = await uploadAPI.uploadProfileImage(file);
-        console.log('Upload response:', response);
 
         if (response.imageUrl || response.url) {
             const imageUrl = response.imageUrl || response.url;
@@ -2766,7 +2761,6 @@ function populateEditForm() {
                 ? JSON.parse(currentProfile.socials)
                 : currentProfile.socials;
         } catch (e) {
-            console.log('Could not parse socials:', e);
         }
     }
 
@@ -4436,18 +4430,14 @@ let selectedSeasonYear = null; // Currently selected season year
 async function loadGameStats() {
     try {
         const response = await API.get('/stats/my-games');
-        console.log('loadGameStats response:', response);
         if (response.games) {
             allGamesData = response.games;
-            console.log('allGamesData before parsing:', JSON.stringify(allGamesData[0]));
 
             // Parse position_stats for all games first
             parseAllGamesData(allGamesData);
-            console.log('allGamesData after parsing:', JSON.stringify(allGamesData[0]));
 
             // Extract unique season years and update dropdown
             updateSeasonDropdown(allGamesData);
-            console.log('allSeasonYears:', allSeasonYears, 'selectedSeasonYear:', selectedSeasonYear);
 
             // Display games for selected season (or all if none selected)
             displayGameStats(allGamesData, selectedSeasonYear);
@@ -4549,7 +4539,6 @@ function displayGameStats(games, filterYear = null) {
     const container = document.getElementById('gameStatsTablesContainer');
     if (!container) return;
 
-    console.log('displayGameStats called with', games.length, 'games, filterYear:', filterYear);
 
     // Clear container
     container.innerHTML = '';
@@ -4563,7 +4552,6 @@ function displayGameStats(games, filterYear = null) {
     let filteredGames = games;
     if (filterYear) {
         filteredGames = games.filter(game => parseInt(game.season_year) === parseInt(filterYear));
-        console.log('After filtering by year', filterYear, ':', filteredGames.length, 'games');
     }
 
     if (filteredGames.length === 0) {
@@ -4572,7 +4560,6 @@ function displayGameStats(games, filterYear = null) {
     }
 
     // Debug: Log first game's position_stats
-    console.log('First game position_stats:', filteredGames[0]?.position_stats);
 
     // Define position categories
     const offensivePositions = ['QB', 'RB', 'FB', 'WR', 'TE', 'OT', 'OG', 'C'];
@@ -4785,7 +4772,6 @@ function displayGameStats(games, filterYear = null) {
         });
     }
 
-    console.log('Game stats displayed:', filteredGames.length, 'games (filtered)');
 }
 
 // ============================================
@@ -5030,7 +5016,6 @@ function displayCareerStats(games) {
         container.innerHTML = html;
     }
 
-    console.log('Career stats displayed for', seasonYears.length, 'seasons');
 }
 
 // ============================================
@@ -5348,7 +5333,6 @@ function displayOverviewStats(games) {
         `;
     }
 
-    console.log('Overview stats displayed for season:', mostRecentSeason);
 }
 
 // ============================================
@@ -7163,7 +7147,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 500);
 });
 
-console.log('My Profile page loaded (dynamic version)');
 
 // Followers/Following Modal Functions
 function setupFollowListModal() {
