@@ -174,8 +174,64 @@ document.addEventListener('DOMContentLoaded', async function() {
         return division;
     }
 
+    // Mobile detection
+    function isMobile() { return window.innerWidth <= 768; }
+
+    // Create mobile transfer player row
+    function createMobileTransferRow(player) {
+        const displayName = `${player.first_name || ''} ${player.last_name || ''}`.trim() || 'Unknown Player';
+        const height = formatHeight(player.height);
+        const weight = player.weight ? `${player.weight} lbs` : '';
+        const eligibility = player.eligibility ? `YOE: ${player.eligibility}` : '';
+        const gpa = player.gpa ? `GPA: ${parseFloat(player.gpa).toFixed(1)}` : '';
+        const position = player.position ? player.position.split(/[,\/]/)[0].trim() : '';
+        const previousSchool = player.team_name || '';
+        const division = formatDivision(player.college_division);
+        const profileImage = player.profile_image_url;
+
+        // Line 2: Position • Height • Weight • Eligibility
+        const line2Parts = [position, height, weight, eligibility].filter(p => p);
+
+        // Line 3: Previous School (Division) • GPA
+        const schoolDiv = previousSchool + (division ? ` (${division})` : '');
+        const line3Parts = [schoolDiv, gpa].filter(p => p);
+
+        // Stats lines (last season + career)
+        const statLabels = getStatLabelsForPosition(player.position);
+        let lastSeasonHtml = '';
+        let careerHtml = '';
+        if (statLabels) {
+            const ls1 = player.lastseasonstat1 !== null && player.lastseasonstat1 !== undefined ? player.lastseasonstat1 : '-';
+            const ls2 = player.lastseasonstat2 !== null && player.lastseasonstat2 !== undefined ? player.lastseasonstat2 : '-';
+            const ls3 = player.lastseasonstat3 !== null && player.lastseasonstat3 !== undefined ? player.lastseasonstat3 : '-';
+            const lastParts = [`${statLabels[0]}: ${ls1}`, `${statLabels[1]}: ${ls2}`, `${statLabels[2]}: ${ls3}`];
+            lastSeasonHtml = `<div class="discover-row-details discover-row-stats-line"><span class="stats-label">Last Season:</span> ${lastParts.join(' • ')}</div>`;
+
+            const cs1 = player.careerstat1 !== null && player.careerstat1 !== undefined ? player.careerstat1 : '-';
+            const cs2 = player.careerstat2 !== null && player.careerstat2 !== undefined ? player.careerstat2 : '-';
+            const cs3 = player.careerstat3 !== null && player.careerstat3 !== undefined ? player.careerstat3 : '-';
+            const careerParts = [`${statLabels[0]}: ${cs1}`, `${statLabels[1]}: ${cs2}`, `${statLabels[2]}: ${cs3}`];
+            careerHtml = `<div class="discover-row-details discover-row-stats-line"><span class="stats-label">Career:</span> ${careerParts.join(' • ')}</div>`;
+        }
+
+        return `
+            <div class="discover-row transfer-row" data-username="${player.username || ''}">
+                <div class="discover-row-avatar transfer-border">
+                    ${profileImage ? `<img src="${profileImage}" alt="${displayName}">` : `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>`}
+                </div>
+                <div class="discover-row-info">
+                    <div class="discover-row-name">${displayName}</div>
+                    <div class="discover-row-details transfer-details-color">${line2Parts.join(' • ')}</div>
+                    <div class="discover-row-details discover-row-line3">${line3Parts.join(' • ')}</div>
+                    ${lastSeasonHtml}
+                    ${careerHtml}
+                </div>
+            </div>`;
+    }
+
     // Create transfer player card HTML
     function createTransferPlayerCard(player) {
+        if (isMobile()) return createMobileTransferRow(player);
         const displayName = `${player.first_name || ''} ${player.last_name || ''}`.trim() || 'Unknown Player';
         const height = formatHeight(player.height);
         const weight = player.weight ? `${player.weight} lbs` : 'N/A';
@@ -299,7 +355,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             loadMoreContainer.style.display = 'none';
 
             // Clear existing player cards (but keep loading/empty states)
-            const existingCards = playersGrid.querySelectorAll('.player-card');
+            const existingCards = playersGrid.querySelectorAll('.player-card, .discover-row');
             existingCards.forEach(card => card.remove());
 
             // Reset pagination state
@@ -389,7 +445,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     // Setup view profile button handlers and make cards clickable
     function setupViewProfileButtons() {
-        const playerCards = playersGrid.querySelectorAll('.player-card');
+        const playerCards = playersGrid.querySelectorAll('.player-card, .discover-row');
         playerCards.forEach(card => {
             const username = card.dataset.username;
 
@@ -489,6 +545,97 @@ document.addEventListener('DOMContentLoaded', async function() {
         const filters = getCurrentFilters();
         fetchTransferPlayers(filters, false);
     });
+
+    // ========== MOBILE FILTER MODAL ==========
+    function initMobileFilters() {
+        if (!isMobile()) return;
+
+        const mobileFilterBtn = document.getElementById('mobileFilterBtn');
+        const mobileFilterModal = document.getElementById('mobileFilterModal');
+        const mobileFilterOverlay = document.getElementById('mobileFilterOverlay');
+        const mobileFilterCloseBtn = document.getElementById('mobileFilterCloseBtn');
+        const mobileFilterApplyBtn = document.getElementById('mobileFilterApplyBtn');
+        const mobileFilterResetBtn = document.getElementById('mobileFilterResetBtn');
+        const mobileFilterModalBody = document.getElementById('mobileFilterModalBody');
+        const filterCountBadge = document.getElementById('filterCountBadge');
+
+        if (!mobileFilterBtn || !mobileFilterModal) return;
+
+        // Show the mobile filter button
+        mobileFilterBtn.style.display = '';
+
+        // Move filter groups from desktop container into the modal body
+        const filtersGrid = document.querySelector('.filters-grid');
+        if (filtersGrid && mobileFilterModalBody) {
+            const filterGroups = filtersGrid.querySelectorAll('.filter-group');
+            filterGroups.forEach(group => {
+                group.classList.add('mobile-filter-group');
+                mobileFilterModalBody.appendChild(group);
+            });
+        }
+
+        function openFilterModal() {
+            mobileFilterModal.classList.add('active');
+            mobileFilterOverlay.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeFilterModal() {
+            mobileFilterModal.classList.remove('active');
+            mobileFilterOverlay.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        function countActiveFilters() {
+            let count = 0;
+            if (positionFilter.value) count++;
+            if (eligibilityFilter.value) count++;
+            if (levelFilter.value) count++;
+            if (parseInt(heightSlider.value) > 60) count++;
+            if (parseInt(weightSlider.value) > 150) count++;
+            if (parseFloat(sliderToGPA(gpaSlider.value)) > 0) count++;
+            return count;
+        }
+
+        function updateFilterBadge() {
+            const count = countActiveFilters();
+            if (count > 0) {
+                filterCountBadge.textContent = count;
+                filterCountBadge.style.display = '';
+            } else {
+                filterCountBadge.style.display = 'none';
+            }
+        }
+
+        mobileFilterBtn.addEventListener('click', openFilterModal);
+        mobileFilterCloseBtn.addEventListener('click', closeFilterModal);
+        mobileFilterOverlay.addEventListener('click', closeFilterModal);
+
+        mobileFilterApplyBtn.addEventListener('click', function() {
+            const filters = getCurrentFilters();
+            fetchTransferPlayers(filters, false);
+            updateFilterBadge();
+            closeFilterModal();
+        });
+
+        mobileFilterResetBtn.addEventListener('click', function() {
+            positionFilter.value = '';
+            eligibilityFilter.value = '';
+            levelFilter.value = '';
+            heightSlider.value = 60;
+            weightSlider.value = 150;
+            gpaSlider.value = 0;
+            heightValue.textContent = inchesToDisplay(60);
+            weightValue.textContent = '150';
+            gpaValue.textContent = '0.0';
+            updateFilterBadge();
+        });
+
+        // Initial badge state
+        updateFilterBadge();
+    }
+
+    initMobileFilters();
 
     // Initial load - fetch first 9 transfer players
     fetchTransferPlayers({}, false);
