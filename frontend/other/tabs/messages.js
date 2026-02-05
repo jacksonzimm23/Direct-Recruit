@@ -526,10 +526,10 @@ async function openOrCreateConversation(otherUserId) {
 }
 
 function setupEventListeners() {
-    // View Profile Button
-    const viewProfileBtn = document.getElementById('viewProfileBtn');
-    if (viewProfileBtn) {
-        viewProfileBtn.addEventListener('click', function() {
+    // Click thread header info to view profile
+    const threadHeaderInfoLink = document.getElementById('threadHeaderInfoLink');
+    if (threadHeaderInfoLink) {
+        threadHeaderInfoLink.addEventListener('click', function() {
             if (currentConversationId) {
                 const conv = conversations.find(c => c.id === currentConversationId);
                 if (conv && conv.participants && conv.participants[0]) {

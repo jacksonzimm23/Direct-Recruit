@@ -158,7 +158,7 @@
                 <!-- Message Thread -->
                 <div class="message-thread" id="messageThread">
                     <div class="message-thread-header" id="messageThreadHeader" style="display: none;">
-                        <div class="thread-header-info">
+                        <div class="thread-header-info" id="threadHeaderInfoLink" style="cursor: pointer;">
                             <div class="thread-avatar-circle">
                                 <svg viewBox="0 0 24 24" fill="currentColor">
                                     <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
@@ -170,9 +170,8 @@
                                 <div class="thread-user-role"></div>
                             </div>
                         </div>
-                        <!-- View Profile and Delete buttons -->
+                        <!-- Delete button -->
                         <div class="thread-actions">
-                            <button class="btn-view-thread-profile" id="viewProfileBtn">View Profile</button>
                             <button class="btn-delete-conversation" id="deleteConversationBtn" title="Delete Conversation">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <polyline points="3 6 5 6 21 6"></polyline>

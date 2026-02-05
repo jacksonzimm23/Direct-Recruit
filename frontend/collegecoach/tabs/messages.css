@@ -791,9 +791,25 @@
 }
 
 @media (max-width: 768px) {
+    /* Remove main-content padding so messages fill the viewport */
+    .messages-content {
+        padding: 0 !important;
+        padding-top: 60px !important;
+        padding-bottom: 70px !important;
+        height: 100vh !important;
+        height: 100dvh !important;
+        box-sizing: border-box !important;
+        overflow: hidden !important;
+    }
+
+    .messages-content .content-header {
+        display: none !important;
+    }
+
     .messages-container {
         grid-template-columns: 1fr;
         position: relative;
+        height: 100%;
     }
 
     .conversations-sidebar {
@@ -813,15 +829,96 @@
 
     .message-thread.active {
         display: flex;
+        height: 100%;
+    }
+
+    /* Compact thread header for mobile */
+    .message-thread-header {
+        padding: 0.5rem 0.75rem;
+        gap: 0.4rem;
+        flex-shrink: 0;
+    }
+
+    .thread-header-info {
+        gap: 0.5rem;
+        min-width: 0;
+        flex: 1;
+    }
+
+    .thread-avatar-circle {
+        width: 30px;
+        height: 30px;
+    }
+
+    .thread-avatar-circle svg {
+        width: 15px;
+        height: 15px;
+    }
+
+    .thread-avatar-circle img {
+        width: 30px;
+        height: 30px;
+    }
+
+    .thread-user-info {
+        gap: 0.05rem;
+        min-width: 0;
+    }
+
+    .thread-user-name {
+        font-size: 0.9rem;
+    }
+
+    .thread-user-role {
+        font-size: 0.7rem;
+        white-space: normal;
+        line-height: 1.3;
+    }
+
+    .thread-header-info:active {
+        opacity: 0.7;
+    }
+
+    .thread-actions {
+        flex-shrink: 0;
+    }
+
+    .btn-delete-conversation {
+        padding: 0.15rem;
+        border-radius: 4px;
+    }
+
+    .btn-delete-conversation svg {
+        width: 12px;
+        height: 12px;
+    }
+
+    .back-btn-mobile {
+        padding: 0.2rem;
+        flex-shrink: 0;
+        margin-right: 0.15rem !important;
+    }
+
+    .back-btn-mobile svg {
+        width: 16px;
+        height: 16px;
     }
 
     .thread-action-btn {
-        padding: 0.5rem;
+        padding: 0.2rem;
     }
 
     .thread-action-btn svg {
-        width: 18px;
-        height: 18px;
+        width: 14px;
+        height: 14px;
+    }
+
+    /* Ensure message thread content fills available space */
+    .message-thread-content {
+        flex: 1;
+        min-height: 0;
+        padding: 0.75rem;
+        overflow-y: auto;
     }
 
     .message-content {
@@ -829,8 +926,9 @@
     }
 
     .message-input-container {
-        padding: 1rem;
+        padding: 0.5rem 0.75rem;
         gap: 0.5rem;
+        flex-shrink: 0;
     }
 
     .message-option-btn {
