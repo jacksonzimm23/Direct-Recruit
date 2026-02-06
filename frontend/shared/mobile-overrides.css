@@ -1215,6 +1215,336 @@
         font-size: 0.9rem !important;
     }
 
+    /* === RECRUITING BOARD PAGE === */
+
+    /* Show title on mobile */
+    .recruiting-board-main .content-header h1 {
+        display: block !important;
+        font-size: 1.5rem !important;
+    }
+
+    /* Remove side margins on mobile */
+    .recruiting-board-main .content-header,
+    .recruiting-board-main .board-selector-section,
+    .recruiting-board-main .current-board-header,
+    .recruiting-board-main .class-year-section,
+    .recruiting-board-main .board-controls,
+    .recruiting-board-main .remove-mode-indicator,
+    .recruiting-board-main .football-field-container {
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+    }
+
+    /* Ensure football field container doesn't clip content */
+    .football-field-container {
+        overflow: visible !important;
+    }
+
+    /* Board selector section */
+    .board-selector-section {
+        margin-bottom: 0.75rem !important;
+    }
+
+    .board-selector-row {
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        gap: 0.5rem !important;
+        flex-wrap: wrap !important;
+    }
+
+    .board-type-dropdown {
+        width: auto !important;
+    }
+
+    .board-type-select {
+        width: auto !important;
+        min-width: unset !important;
+        padding: 0.5rem 2rem 0.5rem 0.75rem !important;
+        font-size: 0.85rem !important;
+    }
+
+    /* Create shared board button - icon only on mobile, right aligned */
+    .btn-create-shared-board {
+        width: 36px !important;
+        height: 36px !important;
+        padding: 0 !important;
+        justify-content: center !important;
+        border-radius: 50% !important;
+        flex-shrink: 0 !important;
+        margin-left: auto !important;
+    }
+
+    .btn-create-shared-board .btn-text {
+        display: none !important;
+    }
+
+    /* Leave board button - full width row below */
+    .btn-leave-board {
+        width: 100% !important;
+        justify-content: center !important;
+        padding: 0.5rem 0.75rem !important;
+        font-size: 0.8rem !important;
+    }
+
+    /* Current board header */
+    .current-board-header {
+        padding: 0.6rem 0.75rem !important;
+        gap: 0.5rem !important;
+        margin-bottom: 0.75rem !important;
+    }
+
+    .current-board-header h2 {
+        font-size: 0.95rem !important;
+    }
+
+    .btn-edit-board-name,
+    .btn-delete-board {
+        padding: 0.3rem !important;
+    }
+
+    .btn-edit-board-name svg,
+    .btn-delete-board svg {
+        width: 16px !important;
+        height: 16px !important;
+    }
+
+    /* Class year section */
+    .class-year-section {
+        margin-bottom: 1rem !important;
+    }
+
+    .class-year-row {
+        flex-direction: row !important;
+        align-items: center !important;
+        gap: 0.75rem !important;
+        flex-wrap: wrap !important;
+    }
+
+    .class-year-dropdown {
+        width: auto !important;
+    }
+
+    .class-year-select {
+        width: 148px !important;
+        min-width: 148px !important;
+        padding: 0.5rem 2rem 0.5rem 0.75rem !important;
+        font-size: 0.85rem !important;
+    }
+
+    /* Hide instructions on mobile - too verbose */
+    .board-instructions {
+        display: none !important;
+    }
+
+    /* Board controls - stack and reorganize */
+    .board-controls {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 0.75rem !important;
+        margin-bottom: 1rem !important;
+    }
+
+    .board-controls-left {
+        flex-direction: column !important;
+        gap: 0.5rem !important;
+    }
+
+    /* Offense/Defense toggle - full width */
+    .board-toggle {
+        width: 100% !important;
+        justify-content: center !important;
+    }
+
+    .toggle-btn {
+        flex: 1 !important;
+        padding: 0.5rem 1rem !important;
+        font-size: 0.85rem !important;
+    }
+
+    /* Invite collaborators - full width */
+    .btn-invite-collaborators {
+        width: 100% !important;
+        justify-content: center !important;
+        padding: 0.5rem 0.75rem !important;
+        font-size: 0.8rem !important;
+    }
+
+    /* Position actions - row layout */
+    .position-actions {
+        display: flex !important;
+        gap: 0.5rem !important;
+    }
+
+    .btn-add-position,
+    .btn-remove-position {
+        flex: 1 !important;
+        justify-content: center !important;
+        padding: 0.5rem 0.75rem !important;
+        font-size: 0.8rem !important;
+    }
+
+    .btn-add-position svg,
+    .btn-remove-position svg {
+        width: 14px !important;
+        height: 14px !important;
+    }
+
+    /* Remove mode indicator */
+    .remove-mode-indicator {
+        padding: 0.6rem 0.75rem !important;
+        font-size: 0.8rem !important;
+        margin-bottom: 0.75rem !important;
+    }
+
+    .remove-mode-indicator svg {
+        width: 16px !important;
+        height: 16px !important;
+    }
+
+    /* Football field - horizontal scroll Kanban style */
+    .football-field {
+        padding: 0.75rem !important;
+        padding-left: 0.5rem !important;
+        padding-right: 0.5rem !important;
+        border-radius: 12px !important;
+        overflow-x: auto !important;
+        overflow-y: hidden !important;
+        -webkit-overflow-scrolling: touch !important;
+    }
+
+    /* Wrapper to ensure full scrolling visibility */
+    .position-group {
+        flex-wrap: nowrap !important;
+        gap: 0.75rem !important;
+        margin-bottom: 1rem !important;
+        padding-bottom: 0.5rem !important;
+        padding-left: 0.25rem !important;
+        padding-right: 0.25rem !important;
+        display: flex !important;
+        width: max-content !important;
+    }
+
+    .position-slot {
+        flex: 0 0 140px !important;
+        min-width: 140px !important;
+        max-width: 140px !important;
+    }
+
+    .position-label-input {
+        padding: 0.4rem 0.5rem !important;
+        font-size: 0.8rem !important;
+        margin-bottom: 0.5rem !important;
+    }
+
+    .recruits-list {
+        min-height: 220px !important;
+        max-height: 220px !important;
+        padding: 0.4rem !important;
+    }
+
+    /* Recruit cards - smaller */
+    .recruit-card {
+        padding: 0.5rem !important;
+        gap: 0.4rem !important;
+        margin-bottom: 0.4rem !important;
+    }
+
+    .recruit-avatar {
+        width: 30px !important;
+        height: 30px !important;
+    }
+
+    .recruit-avatar svg {
+        width: 16px !important;
+        height: 16px !important;
+    }
+
+    .recruit-rank {
+        width: 20px !important;
+        height: 20px !important;
+        font-size: 0.65rem !important;
+    }
+
+    .recruit-name {
+        font-size: 0.75rem !important;
+    }
+
+    .recruit-stats,
+    .recruit-school,
+    .recruit-details {
+        font-size: 0.65rem !important;
+    }
+
+    /* Remove button always visible on mobile (no hover) */
+    .recruit-card .remove-player-btn {
+        opacity: 1 !important;
+    }
+
+    .remove-player-btn {
+        padding: 0.2rem !important;
+    }
+
+    .remove-player-btn svg {
+        width: 14px !important;
+        height: 14px !important;
+    }
+
+    /* Modal adjustments for recruiting board */
+    .recruiting-board-modal-content {
+        width: 95% !important;
+        max-width: 95% !important;
+        max-height: 85vh !important;
+    }
+
+    .recruiting-board-modal-header {
+        padding: 1rem !important;
+    }
+
+    .recruiting-board-modal-header h3 {
+        font-size: 1.1rem !important;
+    }
+
+    .recruiting-board-modal-body {
+        padding: 1rem !important;
+    }
+
+    .recruiting-board-modal-footer {
+        padding: 1rem !important;
+        gap: 0.75rem !important;
+    }
+
+    .recruiting-board-modal-footer .btn-cancel,
+    .recruiting-board-modal-footer .btn-submit {
+        padding: 0.65rem 1rem !important;
+        font-size: 0.9rem !important;
+    }
+
+    /* Collaborator modal - more compact */
+    .recruiting-board-modal.collab-modal .recruiting-board-modal-content {
+        max-height: 80vh !important;
+    }
+
+    .collab-search-results {
+        max-height: 140px !important;
+    }
+
+    .collaborators-list {
+        max-height: 120px !important;
+    }
+
+    /* Context menu positioning */
+    .player-context-menu {
+        min-width: 140px !important;
+    }
+
+    .context-menu-item {
+        padding: 0.5rem 0.75rem !important;
+        font-size: 0.8rem !important;
+    }
+
     /* === SETTINGS PAGE === */
     .settings-container {
         flex-direction: column !important;
