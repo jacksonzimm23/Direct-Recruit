@@ -697,7 +697,6 @@ function setupUserMenuDropdown(userFolder) {
         dropdown.style.position = 'fixed';
         dropdown.style.bottom = (window.innerHeight - rect.top + 10) + 'px';
         dropdown.style.left = rect.left + 'px';
-        dropdown.style.width = rect.width + 'px';
 
         document.body.appendChild(dropdown);
 

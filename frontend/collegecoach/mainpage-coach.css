@@ -1008,6 +1008,8 @@
     z-index: 1001;
     backdrop-filter: blur(10px);
     animation: dropdownSlideUp 0.2s ease-out;
+    min-width: 180px !important;
+    width: auto !important;
 }
 
 @keyframes dropdownSlideUp {
