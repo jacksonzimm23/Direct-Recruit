@@ -7456,6 +7456,7 @@ function setupProfileViewersModal() {
                 const mobileSidebarOverlay = document.getElementById('mobileSidebarOverlay');
                 if (mobileSidebar) mobileSidebar.classList.remove('active');
                 if (mobileSidebarOverlay) mobileSidebarOverlay.classList.remove('active');
+                document.body.style.overflow = ''; // Reset body scroll lock
                 openProfileViewersModal();
             }
         });

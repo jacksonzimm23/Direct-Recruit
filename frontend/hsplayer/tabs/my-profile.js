@@ -6528,17 +6528,18 @@ function setupProfileViewersModal() {
         });
     }
 
-    // Mobile profile views link
+    // Mobile profile views link - handled by mainpage-player.js for all pages
+    // This is kept for backwards compatibility on my-profile page
     if (mobileProfileViewsLink) {
         mobileProfileViewsLink.addEventListener('click', (e) => {
             e.preventDefault();
-            // Only open modal if viewing own profile
             if (isOwnProfile) {
                 // Close mobile sidebar first
                 const mobileSidebar = document.getElementById('mobileSidebar');
                 const mobileSidebarOverlay = document.getElementById('mobileSidebarOverlay');
                 if (mobileSidebar) mobileSidebar.classList.remove('active');
                 if (mobileSidebarOverlay) mobileSidebarOverlay.classList.remove('active');
+                document.body.style.overflow = ''; // Reset body scroll lock
                 openProfileViewersModal();
             }
         });

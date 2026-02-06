@@ -11,6 +11,9 @@ document.addEventListener('DOMContentLoaded', async function() {
     // Initialize mobile sidebar functionality
     initMobileSidebar();
 
+    // Load mobile profile views count
+    loadMobileProfileViewsCount();
+
     // Initialize mobile post modal
     initMobilePostModal();
 
@@ -393,6 +396,18 @@ function initMobileSidebar() {
             await API.auth.logout();
         });
     }
+
+    // Mobile profile views link - open modal directly
+    // Skip if on my-profile page (that page has its own handler)
+    const isMyProfilePage = window.location.pathname.includes('my-profile.html');
+    const mobileProfileViewsLink = document.getElementById('mobileProfileViewsLink');
+    if (mobileProfileViewsLink && !isMyProfilePage) {
+        mobileProfileViewsLink.addEventListener('click', function(e) {
+            e.preventDefault();
+            closeMobileSidebar();
+            openMobileProfileViewersModal();
+        });
+    }
 }
 
 // Verify user is on the correct player page (HS player page)
@@ -700,4 +715,274 @@ function initMobilePostModal() {
     }
 
     updateModalUserInfo();
+}
+
+// ==================== MOBILE PROFILE VIEWERS MODAL ====================
+
+// Create and inject the profile viewers modal into the page
+function ensureProfileViewersModal() {
+    if (document.getElementById('mobileProfileViewersModal')) return;
+
+    const modalHTML = `
+    <div class="follow-list-modal" id="mobileProfileViewersModal">
+        <div class="follow-list-modal-overlay" id="mobileProfileViewersModalOverlay"></div>
+        <div class="follow-list-modal-content">
+            <div class="follow-list-modal-header">
+                <h2>Profile Viewers</h2>
+                <button class="follow-list-modal-close" id="mobileProfileViewersModalClose">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="follow-list-modal-body" id="mobileProfileViewersModalBody">
+                <div class="follow-list-loading">Loading...</div>
+            </div>
+        </div>
+    </div>`;
+
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+    // Add close handlers
+    const modal = document.getElementById('mobileProfileViewersModal');
+    const overlay = document.getElementById('mobileProfileViewersModalOverlay');
+    const closeBtn = document.getElementById('mobileProfileViewersModalClose');
+
+    if (overlay) {
+        overlay.addEventListener('click', closeMobileProfileViewersModal);
+    }
+    if (closeBtn) {
+        closeBtn.addEventListener('click', closeMobileProfileViewersModal);
+    }
+}
+
+async function openMobileProfileViewersModal() {
+    ensureProfileViewersModal();
+
+    const modal = document.getElementById('mobileProfileViewersModal');
+    const modalBody = document.getElementById('mobileProfileViewersModalBody');
+
+    if (!modal || !modalBody) return;
+
+    // Show loading state
+    modalBody.innerHTML = '<div class="follow-list-loading">Loading...</div>';
+
+    // Show modal
+    modal.classList.add('active');
+
+    try {
+        // Get current user ID
+        const authResponse = await API.get('/auth/me');
+        if (!authResponse.user) {
+            modalBody.innerHTML = '<div class="follow-list-empty">Please log in to view this</div>';
+            return;
+        }
+        const currentUserId = authResponse.user.id;
+
+        const response = await API.get(`/profile/viewers/${currentUserId}`);
+        const viewers = response.viewers || [];
+
+        if (viewers.length === 0) {
+            modalBody.innerHTML = '<div class="follow-list-empty">No profile views yet</div>';
+            return;
+        }
+
+        // Render the list
+        modalBody.innerHTML = viewers.map(viewer => {
+            const roleInfo = getMobileRoleInfo(viewer);
+            return `
+            <div class="follow-list-item" data-user-id="${viewer.id}" data-role="${viewer.role}">
+                <div class="follow-list-avatar">
+                    ${viewer.profile_image_url
+                        ? `<img src="${viewer.profile_image_url}" alt="${viewer.first_name}">`
+                        : `<svg viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="12" cy="7" r="4"></circle>
+                           </svg>`
+                    }
+                </div>
+                <div class="follow-list-info">
+                    <div class="follow-list-name">${viewer.first_name} ${viewer.last_name}</div>
+                    <div class="follow-list-role ${roleInfo.colorClass}">${roleInfo.text}</div>
+                </div>
+            </div>
+        `}).join('');
+
+        // Add click handlers to navigate to profiles
+        modalBody.querySelectorAll('.follow-list-item').forEach(item => {
+            item.addEventListener('click', async () => {
+                const visitorUserId = item.dataset.userId;
+                const role = item.dataset.role;
+
+                try {
+                    let profileResponse;
+                    if (role === 'player') {
+                        profileResponse = await API.get(`/profile/player/${visitorUserId}`);
+                    } else if (role === 'coach') {
+                        profileResponse = await API.get(`/profile/coach/${visitorUserId}`);
+                    } else {
+                        profileResponse = await API.get(`/profile/other/${visitorUserId}`);
+                    }
+
+                    if (profileResponse.profile && profileResponse.profile.username) {
+                        closeMobileProfileViewersModal();
+                        const profile = profileResponse.profile;
+
+                        // Navigate to appropriate profile folder
+                        let folder = 'hsplayer';
+                        if (role === 'coach') {
+                            const hasCollegeDivision = profile.college_division &&
+                                ['FBS', 'FCS', 'D2', 'D3', 'NAIA', 'NJCAA', 'JUCO'].includes(profile.college_division);
+                            folder = hasCollegeDivision ? 'collegecoach' : 'hscoach';
+                        } else if (role === 'other') {
+                            folder = 'other';
+                        } else {
+                            if (profile.transfer === 'y' || profile.is_transfer_player) {
+                                folder = 'transferplayer';
+                            } else if (profile.college_division &&
+                                ['FBS', 'FCS', 'D2', 'D3', 'NAIA', 'NJCAA', 'JUCO'].includes(profile.college_division)) {
+                                folder = 'collegeplayer';
+                            } else {
+                                folder = 'hsplayer';
+                            }
+                        }
+
+                        // Determine the correct path based on current location
+                        const isInTabs = window.location.pathname.includes('/tabs/');
+                        const basePath = isInTabs ? '../../' : '../';
+                        window.location.href = `${basePath}${folder}/tabs/my-profile.html?username=${profile.username}&from=profile`;
+                    }
+                } catch (error) {
+                    console.error('Error fetching profile:', error);
+                }
+            });
+        });
+
+    } catch (error) {
+        console.error('Error loading profile viewers:', error);
+        modalBody.innerHTML = '<div class="follow-list-empty">Failed to load viewers</div>';
+    }
+}
+
+function closeMobileProfileViewersModal() {
+    const modal = document.getElementById('mobileProfileViewersModal');
+    if (modal) {
+        modal.classList.remove('active');
+    }
+}
+
+// Helper function to get role display info (matches desktop getFollowListRoleInfo)
+function getMobileRoleInfo(user) {
+    const role = user.role;
+    let text = '';
+    let colorClass = '';
+
+    if (role === 'player') {
+        // Determine player type
+        const isTransfer = user.is_transfer === 'y' || user.is_transfer === true;
+        const hasCollegeDivision = user.player_college_division &&
+            ['FBS', 'FCS', 'D2', 'D3', 'NAIA', 'NJCAA', 'JUCO'].includes(user.player_college_division);
+
+        if (isTransfer) {
+            // Transfer Player: position • height • weight • YOE
+            colorClass = 'role-transfer-player';
+            const parts = [];
+            if (user.player_position) parts.push(user.player_position);
+            const heightStr = formatHeightForMobileDisplay(user.player_height);
+            if (heightStr) parts.push(heightStr);
+            if (user.player_weight) parts.push(`${user.player_weight} lbs`);
+            if (user.years_of_eligibility) parts.push(`${user.years_of_eligibility} YOE`);
+            text = parts.join(' • ') || 'Transfer Player';
+        } else if (hasCollegeDivision) {
+            // College Player: position • school, state • division
+            colorClass = 'role-college-player';
+            const parts = [];
+            if (user.player_position) parts.push(user.player_position);
+            const schoolParts = [];
+            if (user.player_team_name) schoolParts.push(user.player_team_name);
+            if (user.player_state) schoolParts.push(user.player_state);
+            if (schoolParts.length > 0) parts.push(schoolParts.join(', '));
+            if (user.player_college_division) parts.push(user.player_college_division);
+            text = parts.join(' • ') || 'College Player';
+        } else {
+            // HS Player: position • height • weight • class
+            colorClass = 'role-hs-player';
+            const parts = [];
+            if (user.player_position) parts.push(user.player_position);
+            const heightStr = formatHeightForMobileDisplay(user.player_height);
+            if (heightStr) parts.push(heightStr);
+            if (user.player_weight) parts.push(`${user.player_weight} lbs`);
+            if (user.graduation_year) parts.push(user.graduation_year);
+            text = parts.join(' • ') || 'HS Player';
+        }
+    } else if (role === 'coach') {
+        const hasCollegeDivision = user.coach_college_division &&
+            ['FBS', 'FCS', 'D2', 'D3', 'NAIA', 'NJCAA', 'JUCO'].includes(user.coach_college_division);
+
+        if (hasCollegeDivision) {
+            // College Coach: team, state • division
+            colorClass = 'role-college-coach';
+            const parts = [];
+            const teamParts = [];
+            if (user.coach_team_name) teamParts.push(user.coach_team_name);
+            if (user.coach_state) teamParts.push(user.coach_state);
+            if (teamParts.length > 0) parts.push(teamParts.join(', '));
+            if (user.coach_college_division) parts.push(user.coach_college_division);
+            text = parts.join(' • ') || 'College Coach';
+        } else {
+            // HS Coach: team, state
+            colorClass = 'role-hs-coach';
+            const parts = [];
+            if (user.coach_team_name) parts.push(user.coach_team_name);
+            if (user.coach_state) parts.push(user.coach_state);
+            text = parts.join(', ') || 'HS Coach';
+        }
+    } else if (role === 'other') {
+        // Other: subheader
+        colorClass = 'role-other';
+        text = user.other_subheader || 'Other';
+    } else {
+        text = role || 'User';
+    }
+
+    return { text, colorClass };
+}
+
+// Helper function to format height for display
+function formatHeightForMobileDisplay(height) {
+    if (!height) return '';
+    // If it's already in "X'Y\"" format, return as-is
+    if (typeof height === 'string' && height.includes("'")) {
+        return height;
+    }
+    // If it's a number (total inches), convert to feet'inches"
+    const totalInches = parseInt(height);
+    if (isNaN(totalInches)) return '';
+    const feet = Math.floor(totalInches / 12);
+    const inches = totalInches % 12;
+    return `${feet}'${inches}"`;
+}
+
+// Load profile views count for mobile sidebar
+async function loadMobileProfileViewsCount() {
+    const mobileViewCountElement = document.getElementById('mobileProfileViewsCount');
+    const mobileProfileViewsLink = document.getElementById('mobileProfileViewsLink');
+
+    if (!mobileViewCountElement || !mobileProfileViewsLink) return;
+
+    try {
+        const authResponse = await API.get('/auth/me');
+        if (!authResponse.user) return;
+
+        const currentUserId = authResponse.user.id;
+        const response = await API.get(`/profile/views/${currentUserId}`);
+        const viewCount = response.viewCount || 0;
+
+        mobileViewCountElement.textContent = viewCount;
+        mobileProfileViewsLink.style.display = 'flex';
+    } catch (error) {
+        console.error('Error loading mobile profile views count:', error);
+        mobileViewCountElement.textContent = '0';
+    }
 }

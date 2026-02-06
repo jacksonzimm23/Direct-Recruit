@@ -29,6 +29,179 @@
     display: none;
 }
 
+/* === DYNAMICALLY INJECTED PROFILE VIEWERS MODAL (for mobile sidebar) === */
+/* These base styles ensure the modal works when injected via JS on any page */
+#mobileProfileViewersModal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 2000;
+}
+
+#mobileProfileViewersModal.active {
+    display: block;
+}
+
+#mobileProfileViewersModal .follow-list-modal-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(4px);
+}
+
+#mobileProfileViewersModal .follow-list-modal-content {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(10, 17, 40, 0.98);
+    border: 1px solid rgba(18, 130, 162, 0.3);
+    border-radius: 16px;
+    width: 95%;
+    max-width: 95%;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+#mobileProfileViewersModal .follow-list-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid rgba(18, 130, 162, 0.2);
+}
+
+#mobileProfileViewersModal .follow-list-modal-header h2 {
+    color: #fefcfb;
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin: 0;
+}
+
+#mobileProfileViewersModal .follow-list-modal-close {
+    background: none;
+    border: none;
+    color: rgba(254, 252, 251, 0.6);
+    cursor: pointer;
+    padding: 0.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s ease;
+}
+
+#mobileProfileViewersModal .follow-list-modal-close:hover {
+    color: #fefcfb;
+}
+
+#mobileProfileViewersModal .follow-list-modal-close svg {
+    width: 24px;
+    height: 24px;
+}
+
+#mobileProfileViewersModal .follow-list-modal-body {
+    padding: 1rem 1.5rem;
+    overflow-y: auto;
+    flex: 1;
+}
+
+#mobileProfileViewersModal .follow-list-loading,
+#mobileProfileViewersModal .follow-list-empty {
+    text-align: center;
+    color: rgba(254, 252, 251, 0.5);
+    padding: 2rem;
+}
+
+#mobileProfileViewersModal .follow-list-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.75rem 0.5rem;
+    border-bottom: 1px solid rgba(18, 130, 162, 0.1);
+    cursor: pointer;
+    transition: background 0.2s ease;
+    border-radius: 8px;
+}
+
+#mobileProfileViewersModal .follow-list-item:last-child {
+    border-bottom: none;
+}
+
+#mobileProfileViewersModal .follow-list-item:hover {
+    background: rgba(18, 130, 162, 0.1);
+}
+
+#mobileProfileViewersModal .follow-list-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: rgba(18, 130, 162, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    overflow: hidden;
+}
+
+#mobileProfileViewersModal .follow-list-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+#mobileProfileViewersModal .follow-list-avatar svg {
+    width: 24px;
+    height: 24px;
+    color: #1282A2;
+}
+
+#mobileProfileViewersModal .follow-list-info {
+    flex: 1;
+    min-width: 0;
+}
+
+#mobileProfileViewersModal .follow-list-name {
+    color: #fefcfb;
+    font-weight: 600;
+    font-size: 0.95rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+#mobileProfileViewersModal .follow-list-role {
+    color: rgba(254, 252, 251, 0.5);
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+/* Role color classes */
+#mobileProfileViewersModal .role-hs-player,
+#mobileProfileViewersModal .role-college-player {
+    color: #1282A2;
+}
+
+#mobileProfileViewersModal .role-transfer-player {
+    color: #b91c1c;
+}
+
+#mobileProfileViewersModal .role-hs-coach,
+#mobileProfileViewersModal .role-college-coach {
+    color: #ff6b35;
+}
+
+#mobileProfileViewersModal .role-other {
+    color: #d4a017;
+}
+
 /* ============================================
    MOBILE BREAKPOINT (768px and below)
    ============================================ */
@@ -1074,6 +1247,57 @@
 
     .message-input-container {
         padding: 0.75rem !important;
+    }
+
+    /* === FOLLOW LIST / PROFILE VIEWERS MODAL === */
+    .follow-list-modal {
+        z-index: 2000 !important;
+    }
+
+    /* Profile Viewers Modal - keep centered rounded style (matches other pages) */
+    #profileViewersModal .follow-list-modal-content,
+    #mobileProfileViewersModal .follow-list-modal-content {
+        position: absolute !important;
+        width: 90% !important;
+        max-width: 350px !important;
+        height: auto !important;
+        max-height: 70vh !important;
+        border-radius: 16px !important;
+        top: 50% !important;
+        left: 50% !important;
+        transform: translate(-50%, -50%) !important;
+        background: rgba(10, 17, 40, 0.98) !important;
+        border: 1px solid rgba(18, 130, 162, 0.3) !important;
+    }
+
+    #profileViewersModal .follow-list-modal-header,
+    #mobileProfileViewersModal .follow-list-modal-header {
+        padding: 1rem 1.25rem !important;
+    }
+
+    #profileViewersModal .follow-list-modal-body,
+    #mobileProfileViewersModal .follow-list-modal-body {
+        padding: 0.75rem 1rem !important;
+    }
+
+    #profileViewersModal .follow-list-item,
+    #mobileProfileViewersModal .follow-list-item {
+        padding: 0.6rem 0.5rem !important;
+    }
+
+    #profileViewersModal .follow-list-avatar,
+    #mobileProfileViewersModal .follow-list-avatar {
+        width: 40px !important;
+        height: 40px !important;
+    }
+
+    /* Followers/Following Modal - full screen */
+    #followListModal .follow-list-modal-content {
+        width: 100% !important;
+        max-width: 100% !important;
+        height: 100% !important;
+        max-height: 100% !important;
+        border-radius: 0 !important;
     }
 
     /* === NOTIFICATIONS PAGE === */
