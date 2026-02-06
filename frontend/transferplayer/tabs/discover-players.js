@@ -219,8 +219,9 @@ document.addEventListener('DOMContentLoaded', function() {
             recruiting = coach.cc_pos.split(',').map(p => p.trim()).filter(p => p).join(', ');
         }
         const line2Parts = [positionAcronym, school + (state ? `, ${state}` : ''), shortDiv, recruiting ? `Recruiting: ${recruiting}` : ''].filter(p => p);
+        const isCollegeCoach = division ? 'true' : 'false';
         return `
-            <div class="discover-row" data-username="${coach.username || ''}">
+            <div class="discover-row" data-username="${coach.username || ''}" data-user-type="coach" data-is-college="${isCollegeCoach}">
                 <div class="discover-row-avatar coach-border">
                     ${profileImage ? `<img src="${profileImage}" alt="${displayName}">` : `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>`}
                 </div>
@@ -387,9 +388,9 @@ document.addEventListener('DOMContentLoaded', function() {
         `;
     }
 
-    // Attach click listeners to player cards
+    // Attach click listeners to player cards (exclude coach rows)
     function attachPlayerCardListeners() {
-        const playerCards = document.querySelectorAll('.player-card, .discover-row');
+        const playerCards = document.querySelectorAll('.player-card, .discover-row[data-player-type]');
         playerCards.forEach(card => {
             // Remove existing listeners by cloning
             const newCard = card.cloneNode(true);
@@ -567,8 +568,9 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Attach click listeners to coach cards
+    // Attach click listeners to coach cards (desktop and mobile)
     function attachCoachCardListeners() {
+        // Desktop coach cards
         const coachCards = document.querySelectorAll('.coach-card');
         coachCards.forEach(card => {
             card.style.cursor = 'pointer';
@@ -580,7 +582,22 @@ document.addEventListener('DOMContentLoaded', function() {
                     const folder = isCollegeCoach ? 'collegecoach' : 'hscoach';
                     window.location.href = `../../${folder}/tabs/my-profile.html?username=${username}&from=discover`;
                 } else {
-                    const coachName = this.querySelector('.coach-name').textContent.trim();
+                    alert('Profile not available. Coach has not set up their profile yet.');
+                }
+            });
+        });
+
+        // Mobile coach rows
+        const mobileCoachRows = document.querySelectorAll('.discover-row[data-user-type="coach"]');
+        mobileCoachRows.forEach(row => {
+            row.style.cursor = 'pointer';
+            row.addEventListener('click', function() {
+                const username = this.dataset.username;
+                if (username) {
+                    const isCollegeCoach = this.dataset.isCollege === 'true';
+                    const folder = isCollegeCoach ? 'collegecoach' : 'hscoach';
+                    window.location.href = `../../${folder}/tabs/my-profile.html?username=${username}&from=discover`;
+                } else {
                     alert('Profile not available. Coach has not set up their profile yet.');
                 }
             });
