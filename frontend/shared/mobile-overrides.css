@@ -1077,13 +1077,142 @@
     }
 
     /* === NOTIFICATIONS PAGE === */
-    .notification-item {
-        padding: 1rem !important;
+
+    /* Show "Notifications" title on mobile */
+    .notifications-content .content-header h1 {
+        display: block !important;
+        font-size: 1.5rem !important;
     }
 
+    /* Header wrapper - stack vertically */
+    .notifications-content .header-title-wrapper {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 0.75rem !important;
+    }
+
+    /* Mark all read button - full width on mobile */
+    .notifications-content .btn-mark-all-read {
+        width: 100% !important;
+        justify-content: center !important;
+        padding: 0.6rem 1rem !important;
+        font-size: 0.85rem !important;
+    }
+
+    /* Notification tabs - horizontal scroll with smaller padding */
+    .notification-tabs {
+        padding: 0.75rem 1rem !important;
+        gap: 0.5rem !important;
+    }
+
+    .notification-tab {
+        padding: 0.5rem 0.875rem !important;
+        font-size: 0.8rem !important;
+    }
+
+    .notification-tab svg {
+        display: none !important;
+    }
+
+    .tab-count {
+        font-size: 0.7rem !important;
+        padding: 0.15rem 0.4rem !important;
+        min-width: 18px !important;
+    }
+
+    /* Section titles */
+    .notifications-list .section-title {
+        padding: 0 1rem !important;
+        font-size: 0.9rem !important;
+        margin-bottom: 0.75rem !important;
+    }
+
+    /* Notification card - HORIZONTAL layout on mobile (not stacked) */
+    .notification-card {
+        flex-direction: row !important;
+        align-items: flex-start !important;
+        gap: 0.75rem !important;
+        padding: 0.875rem 1rem !important;
+    }
+
+    /* Profile image / icon - smaller on mobile */
+    .notification-profile-img,
     .notification-icon {
-        width: 36px !important;
-        height: 36px !important;
+        width: 40px !important;
+        height: 40px !important;
+        flex-shrink: 0 !important;
+    }
+
+    .notification-icon svg {
+        width: 18px !important;
+        height: 18px !important;
+    }
+
+    /* Content area - flex grow to fill space */
+    .notification-content {
+        flex: 1 !important;
+        min-width: 0 !important;
+        padding-right: 0 !important;
+    }
+
+    /* Notification text - smaller font, tighter line height */
+    .notification-text {
+        font-size: 0.875rem !important;
+        line-height: 1.4 !important;
+        margin-bottom: 0.25rem !important;
+        word-wrap: break-word !important;
+        overflow-wrap: break-word !important;
+    }
+
+    .notification-text strong,
+    .notification-user-link {
+        font-size: 0.875rem !important;
+    }
+
+    /* Time - smaller */
+    .notification-time {
+        font-size: 0.75rem !important;
+    }
+
+    /* Hide notification action buttons on mobile */
+    .notification-actions {
+        display: none !important;
+    }
+
+    /* Follow request buttons - stack below text on mobile */
+    .notification-text .follow-request-actions {
+        display: flex !important;
+        margin-left: 0 !important;
+        margin-top: 0.5rem !important;
+    }
+
+    .btn-accept-request,
+    .btn-decline-request {
+        padding: 0.35rem 0.65rem !important;
+        font-size: 0.75rem !important;
+    }
+
+    /* Unread indicator - thinner border on mobile */
+    .notification-card.unread {
+        border-left-width: 2px !important;
+    }
+
+    /* Empty state adjustments */
+    .notifications-empty {
+        padding: 3rem 1.5rem !important;
+    }
+
+    .notifications-empty .empty-icon {
+        width: 60px !important;
+        height: 60px !important;
+    }
+
+    .notifications-empty .empty-title {
+        font-size: 1.1rem !important;
+    }
+
+    .notifications-empty .empty-text {
+        font-size: 0.9rem !important;
     }
 
     /* === SETTINGS PAGE === */

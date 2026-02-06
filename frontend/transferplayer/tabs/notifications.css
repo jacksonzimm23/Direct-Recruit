@@ -259,47 +259,9 @@
     font-weight: 600;
 }
 
-/* Notification Actions */
+/* Notification Actions - Hidden (clicking notification marks as read) */
 .notification-actions {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    opacity: 0;
-    transition: opacity 0.2s ease;
-}
-
-.notification-card:hover .notification-actions {
-    opacity: 1;
-}
-
-.btn-notification-action,
-.btn-notification-delete {
-    background: transparent;
-    border: none;
-    color: rgba(254, 252, 251, 0.5);
-    padding: 0.5rem;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.btn-notification-action:hover {
-    background: rgba(18, 130, 162, 0.2);
-    color: var(--cerulean);
-}
-
-.btn-notification-delete:hover {
-    background: rgba(255, 107, 53, 0.2);
-    color: var(--accent-orange);
-}
-
-.btn-notification-action svg,
-.btn-notification-delete svg {
-    width: 18px;
-    height: 18px;
+    display: none;
 }
 
 /* Right Sidebar Widgets */
