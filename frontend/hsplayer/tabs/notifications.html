@@ -37,7 +37,7 @@
 
     <!-- Mobile Sidebar (Profile Menu) -->
     <aside class="mobile-sidebar" id="mobileSidebar">
-        <div class="mobile-sidebar-header">
+        <a href="my-profile.html" class="mobile-sidebar-header" id="mobileSidebarProfileLink">
             <div class="mobile-sidebar-avatar-circle" id="mobileSidebarAvatar">
                 <svg viewBox="0 0 24 24" fill="currentColor">
                     <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
@@ -48,13 +48,7 @@
                 <div class="mobile-sidebar-user-name" id="mobileSidebarUserName">User</div>
                 <div class="mobile-sidebar-user-role" id="mobileSidebarUserRole"></div>
             </div>
-            <button class="mobile-sidebar-close" id="mobileSidebarClose" aria-label="Close menu">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <line x1="18" y1="6" x2="6" y2="18"></line>
-                    <line x1="6" y1="6" x2="18" y2="18"></line>
-                </svg>
-            </button>
-        </div>
+        </a>
         <nav class="mobile-sidebar-nav">
             <a href="my-profile.html" class="mobile-sidebar-nav-item">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -79,8 +73,10 @@
                 <span>Profile Views</span>
                 <span class="mobile-stat-value" id="mobileProfileViewsCount">0</span>
             </a>
-            <div class="mobile-sidebar-divider"></div>
-            <button class="mobile-sidebar-nav-item danger" id="mobileSidebarLogout">
+        </nav>
+        <div class="mobile-sidebar-footer">
+            <img src="https://res.cloudinary.com/dzmsj6nwv/image/upload/v1770078659/LOGO.PNG_i0uvv4.png" alt="Direct Recruit" class="mobile-sidebar-logo">
+            <button class="mobile-sidebar-logout-btn" id="mobileSidebarLogout">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
                     <polyline points="16 17 21 12 16 7"></polyline>
@@ -88,9 +84,6 @@
                 </svg>
                 <span>Logout</span>
             </button>
-        </nav>
-        <div class="mobile-sidebar-footer">
-            <img src="https://res.cloudinary.com/dzmsj6nwv/image/upload/v1770078659/LOGO.PNG_i0uvv4.png" alt="Direct Recruit">
         </div>
     </aside>
 
