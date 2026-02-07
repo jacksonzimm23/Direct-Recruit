@@ -1468,6 +1468,12 @@ function initializeEditProfileModal() {
             clearTimeout(usernameCheckTimeout);
             const username = this.value.trim();
 
+            // Update character counter
+            const charCounter = document.getElementById('editUsernameCharCounter');
+            if (charCounter) {
+                charCounter.textContent = `${this.value.length}/15`;
+            }
+
             // TODO: Add backend check for username availability
         });
     }
@@ -1503,7 +1509,14 @@ function populateEditForm() {
     if (currentProfile) {
         if (editFirstName) editFirstName.value = currentProfile.first_name || '';
         if (editLastName) editLastName.value = currentProfile.last_name || '';
-        if (editUsername) editUsername.value = currentProfile.username || '';
+        if (editUsername) {
+            editUsername.value = currentProfile.username || '';
+            // Update username character counter
+            const usernameCharCounter = document.getElementById('editUsernameCharCounter');
+            if (usernameCharCounter) {
+                usernameCharCounter.textContent = `${(currentProfile.username || '').length}/15`;
+            }
+        }
         if (editSubheader) editSubheader.value = currentProfile.subheader || '';
         if (editBio) editBio.value = currentProfile.bio || '';
         if (editEmail) editEmail.value = currentProfile.email || '';

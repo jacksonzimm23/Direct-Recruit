@@ -2024,7 +2024,14 @@ function populateEditForm() {
 
     if (firstName) firstName.value = currentProfile.first_name || '';
     if (lastName) lastName.value = currentProfile.last_name || '';
-    if (username) username.value = currentProfile.username || '';
+    if (username) {
+        username.value = currentProfile.username || '';
+        // Update username character counter
+        const usernameCharCounter = document.getElementById('editUsernameCharCounter');
+        if (usernameCharCounter) {
+            usernameCharCounter.textContent = `${(currentProfile.username || '').length}/15`;
+        }
+    }
 
     // Determine if this is a college or high school coach based on college_division
     const isCollegeCoach = currentProfile.college_division && currentProfile.college_division.trim() !== '';
@@ -2374,6 +2381,12 @@ function setupEditProfileModal() {
             // Convert to lowercase automatically
             this.value = this.value.toLowerCase();
             const username = this.value.trim();
+
+            // Update character counter
+            const usernameCharCounter = document.getElementById('editUsernameCharCounter');
+            if (usernameCharCounter) {
+                usernameCharCounter.textContent = `${this.value.length}/15`;
+            }
 
             // Clear previous timeout
             if (usernameCheckTimeout) {

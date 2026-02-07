@@ -2657,6 +2657,12 @@ function populateEditForm() {
     document.getElementById('editLastName').value = currentProfile.last_name || '';
     document.getElementById('editUsername').value = currentProfile.username || '';
 
+    // Update username character counter
+    const usernameCharCounter = document.getElementById('editUsernameCharCounter');
+    if (usernameCharCounter) {
+        usernameCharCounter.textContent = `${(currentProfile.username || '').length}/15`;
+    }
+
     // Store original username for validation
     originalUsername = currentProfile.username || '';
     isEditUsernameAvailable = true; // Start as true since it's the current username
@@ -3117,6 +3123,12 @@ function setupUsernameValidation() {
             // Convert to lowercase automatically
             this.value = this.value.toLowerCase();
             const username = this.value.trim();
+
+            // Update character counter
+            const charCounter = document.getElementById('editUsernameCharCounter');
+            if (charCounter) {
+                charCounter.textContent = `${this.value.length}/15`;
+            }
 
             // Clear previous timeout
             clearTimeout(editUsernameCheckTimeout);
