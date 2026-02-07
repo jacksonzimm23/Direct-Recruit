@@ -6,9 +6,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const passwordInput = document.getElementById('password');
     const confirmPasswordInput = document.getElementById('confirmPassword');
     const passwordMatch = document.getElementById('passwordMatch');
-    const isNilBrandCheckbox = document.getElementById('isNilBrand');
-    const companyNameGroup = document.getElementById('companyNameGroup');
-    const companyNameInput = document.getElementById('companyName');
 
     // Password validation checklist elements
     const checkLength = document.getElementById('checkLength');
@@ -16,20 +13,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const checkLowercase = document.getElementById('checkLowercase');
     const checkNumber = document.getElementById('checkNumber');
     const checkSpecial = document.getElementById('checkSpecial');
-
-    // NIL Brand checkbox toggle
-    if (isNilBrandCheckbox && companyNameGroup && companyNameInput) {
-        isNilBrandCheckbox.addEventListener('change', function() {
-            if (this.checked) {
-                companyNameGroup.style.display = 'block';
-                companyNameInput.required = true;
-            } else {
-                companyNameGroup.style.display = 'none';
-                companyNameInput.required = false;
-                companyNameInput.value = '';
-            }
-        });
-    }
 
     // Email availability validation
     const emailInput = document.getElementById('email');
@@ -282,13 +265,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
 
-            // Validate company name if NIL Brand is checked
-            if (isNilBrandCheckbox.checked && !companyNameInput.value.trim()) {
-                alert('Please enter your company name.');
-                companyNameInput.focus();
-                return;
-            }
-
             submitBtn.disabled = true;
             submitBtn.textContent = 'Creating Account...';
 
@@ -309,9 +285,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const profileData = {
                     first_name: document.getElementById('firstName').value,
                     last_name: document.getElementById('lastName').value,
-                    username: usernameInput.value,
-                    is_nil_brand: isNilBrandCheckbox.checked,
-                    company_name: isNilBrandCheckbox.checked ? companyNameInput.value : null
+                    username: usernameInput.value
                 };
 
                 // Step 3: Create profile
