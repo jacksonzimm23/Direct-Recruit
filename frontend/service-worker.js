@@ -10,8 +10,8 @@ const STATIC_ASSETS = [
   '/shared/api.js',
   '/shared/feed.css',
   '/shared/search.css',
-  '/icons/icon-192.png',
-  '/icons/icon-512.png',
+  '/icons/android/android-launchericon-192-192.png',
+  '/icons/android/android-launchericon-512-512.png',
   'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap'
 ];
 
