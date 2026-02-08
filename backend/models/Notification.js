@@ -45,7 +45,7 @@ class Notification {
         CASE
           WHEN u.role = 'player' THEN pp.team_name
           WHEN u.role = 'coach' THEN cp.team_name
-          WHEN u.role = 'other' THEN op.company_name
+          ELSE NULL
         END as related_user_school,
         u.role as related_user_role,
         CASE

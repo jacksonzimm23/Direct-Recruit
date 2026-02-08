@@ -1032,7 +1032,6 @@ function displayOtherProfile(profileData) {
     if (subheaderElement) {
         const parts = [];
         if (profileData.subheader) parts.push(profileData.subheader);
-        if (profileData.company_name) parts.push(profileData.company_name);
         subheaderElement.textContent = parts.join(' • ') || '';
         subheaderElement.style.color = '#d4a017'; // Yellow color for other profile
     }

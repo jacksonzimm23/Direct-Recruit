@@ -3,15 +3,15 @@ const pool = require('../config/database');
 class OtherProfile {
   static async create(userId, profileData) {
     const {
-      first_name, last_name, username, is_nil_brand, company_name
+      first_name, last_name, username
     } = profileData;
 
     const result = await pool.query(
       `INSERT INTO other_profiles
-      (user_id, first_name, last_name, username, is_nil_brand, company_name)
-      VALUES ($1, $2, $3, $4, $5, $6)
+      (user_id, first_name, last_name, username)
+      VALUES ($1, $2, $3, $4)
       RETURNING *`,
-      [userId, first_name, last_name, username, is_nil_brand || false, company_name || null]
+      [userId, first_name, last_name, username]
     );
     return result.rows[0];
   }
@@ -57,13 +57,8 @@ class OtherProfile {
     const values = [];
     let paramCount = 1;
 
-    if (filters.is_nil_brand !== undefined) {
-      query += ` AND op.is_nil_brand = $${paramCount}`;
-      values.push(filters.is_nil_brand);
-      paramCount++;
-    }
     if (filters.searchTerm) {
-      query += ` AND (op.first_name ILIKE $${paramCount} OR op.last_name ILIKE $${paramCount} OR op.username ILIKE $${paramCount} OR op.company_name ILIKE $${paramCount})`;
+      query += ` AND (op.first_name ILIKE $${paramCount} OR op.last_name ILIKE $${paramCount} OR op.username ILIKE $${paramCount} OR op.subheader ILIKE $${paramCount})`;
       values.push(`%${filters.searchTerm}%`);
       paramCount++;
     }
@@ -88,13 +83,6 @@ class OtherProfile {
     if (filters.excludeUserId) {
       query += ` AND op.user_id != $${paramCount}`;
       values.push(filters.excludeUserId);
-      paramCount++;
-    }
-
-    // Filter by NIL brand status
-    if (filters.is_nil_brand !== undefined) {
-      query += ` AND op.is_nil_brand = $${paramCount}`;
-      values.push(filters.is_nil_brand);
       paramCount++;
     }
 

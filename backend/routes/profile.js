@@ -99,9 +99,7 @@ function getPrivateProfileData(profile, profileType) {
     return {
       ...baseFields,
       profile_picture_url: profile.profile_picture_url,
-      subheader: profile.subheader,
-      company_name: profile.company_name,
-      is_nil_brand: profile.is_nil_brand
+      subheader: profile.subheader
     };
   }
 
@@ -454,7 +452,6 @@ router.get('/discover/transferplayers', authMiddleware, async (req, res) => {
 router.get('/discover/other', authMiddleware, async (req, res) => {
   try {
     const filters = {
-      is_nil_brand: req.query.is_nil_brand,
       searchTerm: req.query.q,
       excludeUserId: req.userId // Exclude current user's profile
     };

@@ -1312,7 +1312,6 @@ function displayOtherProfile(profile) {
     if (positionElement) {
         const parts = [];
         if (profile.subheader) parts.push(profile.subheader);
-        if (profile.company_name) parts.push(profile.company_name);
         positionElement.textContent = parts.join(' • ') || 'Role not specified';
     }
 
@@ -1321,7 +1320,6 @@ function displayOtherProfile(profile) {
     if (metaElement) {
         const parts = [];
         if (profile.city && profile.state) parts.push(`${profile.city}, ${profile.state}`);
-        if (profile.is_nil_brand) parts.push('NIL Brand ✓');
 
         metaElement.innerHTML = parts.join(' <span>•</span> ') || 'Information not provided';
     }
@@ -1334,7 +1332,6 @@ function displayOtherProfile(profile) {
 
     // Update info items for other profile type
     updateInfoItem('Role', profile.subheader);
-    updateInfoItem('Organization', profile.company_name);
     updateInfoItem('Location', profile.city && profile.state ? `${profile.city}, ${profile.state}` : null);
 }
 
@@ -6817,7 +6814,7 @@ function buildPostMetaInfo(post) {
         }
         parts.push(timeAgo);
         metaInfo = starsHtml + parts.join(' • ');
-    } else {
+    } else if (post.author_role === 'coach') {
         // Coach
         const parts = [];
         if (post.author_division) {
@@ -6844,6 +6841,16 @@ function buildPostMetaInfo(post) {
             const schoolState = parts.join(', ');
             metaInfo = schoolState ? `${schoolState} • ${timeAgo}` : timeAgo;
         }
+    } else if (post.author_role === 'other') {
+        // Other profile type: subheader in yellow
+        if (post.author_subheader) {
+            metaInfo = `<span style="color: #d4a017;">${post.author_subheader} • ${timeAgo}</span>`;
+        } else {
+            metaInfo = `<span style="color: #d4a017;">${timeAgo}</span>`;
+        }
+    } else {
+        // Fallback
+        metaInfo = timeAgo;
     }
 
     return metaInfo;

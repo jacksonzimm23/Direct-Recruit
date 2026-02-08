@@ -597,7 +597,7 @@ class FeedManager {
             const isHSPlayer = !post.author_division && post.author_transfer !== 'y';
             const isTransferPlayer = post.author_transfer === 'y';
             if (isHSPlayer || isTransferPlayer) {
-                starsHtml = `<span class="post-meta-stars" style="color: #ffd700; font-weight: 600;">${post.author_star_rating}â˜…</span> `;
+                starsHtml = `<span class="post-meta-stars" style="color: #ffd700; font-weight: 600;">${post.author_star_rating}★</span> `;
             }
         }
 
@@ -606,7 +606,7 @@ class FeedManager {
 
             // Check if transfer player (transfer = 'y')
             if (post.author_transfer === 'y') {
-                // Transfer Player: Position â€¢ Height â€¢ Weight â€¢ YOE
+                // Transfer Player: Position • Height • Weight • YOE
                 if (post.author_position) parts.push(post.author_position);
 
                 if (post.author_height) {
@@ -635,7 +635,7 @@ class FeedManager {
                     parts.push(`YOE: ${post.author_eligibility} ${yearText}`);
                 }
             } else if (post.author_division) {
-                // College Player: Position â€¢ College â€¢ Division
+                // College Player: Position • College • Division
                 if (post.author_position) parts.push(post.author_position);
                 if (post.author_school) parts.push(post.author_school);
                 // Format FBS/FCS as D1 FBS/D1 FCS
@@ -646,7 +646,7 @@ class FeedManager {
                     parts.push(div);
                 }
             } else {
-                // HS Player: Position â€¢ High School â€¢ Year
+                // HS Player: Position • High School • Year
                 if (post.author_position) parts.push(post.author_position);
                 if (post.author_school) parts.push(post.author_school);
                 if (post.author_grad_year) {
@@ -655,11 +655,11 @@ class FeedManager {
             }
 
             parts.push(timeAgo);
-            metaInfo = starsHtml + parts.join(' â€¢ ');
+            metaInfo = starsHtml + parts.join(' • ');
         } else if (post.author_role === 'other') {
             // Other profile: entire meta info in yellow
             if (post.author_subheader) {
-                metaInfo = `<span style="color: #d4a017;">${post.author_subheader} â€¢ ${timeAgo}</span>`;
+                metaInfo = `<span style="color: #d4a017;">${post.author_subheader} • ${timeAgo}</span>`;
             } else {
                 metaInfo = `<span style="color: #d4a017;">${timeAgo}</span>`;
             }
@@ -669,7 +669,7 @@ class FeedManager {
 
             // Check if college coach (has division) or HS coach (no division)
             if (post.author_division) {
-                // College Coach: College, State â€¢ Division
+                // College Coach: College, State • Division
                 if (post.author_school && post.author_state) {
                     parts.push(`${post.author_school}, ${post.author_state}`);
                 } else if (post.author_school) {
@@ -685,14 +685,14 @@ class FeedManager {
                     parts.push(div);
                 }
                 parts.push(timeAgo);
-                metaInfo = parts.join(' â€¢ ');
+                metaInfo = parts.join(' • ');
             } else {
                 // HS Coach: School, State (comma-separated like sidebar)
                 if (post.author_school) parts.push(post.author_school);
                 if (post.author_state) parts.push(post.author_state);
                 // Use comma separator for HS Coach to match sidebar, then add timeAgo with bullet
                 const schoolState = parts.join(', ');
-                metaInfo = schoolState ? `${schoolState} â€¢ ${timeAgo}` : timeAgo;
+                metaInfo = schoolState ? `${schoolState} • ${timeAgo}` : timeAgo;
             }
         }
 
@@ -1269,14 +1269,14 @@ class FeedManager {
             const isHSPlayer = !share.quoter_division && share.quoter_transfer !== 'y';
             const isTransferPlayer = share.quoter_transfer === 'y';
             if (isHSPlayer || isTransferPlayer) {
-                starsHtml = `<span class="post-meta-stars" style="color: #ffd700; font-weight: 600;">${share.quoter_star_rating}â˜…</span> `;
+                starsHtml = `<span class="post-meta-stars" style="color: #ffd700; font-weight: 600;">${share.quoter_star_rating}★</span> `;
             }
         }
 
         if (share.quoter_role === 'player') {
             const parts = [];
             if (share.quoter_transfer === 'y') {
-                // Transfer Player: Position â€¢ Height â€¢ Weight â€¢ YOE
+                // Transfer Player: Position • Height • Weight • YOE
                 if (share.quoter_position) parts.push(share.quoter_position);
                 if (share.quoter_height) {
                     const heightStr = String(share.quoter_height);
@@ -1313,10 +1313,10 @@ class FeedManager {
                 if (share.quoter_grad_year) parts.push(share.quoter_grad_year);
             }
             parts.push(timeAgo);
-            metaInfo = starsHtml + parts.join(' â€¢ ');
+            metaInfo = starsHtml + parts.join(' • ');
         } else if (share.quoter_role === 'other') {
             if (share.quoter_subheader) {
-                metaInfo = `<span style="color: #d4a017;">${share.quoter_subheader} â€¢ ${timeAgo}</span>`;
+                metaInfo = `<span style="color: #d4a017;">${share.quoter_subheader} • ${timeAgo}</span>`;
             } else {
                 metaInfo = timeAgo;
             }
@@ -1331,12 +1331,12 @@ class FeedManager {
                     parts.push(div);
                 }
                 parts.push(timeAgo);
-                metaInfo = parts.join(' â€¢ ');
+                metaInfo = parts.join(' • ');
             } else {
                 if (share.quoter_school) parts.push(share.quoter_school);
                 if (share.quoter_state) parts.push(share.quoter_state);
                 const schoolState = parts.join(', ');
-                metaInfo = schoolState ? `${schoolState} â€¢ ${timeAgo}` : timeAgo;
+                metaInfo = schoolState ? `${schoolState} • ${timeAgo}` : timeAgo;
             }
         } else {
             metaInfo = timeAgo;
@@ -1354,7 +1354,7 @@ class FeedManager {
             const isHSPlayer = !post.author_division && post.author_transfer !== 'y';
             const isTransferPlayer = post.author_transfer === 'y';
             if (isHSPlayer || isTransferPlayer) {
-                starsHtml = `<span class="post-meta-stars" style="color: #ffd700; font-weight: 600;">${post.author_star_rating}â˜…</span> `;
+                starsHtml = `<span class="post-meta-stars" style="color: #ffd700; font-weight: 600;">${post.author_star_rating}★</span> `;
             }
         }
 
@@ -1395,10 +1395,10 @@ class FeedManager {
                 if (post.author_grad_year) parts.push(post.author_grad_year);
             }
             parts.push(timeAgo);
-            metaInfo = starsHtml + parts.join(' â€¢ ');
+            metaInfo = starsHtml + parts.join(' • ');
         } else if (post.author_role === 'other') {
             if (post.author_subheader) {
-                metaInfo = `<span style="color: #d4a017;">${post.author_subheader} â€¢ ${timeAgo}</span>`;
+                metaInfo = `<span style="color: #d4a017;">${post.author_subheader} • ${timeAgo}</span>`;
             } else {
                 metaInfo = timeAgo;
             }
@@ -1413,12 +1413,12 @@ class FeedManager {
                     parts.push(div);
                 }
                 parts.push(timeAgo);
-                metaInfo = parts.join(' â€¢ ');
+                metaInfo = parts.join(' • ');
             } else {
                 if (post.author_school) parts.push(post.author_school);
                 if (post.author_state) parts.push(post.author_state);
                 const schoolState = parts.join(', ');
-                metaInfo = schoolState ? `${schoolState} â€¢ ${timeAgo}` : timeAgo;
+                metaInfo = schoolState ? `${schoolState} • ${timeAgo}` : timeAgo;
             }
         } else {
             metaInfo = timeAgo;
@@ -1447,7 +1447,7 @@ class FeedManager {
                     parts.push(div);
                 }
                 parts.push(timeAgo);
-                metaInfo = parts.join(' â€¢ ');
+                metaInfo = parts.join(' • ');
             } else {
                 // HS player
                 const parts = [];
@@ -1461,7 +1461,7 @@ class FeedManager {
                 }
                 if (post.reposter_grad_year) parts.push(`'${String(post.reposter_grad_year).slice(-2)}`);
                 parts.push(timeAgo);
-                metaInfo = parts.join(' â€¢ ');
+                metaInfo = parts.join(' • ');
             }
         } else if (role === 'coach') {
             const parts = [];
@@ -1474,17 +1474,17 @@ class FeedManager {
                     parts.push(div);
                 }
                 parts.push(timeAgo);
-                metaInfo = parts.join(' â€¢ ');
+                metaInfo = parts.join(' • ');
             } else {
                 if (post.reposter_school) parts.push(post.reposter_school);
                 if (post.reposter_state) parts.push(post.reposter_state);
                 const schoolState = parts.join(', ');
-                metaInfo = schoolState ? `${schoolState} â€¢ ${timeAgo}` : timeAgo;
+                metaInfo = schoolState ? `${schoolState} • ${timeAgo}` : timeAgo;
             }
         } else if (role === 'other') {
             // Other role - use subheader if available
             if (post.reposter_subheader) {
-                metaInfo = `${post.reposter_subheader} â€¢ ${timeAgo}`;
+                metaInfo = `${post.reposter_subheader} • ${timeAgo}`;
             } else {
                 metaInfo = timeAgo;
             }
@@ -3877,8 +3877,8 @@ class FeedManager {
                 <div class="share-item-info">
                     <div class="share-item-name">${share.first_name || ''} ${share.last_name || ''}</div>
                     <div class="share-item-meta">
-                        ${share.position ? share.position + ' â€¢ ' : ''}${share.school || ''}
-                        ${share.share_type === 'quote' ? ' â€¢ Quote' : ' â€¢ Repost'}
+                        ${share.position ? share.position + ' • ' : ''}${share.school || ''}
+                        ${share.share_type === 'quote' ? ' • Quote' : ' • Repost'}
                     </div>
                     ${share.share_type === 'quote' && share.quote_content ? `
                         <div class="share-item-quote">"${this.escapeHtml(share.quote_content.substring(0, 100))}${share.quote_content.length > 100 ? '...' : ''}"</div>
