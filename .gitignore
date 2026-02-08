@@ -33,3 +33,13 @@ uploads/
 # Temporary files
 *.tmp
 *.temp
+
+# Capacitor native platforms (regenerate with npx cap add ios/android)
+ios/
+android/
+
+# PowerShell scripts (temporary/local)
+*.ps1
+
+# Package lock (optional - can be committed if you want reproducible builds)
+# package-lock.json

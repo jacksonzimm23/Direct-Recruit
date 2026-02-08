@@ -1,0 +1,21 @@
+{
+  "name": "direct-recruit",
+  "version": "1.0.0",
+  "description": "Football recruiting platform connecting players and coaches",
+  "private": true,
+  "scripts": {
+    "cap:sync": "npx cap sync",
+    "cap:open:ios": "npx cap open ios",
+    "cap:build:ios": "npx cap build ios"
+  },
+  "author": "",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "@capacitor/cli": "^8.0.2",
+    "@capacitor/core": "^8.0.2",
+    "@capacitor/ios": "^8.0.2"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  }
+}
