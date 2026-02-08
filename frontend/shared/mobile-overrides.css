@@ -17,6 +17,28 @@
  * To test: Open Chrome DevTools (F12) → Toggle Device Toolbar (Ctrl+Shift+M)
  */
 
+/* === PREVENT ZOOM ON MOBILE === */
+/* Disable double-tap zoom and pinch zoom gestures */
+html {
+    touch-action: manipulation;
+}
+
+/* Prevent iOS auto-zoom on input focus (requires 16px minimum font-size) */
+@media (max-width: 768px) {
+    input[type="text"],
+    input[type="email"],
+    input[type="password"],
+    input[type="search"],
+    input[type="tel"],
+    input[type="url"],
+    input[type="number"],
+    input[type="date"],
+    textarea,
+    select {
+        font-size: 16px !important;
+    }
+}
+
 /* === HIDE MOBILE ELEMENTS ON DESKTOP === */
 .mobile-header,
 .mobile-sidebar,
