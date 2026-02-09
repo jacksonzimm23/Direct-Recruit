@@ -860,6 +860,16 @@ class Post {
               COALESCE(pp.first_name, cp.first_name, op.first_name) as author_first_name,
               COALESCE(pp.last_name, cp.last_name, op.last_name) as author_last_name,
               COALESCE(pp.profile_image_url, cp.profile_image_url, op.profile_picture_url) as author_image,
+              COALESCE(pp.position, cp.position_title) as author_position,
+              COALESCE(pp.team_name, cp.team_name) as author_school,
+              COALESCE(pp.college_division, cp.college_division) as author_division,
+              pp.transfer as author_transfer,
+              pp.height as author_height,
+              pp.weight as author_weight,
+              pp.graduation_year as author_grad_year,
+              pp.eligibility as author_eligibility,
+              COALESCE(pp.state, cp.state) as author_state,
+              op.subheader as author_subheader,
               ${currentUserId ? `EXISTS(SELECT 1 FROM comment_likes WHERE comment_id = c.id AND user_id = $4) as user_liked` : 'false as user_liked'}
        FROM post_comments c
        JOIN users u ON c.user_id = u.id
@@ -1738,7 +1748,15 @@ class Post {
         COALESCE(pp.username, cp.username, op.username) as username,
         COALESCE(pp.profile_image_url, cp.profile_image_url, op.profile_picture_url) as profile_image,
         COALESCE(pp.college_division, cp.college_division) as division,
-        pp.transfer
+        pp.transfer,
+        COALESCE(pp.position, cp.position_title) as position,
+        COALESCE(pp.team_name, cp.team_name) as team_name,
+        pp.height,
+        pp.weight,
+        pp.graduation_year as grad_year,
+        pp.eligibility,
+        COALESCE(pp.state, cp.state) as state,
+        op.subheader
        FROM share_comments c
        JOIN users u ON c.user_id = u.id
        LEFT JOIN player_profiles pp ON u.id = pp.user_id

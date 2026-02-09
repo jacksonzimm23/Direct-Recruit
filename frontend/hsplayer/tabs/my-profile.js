@@ -8273,12 +8273,7 @@ async function togglePostComments(postId) {
         </div>
         <div class="comment-input-container">
             <input type="text" class="comment-input" placeholder="Write a comment..." id="comment-input-${postId}">
-            <button class="comment-submit-btn" onclick="event.stopPropagation(); addPostComment('${postId}')">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <line x1="22" y1="2" x2="11" y2="13"></line>
-                    <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-                </svg>
-            </button>
+            <button onclick="event.stopPropagation(); addPostComment('${postId}')">Post</button>
         </div>
     `;
 
@@ -8305,6 +8300,47 @@ async function togglePostComments(postId) {
     }
 }
 
+function buildCommentSubheader(role, data) {
+    const parts = [];
+    if (role === 'player') {
+        if (data.transfer === 'y') {
+            if (data.position) parts.push(data.position);
+            if (data.height) {
+                const h = String(data.height);
+                if (h.includes("'")) { parts.push(h); } else { const t = parseInt(h); if (!isNaN(t) && t > 0) parts.push(`${Math.floor(t/12)}'${t%12}"`); }
+            }
+            if (data.weight) parts.push(`${data.weight} lbs`);
+            if (data.eligibility) { const yt = data.eligibility === 1 ? 'year' : 'years'; parts.push(`YOE: ${data.eligibility} ${yt}`); }
+            return parts.length ? `<span style="color:#e63946;font-size:11px;">${parts.join(' • ')}</span>` : '';
+        } else if (data.division) {
+            if (data.position) parts.push(data.position);
+            if (data.school) parts.push(data.school);
+            const div = data.division; parts.push((div === 'FBS' || div === 'FCS') ? `D1 ${div}` : div);
+            return parts.length ? `<span style="color:#1282a2;font-size:11px;">${parts.join(' • ')}</span>` : '';
+        } else {
+            if (data.position) parts.push(data.position);
+            if (data.school) parts.push(data.school);
+            if (data.grad_year) parts.push(data.grad_year);
+            return parts.length ? `<span style="color:#1282a2;font-size:11px;">${parts.join(' • ')}</span>` : '';
+        }
+    } else if (role === 'coach') {
+        if (data.division) {
+            if (data.school && data.state) parts.push(`${data.school}, ${data.state}`);
+            else if (data.school) parts.push(data.school);
+            else if (data.state) parts.push(data.state);
+            const div = data.division; parts.push((div === 'FBS' || div === 'FCS') ? `D1 ${div}` : div);
+            return parts.length ? `<span style="color:#ff6b35;font-size:11px;">${parts.join(' • ')}</span>` : '';
+        } else {
+            if (data.school) parts.push(data.school);
+            if (data.state) parts.push(data.state);
+            return parts.length ? `<span style="color:#ff6b35;font-size:11px;">${parts.join(', ')}</span>` : '';
+        }
+    } else if (role === 'other') {
+        return data.subheader ? `<span style="color:#d4a017;font-size:11px;">${data.subheader}</span>` : '';
+    }
+    return '';
+}
+
 async function loadPostComments(postId) {
     const commentsList = document.getElementById(`comments-${postId}`);
     if (!commentsList) return;
@@ -8319,21 +8355,28 @@ async function loadPostComments(postId) {
         }
 
         commentsList.innerHTML = comments.map(comment => {
-            const commentAuthorName = `${comment.first_name || ''} ${comment.last_name || ''}`.trim() || 'Unknown';
+            const commentAuthorName = `${comment.author_first_name || ''} ${comment.author_last_name || ''}`.trim() || 'Unknown';
             const isOwnComment = comment.user_id === currentUserId;
+            const subheader = buildCommentSubheader(comment.author_role, {
+                transfer: comment.author_transfer, position: comment.author_position, height: comment.author_height,
+                weight: comment.author_weight, eligibility: comment.author_eligibility, division: comment.author_division,
+                school: comment.author_school, grad_year: comment.author_grad_year, state: comment.author_state,
+                subheader: comment.author_subheader
+            });
             return `
                 <div class="comment" data-comment-id="${comment.id}">
-                    <div class="comment-avatar">
-                        ${comment.profile_image_url
-                            ? `<img src="${comment.profile_image_url}" alt="${commentAuthorName}">`
+                    <div class="comment-avatar" onclick="event.stopPropagation(); goToProfile('${comment.author_username || comment.user_id}', '${comment.author_role || 'player'}', '${comment.author_division || ''}', '${comment.user_id}', ${comment.author_transfer === 'y'})" style="cursor: pointer; border: 2px solid ${getRoleBorderColor(comment.author_role || 'player', comment.author_transfer === 'y', comment.author_division)}">
+                        ${comment.author_image
+                            ? `<img src="${comment.author_image}" alt="${commentAuthorName}">`
                             : `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>`
                         }
                     </div>
                     <div class="comment-body">
                         <div class="comment-header">
-                            <span class="comment-author">${commentAuthorName}</span>
+                            <span class="comment-author" onclick="event.stopPropagation(); goToProfile('${comment.author_username || comment.user_id}', '${comment.author_role || 'player'}', '${comment.author_division || ''}', '${comment.user_id}', ${comment.author_transfer === 'y'})" style="cursor: pointer;">${commentAuthorName}</span>
                             <span class="comment-time">${formatTimeAgo(comment.created_at)}</span>
                         </div>
+                        ${subheader ? `<div class="comment-subheader">${subheader}</div>` : ''}
                         <div class="comment-content">${comment.content}</div>
                         <div class="comment-actions">
                             <button class="comment-like-btn ${comment.user_liked ? 'liked' : ''}" onclick="event.stopPropagation(); likePostComment('${comment.id}', this)">
@@ -8638,9 +8681,16 @@ async function loadShareComments(shareId) {
         if (!listEl) return;
 
         if (response.comments && response.comments.length > 0) {
-            listEl.innerHTML = response.comments.map(comment => `
+            listEl.innerHTML = response.comments.map(comment => {
+                const shareSubheader = buildCommentSubheader(comment.role, {
+                    transfer: comment.transfer, position: comment.position, height: comment.height,
+                    weight: comment.weight, eligibility: comment.eligibility, division: comment.division,
+                    school: comment.team_name, grad_year: comment.grad_year, state: comment.state,
+                    subheader: comment.subheader
+                });
+                return `
                 <div class="comment" data-comment-id="${comment.id}">
-                    <div class="comment-avatar" onclick="goToProfile('${comment.username || comment.user_id}', '${comment.role || 'player'}', '${comment.division || ''}', '${comment.user_id}', ${comment.transfer === 'y'})" style="cursor: pointer;">
+                    <div class="comment-avatar" onclick="goToProfile('${comment.username || comment.user_id}', '${comment.role || 'player'}', '${comment.division || ''}', '${comment.user_id}', ${comment.transfer === 'y'})" style="cursor: pointer; border: 2px solid ${getRoleBorderColor(comment.role || 'player', comment.transfer === 'y', comment.division)}">
                         ${comment.profile_image ?
                             `<img src="${comment.profile_image}" alt="">` :
                             `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>`
@@ -8651,19 +8701,27 @@ async function loadShareComments(shareId) {
                             <span class="comment-author" onclick="goToProfile('${comment.username || comment.user_id}', '${comment.role || 'player'}', '${comment.division || ''}', '${comment.user_id}', ${comment.transfer === 'y'})" style="cursor: pointer;">${comment.first_name} ${comment.last_name}</span>
                             <span class="comment-time">${formatTimeAgo(comment.created_at)}</span>
                         </div>
+                        ${shareSubheader ? `<div class="comment-subheader">${shareSubheader}</div>` : ''}
                         <p>${formatPostContent(comment.content)}</p>
                         <div class="comment-actions">
-                            <button onclick="likeShareComment('${comment.id}', this)">
-                                Like ${comment.likes_count > 0 ? `(${comment.likes_count})` : ''}
+                            <button class="comment-like-btn ${comment.user_liked ? 'liked' : ''}" onclick="event.stopPropagation(); likeShareComment('${comment.id}', this)">
+                                <svg viewBox="0 0 24 24" fill="${comment.user_liked ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2" width="14" height="14">
+                                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                                </svg>
+                                <span>${comment.likes_count || 0}</span>
                             </button>
-                            ${comment.user_id === currentUserId ?
-                                `<button onclick="deleteShareComment('${shareId}', '${comment.id}')">Delete</button>` :
-                                ''
-                            }
+                            ${comment.user_id === currentUserId ? `
+                                <button class="comment-delete-btn" onclick="event.stopPropagation(); deleteShareComment('${shareId}', '${comment.id}')">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                                        <polyline points="3 6 5 6 21 6"></polyline>
+                                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                    </svg>
+                                </button>
+                            ` : ''}
                         </div>
                     </div>
                 </div>
-            `).join('');
+            `}).join('');
         } else {
             listEl.innerHTML = '<p class="no-comments">No comments yet. Be the first to comment!</p>';
         }

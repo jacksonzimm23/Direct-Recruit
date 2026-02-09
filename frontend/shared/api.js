@@ -468,6 +468,48 @@ function getRoleBorderColor(role, isTransfer, collegeDivision) {
 }
 window.getRoleBorderColor = getRoleBorderColor;
 
+function buildCommentSubheader(role, data) {
+    const parts = [];
+    if (role === 'player') {
+        if (data.transfer === 'y') {
+            if (data.position) parts.push(data.position);
+            if (data.height) {
+                const h = String(data.height);
+                if (h.includes("'")) { parts.push(h); } else { const t = parseInt(h); if (!isNaN(t) && t > 0) parts.push(`${Math.floor(t/12)}'${t%12}"`); }
+            }
+            if (data.weight) parts.push(`${data.weight} lbs`);
+            if (data.eligibility) { const yt = data.eligibility === 1 ? 'year' : 'years'; parts.push(`YOE: ${data.eligibility} ${yt}`); }
+            return parts.length ? `<span style="color:#e63946;font-size:11px;">${parts.join(' \u2022 ')}</span>` : '';
+        } else if (data.division) {
+            if (data.position) parts.push(data.position);
+            if (data.school) parts.push(data.school);
+            const div = data.division; parts.push((div === 'FBS' || div === 'FCS') ? `D1 ${div}` : div);
+            return parts.length ? `<span style="color:#1282a2;font-size:11px;">${parts.join(' \u2022 ')}</span>` : '';
+        } else {
+            if (data.position) parts.push(data.position);
+            if (data.school) parts.push(data.school);
+            if (data.grad_year) parts.push(data.grad_year);
+            return parts.length ? `<span style="color:#1282a2;font-size:11px;">${parts.join(' \u2022 ')}</span>` : '';
+        }
+    } else if (role === 'coach') {
+        if (data.division) {
+            if (data.school && data.state) parts.push(`${data.school}, ${data.state}`);
+            else if (data.school) parts.push(data.school);
+            else if (data.state) parts.push(data.state);
+            const div = data.division; parts.push((div === 'FBS' || div === 'FCS') ? `D1 ${div}` : div);
+            return parts.length ? `<span style="color:#ff6b35;font-size:11px;">${parts.join(' \u2022 ')}</span>` : '';
+        } else {
+            if (data.school) parts.push(data.school);
+            if (data.state) parts.push(data.state);
+            return parts.length ? `<span style="color:#ff6b35;font-size:11px;">${parts.join(', ')}</span>` : '';
+        }
+    } else if (role === 'other') {
+        return data.subheader ? `<span style="color:#d4a017;font-size:11px;">${data.subheader}</span>` : '';
+    }
+    return '';
+}
+window.buildCommentSubheader = buildCommentSubheader;
+
 // Unified API object for convenience
 const API = {
     // Direct access to apiRequest for custom endpoints

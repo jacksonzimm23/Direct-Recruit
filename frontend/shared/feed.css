@@ -980,6 +980,12 @@
     color: var(--cerulean);
 }
 
+.comment-subheader {
+    margin-top: -2px;
+    margin-bottom: 2px;
+    line-height: 1.2;
+}
+
 .comment-time {
     font-size: 0.75rem;
     color: rgba(255, 255, 255, 0.4);

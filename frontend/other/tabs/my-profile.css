@@ -7529,6 +7529,12 @@ input[type="file"]::file-selector-button:hover {
     margin-bottom: 0.25rem;
 }
 
+.profile-comments-section .comment-subheader {
+    margin-top: -2px;
+    margin-bottom: 2px;
+    line-height: 1.2;
+}
+
 .profile-comments-section .comment-author {
     font-weight: 600;
     color: var(--white);

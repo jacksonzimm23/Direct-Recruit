@@ -2363,12 +2363,17 @@ class FeedManager {
     }
 
     async toggleComments(postId) {
-        const section = document.getElementById(`comments-${postId}`);
+        // Find the comment section within the currently active feed section to avoid
+        // duplicate ID issues when the same post appears in both Following and Discover
+        const activeSection = document.querySelector('.feed-section.active');
+        const section = activeSection
+            ? activeSection.querySelector(`#comments-${postId}`) || document.getElementById(`comments-${postId}`)
+            : document.getElementById(`comments-${postId}`);
         if (!section) {
             return;
         }
         if (section.style.display === 'none') {
-            await this.loadComments(postId);
+            await this.loadComments(postId, section);
             section.style.display = 'block';
             section.querySelector('.comment-input')?.focus();
         } else {
@@ -2376,10 +2381,12 @@ class FeedManager {
         }
     }
 
-    async loadComments(postId) {
+    async loadComments(postId, sectionEl) {
         try {
             const response = await postsAPI.getComments(postId);
-            const listEl = document.querySelector(`#comments-${postId} .comments-list`);
+            const listEl = sectionEl
+                ? sectionEl.querySelector('.comments-list')
+                : document.querySelector(`#comments-${postId} .comments-list`);
 
             if (!listEl) {
                 return;
@@ -2387,7 +2394,14 @@ class FeedManager {
 
             if (response.comments && response.comments.length > 0) {
                 const isOwnComment = (userId) => userId === this.currentUserId;
-                listEl.innerHTML = response.comments.map(comment => `
+                listEl.innerHTML = response.comments.map(comment => {
+                    const commentSub = buildCommentSubheader(comment.author_role, {
+                        transfer: comment.author_transfer, position: comment.author_position, height: comment.author_height,
+                        weight: comment.author_weight, eligibility: comment.author_eligibility, division: comment.author_division,
+                        school: comment.author_school, grad_year: comment.author_grad_year, state: comment.author_state,
+                        subheader: comment.author_subheader
+                    });
+                    return `
                     <div class="comment" data-comment-id="${comment.id}">
                         <div class="comment-avatar clickable-profile" onclick="feedManager.goToProfile('${comment.author_username || comment.user_id}', '${comment.author_role || 'player'}', '${comment.author_division || ''}', '${comment.user_id}', ${comment.author_transfer === 'y'})" style="border: 2px solid ${getRoleBorderColor(comment.author_role || 'player', comment.author_transfer === 'y', comment.author_division)}">
                             ${comment.author_image ?
@@ -2400,6 +2414,7 @@ class FeedManager {
                                 <span class="comment-author clickable-profile" onclick="feedManager.goToProfile('${comment.author_username || comment.user_id}', '${comment.author_role || 'player'}', '${comment.author_division || ''}', '${comment.user_id}', ${comment.author_transfer === 'y'})">${comment.author_first_name || ''} ${comment.author_last_name || ''}</span>
                                 <span class="comment-time">${this.getTimeAgo(comment.created_at)}</span>
                             </div>
+                            ${commentSub ? `<div class="comment-subheader">${commentSub}</div>` : ''}
                             <div class="comment-content">${this.escapeHtml(comment.content)}</div>
                             <div class="comment-actions">
                                 <button class="comment-like-btn ${comment.user_liked ? 'liked' : ''}" data-liked="${comment.user_liked ? 'true' : 'false'}" onclick="feedManager.toggleCommentLike('${comment.id}', this)">
@@ -2408,22 +2423,30 @@ class FeedManager {
                                     </svg>
                                     <span class="comment-like-count">${comment.likes_count || 0}</span>
                                 </button>
-                                <button onclick="feedManager.replyToComment('${postId}', '${comment.id}', '${comment.author_first_name || ''} ${comment.author_last_name || ''}')">Reply</button>
-                                <button onclick="feedManager.repostComment('${postId}', '${comment.id}')">Repost</button>
-                                ${comment.user_id === this.currentUserId ? `<button class="comment-delete-btn" onclick="feedManager.deleteComment('${postId}', '${comment.id}')">Delete</button>` : ''}
+                                ${comment.user_id === this.currentUserId ? `<button class="comment-delete-btn" onclick="feedManager.deleteComment('${postId}', '${comment.id}')">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                                        <polyline points="3 6 5 6 21 6"></polyline>
+                                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                    </svg>
+                                </button>` : ''}
                             </div>
                         </div>
                     </div>
-                `).join('');
+                `}).join('');
             } else {
                 listEl.innerHTML = '<div class="no-comments">No comments yet. Be the first!</div>';
             }
         } catch (error) {
+            console.error('Error loading comments:', error);
         }
     }
 
     async addComment(postId) {
-        const input = document.getElementById(`comment-input-${postId}`);
+        // Scope to active feed section to handle duplicate post IDs across Following/Discover
+        const activeSection = document.querySelector('.feed-section.active');
+        const input = activeSection
+            ? activeSection.querySelector(`#comment-input-${postId}`) || document.getElementById(`comment-input-${postId}`)
+            : document.getElementById(`comment-input-${postId}`);
         const content = input?.value.trim();
         if (!content) return;
 
@@ -2436,13 +2459,15 @@ class FeedManager {
             delete input.dataset.replyTo;
 
             // Hide reply indicator if present
-            const replyIndicator = document.getElementById(`reply-indicator-${postId}`);
+            const commentSection = input.closest('.post-comments-section');
+            const replyIndicator = commentSection?.querySelector(`[id="reply-indicator-${postId}"]`);
             if (replyIndicator) replyIndicator.remove();
 
-            await this.loadComments(postId);
+            await this.loadComments(postId, commentSection);
 
-            // Update comment count
-            const statsEl = document.querySelector(`[data-post-id="${postId}"] .comments-count`);
+            // Update comment count in the same post card
+            const postCard = commentSection?.closest('[data-post-id]');
+            const statsEl = postCard?.querySelector('.comments-count');
             if (statsEl) {
                 const count = parseInt(statsEl.textContent) + 1;
                 statsEl.textContent = `${count} ${count === 1 ? 'comment' : 'comments'}`;
@@ -2573,12 +2598,16 @@ class FeedManager {
     }
 
     async toggleShareComments(shareId) {
-        const section = document.getElementById(`share-comments-${shareId}`);
+        // Scope to active feed section to handle duplicate IDs across Following/Discover
+        const activeSection = document.querySelector('.feed-section.active');
+        const section = activeSection
+            ? activeSection.querySelector(`#share-comments-${shareId}`) || document.getElementById(`share-comments-${shareId}`)
+            : document.getElementById(`share-comments-${shareId}`);
         if (!section) {
             return;
         }
         if (section.style.display === 'none') {
-            await this.loadShareComments(shareId);
+            await this.loadShareComments(shareId, section);
             section.style.display = 'block';
             section.querySelector('.comment-input')?.focus();
         } else {
@@ -2586,10 +2615,12 @@ class FeedManager {
         }
     }
 
-    async loadShareComments(shareId) {
+    async loadShareComments(shareId, sectionEl) {
         try {
             const response = await API.get(`/posts/share/${shareId}/comments`);
-            const listEl = document.querySelector(`#share-comments-${shareId} .comments-list`);
+            const listEl = sectionEl
+                ? sectionEl.querySelector('.comments-list')
+                : document.querySelector(`#share-comments-${shareId} .comments-list`);
 
             if (!listEl) {
                 return;
@@ -2597,7 +2628,14 @@ class FeedManager {
 
             if (response.comments && response.comments.length > 0) {
                 const isOwnComment = (userId) => userId === this.currentUserId;
-                listEl.innerHTML = response.comments.map(comment => `
+                listEl.innerHTML = response.comments.map(comment => {
+                    const shareSub = buildCommentSubheader(comment.role, {
+                        transfer: comment.transfer, position: comment.position, height: comment.height,
+                        weight: comment.weight, eligibility: comment.eligibility, division: comment.division,
+                        school: comment.team_name, grad_year: comment.grad_year, state: comment.state,
+                        subheader: comment.subheader
+                    });
+                    return `
                     <div class="comment" data-comment-id="${comment.id}">
                         <div class="comment-avatar clickable-profile" onclick="feedManager.goToProfile('${comment.username || comment.user_id}', '${comment.role || 'player'}', '${comment.division || ''}', '${comment.user_id}', ${comment.transfer === 'y'})" style="border: 2px solid ${getRoleBorderColor(comment.role || 'player', comment.transfer === 'y', comment.division)}">
                             ${comment.profile_image ?
@@ -2610,19 +2648,28 @@ class FeedManager {
                                 <span class="comment-author clickable-profile" onclick="feedManager.goToProfile('${comment.username || comment.user_id}', '${comment.role || 'player'}', '${comment.division || ''}', '${comment.user_id}', ${comment.transfer === 'y'})">${comment.first_name} ${comment.last_name}</span>
                                 <span class="comment-time">${this.getTimeAgo(comment.created_at)}</span>
                             </div>
+                            ${shareSub ? `<div class="comment-subheader">${shareSub}</div>` : ''}
                             <p>${this.formatContent(comment.content)}</p>
                             <div class="comment-actions">
-                                <button onclick="feedManager.likeShareComment('${comment.id}', this)">
-                                    Like ${comment.likes_count > 0 ? `(${comment.likes_count})` : ''}
+                                <button class="comment-like-btn" onclick="feedManager.likeShareComment('${comment.id}', this)">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                                    </svg>
+                                    <span>${comment.likes_count || 0}</span>
                                 </button>
                                 ${isOwnComment(comment.user_id) ?
-                                    `<button onclick="feedManager.deleteShareComment('${shareId}', '${comment.id}')">Delete</button>` :
+                                    `<button class="comment-delete-btn" onclick="feedManager.deleteShareComment('${shareId}', '${comment.id}')">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                                            <polyline points="3 6 5 6 21 6"></polyline>
+                                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                        </svg>
+                                    </button>` :
                                     ''
                                 }
                             </div>
                         </div>
                     </div>
-                `).join('');
+                `}).join('');
             } else {
                 listEl.innerHTML = '<p class="no-comments">No comments yet. Be the first to comment!</p>';
             }
@@ -2631,17 +2678,23 @@ class FeedManager {
     }
 
     async addShareComment(shareId) {
-        const input = document.getElementById(`share-comment-input-${shareId}`);
+        // Scope to active feed section to handle duplicate IDs across Following/Discover
+        const activeSection = document.querySelector('.feed-section.active');
+        const input = activeSection
+            ? activeSection.querySelector(`#share-comment-input-${shareId}`) || document.getElementById(`share-comment-input-${shareId}`)
+            : document.getElementById(`share-comment-input-${shareId}`);
         const content = input?.value.trim();
         if (!content) return;
 
         try {
             await API.post(`/posts/share/${shareId}/comments`, { content });
             input.value = '';
-            await this.loadShareComments(shareId);
+            const commentSection = input.closest('.post-comments-section');
+            await this.loadShareComments(shareId, commentSection);
 
-            // Update comment count
-            const statsEl = document.querySelector(`[data-share-id="${shareId}"] .comments-count`);
+            // Update comment count in the same post card
+            const postCard = commentSection?.closest('[data-share-id]');
+            const statsEl = postCard?.querySelector('.comments-count');
             if (statsEl) {
                 const count = parseInt(statsEl.textContent) + 1;
                 statsEl.textContent = `${count} ${count === 1 ? 'comment' : 'comments'}`;
