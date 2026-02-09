@@ -2737,19 +2737,91 @@ class FeedManager {
     }
 
     async showShareLikes(shareId) {
+        // Remove existing modal
+        const existingModal = document.getElementById('likes-modal');
+        if (existingModal) existingModal.remove();
+
+        const modal = document.createElement('div');
+        modal.className = 'feed-modal-overlay';
+        modal.id = 'likes-modal';
+        modal.innerHTML = `
+            <div class="feed-modal">
+                <div class="feed-modal-header">
+                    <h3>Quote Post Likes</h3>
+                    <button class="feed-modal-close" onclick="feedManager.closeModal('likes-modal')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
+                </div>
+                <div class="feed-modal-body">
+                    <div class="shares-loading">Loading likes...</div>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                this.closeModal('likes-modal');
+            }
+        });
+
         try {
             const response = await API.get(`/posts/share/${shareId}/likes`);
             const likes = response.likes || [];
+            const modalBody = modal.querySelector('.feed-modal-body');
 
             if (likes.length === 0) {
-                this.showToast('No likes yet', 'info');
+                modalBody.innerHTML = `
+                    <div class="shares-empty">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                        </svg>
+                        <p>No likes yet</p>
+                    </div>
+                `;
                 return;
             }
 
-            // Create modal to show likes
-            this.showLikesModal(likes, 'Quote Post Likes');
+            modalBody.innerHTML = `
+                <div class="shares-list">
+                    ${likes.map(like => {
+                        const likeSub = buildCommentSubheader(like.role, {
+                            transfer: like.transfer, position: like.position, height: like.height,
+                            weight: like.weight, eligibility: like.eligibility, division: like.division,
+                            school: like.school, grad_year: like.grad_year, state: like.state,
+                            subheader: like.subheader
+                        });
+                        const imgUrl = like.profile_image_url || like.profile_image;
+                        return `
+                        <div class="share-item" onclick="feedManager.goToProfile('${like.username || like.user_id}', '${like.role}', '${like.division || ''}', '${like.user_id}', ${like.transfer === 'y'}); feedManager.closeModal('likes-modal');">
+                            <div class="share-item-avatar" style="border: 2px solid ${getRoleBorderColor(like.role, like.transfer === 'y', like.division)}">
+                                ${imgUrl ?
+                                    `<img src="${imgUrl}" alt="${like.first_name}">` :
+                                    `<svg viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                        <circle cx="12" cy="7" r="4"></circle>
+                                    </svg>`
+                                }
+                            </div>
+                            <div class="share-item-info">
+                                <div class="share-item-name">${like.first_name || ''} ${like.last_name || ''}</div>
+                                <div class="share-item-meta">${likeSub || ''}</div>
+                            </div>
+                        </div>
+                    `}).join('')}
+                </div>
+            `;
         } catch (error) {
-            this.showToast('Failed to load likes', 'error');
+            const modalBody = modal.querySelector('.feed-modal-body');
+            modalBody.innerHTML = `
+                <div class="shares-empty">
+                    <p>Failed to load likes</p>
+                </div>
+            `;
         }
     }
 
@@ -3916,9 +3988,17 @@ class FeedManager {
             `;
         }
 
-        return shares.map(share => `
-            <div class="share-item" onclick="feedManager.goToProfile('${share.username || share.user_id}', '${share.role}', '${share.college_division || ''}', '${share.user_id}', ${share.transfer === 'y'}); feedManager.closeModal('shares-modal');">
-                <div class="share-item-avatar" style="border: 2px solid ${getRoleBorderColor(share.role, share.transfer === 'y', share.college_division)}">
+        return shares.map(share => {
+            const shareSub = buildCommentSubheader(share.role, {
+                transfer: share.transfer, position: share.position, height: share.height,
+                weight: share.weight, eligibility: share.eligibility, division: share.division,
+                school: share.school, grad_year: share.grad_year, state: share.state,
+                subheader: share.subheader
+            });
+            const shareTypeLabel = share.share_type === 'quote' ? 'Quote' : 'Repost';
+            return `
+            <div class="share-item" onclick="feedManager.goToProfile('${share.username || share.user_id}', '${share.role}', '${share.division || ''}', '${share.user_id}', ${share.transfer === 'y'}); feedManager.closeModal('shares-modal');">
+                <div class="share-item-avatar" style="border: 2px solid ${getRoleBorderColor(share.role, share.transfer === 'y', share.division)}">
                     ${share.profile_image_url ?
                         `<img src="${share.profile_image_url}" alt="${share.first_name}">` :
                         `<svg viewBox="0 0 24 24" fill="currentColor">
@@ -3929,16 +4009,13 @@ class FeedManager {
                 </div>
                 <div class="share-item-info">
                     <div class="share-item-name">${share.first_name || ''} ${share.last_name || ''}</div>
-                    <div class="share-item-meta">
-                        ${share.position ? share.position + ' • ' : ''}${share.school || ''}
-                        ${share.share_type === 'quote' ? ' • Quote' : ' • Repost'}
-                    </div>
+                    <div class="share-item-meta">${shareSub || ''} <span style="opacity:0.5;">• ${shareTypeLabel}</span></div>
                     ${share.share_type === 'quote' && share.quote_content ? `
                         <div class="share-item-quote">"${this.escapeHtml(share.quote_content.substring(0, 100))}${share.quote_content.length > 100 ? '...' : ''}"</div>
                     ` : ''}
                 </div>
             </div>
-        `).join('');
+        `}).join('');
     }
 
     async showLikes(postId) {
@@ -3993,9 +4070,16 @@ class FeedManager {
 
             modalBody.innerHTML = `
                 <div class="shares-list">
-                    ${data.likes.map(like => `
-                        <div class="share-item" onclick="feedManager.goToProfile('${like.username || like.id}', '${like.role}', '${like.college_division || ''}', '${like.id}', ${like.transfer === 'y'}); feedManager.closeModal('likes-modal');">
-                            <div class="share-item-avatar" style="border: 2px solid ${getRoleBorderColor(like.role, like.transfer === 'y', like.college_division)}">
+                    ${data.likes.map(like => {
+                        const likeSub = buildCommentSubheader(like.role, {
+                            transfer: like.transfer, position: like.position, height: like.height,
+                            weight: like.weight, eligibility: like.eligibility, division: like.division,
+                            school: like.school, grad_year: like.grad_year, state: like.state,
+                            subheader: like.subheader
+                        });
+                        return `
+                        <div class="share-item" onclick="feedManager.goToProfile('${like.username || like.id}', '${like.role}', '${like.division || ''}', '${like.id}', ${like.transfer === 'y'}); feedManager.closeModal('likes-modal');">
+                            <div class="share-item-avatar" style="border: 2px solid ${getRoleBorderColor(like.role, like.transfer === 'y', like.division)}">
                                 ${like.profile_image_url ?
                                     `<img src="${like.profile_image_url}" alt="${like.first_name}">` :
                                     `<svg viewBox="0 0 24 24" fill="currentColor">
@@ -4006,10 +4090,10 @@ class FeedManager {
                             </div>
                             <div class="share-item-info">
                                 <div class="share-item-name">${like.first_name || ''} ${like.last_name || ''}</div>
-                                <div class="share-item-meta">${like.role === 'coach' ? 'Coach' : 'Player'}</div>
+                                <div class="share-item-meta">${likeSub || ''}</div>
                             </div>
                         </div>
-                    `).join('')}
+                    `}).join('')}
                 </div>
             `;
 

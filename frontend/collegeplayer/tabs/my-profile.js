@@ -3132,7 +3132,7 @@ function createProfilePostElement(post) {
             <div class="profile-post-stats" onclick="event.stopPropagation();">
                 <span class="profile-likes-count" onclick="showPostLikes('${post.id}')" style="cursor: pointer;">${post.likes_count || 0} ${post.likes_count === 1 ? 'like' : 'likes'}</span>
                 <span class="profile-comments-count" onclick="togglePostComments('${post.id}')" style="cursor: pointer;">${post.comments_count || 0} ${post.comments_count === 1 ? 'comment' : 'comments'}</span>
-                <span>${post.shares_count || 0} ${(post.shares_count || 0) === 1 ? 'share' : 'shares'}</span>
+                <span class="profile-shares-count" onclick="event.stopPropagation(); showPostShares('${post.id}')" style="cursor: pointer;">${post.shares_count || 0} ${(post.shares_count || 0) === 1 ? 'share' : 'shares'}</span>
             </div>
             <div class="profile-post-actions" onclick="event.stopPropagation();">
                 <button class="profile-action-btn ${isLiked ? 'liked' : ''}" onclick="togglePostLike('${post.id}', this)">
@@ -3175,6 +3175,9 @@ function createProfileRepostElement(post) {
     const originalMetaInfo = buildOriginalPostMetaInfo(post);
     const timeAgo = formatTimeAgo(post.created_at);
     const isOwnRepost = reposterId === currentUserId;
+    const isLiked = post.user_liked || false;
+    const isSaved = post.user_saved || false;
+    const isReposted = post.user_reposted || false;
 
     let mediaHtml = '';
     if (post.original_media_urls && post.original_media_urls.length > 0) {
@@ -3190,12 +3193,12 @@ function createProfileRepostElement(post) {
     const optionsButton = isOwnRepost ? `<button class="profile-post-more-btn" onclick="event.stopPropagation(); showRepostMenu('${post.share_id}', '${post.id}', event)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle></svg></button>` : '';
 
     return `
-        <div class="profile-repost-indicator">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg>
-            <span>${isOwnRepost ? 'You' : reposterName} reposted</span>
-            <span class="repost-time">${timeAgo}</span>
-        </div>
         <article class="profile-post-card profile-repost-card" data-post-id="${post.id}" data-share-id="${post.share_id}" onclick="navigateToPost('${post.id}')">
+            <div class="profile-repost-indicator">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg>
+                <span>${isOwnRepost ? 'You' : reposterName} reposted</span>
+                <span class="repost-time">${timeAgo}</span>
+            </div>
             <div class="profile-post-header">
                 <div class="profile-post-avatar">${post.original_author_image ? `<img src="${post.original_author_image}" alt="${originalAuthorName}">` : `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>`}</div>
                 <div class="profile-post-info">
@@ -3205,7 +3208,40 @@ function createProfileRepostElement(post) {
                 <div class="profile-post-header-actions">${optionsButton}<div class="profile-post-view-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg></div></div>
             </div>
             <div class="profile-post-content"><p>${formatPostContent(post.original_content || '')}</p>${mediaHtml}</div>
-            <div class="profile-post-stats"><span>${post.likes_count || 0} ${post.likes_count === 1 ? 'like' : 'likes'}</span><span>${post.comments_count || 0} ${post.comments_count === 1 ? 'comment' : 'comments'}</span><span>${post.shares_count || 0} ${(post.shares_count || 0) === 1 ? 'share' : 'shares'}</span></div>
+            <div class="profile-post-stats" onclick="event.stopPropagation();">
+                <span class="profile-likes-count" onclick="showPostLikes('${post.id}')" style="cursor: pointer;">${post.likes_count || 0} ${post.likes_count === 1 ? 'like' : 'likes'}</span>
+                <span class="profile-comments-count" onclick="togglePostComments('${post.id}')" style="cursor: pointer;">${post.comments_count || 0} ${post.comments_count === 1 ? 'comment' : 'comments'}</span>
+                <span class="profile-shares-count" onclick="event.stopPropagation(); showPostShares('${post.id}')" style="cursor: pointer;">${post.shares_count || 0} ${(post.shares_count || 0) === 1 ? 'share' : 'shares'}</span>
+            </div>
+            <div class="profile-post-actions" onclick="event.stopPropagation();">
+                <button class="profile-action-btn ${isLiked ? 'liked' : ''}" onclick="togglePostLike('${post.id}', this)">
+                    <svg viewBox="0 0 24 24" fill="${isLiked ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2">
+                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                    </svg>
+                    <span>${isLiked ? 'Liked' : 'Like'}</span>
+                </button>
+                <button class="profile-action-btn" onclick="togglePostComments('${post.id}')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                    <span>Comment</span>
+                </button>
+                <button class="profile-action-btn ${isSaved ? 'saved' : ''}" onclick="togglePostSave('${post.id}', this)">
+                    <svg viewBox="0 0 24 24" fill="${isSaved ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2">
+                        <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                    <span>${isSaved ? 'Saved' : 'Save'}</span>
+                </button>
+                <button class="profile-action-btn ${isReposted ? 'reposted' : ''}" onclick="profileSharePost('${post.id}', event)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="17 1 21 5 17 9"></polyline>
+                        <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
+                        <polyline points="7 23 3 19 7 15"></polyline>
+                        <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
+                    </svg>
+                    <span>Share</span>
+                </button>
+            </div>
         </article>
     `;
 }
@@ -3336,7 +3372,7 @@ function createProfileQuotePostElement(post) {
             <div class="profile-post-stats">
                 <span class="profile-likes-count" onclick="event.stopPropagation(); showShareLikes('${post.share_id}')" style="cursor: pointer;">${post.likes_count || 0} ${post.likes_count === 1 ? 'like' : 'likes'}</span>
                 <span class="profile-comments-count" onclick="event.stopPropagation(); toggleShareComments('${post.share_id}')" style="cursor: pointer;">${post.comments_count || 0} ${post.comments_count === 1 ? 'comment' : 'comments'}</span>
-                <span>${post.shares_count || 0} ${(post.shares_count || 0) === 1 ? 'share' : 'shares'}</span>
+                <span class="profile-shares-count" onclick="event.stopPropagation(); showPostShares('${post.original_post_id || post.id}')" style="cursor: pointer;">${post.shares_count || 0} ${(post.shares_count || 0) === 1 ? 'share' : 'shares'}</span>
             </div>
             <div class="profile-post-actions">
                 <button class="profile-action-btn ${isLiked ? 'liked' : ''}" onclick="event.stopPropagation(); toggleShareLike('${post.share_id}', this)">
@@ -3381,16 +3417,60 @@ function createProfileQuotePostElement(post) {
 // Build meta info for original post in reposts/quotes
 function buildOriginalPostMetaInfo(post) {
     const timeAgo = formatTimeAgo(post.original_created_at);
+    let starsHtml = '';
+
+    if (post.original_author_role === 'player' && post.original_author_star_rating && post.original_author_star_rating >= 1 && post.original_author_star_rating <= 5) {
+        const isHSPlayer = !post.original_author_division && post.original_author_transfer !== 'y';
+        const isTransferPlayer = post.original_author_transfer === 'y';
+        if (isHSPlayer || isTransferPlayer) {
+            starsHtml = `<span class="post-meta-stars" style="color: #ffd700; font-weight: 600;">${post.original_author_star_rating}★</span> `;
+        }
+    }
+
     if (post.original_author_role === 'player') {
         const parts = [];
-        if (post.original_author_position) parts.push(post.original_author_position);
-        if (post.original_author_school) parts.push(post.original_author_school);
-        if (post.original_author_grad_year) parts.push(`'${String(post.original_author_grad_year).slice(-2)}`);
-        return parts.join(' · ') + (parts.length > 0 ? ' · ' : '') + timeAgo;
+        if (post.original_author_transfer === 'y') {
+            if (post.original_author_position) parts.push(post.original_author_position);
+            if (post.original_author_height) {
+                const heightStr = String(post.original_author_height);
+                if (heightStr.includes("'") || heightStr.includes('-')) {
+                    parts.push(heightStr.replace('-', "'") + '"');
+                } else {
+                    const feet = Math.floor(parseInt(heightStr) / 12);
+                    const inches = parseInt(heightStr) % 12;
+                    parts.push(`${feet}'${inches}"`);
+                }
+            }
+            if (post.original_author_weight) parts.push(`${post.original_author_weight} lbs`);
+            if (post.original_author_eligibility) {
+                const yearText = post.original_author_eligibility === 1 ? 'year' : 'years';
+                parts.push(`YOE: ${post.original_author_eligibility} ${yearText}`);
+            }
+        } else if (post.original_author_division) {
+            if (post.original_author_position) parts.push(post.original_author_position);
+            if (post.original_author_school) parts.push(post.original_author_school);
+            const div = post.original_author_division;
+            const divLabel = div === 'D1' ? 'D1' : div === 'D2' ? 'D2' : div === 'D3' ? 'D3' : div === 'NAIA' ? 'NAIA' : div === 'JUCO' ? 'JUCO' : '';
+            if (divLabel) parts.push(divLabel);
+        } else {
+            if (post.original_author_position) parts.push(post.original_author_position);
+            if (post.original_author_school) parts.push(post.original_author_school);
+            if (post.original_author_grad_year) parts.push(`'${String(post.original_author_grad_year).slice(-2)}`);
+        }
+        return starsHtml + parts.join(' · ') + (parts.length > 0 ? ' · ' : '') + timeAgo;
     } else if (post.original_author_role === 'coach') {
         const parts = [];
         if (post.original_author_position) parts.push(post.original_author_position);
         if (post.original_author_school) parts.push(post.original_author_school);
+        if (post.original_author_division) {
+            const div = post.original_author_division;
+            const divLabel = div === 'D1' ? 'D1' : div === 'D2' ? 'D2' : div === 'D3' ? 'D3' : div === 'NAIA' ? 'NAIA' : div === 'JUCO' ? 'JUCO' : div === 'High School' ? 'HS' : '';
+            if (divLabel) parts.push(divLabel);
+        }
+        return parts.join(' · ') + (parts.length > 0 ? ' · ' : '') + timeAgo;
+    } else if (post.original_author_role === 'other') {
+        const parts = [];
+        if (post.original_author_subheader) parts.push(post.original_author_subheader);
         return parts.join(' · ') + (parts.length > 0 ? ' · ' : '') + timeAgo;
     }
     return timeAgo;
@@ -3472,7 +3552,7 @@ async function deleteRepost(shareId, postId) {
     try {
         await API.delete(`/posts/shares/${shareId}`);
         const card = document.querySelector(`[data-share-id="${shareId}"]`);
-        if (card) { const indicator = card.previousElementSibling; if (indicator && indicator.classList.contains('profile-repost-indicator')) indicator.remove(); card.remove(); }
+        if (card) card.remove();
         showToast('Repost removed');
     } catch (error) { console.error('Error deleting repost:', error); showToast('Failed to remove repost', 'error'); }
 }
@@ -3550,8 +3630,13 @@ function createProfileReplyElement(reply) {
                 <div class="profile-reply-text" onclick="navigateToPost('${reply.original_post_id}')">
                     <p>${formatPostContent(reply.content)}</p>
                 </div>
-                <div class="profile-reply-stats">
-                    <span>${reply.likes_count || 0} ${reply.likes_count === 1 ? 'like' : 'likes'}</span>
+                <div class="profile-reply-stats" onclick="event.stopPropagation();">
+                    <button class="comment-like-btn ${reply.user_liked ? 'liked' : ''}" onclick="event.stopPropagation(); likePostComment('${reply.id}', this)">
+                        <svg viewBox="0 0 24 24" fill="${reply.user_liked ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2" width="14" height="14">
+                            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                        </svg>
+                        <span>${reply.likes_count || 0}</span>
+                    </button>
                 </div>
             </div>
         </article>
@@ -4531,10 +4616,115 @@ async function showShareLikes(shareId) {
     }
 }
 
+async function showPostShares(postId) {
+    try {
+        const data = await postsAPI.getShares(postId);
+
+        if (!data.all || data.all.length === 0) {
+            showToast('No shares yet', 'info');
+            return;
+        }
+
+        // Remove existing modals
+        document.querySelector('.shares-modal-overlay')?.remove();
+        document.querySelector('.likes-modal-overlay')?.remove();
+
+        const modal = document.createElement('div');
+        modal.className = 'shares-modal-overlay';
+        modal.innerHTML = `
+            <div class="likes-modal">
+                <div class="likes-modal-header">
+                    <h3>Shares</h3>
+                    <button class="likes-modal-close" onclick="this.closest('.shares-modal-overlay').remove()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
+                </div>
+                <div class="shares-tabs">
+                    <button class="shares-tab active" data-type="all">
+                        All <span class="shares-tab-count">${data.all.length}</span>
+                    </button>
+                    <button class="shares-tab" data-type="reposts">
+                        Reposts <span class="shares-tab-count">${data.repost_count}</span>
+                    </button>
+                    <button class="shares-tab" data-type="quotes">
+                        Quotes <span class="shares-tab-count">${data.quote_count}</span>
+                    </button>
+                </div>
+                <div class="likes-modal-list" id="shares-list-content">
+                    ${renderSharesList(data.all)}
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        // Tab switching
+        modal.querySelectorAll('.shares-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                modal.querySelectorAll('.shares-tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                const type = tab.dataset.type;
+                let listToShow = data.all;
+                if (type === 'reposts') listToShow = data.reposts;
+                if (type === 'quotes') listToShow = data.quotes;
+                document.getElementById('shares-list-content').innerHTML = renderSharesList(listToShow);
+            });
+        });
+
+        // Close on overlay click
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) modal.remove();
+        });
+
+    } catch (error) {
+        console.error('Error fetching shares:', error);
+        showToast('Failed to load shares', 'error');
+    }
+}
+
+function renderSharesList(shares) {
+    if (shares.length === 0) {
+        return `<div class="likes-modal-empty">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="32" height="32">
+                <polyline points="17 1 21 5 17 9"></polyline>
+                <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
+                <polyline points="7 23 3 19 7 15"></polyline>
+                <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
+            </svg>
+            <p>No shares in this category</p>
+        </div>`;
+    }
+
+    return shares.map(share => {
+        const shareSub = buildCommentSubheader(share.role, {
+            transfer: share.transfer, position: share.position, height: share.height,
+            weight: share.weight, eligibility: share.eligibility, division: share.division,
+            school: share.school, grad_year: share.grad_year, state: share.state,
+            subheader: share.subheader
+        });
+        const imgUrl = share.profile_image_url || share.profile_image;
+        const shareTypeLabel = share.share_type === 'quote' ? 'Quote' : 'Repost';
+        return `
+        <div class="likes-modal-item" onclick="goToProfile('${share.username || share.user_id}', '${share.role}', '${share.division || ''}', '${share.user_id}', ${share.transfer === 'y'}); this.closest('.shares-modal-overlay').remove();" style="cursor: pointer;">
+            <div class="likes-modal-avatar" style="border: 2px solid ${getRoleBorderColor(share.role, share.transfer === 'y', share.division)}">
+                ${imgUrl ? `<img src="${imgUrl}" alt="${share.first_name}">` : `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>`}
+            </div>
+            <div class="likes-modal-info">
+                <span class="likes-modal-name">${share.first_name || ''} ${share.last_name || ''}</span>
+                ${shareSub ? `<span class="comment-subheader">${shareSub}</span>` : ''}
+                <span class="shares-type-label" style="font-size: 0.7rem; opacity: 0.5;">${shareTypeLabel}</span>
+            </div>
+        </div>
+    `}).join('');
+}
+
 function showLikesModal(likes, title) {
-    // Remove existing modal
-    const existing = document.querySelector('.likes-modal-overlay');
-    if (existing) existing.remove();
+    // Remove existing modals
+    document.querySelector('.likes-modal-overlay')?.remove();
+    document.querySelector('.shares-modal-overlay')?.remove();
 
     const modal = document.createElement('div');
     modal.className = 'likes-modal-overlay';
@@ -4550,20 +4740,28 @@ function showLikesModal(likes, title) {
                 </button>
             </div>
             <div class="likes-modal-list">
-                ${likes.map(like => `
+                ${likes.map(like => {
+                    const likeSub = buildCommentSubheader(like.role, {
+                        transfer: like.transfer, position: like.position, height: like.height,
+                        weight: like.weight, eligibility: like.eligibility, division: like.division,
+                        school: like.school, grad_year: like.grad_year, state: like.state,
+                        subheader: like.subheader
+                    });
+                    const imgUrl = like.profile_image_url || like.profile_image;
+                    return `
                     <div class="likes-modal-item" onclick="goToProfile('${like.username || like.user_id}', '${like.role || 'player'}', '${like.division || ''}', '${like.user_id}', ${like.transfer === 'y'})" style="cursor: pointer;">
-                        <div class="likes-modal-avatar">
-                            ${like.profile_image ?
-                                `<img src="${like.profile_image}" alt="">` :
+                        <div class="likes-modal-avatar" style="border: 2px solid ${getRoleBorderColor(like.role, like.transfer === 'y', like.division)}">
+                            ${imgUrl ?
+                                `<img src="${imgUrl}" alt="">` :
                                 `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>`
                             }
                         </div>
                         <div class="likes-modal-info">
                             <span class="likes-modal-name">${like.first_name} ${like.last_name}</span>
-                            ${like.username ? `<span class="likes-modal-username">@${like.username}</span>` : ''}
+                            ${likeSub ? `<span class="comment-subheader">${likeSub}</span>` : (like.username ? `<span class="likes-modal-username">@${like.username}</span>` : '')}
                         </div>
                     </div>
-                `).join('')}
+                `}).join('')}
             </div>
         </div>
     `;
@@ -5369,7 +5567,7 @@ function createProfileLikedPostElement(post) {
             <div class="profile-post-stats" onclick="event.stopPropagation();">
                 <span class="profile-likes-count" onclick="showPostLikes('${post.id}')" style="cursor: pointer;">${post.likes_count || 0} ${post.likes_count === 1 ? 'like' : 'likes'}</span>
                 <span class="profile-comments-count" onclick="togglePostComments('${post.id}')" style="cursor: pointer;">${post.comments_count || 0} ${post.comments_count === 1 ? 'comment' : 'comments'}</span>
-                <span>${post.shares_count || 0} ${(post.shares_count || 0) === 1 ? 'share' : 'shares'}</span>
+                <span class="profile-shares-count" onclick="event.stopPropagation(); showPostShares('${post.id}')" style="cursor: pointer;">${post.shares_count || 0} ${(post.shares_count || 0) === 1 ? 'share' : 'shares'}</span>
             </div>
             <div class="profile-post-actions" onclick="event.stopPropagation();">
                 <button class="profile-action-btn ${isLiked ? 'liked' : ''}" onclick="togglePostLike('${post.id}', this)">
@@ -5516,7 +5714,7 @@ function createProfileLikedQuotePostElement(post) {
             <div class="profile-post-stats">
                 <span class="profile-likes-count" onclick="event.stopPropagation(); showShareLikes('${post.share_id}')" style="cursor: pointer;">${post.likes_count || 0} ${post.likes_count === 1 ? 'like' : 'likes'}</span>
                 <span class="profile-comments-count" onclick="event.stopPropagation(); toggleShareComments('${post.share_id}')" style="cursor: pointer;">${post.comments_count || 0} ${post.comments_count === 1 ? 'comment' : 'comments'}</span>
-                <span>${post.shares_count || 0} ${(post.shares_count || 0) === 1 ? 'share' : 'shares'}</span>
+                <span class="profile-shares-count" onclick="event.stopPropagation(); showPostShares('${post.original_post_id || post.id}')" style="cursor: pointer;">${post.shares_count || 0} ${(post.shares_count || 0) === 1 ? 'share' : 'shares'}</span>
             </div>
             <div class="profile-post-actions">
                 <button class="profile-action-btn ${isLiked ? 'liked' : ''}" onclick="event.stopPropagation(); toggleShareLike('${post.share_id}', this)">
