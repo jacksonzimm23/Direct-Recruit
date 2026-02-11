@@ -638,13 +638,7 @@ class FeedManager {
                 // College Player: Position • College • Division
                 if (post.author_position) parts.push(post.author_position);
                 if (post.author_school) parts.push(post.author_school);
-                // Format FBS/FCS as D1 FBS/D1 FCS
-                const div = post.author_division;
-                if (div === 'FBS' || div === 'FCS') {
-                    parts.push(`D1 ${div}`);
-                } else {
-                    parts.push(div);
-                }
+                if (post.author_division) parts.push(post.author_division);
             } else {
                 // HS Player: Position • High School • Year
                 if (post.author_position) parts.push(post.author_position);
@@ -677,13 +671,7 @@ class FeedManager {
                 } else if (post.author_state) {
                     parts.push(post.author_state);
                 }
-                // Format FBS/FCS as D1 FBS/D1 FCS
-                const div = post.author_division;
-                if (div === 'FBS' || div === 'FCS') {
-                    parts.push(`D1 ${div}`);
-                } else {
-                    parts.push(div);
-                }
+                if (post.author_division) parts.push(post.author_division);
                 parts.push(timeAgo);
                 metaInfo = parts.join(' • ');
             } else {
@@ -1300,12 +1288,7 @@ class FeedManager {
                 // College player
                 if (share.quoter_position) parts.push(share.quoter_position);
                 if (share.quoter_school) parts.push(share.quoter_school);
-                const div = share.quoter_division;
-                if (div === 'FBS' || div === 'FCS') {
-                    parts.push(`D1 ${div}`);
-                } else {
-                    parts.push(div);
-                }
+                if (share.quoter_division) parts.push(share.quoter_division);
             } else {
                 // HS player
                 if (share.quoter_position) parts.push(share.quoter_position);
@@ -1324,12 +1307,7 @@ class FeedManager {
             const parts = [];
             if (share.quoter_division) {
                 if (share.quoter_school) parts.push(share.quoter_school);
-                const div = share.quoter_division;
-                if (div === 'FBS' || div === 'FCS') {
-                    parts.push(`D1 ${div}`);
-                } else {
-                    parts.push(div);
-                }
+                if (share.quoter_division) parts.push(share.quoter_division);
                 parts.push(timeAgo);
                 metaInfo = parts.join(' • ');
             } else {
@@ -1383,12 +1361,7 @@ class FeedManager {
             } else if (post.author_division) {
                 if (post.author_position) parts.push(post.author_position);
                 if (post.author_school) parts.push(post.author_school);
-                const div = post.author_division;
-                if (div === 'FBS' || div === 'FCS') {
-                    parts.push(`D1 ${div}`);
-                } else {
-                    parts.push(div);
-                }
+                if (post.author_division) parts.push(post.author_division);
             } else {
                 if (post.author_position) parts.push(post.author_position);
                 if (post.author_school) parts.push(post.author_school);
@@ -1406,12 +1379,7 @@ class FeedManager {
             const parts = [];
             if (post.author_division) {
                 if (post.author_school) parts.push(post.author_school);
-                const div = post.author_division;
-                if (div === 'FBS' || div === 'FCS') {
-                    parts.push(`D1 ${div}`);
-                } else {
-                    parts.push(div);
-                }
+                if (post.author_division) parts.push(post.author_division);
                 parts.push(timeAgo);
                 metaInfo = parts.join(' • ');
             } else {
@@ -1440,12 +1408,7 @@ class FeedManager {
                 const parts = [];
                 if (post.reposter_position) parts.push(post.reposter_position);
                 if (post.reposter_school) parts.push(post.reposter_school);
-                const div = post.reposter_division;
-                if (div === 'FBS' || div === 'FCS') {
-                    parts.push(`D1 ${div}`);
-                } else {
-                    parts.push(div);
-                }
+                if (post.reposter_division) parts.push(post.reposter_division);
                 parts.push(timeAgo);
                 metaInfo = parts.join(' • ');
             } else {
@@ -1467,12 +1430,7 @@ class FeedManager {
             const parts = [];
             if (post.reposter_division) {
                 if (post.reposter_school) parts.push(post.reposter_school);
-                const div = post.reposter_division;
-                if (div === 'FBS' || div === 'FCS') {
-                    parts.push(`D1 ${div}`);
-                } else {
-                    parts.push(div);
-                }
+                if (post.reposter_division) parts.push(post.reposter_division);
                 parts.push(timeAgo);
                 metaInfo = parts.join(' • ');
             } else {
@@ -3185,39 +3143,12 @@ class FeedManager {
                 }
             }
 
-            // Determine the correct folder based on role, college division, and transfer status
-            let folder = 'hsplayer';
-            const isCollege = collegeDivision && collegeDivision.trim() !== '';
-
-            if (role === 'coach') {
-                folder = isCollege ? 'collegecoach' : 'hscoach';
-            } else if (role === 'player') {
-                if (isTransfer) {
-                    folder = 'transferplayer';
-                } else {
-                    folder = isCollege ? 'collegeplayer' : 'hsplayer';
-                }
-            } else if (role === 'other') {
-                folder = 'other';
-            }
+            const folder = getProfileFolder({ role, is_transfer_player: isTransfer, college_division: collegeDivision });
 
             // Navigate to the profile type's folder with cross-folder navigation
             window.location.href = `${prefix}${folder}/tabs/my-profile.html?username=${username}&from=feed`;
         } catch (error) {
-            // Fallback: determine folder from role and navigate
-            let folder = 'hsplayer';
-            const isCollege = collegeDivision && collegeDivision.trim() !== '';
-            if (role === 'coach') {
-                folder = isCollege ? 'collegecoach' : 'hscoach';
-            } else if (role === 'player') {
-                if (isTransfer) {
-                    folder = 'transferplayer';
-                } else {
-                    folder = isCollege ? 'collegeplayer' : 'hsplayer';
-                }
-            } else if (role === 'other') {
-                folder = 'other';
-            }
+            const folder = getProfileFolder({ role, is_transfer_player: isTransfer, college_division: collegeDivision });
             window.location.href = `${prefix}${folder}/tabs/my-profile.html?username=${identifier}&from=feed`;
         }
     }

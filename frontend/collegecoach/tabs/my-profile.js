@@ -175,29 +175,11 @@ async function loadCurrentUser() {
 // This ensures the navbar stays consistent when viewing other profiles
 function updateNavbarForLoggedInUser(user, profile) {
     // Determine the correct folder for the logged-in user
-    let userFolder;
-    let isCollege = false;
-    let isTransferPlayer = false;
     const role = user.role;
-
-    if (role === 'player') {
-        // Use user.is_transfer_player for consistent transfer player detection
-        isTransferPlayer = user.is_transfer_player || false;
-        if (isTransferPlayer) {
-            userFolder = 'transferplayer';
-            isCollege = true; // Transfer players are college-level
-        } else {
-            isCollege = profile && profile.college_division && profile.college_division.trim() !== '';
-            userFolder = isCollege ? 'collegeplayer' : 'hsplayer';
-        }
-    } else if (role === 'coach') {
-        isCollege = profile && profile.college_division && profile.college_division.trim() !== '';
-        userFolder = isCollege ? 'collegecoach' : 'hscoach';
-    } else if (role === 'other') {
-        userFolder = 'other';
-    } else {
-        return; // Unknown role, don't modify
-    }
+    const userFolder = getProfileFolder({ role, is_transfer_player: user.is_transfer_player, transfer: profile && profile.transfer, college_division: profile && profile.college_division });
+    if (!userFolder) return; // Unknown role, don't modify
+    const isTransferPlayer = userFolder === 'transferplayer';
+    const isCollege = ['collegeplayer', 'collegecoach', 'transferplayer'].includes(userFolder);
 
     // Add body class for transfer player viewers to apply red theme
     if (isTransferPlayer) {
@@ -571,13 +553,7 @@ function updateNavbarForLoggedInUser(user, profile) {
                 if (profile.position) parts.push(profile.position);
                 if (profile.team_name) parts.push(profile.team_name);
                 if (profile.college_division) {
-                    // Add "D1" prefix for FBS/FCS divisions
-                    const div = profile.college_division;
-                    if (div === 'FBS' || div === 'FCS') {
-                        parts.push(`D1 ${div}`);
-                    } else {
-                        parts.push(div);
-                    }
+                    parts.push(profile.college_division);
                 }
                 userRole.textContent = parts.join(' • ') || 'Player';
             } else if (userFolder === 'hscoach') {
@@ -595,11 +571,7 @@ function updateNavbarForLoggedInUser(user, profile) {
                     parts.push(profile.state);
                 }
                 if (profile.college_division) {
-                    // Format FBS/FCS as D1 FBS/D1 FCS
-                    const divDisplay = (profile.college_division === 'FBS' || profile.college_division === 'FCS')
-                        ? `D1 ${profile.college_division}`
-                        : profile.college_division;
-                    parts.push(divDisplay);
+                    parts.push(profile.college_division);
                 }
                 userRole.textContent = parts.join(' • ') || 'College Coach';
             } else if (userFolder === 'other') {
@@ -1151,11 +1123,7 @@ function displayCoachProfile(profile) {
 
         // Add division with bullet separator if it exists
         if (profile.college_division) {
-            // Format FBS/FCS as D1 FBS/D1 FCS
-            const divisionDisplay = (profile.college_division === 'FBS' || profile.college_division === 'FCS')
-                ? `D1 ${profile.college_division}`
-                : profile.college_division;
-            row2Text += ` <span>•</span> ${divisionDisplay}`;
+            row2Text += ` <span>•</span> ${profile.college_division}`;
         }
 
         if (row2Parts.length > 0) {
@@ -1183,13 +1151,7 @@ function displayCoachProfile(profile) {
     // Update info items for coach
     updateInfoItem('Title', profile.position_title);
     updateInfoItem('College', profile.team_name);
-    // Format FBS/FCS as D1 FBS/D1 FCS for division info item
-    const divisionInfoDisplay = profile.college_division
-        ? ((profile.college_division === 'FBS' || profile.college_division === 'FCS')
-            ? `D1 ${profile.college_division}`
-            : profile.college_division)
-        : null;
-    updateInfoItem('Division', divisionInfoDisplay);
+    updateInfoItem('Division', profile.college_division || null);
 
     // Update contact info
     updateContactInfo(profile);
@@ -2309,7 +2271,7 @@ async function saveProfileChanges() {
             }
 
             // Check if coach type changed (College to HS) - redirect to appropriate folder
-            const collegeDivisions = ['FBS', 'FCS', 'D2', 'D3', 'NAIA', 'NJCAA', 'JUCO', 'Division II', 'Division III'];
+            const collegeDivisions = ['D1 FBS', 'D1 FCS', 'D2', 'D3', 'NAIA', 'NJCAA', '3C2A'];
             const newCollegeDivision = formData.college_division;
             const isStillCollegeCoach = newCollegeDivision && collegeDivisions.includes(newCollegeDivision);
 
@@ -2570,14 +2532,8 @@ function displayOverviewData(profile) {
 
     if (schoolNameValue) schoolNameValue.textContent = profile.team_name || '-';
     if (schoolStateValue) schoolStateValue.textContent = profile.state || '-';
-    // Format FBS/FCS as D1 FBS/D1 FCS
     if (divisionValue) {
-        const divDisplay = profile.college_division
-            ? ((profile.college_division === 'FBS' || profile.college_division === 'FCS')
-                ? `D1 ${profile.college_division}`
-                : profile.college_division)
-            : '-';
-        divisionValue.textContent = divDisplay;
+        divisionValue.textContent = profile.college_division || '-';
     }
     if (conferenceValue) conferenceValue.textContent = profile.conference || '-';
     if (recordValue) recordValue.textContent = profile.record || '-';
@@ -2673,7 +2629,7 @@ function getFollowListRoleInfo(user) {
         // Determine player type
         const isTransfer = user.is_transfer === 'y' || user.is_transfer === true;
         const hasCollegeDivision = user.player_college_division &&
-            ['FBS', 'FCS', 'D2', 'D3', 'NAIA', 'NJCAA', 'JUCO'].includes(user.player_college_division);
+            ['D1 FBS', 'D1 FCS', 'D2', 'D3', 'NAIA', 'NJCAA', '3C2A'].includes(user.player_college_division);
 
         if (isTransfer) {
             // Transfer Player: position • height • weight • YOE
@@ -2709,7 +2665,7 @@ function getFollowListRoleInfo(user) {
         }
     } else if (role === 'coach') {
         const hasCollegeDivision = user.coach_college_division &&
-            ['FBS', 'FCS', 'D2', 'D3', 'NAIA', 'NJCAA', 'JUCO'].includes(user.coach_college_division);
+            ['D1 FBS', 'D1 FCS', 'D2', 'D3', 'NAIA', 'NJCAA', '3C2A'].includes(user.coach_college_division);
 
         if (hasCollegeDivision) {
             // College Coach: team, state • division
@@ -2815,25 +2771,7 @@ async function openFollowListModal(type) {
                     if (profileResponse.profile && profileResponse.profile.username) {
                         closeFollowListModal();
                         const profile = profileResponse.profile;
-                        // Navigate to appropriate profile folder based on role and profile data
-                        let folder = 'hsplayer';
-                        if (role === 'coach') {
-                            const hasCollegeDivision = profile.college_division &&
-                                ['FBS', 'FCS', 'D2', 'D3', 'NAIA', 'NJCAA', 'JUCO'].includes(profile.college_division);
-                            folder = hasCollegeDivision ? 'collegecoach' : 'hscoach';
-                        } else if (role === 'other') {
-                            folder = 'other';
-                        } else {
-                            // Player - check for transfer or college
-                            if (profile.transfer === 'y' || profile.is_transfer_player) {
-                                folder = 'transferplayer';
-                            } else if (profile.college_division &&
-                                ['FBS', 'FCS', 'D2', 'D3', 'NAIA', 'NJCAA', 'JUCO'].includes(profile.college_division)) {
-                                folder = 'collegeplayer';
-                            } else {
-                                folder = 'hsplayer';
-                            }
-                        }
+                        const folder = getProfileFolder({ role, ...profile });
                         const currentFrom = new URLSearchParams(window.location.search).get('from') || 'profile';
                         window.location.href = `../../${folder}/tabs/my-profile.html?username=${profile.username}&from=${currentFrom}`;
                     }
@@ -3159,12 +3097,7 @@ function buildPostMetaInfo(post) {
             // College Player: Position • College • Division
             if (post.author_position) parts.push(post.author_position);
             if (post.author_school) parts.push(post.author_school);
-            const div = post.author_division;
-            if (div === 'FBS' || div === 'FCS') {
-                parts.push(`D1 ${div}`);
-            } else {
-                parts.push(div);
-            }
+            if (post.author_division) parts.push(post.author_division);
         } else {
             // HS Player: Position • High School • Class of Year
             if (post.author_position) parts.push(post.author_position);
@@ -3187,12 +3120,7 @@ function buildPostMetaInfo(post) {
             } else if (post.author_state) {
                 parts.push(post.author_state);
             }
-            const div = post.author_division;
-            if (div === 'FBS' || div === 'FCS') {
-                parts.push(`D1 ${div}`);
-            } else {
-                parts.push(div);
-            }
+            if (post.author_division) parts.push(post.author_division);
             parts.push(timeAgo);
             metaInfo = parts.join(' • ');
         } else {
@@ -4349,7 +4277,7 @@ function buildCommentSubheader(role, data) {
         } else if (data.division) {
             if (data.position) parts.push(data.position);
             if (data.school) parts.push(data.school);
-            const div = data.division; parts.push((div === 'FBS' || div === 'FCS') ? `D1 ${div}` : div);
+            if (data.division) parts.push(data.division);
             return parts.length ? `<span style="color:#1282a2;font-size:11px;">${parts.join(' • ')}</span>` : '';
         } else {
             if (data.position) parts.push(data.position);
@@ -4362,7 +4290,7 @@ function buildCommentSubheader(role, data) {
             if (data.school && data.state) parts.push(`${data.school}, ${data.state}`);
             else if (data.school) parts.push(data.school);
             else if (data.state) parts.push(data.state);
-            const div = data.division; parts.push((div === 'FBS' || div === 'FCS') ? `D1 ${div}` : div);
+            if (data.division) parts.push(data.division);
             return parts.length ? `<span style="color:#ff6b35;font-size:11px;">${parts.join(' • ')}</span>` : '';
         } else {
             if (data.school) parts.push(data.school);
@@ -5321,22 +5249,7 @@ function goToProfile(identifier, role, collegeDivision, userId, isTransfer) {
         return;
     }
 
-    // Determine folder based on role and attributes
-    let folder;
-    if (role === 'coach') {
-        folder = collegeDivision ? 'collegecoach' : 'hscoach';
-    } else if (role === 'other') {
-        folder = 'other';
-    } else {
-        // Player role
-        if (isTransfer) {
-            folder = 'transferplayer';
-        } else if (collegeDivision) {
-            folder = 'collegeplayer';
-        } else {
-            folder = 'hsplayer';
-        }
-    }
+    const folder = getProfileFolder({ role, is_transfer_player: isTransfer, college_division: collegeDivision });
 
     // Navigate using username if available, otherwise user ID
     const param = identifier && !identifier.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)

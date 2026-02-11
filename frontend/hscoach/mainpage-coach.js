@@ -303,22 +303,14 @@ function showLogoutModal() {
 // Skip redirect if viewing another user's profile (has username parameter)
 async function verifyCoachType() {
     try {
-        // Skip verification if viewing another user's profile
         const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.get('username')) {
-            return; // Don't redirect when viewing someone else's profile
-        }
+        if (urlParams.get('username')) return;
 
         const response = await API.get('/auth/me');
         if (response.user && response.profile) {
-            const collegeDivision = response.profile.college_division;
-            const collegeDivisions = ['FBS', 'FCS', 'D2', 'D3', 'NAIA', 'NJCAA'];
-
-            // If user is a college coach, redirect to collegecoach folder
-            const isCollegeCoach = collegeDivision && collegeDivisions.includes(collegeDivision);
-
-            if (isCollegeCoach) {
-                window.location.href = '../collegecoach/mainpage-coach.html';
+            const correctFolder = getProfileFolder({ role: response.user.role, is_transfer_player: response.user.is_transfer_player, ...response.profile });
+            if (correctFolder !== 'hscoach') {
+                window.location.href = `../${correctFolder}/mainpage-coach.html`;
                 return;
             }
         }

@@ -50,13 +50,12 @@ async function updateMobileHeader() {
                             parts.push(`YOE: ${profile.eligibility} ${yt}`);
                         }
                         roleText = parts.join(' • ') || 'Transfer Player';
-                    } else if (profile.college_division && ['FBS', 'FCS', 'D2', 'D3', 'NAIA', 'NJCAA'].includes(profile.college_division)) {
+                    } else if (profile.college_division && ['D1 FBS', 'D1 FCS', 'D2', 'D3', 'NAIA', 'NJCAA', '3C2A'].includes(profile.college_division)) {
                         // College Player: Position • Team • Division
                         const parts = [];
                         if (profile.position) parts.push(profile.position);
                         if (profile.team_name) parts.push(profile.team_name);
-                        const div = profile.college_division;
-                        parts.push((div === 'FBS' || div === 'FCS') ? `D1 ${div}` : div);
+                        if (profile.college_division) parts.push(profile.college_division);
                         roleText = parts.join(' • ') || 'College Player';
                     } else {
                         // HS Player: Position • Height • Weight • GradYear
@@ -86,8 +85,7 @@ async function updateMobileHeader() {
                             parts.push(profile.state);
                         }
                         if (profile.college_division) {
-                            const div = profile.college_division;
-                            parts.push((div === 'FBS' || div === 'FCS') ? `D1 ${div}` : div);
+                            parts.push(profile.college_division);
                         }
                         roleText = parts.join(' • ') || 'College Coach';
                     } else {
@@ -128,16 +126,7 @@ async function updateMobileHeader() {
             }
 
             // Fix mobile sidebar nav links to point to logged-in user's role folder
-            let userFolder = 'hsplayer';
-            if (user.role === 'player') {
-                if (user.is_transfer_player) userFolder = 'transferplayer';
-                else if (profile.college_division && ['FBS', 'FCS', 'D2', 'D3', 'NAIA', 'NJCAA'].includes(profile.college_division)) userFolder = 'collegeplayer';
-                else userFolder = 'hsplayer';
-            } else if (user.role === 'coach') {
-                userFolder = user.is_college_coach ? 'collegecoach' : 'hscoach';
-            } else {
-                userFolder = 'other';
-            }
+            const userFolder = getProfileFolder({ role: user.role, is_transfer_player: user.is_transfer_player, college_division: profile.college_division });
 
             // Check if we're on a different role's page
             const currentPath = window.location.pathname;

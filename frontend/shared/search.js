@@ -131,22 +131,10 @@ class SearchComponent {
             item.addEventListener('click', () => {
                 const username = item.dataset.username;
                 const role = item.dataset.role;
-                const isCollege = item.dataset.isCollege === 'true';
                 const isTransfer = item.dataset.isTransfer === 'true';
+                const collegeDivision = item.dataset.collegeDivision || '';
 
-                // Determine the correct folder based on role and level
-                let folder = 'hsplayer';
-                if (role === 'coach') {
-                    folder = isCollege ? 'collegecoach' : 'hscoach';
-                } else if (role === 'player') {
-                    if (isTransfer) {
-                        folder = 'transferplayer';
-                    } else {
-                        folder = isCollege ? 'collegeplayer' : 'hsplayer';
-                    }
-                } else if (role === 'other') {
-                    folder = 'other';
-                }
+                const folder = getProfileFolder({ role, is_transfer_player: isTransfer, college_division: collegeDivision });
 
                 // Navigate to the profile type's folder with cross-folder navigation
                 const currentPath = window.location.pathname;
@@ -206,12 +194,7 @@ class SearchComponent {
                 if (result.position) subtitle.push(result.position);
                 if (result.team_name) subtitle.push(result.team_name);
                 if (result.college_division) {
-                    const div = result.college_division;
-                    if (div === 'FBS' || div === 'FCS') {
-                        subtitle.push(`D1 ${div}`);
-                    } else {
-                        subtitle.push(div);
-                    }
+                    subtitle.push(result.college_division);
                 }
             } else {
                 // HS Player: Position • Height • Weight • Graduation Year
@@ -240,12 +223,7 @@ class SearchComponent {
                     subtitle.push(result.state);
                 }
                 if (result.college_division) {
-                    const div = result.college_division;
-                    if (div === 'FBS' || div === 'FCS') {
-                        subtitle.push(`D1 ${div}`);
-                    } else {
-                        subtitle.push(div);
-                    }
+                    subtitle.push(result.college_division);
                 }
             } else {
                 // HS Coach: Position Title • Team Name • State
@@ -259,7 +237,7 @@ class SearchComponent {
         }
 
         return `
-            <div class="search-result-item" data-username="${result.username || ''}" data-role="${role}" data-is-college="${isCollege}" data-is-transfer="${isTransfer}">
+            <div class="search-result-item" data-username="${result.username || ''}" data-role="${role}" data-is-college="${isCollege}" data-is-transfer="${isTransfer}" data-college-division="${result.college_division || ''}">
                 <img src="${imageUrl}" alt="${result.first_name} ${result.last_name}" class="result-avatar" style="border: 2px solid ${getRoleBorderColor(role, isTransfer, result.college_division)}" onerror="this.src='${this.getDefaultAvatar(result.first_name)}'">
                 <div class="result-info">
                     <div class="result-name-row">

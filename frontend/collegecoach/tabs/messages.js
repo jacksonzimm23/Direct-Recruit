@@ -360,16 +360,11 @@ function updateThreadHeader(participant) {
 
                 roleText = parts.join(' • ') || 'Transfer Player';
                 threadUserRole.style.color = '#b91c1c'; // Transfer player red
-            } else if (participant.college_division && ['FBS', 'FCS', 'D2', 'D3', 'NAIA', 'NJCAA'].includes(participant.college_division)) {
+            } else if (participant.college_division && ['D1 FBS', 'D1 FCS', 'D2', 'D3', 'NAIA', 'NJCAA', '3C2A'].includes(participant.college_division)) {
                 // College Player: Position • College • Division
                 if (participant.position) parts.push(participant.position);
                 if (participant.team_name) parts.push(participant.team_name);
-                const division = participant.college_division;
-                if (division === 'FBS' || division === 'FCS') {
-                    parts.push(`D1 ${division}`);
-                } else {
-                    parts.push(division);
-                }
+                if (participant.college_division) parts.push(participant.college_division);
                 roleText = parts.join(' • ') || 'Player';
                 threadUserRole.style.color = '';
             } else {
@@ -398,12 +393,7 @@ function updateThreadHeader(participant) {
                 } else if (participant.state) {
                     parts.push(participant.state);
                 }
-                const division = participant.college_division;
-                if (division === 'FBS' || division === 'FCS') {
-                    parts.push(`D1 ${division}`);
-                } else {
-                    parts.push(division);
-                }
+                if (participant.college_division) parts.push(participant.college_division);
                 roleText = parts.join(' • ') || 'Coach';
             } else {
                 // HS Coach: School, State (comma-separated like sidebar)
@@ -758,28 +748,7 @@ async function navigateToProfile(userId, role) {
             // Store conversation context for when user comes back
             sessionStorage.setItem('messagesReturnConversationId', currentConversationId);
 
-            // Navigate to the appropriate profile folder based on role and profile data
-            let folder = 'hsplayer';
-            if (role === 'coach') {
-                // Check if college coach based on division
-                const profile = response.profile;
-                const hasCollegeDivision = profile.college_division &&
-                    ['FBS', 'FCS', 'D2', 'D3', 'NAIA', 'NJCAA', 'JUCO'].includes(profile.college_division);
-                folder = hasCollegeDivision ? 'collegecoach' : 'hscoach';
-            } else if (role === 'other') {
-                folder = 'other';
-            } else {
-                // Player - check for transfer or college
-                const profile = response.profile;
-                if (profile.transfer === 'y' || profile.is_transfer_player) {
-                    folder = 'transferplayer';
-                } else if (profile.college_division &&
-                    ['FBS', 'FCS', 'D2', 'D3', 'NAIA', 'NJCAA', 'JUCO'].includes(profile.college_division)) {
-                    folder = 'collegeplayer';
-                } else {
-                    folder = 'hsplayer';
-                }
-            }
+            const folder = getProfileFolder({ role, ...response.profile });
             window.location.href = `../../${folder}/tabs/my-profile.html?username=${response.profile.username}&from=messages`;
         }
     } catch (error) {

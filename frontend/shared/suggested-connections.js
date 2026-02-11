@@ -272,22 +272,10 @@ class SuggestedConnectionsWidget {
         // Close modal if open
         this.closeModal();
 
-        // Determine the correct folder based on profile type
-        let folder;
-        if (role === 'other') {
-            folder = 'other';
-        } else if (role === 'coach') {
-            folder = profileType === 'college' ? 'collegecoach' : 'hscoach';
-        } else {
-            // Player
-            if (profileType === 'transfer') {
-                folder = 'transferplayer';
-            } else if (profileType === 'college') {
-                folder = 'collegeplayer';
-            } else {
-                folder = 'hsplayer';
-            }
-        }
+        // Map profileType to getProfileFolder fields
+        const isTransfer = profileType === 'transfer';
+        const collegeDivision = profileType === 'college' ? COLLEGE_DIVISIONS[0] : '';
+        const folder = getProfileFolder({ role, is_transfer_player: isTransfer, college_division: collegeDivision });
 
         // Navigate using relative path (same pattern as feed.js)
         const currentPath = window.location.pathname;

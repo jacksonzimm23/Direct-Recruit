@@ -400,13 +400,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             });
             const username = player.username;
             if (username) {
-                // Determine the correct folder based on player type
-                let folder = 'hsplayer';
-                if (player.player_type === 'transfer') {
-                    folder = 'transferplayer';
-                } else if (player.college_division && ['FBS', 'FCS', 'D2', 'D3', 'NAIA', 'NJCAA', 'JUCO'].includes(player.college_division)) {
-                    folder = 'collegeplayer';
-                }
+                const folder = getProfileFolder({ role: 'player', is_transfer_player: player.player_type === 'transfer', college_division: player.college_division });
                 window.location.href = `../../${folder}/tabs/my-profile.html?username=${username}&from=recruiting`;
             }
         });

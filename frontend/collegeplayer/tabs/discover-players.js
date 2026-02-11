@@ -752,16 +752,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     return;
                 }
 
-                // Navigate to appropriate profile folder based on user type
-                let folder = 'other';
-                switch (userType) {
-                    case 'hsplayer': folder = 'hsplayer'; break;
-                    case 'collegeplayer': folder = 'collegeplayer'; break;
-                    case 'transferplayer': folder = 'transferplayer'; break;
-                    case 'hscoach': folder = 'hscoach'; break;
-                    case 'collegecoach': folder = 'collegecoach'; break;
-                    case 'other': folder = 'other'; break;
-                }
+                // userType is already the folder name (hsplayer, collegeplayer, etc.)
+                const folder = userType || 'other';
                 window.location.href = `../../${folder}/tabs/my-profile.html?username=${username}&from=discover`;
             };
 

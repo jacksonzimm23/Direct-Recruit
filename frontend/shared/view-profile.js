@@ -29,7 +29,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
 
         // Determine the correct folder based on profile type and division
-        const targetFolder = getTargetFolder(response.profile, response.type);
+        const targetFolder = getProfileFolder({ role: response.type, ...response.profile });
 
 
         // Redirect to the appropriate my-profile page with the username
@@ -48,24 +48,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
 });
 
-function getTargetFolder(profile, type) {
-    const collegeDivisions = ['FBS', 'FCS', 'D2', 'D3', 'NAIA', 'NJCAA', 'JUCO'];
-
-    if (type === 'player') {
-        // Check if college player based on college_division
-        const isCollegePlayer = profile.college_division && collegeDivisions.includes(profile.college_division);
-        return isCollegePlayer ? 'collegeplayer' : 'hsplayer';
-    } else if (type === 'coach') {
-        // Check if college coach based on college_division or school_type
-        const isCollegeCoach =
-            profile.school_type === 'college' ||
-            (profile.college_division && collegeDivisions.includes(profile.college_division));
-        return isCollegeCoach ? 'collegecoach' : 'hscoach';
-    }
-
-    // Default fallback
-    return 'hsplayer';
-}
+// getTargetFolder replaced by shared getProfileFolder() from api.js
 
 function showError(message) {
     const loadingContainer = document.querySelector('.loading-container');

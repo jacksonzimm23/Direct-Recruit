@@ -290,13 +290,7 @@ async function updateSidebarFooter() {
                 if (profile.position) parts.push(profile.position);
                 if (profile.team_name) parts.push(profile.team_name);
                 if (profile.college_division) {
-                    // Add "D1" prefix for FBS/FCS divisions
-                    const div = profile.college_division;
-                    if (div === 'FBS' || div === 'FCS') {
-                        parts.push(`D1 ${div}`);
-                    } else {
-                        parts.push(div);
-                    }
+                    parts.push(profile.college_division);
                 }
             } else if (userRole === 'coach') {
                 // Coach: Position Title, College, State
@@ -379,29 +373,14 @@ function initMobileSidebar() {
 // Skip redirect if viewing another user's profile (has username parameter)
 async function verifyPlayerType() {
     try {
-        // Skip verification if viewing another user's profile
         const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.get('username')) {
-            return; // Don't redirect when viewing someone else's profile
-        }
+        if (urlParams.get('username')) return;
 
         const response = await API.get('/auth/me');
         if (response.user && response.profile) {
-            // Check if user is a transfer player first - they should go to transferplayer folder
-            const isTransferPlayer = response.user.is_transfer_player;
-            if (isTransferPlayer) {
-                window.location.href = '../transferplayer/mainpage-player.html';
-                return;
-            }
-
-            const collegeDivision = response.profile.college_division;
-            const collegeDivisions = ['FBS', 'FCS', 'D2', 'D3', 'NAIA', 'NJCAA', 'D1 FBS', 'D1 FCS', 'JUCO', 'Division II', 'Division III'];
-
-            // If user is NOT a college player (no division), redirect to hsplayer folder
-            const isCollegePlayer = collegeDivision && collegeDivisions.includes(collegeDivision);
-
-            if (!isCollegePlayer) {
-                window.location.href = '../hsplayer/mainpage-player.html';
+            const correctFolder = getProfileFolder({ role: response.user.role, is_transfer_player: response.user.is_transfer_player, ...response.profile });
+            if (correctFolder !== 'collegeplayer') {
+                window.location.href = `../${correctFolder}/mainpage-player.html`;
                 return;
             }
         }

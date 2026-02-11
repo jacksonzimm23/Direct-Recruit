@@ -459,7 +459,7 @@ const notificationsAPI = {
 // Role-based avatar border color utility
 function getRoleBorderColor(role, isTransfer, collegeDivision) {
     if (role === 'player') {
-        if (isTransfer === true || isTransfer === 'y') return '#e63946';
+        if (isTransfer === true || isTransfer === 'y') return '#ef4444';
         return '#1282a2';
     }
     if (role === 'coach') return '#ff6b35';
@@ -479,11 +479,11 @@ function buildCommentSubheader(role, data) {
             }
             if (data.weight) parts.push(`${data.weight} lbs`);
             if (data.eligibility) { const yt = data.eligibility === 1 ? 'year' : 'years'; parts.push(`YOE: ${data.eligibility} ${yt}`); }
-            return parts.length ? `<span style="color:#e63946;font-size:11px;">${parts.join(' \u2022 ')}</span>` : '';
+            return parts.length ? `<span style="color:#ef4444;font-size:11px;">${parts.join(' \u2022 ')}</span>` : '';
         } else if (data.division) {
             if (data.position) parts.push(data.position);
             if (data.school) parts.push(data.school);
-            const div = data.division; parts.push((div === 'FBS' || div === 'FCS') ? `D1 ${div}` : div);
+            if (data.division) parts.push(data.division);
             return parts.length ? `<span style="color:#1282a2;font-size:11px;">${parts.join(' \u2022 ')}</span>` : '';
         } else {
             if (data.position) parts.push(data.position);
@@ -496,7 +496,7 @@ function buildCommentSubheader(role, data) {
             if (data.school && data.state) parts.push(`${data.school}, ${data.state}`);
             else if (data.school) parts.push(data.school);
             else if (data.state) parts.push(data.state);
-            const div = data.division; parts.push((div === 'FBS' || div === 'FCS') ? `D1 ${div}` : div);
+            if (data.division) parts.push(data.division);
             return parts.length ? `<span style="color:#ff6b35;font-size:11px;">${parts.join(' \u2022 ')}</span>` : '';
         } else {
             if (data.school) parts.push(data.school);
@@ -509,6 +509,39 @@ function buildCommentSubheader(role, data) {
     return '';
 }
 window.buildCommentSubheader = buildCommentSubheader;
+
+// Shared college division list — the single source of truth
+const COLLEGE_DIVISIONS = ['D1 FBS', 'D1 FCS', 'D2', 'D3', 'NAIA', 'NJCAA', '3C2A'];
+
+/**
+ * Determines the correct role folder for a user based on their role, transfer status, and division.
+ * Accepts an object with any combination of these fields (from /auth/me, profile endpoints, notifications, etc.)
+ * @param {Object} user
+ * @param {string} user.role - 'player', 'coach', or 'other'
+ * @param {boolean|string} [user.is_transfer_player] - true/false from users table
+ * @param {string} [user.transfer] - 'y'/'n' from player_profiles table
+ * @param {string} [user.college_division] - division value from profile
+ * @returns {string} folder name: 'hsplayer', 'collegeplayer', 'transferplayer', 'hscoach', 'collegecoach', or 'other'
+ */
+function getProfileFolder(user) {
+    const role = user.role;
+    const collegeDivision = user.college_division;
+    const isCollege = collegeDivision && COLLEGE_DIVISIONS.includes(collegeDivision);
+    const isTransfer = user.is_transfer_player || user.transfer === 'y';
+
+    if (role === 'coach') {
+        return isCollege ? 'collegecoach' : 'hscoach';
+    } else if (role === 'other') {
+        return 'other';
+    } else {
+        // player (default)
+        if (isTransfer) return 'transferplayer';
+        if (isCollege) return 'collegeplayer';
+        return 'hsplayer';
+    }
+}
+window.getProfileFolder = getProfileFolder;
+window.COLLEGE_DIVISIONS = COLLEGE_DIVISIONS;
 
 // Unified API object for convenience
 const API = {

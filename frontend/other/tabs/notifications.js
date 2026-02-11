@@ -3,27 +3,13 @@
 let currentFilter = 'all';
 let notificationsData = [];
 
-// Helper function to determine the correct profile folder based on user data
-function getProfileFolder(notification) {
-    const role = notification.related_user_role;
-    const collegeDivision = notification.related_user_college_division;
-    const transfer = notification.related_user_transfer;
-
-    if (role === 'coach') {
-        // Coach: check if college or HS
-        const isCollege = collegeDivision && ['FBS', 'FCS', 'D2', 'D3', 'NAIA', 'NJCAA', 'JUCO'].includes(collegeDivision);
-        return isCollege ? 'collegecoach' : 'hscoach';
-    } else if (role === 'other') {
-        return 'other';
-    } else {
-        // Player: check transfer status first, then college division
-        if (transfer === 'y') {
-            return 'transferplayer';
-        } else if (collegeDivision && ['FBS', 'FCS', 'D2', 'D3', 'NAIA', 'NJCAA', 'JUCO'].includes(collegeDivision)) {
-            return 'collegeplayer';
-        }
-        return 'hsplayer';
-    }
+// Maps notification fields to the shared getProfileFolder() from api.js
+function getNotificationProfileFolder(notification) {
+    return getProfileFolder({
+        role: notification.related_user_role,
+        college_division: notification.related_user_college_division,
+        transfer: notification.related_user_transfer
+    });
 }
 
 document.addEventListener('DOMContentLoaded', async function() {
@@ -166,7 +152,7 @@ function renderNotificationCard(notification) {
     const hasProfileImage = notification.related_user_profile_image && notification.related_user_username;
     let iconHtml;
     if (hasProfileImage) {
-        const folder = getProfileFolder(notification);
+        const folder = getNotificationProfileFolder(notification);
         iconHtml = `
             <a href="../../${folder}/tabs/my-profile.html?username=${notification.related_user_username}&from=notifications" class="notification-profile-link">
                 <img src="${notification.related_user_profile_image}" alt="" class="notification-profile-img" style="border: 2px solid ${getRoleBorderColor(notification.related_user_role, notification.related_user_transfer === 'y', notification.related_user_college_division)}">
@@ -218,7 +204,7 @@ function formatNotificationMessage(notification) {
     // Navigate to the appropriate profile folder based on user type
     let nameHtml;
     if (notification.related_user_username) {
-        const folder = getProfileFolder(notification);
+        const folder = getNotificationProfileFolder(notification);
         nameHtml = `<a href="../../${folder}/tabs/my-profile.html?username=${notification.related_user_username}&from=notifications" class="notification-user-link">${name}</a>`;
     } else {
         nameHtml = `<strong>${name}</strong>`;
@@ -446,7 +432,7 @@ async function handleAcceptFollowRequest(userId, card) {
                 // Update the card content to show new follower message
                 const contentDiv = card.querySelector('.notification-content');
                 if (contentDiv) {
-                    const folder = getProfileFolder(notification);
+                    const folder = getNotificationProfileFolder(notification);
                     const nameLink = notification.related_user_username
                         ? `<a href="../../${folder}/tabs/my-profile.html?username=${notification.related_user_username}&from=notifications" class="notification-user-link">${name}</a>`
                         : `<strong>${name}</strong>`;
@@ -570,7 +556,7 @@ async function handleNotificationClick(card) {
             case 'follow':
                 if (notification.related_user_username) {
                     // Navigate to the appropriate profile folder based on user type
-                    const folder = getProfileFolder(notification);
+                    const folder = getNotificationProfileFolder(notification);
                     window.location.href = `../../${folder}/tabs/my-profile.html?username=${notification.related_user_username}&from=notifications`;
                 }
                 break;
