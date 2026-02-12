@@ -1,287 +1,390 @@
-# Direct Recruit Landing Page
+# Direct Recruit
 
-A modern, responsive landing page for a football recruiting application built with HTML, CSS, and JavaScript.
-
-## 🎨 Features
-
-- **Responsive Design**: Works seamlessly on desktop, tablet, and mobile devices
-- **Smooth Animations**: Fade-in effects, parallax scrolling, and hover animations
-- **Modern UI**: Clean interface using your custom blue color palette
-- **Interactive Stats**: Animated counters that trigger on scroll
-- **Optimized Performance**: Lightweight and fast-loading
-
-## 📁 Project Structure
-
-```
-direct-recruit/
-│
-├── index.html          # Main HTML structure
-├── styles.css          # All styling and animations
-├── script.js           # JavaScript functionality
-└── README.md           # This file
-```
-
-## 🚀 Getting Started
-
-### Method 1: Simple Setup (Recommended for Beginners)
-
-1. **Create a new folder** on your computer called `direct-recruit`
-
-2. **Copy the files**:
-   - Download all three files: `index.html`, `styles.css`, and `script.js`
-   - Place them in your `direct-recruit` folder
-
-3. **Open with VS Code**:
-   - Open VS Code
-   - Click `File` → `Open Folder`
-   - Select your `direct-recruit` folder
-
-4. **View in browser**:
-   - Right-click on `index.html` in VS Code
-   - Select `Open with Live Server` (if you have the extension)
-   - OR simply double-click `index.html` to open in your default browser
-
-### Method 2: Using VS Code Terminal
-
-1. Open VS Code
-2. Open a new terminal: `Terminal` → `New Terminal`
-3. Navigate to where you want your project:
-   ```bash
-   cd Desktop  # or wherever you want the project
-   ```
-4. Create and navigate to your project folder:
-   ```bash
-   mkdir direct-recruit
-   cd direct-recruit
-   ```
-5. Create the files:
-   ```bash
-   touch index.html styles.css script.js
-   ```
-6. Copy the code from each file into the corresponding files in VS Code
-
-## 🔧 VS Code Setup
-
-### Recommended Extensions
-
-Install these VS Code extensions for the best development experience:
-
-1. **Live Server** (ritwickdey.LiveServer)
-   - Launches a local development server with live reload
-   - Right-click HTML file → "Open with Live Server"
-
-2. **Prettier - Code Formatter** (esbenp.prettier-vscode)
-   - Automatically formats your code
-   - Settings: `Format On Save` enabled
-
-3. **Auto Rename Tag** (formulahendry.auto-rename-tag)
-   - Automatically renames paired HTML tags
-
-4. **HTML CSS Support** (ecmel.vscode-html-css)
-   - CSS class name completion for HTML
-
-5. **Path Intellisense** (christian-kohler.path-intellisense)
-   - Autocompletes filenames
-
-### Installing Extensions
-
-1. Open VS Code
-2. Click the Extensions icon (or press `Ctrl+Shift+X` / `Cmd+Shift+X`)
-3. Search for each extension name
-4. Click "Install"
-
-## 🎨 Color Palette
-
-Your custom blue gradient theme:
-
-```css
---oxford-blue: #0a1128    /* Darkest blue */
---penn-blue: #001f54      /* Dark blue */
---indigo-dye: #034078     /* Medium blue */
---cerulean: #1282a2       /* Bright blue */
---white: #fefcfb          /* Off-white */
---accent-orange: #ff6b35  /* Call-to-action color */
-```
-
-## 🤖 Using Claude AI with VS Code
-
-### Option 1: Claude Desktop App Integration (Recommended)
-
-1. **Install Claude Desktop App** from anthropic.com
-2. **Open VS Code** and your project
-3. **Copy code sections** you want to modify
-4. **Paste into Claude** with instructions like:
-   - "Make the hero section background darker"
-   - "Add a contact form below the stats"
-   - "Change the button hover effects"
-5. **Copy Claude's response** back into your VS Code files
-
-### Option 2: VS Code + Browser Workflow
-
-1. **Open two windows**:
-   - VS Code on one side
-   - claude.ai in browser on the other
-2. **Ask Claude** to help with specific changes:
-   ```
-   "Here's my CSS for the navbar [paste code]. 
-   Can you make it sticky and add a shadow on scroll?"
-   ```
-3. **Claude will provide** updated code
-4. **Copy and paste** the changes into VS Code
-
-### Option 3: GitHub Copilot or Codeium (Alternative AI Assistants)
-
-While Claude doesn't have a direct VS Code extension yet, you can use:
-
-- **GitHub Copilot**: AI code completion (requires subscription)
-- **Codeium**: Free AI code completion
-- **Tabnine**: AI code completion
-
-These work directly in VS Code but use different AI models than Claude.
-
-### Best Practice for Working with Claude
-
-**Instead of sending entire files**, send specific sections with clear requests:
-
-```
-"Here's my hero section HTML [paste]. 
-I want to add a video background. 
-Can you show me how?"
-```
-
-This is more efficient than having Claude rewrite entire files.
-
-## 📝 Customization Guide
-
-### Changing Colors
-
-Edit the CSS variables in `styles.css`:
-
-```css
-:root {
-    --oxford-blue: #0a1128;  /* Change to your color */
-    --accent-orange: #ff6b35; /* Change CTA color */
-}
-```
-
-### Updating Text Content
-
-Edit `index.html`:
-- Hero title: Line 38-40
-- Description: Line 41-45
-- Stats: Lines 55-67
-
-### Modifying Animations
-
-Edit `styles.css` keyframes:
-- `fadeInUp`: Entry animations
-- `slideDown`: Badge animation
-- `pulse`: Background pulse effect
-
-### Adding New Sections
-
-1. Add HTML structure in `index.html`
-2. Style it in `styles.css`
-3. Add interactivity in `script.js` if needed
-
-## 🌐 Deploying Your Site
-
-### Free Hosting Options
-
-1. **Netlify** (Recommended)
-   - Drag and drop your folder
-   - Instant deployment
-   - Free SSL certificate
-
-2. **GitHub Pages**
-   - Create a GitHub repository
-   - Push your code
-   - Enable Pages in settings
-
-3. **Vercel**
-   - Connect your GitHub repo
-   - Automatic deployments
-
-### Quick Netlify Deploy
-
-1. Go to netlify.com
-2. Drag your `direct-recruit` folder onto the page
-3. Your site is live!
-
-## 🔍 Testing Checklist
-
-- [ ] Test on Chrome, Firefox, Safari
-- [ ] Test on mobile devices
-- [ ] Check all buttons work
-- [ ] Verify smooth scrolling
-- [ ] Test animations on scroll
-- [ ] Validate HTML (validator.w3.org)
-- [ ] Check responsive breakpoints
-
-## 📱 Responsive Breakpoints
-
-- Desktop: 1200px+
-- Tablet: 768px - 1199px
-- Mobile: Below 768px
-
-## 🐛 Troubleshooting
-
-### Live Server Not Working
-- Make sure you installed the Live Server extension
-- Right-click the HTML file (not the folder)
-- Select "Open with Live Server"
-
-### Animations Not Playing
-- Check browser console for errors (F12)
-- Ensure all three files are in the same folder
-- Clear browser cache (Ctrl+F5)
-
-### Styling Not Applying
-- Verify `styles.css` is in the same folder as `index.html`
-- Check the `<link>` tag in HTML is correct
-- Ensure file names match exactly (case-sensitive)
-
-## 🎯 Next Steps
-
-1. **Add a background image**: Replace the gradient with a stadium photo
-2. **Build the profile form**: Create a multi-step profile builder
-3. **Add database**: Connect to backend for user data
-4. **Implement auth**: Add sign-in/sign-up functionality
-5. **Coach portal**: Create a separate interface for coaches
-
-## 📚 Learning Resources
-
-- [MDN Web Docs](https://developer.mozilla.org/) - Comprehensive web development guide
-- [CSS-Tricks](https://css-tricks.com/) - CSS tips and tricks
-- [JavaScript.info](https://javascript.info/) - Modern JavaScript tutorial
-- [Animatopy](https://sarthology.github.io/Animatopy/) - CSS animation library (referenced)
-
-## 💡 Tips for Working with Claude
-
-1. **Be specific**: Instead of "make it better," say "make the buttons larger and add a shadow"
-2. **Show examples**: Share screenshots or links to designs you like
-3. **Iterate**: Start with basics, then refine in multiple conversations
-4. **Ask for explanations**: "Explain how this animation works"
-5. **Request alternatives**: "Give me 3 different approaches for this navbar"
-
-## ⚡ Performance Tips
-
-- Images should be compressed and optimized
-- Use WebP format for better compression
-- Lazy load images below the fold
-- Minify CSS and JS for production
-- Use a CDN for font files
-
-## 📞 Support
-
-If you need help:
-1. Check the troubleshooting section above
-2. Ask Claude specific questions about your code
-3. Search Stack Overflow for common issues
-4. Review VS Code documentation
+A football recruiting platform connecting high school players, college players, transfer portal players, high school coaches, college coaches, and other users (parents, fans, etc.). Built as a traditional multi-page application (MPA) with a Node.js backend and vanilla frontend.
 
 ---
 
-**Built with ❤️ for Direct Recruit**
+## Tech Stack
 
-Happy coding! 🚀
+| Layer | Technology |
+|---|---|
+| **Frontend** | Vanilla HTML / CSS / JavaScript (multi-page architecture, no SPA framework) |
+| **Backend** | Node.js + Express.js |
+| **Database** | PostgreSQL 14+ (hosted on AWS RDS) |
+| **Real-time** | Socket.IO (messaging and notifications) |
+| **Authentication** | AWS Cognito (identity) + JWT (session, HTTPOnly cookies) |
+| **File Storage** | AWS S3 (presigned URLs for secure access) |
+| **Email** | AWS SES (transactional emails with branded templates) |
+| **Caching / Rate Limiting** | Redis |
+| **Process Manager** | pm2 (production) |
+| **Hosting** | AWS EC2 (Amazon Linux) |
+| **Mobile (WIP)** | Capacitor (iOS wrapper around the web app) |
+
+### Backend Dependencies
+
+```
+express, socket.io, pg, jsonwebtoken, cookie-parser, cors, helmet,
+multer, dotenv, express-validator, express-rate-limit, rate-limit-redis,
+redis, bcrypt, @aws-sdk/client-s3, @aws-sdk/s3-request-presigner,
+@aws-sdk/client-cognito-identity-provider, @aws-sdk/client-ses
+```
+
+---
+
+## Directory Structure
+
+```
+direct-recruit/
+├── backend/
+│   ├── server.js                 # Express entry point (port 5000)
+│   ├── socket.js                 # Socket.IO setup and event handlers
+│   ├── config/
+│   │   ├── database.js           # PostgreSQL connection pool (pg)
+│   │   └── redis.js              # Redis client
+│   ├── middleware/
+│   │   ├── auth.js               # JWT verification, requireRole(), validateUUID()
+│   │   ├── rateLimit.js          # Redis-backed rate limiting
+│   │   ├── upload.js             # Multer config for file uploads (memory storage)
+│   │   └── validation.js         # Express-validator schemas
+│   ├── models/                   # Class-based models with static methods (raw SQL, no ORM)
+│   ├── routes/                   # 13 route files mounted at /api/*
+│   ├── utils/
+│   │   ├── s3.js                 # S3 upload, delete, presigned URL generation
+│   │   ├── cognito.js            # Cognito sign up/in, password flows, admin ops
+│   │   ├── email.js              # SES email templates and sending
+│   │   └── jwt.js                # JWT token generation
+│   └── scripts/                  # SQL migration scripts and data fixups
+│
+├── frontend/
+│   ├── landingpage/              # Public landing pages (pre-auth)
+│   ├── shared/                   # Shared JS/CSS used across all roles
+│   │   ├── api.js                # Centralized API client (fetch wrapper)
+│   │   ├── feed.js / feed.css    # Feed manager class
+│   │   ├── search.js / search.css
+│   │   ├── suggested-connections.js
+│   │   ├── settings.js / settings.css
+│   │   ├── image-cropper.js
+│   │   ├── mobile-header.js
+│   │   ├── mobile-overrides.css
+│   │   ├── auth-check.js         # Auth guard (redirects unauthenticated users)
+│   │   ├── view-profile.html/js  # Generic profile viewer
+│   │   └── tabs-scroll-arrows.js
+│   ├── hsplayer/                 # High school player dashboard
+│   ├── collegeplayer/            # College player dashboard
+│   ├── transferplayer/           # Transfer portal player dashboard
+│   ├── hscoach/                  # High school coach dashboard
+│   ├── collegecoach/             # College coach dashboard
+│   └── other/                    # Other users (parents, fans, etc.)
+```
+
+### Role Folder Structure
+
+Each of the 6 role folders follows the same pattern:
+
+```
+{role}/
+├── mainpage-{role}.html/js/css   # Dashboard with feed, sidebar nav, post creation
+├── create-profile.html           # Profile creation form
+├── profile-form.js/css           # Profile form logic and styling
+├── sidebar-nav.js                # Sidebar navigation
+├── sidebar-footer.js             # Sidebar footer (user info, dropdown)
+└── tabs/
+    ├── my-profile.html/js/css    # User's own profile page
+    ├── discover-players.html     # Player discovery (or discover-coaches for coaches)
+    ├── messages.html/js/css      # Messaging interface
+    ├── notifications.html/js/css # Notifications feed
+    ├── post-view.html            # Single post view
+    └── settings.html             # Account settings
+```
+
+---
+
+## Architecture Overview
+
+### Frontend
+
+This is a **multi-page application** — each page is a full HTML document with its own CSS and JS files. Navigation between pages causes full page reloads (no client-side routing).
+
+There are **6 role-based dashboards**, one per user type. Each role folder contains its own copy of the dashboard, profile, messages, notifications, and settings pages. While the structure is identical across roles, the content and logic vary slightly based on role-specific data (e.g., player stats vs. coach credentials).
+
+**Shared utilities** live in `frontend/shared/`. The most important is `api.js`, which is a centralized fetch wrapper that all role folders import. It provides typed sub-API objects:
+
+```
+API.auth, API.profile, API.follow, API.posts, API.messages,
+API.upload, API.notifications, API.highlights, API.offers,
+API.stats, API.coaches, API.recruitingBoard, API.settings
+```
+
+**CSS loading order:** `landingpage/styles.css` -> role-specific CSS -> shared component CSS -> `mobile-overrides.css`
+
+### Backend
+
+Standard Express.js REST API running on port 5000. All protected routes use `authMiddleware` (JWT from HTTPOnly cookie). Role-specific endpoints use `requireRole()`.
+
+**Models** are class-based with static methods executing raw SQL via the `pg` connection pool. There is no ORM.
+
+**Models:**
+`User`, `PlayerProfile`, `CoachProfile`, `OtherProfile`, `Post`, `Follow`, `Message`, `Notification`, `PlayerOffer`, `PlayerGameStats`, `RecruitingBoard`, `ProfileView`, `PendingEmailChange`, `PendingPasswordReset`
+
+### Authentication Flow
+
+1. User registers/signs in via AWS Cognito (`USER_PASSWORD_AUTH` flow)
+2. Backend generates a JWT server-side after Cognito authentication
+3. JWT is stored as an HTTPOnly cookie (secure in prod, sameSite strict/lax)
+4. `authMiddleware` reads the cookie on each request to verify identity
+5. Token expiry: 7 days
+
+### File Storage (S3)
+
+S3 keys (not full URLs) are stored in the database. Presigned URLs are generated at read time.
+
+**S3 key structure:**
+```
+profiles/{userId}/avatar-{timestamp}.{ext}
+highlights/{userId}/video-{timestamp}.{ext}
+post-media/{userId}/{type}-{timestamp}-{random}.{ext}
+```
+
+**Upload limits:**
+- Profile images: 5 MB (images only)
+- Post media: 200 MB per file, up to 4 files (images + videos)
+- Highlight videos: 500 MB (MP4, MOV, AVI, WebM, M4V)
+
+**Presigned URL expiry:** Images 1 hour, Videos 6 hours
+
+### Real-time (Socket.IO)
+
+Configured in `backend/socket.js`. Authenticates via JWT cookie on connection. Users join a personal room and conversation-specific rooms.
+
+**Events:**
+- `join_conversation` / `leave_conversation` — room management
+- `typing_start` / `typing_stop` — typing indicators
+- `send_message` / `new_message` — real-time message delivery
+- Notifications are emitted from route handlers via `req.app.get('io')`
+
+### Email (SES)
+
+Branded HTML templates with plain text fallback for:
+- Email change verification (6-digit code, 24h expiry)
+- Email change confirmation
+- Password change confirmation (security notification)
+- Password reset verification (6-digit code, 15min expiry)
+- Account deletion confirmation
+
+---
+
+## API Routes
+
+| Route File | Prefix | Purpose |
+|---|---|---|
+| `auth.js` | `/api/auth` | Registration, login, logout, email verification, password reset, `/me` |
+| `profile.js` | `/api/profile` | CRUD for player/coach/other profiles, search, profile stats |
+| `follow.js` | `/api/follow` | Follow/unfollow, followers/following lists, relationship checks |
+| `posts.js` | `/api/posts` | CRUD posts, feed, likes, comments, shares, saves, pins |
+| `messages.js` | `/api/messages` | Conversations, send/read messages, unread counts |
+| `upload.js` | `/api/upload` | Profile image and post media uploads to S3 |
+| `highlights.js` | `/api/highlights` | Player highlight video management |
+| `offers.js` | `/api/offers` | Player offers CRUD |
+| `stats.js` | `/api/stats` | Player game statistics |
+| `coaches.js` | `/api/coaches` | Coach search/discovery |
+| `notifications.js` | `/api/notifications` | Get/mark read/delete notifications |
+| `recruiting-board.js` | `/api/recruiting-board` | Coach recruiting board management |
+| `settings.js` | `/api/settings` | Account settings, privacy, email/password changes, delete account |
+
+---
+
+## Database Schema
+
+PostgreSQL with UUID primary keys, enums, JSONB for flexible data, CASCADE deletes, and performance indexes.
+
+### Core Tables
+
+| Table | Purpose |
+|---|---|
+| `users` | User accounts (email, role, cognito_sub, active/verified flags) |
+| `player_profiles` | Player-specific profile data (position, height, weight, GPA, etc.) |
+| `coach_profiles` | Coach-specific profile data (team, division, position title) |
+| `other_profiles` | Profiles for non-player, non-coach users |
+| `follows` | Follower/following relationships (self-follow prevented via CHECK) |
+| `posts` | User posts with optional media |
+| `post_likes` | Post like records (unique per user per post) |
+| `post_comments` | Post comments |
+| `conversations` | Messaging conversations |
+| `conversation_participants` | Users in each conversation (with last_read_at tracking) |
+| `messages` | Individual messages within conversations |
+| `player_highlights` | Highlight video records (season/game type) |
+| `player_stats` | Game statistics (JSONB for position-specific flexibility) |
+| `player_offers` | Recruiting offers received by players |
+| `recruiting_boards` | Coach recruiting boards for tracking players |
+| `profile_views` | Profile view tracking |
+| `notifications` | User notification records |
+| `pending_email_changes` | Email change verification codes (24h expiry) |
+| `pending_password_resets` | Password reset codes (15min expiry) |
+
+Schema is managed via SQL migration scripts in `backend/scripts/`. The base schema is in `backend/scripts/schema.sql` with incremental migrations as separate `.sql` and `.js` files.
+
+---
+
+## User Roles & Navigation
+
+Six user types, each with their own frontend folder:
+
+| Role | Folder | Description |
+|---|---|---|
+| High School Player | `frontend/hsplayer/` | HS athletes building recruiting profiles |
+| College Player | `frontend/collegeplayer/` | Active college athletes (FBS, FCS, D2, D3, NAIA, NJCAA) |
+| Transfer Player | `frontend/transferplayer/` | Players in the transfer portal |
+| High School Coach | `frontend/hscoach/` | HS coaching staff |
+| College Coach | `frontend/collegecoach/` | College coaching staff |
+| Other | `frontend/other/` | Parents, fans, and other users |
+
+### Cross-Role Profile Navigation Logic
+
+When navigating to any user's profile, the frontend determines the correct role folder:
+
+```
+if role === 'player':
+    if is_transfer_player       -> /transferplayer/
+    if college_division exists  -> /collegeplayer/
+    else                        -> /hsplayer/
+if role === 'coach':
+    if college_division exists  -> /collegecoach/
+    else                        -> /hscoach/
+else                            -> /other/
+```
+
+This logic is duplicated across 20+ frontend files (all mainpage, messages, notifications, search, and profile files).
+
+---
+
+## Duplicated Frontend Patterns
+
+A significant portion of frontend logic is duplicated across the 6 role folders. When modifying any of these patterns, the same change must be applied to all 6 folders unless it is role-specific.
+
+| Pattern | What It Does | Duplicated In |
+|---|---|---|
+| Cross-folder profile navigation | Determines which role folder to navigate to for a user's profile | 20+ files (mainpage, messages, notifications, search, profile) |
+| Sidebar footer user info | Fetches `/api/auth/me` and populates sidebar with name, avatar, role subtitle | All mainpage + messages files |
+| Unread badge updates | Polls every 30s for unread message/notification counts | All mainpage + messages + notifications files |
+| Logout modal | "Are you sure?" confirmation dialog | All mainpage files |
+| User dropdown menu | Profile / Settings / Logout dropdown from sidebar avatar | All mainpage files |
+| Mobile sidebar | Hamburger menu overlay for mobile | All mainpage files |
+| Mobile post modal | Full post creation modal with media upload for mobile | All mainpage files (~240 identical lines each) |
+| Sidebar toggle & persistence | Show/hide sidebars with localStorage persistence | All mainpage files |
+| Role verification & redirect | Checks if user is on the correct role page, redirects if not | All mainpage files |
+
+The only properly shared utility is `frontend/shared/api.js` — the API client.
+
+---
+
+## Environment Variables
+
+The `.env` file is required in the project root (gitignored). Required variables:
+
+```
+NODE_ENV                        # "development" or "production"
+
+# AWS General
+AWS_ACCESS_KEY_ID
+AWS_SECRET_ACCESS_KEY
+AWS_REGION                      # us-east-1
+
+# S3
+AWS_S3_BUCKET
+
+# Cognito
+AWS_COGNITO_USER_POOL_ID
+AWS_COGNITO_CLIENT_ID
+AWS_COGNITO_CLIENT_SECRET
+
+# PostgreSQL (RDS)
+DB_HOST
+DB_PORT
+DB_NAME
+DB_USER
+DB_PASSWORD
+
+# Email
+SES_FROM_EMAIL
+
+# Auth
+JWT_SECRET
+
+# Redis
+REDIS_URL
+```
+
+---
+
+## Local Development
+
+### Prerequisites
+
+- Node.js (LTS)
+- PostgreSQL 14+ (or access to the RDS instance)
+- Redis
+- A `.env` file with all required variables
+
+### Running Locally
+
+1. Install backend dependencies:
+   ```bash
+   cd backend
+   npm install
+   ```
+
+2. Start the backend server:
+   ```bash
+   node server.js
+   ```
+   The API runs on `http://localhost:5000`.
+
+3. Serve the frontend via VS Code Live Server (or any static file server). The frontend makes API calls to the backend at port 5000.
+
+4. Local `.env` should have `NODE_ENV=development`. The production EC2 instance has its own independent `.env` with `NODE_ENV=production`.
+
+### Running Migrations
+
+```bash
+cd backend
+node scripts/migrate.js
+```
+
+Individual migration scripts can be run directly:
+```bash
+node scripts/run-migration.js
+```
+
+---
+
+## Deployment
+
+The app is deployed on an AWS EC2 instance running Amazon Linux.
+
+### Deployment Workflow
+
+1. Make changes locally and test
+2. Commit and push to GitHub (`main` branch)
+3. SSH into the EC2 instance
+4. Pull latest changes: `cd ~/direct-recruit && git pull origin main`
+5. If backend files changed, restart: `pm2 restart all`
+6. Frontend changes (HTML/CSS/JS) are served as static files and take effect immediately
+
+### Production Notes
+
+- The backend runs under pm2 for process management and automatic restarts
+- Frontend files are served as static assets — no build step required
+- Local and production `.env` files are independent (both gitignored)
+- If `git pull` fails on EC2 due to local changes: `git stash && git pull origin main`
+
+---
+
+## Key Conventions
+
+- **S3 keys in DB, not URLs** — presigned URLs are generated at read time, never stored
+- **UUID primary keys** on all tables
+- **No ORM** — raw SQL via `pg` pool, class-based models with static methods
+- **Auth middleware on all protected routes** — `authMiddleware` verifies JWT, `requireRole()` for role-specific access
+- **Tab pages are full HTML documents** — navigation causes full page reloads
+- **No build step** — frontend is plain HTML/CSS/JS, served as-is
+- **Database connection** — pooled (max 20 connections, idle timeout 30s, connect timeout 10s, SSL for non-localhost, UTC timezone)
