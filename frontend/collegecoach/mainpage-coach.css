@@ -1184,6 +1184,43 @@
     box-shadow: 0 4px 12px rgba(255, 107, 107, 0.4);
 }
 
+/* AI Recruit Assistant - Floating Bubble */
+.ai-widget-bubble {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: #ff6b35;
+    border: none;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 1001;
+    box-shadow: 0 4px 16px rgba(255, 107, 53, 0.4);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    text-decoration: none;
+}
+
+.ai-widget-bubble:hover {
+    transform: scale(1.08);
+    box-shadow: 0 6px 20px rgba(255, 107, 53, 0.5);
+}
+
+.ai-widget-bubble svg {
+    width: 26px;
+    height: 26px;
+}
+
+@media (max-width: 768px) {
+    .ai-widget-bubble {
+        display: none;
+    }
+}
+
 /* Responsive Design */
 @media (max-width: 1280px) {
     .dashboard-container {
