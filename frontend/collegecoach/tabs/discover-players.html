@@ -124,6 +124,27 @@
                 <h1>Discover Players</h1>
             </div>
 
+            <!-- Subtab Navigation -->
+            <div class="dp-subtabs">
+                <button class="dp-subtab active" data-tab="find-players">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <path d="m21 21-4.35-4.35"></path>
+                    </svg>
+                    <span>Find Players</span>
+                </button>
+                <button class="dp-subtab" data-tab="recruit-assistant">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                    <span>Recruiting Assistant</span>
+                    <span class="dp-subtab-badge">AI</span>
+                </button>
+            </div>
+
+            <!-- Find Players Tab Content -->
+            <div class="dp-tab-content active" id="findPlayersTab">
+
             <!-- Mobile Filter Button (hidden on desktop) -->
             <button class="mobile-filter-btn" id="mobileFilterBtn" style="display: none;">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -325,6 +346,142 @@
                     <button class="btn-load-more" id="loadMoreCoachesBtn">Load More Coaches</button>
                 </div>
             </div>
+
+            </div><!-- /findPlayersTab -->
+
+            <!-- Recruiting Assistant AI Tab Content -->
+            <div class="dp-tab-content" id="recruitAssistantTab">
+                <div class="ra-layout">
+                    <!-- Chat History Sidebar -->
+                    <div class="ra-history" id="raHistory">
+                        <div class="ra-history-header">
+                            <h2>Chat History</h2>
+                            <button class="ra-new-chat-btn" id="raNewChatBtn" title="New Chat">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M12 20h9"></path>
+                                    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                                </svg>
+                            </button>
+                        </div>
+                        <div class="ra-history-list" id="raHistoryList">
+                            <!-- Chat history items loaded dynamically -->
+                        </div>
+                        <div class="ra-history-footer">
+                            <button class="ra-baselines-btn" id="openBaselinesBtn">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M12 20V10"></path>
+                                    <path d="M18 20V4"></path>
+                                    <path d="M6 20v-4"></path>
+                                </svg>
+                                <span>Edit Baseline Metrics</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Chat Area -->
+                    <div class="ra-chat">
+                        <div class="ra-messages" id="raMessages">
+                            <!-- Welcome screen -->
+                            <div class="ra-welcome" id="raWelcome">
+                                <div class="ra-welcome-icon">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                                    </svg>
+                                </div>
+                                <h2>Recruit Assistant</h2>
+                                <p>Describe the type of player you're looking for and I'll help you find them.</p>
+                                <div class="ra-suggestions">
+                                    <button class="ra-suggestion" data-prompt="Find me a 6'2+ QB from Texas with a 3.5+ GPA">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <circle cx="11" cy="11" r="8"></circle>
+                                            <path d="m21 21-4.35-4.35"></path>
+                                        </svg>
+                                        Find me a 6'2+ QB from Texas with a 3.5+ GPA
+                                    </button>
+                                    <button class="ra-suggestion" data-prompt="Show me defensive backs from Florida, class of 2026">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <circle cx="11" cy="11" r="8"></circle>
+                                            <path d="m21 21-4.35-4.35"></path>
+                                        </svg>
+                                        Show me defensive backs from Florida, class of 2026
+                                    </button>
+                                    <button class="ra-suggestion" data-prompt="Find transfer portal WRs with at least 2 years of eligibility">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <circle cx="11" cy="11" r="8"></circle>
+                                            <path d="m21 21-4.35-4.35"></path>
+                                        </svg>
+                                        Find transfer portal WRs with 2+ years eligibility
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Input Area -->
+                        <div class="ra-input-area">
+                            <div class="ra-input-wrapper">
+                                <textarea class="ra-input" id="raInput" placeholder="Describe the player you're looking for..." rows="1"></textarea>
+                                <button class="ra-send-btn" id="raSendBtn" aria-label="Send">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <line x1="22" y1="2" x2="11" y2="13"></line>
+                                        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                                    </svg>
+                                </button>
+                            </div>
+                            <div class="ra-input-disclaimer">
+                                Recruit Assistant uses AI to match players — results are suggestions, not guarantees.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div><!-- /recruitAssistantTab -->
+
+            <!-- Baseline Metrics Modal -->
+            <div class="ra-baselines-overlay" id="raBaselinesOverlay">
+                <div class="ra-baselines-modal" id="raBaselinesModal">
+                    <div class="ra-baselines-header">
+                        <h2>Baseline Metrics</h2>
+                        <button class="ra-baselines-close" id="closeBaselinesBtn" aria-label="Close">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="18" y1="6" x2="6" y2="18"></line>
+                                <line x1="6" y1="6" x2="18" y2="18"></line>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="ra-baselines-body" id="raBaselinesBody">
+                        <!-- Division Display -->
+                        <div class="ra-baselines-division">
+                            <label>Division</label>
+                            <div class="ra-baselines-division-value" id="baselineDivision">Loading...</div>
+                        </div>
+
+                        <!-- Min GPA Slider -->
+                        <div class="ra-baselines-gpa">
+                            <div class="ra-baselines-gpa-header">
+                                <label>Minimum GPA</label>
+                                <span class="ra-baselines-gpa-value" id="baselineGpaValue">2.5</span>
+                            </div>
+                            <input type="range" class="ra-baselines-slider" id="baselineGpaSlider" min="0" max="40" value="25" step="1">
+                            <div class="ra-baselines-slider-labels">
+                                <span>0.0</span>
+                                <span>2.0</span>
+                                <span>4.0</span>
+                            </div>
+                        </div>
+
+                        <div class="ra-baselines-divider"></div>
+
+                        <!-- Position Baselines -->
+                        <div class="ra-baselines-positions" id="raBaselinesPositions">
+                            <!-- Generated by JS -->
+                        </div>
+                    </div>
+                    <div class="ra-baselines-footer">
+                        <button class="ra-baselines-reset" id="resetBaselinesBtn">Reset to Defaults</button>
+                        <button class="ra-baselines-save" id="saveBaselinesBtn">Save</button>
+                    </div>
+                </div>
+            </div>
+
         </main>
     </div>
 
@@ -355,5 +512,7 @@
     <script src="../sidebar-footer.js"></script>
     <script src="../mainpage-coach.js?v=4"></script>
     <script src="discover-players.js"></script>
+    <script src="recruit-assistant-glossary.js"></script>
+    <script src="discover-recruit-assistant.js"></script>
 </body>
 </html>

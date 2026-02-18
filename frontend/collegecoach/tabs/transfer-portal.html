@@ -124,6 +124,32 @@
                 <h1>Transfer Portal</h1>
             </div>
 
+            <!-- Subtab Navigation -->
+            <div class="tp-subtabs">
+                <button class="tp-subtab active" data-tab="current-portal">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <path d="M8 12h8"></path>
+                        <path d="M12 8v8"></path>
+                        <circle cx="12" cy="12" r="3"></circle>
+                    </svg>
+                    <span>Current Portal</span>
+                </button>
+                <button class="tp-subtab" data-tab="portal-intelligence">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2a4 4 0 0 1 4 4c0 1.95-1.4 3.57-3.25 3.92L12 22"></path>
+                        <path d="M12 2a4 4 0 0 0-4 4c0 1.95 1.4 3.57 3.25 3.92"></path>
+                        <circle cx="12" cy="14" r="1" fill="currentColor" stroke="none"></circle>
+                        <circle cx="12" cy="18" r="1" fill="currentColor" stroke="none"></circle>
+                    </svg>
+                    <span>Portal Intelligence</span>
+                    <span class="tp-subtab-badge">AI</span>
+                </button>
+            </div>
+
+            <!-- Current Portal Tab Content -->
+            <div class="tp-tab-content active" id="currentPortalTab">
+
             <!-- Mobile Filter Button (hidden on desktop) -->
             <button class="mobile-filter-btn" id="mobileFilterBtn" style="display: none;">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -265,6 +291,88 @@
             <div class="load-more-container" id="loadMoreContainer" style="display: none;">
                 <button class="btn-load-more" id="loadMorePlayersBtn">See More Players</button>
             </div>
+
+            </div><!-- /currentPortalTab -->
+
+            <!-- Portal Intelligence Tab Content -->
+            <div class="tp-tab-content" id="portalIntelligenceTab">
+                <div class="pi-layout">
+                    <!-- Chat History Sidebar -->
+                    <div class="pi-history" id="piHistory">
+                        <div class="pi-history-header">
+                            <h2>Chat History</h2>
+                            <button class="pi-new-chat-btn" id="piNewChatBtn" title="New Chat">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M12 20h9"></path>
+                                    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                                </svg>
+                            </button>
+                        </div>
+                        <div class="pi-history-list" id="piHistoryList">
+                            <!-- Chat history items loaded dynamically -->
+                        </div>
+                    </div>
+
+                    <!-- Chat Area -->
+                    <div class="pi-chat">
+                        <div class="pi-messages" id="piMessages">
+                            <!-- Welcome screen -->
+                            <div class="pi-welcome" id="piWelcome">
+                                <div class="pi-welcome-icon">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M12 2a4 4 0 0 1 4 4c0 1.95-1.4 3.57-3.25 3.92L12 22"></path>
+                                        <path d="M12 2a4 4 0 0 0-4 4c0 1.95 1.4 3.57 3.25 3.92"></path>
+                                        <circle cx="12" cy="14" r="1" fill="currentColor" stroke="none"></circle>
+                                        <circle cx="12" cy="18" r="1" fill="currentColor" stroke="none"></circle>
+                                    </svg>
+                                </div>
+                                <h2>Portal Intelligence</h2>
+                                <p>Predict which players are likely to enter the transfer portal based on behavioral signals — profile updates, film uploads, and school searches.</p>
+                                <div class="pi-suggestions">
+                                    <button class="pi-suggestion" data-prompt="Which QBs from FBS schools are showing portal activity signals?">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <circle cx="11" cy="11" r="8"></circle>
+                                            <path d="m21 21-4.35-4.35"></path>
+                                        </svg>
+                                        Which QBs from FBS schools are showing portal activity signals?
+                                    </button>
+                                    <button class="pi-suggestion" data-prompt="Show me players who updated their bio and uploaded film in the last 2 weeks">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <circle cx="11" cy="11" r="8"></circle>
+                                            <path d="m21 21-4.35-4.35"></path>
+                                        </svg>
+                                        Show me players who updated their bio and uploaded film in the last 2 weeks
+                                    </button>
+                                    <button class="pi-suggestion" data-prompt="Find D1 linebackers with high portal likelihood scores">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <circle cx="11" cy="11" r="8"></circle>
+                                            <path d="m21 21-4.35-4.35"></path>
+                                        </svg>
+                                        Find D1 linebackers with high portal likelihood scores
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Input Area -->
+                        <div class="pi-input-area">
+                            <div class="pi-input-wrapper">
+                                <textarea class="pi-input" id="piInput" placeholder="Ask about portal predictions, player signals, or transfer likelihood..." rows="1"></textarea>
+                                <button class="pi-send-btn" id="piSendBtn" aria-label="Send">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <line x1="22" y1="2" x2="11" y2="13"></line>
+                                        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                                    </svg>
+                                </button>
+                            </div>
+                            <div class="pi-input-disclaimer">
+                                Portal Intelligence analyzes behavioral signals — results are predictions, not confirmations.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div><!-- /portalIntelligenceTab -->
+
         </main>
     </div>
 
@@ -295,5 +403,6 @@
     <script src="../sidebar-footer.js"></script>
     <script src="../mainpage-coach.js?v=4"></script>
     <script src="transfer-portal.js"></script>
+    <script src="portal-intelligence.js"></script>
 </body>
 </html>
