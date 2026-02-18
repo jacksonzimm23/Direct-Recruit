@@ -1,0 +1,897 @@
+/* Recruit Assistant - Full Page Chat */
+
+/* Remove default content-header since this page has its own layout */
+.ra-content .content-header {
+    display: none;
+}
+
+.ra-content {
+    border-right: none;
+}
+
+/* Two-column layout: history sidebar + chat */
+.ra-layout {
+    display: flex;
+    height: 100vh;
+}
+
+/* ========================
+   CHAT HISTORY SIDEBAR
+   ======================== */
+.ra-history {
+    width: 280px;
+    border-right: 1px solid rgba(255, 107, 53, 0.15);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+}
+
+.ra-history-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.25rem 1rem;
+    border-bottom: 1px solid rgba(255, 107, 53, 0.15);
+}
+
+.ra-history-header h2 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--white);
+    margin: 0;
+}
+
+.ra-new-chat-btn {
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    background: rgba(255, 107, 53, 0.12);
+    border: 1px solid rgba(255, 107, 53, 0.25);
+    color: #ff6b35;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.ra-new-chat-btn:hover {
+    background: rgba(255, 107, 53, 0.2);
+    border-color: #ff6b35;
+}
+
+.ra-new-chat-btn svg {
+    width: 18px;
+    height: 18px;
+}
+
+.ra-history-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0.5rem 0;
+}
+
+.ra-history-list::-webkit-scrollbar {
+    width: 4px;
+}
+
+.ra-history-list::-webkit-scrollbar-thumb {
+    background: rgba(255, 107, 53, 0.2);
+    border-radius: 2px;
+}
+
+/* Individual chat history item */
+.ra-history-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    cursor: pointer;
+    transition: background 0.15s ease;
+    border-left: 3px solid transparent;
+}
+
+.ra-history-item:hover {
+    background: rgba(255, 107, 53, 0.06);
+}
+
+.ra-history-item.active {
+    background: rgba(255, 107, 53, 0.1);
+    border-left-color: #ff6b35;
+}
+
+.ra-history-item-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: rgba(255, 107, 53, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.ra-history-item-icon svg {
+    width: 16px;
+    height: 16px;
+    color: #ff6b35;
+}
+
+.ra-history-item-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.ra-history-item-title {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--white);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.ra-history-item-time {
+    font-size: 0.7rem;
+    color: rgba(254, 252, 251, 0.4);
+    margin-top: 2px;
+}
+
+.ra-history-item-delete {
+    background: transparent;
+    border: none;
+    color: rgba(254, 252, 251, 0.3);
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    opacity: 0;
+    transition: all 0.15s ease;
+    flex-shrink: 0;
+}
+
+.ra-history-item:hover .ra-history-item-delete {
+    opacity: 1;
+}
+
+.ra-history-item-delete:hover {
+    background: rgba(255, 107, 107, 0.15);
+    color: #ff6b6b;
+}
+
+.ra-history-item-delete svg {
+    width: 14px;
+    height: 14px;
+}
+
+/* Empty history state */
+.ra-history-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 1rem;
+    text-align: center;
+    color: rgba(254, 252, 251, 0.4);
+    font-size: 0.85rem;
+    gap: 0.5rem;
+}
+
+.ra-history-empty svg {
+    width: 32px;
+    height: 32px;
+    opacity: 0.4;
+}
+
+/* ========================
+   CHAT AREA
+   ======================== */
+.ra-chat {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.ra-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.ra-messages::-webkit-scrollbar {
+    width: 6px;
+}
+
+.ra-messages::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.ra-messages::-webkit-scrollbar-thumb {
+    background: rgba(255, 107, 53, 0.2);
+    border-radius: 3px;
+}
+
+/* Welcome Screen */
+.ra-welcome {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    flex: 1;
+    padding: 2rem;
+    gap: 1rem;
+}
+
+.ra-welcome-icon {
+    width: 72px;
+    height: 72px;
+    background: rgba(255, 107, 53, 0.12);
+    border: 1px solid rgba(255, 107, 53, 0.25);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.ra-welcome-icon svg {
+    width: 36px;
+    height: 36px;
+    color: #ff6b35;
+}
+
+.ra-welcome h2 {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--white);
+    margin: 0;
+}
+
+.ra-welcome p {
+    font-size: 1rem;
+    color: rgba(254, 252, 251, 0.55);
+    max-width: 440px;
+    line-height: 1.5;
+    margin: 0;
+}
+
+/* Suggestion Buttons */
+.ra-suggestions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+    width: 100%;
+    max-width: 480px;
+}
+
+.ra-suggestion {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.85rem 1rem;
+    background: rgba(255, 107, 53, 0.06);
+    border: 1px solid rgba(255, 107, 53, 0.18);
+    border-radius: 12px;
+    color: rgba(254, 252, 251, 0.8);
+    font-size: 0.9rem;
+    font-family: 'Inter', sans-serif;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: left;
+}
+
+.ra-suggestion:hover {
+    background: rgba(255, 107, 53, 0.12);
+    border-color: rgba(255, 107, 53, 0.35);
+    color: var(--white);
+}
+
+.ra-suggestion svg {
+    width: 18px;
+    height: 18px;
+    color: #ff6b35;
+    flex-shrink: 0;
+}
+
+/* Message Bubbles */
+.ra-msg {
+    max-width: 75%;
+    padding: 0.85rem 1.1rem;
+    border-radius: 16px;
+    font-size: 0.95rem;
+    line-height: 1.55;
+    word-wrap: break-word;
+}
+
+.ra-msg.user {
+    align-self: flex-end;
+    background: #ff6b35;
+    color: white;
+    border-bottom-right-radius: 6px;
+}
+
+.ra-msg.assistant {
+    align-self: flex-start;
+    background: rgba(254, 252, 251, 0.06);
+    color: var(--white);
+    border: 1px solid rgba(255, 107, 53, 0.12);
+    border-bottom-left-radius: 6px;
+}
+
+/* Typing Indicator */
+.ra-typing {
+    align-self: flex-start;
+    display: flex;
+    gap: 5px;
+    padding: 0.85rem 1.1rem;
+    background: rgba(254, 252, 251, 0.06);
+    border: 1px solid rgba(255, 107, 53, 0.12);
+    border-radius: 16px;
+    border-bottom-left-radius: 6px;
+}
+
+.ra-typing span {
+    width: 8px;
+    height: 8px;
+    background: rgba(255, 107, 53, 0.5);
+    border-radius: 50%;
+    animation: raTypingDot 1.4s infinite;
+}
+
+.ra-typing span:nth-child(2) { animation-delay: 0.2s; }
+.ra-typing span:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes raTypingDot {
+    0%, 60%, 100% {
+        opacity: 0.3;
+        transform: translateY(0);
+    }
+    30% {
+        opacity: 1;
+        transform: translateY(-5px);
+    }
+}
+
+/* Input Area */
+.ra-input-area {
+    padding: 1rem 1.5rem 1.25rem;
+    border-top: 1px solid rgba(255, 107, 53, 0.1);
+    flex-shrink: 0;
+}
+
+.ra-input-wrapper {
+    display: flex;
+    align-items: flex-end;
+    gap: 0.6rem;
+    background: rgba(254, 252, 251, 0.04);
+    border: 1px solid rgba(255, 107, 53, 0.2);
+    border-radius: 16px;
+    padding: 0.5rem 0.6rem 0.5rem 1rem;
+    transition: border-color 0.2s ease;
+}
+
+.ra-input-wrapper:focus-within {
+    border-color: #ff6b35;
+}
+
+.ra-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: var(--white);
+    font-size: 0.95rem;
+    font-family: 'Inter', sans-serif;
+    resize: none;
+    outline: none;
+    max-height: 120px;
+    overflow-y: auto;
+    padding: 0.35rem 0;
+    line-height: 1.45;
+}
+
+.ra-input::placeholder {
+    color: rgba(254, 252, 251, 0.35);
+}
+
+.ra-send-btn {
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
+    background: #ff6b35;
+    border: none;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: all 0.2s ease;
+}
+
+.ra-send-btn:hover {
+    background: #ff7d4d;
+    transform: scale(1.05);
+}
+
+.ra-send-btn svg {
+    width: 18px;
+    height: 18px;
+}
+
+/* ========================
+   MOBILE HEADER OVERRIDES
+   ======================== */
+.ra-mobile-back {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--white);
+    text-decoration: none;
+}
+
+.ra-mobile-back svg {
+    width: 22px;
+    height: 22px;
+}
+
+.ra-mobile-new-chat {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    background: transparent;
+    border: none;
+    color: #ff6b35;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.ra-mobile-new-chat svg {
+    width: 20px;
+    height: 20px;
+}
+
+/* ========================
+   HISTORY FOOTER / BASELINES BUTTON
+   ======================== */
+.ra-history-footer {
+    padding: 0.75rem 1rem;
+    border-top: 1px solid rgba(255, 107, 53, 0.15);
+}
+
+.ra-baselines-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    width: 100%;
+    padding: 0.65rem 0.75rem;
+    background: rgba(255, 107, 53, 0.08);
+    border: 1px solid rgba(255, 107, 53, 0.2);
+    border-radius: 10px;
+    color: rgba(254, 252, 251, 0.75);
+    font-size: 0.85rem;
+    font-family: 'Inter', sans-serif;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.ra-baselines-btn:hover {
+    background: rgba(255, 107, 53, 0.15);
+    border-color: #ff6b35;
+    color: var(--white);
+}
+
+.ra-baselines-btn svg {
+    width: 18px;
+    height: 18px;
+    color: #ff6b35;
+    flex-shrink: 0;
+}
+
+/* ========================
+   BASELINES MODAL
+   ======================== */
+.ra-baselines-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    z-index: 2000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+}
+
+.ra-baselines-overlay.active {
+    display: flex;
+}
+
+.ra-baselines-modal {
+    background: #0f1a35;
+    border: 1px solid rgba(255, 107, 53, 0.2);
+    border-radius: 16px;
+    width: 100%;
+    max-width: 580px;
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    animation: baselinesSlideIn 0.25s ease;
+}
+
+@keyframes baselinesSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px) scale(0.97);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.ra-baselines-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid rgba(255, 107, 53, 0.15);
+    flex-shrink: 0;
+}
+
+.ra-baselines-header h2 {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--white);
+    margin: 0;
+}
+
+.ra-baselines-close {
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    background: rgba(254, 252, 251, 0.06);
+    border: 1px solid rgba(254, 252, 251, 0.1);
+    color: rgba(254, 252, 251, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.ra-baselines-close:hover {
+    background: rgba(255, 107, 107, 0.15);
+    border-color: rgba(255, 107, 107, 0.3);
+    color: #ff6b6b;
+}
+
+.ra-baselines-close svg {
+    width: 18px;
+    height: 18px;
+}
+
+.ra-baselines-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1.25rem 1.5rem;
+}
+
+.ra-baselines-body::-webkit-scrollbar {
+    width: 5px;
+}
+
+.ra-baselines-body::-webkit-scrollbar-thumb {
+    background: rgba(255, 107, 53, 0.2);
+    border-radius: 3px;
+}
+
+/* Division Display */
+.ra-baselines-division {
+    margin-bottom: 1.25rem;
+}
+
+.ra-baselines-division label {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: rgba(254, 252, 251, 0.45);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.4rem;
+}
+
+.ra-baselines-division-value {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #ff6b35;
+}
+
+/* GPA Slider */
+.ra-baselines-gpa {
+    margin-bottom: 1.25rem;
+}
+
+.ra-baselines-gpa-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.6rem;
+}
+
+.ra-baselines-gpa-header label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--white);
+}
+
+.ra-baselines-gpa-value {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #ff6b35;
+    min-width: 28px;
+    text-align: right;
+}
+
+.ra-baselines-slider {
+    width: 100%;
+    height: 6px;
+    -webkit-appearance: none;
+    appearance: none;
+    background: rgba(254, 252, 251, 0.1);
+    border-radius: 3px;
+    outline: none;
+    cursor: pointer;
+}
+
+.ra-baselines-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #ff6b35;
+    border: 3px solid #0f1a35;
+    box-shadow: 0 0 0 2px rgba(255, 107, 53, 0.3);
+    cursor: pointer;
+    transition: box-shadow 0.15s ease;
+}
+
+.ra-baselines-slider::-webkit-slider-thumb:hover {
+    box-shadow: 0 0 0 4px rgba(255, 107, 53, 0.25);
+}
+
+.ra-baselines-slider::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #ff6b35;
+    border: 3px solid #0f1a35;
+    box-shadow: 0 0 0 2px rgba(255, 107, 53, 0.3);
+    cursor: pointer;
+}
+
+.ra-baselines-slider-labels {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 0.3rem;
+    font-size: 0.7rem;
+    color: rgba(254, 252, 251, 0.3);
+}
+
+/* Divider */
+.ra-baselines-divider {
+    height: 1px;
+    background: rgba(255, 107, 53, 0.12);
+    margin: 0.5rem 0 1.25rem;
+}
+
+/* Position Baselines */
+.ra-baselines-positions {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.ra-baselines-pos-group {
+    background: rgba(254, 252, 251, 0.03);
+    border: 1px solid rgba(255, 107, 53, 0.1);
+    border-radius: 12px;
+    padding: 1rem;
+}
+
+.ra-baselines-pos-label {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #ff6b35;
+    margin-bottom: 0.75rem;
+}
+
+.ra-baselines-pos-fields {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+}
+
+.ra-baselines-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+
+.ra-baselines-field-label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: rgba(254, 252, 251, 0.4);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.ra-baselines-range {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.ra-baselines-range span {
+    font-size: 0.75rem;
+    color: rgba(254, 252, 251, 0.35);
+}
+
+.ra-baselines-input {
+    width: 100%;
+    max-width: 80px;
+    padding: 0.45rem 0.5rem;
+    background: rgba(254, 252, 251, 0.05);
+    border: 1px solid rgba(255, 107, 53, 0.15);
+    border-radius: 8px;
+    color: var(--white);
+    font-size: 0.85rem;
+    font-family: 'Inter', sans-serif;
+    text-align: center;
+    outline: none;
+    transition: border-color 0.15s ease;
+}
+
+.ra-baselines-input:focus {
+    border-color: #ff6b35;
+}
+
+.ra-baselines-input::placeholder {
+    color: rgba(254, 252, 251, 0.25);
+}
+
+/* Footer */
+.ra-baselines-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.5rem;
+    border-top: 1px solid rgba(255, 107, 53, 0.15);
+    flex-shrink: 0;
+}
+
+.ra-baselines-reset {
+    padding: 0.55rem 1rem;
+    background: transparent;
+    border: 1px solid rgba(254, 252, 251, 0.15);
+    border-radius: 10px;
+    color: rgba(254, 252, 251, 0.6);
+    font-size: 0.85rem;
+    font-family: 'Inter', sans-serif;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.ra-baselines-reset:hover {
+    border-color: rgba(254, 252, 251, 0.3);
+    color: var(--white);
+}
+
+.ra-baselines-save {
+    padding: 0.55rem 1.5rem;
+    background: #ff6b35;
+    border: none;
+    border-radius: 10px;
+    color: white;
+    font-size: 0.85rem;
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.ra-baselines-save:hover {
+    background: #ff7d4d;
+}
+
+/* ========================
+   RESPONSIVE
+   ======================== */
+
+/* Tablet - hide chat history sidebar */
+@media (max-width: 1024px) {
+    .ra-history {
+        display: none;
+    }
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+    .ra-layout {
+        height: calc(100vh - 60px);
+    }
+
+    .ra-history {
+        display: none;
+    }
+
+    .ra-messages {
+        padding: 1rem;
+    }
+
+    .ra-input-area {
+        padding: 0.75rem 1rem 1rem;
+    }
+
+    .ra-welcome-icon {
+        width: 56px;
+        height: 56px;
+    }
+
+    .ra-welcome-icon svg {
+        width: 28px;
+        height: 28px;
+    }
+
+    .ra-welcome h2 {
+        font-size: 1.25rem;
+    }
+
+    .ra-welcome p {
+        font-size: 0.9rem;
+    }
+
+    .ra-msg {
+        max-width: 88%;
+    }
+
+    .ra-suggestion {
+        font-size: 0.85rem;
+        padding: 0.75rem 0.85rem;
+    }
+
+    .ra-baselines-modal {
+        max-height: 90vh;
+        border-radius: 12px;
+    }
+
+    .ra-baselines-header {
+        padding: 1rem 1.25rem;
+    }
+
+    .ra-baselines-body {
+        padding: 1rem 1.25rem;
+    }
+
+    .ra-baselines-footer {
+        padding: 0.85rem 1.25rem;
+    }
+
+    .ra-baselines-pos-fields {
+        grid-template-columns: 1fr;
+    }
+}
