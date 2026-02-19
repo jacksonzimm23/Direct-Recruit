@@ -316,6 +316,209 @@ class PlayerProfile {
     const result = await pool.query(query, values);
     return result.rows[0];
   }
+
+  // AI-powered search — searches HS players and transfer players only (never college)
+  // Supports full filter set including game stat filters via JSONB
+  static async searchByAiFilters(filters, excludeUserId, limit = 20, offset = 0) {
+    const VALID_STAT_KEYS = new Set([
+      'rush_yds', 'rush_tds', 'pass_yds', 'pass_tds', 'ints', 'comp_%',
+      'rec', 'rec_yds', 'rec_tds', 'tackles', 'tfls', 'sacks', 'pbu',
+      'ff', 'int', 'att', 'm', 'blk', 'long', 'pats', 'avg', 'tb',
+      'fc', 'i20', '50+'
+    ]);
+
+    const values = [];
+    let paramCount = 1;
+
+    let selectCols = `pp.*, u.email`;
+    let fromClause = `FROM player_profiles pp JOIN users u ON pp.user_id = u.id`;
+    let whereClauses = [`u.is_active = true`];
+
+    // Exclude requesting user
+    if (excludeUserId) {
+      whereClauses.push(`pp.user_id != $${paramCount}`);
+      values.push(excludeUserId);
+      paramCount++;
+    }
+
+    // Player type filter — NEVER include college players
+    if (filters.player_type === 'hs') {
+      whereClauses.push(`(pp.college_division IS NULL OR pp.college_division = '')`);
+      whereClauses.push(`(pp.transfer IS NULL OR pp.transfer != 'y')`);
+    } else if (filters.player_type === 'transfer') {
+      whereClauses.push(`pp.transfer = 'y'`);
+    } else {
+      // "all" = HS + transfer only, exclude college players who are not transferring
+      whereClauses.push(`((pp.college_division IS NULL OR pp.college_division = '') OR pp.transfer = 'y')`);
+    }
+
+    // Position filter (array of positions)
+    if (filters.position && filters.position.length > 0) {
+      const posConditions = filters.position.map(pos => {
+        const p = `$${paramCount}`;
+        values.push(`%${pos}%`);
+        paramCount++;
+        return `pp.position ILIKE ${p}`;
+      });
+      whereClauses.push(`(${posConditions.join(' OR ')})`);
+    }
+
+    // State filter — match full name, abbreviation, or case-insensitive
+    if (filters.state) {
+      whereClauses.push(`(pp.state ILIKE $${paramCount} OR pp.state ILIKE $${paramCount + 1})`);
+      values.push(filters.state);
+      // Also try the abbreviation lookup
+      const stateAbbrevs = {
+        'alabama': 'AL', 'alaska': 'AK', 'arizona': 'AZ', 'arkansas': 'AR',
+        'california': 'CA', 'colorado': 'CO', 'connecticut': 'CT', 'delaware': 'DE',
+        'florida': 'FL', 'georgia': 'GA', 'hawaii': 'HI', 'idaho': 'ID',
+        'illinois': 'IL', 'indiana': 'IN', 'iowa': 'IA', 'kansas': 'KS',
+        'kentucky': 'KY', 'louisiana': 'LA', 'maine': 'ME', 'maryland': 'MD',
+        'massachusetts': 'MA', 'michigan': 'MI', 'minnesota': 'MN', 'mississippi': 'MS',
+        'missouri': 'MO', 'montana': 'MT', 'nebraska': 'NE', 'nevada': 'NV',
+        'new hampshire': 'NH', 'new jersey': 'NJ', 'new mexico': 'NM', 'new york': 'NY',
+        'north carolina': 'NC', 'north dakota': 'ND', 'ohio': 'OH', 'oklahoma': 'OK',
+        'oregon': 'OR', 'pennsylvania': 'PA', 'rhode island': 'RI', 'south carolina': 'SC',
+        'south dakota': 'SD', 'tennessee': 'TN', 'texas': 'TX', 'utah': 'UT',
+        'vermont': 'VT', 'virginia': 'VA', 'washington': 'WA', 'west virginia': 'WV',
+        'wisconsin': 'WI', 'wyoming': 'WY', 'district of columbia': 'DC'
+      };
+      const abbrev = stateAbbrevs[filters.state.toLowerCase()] || filters.state;
+      values.push(abbrev);
+      paramCount += 2;
+    }
+
+    // Graduation year
+    if (filters.graduation_year) {
+      whereClauses.push(`pp.graduation_year = $${paramCount}`);
+      values.push(filters.graduation_year);
+      paramCount++;
+    }
+
+    // Height filters (stored as VARCHAR like "6'1"")
+    const heightCaseExpr = `
+      CASE
+        WHEN pp.height ~ '^[0-9]+''[0-9]+"?$' THEN
+          CAST(SPLIT_PART(pp.height, '''', 1) AS INTEGER) * 12 +
+          CAST(NULLIF(REGEXP_REPLACE(SPLIT_PART(pp.height, '''', 2), '[^0-9]', '', 'g'), '') AS INTEGER)
+        WHEN pp.height ~ '^[0-9]+'' [0-9]+"?$' THEN
+          CAST(SPLIT_PART(pp.height, '''', 1) AS INTEGER) * 12 +
+          CAST(NULLIF(REGEXP_REPLACE(SPLIT_PART(pp.height, '''', 2), '[^0-9]', '', 'g'), '') AS INTEGER)
+        WHEN pp.height ~ '^[0-9]+$' THEN
+          CAST(pp.height AS INTEGER)
+        ELSE 0
+      END`;
+
+    if (filters.min_height) {
+      whereClauses.push(`(${heightCaseExpr}) >= $${paramCount}`);
+      values.push(filters.min_height);
+      paramCount++;
+    }
+    if (filters.max_height) {
+      whereClauses.push(`(${heightCaseExpr}) <= $${paramCount}`);
+      values.push(filters.max_height);
+      paramCount++;
+    }
+
+    // Weight filters
+    if (filters.min_weight) {
+      whereClauses.push(`pp.weight >= $${paramCount}`);
+      values.push(filters.min_weight);
+      paramCount++;
+    }
+    if (filters.max_weight) {
+      whereClauses.push(`pp.weight <= $${paramCount}`);
+      values.push(filters.max_weight);
+      paramCount++;
+    }
+
+    // GPA filter
+    if (filters.min_gpa) {
+      whereClauses.push(`pp.gpa >= $${paramCount}`);
+      values.push(filters.min_gpa);
+      paramCount++;
+    }
+
+    // College division (for transfer players)
+    if (filters.college_division) {
+      whereClauses.push(`pp.college_division = $${paramCount}`);
+      values.push(filters.college_division);
+      paramCount++;
+    }
+
+    // Eligibility (transfer players)
+    if (filters.eligibility) {
+      whereClauses.push(`pp.eligibility = $${paramCount}`);
+      values.push(filters.eligibility);
+      paramCount++;
+    }
+
+    // Search term (name/username)
+    if (filters.searchTerm) {
+      whereClauses.push(`(pp.first_name ILIKE $${paramCount} OR pp.last_name ILIKE $${paramCount} OR pp.username ILIKE $${paramCount})`);
+      values.push(`%${filters.searchTerm}%`);
+      paramCount++;
+    }
+
+    // Stat filters — subquery into player_games + player_game_stats
+    if (filters.stat_filters && filters.stat_filters.length > 0) {
+      filters.stat_filters.forEach((sf, index) => {
+        // Validate stat_key against allowlist to prevent SQL injection
+        if (!VALID_STAT_KEYS.has(sf.stat_key)) return;
+
+        const alias = `sf${index}`;
+        const gameAlias = `sg${index}`;
+
+        let statSubquery = `
+          EXISTS (
+            SELECT 1 FROM player_games ${gameAlias}
+            JOIN player_game_stats ${alias} ON ${gameAlias}.id = ${alias}.game_id
+            JOIN player_profiles pp_stat ON ${gameAlias}.player_id = pp_stat.id
+            WHERE pp_stat.user_id = pp.user_id`;
+
+        // Season year filter
+        if (sf.season_year !== null && sf.season_year !== undefined) {
+          statSubquery += ` AND ${gameAlias}.season_year = $${paramCount}`;
+          values.push(sf.season_year);
+          paramCount++;
+        }
+
+        // Position filter for stats
+        if (sf.positions && sf.positions.length > 0) {
+          const posList = sf.positions.map(p => {
+            const param = `$${paramCount}`;
+            values.push(p);
+            paramCount++;
+            return param;
+          });
+          statSubquery += ` AND ${alias}.position IN (${posList.join(', ')})`;
+        }
+
+        // The stat condition — cast JSONB value to numeric
+        const op = sf.operator || '>=';
+        statSubquery += ` AND CAST(${alias}.stats->>'${sf.stat_key}' AS NUMERIC) ${op} $${paramCount}`;
+        values.push(sf.value);
+        paramCount++;
+
+        statSubquery += `)`;
+        whereClauses.push(statSubquery);
+      });
+    }
+
+    // Build final query
+    const query = `SELECT ${selectCols} ${fromClause}
+      WHERE ${whereClauses.join(' AND ')}
+      ORDER BY pp.created_at DESC
+      LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
+    values.push(limit + 1, offset);
+
+    const result = await pool.query(query, values);
+
+    const hasMore = result.rows.length > limit;
+    const players = hasMore ? result.rows.slice(0, limit) : result.rows;
+
+    return { players, hasMore };
+  }
 }
 
 module.exports = PlayerProfile;

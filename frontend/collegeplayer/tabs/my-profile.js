@@ -20,6 +20,14 @@ const POSTS_PER_PAGE = 10;
 const REPLIES_PER_PAGE = 10;
 const LIKES_PER_PAGE = 10;
 
+// Stats and highlights state
+let allGamesData = [];
+let selectedSeasonYear = null;
+let allSeasonYears = [];
+let playerHighlights = { season: [], game: [] };
+let currentHighlightType = 'season';
+let highlightToDelete = null;
+
 // Format phone number as (XXX) XXX-XXXX
 function formatPhoneNumber(phone) {
     if (!phone) return '';
@@ -172,6 +180,8 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
 
     setupUI();
+    loadGameStats();
+    loadHighlights();
 });
 
 async function loadCurrentUser() {
@@ -1741,6 +1751,34 @@ function setupUI() {
     // Tab switching
     const tabs = document.querySelectorAll('.profile-tab');
     const tabPanes = document.querySelectorAll('.tab-pane');
+
+    // Control tab visibility based on profile type
+    const statsTab = document.querySelector('.profile-tab[data-tab="stats"]');
+    const highlightsTab = document.querySelector('.profile-tab[data-tab="highlights"]');
+    const statsPane = document.getElementById('stats');
+    const highlightsPane = document.getElementById('highlights');
+
+    if (currentProfileType === 'coach') {
+        if (statsTab) statsTab.style.display = 'none';
+        if (highlightsTab) highlightsTab.style.display = 'none';
+        if (statsPane) statsPane.style.display = 'none';
+        if (highlightsPane) highlightsPane.style.display = 'none';
+    } else if (currentProfileType === 'player') {
+        if (statsTab) statsTab.style.display = '';
+        if (highlightsTab) highlightsTab.style.display = '';
+        if (statsPane) statsPane.style.display = '';
+        if (highlightsPane) highlightsPane.style.display = '';
+    }
+
+    // Hide Add Stats / Add Highlight buttons when viewing someone else's profile
+    if (!isOwnProfile) {
+        const addStatsBtn = document.getElementById('addStatsBtn');
+        const addSeasonHighlightBtn = document.getElementById('addSeasonHighlightBtn');
+        const addGameHighlightBtn = document.getElementById('addGameHighlightBtn');
+        if (addStatsBtn) addStatsBtn.style.display = 'none';
+        if (addSeasonHighlightBtn) addSeasonHighlightBtn.style.display = 'none';
+        if (addGameHighlightBtn) addGameHighlightBtn.style.display = 'none';
+    }
 
     tabs.forEach(tab => {
         tab.addEventListener('click', function() {
@@ -6224,3 +6262,2258 @@ function escapeHtml(text) {
     div.textContent = text;
     return div.innerHTML;
 }
+
+// ============================================
+// ADD STATS MODAL - POSITION STATS CONFIG
+// ============================================
+
+let selectedStatsPositions = []; // Track multiple selected positions
+let currentAddSeasonYear = null; // Track selected season year for adding stats
+
+function setupAddStatsModal() {
+    const addStatsBtn = document.getElementById('addStatsBtn');
+    const addStatsModal = document.getElementById('addStatsModal');
+    const addStatsModalOverlay = document.getElementById('addStatsModalOverlay');
+    const addStatsModalClose = document.getElementById('addStatsModalClose');
+    const btnAddStatsCancel = document.getElementById('btnAddStatsCancel');
+    const btnAddStatsSave = document.getElementById('btnAddStatsSave');
+    const btnSelectPosition = document.getElementById('btnSelectPosition');
+    const positionDropdown = document.getElementById('positionDropdown');
+    const statsPositionInput = document.getElementById('statsPositionInput');
+
+    // Season selection modal elements
+    const seasonSelectModal = document.getElementById('seasonSelectModal');
+    const seasonSelectModalOverlay = document.getElementById('seasonSelectModalOverlay');
+    const seasonSelectModalClose = document.getElementById('seasonSelectModalClose');
+    const btnNewSeason = document.getElementById('btnNewSeason');
+    const btnPreviousSeason = document.getElementById('btnPreviousSeason');
+    const newSeasonInputSection = document.getElementById('newSeasonInputSection');
+    const previousSeasonSelectSection = document.getElementById('previousSeasonSelectSection');
+    const newSeasonYearInput = document.getElementById('newSeasonYear');
+    const previousSeasonSelect = document.getElementById('previousSeasonSelect');
+    const btnContinueNewSeason = document.getElementById('btnContinueNewSeason');
+    const btnContinuePreviousSeason = document.getElementById('btnContinuePreviousSeason');
+
+    if (!addStatsBtn || !addStatsModal) return;
+
+    // Open season selection modal first (instead of going directly to add stats modal)
+    addStatsBtn.addEventListener('click', () => {
+        // Check if there are existing seasons
+        if (allSeasonYears.length === 0) {
+            // No seasons exist - go directly to new season flow
+            showNewSeasonInput();
+            seasonSelectModal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        } else {
+            // Show season selection options
+            resetSeasonSelectModal();
+            seasonSelectModal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+    });
+
+    // Season selection modal close handlers
+    function closeSeasonSelectModal() {
+        seasonSelectModal.classList.remove('active');
+        document.body.style.overflow = '';
+        resetSeasonSelectModal();
+    }
+
+    function resetSeasonSelectModal() {
+        // Hide both input sections
+        if (newSeasonInputSection) newSeasonInputSection.style.display = 'none';
+        if (previousSeasonSelectSection) previousSeasonSelectSection.style.display = 'none';
+        // Remove active class from buttons
+        if (btnNewSeason) btnNewSeason.classList.remove('active');
+        if (btnPreviousSeason) btnPreviousSeason.classList.remove('active');
+        // Clear inputs
+        if (newSeasonYearInput) newSeasonYearInput.value = '';
+    }
+
+    function showNewSeasonInput() {
+        if (newSeasonInputSection) newSeasonInputSection.style.display = 'block';
+        if (previousSeasonSelectSection) previousSeasonSelectSection.style.display = 'none';
+        if (btnNewSeason) btnNewSeason.classList.add('active');
+        if (btnPreviousSeason) btnPreviousSeason.classList.remove('active');
+        // Pre-fill with current year
+        if (newSeasonYearInput && !newSeasonYearInput.value) {
+            newSeasonYearInput.value = new Date().getFullYear();
+        }
+    }
+
+    function showPreviousSeasonSelect() {
+        if (newSeasonInputSection) newSeasonInputSection.style.display = 'none';
+        if (previousSeasonSelectSection) previousSeasonSelectSection.style.display = 'block';
+        if (btnNewSeason) btnNewSeason.classList.remove('active');
+        if (btnPreviousSeason) btnPreviousSeason.classList.add('active');
+
+        // Populate the previous season dropdown
+        if (previousSeasonSelect) {
+            previousSeasonSelect.innerHTML = '';
+            allSeasonYears.forEach(year => {
+                const option = document.createElement('option');
+                option.value = year;
+                option.textContent = year;
+                previousSeasonSelect.appendChild(option);
+            });
+        }
+    }
+
+    if (seasonSelectModalOverlay) {
+        seasonSelectModalOverlay.addEventListener('click', closeSeasonSelectModal);
+    }
+
+    if (seasonSelectModalClose) {
+        seasonSelectModalClose.addEventListener('click', closeSeasonSelectModal);
+    }
+
+    if (btnNewSeason) {
+        btnNewSeason.addEventListener('click', showNewSeasonInput);
+    }
+
+    if (btnPreviousSeason) {
+        btnPreviousSeason.addEventListener('click', showPreviousSeasonSelect);
+    }
+
+    if (btnContinueNewSeason) {
+        btnContinueNewSeason.addEventListener('click', () => {
+            const year = parseInt(newSeasonYearInput.value);
+            if (!year || year < 2000 || year > 2050) {
+                showToast('Please enter a valid year (2000-2050)', 'error');
+                return;
+            }
+            currentAddSeasonYear = year;
+            closeSeasonSelectModal();
+            openAddStatsModal();
+        });
+    }
+
+    if (btnContinuePreviousSeason) {
+        btnContinuePreviousSeason.addEventListener('click', () => {
+            const year = parseInt(previousSeasonSelect.value);
+            if (!year) {
+                showToast('Please select a season', 'error');
+                return;
+            }
+            currentAddSeasonYear = year;
+            closeSeasonSelectModal();
+            openAddStatsModal();
+        });
+    }
+
+    // Open add stats modal (after season is selected)
+    function openAddStatsModal() {
+        resetStatsModal();
+        // Display the selected season year
+        const currentSeasonYearEl = document.getElementById('currentSeasonYear');
+        if (currentSeasonYearEl) {
+            currentSeasonYearEl.textContent = currentAddSeasonYear;
+        }
+        addStatsModal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+
+    // Close modal functions
+    function closeAddStatsModal() {
+        addStatsModal.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+
+    // Reset modal to initial state
+    function resetStatsModal() {
+        selectedStatsPositions = [];
+        if (statsPositionInput) statsPositionInput.value = '';
+        if (positionDropdown) positionDropdown.classList.remove('active');
+
+        // Reset game info fields
+        const gameOpponent = document.getElementById('gameOpponent');
+        if (gameOpponent) gameOpponent.value = '';
+
+        // Show the initial position selector again
+        const positionSelector = document.querySelector('.stats-position-selector');
+        if (positionSelector) positionSelector.style.display = '';
+
+        // Remove selected class from all position options
+        document.querySelectorAll('.position-option').forEach(opt => {
+            opt.classList.remove('selected');
+            opt.classList.remove('added');
+        });
+
+        // Clear stats fields container
+        const container = document.getElementById('statsFieldsContainer');
+        if (container) container.innerHTML = '';
+    }
+
+    if (addStatsModalOverlay) {
+        addStatsModalOverlay.addEventListener('click', closeAddStatsModal);
+    }
+
+    if (addStatsModalClose) {
+        addStatsModalClose.addEventListener('click', closeAddStatsModal);
+    }
+
+    if (btnAddStatsCancel) {
+        btnAddStatsCancel.addEventListener('click', closeAddStatsModal);
+    }
+
+    if (btnAddStatsSave) {
+        btnAddStatsSave.addEventListener('click', async () => {
+            await saveGameStats();
+        });
+    }
+
+    // Save game stats to database
+    async function saveGameStats() {
+        const gameOpponent = document.getElementById('gameOpponent').value;
+
+        // Validate required fields
+        if (selectedStatsPositions.length === 0) {
+            showToast('Please select at least one position', 'error');
+            return;
+        }
+
+        // Collect stats for each position
+        const positions = {};
+        selectedStatsPositions.forEach(position => {
+            const stats = POSITION_STATS[position] || [];
+            const positionStats = {};
+
+            stats.forEach(stat => {
+                const fieldId = `stat_${position}_${stat.replace(/[^a-zA-Z0-9%]/g, '_').toLowerCase()}`;
+                const input = document.getElementById(fieldId);
+                if (input && input.value) {
+                    // Convert stat name to snake_case for storage
+                    const statKey = stat.toLowerCase().replace(/[^a-z0-9%]/g, '_');
+                    positionStats[statKey] = parseFloat(input.value) || 0;
+                }
+            });
+
+            // Only add position if it has stats or is a position without stats (OL, LS, etc.)
+            if (Object.keys(positionStats).length > 0 || stats.length === 0) {
+                positions[position] = positionStats;
+            }
+        });
+
+        // Disable save button while saving
+        const btnSave = document.getElementById('btnAddStatsSave');
+        const originalText = btnSave.textContent;
+        btnSave.disabled = true;
+        btnSave.textContent = 'Saving...';
+
+        try {
+            const response = await API.post('/stats', {
+                opponent: gameOpponent || null,
+                positions: positions,
+                season_year: currentAddSeasonYear
+            });
+
+            if (response.success) {
+                showToast('Game stats added successfully!', 'success');
+                closeAddStatsModal();
+                // Set selected season to the one we just added to
+                selectedSeasonYear = currentAddSeasonYear;
+                // Reload the stats display
+                loadGameStats();
+            } else {
+                showToast(response.error || 'Failed to save stats', 'error');
+            }
+        } catch (error) {
+            console.error('Error saving game stats:', error);
+            showToast('Failed to save game stats', 'error');
+        } finally {
+            btnSave.disabled = false;
+            btnSave.textContent = originalText;
+        }
+    }
+
+    // Toggle position dropdown (for first position selection)
+    if (btnSelectPosition && positionDropdown) {
+        btnSelectPosition.addEventListener('click', () => {
+            positionDropdown.classList.toggle('active');
+        });
+    }
+
+    // Handle position selection
+    document.querySelectorAll('.position-option').forEach(option => {
+        option.addEventListener('click', () => {
+            const position = option.dataset.position;
+
+            // Check if position is already added
+            if (selectedStatsPositions.includes(position)) {
+                return; // Don't add duplicate positions
+            }
+
+            // Add position to selected list
+            selectedStatsPositions.push(position);
+
+            // Mark as added
+            option.classList.add('added');
+
+            // Update input to show all selected positions
+            if (statsPositionInput) {
+                statsPositionInput.value = selectedStatsPositions.join(', ');
+            }
+
+            // Close dropdown
+            if (positionDropdown) {
+                positionDropdown.classList.remove('active');
+            }
+
+            // Hide the initial position selector after first selection
+            const positionSelector = document.querySelector('.stats-position-selector');
+            if (positionSelector && selectedStatsPositions.length === 1) {
+                positionSelector.style.display = 'none';
+            }
+
+            // Add stat fields for the selected position
+            addPositionStatsFields(position);
+
+            // Add "Add Another Position" button after stats fields
+            updateAddAnotherPositionButton();
+        });
+    });
+}
+
+// Show/hide the "Add Another Position" button
+function updateAddAnotherPositionButton() {
+    const container = document.getElementById('statsFieldsContainer');
+    if (!container) return;
+
+    // Remove existing button if present
+    const existingBtn = container.querySelector('.btn-add-another-position');
+    if (existingBtn) {
+        existingBtn.remove();
+    }
+
+    // Add new button at the bottom
+    const btnDiv = document.createElement('div');
+    btnDiv.className = 'add-another-position-wrapper';
+    btnDiv.innerHTML = `
+        <button type="button" class="btn-add-another-position" id="btnAddAnotherPosition">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            Add Another Position
+        </button>
+        <div class="another-position-dropdown" id="anotherPositionDropdown">
+            <div class="position-dropdown-section">
+                <h4>Offense - Skill</h4>
+                <div class="position-options">
+                    <button type="button" class="another-position-option" data-position="QB">QB</button>
+                    <button type="button" class="another-position-option" data-position="RB">RB</button>
+                    <button type="button" class="another-position-option" data-position="FB">FB</button>
+                    <button type="button" class="another-position-option" data-position="WR">WR</button>
+                    <button type="button" class="another-position-option" data-position="TE">TE</button>
+                </div>
+            </div>
+            <div class="position-dropdown-section">
+                <h4>Offense - Line</h4>
+                <div class="position-options">
+                    <button type="button" class="another-position-option" data-position="OT">OT</button>
+                    <button type="button" class="another-position-option" data-position="OG">OG</button>
+                    <button type="button" class="another-position-option" data-position="C">C</button>
+                </div>
+            </div>
+            <div class="position-dropdown-section">
+                <h4>Defense - Line</h4>
+                <div class="position-options">
+                    <button type="button" class="another-position-option" data-position="DE">DE</button>
+                    <button type="button" class="another-position-option" data-position="DT">DT</button>
+                    <button type="button" class="another-position-option" data-position="NT">NT</button>
+                </div>
+            </div>
+            <div class="position-dropdown-section">
+                <h4>Defense - Linebackers</h4>
+                <div class="position-options">
+                    <button type="button" class="another-position-option" data-position="ILB">ILB</button>
+                    <button type="button" class="another-position-option" data-position="OLB">OLB</button>
+                </div>
+            </div>
+            <div class="position-dropdown-section">
+                <h4>Defense - Secondary</h4>
+                <div class="position-options">
+                    <button type="button" class="another-position-option" data-position="CB">CB</button>
+                    <button type="button" class="another-position-option" data-position="S">S</button>
+                </div>
+            </div>
+            <div class="position-dropdown-section">
+                <h4>Special Teams</h4>
+                <div class="position-options">
+                    <button type="button" class="another-position-option" data-position="K">K</button>
+                    <button type="button" class="another-position-option" data-position="P">P</button>
+                    <button type="button" class="another-position-option" data-position="LS">LS</button>
+                </div>
+            </div>
+        </div>
+    `;
+    container.appendChild(btnDiv);
+
+    // Mark already-added positions
+    btnDiv.querySelectorAll('.another-position-option').forEach(opt => {
+        if (selectedStatsPositions.includes(opt.dataset.position)) {
+            opt.classList.add('added');
+        }
+    });
+
+    // Toggle dropdown on button click
+    const addAnotherBtn = btnDiv.querySelector('.btn-add-another-position');
+    const anotherDropdown = btnDiv.querySelector('.another-position-dropdown');
+
+    addAnotherBtn.addEventListener('click', () => {
+        anotherDropdown.classList.toggle('active');
+    });
+
+    // Handle position selection from "Add Another" dropdown
+    btnDiv.querySelectorAll('.another-position-option').forEach(option => {
+        option.addEventListener('click', () => {
+            const position = option.dataset.position;
+
+            // Check if position is already added
+            if (selectedStatsPositions.includes(position)) {
+                return;
+            }
+
+            // Add position to selected list
+            selectedStatsPositions.push(position);
+
+            // Mark as added in both dropdowns
+            option.classList.add('added');
+            const originalOption = document.querySelector(`.position-option[data-position="${position}"]`);
+            if (originalOption) {
+                originalOption.classList.add('added');
+            }
+
+            // Update input
+            const statsPositionInput = document.getElementById('statsPositionInput');
+            if (statsPositionInput) {
+                statsPositionInput.value = selectedStatsPositions.join(', ');
+            }
+
+            // Close dropdown
+            anotherDropdown.classList.remove('active');
+
+            // Remove the "Add Another" button wrapper before adding new stats
+            btnDiv.remove();
+
+            // Add stat fields for the selected position
+            addPositionStatsFields(position);
+
+            // Re-add the "Add Another Position" button
+            updateAddAnotherPositionButton();
+        });
+    });
+}
+
+// Position-specific stats configuration
+const POSITION_STATS = {
+    'QB': ['RUSH YDS', 'RUSH TDS', 'PASS YDS', 'PASS TDS', 'INTS', 'COMP %'],
+    'RB': ['RUSH YDS', 'RUSH TDS', 'REC', 'REC YDS', 'REC TDS'],
+    'FB': ['RUSH YDS', 'RUSH TDS', 'REC', 'REC YDS', 'REC TDS'],
+    'WR': ['REC', 'REC YDS', 'REC TDS'],
+    'TE': ['REC', 'REC YDS', 'REC TDS'],
+    'OT': [],
+    'OG': [],
+    'C': [],
+    'DE': ['TACKLES', 'TFLS', 'SACKS', 'PBU', 'FF'],
+    'DT': ['TACKLES', 'TFLS', 'SACKS', 'PBU', 'FF'],
+    'NT': ['TACKLES', 'TFLS', 'SACKS', 'PBU', 'FF'],
+    'ILB': ['TACKLES', 'TFLS', 'SACKS', 'FF', 'INT', 'PBU'],
+    'OLB': ['TACKLES', 'TFLS', 'SACKS', 'FF', 'INT', 'PBU'],
+    'CB': ['TACKLES', 'INT', 'PBU'],
+    'S': ['TACKLES', 'INT', 'PBU'],
+    'K': ['ATT', 'M', 'BLK', 'LONG', 'PATS'],
+    'P': ['ATT', 'LONG', 'AVG', 'TB', 'FC', 'I20', '50+', 'BLK'],
+    'LS': []
+};
+
+function addPositionStatsFields(position) {
+    const container = document.getElementById('statsFieldsContainer');
+    if (!container) return;
+
+    const stats = POSITION_STATS[position] || [];
+
+    // Create a section for this position
+    const sectionDiv = document.createElement('div');
+    sectionDiv.className = 'position-stats-section';
+    sectionDiv.dataset.position = position;
+
+    // Add position header with remove button
+    let html = `
+        <div class="position-stats-header">
+            <h4>${position} Stats</h4>
+            <button type="button" class="btn-remove-position" data-position="${position}">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+    `;
+
+    // If no stats for this position, show a message
+    if (stats.length === 0) {
+        html += '<p class="no-stats-message">No stats to track for this position.</p>';
+    } else {
+        // Create the stats grid
+        html += '<div class="stats-fields-grid">';
+        stats.forEach(stat => {
+            const fieldId = `stat_${position}_${stat.replace(/[^a-zA-Z0-9%]/g, '_').toLowerCase()}`;
+            html += `
+                <div class="stat-field-group">
+                    <label for="${fieldId}">${stat}</label>
+                    <input type="number" id="${fieldId}" name="${fieldId}" placeholder="0" min="0" step="any">
+                </div>
+            `;
+        });
+        html += '</div>';
+    }
+
+    sectionDiv.innerHTML = html;
+    container.appendChild(sectionDiv);
+
+    // Add event listener for remove button
+    const removeBtn = sectionDiv.querySelector('.btn-remove-position');
+    if (removeBtn) {
+        removeBtn.addEventListener('click', () => {
+            removePositionStats(position);
+        });
+    }
+}
+
+function removePositionStats(position) {
+    // Remove from selected positions array
+    selectedStatsPositions = selectedStatsPositions.filter(p => p !== position);
+
+    // Remove the section from DOM
+    const container = document.getElementById('statsFieldsContainer');
+    const section = container.querySelector(`.position-stats-section[data-position="${position}"]`);
+    if (section) {
+        section.remove();
+    }
+
+    // Remove added class from position option
+    const option = document.querySelector(`.position-option[data-position="${position}"]`);
+    if (option) {
+        option.classList.remove('added');
+    }
+
+    // Update input field
+    const statsPositionInput = document.getElementById('statsPositionInput');
+    if (statsPositionInput) {
+        statsPositionInput.value = selectedStatsPositions.join(', ');
+    }
+}
+
+// Initialize add stats modal when DOM is ready
+document.addEventListener('DOMContentLoaded', setupAddStatsModal);
+
+// ============================================
+// LOAD AND DISPLAY GAME STATS
+// ============================================
+
+async function loadGameStats() {
+    try {
+        let response;
+        if (!isOwnProfile && currentProfile && currentProfile.username) {
+            response = await API.get(`/stats/player/${currentProfile.username}`);
+        } else {
+            response = await API.get('/stats/my-games');
+        }
+        if (response.games) {
+            allGamesData = response.games;
+
+            // Parse position_stats for all games first
+            parseAllGamesData(allGamesData);
+
+            // Extract unique season years and update dropdown
+            updateSeasonDropdown(allGamesData);
+
+            // Display games for selected season (or all if none selected)
+            displayGameStats(allGamesData, selectedSeasonYear);
+
+            // Display career statistics (all games aggregated by season)
+            displayCareerStats(allGamesData);
+
+            // Display overview tab stats (season and career totals)
+            displayOverviewStats(allGamesData);
+        }
+    } catch (error) {
+        console.error('Error loading game stats:', error);
+    }
+}
+
+function parseAllGamesData(games) {
+    games.forEach(game => {
+        if (typeof game.position_stats === 'string') {
+            try {
+                game.position_stats = JSON.parse(game.position_stats);
+            } catch (e) {
+                console.error('Error parsing position_stats:', e);
+                game.position_stats = [];
+            }
+        }
+        // Ensure position_stats is an array
+        if (!Array.isArray(game.position_stats)) {
+            game.position_stats = [];
+        }
+        // Also parse individual stats objects if needed
+        game.position_stats.forEach(ps => {
+            if (ps && typeof ps.stats === 'string') {
+                try {
+                    ps.stats = JSON.parse(ps.stats);
+                } catch (e) {
+                    console.error('Error parsing stats:', e);
+                    ps.stats = {};
+                }
+            }
+        });
+    });
+}
+
+function updateSeasonDropdown(games) {
+    // Extract unique season years
+    const seasonYears = new Set();
+    games.forEach(game => {
+        if (game.season_year) {
+            seasonYears.add(game.season_year);
+        }
+    });
+
+    // Convert to sorted array (descending order - latest year first)
+    allSeasonYears = Array.from(seasonYears).sort((a, b) => b - a);
+
+    const seasonDropdownWrapper = document.getElementById('seasonDropdownWrapper');
+    const seasonYearDropdown = document.getElementById('seasonYearDropdown');
+
+    if (allSeasonYears.length === 0) {
+        // No seasons - hide dropdown
+        if (seasonDropdownWrapper) seasonDropdownWrapper.style.display = 'none';
+        return;
+    }
+
+    // Show dropdown
+    if (seasonDropdownWrapper) seasonDropdownWrapper.style.display = 'flex';
+
+    // Populate dropdown with season years only (no "All Seasons" option)
+    if (seasonYearDropdown) {
+        seasonYearDropdown.innerHTML = '';
+
+        allSeasonYears.forEach(year => {
+            const option = document.createElement('option');
+            option.value = year;
+            option.textContent = year;
+            seasonYearDropdown.appendChild(option);
+        });
+
+        // Default to the latest season year (first in the sorted array)
+        if (!selectedSeasonYear || !allSeasonYears.includes(selectedSeasonYear)) {
+            selectedSeasonYear = allSeasonYears[0];
+        }
+        seasonYearDropdown.value = selectedSeasonYear;
+    }
+}
+
+// Setup season dropdown change handler
+document.addEventListener('DOMContentLoaded', () => {
+    const seasonYearDropdown = document.getElementById('seasonYearDropdown');
+    if (seasonYearDropdown) {
+        seasonYearDropdown.addEventListener('change', (e) => {
+            selectedSeasonYear = parseInt(e.target.value);
+            displayGameStats(allGamesData, selectedSeasonYear);
+        });
+    }
+});
+
+function displayGameStats(games, filterYear = null) {
+    const container = document.getElementById('gameStatsTablesContainer');
+    if (!container) return;
+
+
+    // Clear container
+    container.innerHTML = '';
+
+    if (!games || games.length === 0) {
+        container.innerHTML = '<div class="no-stats-message">No games recorded yet.</div>';
+        return;
+    }
+
+    // Filter games by season year if specified
+    let filteredGames = games;
+    if (filterYear) {
+        filteredGames = games.filter(game => parseInt(game.season_year) === parseInt(filterYear));
+    }
+
+    if (filteredGames.length === 0) {
+        container.innerHTML = '<div class="no-stats-message">No games recorded for this season.</div>';
+        return;
+    }
+
+    // Define position categories
+    const offensivePositions = ['QB', 'RB', 'FB', 'WR', 'TE', 'OT', 'OG', 'C'];
+    const defensivePositions = ['DE', 'DT', 'NT', 'ILB', 'OLB', 'CB', 'S'];
+    const specialPositions = ['K', 'P', 'LS'];
+
+    // Define stats by category
+    const offensiveStats = ['rush_yds', 'rush_tds', 'pass_yds', 'pass_tds', 'ints', 'comp_%', 'rec', 'rec_yds', 'rec_td', 'rec_tds', 'total_tds'];
+    const defensiveStats = ['tackles', 'tfls', 'sacks', 'pbu', 'ff', 'int'];
+    const specialStats = ['att', 'm', 'blk', 'long', 'pats', 'avg', 'tb', 'fc', 'i20', '50_'];
+
+    // Map position to its stats
+    const positionStatsMap = {
+        'QB': ['rush_yds', 'rush_tds', 'pass_yds', 'pass_tds', 'ints', 'comp_%', 'total_tds'],
+        'RB': ['rush_yds', 'rush_tds', 'rec', 'rec_yds', 'rec_tds', 'total_tds'],
+        'FB': ['rush_yds', 'rush_tds', 'rec', 'rec_yds', 'rec_tds', 'total_tds'],
+        'WR': ['rec', 'rec_yds', 'rec_tds', 'total_tds'],
+        'TE': ['rec', 'rec_yds', 'rec_tds', 'total_tds'],
+        'OT': [], 'OG': [], 'C': [],
+        'DE': ['tackles', 'tfls', 'sacks', 'pbu', 'ff'],
+        'DT': ['tackles', 'tfls', 'sacks', 'pbu', 'ff'],
+        'NT': ['tackles', 'tfls', 'sacks', 'pbu', 'ff'],
+        'ILB': ['tackles', 'tfls', 'sacks', 'ff', 'int', 'pbu'],
+        'OLB': ['tackles', 'tfls', 'sacks', 'ff', 'int', 'pbu'],
+        'CB': ['tackles', 'int', 'pbu'],
+        'S': ['tackles', 'int', 'pbu'],
+        'K': ['att', 'm', 'blk', 'long', 'pats'],
+        'P': ['att', 'long', 'avg', 'tb', 'fc', 'i20', '50+', 'blk'],
+        'LS': []
+    };
+
+    // Collect stats and positions used in filtered games
+    const usedStats = { offense: new Set(), defense: new Set(), special: new Set() };
+    const usedCategories = { offense: false, defense: false, special: false };
+
+    filteredGames.forEach(game => {
+        if (game.position_stats && Array.isArray(game.position_stats)) {
+            game.position_stats.forEach(ps => {
+                if (ps && ps.position && ps.stats) {
+                    const position = ps.position;
+                    const posStats = positionStatsMap[position] || [];
+
+                    if (offensivePositions.includes(position)) {
+                        usedCategories.offense = true;
+                        posStats.forEach(stat => usedStats.offense.add(stat));
+                    } else if (defensivePositions.includes(position)) {
+                        usedCategories.defense = true;
+                        posStats.forEach(stat => usedStats.defense.add(stat));
+                    } else if (specialPositions.includes(position)) {
+                        usedCategories.special = true;
+                        posStats.forEach(stat => usedStats.special.add(stat));
+                    }
+                }
+            });
+        }
+    });
+
+    // Helper function to sort stats by category order
+    const sortStatsByOrder = (stats, orderArray) => {
+        return Array.from(stats).sort((a, b) => {
+            const aIdx = orderArray.indexOf(a);
+            const bIdx = orderArray.indexOf(b);
+            if (aIdx !== -1 && bIdx !== -1) return aIdx - bIdx;
+            if (aIdx !== -1) return -1;
+            if (bIdx !== -1) return 1;
+            return a.localeCompare(b);
+        });
+    };
+
+    // Helper function to create a stats table for a category
+    const createCategoryTable = (title, categoryStats, categoryPositions, statOrderArray) => {
+        if (categoryStats.size === 0) return '';
+
+        const sortedStats = sortStatsByOrder(categoryStats, statOrderArray);
+
+        // Build header
+        let headerHtml = '<th>Opponent</th>';
+        sortedStats.forEach(stat => {
+            const label = stat.replace(/_/g, ' ').toUpperCase();
+            headerHtml += `<th>${label}</th>`;
+        });
+
+        // Build body rows and track totals
+        const totals = {};
+        sortedStats.forEach(stat => { totals[stat] = 0; });
+        let rowCount = 0;
+
+        let bodyHtml = '';
+        filteredGames.forEach(game => {
+            // Check if this game has any stats for this category
+            let hasStatsForCategory = false;
+            if (game.position_stats && Array.isArray(game.position_stats)) {
+                hasStatsForCategory = game.position_stats.some(ps =>
+                    ps && categoryPositions.includes(ps.position) && ps.stats && Object.keys(ps.stats).length > 0
+                );
+            }
+
+            if (!hasStatsForCategory) return; // Skip games with no stats for this category
+
+            rowCount++;
+            const opponent = game.opponent || '-';
+            const clickableClass = isOwnProfile ? 'clickable-row' : '';
+            bodyHtml += `<tr class="${clickableClass}" data-game-id="${game.game_id}">`;
+            bodyHtml += `<td>${opponent}</td>`;
+
+            sortedStats.forEach(stat => {
+                let value = null;
+                if (game.position_stats && Array.isArray(game.position_stats)) {
+                    for (const ps of game.position_stats) {
+                        if (ps && categoryPositions.includes(ps.position) && ps.stats) {
+                            // Calculate total_tds dynamically - sum of all available TD types
+                            if (stat === 'total_tds') {
+                                const passTds = parseFloat(ps.stats['pass_tds']) || 0;
+                                const rushTds = parseFloat(ps.stats['rush_tds']) || 0;
+                                const recTds = parseFloat(ps.stats['rec_tds']) || 0;
+                                value = (value !== null ? value : 0) + passTds + rushTds + recTds;
+                            } else if (ps.stats[stat] !== undefined && ps.stats[stat] !== null) {
+                                if (value !== null) {
+                                    value += parseFloat(ps.stats[stat]) || 0;
+                                } else {
+                                    value = parseFloat(ps.stats[stat]) || 0;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                const displayValue = (value !== null && !isNaN(value)) ? value : 0;
+                totals[stat] += displayValue;
+
+                const suffix = stat === 'comp_%' ? '%' : '';
+                bodyHtml += `<td>${displayValue}${suffix}</td>`;
+            });
+
+            bodyHtml += '</tr>';
+        });
+
+        // If no rows were added, don't create the table
+        if (bodyHtml === '') return '';
+
+        // Add totals row
+        bodyHtml += '<tr class="totals-row">';
+        bodyHtml += '<td><strong>TOTAL</strong></td>';
+        sortedStats.forEach(stat => {
+            let total = totals[stat];
+            // Comp % should show average, not sum
+            if (stat === 'comp_%' && rowCount > 0) {
+                total = total / rowCount;
+            }
+            const suffix = stat === 'comp_%' ? '%' : '';
+            const displayTotal = Number.isInteger(total) ? total : total.toFixed(1);
+            bodyHtml += `<td><strong>${displayTotal}${suffix}</strong></td>`;
+        });
+        bodyHtml += '</tr>';
+
+        return `
+            <div class="stats-category-section">
+                <h3 class="stats-category-title">${title}</h3>
+                <div class="stats-table-container">
+                    <table class="stats-table">
+                        <thead>
+                            <tr>${headerHtml}</tr>
+                        </thead>
+                        <tbody>${bodyHtml}</tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+    };
+
+    // Create tables for each category that has data
+    let html = '';
+
+    if (usedCategories.offense) {
+        html += createCategoryTable('Offensive Stats', usedStats.offense, offensivePositions, offensiveStats);
+    }
+
+    if (usedCategories.defense) {
+        html += createCategoryTable('Defensive Stats', usedStats.defense, defensivePositions, defensiveStats);
+    }
+
+    if (usedCategories.special) {
+        html += createCategoryTable('Special Teams Stats', usedStats.special, specialPositions, specialStats);
+    }
+
+    if (html === '') {
+        container.innerHTML = '<div class="no-stats-message">No games recorded yet.</div>';
+    } else {
+        container.innerHTML = html;
+    }
+
+    // Store all games data for editing (not just filtered)
+    window.gamesData = allGamesData;
+
+    // Add click handlers for editable rows (only on own profile)
+    if (isOwnProfile) {
+        container.querySelectorAll('tr.clickable-row').forEach(row => {
+            row.addEventListener('click', () => {
+                const gameId = row.dataset.gameId;
+                const game = allGamesData.find(g => g.game_id == gameId);
+                if (game) {
+                    showEditStatsModal(game);
+                }
+            });
+        });
+    }
+
+}
+
+// ============================================
+// CAREER STATISTICS DISPLAY
+// ============================================
+
+function displayCareerStats(games) {
+    const container = document.getElementById('careerStatsTablesContainer');
+    if (!container) return;
+
+    // Clear container
+    container.innerHTML = '';
+
+    if (!games || games.length === 0) {
+        container.innerHTML = '<div class="no-stats-message">No career statistics to display yet.</div>';
+        return;
+    }
+
+    // Define position categories
+    const offensivePositions = ['QB', 'RB', 'FB', 'WR', 'TE', 'OT', 'OG', 'C'];
+    const defensivePositions = ['DE', 'DT', 'NT', 'ILB', 'OLB', 'CB', 'S'];
+    const specialPositions = ['K', 'P', 'LS'];
+
+    // Define stats by category
+    const offensiveStats = ['rush_yds', 'rush_tds', 'pass_yds', 'pass_tds', 'ints', 'comp_%', 'rec', 'rec_yds', 'rec_td', 'rec_tds', 'total_tds'];
+    const defensiveStats = ['tackles', 'tfls', 'sacks', 'pbu', 'ff', 'int'];
+    const specialStats = ['att', 'm', 'blk', 'long', 'pats', 'avg', 'tb', 'fc', 'i20', '50_'];
+
+    // Map position to its stats
+    const positionStatsMap = {
+        'QB': ['rush_yds', 'rush_tds', 'pass_yds', 'pass_tds', 'ints', 'comp_%', 'total_tds'],
+        'RB': ['rush_yds', 'rush_tds', 'rec', 'rec_yds', 'rec_tds', 'total_tds'],
+        'FB': ['rush_yds', 'rush_tds', 'rec', 'rec_yds', 'rec_tds', 'total_tds'],
+        'WR': ['rec', 'rec_yds', 'rec_tds', 'total_tds'],
+        'TE': ['rec', 'rec_yds', 'rec_tds', 'total_tds'],
+        'OT': [], 'OG': [], 'C': [],
+        'DE': ['tackles', 'tfls', 'sacks', 'pbu', 'ff'],
+        'DT': ['tackles', 'tfls', 'sacks', 'pbu', 'ff'],
+        'NT': ['tackles', 'tfls', 'sacks', 'pbu', 'ff'],
+        'ILB': ['tackles', 'tfls', 'sacks', 'ff', 'int', 'pbu'],
+        'OLB': ['tackles', 'tfls', 'sacks', 'ff', 'int', 'pbu'],
+        'CB': ['tackles', 'int', 'pbu'],
+        'S': ['tackles', 'int', 'pbu'],
+        'K': ['att', 'm', 'blk', 'long', 'pats'],
+        'P': ['att', 'long', 'avg', 'tb', 'fc', 'i20', '50+', 'blk'],
+        'LS': []
+    };
+
+    // Group games by season year
+    const gamesBySeason = {};
+    games.forEach(game => {
+        const year = game.season_year || 'Unknown';
+        if (!gamesBySeason[year]) {
+            gamesBySeason[year] = [];
+        }
+        gamesBySeason[year].push(game);
+    });
+
+    // Get sorted season years (ascending - latest at bottom)
+    const seasonYears = Object.keys(gamesBySeason).sort((a, b) => a - b);
+
+    // Collect stats used across all seasons
+    const usedStats = { offense: new Set(), defense: new Set(), special: new Set() };
+    const usedCategories = { offense: false, defense: false, special: false };
+
+    games.forEach(game => {
+        if (game.position_stats && Array.isArray(game.position_stats)) {
+            game.position_stats.forEach(ps => {
+                if (ps && ps.position && ps.stats) {
+                    const position = ps.position;
+                    const posStats = positionStatsMap[position] || [];
+
+                    if (offensivePositions.includes(position)) {
+                        usedCategories.offense = true;
+                        posStats.forEach(stat => usedStats.offense.add(stat));
+                    } else if (defensivePositions.includes(position)) {
+                        usedCategories.defense = true;
+                        posStats.forEach(stat => usedStats.defense.add(stat));
+                    } else if (specialPositions.includes(position)) {
+                        usedCategories.special = true;
+                        posStats.forEach(stat => usedStats.special.add(stat));
+                    }
+                }
+            });
+        }
+    });
+
+    // Helper function to sort stats by category order
+    const sortStatsByOrder = (stats, orderArray) => {
+        return Array.from(stats).sort((a, b) => {
+            const aIdx = orderArray.indexOf(a);
+            const bIdx = orderArray.indexOf(b);
+            if (aIdx !== -1 && bIdx !== -1) return aIdx - bIdx;
+            if (aIdx !== -1) return -1;
+            if (bIdx !== -1) return 1;
+            return a.localeCompare(b);
+        });
+    };
+
+    // Helper function to calculate season totals for a category
+    const calculateSeasonTotals = (seasonGames, categoryPositions, categoryStats) => {
+        const totals = {};
+        categoryStats.forEach(stat => { totals[stat] = 0; });
+        let gamesCount = 0;
+
+        seasonGames.forEach(game => {
+            let hasStatsForCategory = false;
+            if (game.position_stats && Array.isArray(game.position_stats)) {
+                game.position_stats.forEach(ps => {
+                    if (ps && categoryPositions.includes(ps.position) && ps.stats) {
+                        hasStatsForCategory = true;
+                        categoryStats.forEach(stat => {
+                            // Calculate total_tds dynamically - sum of all available TD types
+                            if (stat === 'total_tds') {
+                                const passTds = parseFloat(ps.stats['pass_tds']) || 0;
+                                const rushTds = parseFloat(ps.stats['rush_tds']) || 0;
+                                const recTds = parseFloat(ps.stats['rec_tds']) || 0;
+                                totals[stat] += passTds + rushTds + recTds;
+                            } else if (ps.stats[stat] !== undefined && ps.stats[stat] !== null) {
+                                totals[stat] += parseFloat(ps.stats[stat]) || 0;
+                            }
+                        });
+                    }
+                });
+            }
+            if (hasStatsForCategory) gamesCount++;
+        });
+
+        return { totals, gamesCount };
+    };
+
+    // Helper function to create a career stats table for a category
+    const createCareerCategoryTable = (title, categoryStats, categoryPositions, statOrderArray) => {
+        if (categoryStats.size === 0) return '';
+
+        const sortedStats = sortStatsByOrder(categoryStats, statOrderArray);
+
+        // Check if any season has data for this category
+        let hasAnyData = false;
+        seasonYears.forEach(year => {
+            const { gamesCount } = calculateSeasonTotals(gamesBySeason[year], categoryPositions, sortedStats);
+            if (gamesCount > 0) hasAnyData = true;
+        });
+
+        if (!hasAnyData) return '';
+
+        // Build header
+        let headerHtml = '<th>Season</th><th>Games</th>';
+        sortedStats.forEach(stat => {
+            const label = stat.replace(/_/g, ' ').toUpperCase();
+            headerHtml += `<th>${label}</th>`;
+        });
+
+        // Build body rows and track career totals
+        const careerTotals = {};
+        sortedStats.forEach(stat => { careerTotals[stat] = 0; });
+        let careerGamesCount = 0;
+        let seasonCount = 0;
+
+        let bodyHtml = '';
+        seasonYears.forEach(year => {
+            const { totals, gamesCount } = calculateSeasonTotals(gamesBySeason[year], categoryPositions, sortedStats);
+
+            if (gamesCount === 0) return; // Skip seasons with no games for this category
+
+            careerGamesCount += gamesCount;
+            seasonCount++;
+
+            bodyHtml += `<tr>`;
+            bodyHtml += `<td>${year}</td>`;
+            bodyHtml += `<td>${gamesCount}</td>`;
+
+            sortedStats.forEach(stat => {
+                let displayVal = totals[stat];
+                if (stat === 'comp_%' && gamesCount > 0) {
+                    // Average comp % for this season, accumulate season average for career
+                    displayVal = displayVal / gamesCount;
+                    careerTotals[stat] += displayVal;
+                } else {
+                    careerTotals[stat] += totals[stat];
+                }
+                const suffix = stat === 'comp_%' ? '%' : '';
+                const displayValue = Number.isInteger(displayVal) ? displayVal : displayVal.toFixed(1);
+                bodyHtml += `<td>${displayValue}${suffix}</td>`;
+            });
+
+            bodyHtml += '</tr>';
+        });
+
+        // If no rows were added, don't create the table
+        if (bodyHtml === '') return '';
+
+        // Add career totals row
+        bodyHtml += '<tr class="totals-row">';
+        bodyHtml += '<td><strong>CAREER</strong></td>';
+        bodyHtml += `<td><strong>${careerGamesCount}</strong></td>`;
+        sortedStats.forEach(stat => {
+            let total = careerTotals[stat];
+            // Comp % career total = average of season averages
+            if (stat === 'comp_%' && seasonCount > 0) {
+                total = total / seasonCount;
+            }
+            const suffix = stat === 'comp_%' ? '%' : '';
+            const displayTotal = Number.isInteger(total) ? total : total.toFixed(1);
+            bodyHtml += `<td><strong>${displayTotal}${suffix}</strong></td>`;
+        });
+        bodyHtml += '</tr>';
+
+        return `
+            <div class="stats-category-section">
+                <h3 class="stats-category-title">${title}</h3>
+                <div class="stats-table-container">
+                    <table class="stats-table">
+                        <thead>
+                            <tr>${headerHtml}</tr>
+                        </thead>
+                        <tbody>${bodyHtml}</tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+    };
+
+    // Create tables for each category that has data
+    let html = '';
+
+    if (usedCategories.offense) {
+        html += createCareerCategoryTable('Offensive Stats', usedStats.offense, offensivePositions, offensiveStats);
+    }
+
+    if (usedCategories.defense) {
+        html += createCareerCategoryTable('Defensive Stats', usedStats.defense, defensivePositions, defensiveStats);
+    }
+
+    if (usedCategories.special) {
+        html += createCareerCategoryTable('Special Teams Stats', usedStats.special, specialPositions, specialStats);
+    }
+
+    if (html === '') {
+        container.innerHTML = '<div class="no-stats-message">No career statistics to display yet.</div>';
+    } else {
+        container.innerHTML = html;
+    }
+
+}
+
+// ============================================
+// OVERVIEW TAB STATS DISPLAY
+// ============================================
+
+function displayOverviewStats(games) {
+    const seasonContainer = document.getElementById('overviewSeasonStatsContainer');
+    const careerContainer = document.getElementById('overviewCareerStatsContainer');
+
+    if (!seasonContainer || !careerContainer) return;
+
+    // Clear containers
+    seasonContainer.innerHTML = '';
+    careerContainer.innerHTML = '';
+
+    if (!games || games.length === 0) {
+        seasonContainer.innerHTML = `
+            <div class="overview-section">
+                <h2 class="section-title">Season Stats</h2>
+                <div class="info-card">
+                    <div class="no-stats-message">No season stats recorded yet.</div>
+                </div>
+            </div>
+        `;
+        careerContainer.innerHTML = `
+            <div class="overview-section">
+                <h2 class="section-title">Career Stats</h2>
+                <div class="info-card">
+                    <div class="no-stats-message">No career stats recorded yet.</div>
+                </div>
+            </div>
+        `;
+        return;
+    }
+
+    // Define position categories
+    const offensivePositions = ['QB', 'RB', 'FB', 'WR', 'TE', 'OT', 'OG', 'C'];
+    const defensivePositions = ['DE', 'DT', 'NT', 'ILB', 'OLB', 'CB', 'S'];
+    const specialPositions = ['K', 'P', 'LS'];
+
+    // Map position to its stats
+    const positionStatsMap = {
+        'QB': ['rush_yds', 'rush_tds', 'pass_yds', 'pass_tds', 'ints', 'comp_%', 'total_tds'],
+        'RB': ['rush_yds', 'rush_tds', 'rec', 'rec_yds', 'rec_tds', 'total_tds'],
+        'FB': ['rush_yds', 'rush_tds', 'rec', 'rec_yds', 'rec_tds', 'total_tds'],
+        'WR': ['rec', 'rec_yds', 'rec_tds', 'total_tds'],
+        'TE': ['rec', 'rec_yds', 'rec_tds', 'total_tds'],
+        'OT': [], 'OG': [], 'C': [],
+        'DE': ['tackles', 'tfls', 'sacks', 'pbu', 'ff'],
+        'DT': ['tackles', 'tfls', 'sacks', 'pbu', 'ff'],
+        'NT': ['tackles', 'tfls', 'sacks', 'pbu', 'ff'],
+        'ILB': ['tackles', 'tfls', 'sacks', 'ff', 'int', 'pbu'],
+        'OLB': ['tackles', 'tfls', 'sacks', 'ff', 'int', 'pbu'],
+        'CB': ['tackles', 'int', 'pbu'],
+        'S': ['tackles', 'int', 'pbu'],
+        'K': ['att', 'm', 'blk', 'long', 'pats'],
+        'P': ['att', 'long', 'avg', 'tb', 'fc', 'i20', '50+', 'blk'],
+        'LS': []
+    };
+
+    // Stat labels for display
+    const statLabels = {
+        'rush_yds': 'Rush Yds',
+        'rush_tds': 'Rush TDs',
+        'pass_yds': 'Pass Yds',
+        'pass_tds': 'Pass TDs',
+        'ints': 'INTs',
+        'comp_%': 'Comp %',
+        'total_tds': 'Total TDs',
+        'rec': 'Rec',
+        'rec_yds': 'Rec Yds',
+        'rec_td': 'Rec TDs',
+        'rec_tds': 'Rec TDs',
+        'tackles': 'Tackles',
+        'tfls': 'TFLs',
+        'sacks': 'Sacks',
+        'pbu': 'PBU',
+        'ff': 'FF',
+        'int': 'INTs',
+        'att': 'Att',
+        'm': 'Made',
+        'blk': 'Blk',
+        'long': 'Long',
+        'pats': 'PATs',
+        'avg': 'Avg',
+        'tb': 'TB',
+        'fc': 'FC',
+        'i20': 'I20',
+        '50+': '50+'
+    };
+
+    // Group games by season year
+    const gamesBySeason = {};
+    games.forEach(game => {
+        const year = game.season_year || 'Unknown';
+        if (!gamesBySeason[year]) {
+            gamesBySeason[year] = [];
+        }
+        gamesBySeason[year].push(game);
+    });
+
+    // Get most recent season year
+    const seasonYears = Object.keys(gamesBySeason).sort((a, b) => b - a);
+    const mostRecentSeason = seasonYears[0];
+
+    // Collect stats used across all games
+    const usedStats = { offense: new Set(), defense: new Set(), special: new Set() };
+    const usedCategories = { offense: false, defense: false, special: false };
+
+    games.forEach(game => {
+        if (game.position_stats && Array.isArray(game.position_stats)) {
+            game.position_stats.forEach(ps => {
+                if (ps && ps.position && ps.stats) {
+                    const position = ps.position;
+                    const posStats = positionStatsMap[position] || [];
+
+                    if (offensivePositions.includes(position)) {
+                        usedCategories.offense = true;
+                        posStats.forEach(stat => usedStats.offense.add(stat));
+                    } else if (defensivePositions.includes(position)) {
+                        usedCategories.defense = true;
+                        posStats.forEach(stat => usedStats.defense.add(stat));
+                    } else if (specialPositions.includes(position)) {
+                        usedCategories.special = true;
+                        posStats.forEach(stat => usedStats.special.add(stat));
+                    }
+                }
+            });
+        }
+    });
+
+    // Helper function to calculate totals for a set of games and category
+    const calculateTotals = (gamesList, categoryPositions, categoryStatsSet) => {
+        const totals = {};
+        const statsArray = Array.from(categoryStatsSet);
+        statsArray.forEach(stat => { totals[stat] = 0; });
+        let gamesCount = 0;
+
+        gamesList.forEach(game => {
+            let hasStatsForCategory = false;
+            if (game.position_stats && Array.isArray(game.position_stats)) {
+                game.position_stats.forEach(ps => {
+                    if (ps && categoryPositions.includes(ps.position) && ps.stats) {
+                        hasStatsForCategory = true;
+                        statsArray.forEach(stat => {
+                            // Calculate total_tds dynamically - sum of all available TD types
+                            if (stat === 'total_tds') {
+                                const passTds = parseFloat(ps.stats['pass_tds']) || 0;
+                                const rushTds = parseFloat(ps.stats['rush_tds']) || 0;
+                                const recTds = parseFloat(ps.stats['rec_tds']) || 0;
+                                totals[stat] += passTds + rushTds + recTds;
+                            } else if (ps.stats[stat] !== undefined && ps.stats[stat] !== null) {
+                                totals[stat] += parseFloat(ps.stats[stat]) || 0;
+                            }
+                        });
+                    }
+                });
+            }
+            if (hasStatsForCategory) gamesCount++;
+        });
+
+        return { totals, gamesCount };
+    };
+
+    // Helper function to create stat boxes HTML
+    const createStatBoxesHtml = (totals, gamesCount, statsSet) => {
+        let html = `
+            <div class="stat-box">
+                <div class="stat-value">${gamesCount}</div>
+                <div class="stat-label">Games</div>
+            </div>
+        `;
+
+        // Separate total_tds from other stats to display it prominently
+        const regularStats = [];
+        let hasTotalTds = false;
+        let totalTdsValue = 0;
+
+        Array.from(statsSet).forEach(stat => {
+            if (stat === 'total_tds') {
+                hasTotalTds = true;
+                totalTdsValue = totals[stat];
+            } else {
+                regularStats.push(stat);
+            }
+        });
+
+        // Add regular stats first
+        regularStats.forEach(stat => {
+            let value = totals[stat];
+            // Comp % should show average, not sum
+            if (stat === 'comp_%' && gamesCount > 0) {
+                value = value / gamesCount;
+            }
+            const suffix = stat === 'comp_%' ? '%' : '';
+            const displayValue = Number.isInteger(value) ? value : value.toFixed(1);
+            const label = statLabels[stat] || stat.replace(/_/g, ' ').toUpperCase();
+            html += `
+                <div class="stat-box">
+                    <div class="stat-value">${displayValue}${suffix}</div>
+                    <div class="stat-label">${label}</div>
+                </div>
+            `;
+        });
+
+        // Add total_tds last (regular stat box)
+        if (hasTotalTds) {
+            const displayValue = Number.isInteger(totalTdsValue) ? totalTdsValue : totalTdsValue.toFixed(1);
+            html += `
+                <div class="stat-box">
+                    <div class="stat-value">${displayValue}</div>
+                    <div class="stat-label">Total TDs</div>
+                </div>
+            `;
+        }
+
+        return html;
+    };
+
+    // Helper function to create a category section
+    const createCategorySection = (title, totals, gamesCount, statsSet) => {
+        if (statsSet.size === 0 || gamesCount === 0) return '';
+
+        return `
+            <div class="overview-stats-category">
+                <h3 class="overview-stats-category-title">${title}</h3>
+                <div class="stats-horizontal">
+                    ${createStatBoxesHtml(totals, gamesCount, statsSet)}
+                </div>
+            </div>
+        `;
+    };
+
+    // ==================
+    // SEASON STATS
+    // ==================
+    if (mostRecentSeason) {
+        const seasonGames = gamesBySeason[mostRecentSeason];
+        let seasonHtml = '';
+
+        if (usedCategories.offense) {
+            const { totals, gamesCount } = calculateTotals(seasonGames, offensivePositions, usedStats.offense);
+            seasonHtml += createCategorySection('Offense', totals, gamesCount, usedStats.offense);
+        }
+
+        if (usedCategories.defense) {
+            const { totals, gamesCount } = calculateTotals(seasonGames, defensivePositions, usedStats.defense);
+            seasonHtml += createCategorySection('Defense', totals, gamesCount, usedStats.defense);
+        }
+
+        if (usedCategories.special) {
+            const { totals, gamesCount } = calculateTotals(seasonGames, specialPositions, usedStats.special);
+            seasonHtml += createCategorySection('Special Teams', totals, gamesCount, usedStats.special);
+        }
+
+        if (seasonHtml) {
+            seasonContainer.innerHTML = `
+                <div class="overview-section">
+                    <h2 class="section-title">Season Stats (${mostRecentSeason})</h2>
+                    <div class="info-card">
+                        ${seasonHtml}
+                    </div>
+                </div>
+            `;
+        } else {
+            seasonContainer.innerHTML = `
+                <div class="overview-section">
+                    <h2 class="section-title">Season Stats (${mostRecentSeason})</h2>
+                    <div class="info-card">
+                        <div class="no-stats-message">No season stats recorded yet.</div>
+                    </div>
+                </div>
+            `;
+        }
+    }
+
+    // ==================
+    // CAREER STATS
+    // ==================
+    let careerHtml = '';
+
+    if (usedCategories.offense) {
+        const { totals, gamesCount } = calculateTotals(games, offensivePositions, usedStats.offense);
+        careerHtml += createCategorySection('Offense', totals, gamesCount, usedStats.offense);
+    }
+
+    if (usedCategories.defense) {
+        const { totals, gamesCount } = calculateTotals(games, defensivePositions, usedStats.defense);
+        careerHtml += createCategorySection('Defense', totals, gamesCount, usedStats.defense);
+    }
+
+    if (usedCategories.special) {
+        const { totals, gamesCount } = calculateTotals(games, specialPositions, usedStats.special);
+        careerHtml += createCategorySection('Special Teams', totals, gamesCount, usedStats.special);
+    }
+
+    if (careerHtml) {
+        careerContainer.innerHTML = `
+            <div class="overview-section">
+                <h2 class="section-title">Career Stats</h2>
+                <div class="info-card">
+                    ${careerHtml}
+                </div>
+            </div>
+        `;
+    } else {
+        careerContainer.innerHTML = `
+            <div class="overview-section">
+                <h2 class="section-title">Career Stats</h2>
+                <div class="info-card">
+                    <div class="no-stats-message">No career stats recorded yet.</div>
+                </div>
+            </div>
+        `;
+    }
+
+}
+
+// ============================================
+// EDIT GAME STATS MODAL
+// ============================================
+
+let currentEditGameId = null;
+
+function showEditStatsModal(game) {
+    const modal = document.getElementById('editStatsModal');
+    if (!modal) return;
+
+    currentEditGameId = game.game_id;
+
+    // Set opponent
+    const opponentInput = document.getElementById('editGameOpponent');
+    if (opponentInput) {
+        opponentInput.value = game.opponent || '';
+    }
+
+    // Set game ID
+    const gameIdInput = document.getElementById('editGameId');
+    if (gameIdInput) {
+        gameIdInput.value = game.game_id;
+    }
+
+    // Clear and populate stats fields
+    const container = document.getElementById('editStatsFieldsContainer');
+    container.innerHTML = '';
+    editSelectedPositions = [];
+
+    // Add stats sections for each position in the game
+    if (game.position_stats && Array.isArray(game.position_stats)) {
+        game.position_stats.forEach(ps => {
+            if (ps.position) {
+                editSelectedPositions.push(ps.position);
+                addEditPositionStatsFields(ps.position, ps.stats || {});
+            }
+        });
+    }
+
+    modal.classList.add('active');
+    document.body.style.overflow = 'hidden';
+}
+
+function hideEditStatsModal() {
+    const modal = document.getElementById('editStatsModal');
+    if (modal) {
+        modal.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+    currentEditGameId = null;
+}
+
+function addEditPositionStatsFields(position, existingStats = {}) {
+    const container = document.getElementById('editStatsFieldsContainer');
+    if (!container) return;
+
+    const stats = POSITION_STATS[position] || [];
+
+    // Create a section for this position
+    const sectionDiv = document.createElement('div');
+    sectionDiv.className = 'position-stats-section';
+    sectionDiv.dataset.position = position;
+
+    // Add position header
+    let html = `
+        <div class="position-stats-header">
+            <h4>${position} Stats</h4>
+        </div>
+    `;
+
+    // If no stats for this position, show a message
+    if (stats.length === 0) {
+        html += '<p class="no-stats-message">No stats to track for this position.</p>';
+    } else {
+        // Create the stats grid
+        html += '<div class="stats-fields-grid">';
+        stats.forEach(stat => {
+            const fieldId = `edit_stat_${position}_${stat.replace(/[^a-zA-Z0-9%]/g, '_').toLowerCase()}`;
+            const statKey = stat.toLowerCase().replace(/[^a-z0-9%]/g, '_');
+            const existingValue = existingStats[statKey] ?? '';
+            html += `
+                <div class="stat-field-group">
+                    <label for="${fieldId}">${stat}</label>
+                    <input type="number" id="${fieldId}" name="${fieldId}" placeholder="0" min="0" step="any" value="${existingValue}">
+                </div>
+            `;
+        });
+        html += '</div>';
+    }
+
+    sectionDiv.innerHTML = html;
+    container.appendChild(sectionDiv);
+}
+
+async function saveEditedGameStats() {
+    const gameId = currentEditGameId;
+    if (!gameId) return;
+
+    const gameOpponent = document.getElementById('editGameOpponent').value;
+
+    // Collect stats for each position
+    const positions = {};
+    editSelectedPositions.forEach(position => {
+        const stats = POSITION_STATS[position] || [];
+        const positionStats = {};
+
+        stats.forEach(stat => {
+            const fieldId = `edit_stat_${position}_${stat.replace(/[^a-zA-Z0-9%]/g, '_').toLowerCase()}`;
+            const input = document.getElementById(fieldId);
+            if (input && input.value) {
+                const statKey = stat.toLowerCase().replace(/[^a-z0-9%]/g, '_');
+                positionStats[statKey] = parseFloat(input.value) || 0;
+            }
+        });
+
+        if (Object.keys(positionStats).length > 0 || stats.length === 0) {
+            positions[position] = positionStats;
+        }
+    });
+
+    // Get current game data for date info
+    const currentGame = window.gamesData?.find(g => g.game_id == gameId);
+    const game_date = currentGame?.game_date || new Date().toISOString().split('T')[0];
+    const season_year = currentGame?.season_year || new Date().getFullYear();
+
+    // Disable save button while saving
+    const btnSave = document.getElementById('btnEditStatsSave');
+    const originalText = btnSave.textContent;
+    btnSave.disabled = true;
+    btnSave.textContent = 'Saving...';
+
+    try {
+        const response = await API.put(`/stats/${gameId}`, {
+            game_date,
+            season_year,
+            opponent: gameOpponent || null,
+            result: null,
+            positions: positions
+        });
+
+        if (response.success) {
+            showToast('Game stats updated successfully!', 'success');
+            hideEditStatsModal();
+            loadGameStats();
+        } else {
+            showToast(response.error || 'Failed to update stats', 'error');
+        }
+    } catch (error) {
+        console.error('Error updating game stats:', error);
+        showToast('Failed to update game stats', 'error');
+    } finally {
+        btnSave.disabled = false;
+        btnSave.textContent = originalText;
+    }
+}
+
+function showDeleteStatsConfirmModal() {
+    const modal = document.getElementById('deleteStatsConfirmModal');
+    if (modal) {
+        modal.classList.add('active');
+    }
+}
+
+function hideDeleteStatsConfirmModal() {
+    const modal = document.getElementById('deleteStatsConfirmModal');
+    if (modal) {
+        modal.classList.remove('active');
+    }
+}
+
+async function confirmDeleteGameStats() {
+    const gameId = currentEditGameId;
+    if (!gameId) return;
+
+    const confirmBtn = document.getElementById('btnStatsConfirmDelete');
+    const originalText = confirmBtn.textContent;
+    confirmBtn.textContent = 'Deleting...';
+    confirmBtn.disabled = true;
+
+    try {
+        const response = await API.delete(`/stats/${gameId}`);
+
+        if (response.success) {
+            showToast('Game stats deleted successfully!', 'success');
+            hideDeleteStatsConfirmModal();
+            hideEditStatsModal();
+            loadGameStats();
+        } else {
+            showToast(response.error || 'Failed to delete stats', 'error');
+        }
+    } catch (error) {
+        console.error('Error deleting game stats:', error);
+        showToast('Failed to delete game stats', 'error');
+    } finally {
+        confirmBtn.textContent = originalText;
+        confirmBtn.disabled = false;
+    }
+}
+
+// Setup Edit Stats Modal event listeners
+function setupEditStatsModal() {
+    const editStatsModal = document.getElementById('editStatsModal');
+    const editStatsModalOverlay = document.getElementById('editStatsModalOverlay');
+    const editStatsModalClose = document.getElementById('editStatsModalClose');
+    const btnEditStatsCancel = document.getElementById('btnEditStatsCancel');
+    const btnEditStatsSave = document.getElementById('btnEditStatsSave');
+    const btnDeleteGameStats = document.getElementById('btnDeleteGameStats');
+
+    // Delete confirmation modal elements
+    const deleteStatsConfirmOverlay = document.getElementById('deleteStatsConfirmOverlay');
+    const btnStatsConfirmCancel = document.getElementById('btnStatsConfirmCancel');
+    const btnStatsConfirmDelete = document.getElementById('btnStatsConfirmDelete');
+
+    // Close modal handlers
+    if (editStatsModalOverlay) {
+        editStatsModalOverlay.addEventListener('click', hideEditStatsModal);
+    }
+    if (editStatsModalClose) {
+        editStatsModalClose.addEventListener('click', hideEditStatsModal);
+    }
+    if (btnEditStatsCancel) {
+        btnEditStatsCancel.addEventListener('click', hideEditStatsModal);
+    }
+
+    // Save changes handler
+    if (btnEditStatsSave) {
+        btnEditStatsSave.addEventListener('click', saveEditedGameStats);
+    }
+
+    // Delete handler (shows confirmation modal)
+    if (btnDeleteGameStats) {
+        btnDeleteGameStats.addEventListener('click', showDeleteStatsConfirmModal);
+    }
+
+    // Delete confirmation modal handlers
+    if (deleteStatsConfirmOverlay) {
+        deleteStatsConfirmOverlay.addEventListener('click', hideDeleteStatsConfirmModal);
+    }
+    if (btnStatsConfirmCancel) {
+        btnStatsConfirmCancel.addEventListener('click', hideDeleteStatsConfirmModal);
+    }
+    if (btnStatsConfirmDelete) {
+        btnStatsConfirmDelete.addEventListener('click', confirmDeleteGameStats);
+    }
+}
+
+// Initialize edit stats modal when DOM is ready
+document.addEventListener('DOMContentLoaded', setupEditStatsModal);
+
+// ============================================
+// HIGHLIGHTS TAB
+// ============================================
+
+function setupHighlightsModal() {
+    const addHighlightModal = document.getElementById('addHighlightModal');
+    const addHighlightModalOverlay = document.getElementById('addHighlightModalOverlay');
+    const addHighlightModalClose = document.getElementById('addHighlightModalClose');
+    const addSeasonHighlightBtn = document.getElementById('addSeasonHighlightBtn');
+    const addGameHighlightBtn = document.getElementById('addGameHighlightBtn');
+    const btnSeasonHighlight = document.getElementById('btnSeasonHighlight');
+    const btnGameHighlight = document.getElementById('btnGameHighlight');
+    const highlightTypeSelection = document.getElementById('highlightTypeSelection');
+    const highlightLinkInput = document.getElementById('highlightLinkInput');
+    const addHighlightModalFooter = document.getElementById('addHighlightModalFooter');
+    const highlightTypeValue = document.getElementById('highlightTypeValue');
+    const btnHighlightBack = document.getElementById('btnHighlightBack');
+    const btnHighlightSave = document.getElementById('btnHighlightSave');
+    const highlightTitleInput = document.getElementById('highlightTitle');
+    const highlightLinkInputField = document.getElementById('highlightLink');
+
+    if (!addHighlightModal) return;
+
+    // Open modal from Add Highlight buttons
+    function openHighlightModal(type) {
+        currentHighlightType = type;
+        resetHighlightModal();
+
+        // If type is specified, go directly to link input step
+        if (type) {
+            highlightTypeValue.textContent = type === 'season' ? 'Season Highlight Reel' : 'Single Game Highlight Reel';
+            highlightTypeSelection.style.display = 'none';
+            highlightLinkInput.style.display = 'block';
+            addHighlightModalFooter.style.display = 'flex';
+        }
+
+        addHighlightModal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+
+    if (addSeasonHighlightBtn) {
+        addSeasonHighlightBtn.addEventListener('click', () => openHighlightModal('season'));
+    }
+
+    if (addGameHighlightBtn) {
+        addGameHighlightBtn.addEventListener('click', () => openHighlightModal('game'));
+    }
+
+    // Type selection buttons in modal
+    if (btnSeasonHighlight) {
+        btnSeasonHighlight.addEventListener('click', () => {
+            currentHighlightType = 'season';
+            highlightTypeValue.textContent = 'Season Highlight Reel';
+            highlightTypeSelection.style.display = 'none';
+            highlightLinkInput.style.display = 'block';
+            addHighlightModalFooter.style.display = 'flex';
+        });
+    }
+
+    if (btnGameHighlight) {
+        btnGameHighlight.addEventListener('click', () => {
+            currentHighlightType = 'game';
+            highlightTypeValue.textContent = 'Single Game Highlight Reel';
+            highlightTypeSelection.style.display = 'none';
+            highlightLinkInput.style.display = 'block';
+            addHighlightModalFooter.style.display = 'flex';
+        });
+    }
+
+    // Back button
+    if (btnHighlightBack) {
+        btnHighlightBack.addEventListener('click', () => {
+            highlightTypeSelection.style.display = 'block';
+            highlightLinkInput.style.display = 'none';
+            addHighlightModalFooter.style.display = 'none';
+            if (highlightTitleInput) highlightTitleInput.value = '';
+            if (highlightLinkInputField) highlightLinkInputField.value = '';
+        });
+    }
+
+    // Helper function to show validation error
+    function showHighlightError(message) {
+        const errorContainer = document.getElementById('highlightValidationErrors');
+        const errorText = document.getElementById('highlightErrorText');
+        if (errorContainer && errorText) {
+            errorText.textContent = message;
+            errorContainer.style.display = 'block';
+        }
+    }
+
+    // Helper function to hide validation error
+    function hideHighlightError() {
+        const errorContainer = document.getElementById('highlightValidationErrors');
+        if (errorContainer) {
+            errorContainer.style.display = 'none';
+        }
+    }
+
+    // Helper function to update progress bar
+    function updateProgressBar(percent, status = 'uploading') {
+        const progressContainer = document.getElementById('videoUploadProgress');
+        const progressBar = document.getElementById('videoProgressBar');
+        const progressText = document.getElementById('videoProgressText');
+
+        if (progressContainer && progressBar && progressText) {
+            progressContainer.style.display = 'flex';
+            progressBar.style.width = `${percent}%`;
+
+            if (status === 'ready') {
+                progressBar.classList.add('complete');
+                progressText.textContent = 'Ready!';
+            } else if (status === 'processing') {
+                progressBar.classList.remove('complete');
+                progressText.textContent = 'Processing...';
+            } else {
+                progressBar.classList.remove('complete');
+                progressText.textContent = `${Math.round(percent)}%`;
+            }
+        }
+    }
+
+    // Helper function to reset progress bar
+    function resetProgressBar() {
+        const progressContainer = document.getElementById('videoUploadProgress');
+        const progressBar = document.getElementById('videoProgressBar');
+        const progressText = document.getElementById('videoProgressText');
+
+        if (progressContainer && progressBar && progressText) {
+            progressContainer.style.display = 'none';
+            progressBar.style.width = '0%';
+            progressBar.classList.remove('complete');
+            progressText.textContent = '0%';
+        }
+    }
+
+    // Save highlight
+    if (btnHighlightSave) {
+        btnHighlightSave.addEventListener('click', async () => {
+            const title = highlightTitleInput?.value?.trim();
+            const link = highlightLinkInputField?.value?.trim();
+            const videoFileInput = document.getElementById('highlightVideoFile');
+            const videoFile = videoFileInput?.files?.[0];
+
+            // Hide any previous errors
+            hideHighlightError();
+
+            if (!title) {
+                showHighlightError('Please enter a title for your highlight');
+                return;
+            }
+
+            // Check if either a Hudl link or video file is provided
+            if (!link && !videoFile) {
+                showHighlightError('Please enter a Hudl link or upload a video file');
+                return;
+            }
+
+            // Validate Hudl link if provided
+            if (link && !isValidHudlLink(link)) {
+                showHighlightError('Please enter a valid Hudl link (e.g., https://www.hudl.com/video/...)');
+                return;
+            }
+
+            // Validate video file size (500MB max)
+            if (videoFile && videoFile.size > 500 * 1024 * 1024) {
+                showHighlightError('Video file is too large. Maximum size is 500MB.');
+                return;
+            }
+
+            try {
+                btnHighlightSave.disabled = true;
+                btnHighlightSave.textContent = 'Adding...';
+
+                let response;
+
+                if (videoFile) {
+                    // Upload with video file
+                    const formData = new FormData();
+                    formData.append('highlight_type', currentHighlightType);
+                    formData.append('title', title);
+                    if (link) formData.append('hudl_link', link);
+                    formData.append('video_file', videoFile);
+
+                    // Use XMLHttpRequest for progress tracking
+                    response = await new Promise((resolve, reject) => {
+                        const xhr = new XMLHttpRequest();
+
+                        xhr.upload.addEventListener('progress', (e) => {
+                            if (e.lengthComputable) {
+                                const percent = (e.loaded / e.total) * 100;
+                                updateProgressBar(percent, 'uploading');
+                            }
+                        });
+
+                        // When upload completes, show processing status
+                        xhr.upload.addEventListener('load', () => {
+                            updateProgressBar(100, 'processing');
+                        });
+
+                        xhr.addEventListener('load', () => {
+                            if (xhr.status >= 200 && xhr.status < 300) {
+                                try {
+                                    updateProgressBar(100, 'ready');
+                                    resolve(JSON.parse(xhr.responseText));
+                                } catch (e) {
+                                    reject(new Error('Invalid response'));
+                                }
+                            } else {
+                                reject(new Error(xhr.statusText || 'Upload failed'));
+                            }
+                        });
+
+                        xhr.addEventListener('error', () => reject(new Error('Network error')));
+
+                        xhr.open('POST', `${API_BASE_URL}/highlights/upload`);
+                        xhr.withCredentials = true;
+                        xhr.send(formData);
+                    });
+                } else {
+                    // Regular API call for Hudl link only
+                    response = await API.post('/highlights', {
+                        highlight_type: currentHighlightType,
+                        title: title,
+                        hudl_link: link
+                    });
+                }
+
+                if (response.success) {
+                    closeHighlightModal();
+                    loadHighlights(); // Reload highlights
+                } else {
+                    showHighlightError(response.message || 'Failed to add highlight');
+                }
+            } catch (error) {
+                console.error('Error adding highlight:', error);
+                showHighlightError('Failed to add highlight. Please try again.');
+            } finally {
+                btnHighlightSave.disabled = false;
+                btnHighlightSave.textContent = 'Add Highlight';
+                resetProgressBar();
+            }
+        });
+    }
+
+    // Close modal functions
+    function closeHighlightModal() {
+        addHighlightModal.classList.remove('active');
+        document.body.style.overflow = '';
+        resetHighlightModal();
+    }
+
+    function resetHighlightModal() {
+        highlightTypeSelection.style.display = 'block';
+        highlightLinkInput.style.display = 'none';
+        addHighlightModalFooter.style.display = 'none';
+        if (highlightTitleInput) highlightTitleInput.value = '';
+        if (highlightLinkInputField) highlightLinkInputField.value = '';
+
+        // Reset video file input
+        const videoFileInput = document.getElementById('highlightVideoFile');
+        if (videoFileInput) videoFileInput.value = '';
+
+        // Hide validation errors
+        hideHighlightError();
+
+        // Reset progress bar
+        resetProgressBar();
+    }
+
+    if (addHighlightModalOverlay) {
+        addHighlightModalOverlay.addEventListener('click', closeHighlightModal);
+    }
+
+    if (addHighlightModalClose) {
+        addHighlightModalClose.addEventListener('click', closeHighlightModal);
+    }
+}
+
+async function loadHighlights() {
+    if (!viewingUserId) return;
+
+    try {
+        const response = await API.get(`/highlights/${viewingUserId}`);
+        if (response.success && response.highlights) {
+            playerHighlights = {
+                season: response.highlights.filter(h => h.highlight_type === 'season'),
+                game: response.highlights.filter(h => h.highlight_type === 'game')
+            };
+            renderHighlights();
+        }
+    } catch (error) {
+        console.error('Error loading highlights:', error);
+    }
+}
+
+function renderHighlights() {
+    const seasonGrid = document.getElementById('seasonHighlightsGrid');
+    const gameGrid = document.getElementById('gameHighlightsGrid');
+
+    if (seasonGrid) {
+        if (playerHighlights.season.length === 0) {
+            seasonGrid.innerHTML = `
+                <div class="no-highlights-message">
+                    <p>No season highlight reels added yet.</p>
+                </div>
+            `;
+        } else {
+            seasonGrid.innerHTML = playerHighlights.season.map(highlight =>
+                createHighlightCard(highlight)
+            ).join('');
+            attachHighlightCardEvents(seasonGrid);
+        }
+    }
+
+    if (gameGrid) {
+        if (playerHighlights.game.length === 0) {
+            gameGrid.innerHTML = `
+                <div class="no-highlights-message">
+                    <p>No single game highlight reels added yet.</p>
+                </div>
+            `;
+        } else {
+            gameGrid.innerHTML = playerHighlights.game.map(highlight =>
+                createHighlightCard(highlight)
+            ).join('');
+            attachHighlightCardEvents(gameGrid);
+        }
+    }
+}
+
+function createHighlightCard(highlight) {
+    // Use the title from the database
+    const title = highlight.title || (highlight.highlight_type === 'season' ? 'Season Highlight Reel' : 'Game Highlight Reel');
+    const deleteButton = isOwnProfile
+        ? `<button class="highlight-delete-btn show-button" data-id="${highlight.id}">
+               <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                   <polyline points="3 6 5 6 21 6"></polyline>
+                   <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+               </svg>
+           </button>`
+        : '';
+
+    // Escape HTML in title to prevent XSS
+    const escapedTitle = title.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+    // Check if this is an uploaded video (has video_signed_url) or a Hudl link
+    const isUploadedVideo = highlight.video_signed_url && highlight.video_url;
+    const linkOrVideo = isUploadedVideo ? highlight.video_signed_url : highlight.hudl_link;
+    const displayUrl = isUploadedVideo ? 'Uploaded Video' : truncateUrl(highlight.hudl_link);
+
+    // For uploaded videos, show video thumbnail; for Hudl links, show play icon
+    const thumbnailContent = isUploadedVideo
+        ? `<video class="highlight-video-preview" src="${highlight.video_signed_url}" muted preload="metadata"></video>
+           <div class="highlight-play-overlay">
+               <svg viewBox="0 0 24 24" fill="currentColor">
+                   <polygon points="5 3 19 12 5 21 5 3"></polygon>
+               </svg>
+           </div>`
+        : `<svg viewBox="0 0 24 24" fill="currentColor">
+               <polygon points="5 3 19 12 5 21 5 3"></polygon>
+           </svg>`;
+
+    return `
+        <div class="highlight-card" data-link="${linkOrVideo || ''}" data-is-video="${isUploadedVideo}">
+            <div class="highlight-thumbnail">
+                ${thumbnailContent}
+                ${deleteButton}
+            </div>
+            <div class="highlight-info">
+                <h3>${escapedTitle}</h3>
+                <p>${displayUrl}</p>
+            </div>
+        </div>
+    `;
+}
+
+function truncateUrl(url) {
+    if (!url) return '';
+    // Remove protocol and www
+    let display = url.replace(/^https?:\/\/(www\.)?/, '');
+    // Truncate if too long
+    if (display.length > 40) {
+        display = display.substring(0, 37) + '...';
+    }
+    return display;
+}
+
+function attachHighlightCardEvents(container) {
+    // Click on card to open link or video modal
+    container.querySelectorAll('.highlight-card').forEach(card => {
+        card.addEventListener('click', (e) => {
+            // Don't open link if clicking delete button
+            if (e.target.closest('.highlight-delete-btn')) return;
+
+            const link = card.dataset.link;
+            const isVideo = card.dataset.isVideo === 'true';
+
+            if (link) {
+                if (isVideo) {
+                    // Open video in modal
+                    openVideoModal(link);
+                } else {
+                    // Open Hudl link in new tab
+                    window.open(link, '_blank');
+                }
+            }
+        });
+    });
+
+    // Delete button - show confirmation modal
+    container.querySelectorAll('.highlight-delete-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const highlightId = btn.dataset.id;
+            showDeleteHighlightConfirmModal(highlightId);
+        });
+    });
+}
+
+// Open video in fullscreen modal
+function openVideoModal(videoUrl) {
+    // Create modal if it doesn't exist
+    let modal = document.getElementById('videoPlayerModal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'videoPlayerModal';
+        modal.className = 'video-player-modal';
+        modal.innerHTML = `
+            <div class="video-player-modal-overlay"></div>
+            <div class="video-player-modal-content">
+                <button class="video-player-modal-close">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+                <video id="videoPlayerElement" controls autoplay>
+                    <source src="" type="video/mp4">
+                    Your browser does not support the video tag.
+                </video>
+            </div>
+        `;
+        document.body.appendChild(modal);
+
+        // Close modal on overlay click
+        modal.querySelector('.video-player-modal-overlay').addEventListener('click', closeVideoModal);
+        modal.querySelector('.video-player-modal-close').addEventListener('click', closeVideoModal);
+
+        // Close on escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && modal.classList.contains('active')) {
+                closeVideoModal();
+            }
+        });
+    }
+
+    // Set video source and show modal
+    const videoElement = modal.querySelector('#videoPlayerElement');
+    videoElement.src = videoUrl;
+    modal.classList.add('active');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeVideoModal() {
+    const modal = document.getElementById('videoPlayerModal');
+    if (modal) {
+        const videoElement = modal.querySelector('#videoPlayerElement');
+        videoElement.pause();
+        videoElement.src = '';
+        modal.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+}
+
+// Validate Hudl link
+function isValidHudlLink(url) {
+    if (!url) return false;
+
+    // Check if it starts with http:// or https://
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+        return false;
+    }
+
+    // Check if it's a Hudl domain
+    const hudlPatterns = [
+        /^https?:\/\/(www\.)?hudl\.com\//,
+        /^https?:\/\/hudl\.com\//
+    ];
+
+    return hudlPatterns.some(pattern => pattern.test(url));
+}
+
+// Delete highlight confirmation modal
+function showDeleteHighlightConfirmModal(highlightId) {
+    highlightToDelete = highlightId;
+    const modal = document.getElementById('deleteHighlightConfirmModal');
+    if (modal) {
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+}
+
+function hideDeleteHighlightConfirmModal() {
+    highlightToDelete = null;
+    const modal = document.getElementById('deleteHighlightConfirmModal');
+    if (modal) {
+        modal.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+}
+
+async function confirmDeleteHighlight() {
+    if (!highlightToDelete) return;
+
+    try {
+        const response = await API.delete(`/highlights/${highlightToDelete}`);
+        if (response.success) {
+            hideDeleteHighlightConfirmModal();
+            loadHighlights();
+        } else {
+            alert(response.message || 'Failed to delete highlight');
+        }
+    } catch (error) {
+        console.error('Error deleting highlight:', error);
+        alert('Failed to delete highlight. Please try again.');
+    }
+}
+
+function setupDeleteHighlightConfirmModal() {
+    const modal = document.getElementById('deleteHighlightConfirmModal');
+    const overlay = document.getElementById('deleteHighlightConfirmOverlay');
+    const cancelBtn = document.getElementById('btnHighlightConfirmCancel');
+    const deleteBtn = document.getElementById('btnHighlightConfirmDelete');
+
+    if (overlay) {
+        overlay.addEventListener('click', hideDeleteHighlightConfirmModal);
+    }
+    if (cancelBtn) {
+        cancelBtn.addEventListener('click', hideDeleteHighlightConfirmModal);
+    }
+    if (deleteBtn) {
+        deleteBtn.addEventListener('click', confirmDeleteHighlight);
+    }
+}
+
+// Initialize highlights
+document.addEventListener('DOMContentLoaded', () => {
+    setupHighlightsModal();
+    setupDeleteHighlightConfirmModal();
+});

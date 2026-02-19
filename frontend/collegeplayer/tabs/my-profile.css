@@ -4649,3 +4649,1718 @@ body.transfer-player-viewer .sidebar-user-avatar {
 .edit-modal.with-media .feed-modal-body {
     overflow-y: auto;
 }
+
+/* ============================================
+   STATS & HIGHLIGHTS STYLES
+   (Copied from hsplayer/tabs/my-profile.css)
+   ============================================ */
+
+/* ============================================
+   STATS TABLE BASE STYLES
+   ============================================ */
+
+.stats-table-container {
+    overflow-x: auto;
+}
+
+.stats-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: rgba(254, 252, 251, 0.03);
+    border: 1px solid rgba(18, 130, 162, 0.2);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.stats-table thead {
+    background: rgba(18, 130, 162, 0.15);
+}
+
+.stats-table th {
+    padding: 1rem;
+    text-align: center;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--cerulean);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.stats-table th:first-child {
+    text-align: left;
+}
+
+.stats-table td {
+    padding: 1rem;
+    border-top: 1px solid rgba(18, 130, 162, 0.1);
+    color: rgba(254, 252, 251, 0.8);
+    text-align: center;
+}
+
+.stats-table td:first-child {
+    text-align: left;
+}
+
+.stats-table tbody tr:hover {
+    background: rgba(18, 130, 162, 0.05);
+}
+
+/* ============================================
+   DELETE BUTTON (MODAL)
+   ============================================ */
+
+.btn-modal-delete {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.25rem;
+    background: rgba(220, 53, 69, 0.15);
+    border: 1px solid rgba(220, 53, 69, 0.4);
+    border-radius: 8px;
+    color: #dc3545;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: 'Inter', sans-serif;
+}
+
+.btn-modal-delete:hover {
+    background: rgba(220, 53, 69, 0.25);
+    border-color: #dc3545;
+}
+
+.btn-modal-delete:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.btn-modal-delete svg {
+    width: 18px;
+    height: 18px;
+}
+
+/* ============================================
+   STATS HORIZONTAL LAYOUT (Overview)
+   ============================================ */
+
+.stats-horizontal {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    justify-content: space-between;
+}
+
+.stats-horizontal .stat-box {
+    flex: 1 1 calc(12.5% - 1rem);
+    min-width: 100px;
+    text-align: center;
+    padding: 1.25rem 0.75rem;
+    background: rgba(18, 130, 162, 0.1);
+    border-radius: 10px;
+    transition: all 0.2s ease;
+}
+
+.stats-horizontal .stat-box:hover {
+    background: rgba(18, 130, 162, 0.18);
+    transform: translateY(-2px);
+}
+
+.stats-horizontal .stat-box .stat-value {
+    font-size: 1.75rem;
+    font-weight: 900;
+    color: var(--cerulean);
+    margin-bottom: 0.25rem;
+}
+
+.stats-horizontal .stat-box .stat-label {
+    font-size: 0.8rem;
+    color: rgba(254, 252, 251, 0.7);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 600;
+}
+
+/* Responsive for horizontal stats */
+@media (max-width: 1200px) {
+    .stats-horizontal .stat-box {
+        flex: 1 1 calc(25% - 1rem);
+    }
+}
+
+@media (max-width: 768px) {
+    .stats-horizontal .stat-box {
+        flex: 1 1 calc(50% - 0.5rem);
+        min-width: 80px;
+    }
+
+    .stats-horizontal .stat-box .stat-value {
+        font-size: 1.5rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .stats-horizontal .stat-box {
+        flex: 1 1 calc(50% - 0.5rem);
+    }
+}
+
+/* ============================================
+   OVERVIEW STATS CATEGORY SECTIONS
+   ============================================ */
+
+.overview-stats-category {
+    margin-bottom: 1.5rem;
+}
+
+.overview-stats-category:last-child {
+    margin-bottom: 0;
+}
+
+.overview-stats-category-title {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--cerulean);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin: 0 0 1rem 0;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid rgba(18, 130, 162, 0.2);
+}
+
+/* ============================================
+   STATS HEADER WITH ADD BUTTON
+   ============================================ */
+
+.stats-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.stats-header .section-title {
+    margin-bottom: 0;
+    margin-top: 0;
+}
+
+.btn-add-stats {
+    display: none;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.25rem;
+    background: var(--cerulean);
+    border: none;
+    border-radius: 8px;
+    color: var(--white);
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: 'Inter', sans-serif;
+}
+
+.btn-add-stats.show-button {
+    display: flex;
+}
+
+.btn-add-stats:hover {
+    background: var(--accent-orange);
+    transform: translateY(-2px);
+}
+
+.btn-add-stats svg {
+    width: 18px;
+    height: 18px;
+}
+
+/* ============================================
+   ADD STATS MODAL
+   ============================================ */
+
+.add-stats-modal-content {
+    max-width: 900px;
+}
+
+/* Edit Stats Modal Footer */
+.edit-stats-footer {
+    justify-content: space-between;
+}
+
+.edit-stats-actions {
+    display: flex;
+    gap: 1rem;
+}
+
+/* ============================================
+   STATS POSITION SELECTOR
+   ============================================ */
+
+.stats-position-selector {
+    margin-bottom: 2rem;
+}
+
+.position-input-row {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+
+.stats-position-input {
+    flex: 1;
+    padding: 0.875rem 1rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 2px solid rgba(18, 130, 162, 0.2);
+    border-radius: 8px;
+    color: var(--white);
+    font-size: 1rem;
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    transition: all 0.2s;
+}
+
+.stats-position-input:focus {
+    outline: none;
+    border-color: var(--cerulean);
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.stats-position-input::placeholder {
+    color: rgba(255, 255, 255, 0.4);
+}
+
+.btn-select-position {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.25rem;
+    background: var(--cerulean);
+    border: none;
+    border-radius: 8px;
+    color: var(--white);
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: 'Inter', sans-serif;
+    white-space: nowrap;
+}
+
+.btn-select-position:hover {
+    background: var(--accent-orange);
+    transform: translateY(-2px);
+}
+
+.btn-select-position svg {
+    width: 18px;
+    height: 18px;
+}
+
+/* Position Dropdown */
+.position-dropdown {
+    display: none;
+    margin-top: 1rem;
+    padding: 1.5rem;
+    background: rgba(254, 252, 251, 0.03);
+    border: 2px solid rgba(18, 130, 162, 0.2);
+    border-radius: 12px;
+}
+
+.position-dropdown.active {
+    display: block;
+}
+
+.position-dropdown-section {
+    margin-bottom: 1.25rem;
+}
+
+.position-dropdown-section:last-child {
+    margin-bottom: 0;
+}
+
+.position-dropdown-section h4 {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--cerulean);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin: 0 0 0.75rem 0;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid rgba(18, 130, 162, 0.15);
+}
+
+.position-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.position-option {
+    padding: 0.5rem 1rem;
+    background: rgba(18, 130, 162, 0.1);
+    border: 1px solid rgba(18, 130, 162, 0.3);
+    border-radius: 6px;
+    color: var(--white);
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: 'Inter', sans-serif;
+}
+
+.position-option:hover {
+    background: rgba(18, 130, 162, 0.25);
+    border-color: var(--cerulean);
+}
+
+.position-option.selected {
+    background: var(--cerulean);
+    border-color: var(--cerulean);
+}
+
+/* ============================================
+   STATS FIELDS CONTAINER
+   ============================================ */
+
+#statsFieldsContainer {
+    margin-top: 1.5rem;
+}
+
+.stats-fields-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 1rem;
+}
+
+.stat-field-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.stat-field-group label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--cerulean);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.stat-field-group input {
+    padding: 0.875rem 1rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 2px solid rgba(18, 130, 162, 0.2);
+    border-radius: 8px;
+    color: var(--white);
+    font-size: 1rem;
+    font-weight: 600;
+    text-align: center;
+    font-family: 'Inter', sans-serif;
+    transition: all 0.2s;
+}
+
+.stat-field-group input:focus {
+    outline: none;
+    border-color: var(--cerulean);
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.stat-field-group input::placeholder {
+    color: rgba(255, 255, 255, 0.4);
+}
+
+/* Hide number input spinners */
+.stat-field-group input[type="number"]::-webkit-outer-spin-button,
+.stat-field-group input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.stat-field-group input[type="number"] {
+    -moz-appearance: textfield;
+}
+
+.no-stats-message {
+    color: rgba(254, 252, 251, 0.5);
+    font-style: italic;
+    text-align: center;
+    padding: 2rem;
+}
+
+/* ============================================
+   MULTI-POSITION STATS SECTIONS
+   ============================================ */
+
+.position-stats-section {
+    margin-bottom: 1.5rem;
+    padding: 1.5rem;
+    background: rgba(254, 252, 251, 0.03);
+    border: 1px solid rgba(18, 130, 162, 0.2);
+    border-radius: 12px;
+}
+
+.position-stats-section:last-child {
+    margin-bottom: 0;
+}
+
+.position-stats-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid rgba(18, 130, 162, 0.15);
+}
+
+.position-stats-header h4 {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--cerulean);
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.btn-remove-position {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    background: rgba(220, 53, 69, 0.15);
+    border: 1px solid rgba(220, 53, 69, 0.3);
+    border-radius: 6px;
+    color: #dc3545;
+    font-size: 1.25rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    line-height: 1;
+}
+
+.btn-remove-position:hover {
+    background: rgba(220, 53, 69, 0.25);
+    border-color: #dc3545;
+    transform: scale(1.05);
+}
+
+/* Position option already added state */
+.position-option.added {
+    background: rgba(76, 175, 80, 0.15);
+    border-color: rgba(76, 175, 80, 0.4);
+    color: rgba(254, 252, 251, 0.5);
+    cursor: not-allowed;
+    position: relative;
+}
+
+.position-option.added::after {
+    content: '\2713';
+    margin-left: 0.5rem;
+    color: #4caf50;
+}
+
+.position-option.added:hover {
+    background: rgba(76, 175, 80, 0.15);
+    border-color: rgba(76, 175, 80, 0.4);
+    transform: none;
+}
+
+/* ============================================
+   ADD ANOTHER POSITION BUTTON
+   ============================================ */
+
+.add-another-position-wrapper {
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid rgba(18, 130, 162, 0.15);
+}
+
+.btn-add-another-position {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.25rem;
+    background: rgba(18, 130, 162, 0.15);
+    border: 1px dashed rgba(18, 130, 162, 0.4);
+    border-radius: 8px;
+    color: var(--cerulean);
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: 'Inter', sans-serif;
+    width: 100%;
+    justify-content: center;
+}
+
+.btn-add-another-position:hover {
+    background: rgba(18, 130, 162, 0.25);
+    border-color: var(--cerulean);
+    border-style: solid;
+}
+
+.btn-add-another-position svg {
+    width: 18px;
+    height: 18px;
+}
+
+/* Another Position Dropdown */
+.another-position-dropdown {
+    display: none;
+    margin-top: 1rem;
+    padding: 1.5rem;
+    background: rgba(254, 252, 251, 0.03);
+    border: 2px solid rgba(18, 130, 162, 0.2);
+    border-radius: 12px;
+}
+
+.another-position-dropdown.active {
+    display: block;
+}
+
+/* Reuse styles for another-position-option */
+.another-position-option {
+    padding: 0.5rem 1rem;
+    background: rgba(18, 130, 162, 0.1);
+    border: 1px solid rgba(18, 130, 162, 0.3);
+    border-radius: 6px;
+    color: var(--white);
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: 'Inter', sans-serif;
+}
+
+.another-position-option:hover {
+    background: rgba(18, 130, 162, 0.25);
+    border-color: var(--cerulean);
+}
+
+.another-position-option.added {
+    background: rgba(76, 175, 80, 0.15);
+    border-color: rgba(76, 175, 80, 0.4);
+    color: rgba(254, 252, 251, 0.5);
+    cursor: not-allowed;
+    position: relative;
+}
+
+.another-position-option.added::after {
+    content: '\2713';
+    margin-left: 0.5rem;
+    color: #4caf50;
+}
+
+.another-position-option.added:hover {
+    background: rgba(76, 175, 80, 0.15);
+    border-color: rgba(76, 175, 80, 0.4);
+    transform: none;
+}
+
+/* ============================================
+   GAME INFO SECTION IN ADD STATS MODAL
+   ============================================ */
+
+.game-info-section {
+    margin-bottom: 1.5rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid rgba(18, 130, 162, 0.2);
+}
+
+.game-info-section .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.game-info-section .form-group {
+    margin-bottom: 1rem;
+}
+
+.game-info-section .form-group:last-child {
+    margin-bottom: 0;
+}
+
+.game-info-section input[type="date"],
+.game-info-section input[type="text"] {
+    width: 100%;
+    padding: 0.875rem 1rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 2px solid rgba(18, 130, 162, 0.2);
+    border-radius: 8px;
+    color: var(--white);
+    font-size: 1rem;
+    font-family: 'Inter', sans-serif;
+    transition: all 0.2s;
+}
+
+.game-info-section input:focus {
+    outline: none;
+    border-color: var(--cerulean);
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.game-info-section input::placeholder {
+    color: rgba(255, 255, 255, 0.4);
+}
+
+/* Date input calendar icon color fix */
+.game-info-section input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(1);
+    cursor: pointer;
+}
+
+@media (max-width: 600px) {
+    .game-info-section .form-row {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ============================================
+   CLICKABLE STATS TABLE ROWS
+   ============================================ */
+
+.stats-table tbody tr.clickable-row {
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.stats-table tbody tr.clickable-row:hover {
+    background: rgba(18, 130, 162, 0.15);
+    transform: translateX(2px);
+}
+
+.stats-table tbody tr.clickable-row:hover td {
+    color: var(--white);
+}
+
+/* Edit Stats Modal Footer */
+.edit-stats-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.edit-stats-actions {
+    display: flex;
+    gap: 1rem;
+}
+
+/* ============================================
+   EDIT STATS FIELDS CONTAINER
+   ============================================ */
+
+#editStatsFieldsContainer .position-stats-section {
+    margin-bottom: 1.5rem;
+    padding: 1.5rem;
+    background: rgba(254, 252, 251, 0.03);
+    border: 1px solid rgba(18, 130, 162, 0.2);
+    border-radius: 12px;
+}
+
+#editStatsFieldsContainer .position-stats-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid rgba(18, 130, 162, 0.15);
+}
+
+#editStatsFieldsContainer .position-stats-header h4 {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--cerulean);
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+#editStatsFieldsContainer .stats-fields-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 1rem;
+}
+
+#editStatsFieldsContainer .stat-field-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+#editStatsFieldsContainer .stat-field-group label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: rgba(254, 252, 251, 0.7);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+#editStatsFieldsContainer .stat-field-group input {
+    padding: 0.75rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 2px solid rgba(18, 130, 162, 0.2);
+    border-radius: 8px;
+    color: var(--white);
+    font-size: 1rem;
+    font-family: 'Inter', sans-serif;
+    text-align: center;
+}
+
+#editStatsFieldsContainer .stat-field-group input:focus {
+    outline: none;
+    border-color: var(--cerulean);
+    background: rgba(255, 255, 255, 0.08);
+}
+
+#editStatsFieldsContainer .stat-field-group input::placeholder {
+    color: rgba(255, 255, 255, 0.3);
+}
+
+/* ============================================
+   STATS SECTIONS SPACING
+   ============================================ */
+
+.stats-section {
+    margin-bottom: 3rem;
+}
+
+.stats-section:last-child {
+    margin-bottom: 0;
+}
+
+/* Stats Section Header (main title with Add Stats button) */
+.stats-section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.stats-section-header .section-title {
+    margin: 0;
+}
+
+/* Stats Category Tables Container */
+#gameStatsTablesContainer {
+    margin-bottom: 3rem;
+}
+
+/* Individual Stats Category Section */
+.stats-category-section {
+    margin-bottom: 2rem;
+}
+
+.stats-category-section:last-child {
+    margin-bottom: 0;
+}
+
+/* Sub-header for category tables (Offensive Stats, Defensive Stats, etc.) */
+.stats-category-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--cerulean);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin: 0 0 1rem 0;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid rgba(18, 130, 162, 0.2);
+}
+
+/* No stats message for empty container */
+#gameStatsTablesContainer .no-stats-message,
+#careerStatsTablesContainer .no-stats-message {
+    background: rgba(254, 252, 251, 0.03);
+    border: 1px solid rgba(18, 130, 162, 0.2);
+    border-radius: 12px;
+    padding: 2rem;
+    text-align: center;
+    color: rgba(254, 252, 251, 0.5);
+    font-style: italic;
+}
+
+/* Totals Row Styling */
+.stats-table tbody tr.totals-row {
+    background: rgba(18, 130, 162, 0.15);
+    border-top: 2px solid rgba(18, 130, 162, 0.4);
+}
+
+.stats-table tbody tr.totals-row td {
+    color: var(--cerulean);
+    font-weight: 700;
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+}
+
+.stats-table tbody tr.totals-row:hover {
+    background: rgba(18, 130, 162, 0.15);
+    transform: none;
+    cursor: default;
+}
+
+/* ============================================
+   SEASON SELECTION MODAL
+   ============================================ */
+
+.season-select-modal-body {
+    padding: 2rem;
+}
+
+.season-select-prompt {
+    text-align: center;
+    color: rgba(254, 252, 251, 0.7);
+    margin: 0 0 1.5rem 0;
+    font-size: 1rem;
+}
+
+.season-select-options {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.season-option-btn {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1.5rem 1rem;
+    background: rgba(255, 255, 255, 0.03);
+    border: 2px solid rgba(18, 130, 162, 0.3);
+    border-radius: 12px;
+    color: var(--white);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.season-option-btn:hover {
+    background: rgba(18, 130, 162, 0.1);
+    border-color: var(--cerulean);
+    transform: translateY(-2px);
+}
+
+.season-option-btn.active {
+    background: rgba(18, 130, 162, 0.2);
+    border-color: var(--cerulean);
+}
+
+.season-option-btn svg {
+    width: 32px;
+    height: 32px;
+    color: var(--cerulean);
+}
+
+.season-option-btn span {
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.new-season-input-section,
+.previous-season-select-section {
+    animation: statsHighlightsFadeIn 0.3s ease;
+}
+
+.new-season-input-section .form-group label,
+.previous-season-select-section .form-group label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--cerulean);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.new-season-input-section .form-group input {
+    width: 100%;
+    padding: 0.875rem 1rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 2px solid rgba(18, 130, 162, 0.2);
+    border-radius: 8px;
+    color: var(--white);
+    font-size: 1rem;
+    font-family: 'Inter', sans-serif;
+    transition: all 0.2s;
+}
+
+.new-season-input-section .form-group input:focus {
+    outline: none;
+    border-color: var(--cerulean);
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.new-season-input-section .form-group input::placeholder {
+    color: rgba(255, 255, 255, 0.4);
+}
+
+@keyframes statsHighlightsFadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.btn-continue-season {
+    width: 100%;
+    padding: 0.875rem 1.5rem;
+    background: var(--cerulean);
+    border: none;
+    border-radius: 8px;
+    color: var(--white);
+    font-size: 1rem;
+    font-weight: 600;
+    font-family: 'Inter', sans-serif;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.2s;
+    margin-top: 1rem;
+}
+
+.btn-continue-season:hover {
+    background: #0e9fc0;
+    transform: translateY(-1px);
+}
+
+.season-select {
+    width: 100%;
+    padding: 0.875rem 1rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 2px solid rgba(18, 130, 162, 0.3);
+    border-radius: 8px;
+    color: var(--white);
+    font-size: 1rem;
+    font-family: 'Inter', sans-serif;
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23FEFCFB' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 1rem center;
+}
+
+.season-select:focus {
+    outline: none;
+    border-color: var(--cerulean);
+}
+
+.season-select option {
+    background: var(--oxford-blue);
+    color: var(--white);
+}
+
+/* Season Year Display in Add Stats Modal */
+.season-year-display {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    background: rgba(18, 130, 162, 0.15);
+    border: 1px solid rgba(18, 130, 162, 0.3);
+    border-radius: 8px;
+    margin-bottom: 1.25rem;
+}
+
+.season-label {
+    color: rgba(254, 252, 251, 0.7);
+    font-size: 0.9rem;
+}
+
+.season-value {
+    color: var(--cerulean);
+    font-size: 1rem;
+    font-weight: 700;
+}
+
+/* ============================================
+   STATS HEADER WITH SEASON DROPDOWN
+   ============================================ */
+
+.stats-title-with-dropdown {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.season-dropdown-wrapper {
+    display: flex;
+    align-items: center;
+}
+
+.season-year-dropdown {
+    padding: 0.5rem 2rem 0.5rem 1rem;
+    background-color: #0d1b2a;
+    border: 1px solid rgba(18, 130, 162, 0.4);
+    border-radius: 8px;
+    color: var(--cerulean);
+    font-size: 1rem;
+    font-weight: 700;
+    font-family: 'Inter', sans-serif;
+    cursor: pointer;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%231282A2' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    transition: all 0.2s;
+}
+
+.season-year-dropdown:hover {
+    background-color: rgba(18, 130, 162, 0.25);
+    border-color: var(--cerulean);
+}
+
+.season-year-dropdown:focus {
+    outline: none;
+    border-color: var(--cerulean);
+}
+
+.season-year-dropdown option {
+    background: #0d1b2a;
+    color: #FEFCFB;
+    padding: 0.5rem;
+}
+
+.season-year-dropdown option:hover,
+.season-year-dropdown option:checked {
+    background: rgba(18, 130, 162, 0.3);
+    color: #FEFCFB;
+}
+
+/* ============================================
+   HIGHLIGHTS TAB STYLES
+   ============================================ */
+
+.highlights-section {
+    margin-bottom: 2.5rem;
+}
+
+.highlights-section:last-child {
+    margin-bottom: 0;
+}
+
+.highlights-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.highlights-header .section-title {
+    margin: 0;
+}
+
+/* Add Highlight Button */
+.btn-add-highlight {
+    display: none;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.25rem;
+    background: var(--cerulean);
+    border: none;
+    border-radius: 8px;
+    color: var(--white);
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: 'Inter', sans-serif;
+}
+
+.btn-add-highlight.show-button {
+    display: flex;
+}
+
+.btn-add-highlight:hover {
+    background: var(--accent-orange);
+    transform: translateY(-2px);
+}
+
+.btn-add-highlight svg {
+    width: 18px;
+    height: 18px;
+}
+
+/* No Highlights Message */
+.no-highlights-message {
+    background: rgba(254, 252, 251, 0.03);
+    border: 1px solid rgba(18, 130, 162, 0.2);
+    border-radius: 12px;
+    padding: 2rem;
+    text-align: center;
+    color: rgba(254, 252, 251, 0.5);
+    font-style: italic;
+    grid-column: 1 / -1;
+}
+
+.no-highlights-message p {
+    margin: 0;
+}
+
+/* Highlight Card */
+.highlight-card {
+    background: rgba(254, 252, 251, 0.03);
+    border: 1px solid rgba(18, 130, 162, 0.2);
+    border-radius: 12px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.highlight-card:hover {
+    transform: translateY(-4px);
+    border-color: var(--cerulean);
+}
+
+.highlight-thumbnail {
+    aspect-ratio: 16/9;
+    background: rgba(18, 130, 162, 0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+.highlight-thumbnail svg {
+    width: 60px;
+    height: 60px;
+    color: var(--cerulean);
+}
+
+.highlight-thumbnail iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+}
+
+.highlight-info {
+    padding: 1rem;
+}
+
+.highlight-info h3 {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--white);
+    margin-bottom: 0.5rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.highlight-info p {
+    font-size: 0.85rem;
+    color: rgba(254, 252, 251, 0.6);
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Highlight Card Delete Button */
+.highlight-delete-btn {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    width: 32px;
+    height: 32px;
+    background: rgba(220, 53, 69, 0.9);
+    border: none;
+    border-radius: 6px;
+    color: var(--white);
+    cursor: pointer;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.highlight-card:hover .highlight-delete-btn.show-button {
+    display: flex;
+}
+
+.highlight-delete-btn:hover {
+    background: #dc3545;
+    transform: scale(1.1);
+}
+
+.highlight-delete-btn svg {
+    width: 16px;
+    height: 16px;
+}
+
+/* ============================================
+   ADD HIGHLIGHTS MODAL
+   ============================================ */
+
+.add-highlight-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 10000;
+}
+
+.add-highlight-modal.active {
+    display: block;
+}
+
+.add-highlight-modal-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(4px);
+}
+
+.add-highlight-modal-content {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: var(--oxford-blue);
+    border: 2px solid rgba(18, 130, 162, 0.3);
+    border-radius: 16px;
+    width: 90%;
+    max-width: 500px;
+    max-height: 90vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+.add-highlight-modal-header {
+    padding: 1.5rem 2rem;
+    border-bottom: 2px solid rgba(18, 130, 162, 0.2);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.add-highlight-modal-header h2 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--white);
+    margin: 0;
+}
+
+.add-highlight-modal-close {
+    background: none;
+    border: none;
+    color: var(--white);
+    cursor: pointer;
+    padding: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    transition: background 0.2s;
+}
+
+.add-highlight-modal-close:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.add-highlight-modal-close svg {
+    width: 24px;
+    height: 24px;
+}
+
+.add-highlight-modal-body {
+    padding: 2rem;
+    color: var(--white);
+    overflow-y: auto;
+    flex: 1;
+}
+
+.add-highlight-modal-footer {
+    padding: 1.5rem 2rem;
+    border-top: 2px solid rgba(18, 130, 162, 0.2);
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+}
+
+/* Highlight Type Selection */
+.highlight-type-prompt {
+    text-align: center;
+    color: rgba(254, 252, 251, 0.7);
+    margin: 0 0 1.5rem 0;
+    font-size: 1rem;
+}
+
+.highlight-type-options {
+    display: flex;
+    gap: 1rem;
+}
+
+.highlight-type-btn {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1.5rem 1rem;
+    background: rgba(255, 255, 255, 0.03);
+    border: 2px solid rgba(18, 130, 162, 0.3);
+    border-radius: 12px;
+    color: var(--white);
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: 'Inter', sans-serif;
+}
+
+.highlight-type-btn:hover {
+    background: rgba(18, 130, 162, 0.1);
+    border-color: var(--cerulean);
+    transform: translateY(-2px);
+}
+
+.highlight-type-btn.active {
+    background: rgba(18, 130, 162, 0.2);
+    border-color: var(--cerulean);
+}
+
+.highlight-type-btn svg {
+    width: 40px;
+    height: 40px;
+    color: var(--cerulean);
+}
+
+.highlight-type-btn span {
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-align: center;
+}
+
+/* Highlight Link Input Section */
+.highlight-link-input {
+    animation: statsHighlightsFadeIn 0.3s ease;
+}
+
+.highlight-coach-notice {
+    padding: 0.875rem 1rem;
+    background: rgba(220, 53, 69, 0.15);
+    border: 1px solid rgba(220, 53, 69, 0.4);
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    color: #dc3545;
+    font-size: 0.875rem;
+    font-weight: 500;
+    line-height: 1.4;
+}
+
+.highlight-type-indicator {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    background: rgba(18, 130, 162, 0.15);
+    border: 1px solid rgba(18, 130, 162, 0.3);
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+}
+
+.highlight-type-label {
+    color: rgba(254, 252, 251, 0.7);
+    font-size: 0.9rem;
+}
+
+.highlight-type-value {
+    color: var(--cerulean);
+    font-size: 1rem;
+    font-weight: 700;
+}
+
+#addHighlightForm {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+#addHighlightForm .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+#addHighlightForm .form-group label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--cerulean);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+#addHighlightForm .form-group input {
+    padding: 0.875rem 1rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 2px solid rgba(18, 130, 162, 0.2);
+    border-radius: 8px;
+    color: var(--white);
+    font-size: 1rem;
+    transition: all 0.2s;
+}
+
+#addHighlightForm .form-group input:focus {
+    outline: none;
+    border-color: var(--cerulean);
+    background: rgba(255, 255, 255, 0.08);
+}
+
+#addHighlightForm .form-group input::placeholder {
+    color: rgba(255, 255, 255, 0.4);
+}
+
+/* Video Preview Thumbnail */
+.highlight-video-preview {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+.highlight-play-overlay {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 50px;
+    height: 50px;
+    background: rgba(0, 0, 0, 0.6);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.highlight-play-overlay svg {
+    width: 24px;
+    height: 24px;
+    color: var(--white);
+    margin-left: 3px;
+}
+
+.highlight-card:hover .highlight-play-overlay {
+    background: var(--cerulean);
+    transform: translate(-50%, -50%) scale(1.1);
+}
+
+/* ============================================
+   VIDEO PLAYER MODAL
+   ============================================ */
+
+.video-player-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 10001;
+}
+
+.video-player-modal.active {
+    display: block;
+}
+
+.video-player-modal-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.9);
+}
+
+.video-player-modal-content {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 90%;
+    max-width: 1000px;
+    max-height: 90vh;
+}
+
+.video-player-modal-content video {
+    width: 100%;
+    max-height: 80vh;
+    border-radius: 12px;
+    background: #000;
+}
+
+.video-player-modal-close {
+    position: absolute;
+    top: -50px;
+    right: 0;
+    width: 40px;
+    height: 40px;
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.2s;
+    z-index: 10;
+}
+
+.video-player-modal-close:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.video-player-modal-close svg {
+    width: 24px;
+    height: 24px;
+    color: var(--white);
+}
+
+/* ============================================
+   VIDEO UPLOAD PROGRESS
+   ============================================ */
+
+.video-upload-progress {
+    margin-top: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.progress-bar-container {
+    flex: 1;
+    height: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.progress-bar {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #ef4444 0%, #f59e0b 50%, #22c55e 100%);
+    background-size: 200% 100%;
+    background-position: 0% 0%;
+    border-radius: 4px;
+    transition: width 0.3s ease, background-position 0.3s ease;
+}
+
+.progress-bar.complete {
+    background-position: 100% 0%;
+}
+
+.progress-text {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    min-width: 45px;
+    text-align: right;
+}
+
+/* ============================================
+   HIGHLIGHT VALIDATION ERRORS
+   ============================================ */
+
+.highlight-validation-errors {
+    margin-top: 0.75rem;
+    padding: 0.75rem 1rem;
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    border-radius: 8px;
+}
+
+.validation-error-text {
+    color: #ef4444;
+    font-size: 0.875rem;
+    margin: 0;
+}
+
+/* ============================================
+   FORM DIVIDER
+   ============================================ */
+
+.form-divider {
+    display: flex;
+    align-items: center;
+    margin: 1rem 0;
+}
+
+.form-divider::before,
+.form-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.form-divider span {
+    padding: 0 1rem;
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+/* ============================================
+   FILE INPUT STYLING
+   ============================================ */
+
+input[type="file"] {
+    padding: 0.75rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px dashed rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    color: var(--text-primary);
+    cursor: pointer;
+    width: 100%;
+}
+
+input[type="file"]:hover {
+    border-color: rgba(255, 255, 255, 0.3);
+    background: rgba(255, 255, 255, 0.08);
+}
+
+input[type="file"]::file-selector-button {
+    padding: 0.5rem 1rem;
+    margin-right: 1rem;
+    background: var(--primary-color);
+    border: none;
+    border-radius: 6px;
+    color: white;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+/* ============================================
+   HIGHLIGHTS RESPONSIVE
+   ============================================ */
+
+@media (max-width: 768px) {
+    .highlights-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .btn-add-highlight {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .highlight-type-options {
+        flex-direction: column;
+    }
+
+    .video-player-modal-close {
+        top: 10px;
+        right: 10px;
+    }
+}
+
+/* ============================================
+   END STATS & HIGHLIGHTS STYLES
+   ============================================ */

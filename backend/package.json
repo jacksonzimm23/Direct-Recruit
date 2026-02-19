@@ -9,6 +9,7 @@
     "migrate": "node scripts/migrate.js"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.77.0",
     "@aws-sdk/client-cognito-identity-provider": "^3.958.0",
     "@aws-sdk/client-s3": "^3.956.0",
     "@aws-sdk/client-ses": "^3.971.0",

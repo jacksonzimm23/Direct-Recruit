@@ -175,6 +175,8 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
 
     setupUI();
+    loadGameStats();
+    loadHighlights();
 });
 
 async function loadCurrentUser() {
@@ -4347,7 +4349,12 @@ let selectedSeasonYear = null; // Currently selected season year
 
 async function loadGameStats() {
     try {
-        const response = await API.get('/stats/my-games');
+        let response;
+        if (!isOwnProfile && currentProfile && currentProfile.username) {
+            response = await API.get(`/stats/player/${currentProfile.username}`);
+        } else {
+            response = await API.get('/stats/my-games');
+        }
         if (response.games) {
             allGamesData = response.games;
 
@@ -5503,12 +5510,6 @@ function setupEditStatsModal() {
 // Initialize edit stats modal when DOM is ready
 document.addEventListener('DOMContentLoaded', setupEditStatsModal);
 
-// Load game stats when profile is loaded
-document.addEventListener('DOMContentLoaded', () => {
-    // Delay slightly to ensure API is available
-    setTimeout(loadGameStats, 500);
-});
-
 // ============================================
 // HIGHLIGHTS TAB
 // ============================================
@@ -6066,8 +6067,6 @@ function setupDeleteHighlightConfirmModal() {
 document.addEventListener('DOMContentLoaded', () => {
     setupHighlightsModal();
     setupDeleteHighlightConfirmModal();
-    // Load highlights after a delay to ensure profile is loaded
-    setTimeout(loadHighlights, 600);
 });
 
 // ============================================
