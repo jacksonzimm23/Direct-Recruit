@@ -819,6 +819,274 @@
 }
 
 /* ========================
+   PLAYER CARDS IN CHAT
+   ======================== */
+
+.ra-player-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1rem;
+    padding: 0.5rem 0;
+    width: 100%;
+    align-self: stretch;
+}
+
+/* Base Player Card */
+.ra-player-card {
+    background: rgba(254, 252, 251, 0.03);
+    border: 1px solid rgba(18, 130, 162, 0.2);
+    border-radius: 16px;
+    padding: 1.25rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    min-width: 0;
+}
+
+/* Constrain all SVGs inside player cards */
+.ra-player-card svg {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+}
+
+.ra-player-card:hover {
+    background: rgba(254, 252, 251, 0.05);
+    border-color: var(--cerulean);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+/* Transfer Portal Variant */
+.ra-player-card.ra-transfer {
+    border-color: rgba(220, 38, 38, 0.4);
+    background: rgba(220, 38, 38, 0.03);
+}
+
+.ra-player-card.ra-transfer:hover {
+    border-color: #dc2626;
+    box-shadow: 0 8px 24px rgba(220, 38, 38, 0.2);
+}
+
+/* Card Header — Avatar + Badge */
+.ra-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 0.75rem;
+}
+
+.ra-card-avatar {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: rgba(18, 130, 162, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 3px solid rgba(18, 130, 162, 0.4);
+    flex-shrink: 0;
+    overflow: hidden;
+}
+
+.ra-transfer .ra-card-avatar {
+    border-color: rgba(220, 38, 38, 0.4);
+    background: rgba(220, 38, 38, 0.15);
+}
+
+.ra-card-avatar svg {
+    width: 32px !important;
+    height: 32px !important;
+    color: var(--cerulean);
+}
+
+.ra-transfer .ra-card-avatar svg {
+    color: #dc2626;
+}
+
+.ra-avatar-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+}
+
+.ra-portal-badge {
+    background: #dc2626;
+    color: var(--white);
+    padding: 0.3rem 0.65rem;
+    border-radius: 50px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+
+/* Name */
+.ra-card-name {
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: var(--white);
+    margin: 0 0 0.4rem;
+}
+
+/* Position Badges */
+.ra-card-positions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-bottom: 0.75rem;
+}
+
+.ra-position-badge {
+    background: var(--cerulean);
+    color: var(--white);
+    padding: 0.25rem 0.6rem;
+    border-radius: 50px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+}
+
+.ra-transfer .ra-position-badge {
+    background: rgba(220, 38, 38, 0.15);
+    color: #dc2626;
+}
+
+/* Stats Grid (Height / Weight / GPA or Eligibility) */
+.ra-card-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+    padding: 0.75rem;
+    background: rgba(18, 130, 162, 0.1);
+    border-radius: 8px;
+}
+
+.ra-transfer .ra-card-stats {
+    background: rgba(220, 38, 38, 0.08);
+}
+
+.ra-stat-item {
+    text-align: center;
+}
+
+.ra-stat-label {
+    font-size: 0.65rem;
+    color: rgba(254, 252, 251, 0.5);
+    margin-bottom: 0.2rem;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.ra-stat-value {
+    font-size: 0.95rem;
+    font-weight: 800;
+    color: var(--white);
+    white-space: nowrap;
+}
+
+/* GPA Row (transfer cards) */
+.ra-card-gpa-row {
+    text-align: center;
+    margin-bottom: 0.75rem;
+    padding: 0.4rem;
+    background: rgba(220, 38, 38, 0.06);
+    border-radius: 6px;
+}
+
+.ra-gpa-label {
+    font-size: 0.75rem;
+    color: rgba(254, 252, 251, 0.5);
+    margin-right: 0.3rem;
+}
+
+.ra-gpa-value {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--white);
+}
+
+/* Detail Items (school, grad year, offers) */
+.ra-card-details {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    margin-bottom: 0.75rem;
+}
+
+.ra-detail-item {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.8rem;
+    color: rgba(254, 252, 251, 0.75);
+}
+
+.ra-detail-item svg {
+    width: 14px;
+    height: 14px;
+    color: var(--cerulean);
+    flex-shrink: 0;
+}
+
+.ra-detail-item.ra-transfer-detail {
+    color: #dc2626;
+    font-weight: 600;
+}
+
+.ra-detail-item.ra-transfer-detail svg {
+    color: #dc2626;
+}
+
+.ra-detail-item.ra-offers-detail {
+    color: var(--accent-orange);
+    font-weight: 600;
+}
+
+.ra-detail-item.ra-offers-detail svg {
+    color: var(--accent-orange);
+}
+
+/* View Profile Button */
+.ra-btn-view-profile {
+    width: 100%;
+    background: var(--cerulean);
+    color: var(--white);
+    border: none;
+    padding: 0.7rem;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: 'Inter', sans-serif;
+    margin-top: auto;
+}
+
+.ra-btn-view-profile:hover {
+    background: var(--accent-orange);
+    transform: translateY(-1px);
+}
+
+.ra-transfer .ra-btn-view-profile {
+    background: #dc2626;
+}
+
+.ra-transfer .ra-btn-view-profile:hover {
+    background: #b91c1c;
+}
+
+/* Error message styling */
+.ra-msg.assistant.error {
+    color: #f87171;
+    font-style: italic;
+    border-color: rgba(248, 113, 113, 0.2);
+}
+
+/* ========================
    RESPONSIVE
    ======================== */
 
@@ -893,5 +1161,28 @@
 
     .ra-baselines-pos-fields {
         grid-template-columns: 1fr;
+    }
+
+    .ra-player-cards {
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+    }
+
+    .ra-player-card {
+        padding: 1rem;
+    }
+
+    .ra-card-avatar {
+        width: 52px;
+        height: 52px;
+    }
+
+    .ra-card-avatar svg {
+        width: 26px;
+        height: 26px;
+    }
+
+    .ra-card-name {
+        font-size: 1rem;
     }
 }

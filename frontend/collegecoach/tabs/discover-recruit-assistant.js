@@ -57,69 +57,104 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (!messagesContainer || !input) return;
 
-    const STORAGE_KEY = 'raChats';
-    let chats = loadChats();
+    let chats = [];
     let activeChatId = null;
+    let isSending = false;
 
     // ========================
-    // STORAGE
+    // API-BACKED CHAT STORAGE
     // ========================
 
-    function loadChats() {
+    async function loadChats() {
         try {
-            const saved = localStorage.getItem(STORAGE_KEY);
-            return saved ? JSON.parse(saved) : [];
+            const data = await API.ai.getChats('recruit_assistant');
+            chats = data.chats || [];
+            renderHistory();
         } catch (e) {
-            return [];
+            console.error('Failed to load chats:', e);
+            chats = [];
         }
     }
 
-    function saveChats() {
+    async function createNewChat() {
         try {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(chats));
+            const data = await API.ai.createChat('recruit_assistant');
+            const chat = data.chat;
+            chats.unshift(chat);
+            activeChatId = chat.id;
+            sessionStorage.setItem('raActiveChatId', chat.id);
+            messagesContainer.querySelectorAll('.ra-msg, .ra-typing, .ra-player-cards').forEach(el => el.remove());
+            if (welcome) welcome.style.display = '';
+            renderHistory();
+            input.focus();
+            return chat;
         } catch (e) {
-            console.error('Error saving RA chats:', e);
+            console.error('Failed to create chat:', e);
+            return null;
         }
     }
 
-    function getActiveChat() {
-        return chats.find(c => c.id === activeChatId);
-    }
-
-    // ========================
-    // CHAT MANAGEMENT
-    // ========================
-
-    function createNewChat() {
-        const chat = {
-            id: Date.now().toString(),
-            title: 'New Chat',
-            messages: [],
-            createdAt: new Date().toISOString()
-        };
-        chats.unshift(chat);
-        saveChats();
-        activeChatId = chat.id;
-        renderHistory();
-        renderChat();
-        input.focus();
-        return chat;
-    }
-
-    function deleteChat(chatId) {
-        chats = chats.filter(c => c.id !== chatId);
-        saveChats();
-        if (activeChatId === chatId) {
-            activeChatId = chats.length > 0 ? chats[0].id : null;
+    async function deleteChat(chatId) {
+        try {
+            await API.ai.deleteChat(chatId);
+            chats = chats.filter(c => c.id !== chatId);
+            if (activeChatId === chatId) {
+                activeChatId = chats.length > 0 ? chats[0].id : null;
+                if (activeChatId) {
+                    await selectChat(activeChatId);
+                } else {
+                    messagesContainer.querySelectorAll('.ra-msg, .ra-typing, .ra-player-cards').forEach(el => el.remove());
+                    if (welcome) welcome.style.display = '';
+                }
+            }
+            renderHistory();
+        } catch (e) {
+            console.error('Failed to delete chat:', e);
         }
-        renderHistory();
-        renderChat();
     }
 
-    function selectChat(chatId) {
+    async function selectChat(chatId) {
         activeChatId = chatId;
-        renderHistory();
-        renderChat();
+        sessionStorage.setItem('raActiveChatId', chatId);
+        try {
+            const data = await API.ai.getChat(chatId);
+            const chat = data.chat;
+            messagesContainer.querySelectorAll('.ra-msg, .ra-typing, .ra-player-cards').forEach(el => el.remove());
+
+            if (!chat.messages || chat.messages.length === 0) {
+                if (welcome) welcome.style.display = '';
+            } else {
+                if (welcome) welcome.style.display = 'none';
+                for (const msg of chat.messages) {
+                    const div = document.createElement('div');
+                    div.className = `ra-msg ${msg.role}`;
+                    div.textContent = msg.content;
+                    messagesContainer.appendChild(div);
+
+                    // If this assistant message had player results, re-run the search to show cards
+                    if (msg.role === 'assistant' && msg.metadata && msg.metadata.filters && msg.metadata.playerCount > 0) {
+                        try {
+                            const baselines = getCurrentBaselines();
+                            const searchData = await API.ai.reSearch(msg.metadata.filters, baselines);
+                            if (searchData.players && searchData.players.length > 0) {
+                                const cardsContainer = document.createElement('div');
+                                cardsContainer.className = 'ra-player-cards';
+                                searchData.players.forEach(player => {
+                                    cardsContainer.appendChild(createPlayerCard(player));
+                                });
+                                messagesContainer.appendChild(cardsContainer);
+                            }
+                        } catch (searchErr) {
+                            console.error('Failed to re-load player cards:', searchErr);
+                        }
+                    }
+                }
+                scrollToBottom();
+            }
+            renderHistory();
+        } catch (e) {
+            console.error('Failed to load chat:', e);
+        }
     }
 
     // ========================
@@ -142,7 +177,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         historyList.innerHTML = chats.map(chat => {
-            const timeStr = formatTimeAgo(chat.createdAt);
+            const timeStr = formatTimeAgo(chat.created_at);
             const isActive = chat.id === activeChatId;
             return `
                 <div class="ra-history-item ${isActive ? 'active' : ''}" data-chat-id="${chat.id}">
@@ -181,29 +216,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    function renderChat() {
-        const chat = getActiveChat();
-
-        if (!chat || chat.messages.length === 0) {
-            if (welcome) welcome.style.display = '';
-            messagesContainer.querySelectorAll('.ra-msg, .ra-typing').forEach(el => el.remove());
-            return;
-        }
-
-        if (welcome) welcome.style.display = 'none';
-
-        messagesContainer.querySelectorAll('.ra-msg, .ra-typing').forEach(el => el.remove());
-
-        chat.messages.forEach(msg => {
-            const div = document.createElement('div');
-            div.className = `ra-msg ${msg.role}`;
-            div.textContent = msg.content;
-            messagesContainer.appendChild(div);
-        });
-
-        scrollToBottom();
-    }
-
     function scrollToBottom() {
         messagesContainer.scrollTop = messagesContainer.scrollHeight;
     }
@@ -226,27 +238,24 @@ document.addEventListener('DOMContentLoaded', function() {
         if (typing) typing.remove();
     }
 
-    function sendMessage(text) {
+    async function sendMessage(text) {
         text = text.trim();
-        if (!text) return;
+        if (!text || isSending) return;
 
-        let chat = getActiveChat();
-        if (!chat) {
-            chat = createNewChat();
+        isSending = true;
+
+        // Create a new chat if none active
+        if (!activeChatId) {
+            const chat = await createNewChat();
+            if (!chat) {
+                isSending = false;
+                return;
+            }
         }
 
         if (welcome) welcome.style.display = 'none';
 
-        // Update chat title from first message
-        if (chat.messages.length === 0) {
-            chat.title = text.length > 50 ? text.substring(0, 50) + '...' : text;
-        }
-
-        // Add user message
-        chat.messages.push({ role: 'user', content: text });
-        saveChats();
-        renderHistory();
-
+        // Show user message immediately
         const userDiv = document.createElement('div');
         userDiv.className = 'ra-msg user';
         userDiv.textContent = text;
@@ -256,22 +265,224 @@ document.addEventListener('DOMContentLoaded', function() {
         input.value = '';
         input.style.height = 'auto';
 
-        // Placeholder AI response
+        // Show typing indicator
         showTyping();
 
-        setTimeout(() => {
+        try {
+            // Get current baselines from the modal
+            const baselines = getCurrentBaselines();
+
+            // Call the real API
+            const data = await API.ai.sendMessage(activeChatId, text, baselines);
+
             removeTyping();
 
-            const response = "This feature is coming soon! I'll be able to help you find players matching your criteria.";
-            chat.messages.push({ role: 'assistant', content: response });
-            saveChats();
-
+            // Show the AI response text
             const aiDiv = document.createElement('div');
             aiDiv.className = 'ra-msg assistant';
-            aiDiv.textContent = response;
+            aiDiv.textContent = data.response;
             messagesContainer.appendChild(aiDiv);
+
+            // If players were returned, render player cards
+            if (data.players && data.players.length > 0) {
+                const cardsContainer = document.createElement('div');
+                cardsContainer.className = 'ra-player-cards';
+                data.players.forEach(player => {
+                    cardsContainer.appendChild(createPlayerCard(player));
+                });
+                messagesContainer.appendChild(cardsContainer);
+            }
+
             scrollToBottom();
-        }, 1200);
+
+            // Refresh the chat list to update title/order
+            loadChats();
+
+        } catch (error) {
+            removeTyping();
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'ra-msg assistant error';
+            errorDiv.textContent = 'Sorry, something went wrong. Please try again.';
+            messagesContainer.appendChild(errorDiv);
+            scrollToBottom();
+        }
+
+        isSending = false;
+    }
+
+    // Helper: format height from DB value
+    function formatHeight(heightVal) {
+        if (!heightVal) return 'N/A';
+        if (typeof heightVal === 'string' && heightVal.includes("'")) return heightVal;
+        const totalInches = parseInt(heightVal);
+        if (isNaN(totalInches) || totalInches <= 0) return 'N/A';
+        return `${Math.floor(totalInches / 12)}'${totalInches % 12}"`;
+    }
+
+    // Helper: format positions as badges
+    const positionNames = {
+        'QB': 'Quarterback (QB)', 'RB': 'Running Back (RB)', 'FB': 'Fullback (FB)',
+        'WR': 'Wide Receiver (WR)', 'TE': 'Tight End (TE)', 'OT': 'Offensive Tackle (OT)',
+        'OG': 'Offensive Guard (OG)', 'C': 'Center (C)', 'OL': 'Offensive Line (OL)',
+        'DE': 'Defensive End (DE)', 'DT': 'Defensive Tackle (DT)', 'NT': 'Nose Tackle (NT)',
+        'ILB': 'Inside Linebacker (ILB)', 'OLB': 'Outside Linebacker (OLB)', 'LB': 'Linebacker (LB)',
+        'CB': 'Cornerback (CB)', 'S': 'Safety (S)', 'K': 'Kicker (K)', 'P': 'Punter (P)',
+        'LS': 'Long Snapper (LS)', 'ATH': 'Athlete (ATH)'
+    };
+
+    function formatPositions(positionString) {
+        if (!positionString) return '';
+        return positionString.split(/[,\/]/).map(p => p.trim()).filter(p => p !== '').map(pos => {
+            const fullName = positionNames[pos.toUpperCase()] || pos;
+            return `<span class="ra-position-badge">${fullName}</span>`;
+        }).join('');
+    }
+
+    // Helper: count offers
+    function countOffers(offersString) {
+        if (!offersString || offersString.trim() === '') return 0;
+        return offersString.split('|').filter(o => o.trim() !== '').length;
+    }
+
+    // Helper: format division
+    function formatDivision(division) {
+        if (!division) return '';
+        const div = division.trim().toUpperCase();
+        if (div === 'FBS') return 'D1 FBS';
+        if (div === 'FCS') return 'D1 FCS';
+        if (div === 'D2' || div === 'DIVISION II') return 'D2';
+        if (div === 'D3' || div === 'DIVISION III') return 'D3';
+        if (div === 'NAIA') return 'NAIA';
+        if (div === 'NJCAA' || div === 'JUCO') return 'JUCO';
+        return division;
+    }
+
+    function createPlayerCard(player) {
+        const card = document.createElement('div');
+        const isTransfer = player.transfer === 'y';
+        const displayName = `${player.first_name || ''} ${player.last_name || ''}`.trim() || 'Unknown Player';
+        const height = formatHeight(player.height);
+        const weight = player.weight ? `${player.weight} lbs` : 'N/A';
+        const gpaVal = player.gpa ? parseFloat(player.gpa) : null;
+        const gpa = gpaVal ? gpaVal.toFixed(1) : 'N/A';
+        const school = player.team_name || 'Unknown School';
+        const state = player.state || '';
+        const gradYear = player.graduation_year || 'N/A';
+        const profileImage = player.profile_image_url;
+
+        card.className = `ra-player-card${isTransfer ? ' ra-transfer' : ''}`;
+
+        let detailsHtml = '';
+        if (isTransfer) {
+            const eligibility = player.eligibility ? `${player.eligibility} Year${player.eligibility > 1 ? 's' : ''}` : 'N/A';
+            const division = formatDivision(player.college_division);
+            detailsHtml = `
+                <div class="ra-card-stats">
+                    <div class="ra-stat-item">
+                        <div class="ra-stat-label">Height</div>
+                        <div class="ra-stat-value">${height}</div>
+                    </div>
+                    <div class="ra-stat-item">
+                        <div class="ra-stat-label">Weight</div>
+                        <div class="ra-stat-value">${weight}</div>
+                    </div>
+                    <div class="ra-stat-item">
+                        <div class="ra-stat-label">Eligibility</div>
+                        <div class="ra-stat-value">${eligibility}</div>
+                    </div>
+                </div>
+                <div class="ra-card-gpa-row">
+                    <span class="ra-gpa-label">GPA:</span>
+                    <span class="ra-gpa-value">${gpa}</span>
+                </div>
+                <div class="ra-card-details">
+                    <div class="ra-detail-item ra-transfer-detail">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                            <circle cx="12" cy="10" r="3"></circle>
+                        </svg>
+                        Previously: ${escapeHtml(school)}${division ? ` (${division})` : ''}
+                    </div>
+                </div>`;
+        } else {
+            const offerCount = countOffers(player.offers);
+            detailsHtml = `
+                <div class="ra-card-stats">
+                    <div class="ra-stat-item">
+                        <div class="ra-stat-label">Height</div>
+                        <div class="ra-stat-value">${height}</div>
+                    </div>
+                    <div class="ra-stat-item">
+                        <div class="ra-stat-label">Weight</div>
+                        <div class="ra-stat-value">${weight}</div>
+                    </div>
+                    <div class="ra-stat-item">
+                        <div class="ra-stat-label">GPA</div>
+                        <div class="ra-stat-value">${gpa}</div>
+                    </div>
+                </div>
+                <div class="ra-card-details">
+                    <div class="ra-detail-item">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                            <path d="M9 22V12h6v10"></path>
+                        </svg>
+                        ${escapeHtml(school)}${state ? `, ${escapeHtml(state)}` : ''}
+                    </div>
+                    <div class="ra-detail-item">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="16" y1="2" x2="16" y2="6"></line>
+                            <line x1="8" y1="2" x2="8" y2="6"></line>
+                            <line x1="3" y1="10" x2="21" y2="10"></line>
+                        </svg>
+                        Class of ${gradYear}
+                    </div>
+                    <div class="ra-detail-item ra-offers-detail">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                        </svg>
+                        Offers: ${offerCount}
+                    </div>
+                </div>`;
+        }
+
+        card.innerHTML = `
+            <div class="ra-card-header">
+                <div class="ra-card-avatar">
+                    ${profileImage
+                        ? `<img src="${profileImage}" alt="${escapeHtml(displayName)}" class="ra-avatar-image">`
+                        : `<svg viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="12" cy="7" r="4"></circle>
+                        </svg>`
+                    }
+                </div>
+                ${isTransfer ? '<div class="ra-portal-badge">PORTAL</div>' : ''}
+            </div>
+            <h3 class="ra-card-name">${escapeHtml(displayName)}</h3>
+            <div class="ra-card-positions">
+                ${formatPositions(player.position)}
+            </div>
+            ${detailsHtml}
+            <button class="ra-btn-view-profile">View Profile</button>
+        `;
+
+        card.querySelector('.ra-btn-view-profile').addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (player.username) {
+                window.location.href = `../../shared/view-profile.html?username=${player.username}`;
+            }
+        });
+
+        card.addEventListener('click', () => {
+            if (player.username) {
+                window.location.href = `../../shared/view-profile.html?username=${player.username}`;
+            }
+        });
+
+        return card;
     }
 
     // ========================
@@ -600,10 +811,18 @@ document.addEventListener('DOMContentLoaded', function() {
     // INIT
     // ========================
 
-    if (chats.length > 0) {
-        activeChatId = chats[0].id;
+    async function init() {
+        await loadChats();
+        const savedChatId = sessionStorage.getItem('raActiveChatId');
+        const savedChatExists = savedChatId && chats.some(c => c.id === savedChatId);
+
+        if (savedChatExists) {
+            await selectChat(savedChatId);
+        } else if (chats.length > 0) {
+            await selectChat(chats[0].id);
+        }
+        fetchCoachDivision();
     }
-    renderHistory();
-    renderChat();
-    fetchCoachDivision();
+
+    init();
 });

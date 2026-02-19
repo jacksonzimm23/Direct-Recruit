@@ -543,6 +543,30 @@ function getProfileFolder(user) {
 window.getProfileFolder = getProfileFolder;
 window.COLLEGE_DIVISIONS = COLLEGE_DIVISIONS;
 
+// AI chat API
+const aiAPI = {
+    getChats: async (type = 'recruit_assistant') =>
+        apiRequest(`/ai/chats?type=${type}`),
+    createChat: async (chatType = 'recruit_assistant', title = 'New Chat') =>
+        apiRequest('/ai/chats', { method: 'POST', body: JSON.stringify({ chat_type: chatType, title }) }),
+    getChat: async (chatId) =>
+        apiRequest(`/ai/chats/${chatId}`),
+    updateChatTitle: async (chatId, title) =>
+        apiRequest(`/ai/chats/${chatId}/title`, { method: 'PUT', body: JSON.stringify({ title }) }),
+    deleteChat: async (chatId) =>
+        apiRequest(`/ai/chats/${chatId}`, { method: 'DELETE' }),
+    sendMessage: async (chatId, message, baselines = null) =>
+        apiRequest(`/ai/chats/${chatId}/message`, {
+            method: 'POST',
+            body: JSON.stringify({ message, baselines })
+        }),
+    reSearch: async (filters) =>
+        apiRequest('/ai/search', {
+            method: 'POST',
+            body: JSON.stringify({ filters })
+        }),
+};
+
 // Unified API object for convenience
 const API = {
     // Direct access to apiRequest for custom endpoints
@@ -567,6 +591,7 @@ const API = {
     messages: messagesAPI,
     upload: uploadAPI,
     notifications: notificationsAPI,
+    ai: aiAPI,
 
     // Auth helpers
     getUser,
