@@ -29,7 +29,8 @@
         'discover': 'discover-players',
         'messages': 'messages',
         'feed': 'mainpage-player',
-        'profile': 'my-profile'
+        'profile': 'my-profile',
+        'transfer-portal': 'transfer-portal'
     };
 
     // Use fromPage for active state if viewing another user's profile

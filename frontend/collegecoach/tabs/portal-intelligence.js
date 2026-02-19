@@ -16,11 +16,9 @@ document.addEventListener('DOMContentLoaded', function() {
         tab.addEventListener('click', () => {
             const targetTab = tab.dataset.tab;
 
-            // Update active subtab
             subtabs.forEach(t => t.classList.remove('active'));
             tab.classList.add('active');
 
-            // Show/hide tab content
             Object.entries(tabContents).forEach(([key, content]) => {
                 if (content) {
                     if (key === targetTab) {
@@ -31,12 +29,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
 
-            // Save active tab to sessionStorage
             sessionStorage.setItem('tpActiveTab', targetTab);
         });
     });
 
-    // Restore active tab from sessionStorage
     const savedTab = sessionStorage.getItem('tpActiveTab');
     if (savedTab && tabContents[savedTab]) {
         const targetBtn = document.querySelector(`.tp-subtab[data-tab="${savedTab}"]`);
@@ -57,69 +53,100 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (!messagesContainer || !input) return;
 
-    const STORAGE_KEY = 'piChats';
-    let chats = loadChats();
+    let chats = [];
     let activeChatId = null;
+    let isSending = false;
 
     // ========================
-    // STORAGE
+    // API-BACKED CHAT STORAGE
     // ========================
 
-    function loadChats() {
+    async function loadChats() {
         try {
-            const saved = localStorage.getItem(STORAGE_KEY);
-            return saved ? JSON.parse(saved) : [];
+            const data = await API.ai.getChats('portal_intelligence');
+            chats = data.chats || [];
+            renderHistory();
         } catch (e) {
-            return [];
+            console.error('Failed to load PI chats:', e);
+            chats = [];
+            renderHistory();
         }
     }
 
-    function saveChats() {
+    async function createNewChat() {
         try {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(chats));
+            const data = await API.ai.createChat('portal_intelligence');
+            const chat = data.chat;
+            chats.unshift(chat);
+            activeChatId = chat.id;
+            messagesContainer.querySelectorAll('.pi-msg, .pi-typing, .pi-player-cards').forEach(el => el.remove());
+            if (welcome) welcome.style.display = '';
+            renderHistory();
+            input.focus();
+            return chat;
         } catch (e) {
-            console.error('Error saving PI chats:', e);
+            console.error('Failed to create PI chat:', e);
+            return null;
         }
     }
 
-    function getActiveChat() {
-        return chats.find(c => c.id === activeChatId);
-    }
-
-    // ========================
-    // CHAT MANAGEMENT
-    // ========================
-
-    function createNewChat() {
-        const chat = {
-            id: Date.now().toString(),
-            title: 'New Chat',
-            messages: [],
-            createdAt: new Date().toISOString()
-        };
-        chats.unshift(chat);
-        saveChats();
-        activeChatId = chat.id;
-        renderHistory();
-        renderChat();
-        input.focus();
-        return chat;
-    }
-
-    function deleteChat(chatId) {
-        chats = chats.filter(c => c.id !== chatId);
-        saveChats();
-        if (activeChatId === chatId) {
-            activeChatId = chats.length > 0 ? chats[0].id : null;
+    async function deleteChat(chatId) {
+        try {
+            await API.ai.deleteChat(chatId);
+            chats = chats.filter(c => c.id !== chatId);
+            if (activeChatId === chatId) {
+                activeChatId = chats.length > 0 ? chats[0].id : null;
+                if (activeChatId) {
+                    await selectChat(activeChatId);
+                } else {
+                    messagesContainer.querySelectorAll('.pi-msg, .pi-typing, .pi-player-cards').forEach(el => el.remove());
+                    if (welcome) welcome.style.display = '';
+                }
+            }
+            renderHistory();
+        } catch (e) {
+            console.error('Failed to delete PI chat:', e);
         }
-        renderHistory();
-        renderChat();
     }
 
-    function selectChat(chatId) {
+    async function selectChat(chatId) {
         activeChatId = chatId;
         renderHistory();
-        renderChat();
+
+        try {
+            const data = await API.ai.getChat(chatId);
+            const chat = data.chat;
+
+            messagesContainer.querySelectorAll('.pi-msg, .pi-typing, .pi-player-cards').forEach(el => el.remove());
+
+            if (!chat.messages || chat.messages.length === 0) {
+                if (welcome) welcome.style.display = '';
+                return;
+            }
+
+            if (welcome) welcome.style.display = 'none';
+
+            chat.messages.forEach(msg => {
+                const div = document.createElement('div');
+                div.className = `pi-msg ${msg.role}`;
+                div.textContent = msg.content;
+                messagesContainer.appendChild(div);
+
+                // Render player cards from metadata if present
+                if (msg.role === 'assistant' && msg.metadata && msg.metadata.players && msg.metadata.players.length > 0) {
+                    const cardsContainer = document.createElement('div');
+                    cardsContainer.className = 'pi-player-cards';
+                    msg.metadata.players.forEach(player => {
+                        cardsContainer.appendChild(createPlayerCard(player));
+                    });
+                    messagesContainer.appendChild(cardsContainer);
+                }
+            });
+
+            scrollToBottom();
+        } catch (e) {
+            console.error('Failed to load PI chat:', e);
+        }
     }
 
     // ========================
@@ -143,7 +170,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         historyList.innerHTML = chats.map(chat => {
-            const timeStr = formatTimeAgo(chat.createdAt);
+            const timeStr = formatTimeAgo(chat.created_at);
             const isActive = chat.id === activeChatId;
             return `
                 <div class="pi-history-item ${isActive ? 'active' : ''}" data-chat-id="${chat.id}">
@@ -167,7 +194,6 @@ document.addEventListener('DOMContentLoaded', function() {
             `;
         }).join('');
 
-        // Attach click handlers
         historyList.querySelectorAll('.pi-history-item').forEach(item => {
             item.addEventListener('click', (e) => {
                 if (e.target.closest('.pi-history-item-delete')) return;
@@ -181,29 +207,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 deleteChat(btn.dataset.deleteId);
             });
         });
-    }
-
-    function renderChat() {
-        const chat = getActiveChat();
-
-        if (!chat || chat.messages.length === 0) {
-            if (welcome) welcome.style.display = '';
-            messagesContainer.querySelectorAll('.pi-msg, .pi-typing').forEach(el => el.remove());
-            return;
-        }
-
-        if (welcome) welcome.style.display = 'none';
-
-        messagesContainer.querySelectorAll('.pi-msg, .pi-typing').forEach(el => el.remove());
-
-        chat.messages.forEach(msg => {
-            const div = document.createElement('div');
-            div.className = `pi-msg ${msg.role}`;
-            div.textContent = msg.content;
-            messagesContainer.appendChild(div);
-        });
-
-        scrollToBottom();
     }
 
     function scrollToBottom() {
@@ -228,27 +231,23 @@ document.addEventListener('DOMContentLoaded', function() {
         if (typing) typing.remove();
     }
 
-    function sendMessage(text) {
+    async function sendMessage(text) {
         text = text.trim();
-        if (!text) return;
+        if (!text || isSending) return;
 
-        let chat = getActiveChat();
-        if (!chat) {
-            chat = createNewChat();
+        isSending = true;
+
+        if (!activeChatId) {
+            const chat = await createNewChat();
+            if (!chat) {
+                isSending = false;
+                return;
+            }
         }
 
         if (welcome) welcome.style.display = 'none';
 
-        // Update chat title from first message
-        if (chat.messages.length === 0) {
-            chat.title = text.length > 50 ? text.substring(0, 50) + '...' : text;
-        }
-
-        // Add user message
-        chat.messages.push({ role: 'user', content: text });
-        saveChats();
-        renderHistory();
-
+        // Show user message immediately
         const userDiv = document.createElement('div');
         userDiv.className = 'pi-msg user';
         userDiv.textContent = text;
@@ -258,22 +257,222 @@ document.addEventListener('DOMContentLoaded', function() {
         input.value = '';
         input.style.height = 'auto';
 
-        // Placeholder AI response
         showTyping();
 
-        setTimeout(() => {
+        try {
+            const data = await API.ai.sendPiMessage(activeChatId, text);
+
             removeTyping();
 
-            const response = "Portal Intelligence is coming soon! I'll analyze behavioral signals — profile updates, film uploads, and school searches — to predict which players are likely to enter the transfer portal.";
-            chat.messages.push({ role: 'assistant', content: response });
-            saveChats();
-
+            // Show the AI response text
             const aiDiv = document.createElement('div');
             aiDiv.className = 'pi-msg assistant';
-            aiDiv.textContent = response;
+            aiDiv.textContent = data.response;
             messagesContainer.appendChild(aiDiv);
+
+            // Render player cards with signal reasoning
+            if (data.players && data.players.length > 0) {
+                const cardsContainer = document.createElement('div');
+                cardsContainer.className = 'pi-player-cards';
+                data.players.forEach(player => {
+                    cardsContainer.appendChild(createPlayerCard(player));
+                });
+                messagesContainer.appendChild(cardsContainer);
+            }
+
             scrollToBottom();
-        }, 1200);
+
+            // Refresh chat list to update title/order
+            loadChats();
+
+        } catch (error) {
+            removeTyping();
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'pi-msg assistant error';
+            errorDiv.textContent = 'Sorry, something went wrong. Please try again.';
+            messagesContainer.appendChild(errorDiv);
+            scrollToBottom();
+        }
+
+        isSending = false;
+    }
+
+    // ========================
+    // PLAYER CARD RENDERING
+    // ========================
+
+    function createPlayerCard(player) {
+        const card = document.createElement('div');
+        const displayName = `${player.first_name || ''} ${player.last_name || ''}`.trim() || 'Unknown Player';
+        const height = formatHeight(player.height);
+        const weight = player.weight ? `${player.weight} lbs` : 'N/A';
+        const school = player.team_name || 'Unknown School';
+        const division = formatDivision(player.college_division);
+        const profileImage = player.profile_image_url;
+        const gpaVal = player.gpa ? parseFloat(player.gpa) : null;
+        const gpa = gpaVal ? gpaVal.toFixed(1) : 'N/A';
+
+        card.className = 'pi-player-card';
+
+        // Build signal badges
+        const signalBadges = (player.signal_types || []).map(signal => {
+            const labels = {
+                'bio_and_film': 'Bio + New Film',
+                'portal_keywords': 'Portal Keywords',
+                'browsing_coaches': 'Browsing Coaches'
+            };
+            const icons = {
+                'bio_and_film': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>',
+                'portal_keywords': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.35-4.35"></path></svg>',
+                'browsing_coaches': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>'
+            };
+            return `<span class="pi-signal-badge pi-signal-${signal}">${icons[signal] || ''}${labels[signal] || signal}</span>`;
+        }).join('');
+
+        // Build in-depth signal reasoning sections
+        let signalDetailsHtml = '';
+        const details = player.signal_details || {};
+
+        // Portal Keywords — show matched keywords + full bio with highlights
+        if (details.portal_keywords) {
+            const kw = details.portal_keywords;
+            let section = '<div class="pi-signal-section pi-section-keywords">';
+            section += '<div class="pi-section-header"><span class="pi-section-icon">&#128269;</span> Portal Keywords Detected</div>';
+            if (kw.matched_keywords && kw.matched_keywords.length > 0) {
+                section += '<div class="pi-keyword-tags">';
+                kw.matched_keywords.forEach(keyword => {
+                    section += `<span class="pi-keyword-tag">${escapeHtml(keyword)}</span>`;
+                });
+                section += '</div>';
+            }
+            if (kw.bio_text) {
+                let bioHtml = escapeHtml(kw.bio_text);
+                // Highlight matched keywords in the bio text
+                if (kw.matched_keywords) {
+                    kw.matched_keywords.forEach(keyword => {
+                        const regex = new RegExp(`(${keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+                        bioHtml = bioHtml.replace(regex, '<mark class="pi-keyword-highlight">$1</mark>');
+                    });
+                }
+                section += `<div class="pi-bio-preview"><div class="pi-bio-label">Player's Bio:</div><div class="pi-bio-text">${bioHtml}</div></div>`;
+            }
+            if (kw.bio_updated) {
+                section += `<div class="pi-detail-meta">Bio last updated: ${formatDate(kw.bio_updated)}</div>`;
+            }
+            section += '</div>';
+            signalDetailsHtml += section;
+        }
+
+        // Bio + Film — show update date, highlights, and bio only if not already shown in keywords section
+        if (details.bio_and_film) {
+            const bf = details.bio_and_film;
+            const bioAlreadyShown = !!details.portal_keywords;
+            let section = '<div class="pi-signal-section pi-section-biofilm">';
+            section += '<div class="pi-section-header"><span class="pi-section-icon">&#127916;</span> Bio Updated + New Film Uploaded</div>';
+            if (!bioAlreadyShown && bf.bio_updated) {
+                section += `<div class="pi-detail-meta">Bio updated: ${formatDate(bf.bio_updated)}</div>`;
+            }
+            if (!bioAlreadyShown && bf.bio_excerpt) {
+                section += `<div class="pi-bio-preview"><div class="pi-bio-label">Bio excerpt:</div><div class="pi-bio-text">${escapeHtml(bf.bio_excerpt)}</div></div>`;
+            }
+            if (bf.recent_highlights && bf.recent_highlights.length > 0) {
+                section += '<div class="pi-highlights-list"><div class="pi-bio-label">Recent Highlights:</div>';
+                bf.recent_highlights.forEach(hl => {
+                    const typeLabel = hl.type === 'season' ? 'Season' : hl.type === 'game' ? 'Game' : (hl.type || 'Highlight');
+                    section += `<div class="pi-highlight-item"><span class="pi-hl-title">${escapeHtml(hl.title || 'Untitled')}</span><span class="pi-hl-meta">${typeLabel} &middot; Uploaded ${formatDate(hl.uploaded_at)}</span></div>`;
+                });
+                section += '</div>';
+            }
+            section += '</div>';
+            signalDetailsHtml += section;
+        }
+
+        // Browsing Coaches — show each coach name, title, team, view count, last viewed
+        if (details.browsing_coaches) {
+            const bc = details.browsing_coaches;
+            let section = '<div class="pi-signal-section pi-section-browsing">';
+            section += '<div class="pi-section-header"><span class="pi-section-icon">&#128065;</span> Browsing Coaches From Other Programs</div>';
+            if (bc.unique_teams_browsed || bc.total_external_views) {
+                section += `<div class="pi-detail-meta">${bc.unique_teams_browsed || 0} different program${(bc.unique_teams_browsed || 0) !== 1 ? 's' : ''} &middot; ${bc.total_external_views || 0} total coach profile view${(bc.total_external_views || 0) !== 1 ? 's' : ''}</div>`;
+            }
+            if (bc.coaches_viewed && bc.coaches_viewed.length > 0) {
+                section += '<div class="pi-coaches-list">';
+                bc.coaches_viewed.forEach(coach => {
+                    const coachName = escapeHtml(coach.name || 'Unknown Coach');
+                    const coachTitle = coach.title ? escapeHtml(coach.title) : '';
+                    const team = escapeHtml(coach.team || 'Unknown');
+                    const div = coach.division ? ` (${formatDivision(coach.division)})` : '';
+                    const views = coach.views || 1;
+                    const lastViewed = coach.last_viewed ? formatDate(coach.last_viewed) : '';
+                    section += `<div class="pi-coach-item">`;
+                    section += `<div class="pi-coach-name">${coachName}${coachTitle ? ' &mdash; ' + coachTitle : ''}</div>`;
+                    section += `<div class="pi-coach-meta">${team}${div} &middot; ${views} view${views > 1 ? 's' : ''}${lastViewed ? ' &middot; Last viewed ' + lastViewed : ''}</div>`;
+                    section += `</div>`;
+                });
+                section += '</div>';
+            }
+            section += '</div>';
+            signalDetailsHtml += section;
+        }
+
+        card.innerHTML = `
+            <div class="pi-card-header">
+                <div class="pi-card-avatar">
+                    ${profileImage
+                        ? `<img src="${profileImage}" alt="${escapeHtml(displayName)}" class="pi-avatar-image">`
+                        : `<svg viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="12" cy="7" r="4"></circle>
+                        </svg>`
+                    }
+                </div>
+                <div class="pi-card-info">
+                    <h3 class="pi-card-name">${escapeHtml(displayName)}</h3>
+                    <div class="pi-card-positions">${formatPositions(player.position)}</div>
+                </div>
+            </div>
+            <div class="pi-card-stats">
+                <div class="pi-stat-item">
+                    <div class="pi-stat-label">Height</div>
+                    <div class="pi-stat-value">${height}</div>
+                </div>
+                <div class="pi-stat-item">
+                    <div class="pi-stat-label">Weight</div>
+                    <div class="pi-stat-value">${weight}</div>
+                </div>
+                <div class="pi-stat-item">
+                    <div class="pi-stat-label">GPA</div>
+                    <div class="pi-stat-value">${gpa}</div>
+                </div>
+            </div>
+            <div class="pi-card-school">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                    <path d="M9 22V12h6v10"></path>
+                </svg>
+                ${escapeHtml(school)}${division ? ` (${division})` : ''}
+            </div>
+            <div class="pi-signal-badges">${signalBadges}</div>
+            ${signalDetailsHtml ? `<div class="pi-signal-details">${signalDetailsHtml}</div>` : ''}
+            <button class="pi-btn-view-profile">View Profile</button>
+        `;
+
+        const viewBtn = card.querySelector('.pi-btn-view-profile');
+        const profileUrl = `../../collegeplayer/tabs/my-profile.html?username=${player.username}&from=transfer-portal`;
+        viewBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (player.username) {
+                window.location.href = profileUrl;
+            }
+        });
+
+        card.addEventListener('click', () => {
+            if (player.username) {
+                window.location.href = profileUrl;
+            }
+        });
+
+        return card;
     }
 
     // ========================
@@ -301,6 +500,55 @@ document.addEventListener('DOMContentLoaded', function() {
         return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     }
 
+    function formatDate(dateStr) {
+        if (!dateStr) return '';
+        const date = new Date(dateStr);
+        const now = new Date();
+        const diffMs = now - date;
+        const diffDays = Math.floor(diffMs / 86400000);
+        if (diffDays === 0) return 'Today';
+        if (diffDays === 1) return 'Yesterday';
+        if (diffDays < 7) return `${diffDays} days ago`;
+        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined });
+    }
+
+    function formatHeight(heightVal) {
+        if (!heightVal) return 'N/A';
+        if (typeof heightVal === 'string' && heightVal.includes("'")) return heightVal;
+        const totalInches = parseInt(heightVal);
+        if (isNaN(totalInches) || totalInches <= 0) return 'N/A';
+        return `${Math.floor(totalInches / 12)}'${totalInches % 12}"`;
+    }
+
+    function formatDivision(division) {
+        if (!division) return '';
+        const div = division.trim().toUpperCase();
+        if (div === 'FBS') return 'D1 FBS';
+        if (div === 'FCS') return 'D1 FCS';
+        if (div === 'D2' || div === 'DIVISION II') return 'D2';
+        if (div === 'D3' || div === 'DIVISION III') return 'D3';
+        if (div === 'NAIA') return 'NAIA';
+        if (div === 'NJCAA' || div === 'JUCO') return 'JUCO';
+        return division;
+    }
+
+    const positionNames = {
+        'QB': 'QB', 'RB': 'RB', 'FB': 'FB', 'WR': 'WR', 'TE': 'TE',
+        'OT': 'OT', 'OG': 'OG', 'C': 'C', 'OL': 'OL',
+        'DE': 'DE', 'DT': 'DT', 'NT': 'NT',
+        'ILB': 'ILB', 'OLB': 'OLB', 'MLB': 'MLB', 'LB': 'LB',
+        'CB': 'CB', 'FS': 'FS', 'SS': 'SS', 'S': 'S',
+        'K': 'K', 'P': 'P', 'LS': 'LS', 'ATH': 'ATH'
+    };
+
+    function formatPositions(positionString) {
+        if (!positionString) return '';
+        return positionString.split(/[,\/]/).map(p => p.trim()).filter(p => p !== '').map(pos => {
+            const abbr = positionNames[pos.toUpperCase()] || pos;
+            return `<span class="pi-position-badge">${abbr}</span>`;
+        }).join('');
+    }
+
     // ========================
     // EVENT LISTENERS
     // ========================
@@ -314,7 +562,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Auto-resize textarea
     input.addEventListener('input', () => {
         input.style.height = 'auto';
         input.style.height = Math.min(input.scrollHeight, 120) + 'px';
@@ -324,7 +571,6 @@ document.addEventListener('DOMContentLoaded', function() {
         newChatBtn.addEventListener('click', () => createNewChat());
     }
 
-    // Suggestion buttons
     suggestions.forEach(btn => {
         btn.addEventListener('click', () => {
             const prompt = btn.dataset.prompt;
@@ -336,9 +582,10 @@ document.addEventListener('DOMContentLoaded', function() {
     // INIT
     // ========================
 
-    if (chats.length > 0) {
-        activeChatId = chats[0].id;
-    }
-    renderHistory();
-    renderChat();
+    loadChats().then(() => {
+        if (chats.length > 0) {
+            activeChatId = chats[0].id;
+            selectChat(activeChatId);
+        }
+    });
 });

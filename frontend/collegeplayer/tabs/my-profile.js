@@ -242,6 +242,8 @@ function updateNavbarForLoggedInUser(user, profile) {
     let messagesActive = '';
     let notificationsActive = '';
 
+    let transferPortalActive = '';
+
     if (!hasUsername) {
         // Viewing own profile
         profileActive = 'active';
@@ -255,6 +257,8 @@ function updateNavbarForLoggedInUser(user, profile) {
         profileActive = 'active';
     } else if (fromPage === 'feed') {
         feedActive = 'active';
+    } else if (fromPage === 'transfer-portal') {
+        transferPortalActive = 'active';
     } else {
         // Default to feed for viewing someone else's profile
         feedActive = 'active';
@@ -304,7 +308,7 @@ function updateNavbarForLoggedInUser(user, profile) {
                     <span class="notification-badge" style="display: none;"></span>
                 </a>
                 ${isCollege ? `
-                <a href="/frontend/${userFolder}/tabs/transfer-portal.html" class="nav-item${isTransferPlayer ? ' nav-item-portal' : ''}" id="transferPortalNav">
+                <a href="/frontend/${userFolder}/tabs/transfer-portal.html" class="nav-item ${transferPortalActive}${isTransferPlayer ? ' nav-item-portal' : ''}" id="transferPortalNav">
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <circle cx="12" cy="12" r="10"></circle>
                         <path d="M8 12h8"></path>
@@ -371,7 +375,7 @@ function updateNavbarForLoggedInUser(user, profile) {
                     </svg>
                     <span>Recruiting Board</span>
                 </a>
-                <a href="/frontend/${userFolder}/tabs/transfer-portal.html" class="nav-item" id="transferPortalNav">
+                <a href="/frontend/${userFolder}/tabs/transfer-portal.html" class="nav-item ${transferPortalActive}" id="transferPortalNav">
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <circle cx="12" cy="12" r="10"></circle>
                         <path d="M8 12h8"></path>
@@ -1687,6 +1691,8 @@ function updateActiveNavItem() {
         if (messagesNavItem) messagesNavItem.classList.remove('active');
         if (discoverNavItem) discoverNavItem.classList.remove('active');
         if (notificationsNavItem) notificationsNavItem.classList.remove('active');
+        const transferPortalNav = document.getElementById('transferPortalNav');
+        if (transferPortalNav) transferPortalNav.classList.remove('active');
 
         if (!hasUsername || isOwnProfile) {
             // Viewing own profile - highlight My Profile
@@ -1706,6 +1712,10 @@ function updateActiveNavItem() {
         } else if (fromPage === 'feed') {
             // Came from feed page - highlight Feed
             feedNavItem.classList.add('active');
+        } else if (fromPage === 'transfer-portal') {
+            // Came from transfer portal - highlight Transfer Portal
+            const transferPortalNavItem = document.getElementById('transferPortalNav');
+            if (transferPortalNavItem) transferPortalNavItem.classList.add('active');
         } else {
             // Default: Viewing someone else's profile (from feed) - highlight Feed
             feedNavItem.classList.add('active');
@@ -1770,11 +1780,16 @@ function setupUI() {
         if (highlightsPane) highlightsPane.style.display = '';
     }
 
-    // Hide Add Stats / Add Highlight buttons when viewing someone else's profile
-    if (!isOwnProfile) {
-        const addStatsBtn = document.getElementById('addStatsBtn');
-        const addSeasonHighlightBtn = document.getElementById('addSeasonHighlightBtn');
-        const addGameHighlightBtn = document.getElementById('addGameHighlightBtn');
+    // Show/hide Add Stats / Add Highlight buttons based on profile ownership
+    const addStatsBtn = document.getElementById('addStatsBtn');
+    const addSeasonHighlightBtn = document.getElementById('addSeasonHighlightBtn');
+    const addGameHighlightBtn = document.getElementById('addGameHighlightBtn');
+
+    if (isOwnProfile) {
+        if (addStatsBtn) addStatsBtn.classList.add('show-button');
+        if (addSeasonHighlightBtn) addSeasonHighlightBtn.classList.add('show-button');
+        if (addGameHighlightBtn) addGameHighlightBtn.classList.add('show-button');
+    } else {
         if (addStatsBtn) addStatsBtn.style.display = 'none';
         if (addSeasonHighlightBtn) addSeasonHighlightBtn.style.display = 'none';
         if (addGameHighlightBtn) addGameHighlightBtn.style.display = 'none';
@@ -6253,6 +6268,49 @@ function showProfileToast(message, type = 'info') {
     setTimeout(() => {
         toast.classList.remove('show');
         setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
+
+// ============================================
+// TOAST NOTIFICATION HELPER
+// ============================================
+
+function showToast(message, type = 'info') {
+    // Remove any existing toasts
+    const existingToast = document.querySelector('.toast-notification');
+    if (existingToast) {
+        existingToast.remove();
+    }
+
+    const toast = document.createElement('div');
+    toast.className = `toast-notification toast-${type}`;
+    toast.textContent = message;
+
+    const bgColor = type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#3b82f6';
+    toast.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: ${bgColor};
+        color: white;
+        padding: 1rem 1.5rem;
+        border-radius: 8px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        z-index: 10001;
+        animation: slideIn 0.3s ease-out;
+        font-size: 0.95rem;
+        font-weight: 500;
+    `;
+
+    document.body.appendChild(toast);
+
+    setTimeout(() => {
+        toast.style.animation = 'slideOut 0.3s ease-out forwards';
+        setTimeout(() => {
+            if (toast.parentNode) {
+                toast.parentNode.removeChild(toast);
+            }
+        }, 300);
     }, 3000);
 }
 

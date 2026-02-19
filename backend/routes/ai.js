@@ -5,6 +5,8 @@ const AiChat = require('../models/AiChat');
 const PlayerProfile = require('../models/PlayerProfile');
 const CoachProfile = require('../models/CoachProfile');
 const { getRecruitingFilters } = require('../utils/ai');
+const { getPortalIntelligence } = require('../utils/portal-intelligence');
+const PortalSignal = require('../models/PortalSignal');
 const { getSignedS3Url } = require('../utils/s3');
 const PlayerGameStats = require('../models/PlayerGameStats');
 
@@ -54,6 +56,20 @@ router.get('/chats/:chatId', validateUUID('chatId'), async (req, res) => {
     if (!chat) {
       return res.status(404).json({ error: 'Chat not found' });
     }
+
+    // Sign profile image keys in metadata for PI/RA player cards
+    if (chat.messages) {
+      await Promise.all(chat.messages.map(async (msg) => {
+        if (msg.metadata && msg.metadata.players) {
+          await Promise.all(msg.metadata.players.map(async (player) => {
+            if (player.profile_image_key) {
+              player.profile_image_url = await getSignedS3Url(player.profile_image_key);
+            }
+          }));
+        }
+      }));
+    }
+
     res.json({ chat });
   } catch (error) {
     console.error('Get AI chat error:', error);
@@ -296,6 +312,185 @@ router.post('/chats/:chatId/message', validateUUID('chatId'), async (req, res) =
   } catch (error) {
     console.error('AI message error:', error);
     res.status(500).json({ error: 'Failed to process message' });
+  }
+});
+
+// ============ PORTAL INTELLIGENCE MESSAGE ENDPOINT ============
+
+// POST /api/ai/chats/:chatId/pi-message
+// Send a message and get portal intelligence analysis + flagged players
+router.post('/chats/:chatId/pi-message', validateUUID('chatId'), async (req, res) => {
+  try {
+    const { message } = req.body;
+    const chatId = req.params.chatId;
+
+    if (!message || !message.trim()) {
+      return res.status(400).json({ error: 'Message is required' });
+    }
+
+    // 1. Verify chat ownership and get existing messages
+    const chat = await AiChat.getChatWithMessages(chatId, req.userId);
+    if (!chat) {
+      return res.status(404).json({ error: 'Chat not found' });
+    }
+
+    // 2. Get coach profile info for context
+    const coachProfile = await CoachProfile.findByUserId(req.userId);
+    const coachState = coachProfile?.state || null;
+    const coachDivision = coachProfile?.college_division || null;
+
+    // 3. Save the user message
+    await AiChat.addMessage(chatId, req.userId, 'user', message.trim());
+
+    // 4. Update title from first message
+    if (chat.messages.length === 0) {
+      const title = message.trim().length > 50
+        ? message.trim().substring(0, 50) + '...'
+        : message.trim();
+      await AiChat.updateTitle(chatId, req.userId, title);
+    }
+
+    // 5. Build conversation history (include flagged player context from metadata)
+    const conversationHistory = chat.messages.map(m => {
+      let content = m.content;
+      if (m.role === 'assistant' && m.metadata && m.metadata.players && m.metadata.players.length > 0) {
+        const playerSummaries = m.metadata.players.map(p => {
+          const parts = [`${p.first_name} ${p.last_name}`];
+          if (p.position) parts.push(`Position: ${p.position}`);
+          if (p.team_name) parts.push(`School: ${p.team_name}`);
+          if (p.college_division) parts.push(`Division: ${p.college_division}`);
+          if (p.height) parts.push(`Height: ${p.height}`);
+          if (p.weight) parts.push(`Weight: ${p.weight} lbs`);
+          if (p.gpa) parts.push(`GPA: ${p.gpa}`);
+          if (p.signal_types) parts.push(`Signals: ${p.signal_types.join(', ')}`);
+          if (p.signal_details) {
+            if (p.signal_details.portal_keywords) {
+              if (p.signal_details.portal_keywords.matched_keywords) {
+                parts.push(`Keywords found in bio: "${p.signal_details.portal_keywords.matched_keywords.join('", "')}"`);
+              }
+              if (p.signal_details.portal_keywords.bio_text) {
+                parts.push(`Full bio: "${p.signal_details.portal_keywords.bio_text}"`);
+              }
+              if (p.signal_details.portal_keywords.bio_updated) {
+                parts.push(`Bio last updated: ${new Date(p.signal_details.portal_keywords.bio_updated).toLocaleDateString()}`);
+              }
+            }
+            if (p.signal_details.browsing_coaches) {
+              if (p.signal_details.browsing_coaches.coaches_viewed) {
+                const coachList = p.signal_details.browsing_coaches.coaches_viewed.map(c =>
+                  `${c.name}${c.title ? ' (' + c.title + ')' : ''} at ${c.team} (${c.division}) — ${c.views} view${c.views > 1 ? 's' : ''}`
+                ).join('; ');
+                parts.push(`Coaches viewed: ${coachList}`);
+              }
+              if (p.signal_details.browsing_coaches.unique_teams_browsed) {
+                parts.push(`Unique external teams browsed: ${p.signal_details.browsing_coaches.unique_teams_browsed}`);
+              }
+              parts.push(`Total external coach views: ${p.signal_details.browsing_coaches.total_external_views}`);
+            }
+            if (p.signal_details.bio_and_film) {
+              if (p.signal_details.bio_and_film.bio_excerpt) {
+                parts.push(`Bio excerpt: "${p.signal_details.bio_and_film.bio_excerpt}"`);
+              }
+              if (p.signal_details.bio_and_film.bio_updated) {
+                parts.push(`Bio updated: ${new Date(p.signal_details.bio_and_film.bio_updated).toLocaleDateString()}`);
+              }
+              if (p.signal_details.bio_and_film.recent_highlights) {
+                const hlList = p.signal_details.bio_and_film.recent_highlights.map(h =>
+                  `"${h.title}" (${h.type}, uploaded ${new Date(h.uploaded_at).toLocaleDateString()})`
+                ).join(', ');
+                parts.push(`Recent highlights uploaded: ${hlList}`);
+              }
+            }
+          }
+          return parts.join(', ');
+        }).join('\n\n');
+        content += `\n\n[Flagged players shown:\n${playerSummaries}]`;
+      }
+      return { role: m.role, content };
+    });
+    conversationHistory.push({ role: 'user', content: message.trim() });
+
+    // 6. Call Claude Haiku for portal intelligence
+    const aiResponse = await getPortalIntelligence(
+      conversationHistory,
+      coachState,
+      coachDivision
+    );
+
+    // 7. If it's a conversational response (no signal filters), return it
+    if (!aiResponse.signal_filters) {
+      const responseText = aiResponse.message || "I focus on detecting portal signals from player behavior. Try asking about which players are showing transfer activity.";
+
+      await AiChat.addMessage(chatId, req.userId, 'assistant', responseText);
+
+      return res.json({
+        response: responseText,
+        players: [],
+        signal_filters: null,
+        summary: null
+      });
+    }
+
+    // 8. Execute the signal query with AI-generated filters
+    const result = await PortalSignal.queryBySignalFilters(
+      aiResponse.signal_filters,
+      req.userId,
+      5,
+      0
+    );
+
+    // 9. Save S3 keys before signing (for metadata persistence)
+    const playerImageKeys = {};
+    result.players.forEach(p => {
+      if (p.profile_image_url) playerImageKeys[p.user_id] = p.profile_image_url;
+    });
+
+    // 10. Add signed URLs to player profile images
+    result.players = await addSignedUrlsToProfiles(result.players);
+
+    // 11. Build response text
+    const playerCount = result.players.length;
+    let responseText;
+    if (playerCount === 0) {
+      responseText = `No players are currently showing portal signals matching those criteria. This could mean no college players on the platform are exhibiting the behavioral patterns we track, or you might want to try a wider search — broaden the position, division, or lookback window.`;
+    } else {
+      responseText = `Found ${playerCount}${result.hasMore ? '+' : ''} college player${playerCount !== 1 ? 's' : ''} showing portal activity signals.`;
+    }
+
+    // 12. Save assistant response with metadata (use S3 keys, not signed URLs)
+    const playerSummaries = result.players.map(p => ({
+      first_name: p.first_name,
+      last_name: p.last_name,
+      username: p.username,
+      position: p.position,
+      height: p.height,
+      weight: p.weight,
+      gpa: p.gpa,
+      team_name: p.team_name,
+      college_division: p.college_division,
+      signal_types: p.signal_types,
+      signal_details: p.signal_details,
+      profile_image_key: playerImageKeys[p.user_id] || null
+    }));
+
+    await AiChat.addMessage(chatId, req.userId, 'assistant', responseText, {
+      signal_filters: aiResponse.signal_filters,
+      players: playerSummaries,
+      playerCount: playerCount,
+      hasMore: result.hasMore
+    });
+
+    return res.json({
+      response: responseText,
+      players: result.players,
+      signal_filters: aiResponse.signal_filters,
+      summary: aiResponse.summary,
+      hasMore: result.hasMore
+    });
+
+  } catch (error) {
+    console.error('Portal Intelligence message error:', error);
+    res.status(500).json({ error: 'Failed to process portal intelligence message' });
   }
 });
 
