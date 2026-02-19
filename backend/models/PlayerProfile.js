@@ -461,6 +461,7 @@ class PlayerProfile {
     }
 
     // Stat filters — subquery into player_games + player_game_stats
+    // Uses SUM aggregation across games so stats spread across multiple games are totaled
     if (filters.stat_filters && filters.stat_filters.length > 0) {
       filters.stat_filters.forEach((sf, index) => {
         // Validate stat_key against allowlist to prevent SQL injection
@@ -469,6 +470,7 @@ class PlayerProfile {
         const alias = `sf${index}`;
         const gameAlias = `sg${index}`;
 
+        // Build aggregated subquery — SUM the stat across matching games
         let statSubquery = `
           EXISTS (
             SELECT 1 FROM player_games ${gameAlias}
@@ -476,12 +478,22 @@ class PlayerProfile {
             JOIN player_profiles pp_stat ON ${gameAlias}.player_id = pp_stat.id
             WHERE pp_stat.user_id = pp.user_id`;
 
-        // Season year filter
-        if (sf.season_year !== null && sf.season_year !== undefined) {
+        // Season year filter:
+        // 0 or null = career (all games), -1 = last season, positive = specific year
+        if (sf.season_year === -1) {
+          // Last season: find the max season_year for this player
+          statSubquery += ` AND ${gameAlias}.season_year = (
+            SELECT MAX(sg_inner.season_year) FROM player_games sg_inner
+            JOIN player_profiles pp_inner ON sg_inner.player_id = pp_inner.id
+            WHERE pp_inner.user_id = pp.user_id AND sg_inner.season_year > 0
+          )`;
+        } else if (sf.season_year && sf.season_year > 0) {
+          // Specific year
           statSubquery += ` AND ${gameAlias}.season_year = $${paramCount}`;
           values.push(sf.season_year);
           paramCount++;
         }
+        // season_year 0 or null/undefined = career totals across ALL games (no filter needed)
 
         // Position filter for stats
         if (sf.positions && sf.positions.length > 0) {
@@ -494,9 +506,15 @@ class PlayerProfile {
           statSubquery += ` AND ${alias}.position IN (${posList.join(', ')})`;
         }
 
-        // The stat condition — cast JSONB value to numeric
         const op = sf.operator || '>=';
-        statSubquery += ` AND CAST(${alias}.stats->>'${sf.stat_key}' AS NUMERIC) ${op} $${paramCount}`;
+        if (sf.per_game) {
+          // Per-game mode: check if ANY single game meets the threshold
+          statSubquery += ` AND COALESCE(CAST(${alias}.stats->>'${sf.stat_key}' AS NUMERIC), 0) ${op} $${paramCount}`;
+        } else {
+          // Aggregate mode (default): SUM the stat across all matching games
+          statSubquery += ` GROUP BY pp_stat.user_id
+            HAVING SUM(COALESCE(CAST(${alias}.stats->>'${sf.stat_key}' AS NUMERIC), 0)) ${op} $${paramCount}`;
+        }
         values.push(sf.value);
         paramCount++;
 

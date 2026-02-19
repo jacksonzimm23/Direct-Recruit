@@ -38,6 +38,7 @@ When the coach describes players they're looking for, respond with ONLY a valid 
         "operator": ">=",
         "value": 3000,
         "season_year": 0,
+        "per_game": false,
         "positions": ["QB"]
       }
     ]
@@ -57,7 +58,10 @@ When the coach describes players they're looking for, respond with ONLY a valid 
 - college_division: Only for transfer players — one of: "D1 FBS", "D1 FCS", "D2", "D3", "NAIA", "NJCAA", "3C2A"
 - eligibility: Integer years remaining (transfer players only)
 - searchTerm: For name/username search only
-- stat_filters: Array of stat conditions. Each has stat_key (from glossary statsByPosition), operator (>=, <=, >, <, =), value, season_year (0=career, -1=last season, or actual year), and positions array
+- stat_filters: Array of stat conditions. Each has stat_key (from glossary statsByPosition), operator (>=, <=, >, <, =), value, season_year (0=career totals across all games, -1=most recent season only, or a specific year like 2024), per_game (boolean, default false), and positions array.
+  - Default to season_year: 0 (career) and per_game: false unless the coach specifies otherwise
+  - per_game: false (default) = AGGREGATE/SUM the stat across all matching games. Use for career totals, season totals, or general stat searches (e.g., "over 2 picks", "3000+ passing yards")
+  - per_game: true = check if ANY SINGLE GAME meets the threshold. Use ONLY when the coach explicitly says "in a game", "in a single game", "per game", "game with 300+ yards", etc.
 - Set any unused filter to null
 - summary: Brief human-readable description of the search
 
