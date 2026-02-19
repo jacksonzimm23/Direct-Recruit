@@ -1275,6 +1275,357 @@
 }
 
 /* ==============================
+   PI — PLAYER CARDS
+   ============================== */
+
+.pi-player-cards {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 8px 0;
+    max-width: 100%;
+}
+
+.pi-player-card {
+    background: rgba(254, 252, 251, 0.04);
+    border: 1px solid rgba(18, 130, 162, 0.2);
+    border-radius: 12px;
+    padding: 14px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    width: calc(50% - 6px);
+    min-width: 280px;
+}
+
+.pi-player-card:hover {
+    background: rgba(18, 130, 162, 0.08);
+    border-color: rgba(18, 130, 162, 0.4);
+    box-shadow: 0 2px 12px rgba(18, 130, 162, 0.15);
+}
+
+.pi-card-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.pi-card-avatar {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: rgba(18, 130, 162, 0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    overflow: hidden;
+}
+
+.pi-card-avatar svg {
+    width: 24px;
+    height: 24px;
+    color: var(--cerulean);
+}
+
+.pi-avatar-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+}
+
+.pi-card-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.pi-card-name {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--white);
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.pi-card-positions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 3px;
+}
+
+.pi-position-badge {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--cerulean);
+    background: rgba(18, 130, 162, 0.12);
+    padding: 1px 6px;
+    border-radius: 4px;
+}
+
+.pi-card-stats {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 8px;
+    padding: 8px 0;
+    border-top: 1px solid rgba(254, 252, 251, 0.06);
+    border-bottom: 1px solid rgba(254, 252, 251, 0.06);
+}
+
+.pi-stat-item {
+    flex: 1;
+    text-align: center;
+}
+
+.pi-stat-label {
+    font-size: 0.65rem;
+    color: rgba(254, 252, 251, 0.4);
+    text-transform: uppercase;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+}
+
+.pi-stat-value {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--white);
+    margin-top: 2px;
+}
+
+.pi-card-school {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.8rem;
+    color: rgba(254, 252, 251, 0.6);
+    margin-bottom: 10px;
+}
+
+.pi-card-school svg {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+}
+
+.pi-signal-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 8px;
+}
+
+.pi-signal-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 6px;
+}
+
+.pi-signal-badge svg {
+    width: 12px;
+    height: 12px;
+}
+
+.pi-signal-bio_and_film {
+    color: #f59e0b;
+    background: rgba(245, 158, 11, 0.12);
+    border: 1px solid rgba(245, 158, 11, 0.25);
+}
+
+.pi-signal-portal_keywords {
+    color: #ef4444;
+    background: rgba(239, 68, 68, 0.12);
+    border: 1px solid rgba(239, 68, 68, 0.25);
+}
+
+.pi-signal-browsing_coaches {
+    color: #8b5cf6;
+    background: rgba(139, 92, 246, 0.12);
+    border: 1px solid rgba(139, 92, 246, 0.25);
+}
+
+.pi-signal-details {
+    margin-bottom: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+/* Signal section — each signal type gets its own collapsible section */
+.pi-signal-section {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    padding: 10px 12px;
+    border-left: 3px solid rgba(254, 252, 251, 0.15);
+}
+
+.pi-section-keywords { border-left-color: rgba(239, 68, 68, 0.6); }
+.pi-section-biofilm { border-left-color: rgba(245, 158, 11, 0.6); }
+.pi-section-browsing { border-left-color: rgba(139, 92, 246, 0.6); }
+
+.pi-section-header {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: rgba(254, 252, 251, 0.85);
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.pi-section-icon {
+    font-size: 0.85rem;
+}
+
+.pi-detail-meta {
+    font-size: 0.72rem;
+    color: rgba(254, 252, 251, 0.45);
+    margin-bottom: 4px;
+}
+
+/* Keyword tags */
+.pi-keyword-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-bottom: 6px;
+}
+
+.pi-keyword-tag {
+    font-size: 0.68rem;
+    padding: 2px 8px;
+    border-radius: 10px;
+    background: rgba(239, 68, 68, 0.15);
+    color: #fca5a5;
+    border: 1px solid rgba(239, 68, 68, 0.25);
+    font-weight: 500;
+}
+
+/* Bio preview */
+.pi-bio-preview {
+    margin: 6px 0;
+}
+
+.pi-bio-label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: rgba(254, 252, 251, 0.55);
+    margin-bottom: 3px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.pi-bio-text {
+    font-size: 0.75rem;
+    color: rgba(254, 252, 251, 0.7);
+    line-height: 1.5;
+    background: rgba(0, 0, 0, 0.15);
+    padding: 8px 10px;
+    border-radius: 6px;
+    border: 1px solid rgba(254, 252, 251, 0.06);
+    max-height: 120px;
+    overflow-y: auto;
+}
+
+.pi-keyword-highlight {
+    background: rgba(239, 68, 68, 0.25);
+    color: #fca5a5;
+    padding: 0 3px;
+    border-radius: 3px;
+    font-weight: 600;
+}
+
+/* Highlights list */
+.pi-highlights-list {
+    margin-top: 6px;
+}
+
+.pi-highlight-item {
+    display: flex;
+    flex-direction: column;
+    padding: 5px 8px;
+    margin-top: 3px;
+    background: rgba(245, 158, 11, 0.06);
+    border-radius: 5px;
+    border: 1px solid rgba(245, 158, 11, 0.12);
+}
+
+.pi-hl-title {
+    font-size: 0.74rem;
+    font-weight: 600;
+    color: rgba(254, 252, 251, 0.8);
+}
+
+.pi-hl-meta {
+    font-size: 0.68rem;
+    color: rgba(254, 252, 251, 0.4);
+}
+
+/* Coaches browsed list */
+.pi-coaches-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-top: 4px;
+}
+
+.pi-coach-item {
+    padding: 5px 8px;
+    background: rgba(139, 92, 246, 0.06);
+    border-radius: 5px;
+    border: 1px solid rgba(139, 92, 246, 0.12);
+}
+
+.pi-coach-name {
+    font-size: 0.74rem;
+    font-weight: 600;
+    color: rgba(254, 252, 251, 0.8);
+}
+
+.pi-coach-meta {
+    font-size: 0.68rem;
+    color: rgba(254, 252, 251, 0.4);
+}
+
+/* Legacy — keep for backwards compat with any old rendered messages */
+.pi-signal-detail {
+    font-size: 0.75rem;
+    color: rgba(254, 252, 251, 0.5);
+    padding: 2px 0;
+    font-style: italic;
+}
+
+.pi-btn-view-profile {
+    width: 100%;
+    padding: 8px;
+    background: rgba(18, 130, 162, 0.15);
+    border: 1px solid rgba(18, 130, 162, 0.3);
+    border-radius: 8px;
+    color: var(--cerulean);
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: 'Inter', sans-serif;
+}
+
+.pi-btn-view-profile:hover {
+    background: rgba(18, 130, 162, 0.25);
+    border-color: var(--cerulean);
+}
+
+.pi-msg.error {
+    color: #ef4444;
+    font-style: italic;
+}
+
+/* ==============================
    PI — RESPONSIVE
    ============================== */
 
@@ -1347,5 +1698,14 @@
     .pi-suggestion {
         font-size: 0.85rem;
         padding: 0.75rem 0.85rem;
+    }
+
+    .pi-player-cards {
+        flex-direction: column;
+    }
+
+    .pi-player-card {
+        width: 100%;
+        min-width: unset;
     }
 }
