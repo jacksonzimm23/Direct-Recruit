@@ -5,7 +5,10 @@ const CoachProfile = require('../models/CoachProfile');
 const OtherProfile = require('../models/OtherProfile');
 const User = require('../models/User');
 const ProfileView = require('../models/ProfileView');
+const CoachProfileView = require('../models/CoachProfileView');
 const Follow = require('../models/Follow');
+const Notification = require('../models/Notification');
+const PortalWatchlist = require('../models/PortalWatchlist');
 const { authMiddleware, requireRole, validateUUID } = require('../middleware/auth');
 const { validatePlayerProfile, validateCoachProfile, handleValidationErrors } = require('../middleware/validation');
 const { getSignedS3Url } = require('../utils/s3');
@@ -144,10 +147,23 @@ router.post('/player', authMiddleware, requireRole('player'), validatePlayerProf
 
     let profile;
     if (existingProfile) {
+      const oldTransfer = existingProfile.transfer;
       profile = await PlayerProfile.update(req.userId, req.body);
       // Update username in users table if it changed
       if (req.body.username) {
         await User.updateUsername(req.userId, req.body.username);
+      }
+      // Portal watchlist: notify coaches if player just entered the transfer portal
+      if (oldTransfer !== 'y' && profile.transfer === 'y') {
+        try {
+          const coachIds = await PortalWatchlist.getCoachesWatching(req.userId);
+          const playerName = `${profile.first_name || ''} ${profile.last_name || ''}`.trim();
+          for (const coachId of coachIds) {
+            await Notification.createPortalEntryNotification(coachId, req.userId, playerName, profile.position, profile.team_name);
+          }
+        } catch (notifError) {
+          console.error('Failed to send portal watchlist notifications:', notifError);
+        }
       }
     } else {
       profile = await PlayerProfile.create(req.userId, req.body);
@@ -178,7 +194,20 @@ router.put('/', authMiddleware, async (req, res) => {
 
     let profile;
     if (user.role === 'player') {
+      const oldProfile = await PlayerProfile.findByUserId(req.userId);
       profile = await PlayerProfile.update(req.userId, req.body);
+      // Portal watchlist: notify coaches if player just entered the transfer portal
+      if (oldProfile && oldProfile.transfer !== 'y' && profile.transfer === 'y') {
+        try {
+          const coachIds = await PortalWatchlist.getCoachesWatching(req.userId);
+          const playerName = `${profile.first_name || ''} ${profile.last_name || ''}`.trim();
+          for (const coachId of coachIds) {
+            await Notification.createPortalEntryNotification(coachId, req.userId, playerName, profile.position, profile.team_name);
+          }
+        } catch (notifError) {
+          console.error('Failed to send portal watchlist notifications:', notifError);
+        }
+      }
     } else if (user.role === 'coach') {
       profile = await CoachProfile.update(req.userId, req.body);
     } else if (user.role === 'other') {
@@ -640,6 +669,32 @@ router.post('/view/:userId', authMiddleware, validateUUID('userId'), async (req,
   } catch (error) {
     console.error('Record profile view error:', error);
     res.status(500).json({ error: 'Failed to record profile view' });
+  }
+});
+
+// Record a coach profile view (for Portal Intelligence signal tracking)
+router.post('/coach-view/:userId', authMiddleware, validateUUID('userId'), async (req, res) => {
+  try {
+    const viewedCoachId = req.params.userId;
+    const viewerId = req.userId;
+
+    // Only record if the viewer is a player
+    const viewer = await User.findById(viewerId);
+    if (!viewer || viewer.role !== 'player') {
+      return res.json({ success: true, recorded: false });
+    }
+
+    // Only record if the viewed user is a coach
+    const coachProfile = await CoachProfile.findByUserId(viewedCoachId);
+    if (!coachProfile) {
+      return res.json({ success: true, recorded: false });
+    }
+
+    await CoachProfileView.recordView(viewedCoachId, viewerId);
+    res.json({ success: true, recorded: true });
+  } catch (error) {
+    console.error('Record coach profile view error:', error);
+    res.status(500).json({ error: 'Failed to record coach profile view' });
   }
 });
 

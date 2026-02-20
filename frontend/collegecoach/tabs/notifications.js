@@ -243,6 +243,12 @@ function renderNotificationCard(notification) {
                 <path d="M4 12h16"></path>
                 <path d="M20 12v5a2 2 0 0 1-2 2H9"></path>
             </svg>`;
+        } else if (notification.title === 'Portal Entry') {
+            iconClass = 'portal-entry-icon';
+            iconSvg = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+            </svg>`;
         }
     }
 
@@ -395,6 +401,8 @@ function formatNotificationMessage(notification) {
             const replyMatch = notification.message?.match(/: "(.+)"$/);
             const replyPreview = replyMatch ? `: "${replyMatch[1]}"` : '';
             return `${nameHtml} replied to your comment${replyPreview}`;
+        case 'Portal Entry':
+            return `${nameHtml} has entered the transfer portal`;
         case 'Board Invite':
             // Extract board name if available
             const boardMatch = notification.message?.match(/to collaborate on "(.+)"/);
