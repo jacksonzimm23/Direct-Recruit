@@ -307,7 +307,7 @@ body {
 
 .hero-title-accent {
     color: var(--accent-orange);
-    display: inline;
+    display: block;
 }
 
 .hero-description {
