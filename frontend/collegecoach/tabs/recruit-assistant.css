@@ -1186,3 +1186,47 @@
         font-size: 1rem;
     }
 }
+
+/* Stats Table in Chat */
+.ra-stats-table-wrapper {
+    overflow-x: auto;
+    margin: 10px 0;
+    border-radius: 8px;
+    border: 1px solid rgba(18, 130, 162, 0.3);
+}
+
+.ra-stats-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+    white-space: nowrap;
+}
+
+.ra-stats-table thead {
+    background: rgba(18, 130, 162, 0.2);
+}
+
+.ra-stats-table th {
+    padding: 8px 12px;
+    text-align: left;
+    font-weight: 700;
+    font-size: 0.8rem;
+    color: var(--cerulean, #1282a2);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.ra-stats-table td {
+    padding: 7px 12px;
+    border-top: 1px solid rgba(18, 130, 162, 0.15);
+    color: rgba(254, 252, 251, 0.8);
+}
+
+.ra-stats-table tbody tr:hover {
+    background: rgba(18, 130, 162, 0.08);
+}
+
+.ra-stats-table td.ra-stats-label {
+    font-weight: 600;
+    color: rgba(254, 252, 251, 0.95);
+}

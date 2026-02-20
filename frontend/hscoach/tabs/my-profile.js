@@ -783,6 +783,11 @@ async function loadProfileByUsername(username) {
             if (!isOwnProfile) {
                 removeSensitiveElementsForOtherProfile();
             }
+
+            // Record coach profile view for Portal Intelligence signal tracking
+            if (!isOwnProfile && response.type === 'coach') {
+                API.post(`/profile/coach-view/${viewingUserId}`).catch(() => {});
+            }
         } else {
             showError('Profile not found');
         }
