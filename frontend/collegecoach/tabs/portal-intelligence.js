@@ -56,6 +56,16 @@ document.addEventListener('DOMContentLoaded', function() {
     let chats = [];
     let activeChatId = null;
     let isSending = false;
+    let watchlistCount = 0;
+
+    // Watchlist DOM elements
+    const watchlistBtn = document.getElementById('piWatchlistBtn');
+    const watchlistCountEl = document.getElementById('piWatchlistCount');
+    const watchlistOverlay = document.getElementById('piWatchlistOverlay');
+    const watchlistBody = document.getElementById('piWatchlistBody');
+    const watchlistCloseBtn = document.getElementById('piWatchlistCloseBtn');
+    const watchlistClearAll = document.getElementById('piWatchlistClearAll');
+    const watchlistHeaderCount = document.getElementById('piWatchlistHeaderCount');
 
     // ========================
     // API-BACKED CHAT STORAGE
@@ -142,6 +152,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     messagesContainer.appendChild(cardsContainer);
                 }
             });
+
+            // Batch check flag states for all rendered player cards
+            batchCheckFlags(messagesContainer);
 
             scrollToBottom();
         } catch (e) {
@@ -278,6 +291,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     cardsContainer.appendChild(createPlayerCard(player));
                 });
                 messagesContainer.appendChild(cardsContainer);
+                batchCheckFlags(cardsContainer);
             }
 
             scrollToBottom();
@@ -454,7 +468,20 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
             <div class="pi-signal-badges">${signalBadges}</div>
             ${signalDetailsHtml ? `<div class="pi-signal-details">${signalDetailsHtml}</div>` : ''}
-            <button class="pi-btn-view-profile">View Profile</button>
+            <div class="pi-card-actions">
+                <button class="pi-btn-view-profile">View Profile</button>
+                <button class="pi-btn-flag-player" data-player-id="${player.user_id || ''}" data-flagged="false">
+                    <svg class="pi-flag-icon-outline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                    </svg>
+                    <svg class="pi-flag-icon-filled" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" style="display:none;">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                    </svg>
+                    <span class="pi-flag-label">Flag Player</span>
+                </button>
+            </div>
         `;
 
         const viewBtn = card.querySelector('.pi-btn-view-profile');
@@ -465,6 +492,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 window.location.href = profileUrl;
             }
         });
+
+        // Flag player button
+        const flagBtn = card.querySelector('.pi-btn-flag-player');
+        if (flagBtn && player.user_id) {
+            flagBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                toggleFlag(flagBtn, player.user_id);
+            });
+        }
 
         card.addEventListener('click', () => {
             if (player.username) {
@@ -550,6 +586,208 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // ========================
+    // WATCHLIST FUNCTIONS
+    // ========================
+
+    function updateWatchlistCount(count) {
+        watchlistCount = count;
+        if (watchlistCountEl) watchlistCountEl.textContent = `${count}/50`;
+        if (watchlistHeaderCount) watchlistHeaderCount.textContent = `${count}/50`;
+    }
+
+    async function loadWatchlistCount() {
+        try {
+            const data = await API.ai.getWatchlist();
+            updateWatchlistCount(data.count);
+        } catch (e) {
+            console.error('Failed to load watchlist count:', e);
+        }
+    }
+
+    async function toggleFlag(btn, playerUserId) {
+        const isFlagged = btn.dataset.flagged === 'true';
+        try {
+            if (isFlagged) {
+                const data = await API.ai.removeFromWatchlist(playerUserId);
+                setFlagState(btn, false);
+                updateWatchlistCount(data.count);
+            } else {
+                const data = await API.ai.addToWatchlist(playerUserId);
+                setFlagState(btn, true);
+                updateWatchlistCount(data.count);
+            }
+        } catch (e) {
+            if (e.message && e.message.includes('Watchlist full')) {
+                showFlagError(btn, 'Watchlist full — maximum 50 players');
+            } else {
+                console.error('Failed to toggle flag:', e);
+            }
+        }
+    }
+
+    function setFlagState(btn, flagged) {
+        btn.dataset.flagged = flagged ? 'true' : 'false';
+        const outlineIcon = btn.querySelector('.pi-flag-icon-outline');
+        const filledIcon = btn.querySelector('.pi-flag-icon-filled');
+        const label = btn.querySelector('.pi-flag-label');
+        if (flagged) {
+            btn.classList.add('flagged');
+            if (outlineIcon) outlineIcon.style.display = 'none';
+            if (filledIcon) filledIcon.style.display = '';
+            if (label) label.textContent = 'Flagged';
+        } else {
+            btn.classList.remove('flagged');
+            if (outlineIcon) outlineIcon.style.display = '';
+            if (filledIcon) filledIcon.style.display = 'none';
+            if (label) label.textContent = 'Flag Player';
+        }
+    }
+
+    function showFlagError(btn, message) {
+        const existing = btn.parentElement.querySelector('.pi-flag-error');
+        if (existing) existing.remove();
+        const err = document.createElement('div');
+        err.className = 'pi-flag-error';
+        err.textContent = message;
+        btn.parentElement.appendChild(err);
+        setTimeout(() => err.remove(), 3000);
+    }
+
+    async function batchCheckFlags(container) {
+        const flagBtns = container.querySelectorAll('.pi-btn-flag-player[data-player-id]');
+        const playerIds = [];
+        flagBtns.forEach(btn => {
+            const id = btn.dataset.playerId;
+            if (id) playerIds.push(id);
+        });
+        if (playerIds.length === 0) return;
+
+        try {
+            const data = await API.ai.checkWatchlist(playerIds);
+            const watchedSet = new Set(data.watchedIds || []);
+            flagBtns.forEach(btn => {
+                if (watchedSet.has(btn.dataset.playerId)) {
+                    setFlagState(btn, true);
+                }
+            });
+        } catch (e) {
+            console.error('Failed to batch check watchlist:', e);
+        }
+    }
+
+    // Watchlist modal
+    function openWatchlistModal() {
+        if (!watchlistOverlay) return;
+        watchlistOverlay.classList.add('active');
+        renderWatchlistModal();
+    }
+
+    function closeWatchlistModal() {
+        if (!watchlistOverlay) return;
+        watchlistOverlay.classList.remove('active');
+    }
+
+    async function renderWatchlistModal() {
+        if (!watchlistBody) return;
+        watchlistBody.innerHTML = '<div class="pi-watchlist-loading">Loading watchlist...</div>';
+
+        try {
+            const data = await API.ai.getWatchlist();
+            updateWatchlistCount(data.count);
+            const players = data.players || [];
+
+            if (players.length === 0) {
+                watchlistBody.innerHTML = `
+                    <div class="pi-watchlist-empty">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                            <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                        </svg>
+                        <p>No players flagged yet</p>
+                        <span>Flag players from Portal Intelligence results to track them here.</span>
+                    </div>
+                `;
+                return;
+            }
+
+            watchlistBody.innerHTML = players.map(player => {
+                const displayName = `${player.first_name || ''} ${player.last_name || ''}`.trim() || 'Unknown Player';
+                const height = formatHeight(player.height);
+                const weight = player.weight ? `${player.weight} lbs` : '';
+                const school = player.team_name || '';
+                const division = formatDivision(player.college_division);
+                const inPortal = player.transfer === 'y';
+                const statsText = [height, weight].filter(Boolean).join(' / ');
+                const schoolText = [school, division].filter(Boolean).join(' · ');
+                const profileImage = player.profile_image_url;
+
+                return `
+                    <div class="pi-watchlist-item" data-user-id="${player.user_id}" data-username="${player.username || ''}">
+                        <div class="pi-watchlist-item-avatar">
+                            ${profileImage
+                                ? `<img src="${profileImage}" alt="${escapeHtml(displayName)}">`
+                                : `<svg viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                    <circle cx="12" cy="7" r="4"></circle>
+                                </svg>`
+                            }
+                        </div>
+                        <div class="pi-watchlist-item-info">
+                            <div class="pi-watchlist-item-name">${escapeHtml(displayName)}</div>
+                            <div class="pi-watchlist-item-detail">${formatPositions(player.position)} ${statsText ? `<span class="pi-watchlist-item-stats">${statsText}</span>` : ''}</div>
+                            ${schoolText ? `<div class="pi-watchlist-item-school">${escapeHtml(schoolText)}</div>` : ''}
+                        </div>
+                        <div class="pi-watchlist-item-status ${inPortal ? 'in-portal' : 'not-in-portal'}">
+                            ${inPortal ? 'In Portal' : 'Not in Portal'}
+                        </div>
+                        <button class="pi-watchlist-item-remove" data-remove-id="${player.user_id}" title="Remove from watchlist">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="18" y1="6" x2="6" y2="18"></line>
+                                <line x1="6" y1="6" x2="18" y2="18"></line>
+                            </svg>
+                        </button>
+                    </div>
+                `;
+            }).join('');
+
+            // Click handlers for watchlist items
+            watchlistBody.querySelectorAll('.pi-watchlist-item').forEach(item => {
+                item.addEventListener('click', (e) => {
+                    if (e.target.closest('.pi-watchlist-item-remove')) return;
+                    const username = item.dataset.username;
+                    if (username) {
+                        window.location.href = `../../collegeplayer/tabs/my-profile.html?username=${username}&from=transfer-portal`;
+                    }
+                });
+            });
+
+            // Remove buttons
+            watchlistBody.querySelectorAll('.pi-watchlist-item-remove').forEach(btn => {
+                btn.addEventListener('click', async (e) => {
+                    e.stopPropagation();
+                    const playerId = btn.dataset.removeId;
+                    try {
+                        const data = await API.ai.removeFromWatchlist(playerId);
+                        updateWatchlistCount(data.count);
+                        // Update any flag buttons in the chat for this player
+                        messagesContainer.querySelectorAll(`.pi-btn-flag-player[data-player-id="${playerId}"]`).forEach(flagBtn => {
+                            setFlagState(flagBtn, false);
+                        });
+                        // Re-render modal
+                        renderWatchlistModal();
+                    } catch (err) {
+                        console.error('Failed to remove from watchlist:', err);
+                    }
+                });
+            });
+
+        } catch (e) {
+            console.error('Failed to load watchlist:', e);
+            watchlistBody.innerHTML = '<div class="pi-watchlist-empty"><p>Failed to load watchlist</p></div>';
+        }
+    }
+
+    // ========================
     // EVENT LISTENERS
     // ========================
 
@@ -578,9 +816,45 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
+    // Watchlist modal event listeners
+    if (watchlistBtn) {
+        watchlistBtn.addEventListener('click', openWatchlistModal);
+    }
+    if (watchlistCloseBtn) {
+        watchlistCloseBtn.addEventListener('click', closeWatchlistModal);
+    }
+    if (watchlistOverlay) {
+        watchlistOverlay.addEventListener('click', (e) => {
+            if (e.target === watchlistOverlay) closeWatchlistModal();
+        });
+    }
+    if (watchlistClearAll) {
+        watchlistClearAll.addEventListener('click', async () => {
+            if (!confirm('Remove all players from your watchlist?')) return;
+            try {
+                const data = await API.ai.clearWatchlist();
+                updateWatchlistCount(data.count);
+                // Update all flag buttons in chat
+                messagesContainer.querySelectorAll('.pi-btn-flag-player').forEach(btn => {
+                    setFlagState(btn, false);
+                });
+                renderWatchlistModal();
+            } catch (e) {
+                console.error('Failed to clear watchlist:', e);
+            }
+        });
+    }
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && watchlistOverlay && watchlistOverlay.classList.contains('active')) {
+            closeWatchlistModal();
+        }
+    });
+
     // ========================
     // INIT
     // ========================
+
+    loadWatchlistCount();
 
     loadChats().then(() => {
         if (chats.length > 0) {

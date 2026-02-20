@@ -311,6 +311,16 @@
                         <div class="pi-history-list" id="piHistoryList">
                             <!-- Chat history items loaded dynamically -->
                         </div>
+                        <div class="pi-history-footer">
+                            <button class="pi-watchlist-btn" id="piWatchlistBtn">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                                    <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                                </svg>
+                                <span>Portal Watchlist</span>
+                                <span class="pi-watchlist-count" id="piWatchlistCount">0/50</span>
+                            </button>
+                        </div>
                     </div>
 
                     <!-- Chat Area -->
@@ -326,7 +336,7 @@
                                         <circle cx="12" cy="18" r="1" fill="currentColor" stroke="none"></circle>
                                     </svg>
                                 </div>
-                                <h2>Portal Intelligence</h2>
+                                <h2>AI Portal Intelligence</h2>
                                 <p>Predict which players are likely to enter the transfer portal based on behavioral signals — profile updates, film uploads, and school searches.</p>
                                 <div class="pi-suggestions">
                                     <button class="pi-suggestion" data-prompt="Which QBs from FBS schools are showing portal activity signals?">
@@ -372,6 +382,31 @@
                     </div>
                 </div>
             </div><!-- /portalIntelligenceTab -->
+
+            <!-- Portal Watchlist Modal -->
+            <div class="pi-watchlist-overlay" id="piWatchlistOverlay">
+                <div class="pi-watchlist-modal">
+                    <div class="pi-watchlist-header">
+                        <div class="pi-watchlist-header-left">
+                            <h2>Portal Watchlist</h2>
+                            <span class="pi-watchlist-header-count" id="piWatchlistHeaderCount">0/50</span>
+                        </div>
+                        <button class="pi-watchlist-close" id="piWatchlistCloseBtn" aria-label="Close">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="18" y1="6" x2="6" y2="18"></line>
+                                <line x1="6" y1="6" x2="18" y2="18"></line>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="pi-watchlist-info">Flagged players are being monitored. You will receive a notification if any of them enter the transfer portal.</div>
+                    <div class="pi-watchlist-body" id="piWatchlistBody">
+                        <!-- Dynamically rendered player items -->
+                    </div>
+                    <div class="pi-watchlist-footer">
+                        <button class="pi-watchlist-clear-all" id="piWatchlistClearAll">Remove All</button>
+                    </div>
+                </div>
+            </div>
 
         </main>
     </div>
