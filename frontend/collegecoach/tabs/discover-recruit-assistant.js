@@ -128,7 +128,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 for (const msg of chat.messages) {
                     const div = document.createElement('div');
                     div.className = `ra-msg ${msg.role}`;
-                    div.textContent = msg.content;
+                    if (msg.role === 'assistant') {
+                        div.innerHTML = formatResponseWithTables(msg.content);
+                    } else {
+                        div.textContent = msg.content;
+                    }
                     messagesContainer.appendChild(div);
 
                     // If this assistant message had player results, re-run the search to show cards
@@ -280,7 +284,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // Show the AI response text
             const aiDiv = document.createElement('div');
             aiDiv.className = 'ra-msg assistant';
-            aiDiv.textContent = data.response;
+            aiDiv.innerHTML = formatResponseWithTables(data.response);
             messagesContainer.appendChild(aiDiv);
 
             // If players were returned, render player cards
@@ -493,6 +497,62 @@ document.addEventListener('DOMContentLoaded', function() {
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;
+    }
+
+    function formatResponseWithTables(text) {
+        if (!text) return '';
+        // Split on [STATS_TABLE] ... [/STATS_TABLE] blocks
+        const parts = text.split(/\[STATS_TABLE\]/i);
+        if (parts.length === 1) {
+            // No table markers — return escaped plain text with line breaks
+            return escapeHtml(text).replace(/\n/g, '<br>');
+        }
+
+        let html = '';
+        for (let i = 0; i < parts.length; i++) {
+            if (i === 0) {
+                // Text before the first table
+                html += escapeHtml(parts[i]).replace(/\n/g, '<br>');
+                continue;
+            }
+            // This part contains table content then possibly [/STATS_TABLE] then more text
+            const endIdx = parts[i].search(/\[\/STATS_TABLE\]/i);
+            let tableContent, afterTable;
+            if (endIdx !== -1) {
+                tableContent = parts[i].substring(0, endIdx).trim();
+                afterTable = parts[i].substring(endIdx + '[/STATS_TABLE]'.length);
+            } else {
+                tableContent = parts[i].trim();
+                afterTable = '';
+            }
+
+            // Parse the table rows
+            const rows = tableContent.split('\n').filter(r => r.trim());
+            if (rows.length > 0) {
+                html += '<div class="ra-stats-table-wrapper"><table class="ra-stats-table">';
+                // First row is the header
+                const headers = rows[0].split('|').map(h => h.trim());
+                html += '<thead><tr>';
+                headers.forEach(h => { html += `<th>${escapeHtml(h)}</th>`; });
+                html += '</tr></thead><tbody>';
+                // Remaining rows are data
+                for (let r = 1; r < rows.length; r++) {
+                    const cells = rows[r].split('|').map(c => c.trim());
+                    html += '<tr>';
+                    cells.forEach((c, ci) => {
+                        html += ci === 0 ? `<td class="ra-stats-label">${escapeHtml(c)}</td>` : `<td>${escapeHtml(c)}</td>`;
+                    });
+                    html += '</tr>';
+                }
+                html += '</tbody></table></div>';
+            }
+
+            // Text after the table
+            if (afterTable.trim()) {
+                html += escapeHtml(afterTable).replace(/\n/g, '<br>');
+            }
+        }
+        return html;
     }
 
     function formatTimeAgo(dateStr) {
