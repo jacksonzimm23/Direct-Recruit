@@ -7,6 +7,7 @@ const CoachProfile = require('../models/CoachProfile');
 const { getRecruitingFilters } = require('../utils/ai');
 const { getPortalIntelligence } = require('../utils/portal-intelligence');
 const PortalSignal = require('../models/PortalSignal');
+const PortalWatchlist = require('../models/PortalWatchlist');
 const { getSignedS3Url } = require('../utils/s3');
 const PlayerGameStats = require('../models/PlayerGameStats');
 
@@ -459,6 +460,7 @@ router.post('/chats/:chatId/pi-message', validateUUID('chatId'), async (req, res
 
     // 12. Save assistant response with metadata (use S3 keys, not signed URLs)
     const playerSummaries = result.players.map(p => ({
+      user_id: p.user_id,
       first_name: p.first_name,
       last_name: p.last_name,
       username: p.username,
@@ -491,6 +493,76 @@ router.post('/chats/:chatId/pi-message', validateUUID('chatId'), async (req, res
   } catch (error) {
     console.error('Portal Intelligence message error:', error);
     res.status(500).json({ error: 'Failed to process portal intelligence message' });
+  }
+});
+
+// ========================
+// PORTAL WATCHLIST ROUTES
+// ========================
+
+// Get watchlist with player data
+router.get('/watchlist', async (req, res) => {
+  try {
+    let players = await PortalWatchlist.getWatchlist(req.userId);
+    players = await addSignedUrlsToProfiles(players);
+    const count = players.length;
+    res.json({ players, count, max: 50 });
+  } catch (error) {
+    console.error('Get watchlist error:', error);
+    res.status(500).json({ error: 'Failed to get watchlist' });
+  }
+});
+
+// Batch check which players are watched
+router.get('/watchlist/check', async (req, res) => {
+  try {
+    const playerIds = req.query.playerIds ? req.query.playerIds.split(',').filter(id => id) : [];
+    if (playerIds.length === 0) {
+      return res.json({ watchedIds: [] });
+    }
+    const watchedIds = await PortalWatchlist.checkPlayers(req.userId, playerIds);
+    res.json({ watchedIds });
+  } catch (error) {
+    console.error('Check watchlist error:', error);
+    res.status(500).json({ error: 'Failed to check watchlist' });
+  }
+});
+
+// Add player to watchlist
+router.post('/watchlist/:playerUserId', async (req, res) => {
+  try {
+    const { playerUserId } = req.params;
+    const result = await PortalWatchlist.addPlayer(req.userId, playerUserId);
+    if (!result.success) {
+      return res.status(400).json({ error: result.error, count: result.count });
+    }
+    res.json({ success: true, count: result.count });
+  } catch (error) {
+    console.error('Add to watchlist error:', error);
+    res.status(500).json({ error: 'Failed to add to watchlist' });
+  }
+});
+
+// Remove player from watchlist
+router.delete('/watchlist/:playerUserId', async (req, res) => {
+  try {
+    const { playerUserId } = req.params;
+    const result = await PortalWatchlist.removePlayer(req.userId, playerUserId);
+    res.json({ success: true, count: result.count });
+  } catch (error) {
+    console.error('Remove from watchlist error:', error);
+    res.status(500).json({ error: 'Failed to remove from watchlist' });
+  }
+});
+
+// Remove all players from watchlist
+router.delete('/watchlist', async (req, res) => {
+  try {
+    await PortalWatchlist.removeAll(req.userId);
+    res.json({ success: true, count: 0 });
+  } catch (error) {
+    console.error('Clear watchlist error:', error);
+    res.status(500).json({ error: 'Failed to clear watchlist' });
   }
 });
 

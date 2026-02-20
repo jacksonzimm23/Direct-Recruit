@@ -453,6 +453,19 @@ class Notification {
       relatedEntityType: 'share'
     });
   }
+  // Create notification when a watched player enters the transfer portal
+  static async createPortalEntryNotification(coachUserId, playerUserId, playerName, playerPosition, playerSchool) {
+    const posText = playerPosition ? ` (${playerPosition})` : '';
+    const schoolText = playerSchool ? `, ${playerSchool}` : '';
+    return this.create({
+      userId: coachUserId,
+      type: 'interaction',
+      title: 'Portal Entry',
+      message: `${playerName}${posText}${schoolText} has entered the transfer portal`,
+      relatedUserId: playerUserId,
+      relatedEntityType: 'portal_watchlist'
+    });
+  }
 }
 
 module.exports = Notification;

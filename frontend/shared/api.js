@@ -565,6 +565,21 @@ const aiAPI = {
             method: 'POST',
             body: JSON.stringify({ filters })
         }),
+    sendPiMessage: async (chatId, message) =>
+        apiRequest(`/ai/chats/${chatId}/pi-message`, {
+            method: 'POST',
+            body: JSON.stringify({ message })
+        }),
+    getWatchlist: async () =>
+        apiRequest('/ai/watchlist'),
+    checkWatchlist: async (playerIds) =>
+        apiRequest(`/ai/watchlist/check?playerIds=${playerIds.join(',')}`),
+    addToWatchlist: async (playerUserId) =>
+        apiRequest(`/ai/watchlist/${playerUserId}`, { method: 'POST' }),
+    removeFromWatchlist: async (playerUserId) =>
+        apiRequest(`/ai/watchlist/${playerUserId}`, { method: 'DELETE' }),
+    clearWatchlist: async () =>
+        apiRequest('/ai/watchlist', { method: 'DELETE' }),
 };
 
 // Unified API object for convenience
