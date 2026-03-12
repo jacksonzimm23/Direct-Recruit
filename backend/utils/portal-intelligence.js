@@ -1,3 +1,6 @@
+// In development, use mock unless an API key is explicitly provided
+if (process.env.NODE_ENV !== 'production' && !process.env.ANTHROPIC_PI_API_KEY) { module.exports = require('./local/portal-intelligence-local'); return; }
+
 const Anthropic = require('@anthropic-ai/sdk').default;
 const RA_GLOSSARY = require('./recruit-assistant-glossary');
 

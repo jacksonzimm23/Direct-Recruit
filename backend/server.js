@@ -65,6 +65,11 @@ app.use('/api/recruiting-board', recruitingBoardRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/ai', aiRoutes);
 
+// In development, serve frontend files so cookies work on the same origin
+if (process.env.NODE_ENV !== 'production') {
+  app.use('/frontend', express.static(path.join(__dirname, '..', 'frontend')));
+}
+
 // Health check
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
@@ -85,6 +90,16 @@ server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
   console.log(`WebSocket server running`);
   console.log(`Environment: ${process.env.NODE_ENV}`);
+
+  if (process.env.NODE_ENV !== 'production') {
+    console.log('');
+    console.log('LOCAL DEV MODE — AWS services are mocked:');
+    console.log('  Auth: bcrypt-based (no Cognito)');
+    console.log('  Storage: local filesystem (no S3)');
+    console.log('  Email: console output (no SES)');
+    console.log(`  Verification code: ${process.env.LOCAL_DEV_VERIFICATION_CODE || '123456'}`);
+    console.log('');
+  }
 });
 
 module.exports = app;

@@ -1,3 +1,6 @@
+// In development, use local filesystem instead of AWS S3
+if (process.env.NODE_ENV !== 'production') { module.exports = require('./local/s3-local'); return; }
+
 const { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand } = require('@aws-sdk/client-s3');
 const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
 
