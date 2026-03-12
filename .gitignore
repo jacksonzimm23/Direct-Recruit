@@ -42,5 +42,8 @@ uploads/
 # PowerShell scripts (temporary/local)
 *.ps1
 
+# Remotion video project
+video/
+
 # Package lock (optional - can be committed if you want reproducible builds)
 # package-lock.json

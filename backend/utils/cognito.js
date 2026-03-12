@@ -1,3 +1,6 @@
+// In development, use local mock instead of AWS Cognito
+if (process.env.NODE_ENV !== 'production') { module.exports = require('./local/cognito-local'); return; }
+
 const {
   CognitoIdentityProviderClient,
   SignUpCommand,

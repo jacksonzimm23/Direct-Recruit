@@ -1,3 +1,6 @@
+// In development, use console logging instead of AWS SES
+if (process.env.NODE_ENV !== 'production') { module.exports = require('./local/email-local'); return; }
+
 const { SESClient, SendEmailCommand } = require('@aws-sdk/client-ses');
 
 const sesClient = new SESClient({
