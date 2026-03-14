@@ -381,7 +381,7 @@ router.get('/search-coaches', authMiddleware, requireRole('coach'), async (req, 
       }
     }
 
-    // Search for college coaches by name or username
+    // Search for college coaches by name or username (fuzzy + LIKE fallback)
     const result = await pool.query(
       `SELECT cp.user_id, cp.first_name, cp.last_name, cp.username, cp.profile_image_url, cp.team_name
        FROM coach_profiles cp
@@ -390,12 +390,14 @@ router.get('/search-coaches', authMiddleware, requireRole('coach'), async (req, 
          AND cp.college_division IS NOT NULL
          AND cp.user_id != ALL($1::uuid[])
          AND (
-           LOWER(cp.first_name || ' ' || cp.last_name) LIKE LOWER($2)
-           OR LOWER(cp.username) LIKE LOWER($2)
+           similarity(cp.first_name || ' ' || cp.last_name, $2) > 0.2
+           OR similarity(cp.username, $2) > 0.2
+           OR LOWER(cp.first_name || ' ' || cp.last_name) LIKE LOWER($3)
+           OR LOWER(cp.username) LIKE LOWER($3)
          )
-       ORDER BY cp.last_name, cp.first_name
+       ORDER BY GREATEST(similarity(cp.first_name || ' ' || cp.last_name, $2), similarity(cp.username, $2)) DESC, cp.last_name, cp.first_name
        LIMIT 10`,
-      [excludeIds, `%${query}%`]
+      [excludeIds, query, `%${query}%`]
     );
 
     res.json({ coaches: result.rows });

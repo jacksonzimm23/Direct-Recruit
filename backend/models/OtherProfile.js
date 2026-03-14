@@ -58,12 +58,18 @@ class OtherProfile {
     let paramCount = 1;
 
     if (filters.searchTerm) {
-      query += ` AND (op.first_name ILIKE $${paramCount} OR op.last_name ILIKE $${paramCount} OR op.username ILIKE $${paramCount} OR op.subheader ILIKE $${paramCount})`;
-      values.push(`%${filters.searchTerm}%`);
-      paramCount++;
+      query += ` AND (similarity(op.first_name, $${paramCount}) > 0.2 OR similarity(op.last_name, $${paramCount}) > 0.2 OR similarity(op.username, $${paramCount}) > 0.2 OR similarity(COALESCE(op.subheader, ''), $${paramCount}) > 0.2 OR op.first_name ILIKE $${paramCount + 1} OR op.last_name ILIKE $${paramCount + 1} OR op.username ILIKE $${paramCount + 1} OR op.subheader ILIKE $${paramCount + 1})`;
+      values.push(filters.searchTerm, `%${filters.searchTerm}%`);
+      paramCount += 2;
     }
 
-    query += ' ORDER BY op.created_at DESC LIMIT 50';
+    if (filters.searchTerm) {
+      query += ` ORDER BY GREATEST(similarity(op.first_name, $${paramCount}), similarity(op.last_name, $${paramCount}), similarity(op.username, $${paramCount}), COALESCE(similarity(op.subheader, $${paramCount}), 0)) DESC, op.created_at DESC LIMIT 50`;
+      values.push(filters.searchTerm);
+      paramCount++;
+    } else {
+      query += ' ORDER BY op.created_at DESC LIMIT 50';
+    }
     const result = await pool.query(query, values);
     return result.rows;
   }
@@ -86,11 +92,11 @@ class OtherProfile {
       paramCount++;
     }
 
-    // Search term filter
+    // Search term filter — fuzzy + ILIKE fallback
     if (filters.searchTerm) {
-      query += ` AND (op.first_name ILIKE $${paramCount} OR op.last_name ILIKE $${paramCount} OR op.username ILIKE $${paramCount} OR op.subheader ILIKE $${paramCount})`;
-      values.push(`%${filters.searchTerm}%`);
-      paramCount++;
+      query += ` AND (similarity(op.first_name, $${paramCount}) > 0.2 OR similarity(op.last_name, $${paramCount}) > 0.2 OR similarity(op.username, $${paramCount}) > 0.2 OR similarity(COALESCE(op.subheader, ''), $${paramCount}) > 0.2 OR op.first_name ILIKE $${paramCount + 1} OR op.last_name ILIKE $${paramCount + 1} OR op.username ILIKE $${paramCount + 1} OR op.subheader ILIKE $${paramCount + 1})`;
+      values.push(filters.searchTerm, `%${filters.searchTerm}%`);
+      paramCount += 2;
     }
 
     // Count total for hasMore check
@@ -99,8 +105,13 @@ class OtherProfile {
     const total = parseInt(countResult.rows[0].total);
 
     // Add ordering and pagination
-    query += ` ORDER BY op.created_at DESC LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
-    values.push(limit, offset);
+    if (filters.searchTerm) {
+      query += ` ORDER BY GREATEST(similarity(op.first_name, $${paramCount}), similarity(op.last_name, $${paramCount}), similarity(op.username, $${paramCount}), COALESCE(similarity(op.subheader, $${paramCount}), 0)) DESC, op.created_at DESC LIMIT $${paramCount + 1} OFFSET $${paramCount + 2}`;
+      values.push(filters.searchTerm, limit, offset);
+    } else {
+      query += ` ORDER BY op.created_at DESC LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
+      values.push(limit, offset);
+    }
 
     const result = await pool.query(query, values);
 
