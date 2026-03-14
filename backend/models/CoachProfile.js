@@ -59,12 +59,18 @@ class CoachProfile {
       paramCount++;
     }
     if (filters.searchTerm) {
-      query += ` AND (cp.first_name ILIKE $${paramCount} OR cp.last_name ILIKE $${paramCount} OR cp.username ILIKE $${paramCount} OR cp.team_name ILIKE $${paramCount})`;
-      values.push(`%${filters.searchTerm}%`);
-      paramCount++;
+      query += ` AND (similarity(cp.first_name, $${paramCount}) > 0.2 OR similarity(cp.last_name, $${paramCount}) > 0.2 OR similarity(cp.username, $${paramCount}) > 0.2 OR similarity(cp.team_name, $${paramCount}) > 0.2 OR cp.first_name ILIKE $${paramCount + 1} OR cp.last_name ILIKE $${paramCount + 1} OR cp.username ILIKE $${paramCount + 1} OR cp.team_name ILIKE $${paramCount + 1})`;
+      values.push(filters.searchTerm, `%${filters.searchTerm}%`);
+      paramCount += 2;
     }
 
-    query += ' ORDER BY cp.verified DESC, cp.created_at DESC LIMIT 50';
+    if (filters.searchTerm) {
+      query += ` ORDER BY GREATEST(similarity(cp.first_name, $${paramCount}), similarity(cp.last_name, $${paramCount}), similarity(cp.username, $${paramCount}), similarity(cp.team_name, $${paramCount})) DESC, cp.verified DESC, cp.created_at DESC LIMIT 50`;
+      values.push(filters.searchTerm);
+      paramCount++;
+    } else {
+      query += ' ORDER BY cp.verified DESC, cp.created_at DESC LIMIT 50';
+    }
     const result = await pool.query(query, values);
     return result.rows;
   }

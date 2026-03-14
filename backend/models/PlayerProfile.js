@@ -70,12 +70,18 @@ class PlayerProfile {
       paramCount++;
     }
     if (filters.searchTerm) {
-      query += ` AND (pp.first_name ILIKE $${paramCount} OR pp.last_name ILIKE $${paramCount} OR pp.username ILIKE $${paramCount})`;
-      values.push(`%${filters.searchTerm}%`);
-      paramCount++;
+      query += ` AND (similarity(pp.first_name, $${paramCount}) > 0.2 OR similarity(pp.last_name, $${paramCount}) > 0.2 OR similarity(pp.username, $${paramCount}) > 0.2 OR pp.first_name ILIKE $${paramCount + 1} OR pp.last_name ILIKE $${paramCount + 1} OR pp.username ILIKE $${paramCount + 1})`;
+      values.push(filters.searchTerm, `%${filters.searchTerm}%`);
+      paramCount += 2;
     }
 
-    query += ' ORDER BY pp.created_at DESC LIMIT 50';
+    if (filters.searchTerm) {
+      query += ` ORDER BY GREATEST(similarity(pp.first_name, $${paramCount}), similarity(pp.last_name, $${paramCount}), similarity(pp.username, $${paramCount})) DESC, pp.created_at DESC LIMIT 50`;
+      values.push(filters.searchTerm);
+      paramCount++;
+    } else {
+      query += ' ORDER BY pp.created_at DESC LIMIT 50';
+    }
     const result = await pool.query(query, values);
     return result.rows;
   }
@@ -144,14 +150,19 @@ class PlayerProfile {
       paramCount++;
     }
     if (filters.searchTerm) {
-      query += ` AND (pp.first_name ILIKE $${paramCount} OR pp.last_name ILIKE $${paramCount} OR pp.username ILIKE $${paramCount})`;
-      values.push(`%${filters.searchTerm}%`);
-      paramCount++;
+      query += ` AND (similarity(pp.first_name, $${paramCount}) > 0.2 OR similarity(pp.last_name, $${paramCount}) > 0.2 OR similarity(pp.username, $${paramCount}) > 0.2 OR pp.first_name ILIKE $${paramCount + 1} OR pp.last_name ILIKE $${paramCount + 1} OR pp.username ILIKE $${paramCount + 1})`;
+      values.push(filters.searchTerm, `%${filters.searchTerm}%`);
+      paramCount += 2;
     }
 
     // Add limit + 1 to check if there are more results
-    query += ` ORDER BY pp.created_at DESC LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
-    values.push(limit + 1, offset);
+    if (filters.searchTerm) {
+      query += ` ORDER BY GREATEST(similarity(pp.first_name, $${paramCount}), similarity(pp.last_name, $${paramCount}), similarity(pp.username, $${paramCount})) DESC, pp.created_at DESC LIMIT $${paramCount + 1} OFFSET $${paramCount + 2}`;
+      values.push(filters.searchTerm, limit + 1, offset);
+    } else {
+      query += ` ORDER BY pp.created_at DESC LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
+      values.push(limit + 1, offset);
+    }
 
     const result = await pool.query(query, values);
 
@@ -194,14 +205,19 @@ class PlayerProfile {
       paramCount++;
     }
     if (filters.searchTerm) {
-      query += ` AND (pp.first_name ILIKE $${paramCount} OR pp.last_name ILIKE $${paramCount} OR pp.username ILIKE $${paramCount})`;
-      values.push(`%${filters.searchTerm}%`);
-      paramCount++;
+      query += ` AND (similarity(pp.first_name, $${paramCount}) > 0.2 OR similarity(pp.last_name, $${paramCount}) > 0.2 OR similarity(pp.username, $${paramCount}) > 0.2 OR pp.first_name ILIKE $${paramCount + 1} OR pp.last_name ILIKE $${paramCount + 1} OR pp.username ILIKE $${paramCount + 1})`;
+      values.push(filters.searchTerm, `%${filters.searchTerm}%`);
+      paramCount += 2;
     }
 
     // Add limit + 1 to check if there are more results
-    query += ` ORDER BY pp.created_at DESC LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
-    values.push(limit + 1, offset);
+    if (filters.searchTerm) {
+      query += ` ORDER BY GREATEST(similarity(pp.first_name, $${paramCount}), similarity(pp.last_name, $${paramCount}), similarity(pp.username, $${paramCount})) DESC, pp.created_at DESC LIMIT $${paramCount + 1} OFFSET $${paramCount + 2}`;
+      values.push(filters.searchTerm, limit + 1, offset);
+    } else {
+      query += ` ORDER BY pp.created_at DESC LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
+      values.push(limit + 1, offset);
+    }
 
     const result = await pool.query(query, values);
 
@@ -272,14 +288,19 @@ class PlayerProfile {
       paramCount++;
     }
     if (filters.searchTerm) {
-      query += ` AND (pp.first_name ILIKE $${paramCount} OR pp.last_name ILIKE $${paramCount} OR pp.username ILIKE $${paramCount})`;
-      values.push(`%${filters.searchTerm}%`);
-      paramCount++;
+      query += ` AND (similarity(pp.first_name, $${paramCount}) > 0.2 OR similarity(pp.last_name, $${paramCount}) > 0.2 OR similarity(pp.username, $${paramCount}) > 0.2 OR pp.first_name ILIKE $${paramCount + 1} OR pp.last_name ILIKE $${paramCount + 1} OR pp.username ILIKE $${paramCount + 1})`;
+      values.push(filters.searchTerm, `%${filters.searchTerm}%`);
+      paramCount += 2;
     }
 
     // Add limit + 1 to check if there are more results
-    query += ` ORDER BY pp.created_at DESC LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
-    values.push(limit + 1, offset);
+    if (filters.searchTerm) {
+      query += ` ORDER BY GREATEST(similarity(pp.first_name, $${paramCount}), similarity(pp.last_name, $${paramCount}), similarity(pp.username, $${paramCount})) DESC, pp.created_at DESC LIMIT $${paramCount + 1} OFFSET $${paramCount + 2}`;
+      values.push(filters.searchTerm, limit + 1, offset);
+    } else {
+      query += ` ORDER BY pp.created_at DESC LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
+      values.push(limit + 1, offset);
+    }
 
     const result = await pool.query(query, values);
 
@@ -453,11 +474,11 @@ class PlayerProfile {
       paramCount++;
     }
 
-    // Search term (name/username)
+    // Search term (name/username) — fuzzy + ILIKE fallback
     if (filters.searchTerm) {
-      whereClauses.push(`(pp.first_name ILIKE $${paramCount} OR pp.last_name ILIKE $${paramCount} OR pp.username ILIKE $${paramCount})`);
-      values.push(`%${filters.searchTerm}%`);
-      paramCount++;
+      whereClauses.push(`(similarity(pp.first_name, $${paramCount}) > 0.2 OR similarity(pp.last_name, $${paramCount}) > 0.2 OR similarity(pp.username, $${paramCount}) > 0.2 OR pp.first_name ILIKE $${paramCount + 1} OR pp.last_name ILIKE $${paramCount + 1} OR pp.username ILIKE $${paramCount + 1})`);
+      values.push(filters.searchTerm, `%${filters.searchTerm}%`);
+      paramCount += 2;
     }
 
     // Stat filters — subquery into player_games + player_game_stats
@@ -523,10 +544,19 @@ class PlayerProfile {
       });
     }
 
-    // Build final query
+    // Build final query — rank by similarity when searching by name
+    let orderClause;
+    if (filters.searchTerm) {
+      orderClause = `ORDER BY GREATEST(similarity(pp.first_name, $${paramCount}), similarity(pp.last_name, $${paramCount}), similarity(pp.username, $${paramCount})) DESC, pp.created_at DESC`;
+      values.push(filters.searchTerm);
+      paramCount++;
+    } else {
+      orderClause = `ORDER BY pp.created_at DESC`;
+    }
+
     const query = `SELECT ${selectCols} ${fromClause}
       WHERE ${whereClauses.join(' AND ')}
-      ORDER BY pp.created_at DESC
+      ${orderClause}
       LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
     values.push(limit + 1, offset);
 
