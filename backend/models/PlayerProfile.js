@@ -31,12 +31,20 @@ class PlayerProfile {
   }
 
   static async update(userId, profileData) {
+    const allowedColumns = new Set([
+      'first_name', 'last_name', 'username', 'date_of_birth', 'team_name', 'graduation_year',
+      'city', 'state', 'position', 'height', 'weight', 'gpa', 'sat_score', 'act_score',
+      'highlight_video_url', 'bio', 'hudl_profile', 'twitter_handle', 'instagram_handle', 'player_status',
+      'college_division', 'conference', 'number', 'eligibility', 'profile_image_url', 'transfer',
+      'years_of_eligibility', 'phone', 'email', 'is_transfer_player'
+    ]);
+
     const fields = [];
     const values = [];
     let paramCount = 1;
 
     Object.keys(profileData).forEach(key => {
-      if (profileData[key] !== undefined) {
+      if (profileData[key] !== undefined && allowedColumns.has(key)) {
         fields.push(`${key} = $${paramCount}`);
         values.push(profileData[key]);
         paramCount++;
