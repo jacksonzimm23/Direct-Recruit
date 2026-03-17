@@ -852,22 +852,55 @@
             </div>
             <div class="add-offer-modal-body">
                 <form id="addOfferForm">
-                    <div class="form-group">
-                        <label for="offerCollegeName">College / University Name</label>
-                        <input type="text" id="offerCollegeName" name="college_name" placeholder="Enter college or university name" required>
+                    <!-- School search mode (default) -->
+                    <div id="offerSearchMode">
+                        <div class="form-group">
+                            <label for="offerSchoolSearch">College / University Name</label>
+                            <div class="school-search-wrapper">
+                                <input type="text" id="offerSchoolSearch" autocomplete="off" placeholder="Search for a school..." required>
+                                <div class="school-search-dropdown" id="schoolSearchDropdown"></div>
+                            </div>
+                        </div>
+
+                        <!-- Logo + Division preview (shown after selecting a school) -->
+                        <div class="offer-school-preview" id="offerSchoolPreview" style="display: none;">
+                            <div class="offer-preview-logo" id="offerPreviewLogo"></div>
+                            <div class="offer-preview-info">
+                                <div class="offer-preview-name" id="offerPreviewName"></div>
+                                <div class="offer-preview-division" id="offerPreviewDivision"></div>
+                            </div>
+                            <button type="button" class="offer-preview-clear" id="offerPreviewClear" title="Remove selection">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                                </svg>
+                            </button>
+                        </div>
+
+                        <button type="button" class="btn-cant-find-school" id="btnCantFindSchool">Can't find your school? Enter manually</button>
                     </div>
 
-                    <div class="form-group">
-                        <label for="offerDivision">Division</label>
-                        <select id="offerDivision" name="division" required>
-                            <option value="">Select Division</option>
-                            <option value="FBS">FBS</option>
-                            <option value="FCS">FCS</option>
-                            <option value="D2">Division II</option>
-                            <option value="D3">Division III</option>
-                            <option value="NAIA">NAIA</option>
-                            <option value="JUCO">JUCO</option>
-                        </select>
+                    <!-- Manual entry mode (hidden by default) -->
+                    <div id="offerManualMode" style="display: none;">
+                        <div class="form-group">
+                            <label for="offerCollegeName">College / University Name</label>
+                            <input type="text" id="offerCollegeName" name="college_name" placeholder="Enter college or university name" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="offerDivision">Division</label>
+                            <select id="offerDivision" name="division" required>
+                                <option value="">Select Division</option>
+                                <option value="FBS">FBS</option>
+                                <option value="FCS">FCS</option>
+                                <option value="D2">Division II</option>
+                                <option value="D3">Division III</option>
+                                <option value="NAIA">NAIA</option>
+                                <option value="JUCO">JUCO</option>
+                            </select>
+                        </div>
+
+                        <button type="button" class="btn-back-to-search" id="btnBackToSearch">Back to school search</button>
                     </div>
                 </form>
             </div>
@@ -903,7 +936,7 @@
         <div class="add-offer-modal-overlay" id="editOfferModalOverlay"></div>
         <div class="add-offer-modal-content">
             <div class="add-offer-modal-header">
-                <h2>Edit Offer</h2>
+                <h2>Offer</h2>
                 <button class="add-offer-modal-close" id="editOfferModalClose">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -912,26 +945,8 @@
                 </button>
             </div>
             <div class="add-offer-modal-body">
-                <form id="editOfferForm">
-                    <input type="hidden" id="editOfferIndex" value="">
-                    <div class="form-group">
-                        <label for="editOfferCollegeName">College / University Name</label>
-                        <input type="text" id="editOfferCollegeName" name="college_name" placeholder="Enter college or university name" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="editOfferDivision">Division</label>
-                        <select id="editOfferDivision" name="division" required>
-                            <option value="">Select Division</option>
-                            <option value="FBS">FBS</option>
-                            <option value="FCS">FCS</option>
-                            <option value="D2">Division II</option>
-                            <option value="D3">Division III</option>
-                            <option value="NAIA">NAIA</option>
-                            <option value="JUCO">JUCO</option>
-                        </select>
-                    </div>
-                </form>
+                <input type="hidden" id="editOfferIndex" value="">
+                <div class="edit-offer-preview" id="editOfferPreview"></div>
             </div>
             <div class="add-offer-modal-footer edit-offer-footer">
                 <button class="btn-modal-delete" id="btnDeleteOffer">
@@ -941,12 +956,9 @@
                         <line x1="10" y1="11" x2="10" y2="17"></line>
                         <line x1="14" y1="11" x2="14" y2="17"></line>
                     </svg>
-                    Delete
+                    Delete Offer
                 </button>
-                <div class="edit-offer-actions">
-                    <button class="btn-modal-cancel" id="btnEditOfferCancel">Cancel</button>
-                    <button class="btn-modal-save" id="btnEditOfferSave">Save Changes</button>
-                </div>
+                <button class="btn-modal-cancel" id="btnEditOfferCancel">Close</button>
             </div>
         </div>
     </div>

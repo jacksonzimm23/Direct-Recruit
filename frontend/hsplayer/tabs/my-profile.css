@@ -1782,8 +1782,6 @@
 .offer-logo {
     width: 50px;
     height: 50px;
-    border-radius: 8px;
-    background: rgba(255, 255, 255, 0.1);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1791,9 +1789,14 @@
     flex-shrink: 0;
 }
 
+.offer-logo:has(svg) {
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.1);
+}
+
 .offer-logo img {
-    width: 40px;
-    height: 40px;
+    width: 50px;
+    height: 50px;
     object-fit: contain;
 }
 
@@ -1951,6 +1954,7 @@
     border-radius: 16px;
     width: 90%;
     max-width: 500px;
+    height: 70vh;
     max-height: 90vh;
     overflow: hidden;
     display: flex;
@@ -2050,6 +2054,175 @@
     color: var(--white);
 }
 
+/* School search dropdown */
+.school-search-wrapper {
+    position: relative;
+}
+
+.school-search-dropdown {
+    display: none;
+    max-height: 300px;
+    overflow-y: auto;
+    background: rgba(255, 255, 255, 0.03);
+    border: 2px solid rgba(18, 130, 162, 0.2);
+    border-top: none;
+    border-radius: 0 0 8px 8px;
+    margin-top: -2px;
+}
+
+.school-search-dropdown.active {
+    display: block;
+}
+
+.school-dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.625rem 1rem;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.school-dropdown-item:hover {
+    background: rgba(18, 130, 162, 0.15);
+}
+
+.school-dropdown-logo {
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
+    border-radius: 4px;
+    flex-shrink: 0;
+}
+
+.school-dropdown-logo-svg {
+    width: 32px;
+    height: 32px;
+    color: var(--cerulean);
+    flex-shrink: 0;
+}
+
+.school-dropdown-info {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.school-dropdown-name {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--white);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.school-dropdown-division {
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.school-dropdown-empty {
+    padding: 1rem;
+    text-align: center;
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 0.875rem;
+}
+
+/* School preview after selection */
+.offer-school-preview {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    background: rgba(18, 130, 162, 0.1);
+    border: 2px solid rgba(18, 130, 162, 0.3);
+    border-radius: 10px;
+    margin-bottom: 0.5rem;
+}
+
+.offer-preview-logo {
+    width: 56px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.offer-preview-logo img {
+    width: 56px;
+    height: 56px;
+    object-fit: contain;
+}
+
+.offer-preview-logo svg {
+    width: 40px;
+    height: 40px;
+    color: var(--cerulean);
+}
+
+.offer-preview-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.offer-preview-name {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--white);
+}
+
+.offer-preview-division {
+    font-size: 0.85rem;
+    color: var(--cerulean);
+    margin-top: 0.2rem;
+}
+
+.offer-preview-clear {
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.4);
+    cursor: pointer;
+    padding: 0.375rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    transition: all 0.2s;
+    flex-shrink: 0;
+}
+
+.offer-preview-clear:hover {
+    color: var(--white);
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.offer-preview-clear svg {
+    width: 18px;
+    height: 18px;
+}
+
+/* Toggle buttons */
+.btn-cant-find-school,
+.btn-back-to-search {
+    background: none;
+    border: none;
+    color: var(--cerulean);
+    font-size: 0.85rem;
+    cursor: pointer;
+    padding: 0.5rem 0;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    transition: color 0.2s;
+    font-family: 'Inter', sans-serif;
+}
+
+.btn-cant-find-school:hover,
+.btn-back-to-search:hover {
+    color: var(--white);
+}
+
 .add-offer-modal-footer {
     padding: 1.5rem 2rem;
     border-top: 2px solid rgba(18, 130, 162, 0.2);
@@ -2106,14 +2279,56 @@
     color: var(--white);
 }
 
+/* Edit Offer Preview */
+.edit-offer-preview {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    padding: 1.25rem;
+    background: rgba(18, 130, 162, 0.08);
+    border-radius: 12px;
+}
+
+.edit-offer-preview-logo {
+    width: 64px;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.edit-offer-preview-logo img {
+    width: 64px;
+    height: 64px;
+    object-fit: contain;
+}
+
+.edit-offer-preview-logo svg {
+    width: 44px;
+    height: 44px;
+    color: var(--cerulean);
+}
+
+.edit-offer-preview-info {
+    flex: 1;
+}
+
+.edit-offer-preview-name {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--white);
+}
+
+.edit-offer-preview-division {
+    font-size: 0.9rem;
+    color: var(--cerulean);
+    margin-top: 0.25rem;
+}
+
 /* Edit Offer Modal Footer */
 .edit-offer-footer {
     justify-content: space-between;
-}
-
-.edit-offer-actions {
-    display: flex;
-    gap: 1rem;
 }
 
 .btn-modal-delete {

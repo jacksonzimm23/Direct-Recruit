@@ -3316,15 +3316,256 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
+// School logos data (loaded once)
+let schoolLogosData = null;
+let schoolNamesList = []; // sorted A-Z for dropdown
+let selectedOfferSchool = null; // { name, division, logo }
+
+async function loadSchoolLogosData() {
+    if (schoolLogosData) return schoolLogosData;
+    try {
+        const response = await fetch('../../assets/school-logos.json');
+        schoolLogosData = await response.json();
+        schoolNamesList = Object.keys(schoolLogosData).sort((a, b) => a.localeCompare(b));
+        return schoolLogosData;
+    } catch (error) {
+        console.error('Error loading school logos data:', error);
+        return null;
+    }
+}
+
+function getSchoolLogoPath(logoFile) {
+    if (!logoFile) return null;
+    return `../../assets/logos/${logoFile}`;
+}
+
+// Fuzzy search: matches if all typed words appear somewhere in the school name (case-insensitive)
+function fuzzyMatchSchool(query, schoolName) {
+    const queryLower = query.toLowerCase();
+    const nameLower = schoolName.toLowerCase();
+
+    // Exact substring match gets highest priority
+    if (nameLower.includes(queryLower)) return 3;
+
+    // All words in query appear in the name
+    const queryWords = queryLower.split(/\s+/).filter(Boolean);
+    const allWordsMatch = queryWords.every(w => nameLower.includes(w));
+    if (allWordsMatch) return 2;
+
+    // Partial: most words match
+    const matchCount = queryWords.filter(w => nameLower.includes(w)).length;
+    if (matchCount > 0 && matchCount >= queryWords.length - 1) return 1;
+
+    return 0;
+}
+
+function renderSchoolDropdown(query) {
+    const dropdown = document.getElementById('schoolSearchDropdown');
+    if (!dropdown || !schoolLogosData) return;
+
+    if (!query || query.length < 1) {
+        // Show all schools A-Z when input is focused with no query
+        const html = schoolNamesList.map(name => {
+            const school = schoolLogosData[name];
+            const logoPath = getSchoolLogoPath(school.logo);
+            const logoHTML = logoPath
+                ? `<img src="${logoPath}" alt="" class="school-dropdown-logo">`
+                : `<svg class="school-dropdown-logo-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"></path><path d="M6 12v5c3 3 9 3 12 0v-5"></path></svg>`;
+            return `<div class="school-dropdown-item" data-school-name="${name.replace(/"/g, '&quot;')}">
+                ${logoHTML}
+                <div class="school-dropdown-info">
+                    <span class="school-dropdown-name">${name}</span>
+                    <span class="school-dropdown-division">${school.division || ''}</span>
+                </div>
+            </div>`;
+        }).join('');
+        dropdown.innerHTML = html;
+        dropdown.classList.add('active');
+        return;
+    }
+
+    // Fuzzy search and rank results
+    const results = [];
+    for (const name of schoolNamesList) {
+        const score = fuzzyMatchSchool(query, name);
+        if (score > 0) results.push({ name, score });
+    }
+    results.sort((a, b) => b.score - a.score || a.name.localeCompare(b.name));
+
+    if (results.length === 0) {
+        dropdown.innerHTML = '<div class="school-dropdown-empty">No schools found</div>';
+        dropdown.classList.add('active');
+        return;
+    }
+
+    const html = results.map(({ name }) => {
+        const school = schoolLogosData[name];
+        const logoPath = getSchoolLogoPath(school.logo);
+        const logoHTML = logoPath
+            ? `<img src="${logoPath}" alt="" class="school-dropdown-logo">`
+            : `<svg class="school-dropdown-logo-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"></path><path d="M6 12v5c3 3 9 3 12 0v-5"></path></svg>`;
+        return `<div class="school-dropdown-item" data-school-name="${name.replace(/"/g, '&quot;')}">
+            ${logoHTML}
+            <div class="school-dropdown-info">
+                <span class="school-dropdown-name">${name}</span>
+                <span class="school-dropdown-division">${school.division || ''}</span>
+            </div>
+        </div>`;
+    }).join('');
+    dropdown.innerHTML = html;
+    dropdown.classList.add('active');
+}
+
+function selectSchool(schoolName) {
+    const school = schoolLogosData[schoolName];
+    if (!school) return;
+
+    selectedOfferSchool = {
+        name: schoolName,
+        division: school.division || '',
+        logo: school.logo || null
+    };
+
+    // Hide search input, show preview
+    const searchInput = document.getElementById('offerSchoolSearch');
+    const dropdown = document.getElementById('schoolSearchDropdown');
+    const preview = document.getElementById('offerSchoolPreview');
+    const searchWrapper = searchInput?.closest('.form-group');
+
+    if (searchWrapper) searchWrapper.style.display = 'none';
+    if (dropdown) dropdown.classList.remove('active');
+
+    // Populate preview
+    const previewLogo = document.getElementById('offerPreviewLogo');
+    const previewName = document.getElementById('offerPreviewName');
+    const previewDivision = document.getElementById('offerPreviewDivision');
+
+    if (previewLogo) {
+        const logoPath = getSchoolLogoPath(selectedOfferSchool.logo);
+        if (logoPath) {
+            previewLogo.innerHTML = `<img src="${logoPath}" alt="${schoolName}">`;
+        } else {
+            previewLogo.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"></path><path d="M6 12v5c3 3 9 3 12 0v-5"></path></svg>`;
+        }
+    }
+    if (previewName) previewName.textContent = schoolName;
+    if (previewDivision) previewDivision.textContent = selectedOfferSchool.division;
+    if (preview) preview.style.display = 'flex';
+}
+
+function clearSchoolSelection() {
+    selectedOfferSchool = null;
+
+    const searchInput = document.getElementById('offerSchoolSearch');
+    const preview = document.getElementById('offerSchoolPreview');
+    const searchWrapper = searchInput?.closest('.form-group');
+
+    if (searchWrapper) searchWrapper.style.display = 'flex';
+    if (preview) preview.style.display = 'none';
+    if (searchInput) {
+        searchInput.value = '';
+        searchInput.focus();
+    }
+}
+
+function initOfferSchoolSearch() {
+    const searchInput = document.getElementById('offerSchoolSearch');
+    const dropdown = document.getElementById('schoolSearchDropdown');
+    const btnCantFind = document.getElementById('btnCantFindSchool');
+    const btnBackToSearch = document.getElementById('btnBackToSearch');
+    const previewClear = document.getElementById('offerPreviewClear');
+
+    if (!searchInput) return;
+
+    // Load data
+    loadSchoolLogosData();
+
+    // Search input events
+    searchInput.addEventListener('input', () => {
+        renderSchoolDropdown(searchInput.value.trim());
+    });
+
+    searchInput.addEventListener('focus', () => {
+        if (schoolLogosData) {
+            renderSchoolDropdown(searchInput.value.trim());
+        }
+    });
+
+    // Click on dropdown item
+    if (dropdown) {
+        dropdown.addEventListener('click', (e) => {
+            const item = e.target.closest('.school-dropdown-item');
+            if (item) {
+                const schoolName = item.dataset.schoolName;
+                selectSchool(schoolName);
+            }
+        });
+    }
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', (e) => {
+        if (dropdown && !e.target.closest('.school-search-wrapper')) {
+            dropdown.classList.remove('active');
+        }
+    });
+
+    // Clear selection
+    if (previewClear) {
+        previewClear.addEventListener('click', clearSchoolSelection);
+    }
+
+    // Toggle manual mode
+    if (btnCantFind) {
+        btnCantFind.addEventListener('click', () => {
+            document.getElementById('offerSearchMode').style.display = 'none';
+            document.getElementById('offerManualMode').style.display = 'block';
+            selectedOfferSchool = null;
+        });
+    }
+
+    if (btnBackToSearch) {
+        btnBackToSearch.addEventListener('click', () => {
+            document.getElementById('offerManualMode').style.display = 'none';
+            document.getElementById('offerSearchMode').style.display = 'block';
+            document.getElementById('offerCollegeName').value = '';
+            document.getElementById('offerDivision').value = '';
+        });
+    }
+}
+
+// Initialize on DOM ready
+document.addEventListener('DOMContentLoaded', () => {
+    initOfferSchoolSearch();
+});
+
 // Add Offer Modal Functions
 function showAddOfferModal() {
     const modal = document.getElementById('addOfferModal');
     if (modal) {
-        // Clear form
+        // Reset to search mode
+        const searchMode = document.getElementById('offerSearchMode');
+        const manualMode = document.getElementById('offerManualMode');
+        if (searchMode) searchMode.style.display = 'block';
+        if (manualMode) manualMode.style.display = 'none';
+
+        // Clear search
+        const searchInput = document.getElementById('offerSchoolSearch');
+        if (searchInput) searchInput.value = '';
+        clearSchoolSelection();
+
+        // Clear manual form
         document.getElementById('offerCollegeName').value = '';
         document.getElementById('offerDivision').value = '';
+
+        // Close dropdown
+        const dropdown = document.getElementById('schoolSearchDropdown');
+        if (dropdown) dropdown.classList.remove('active');
+
         modal.classList.add('active');
         document.body.style.overflow = 'hidden';
+
+        // Load school data if not loaded
+        loadSchoolLogosData();
     }
 }
 
@@ -3337,18 +3578,34 @@ function hideAddOfferModal() {
 }
 
 async function saveNewOffer() {
-    const collegeName = document.getElementById('offerCollegeName').value.trim();
-    const division = document.getElementById('offerDivision').value;
+    let collegeName, division, logoFile;
 
-    // Validate inputs
-    if (!collegeName) {
-        alert('Please enter a college or university name.');
-        return;
-    }
+    const manualMode = document.getElementById('offerManualMode');
+    const isManual = manualMode && manualMode.style.display !== 'none';
 
-    if (!division) {
-        alert('Please select a division.');
-        return;
+    if (isManual) {
+        // Manual entry
+        collegeName = document.getElementById('offerCollegeName').value.trim();
+        division = document.getElementById('offerDivision').value;
+        logoFile = null;
+
+        if (!collegeName) {
+            alert('Please enter a college or university name.');
+            return;
+        }
+        if (!division) {
+            alert('Please select a division.');
+            return;
+        }
+    } else {
+        // Search mode - must have selected a school
+        if (!selectedOfferSchool) {
+            alert('Please select a school from the dropdown.');
+            return;
+        }
+        collegeName = selectedOfferSchool.name;
+        division = selectedOfferSchool.division;
+        logoFile = selectedOfferSchool.logo;
     }
 
     // Show loading state
@@ -3363,7 +3620,7 @@ async function saveNewOffer() {
 
         if (response.success) {
             // Add the offer to the UI at the TOP of the list
-            addOfferToGrid(collegeName, division, true);
+            addOfferToGrid(collegeName, division, true, null, logoFile);
 
             // Show success message
             showSuccessMessage('Offer added successfully!');
@@ -3383,7 +3640,7 @@ async function saveNewOffer() {
     }
 }
 
-function addOfferToGrid(collegeName, division, addToTop = false, offerIndex = null) {
+function addOfferToGrid(collegeName, division, addToTop = false, offerIndex = null, logoFile = undefined) {
     const offersGridFull = document.getElementById('offersGridFull');
     const offersGrid = document.getElementById('offersGrid');
 
@@ -3396,15 +3653,25 @@ function addOfferToGrid(collegeName, division, addToTop = false, offerIndex = nu
         }
     }
 
+    // Look up logo from school-logos.json if not explicitly provided
+    if (logoFile === undefined && schoolLogosData && schoolLogosData[collegeName]) {
+        logoFile = schoolLogosData[collegeName].logo;
+    }
+
+    const logoPath = logoFile ? getSchoolLogoPath(logoFile) : null;
+    const logoHTML = logoPath
+        ? `<img src="${logoPath}" alt="${collegeName}">`
+        : `<svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 10v6M2 10l10-5 10 5-10 5z"></path>
+                    <path d="M6 12v5c3 3 9 3 12 0v-5"></path>
+                </svg>`;
+
     // Create new offer item HTML with data attributes and click handler (only for own profile in offers tab)
     const clickableClass = isOwnProfile ? 'offer-item-clickable' : '';
     const offerHTML = `
         <div class="offer-item ${clickableClass}" data-offer-index="${offerIndex}" data-college="${collegeName}" data-division="${division}">
             <div class="offer-logo">
-                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M22 10v6M2 10l10-5 10 5-10 5z"></path>
-                    <path d="M6 12v5c3 3 9 3 12 0v-5"></path>
-                </svg>
+                ${logoHTML}
             </div>
             <div class="offer-info">
                 <div class="offer-details">${collegeName} • ${division}</div>
@@ -3427,10 +3694,7 @@ function addOfferToGrid(collegeName, division, addToTop = false, offerIndex = nu
     const overviewOfferHTML = `
         <div class="offer-item" data-offer-index="${offerIndex}" data-college="${collegeName}" data-division="${division}">
             <div class="offer-logo">
-                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M22 10v6M2 10l10-5 10 5-10 5z"></path>
-                    <path d="M6 12v5c3 3 9 3 12 0v-5"></path>
-                </svg>
+                ${logoHTML}
             </div>
             <div class="offer-info">
                 <div class="offer-details">${collegeName} • ${division}</div>
@@ -3475,6 +3739,9 @@ function updateOfferIndices() {
 // Load offers from database
 async function loadOffers() {
     try {
+        // Ensure school logos data is loaded for logo display
+        await loadSchoolLogosData();
+
         let response;
         if (isOwnProfile) {
             // Load own offers
@@ -3574,11 +3841,6 @@ function setupEditOfferModal() {
         btnEditOfferCancel.addEventListener('click', hideEditOfferModal);
     }
 
-    // Save changes handler
-    if (btnEditOfferSave) {
-        btnEditOfferSave.addEventListener('click', saveEditedOffer);
-    }
-
     // Delete handler (shows confirmation modal)
     if (btnDeleteOffer) {
         btnDeleteOffer.addEventListener('click', deleteOffer);
@@ -3599,17 +3861,30 @@ function setupEditOfferModal() {
 function showEditOfferModal(index, collegeName, division) {
     const modal = document.getElementById('editOfferModal');
     const indexInput = document.getElementById('editOfferIndex');
-    const collegeInput = document.getElementById('editOfferCollegeName');
-    const divisionSelect = document.getElementById('editOfferDivision');
+    const preview = document.getElementById('editOfferPreview');
 
-    if (modal && indexInput && collegeInput && divisionSelect) {
+    if (modal && indexInput && preview) {
         indexInput.value = index;
-        collegeInput.value = collegeName;
-        divisionSelect.value = division;
+
+        // Build preview with logo
+        let logoHTML = '';
+        if (schoolLogosData && schoolLogosData[collegeName] && schoolLogosData[collegeName].logo) {
+            const logoPath = getSchoolLogoPath(schoolLogosData[collegeName].logo);
+            logoHTML = `<img src="${logoPath}" alt="${collegeName}">`;
+        } else {
+            logoHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"></path><path d="M6 12v5c3 3 9 3 12 0v-5"></path></svg>`;
+        }
+
+        preview.innerHTML = `
+            <div class="edit-offer-preview-logo">${logoHTML}</div>
+            <div class="edit-offer-preview-info">
+                <div class="edit-offer-preview-name">${collegeName}</div>
+                <div class="edit-offer-preview-division">${division}</div>
+            </div>
+        `;
 
         modal.classList.add('active');
         document.body.style.overflow = 'hidden';
-        collegeInput.focus();
     }
 }
 
