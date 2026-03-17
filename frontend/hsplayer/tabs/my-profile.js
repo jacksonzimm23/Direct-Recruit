@@ -568,9 +568,19 @@ function updateNavbarForLoggedInUser(user, profile) {
                 userRole.textContent = parts.join(' • ') || 'Transfer Player';
                 userRole.style.color = '#b91c1c'; // Transfer player red
             } else if (userFolder === 'hsplayer') {
-                // HS Player: position • high_school • graduation_year
+                // HS Player: position • height • weight • graduation_year
                 if (profile.position) parts.push(profile.position);
-                if (profile.team_name) parts.push(profile.team_name);
+                if (profile.height) {
+                    if (typeof profile.height === 'string' && (profile.height.includes("'") || profile.height.includes('"'))) {
+                        parts.push(profile.height);
+                    } else {
+                        const totalInches = parseInt(profile.height);
+                        const feet = Math.floor(totalInches / 12);
+                        const inches = totalInches % 12;
+                        parts.push(`${feet}'${inches}"`);
+                    }
+                }
+                if (profile.weight) parts.push(`${profile.weight} lbs`);
                 if (profile.graduation_year) parts.push(profile.graduation_year);
                 userRole.textContent = parts.join(' • ') || 'Player';
             } else if (userFolder === 'collegeplayer') {
