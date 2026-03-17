@@ -1,0 +1,3314 @@
+{
+  "Abilene Christian University": {
+    "division": "D1 FCS",
+    "logo": "abilene_christian.png"
+  },
+  "United States Air Force Academy (Air Force)": {
+    "division": "D1 FBS",
+    "logo": "air_force.png"
+  },
+  "University of Akron": {
+    "division": "D1 FBS",
+    "logo": "akron.png"
+  },
+  "University of Alabama": {
+    "division": "D1 FBS",
+    "logo": "alabama.png"
+  },
+  "Alabama A&M University": {
+    "division": "D1 FCS",
+    "logo": "alabama_a&m.png"
+  },
+  "Alabama State University": {
+    "division": "D1 FCS",
+    "logo": "alabama_state.png"
+  },
+  "University at Albany, SUNY": {
+    "division": "D1 FCS",
+    "logo": "albany_suny.png"
+  },
+  "Alcorn State University": {
+    "division": "D1 FCS",
+    "logo": "alcorn_state.png"
+  },
+  "Appalachian State University": {
+    "division": "D1 FBS",
+    "logo": "appalachin_state.png"
+  },
+  "University of Arizona": {
+    "division": "D1 FBS",
+    "logo": "arizona.png"
+  },
+  "Arizona State University": {
+    "division": "D1 FBS",
+    "logo": "arizona_state.png"
+  },
+  "University of Arkansas": {
+    "division": "D1 FBS",
+    "logo": "arkansas.png"
+  },
+  "Arkansas State University": {
+    "division": "D1 FBS",
+    "logo": "arkansas_state.png"
+  },
+  "United States Military Academy (Army)": {
+    "division": "D1 FBS",
+    "logo": "army.png"
+  },
+  "Auburn University": {
+    "division": "D1 FBS",
+    "logo": "auburn.png"
+  },
+  "Ball State University": {
+    "division": "D1 FBS",
+    "logo": "ball_state.png"
+  },
+  "Baylor University": {
+    "division": "D1 FBS",
+    "logo": "baylor.png"
+  },
+  "Bethune-Cookman University": {
+    "division": "D1 FCS",
+    "logo": "bethune_cookman.png"
+  },
+  "Boise State University": {
+    "division": "D1 FBS",
+    "logo": "boise_state.png"
+  },
+  "Boston College": {
+    "division": "D1 FBS",
+    "logo": "boston.png"
+  },
+  "Bowling Green State University": {
+    "division": "D1 FBS",
+    "logo": "bowling_green.png"
+  },
+  "Brown University": {
+    "division": "D1 FCS",
+    "logo": "brown.png"
+  },
+  "Bryant University": {
+    "division": "D1 FCS",
+    "logo": "bryant.png"
+  },
+  "Bucknell University": {
+    "division": "D1 FCS",
+    "logo": "bucknell.png"
+  },
+  "University at Buffalo": {
+    "division": "D1 FBS",
+    "logo": "buffalo.png"
+  },
+  "Butler University": {
+    "division": "D1 FCS",
+    "logo": "butler.png"
+  },
+  "Brigham Young University (BYU)": {
+    "division": "D1 FBS",
+    "logo": "byu.png"
+  },
+  "California Polytechnic State University, San Luis Obispo (Cal Poly)": {
+    "division": "D1 FCS",
+    "logo": "cal_poly.png"
+  },
+  "University of California, Berkeley (Cal)": {
+    "division": "D1 FBS",
+    "logo": "cal.png"
+  },
+  "Campbell University": {
+    "division": "D1 FCS",
+    "logo": "campbell.png"
+  },
+  "University of Central Arkansas": {
+    "division": "D1 FCS",
+    "logo": "central_arkansas.png"
+  },
+  "Central Connecticut State University": {
+    "division": "D1 FCS",
+    "logo": "central_connecticut.png"
+  },
+  "Central Michigan University": {
+    "division": "D1 FBS",
+    "logo": "central_michigan.png"
+  },
+  "Charleston Southern University": {
+    "division": "D1 FCS",
+    "logo": "charleston_southern.png"
+  },
+  "University of North Carolina at Charlotte": {
+    "division": "D1 FBS",
+    "logo": "north_carolina_charlotte.png"
+  },
+  "University of Tennessee at Chattanooga": {
+    "division": "D1 FCS",
+    "logo": "tennessee_chattanooga.png"
+  },
+  "University of Cincinnati": {
+    "division": "D1 FBS",
+    "logo": "cincinnati.png"
+  },
+  "Clemson University": {
+    "division": "D1 FBS",
+    "logo": "clemson.png"
+  },
+  "Coastal Carolina University": {
+    "division": "D1 FBS",
+    "logo": "coastal_carolina.png"
+  },
+  "Colgate University": {
+    "division": "D1 FCS",
+    "logo": "colgate.png"
+  },
+  "University of Colorado Boulder": {
+    "division": "D1 FBS",
+    "logo": "colorado_boulder.png"
+  },
+  "Colorado State University": {
+    "division": "D1 FBS",
+    "logo": "colorado_state.png"
+  },
+  "Columbia University": {
+    "division": "D1 FCS",
+    "logo": "columbia.png"
+  },
+  "University of Connecticut (UConn)": {
+    "division": "D1 FBS",
+    "logo": "uconn.png"
+  },
+  "Cornell University": {
+    "division": "D1 FCS",
+    "logo": "cornell_university.png"
+  },
+  "Dartmouth College": {
+    "division": "D1 FCS",
+    "logo": "dartmouth.png"
+  },
+  "Davidson College": {
+    "division": "D1 FCS",
+    "logo": "davidson.png"
+  },
+  "University of Dayton": {
+    "division": "D1 FCS",
+    "logo": "dayton.png"
+  },
+  "University of Delaware": {
+    "division": "D1 FCS",
+    "logo": "delaware.png"
+  },
+  "Delaware State University": {
+    "division": "D1 FCS",
+    "logo": "delaware_state.png"
+  },
+  "Drake University": {
+    "division": "D1 FCS",
+    "logo": "drake.png"
+  },
+  "Duke University": {
+    "division": "D1 FBS",
+    "logo": "duke.png"
+  },
+  "Duquesne University": {
+    "division": "D1 FCS",
+    "logo": "duquesne.png"
+  },
+  "East Carolina University": {
+    "division": "D1 FBS",
+    "logo": "east_carolina.png"
+  },
+  "Eastern Illinois University": {
+    "division": "D1 FCS",
+    "logo": "eastern_illinois.png"
+  },
+  "Eastern Kentucky University": {
+    "division": "D1 FCS",
+    "logo": "eastern_kentucky.png"
+  },
+  "Eastern Michigan University": {
+    "division": "D1 FBS",
+    "logo": "eastern_michigan.png"
+  },
+  "Eastern Washington University": {
+    "division": "D1 FCS",
+    "logo": "eastern_washington.png"
+  },
+  "Elon University": {
+    "division": "D1 FCS",
+    "logo": "elon.png"
+  },
+  "East Tennessee State University": {
+    "division": "D1 FCS",
+    "logo": "east_tennessee_state.png"
+  },
+  "University of Florida": {
+    "division": "D1 FBS",
+    "logo": "florida.png"
+  },
+  "Florida A&M University": {
+    "division": "D1 FCS",
+    "logo": "florida_a&m.png"
+  },
+  "Florida Atlantic University": {
+    "division": "D1 FBS",
+    "logo": "florida_atlantic.png"
+  },
+  "Florida International University": {
+    "division": "D1 FBS",
+    "logo": "florida_international.png"
+  },
+  "Florida State University": {
+    "division": "D1 FBS",
+    "logo": "florida_state.png"
+  },
+  "Fordham University": {
+    "division": "D1 FCS",
+    "logo": "fordham.png"
+  },
+  "California State University, Fresno (Fresno State)": {
+    "division": "D1 FBS",
+    "logo": "fresno_state.png"
+  },
+  "Furman University": {
+    "division": "D1 FCS",
+    "logo": "furman.png"
+  },
+  "Gardner-Webb University": {
+    "division": "D1 FCS",
+    "logo": "gardner_webb.png"
+  },
+  "Georgetown University": {
+    "division": "D1 FCS",
+    "logo": "georgetown.png"
+  },
+  "University of Georgia": {
+    "division": "D1 FBS",
+    "logo": "georgia.png"
+  },
+  "Georgia Southern University": {
+    "division": "D1 FBS",
+    "logo": "georgia_southern.png"
+  },
+  "Georgia State University": {
+    "division": "D1 FBS",
+    "logo": "georgia_state.png"
+  },
+  "Georgia Institute of Technology (Georgia Tech)": {
+    "division": "D1 FBS",
+    "logo": "georgia_tech.png"
+  },
+  "Grambling State University": {
+    "division": "D1 FCS",
+    "logo": "grambling_state.png"
+  },
+  "Hampton University": {
+    "division": "D1 FCS",
+    "logo": "hampton.png"
+  },
+  "Harvard University": {
+    "division": "D1 FCS",
+    "logo": "harvard.png"
+  },
+  "Houston Christian": {
+    "division": "D1 FCS",
+    "logo": "houston_christian.png"
+  },
+  "University of Hawai'i at Mānoa": {
+    "division": "D1 FBS",
+    "logo": "hawai'i.png"
+  },
+  "College of the Holy Cross": {
+    "division": "D1 FCS",
+    "logo": "holy_cross.png"
+  },
+  "University of Houston": {
+    "division": "D1 FBS",
+    "logo": "houston.png"
+  },
+  "Howard University": {
+    "division": "D1 FCS",
+    "logo": "howard.png"
+  },
+  "University of Idaho": {
+    "division": "D1 FCS",
+    "logo": "idaho.png"
+  },
+  "Idaho State University": {
+    "division": "D1 FCS",
+    "logo": "idaho_state.png"
+  },
+  "University of Illinois Urbana-Champaign": {
+    "division": "D1 FBS",
+    "logo": "illinois_urbana_champaign.png"
+  },
+  "Illinois State University": {
+    "division": "D1 FCS",
+    "logo": "illinois_state.png"
+  },
+  "Indiana University Bloomington": {
+    "division": "D1 FBS",
+    "logo": "indiana.png"
+  },
+  "Indiana State University": {
+    "division": "D1 FCS",
+    "logo": "indiana_state.png"
+  },
+  "University of Iowa": {
+    "division": "D1 FBS",
+    "logo": "iowa.png"
+  },
+  "Iowa State University": {
+    "division": "D1 FBS",
+    "logo": "iowa_state.png"
+  },
+  "Jackson State University": {
+    "division": "D1 FCS",
+    "logo": "jackson_state.png"
+  },
+  "Jacksonville State University": {
+    "division": "D1 FBS",
+    "logo": "jacksonville_state.png"
+  },
+  "James Madison University": {
+    "division": "D1 FBS",
+    "logo": "james_madison.png"
+  },
+  "University of Kansas": {
+    "division": "D1 FBS",
+    "logo": "kansas.png"
+  },
+  "Kansas State University": {
+    "division": "D1 FBS",
+    "logo": "kansas_state.png"
+  },
+  "Kennesaw State University": {
+    "division": "D1 FBS",
+    "logo": "kennesaw_state.png"
+  },
+  "Kent State University": {
+    "division": "D1 FBS",
+    "logo": "kent_state.png"
+  },
+  "University of Kentucky": {
+    "division": "D1 FBS",
+    "logo": "kentucky.png"
+  },
+  "Lafayette College": {
+    "division": "D1 FCS",
+    "logo": "lafayette.png"
+  },
+  "Lamar University": {
+    "division": "D1 FCS",
+    "logo": "lamar.png"
+  },
+  "Lehigh University": {
+    "division": "D1 FCS",
+    "logo": "lehigh.png"
+  },
+  "Liberty University": {
+    "division": "D1 FBS",
+    "logo": "liberty.png"
+  },
+  "Lindenwood University": {
+    "division": "D1 FCS",
+    "logo": "lindenwood.png"
+  },
+  "Long Island University": {
+    "division": "D1 FCS",
+    "logo": "long_island.png"
+  },
+  "University of Louisiana at Lafayette": {
+    "division": "D1 FBS",
+    "logo": "louisiana_lafayette.png"
+  },
+  "Louisiana Tech University": {
+    "division": "D1 FBS",
+    "logo": "louisiana_tech.png"
+  },
+  "University of Louisville": {
+    "division": "D1 FBS",
+    "logo": "louisville.png"
+  },
+  "Louisiana State University (LSU)": {
+    "division": "D1 FBS",
+    "logo": "lsu.png"
+  },
+  "University of Maine": {
+    "division": "D1 FCS",
+    "logo": "maine.png"
+  },
+  "Marist College": {
+    "division": "D1 FCS",
+    "logo": "marist.png"
+  },
+  "Marshall University": {
+    "division": "D1 FBS",
+    "logo": "marshall.png"
+  },
+  "University of Maryland, College Park": {
+    "division": "D1 FBS",
+    "logo": "maryland.png"
+  },
+  "University of Massachusetts Amherst (UMass)": {
+    "division": "D1 FBS",
+    "logo": "massachusetts.png"
+  },
+  "McNeese State University": {
+    "division": "D1 FCS",
+    "logo": "mcneese_state.png"
+  },
+  "University of Memphis": {
+    "division": "D1 FBS",
+    "logo": "memphis.png"
+  },
+  "Mercyhurst University": {
+    "division": "D1 FCS",
+    "logo": "mercyhurst.png"
+  },
+  "Merrimack College": {
+    "division": "D1 FCS",
+    "logo": "merrimack.png"
+  },
+  "Mercer University": {
+    "division": "D1 FCS",
+    "logo": "mercer.png"
+  },
+  "University of Miami (Florida)": {
+    "division": "D1 FBS",
+    "logo": "miami_florida.png"
+  },
+  "Miami University (Ohio)": {
+    "division": "D1 FBS",
+    "logo": "miami_ohio.png"
+  },
+  "University of Michigan": {
+    "division": "D1 FBS",
+    "logo": "michigan.png"
+  },
+  "Michigan State University": {
+    "division": "D1 FBS",
+    "logo": "michigan_state.png"
+  },
+  "Middle Tennessee State University": {
+    "division": "D1 FBS",
+    "logo": "middle_tennessee.png"
+  },
+  "University of Minnesota": {
+    "division": "D1 FBS",
+    "logo": "minnesota.png"
+  },
+  "Mississippi State University": {
+    "division": "D1 FBS",
+    "logo": "mississippi_state.png"
+  },
+  "Mississippi Valley State University": {
+    "division": "D1 FCS",
+    "logo": "mississippi_valley_state.png"
+  },
+  "University of Missouri": {
+    "division": "D1 FBS",
+    "logo": "missouri.png"
+  },
+  "Missouri State University": {
+    "division": "D1 FCS",
+    "logo": "missouri_state.png"
+  },
+  "Monmouth University": {
+    "division": "D1 FCS",
+    "logo": "monmouth.png"
+  },
+  "University of Montana": {
+    "division": "D1 FCS",
+    "logo": "montana.png"
+  },
+  "Montana State University": {
+    "division": "D1 FCS",
+    "logo": "montana_state.png"
+  },
+  "Morehead State University": {
+    "division": "D1 FCS",
+    "logo": "morehead_state.png"
+  },
+  "Morgan State University": {
+    "division": "D1 FCS",
+    "logo": "morgan_state.png"
+  },
+  "Murray State University": {
+    "division": "D1 FCS",
+    "logo": "murray_state.png"
+  },
+  "United States Naval Academy (Navy)": {
+    "division": "D1 FBS",
+    "logo": "navy.png"
+  },
+  "North Carolina A&T State University": {
+    "division": "D1 FCS",
+    "logo": "north_carolina_a&t_state.png"
+  },
+  "North Carolina Central University": {
+    "division": "D1 FCS",
+    "logo": "north_carolina_central.png"
+  },
+  "North Carolina State University (NC State)": {
+    "division": "D1 FBS",
+    "logo": "nc_state.png"
+  },
+  "University of Nebraska-Lincoln": {
+    "division": "D1 FBS",
+    "logo": "nebraska_lincoln.png"
+  },
+  "University of Nevada, Reno": {
+    "division": "D1 FBS",
+    "logo": "nevada.png"
+  },
+  "University of New Hampshire": {
+    "division": "D1 FCS",
+    "logo": "new_hampshire.png"
+  },
+  "University of New Mexico": {
+    "division": "D1 FBS",
+    "logo": "new_mexico.png"
+  },
+  "New Mexico State University": {
+    "division": "D1 FBS",
+    "logo": "new_mexico_state.png"
+  },
+  "Nicholls State University": {
+    "division": "D1 FCS",
+    "logo": "nicholls_state.png"
+  },
+  "Norfolk State University": {
+    "division": "D1 FCS",
+    "logo": "norfolk_state.png"
+  },
+  "University of North Alabama": {
+    "division": "D1 FCS",
+    "logo": "north_alabama.png"
+  },
+  "University of North Carolina at Chapel Hill": {
+    "division": "D1 FBS",
+    "logo": "north_carolina_chapel_hill.png"
+  },
+  "University of North Dakota": {
+    "division": "D1 FCS",
+    "logo": "north_dakota.png"
+  },
+  "North Dakota State University": {
+    "division": "D1 FCS",
+    "logo": "north_dakota_state.png"
+  },
+  "University of North Texas": {
+    "division": "D1 FBS",
+    "logo": "north_texas.png"
+  },
+  "Northern Arizona University": {
+    "division": "D1 FCS",
+    "logo": "northern_arizona.png"
+  },
+  "University of Northern Colorado": {
+    "division": "D1 FCS",
+    "logo": "northern_colorado.png"
+  },
+  "Northern Illinois University": {
+    "division": "D1 FBS",
+    "logo": "northern_illinois.png"
+  },
+  "University of Northern Iowa": {
+    "division": "D1 FCS",
+    "logo": "northern_iowa.png"
+  },
+  "Northwestern University": {
+    "division": "D1 FBS",
+    "logo": "northwestern.png"
+  },
+  "Northwestern State University of Louisiana": {
+    "division": "D1 FCS",
+    "logo": "northwestern_state.png"
+  },
+  "University of Notre Dame": {
+    "division": "D1 FBS",
+    "logo": "notre_dame.png"
+  },
+  "Ohio University": {
+    "division": "D1 FBS",
+    "logo": "ohio.png"
+  },
+  "The Ohio State University": {
+    "division": "D1 FBS",
+    "logo": "ohio_state.png"
+  },
+  "University of Oklahoma": {
+    "division": "D1 FBS",
+    "logo": "oklahoma.png"
+  },
+  "Oklahoma State University": {
+    "division": "D1 FBS",
+    "logo": "oklahoma_state.png"
+  },
+  "Old Dominion University": {
+    "division": "D1 FBS",
+    "logo": "old_dominion.png"
+  },
+  "University of Mississippi (Ole Miss)": {
+    "division": "D1 FBS",
+    "logo": "ole_miss.png"
+  },
+  "University of Oregon": {
+    "division": "D1 FBS",
+    "logo": "oregon.png"
+  },
+  "Oregon State University": {
+    "division": "D1 FBS",
+    "logo": "oregon_state.png"
+  },
+  "University of Pennsylvania (Penn)": {
+    "division": "D1 FCS",
+    "logo": "penn.png"
+  },
+  "Pennsylvania State University (Penn State)": {
+    "division": "D1 FBS",
+    "logo": "penn_state.png"
+  },
+  "Portland State University": {
+    "division": "D1 FCS",
+    "logo": "portland_state.png"
+  },
+  "Prairie View A&M University": {
+    "division": "D1 FCS",
+    "logo": "prairie_view_a&m.png"
+  },
+  "Presbyterian College": {
+    "division": "D1 FCS",
+    "logo": "presbyterian.png"
+  },
+  "Princeton University": {
+    "division": "D1 FCS",
+    "logo": "princeton.png"
+  },
+  "Purdue University": {
+    "division": "D1 FBS",
+    "logo": "purdue.png"
+  },
+  "University of Rhode Island": {
+    "division": "D1 FCS",
+    "logo": "rhode_island.png"
+  },
+  "Rice University": {
+    "division": "D1 FBS",
+    "logo": "rice.png"
+  },
+  "University of Richmond": {
+    "division": "D1 FCS",
+    "logo": "richmond.png"
+  },
+  "Robert Morris University": {
+    "division": "D1 FCS",
+    "logo": "robert_morris.png"
+  },
+  "Rutgers University-New Brunswick": {
+    "division": "D1 FBS",
+    "logo": "rutgers.png"
+  },
+  "California State University, Sacramento (Sacramento State)": {
+    "division": "D1 FCS",
+    "logo": "sacramento_state.png"
+  },
+  "Sacred Heart University": {
+    "division": "D1 FCS",
+    "logo": "sacred_heart.png"
+  },
+  "Samford University": {
+    "division": "D1 FCS",
+    "logo": "samford.png"
+  },
+  "Sam Houston State University": {
+    "division": "D1 FBS",
+    "logo": "sam_houston_state.png"
+  },
+  "University of San Diego": {
+    "division": "D1 FCS",
+    "logo": "san_diego.png"
+  },
+  "San Diego State University": {
+    "division": "D1 FBS",
+    "logo": "san_diego_state.png"
+  },
+  "San Jose State University": {
+    "division": "D1 FBS",
+    "logo": "san_jose_state.png"
+  },
+  "South Carolina State University": {
+    "division": "D1 FCS",
+    "logo": "south_carolina_state.png"
+  },
+  "Southeastern Louisiana University": {
+    "division": "D1 FCS",
+    "logo": "southeastern_louisiana.png"
+  },
+  "Southeast Missouri State University": {
+    "division": "D1 FCS",
+    "logo": "southeast_missouri_state.png"
+  },
+  "Southern Illinois University Carbondale": {
+    "division": "D1 FCS",
+    "logo": "southern_illinois.png"
+  },
+  "Southern Methodist University (SMU)": {
+    "division": "D1 FBS",
+    "logo": "smu.png"
+  },
+  "University of South Alabama": {
+    "division": "D1 FBS",
+    "logo": "south_alabama.png"
+  },
+  "University of South Carolina": {
+    "division": "D1 FBS",
+    "logo": "south_carolina.png"
+  },
+  "University of South Dakota": {
+    "division": "D1 FCS",
+    "logo": "south_dakota.png"
+  },
+  "South Dakota State University": {
+    "division": "D1 FCS",
+    "logo": "south_dakota_state.png"
+  },
+  "University of South Florida": {
+    "division": "D1 FBS",
+    "logo": "south_florida.png"
+  },
+  "Southern University": {
+    "division": "D1 FCS",
+    "logo": "southern.png"
+  },
+  "Southern Utah University": {
+    "division": "D1 FCS",
+    "logo": "southern_utah.png"
+  },
+  "Stanford University": {
+    "division": "D1 FBS",
+    "logo": "stanford.png"
+  },
+  "Stephen F. Austin State University": {
+    "division": "D1 FCS",
+    "logo": "stephen_f_austin_state.png"
+  },
+  "Stetson University": {
+    "division": "D1 FCS",
+    "logo": "stetson.png"
+  },
+  "Stony Brook University": {
+    "division": "D1 FCS",
+    "logo": "stony_brook.png"
+  },
+  "Syracuse University": {
+    "division": "D1 FBS",
+    "logo": "syracuse.png"
+  },
+  "Tarleton State University": {
+    "division": "D1 FCS",
+    "logo": "tarleton_state.png"
+  },
+  "Temple University": {
+    "division": "D1 FBS",
+    "logo": "temple.png"
+  },
+  "University of Tennessee": {
+    "division": "D1 FBS",
+    "logo": "tennessee.png"
+  },
+  "Tennessee State University": {
+    "division": "D1 FCS",
+    "logo": "tennessee_state.png"
+  },
+  "Tennessee Technological University (Tennessee Tech)": {
+    "division": "D1 FCS",
+    "logo": "tennessee_tech.png"
+  },
+  "University of Texas at Austin": {
+    "division": "D1 FBS",
+    "logo": "texas_austin.png"
+  },
+  "Texas A&M University": {
+    "division": "D1 FBS",
+    "logo": "texas_a&m.png"
+  },
+  "Texas Southern University": {
+    "division": "D1 FCS",
+    "logo": "texas_southern.png"
+  },
+  "Texas State University": {
+    "division": "D1 FBS",
+    "logo": "texas_state.png"
+  },
+  "Texas Tech University": {
+    "division": "D1 FBS",
+    "logo": "texas_tech.png"
+  },
+  "University of Toledo": {
+    "division": "D1 FBS",
+    "logo": "toledo.png"
+  },
+  "Towson University": {
+    "division": "D1 FCS",
+    "logo": "towson.png"
+  },
+  "Troy University": {
+    "division": "D1 FBS",
+    "logo": "troy.png"
+  },
+  "Tulane University": {
+    "division": "D1 FBS",
+    "logo": "tulane.png"
+  },
+  "University of Tulsa": {
+    "division": "D1 FBS",
+    "logo": "tulsa.png"
+  },
+  "University of Alabama at Birmingham (UAB)": {
+    "division": "D1 FBS",
+    "logo": "uab.png"
+  },
+  "University of Central Florida (UCF)": {
+    "division": "D1 FBS",
+    "logo": "ucf.png"
+  },
+  "University of California, Los Angeles (UCLA)": {
+    "division": "D1 FBS",
+    "logo": "ucla.png"
+  },
+  "University of Texas at El Paso (UTEP)": {
+    "division": "D1 FBS",
+    "logo": "utep.png"
+  },
+  "University of Tennessee at Martin": {
+    "division": "D1 FCS",
+    "logo": "tennessee_martin.png"
+  },
+  "University of Utah": {
+    "division": "D1 FBS",
+    "logo": "utah.png"
+  },
+  "Utah State University": {
+    "division": "D1 FBS",
+    "logo": "utah_state.png"
+  },
+  "Valparaiso University": {
+    "division": "D1 FCS",
+    "logo": "valparaiso.png"
+  },
+  "Vanderbilt University": {
+    "division": "D1 FBS",
+    "logo": "vanderbilt.png"
+  },
+  "Villanova University": {
+    "division": "D1 FCS",
+    "logo": "villanova.png"
+  },
+  "University of Virginia": {
+    "division": "D1 FBS",
+    "logo": "virginia.png"
+  },
+  "Virginia Military Institute (VMI)": {
+    "division": "D1 FCS",
+    "logo": "vmi.png"
+  },
+  "Virginia Polytechnic Institute and State University (Virginia Tech)": {
+    "division": "D1 FBS",
+    "logo": "virginia_tech.png"
+  },
+  "Wagner College": {
+    "division": "D1 FCS",
+    "logo": "wagner.png"
+  },
+  "Wake Forest University": {
+    "division": "D1 FBS",
+    "logo": "wake_forest.png"
+  },
+  "University of Washington": {
+    "division": "D1 FBS",
+    "logo": "washington.png"
+  },
+  "Washington State University": {
+    "division": "D1 FBS",
+    "logo": "washington_state.png"
+  },
+  "Weber State University": {
+    "division": "D1 FCS",
+    "logo": "weber_state.png"
+  },
+  "West Virginia University": {
+    "division": "D1 FBS",
+    "logo": "west_virginia.png"
+  },
+  "Western Carolina University": {
+    "division": "D1 FCS",
+    "logo": "western_carolina.png"
+  },
+  "Western Illinois University": {
+    "division": "D1 FCS",
+    "logo": "western_illinois.png"
+  },
+  "Western Kentucky University": {
+    "division": "D1 FBS",
+    "logo": "western_kentucky.png"
+  },
+  "Western Michigan University": {
+    "division": "D1 FBS",
+    "logo": "western_michigan.png"
+  },
+  "College of William & Mary": {
+    "division": "D1 FCS",
+    "logo": "william_&_mary.png"
+  },
+  "University of Wisconsin-Madison": {
+    "division": "D1 FBS",
+    "logo": "wisconsin_madison.png"
+  },
+  "Wofford College": {
+    "division": "D1 FCS",
+    "logo": "wofford.png"
+  },
+  "University of Wyoming": {
+    "division": "D1 FBS",
+    "logo": "wyoming.png"
+  },
+  "Yale University": {
+    "division": "D1 FCS",
+    "logo": "yale.png"
+  },
+  "Youngstown State University": {
+    "division": "D1 FCS",
+    "logo": "youngstown_state.png"
+  },
+  "University of Nevada, Las Vegas (UNLV)": {
+    "division": "D1 FBS",
+    "logo": "unlv.png"
+  },
+  "University of Texas at San Antonio (UTSA)": {
+    "division": "D1 FBS",
+    "logo": "utsa.png"
+  },
+  "University of Southern California (USC)": {
+    "division": "D1 FBS",
+    "logo": "usc.png"
+  },
+  "University of Southern Mississippi (Southern Miss)": {
+    "division": "D1 FBS",
+    "logo": "southern_miss.png"
+  },
+  "University of Louisiana at Monroe (ULM)": {
+    "division": "D1 FBS",
+    "logo": "ulm.png"
+  },
+  "University of Pittsburgh (Pitt)": {
+    "division": "D1 FBS",
+    "logo": "pitt.png"
+  },
+  "Texas Christian University (TCU)": {
+    "division": "D1 FBS",
+    "logo": "tcu.png"
+  },
+  "Austin Peay State University": {
+    "division": "D1 FCS",
+    "logo": "austin_peay_state.png"
+  },
+  "University of California, Davis (UC Davis)": {
+    "division": "D1 FCS",
+    "logo": "uc_davis.png"
+  },
+  "University of the Incarnate Word (UIW)": {
+    "division": "D1 FCS",
+    "logo": "uiw.png"
+  },
+  "Texas A&M University-Commerce": {
+    "division": "D1 FCS",
+    "logo": "texas_a&m_commerce.png"
+  },
+  "University of Texas Rio Grande Valley (UTRGV)": {
+    "division": "D1 FCS",
+    "logo": "utrgv.png"
+  },
+  "Utah Tech University": {
+    "division": "D1 FCS",
+    "logo": "utah_tech.png"
+  },
+  "Saint Francis University (PA)": {
+    "division": "D1 FCS",
+    "logo": "saint_francis_pa.png"
+  },
+  "Stonehill College": {
+    "division": "D1 FCS",
+    "logo": "stonehill.png"
+  },
+  "University of St. Thomas (Minnesota)": {
+    "division": "D1 FCS",
+    "logo": "st_thomas_minnesota.png"
+  },
+  "The Citadel": {
+    "division": "D1 FCS",
+    "logo": "the_citadel.png"
+  },
+  "University of Arkansas at Pine Bluff": {
+    "division": "D1 FCS",
+    "logo": "arkansas_pine_bluff.png"
+  },
+  "University of New Haven": {
+    "division": "D1 FCS",
+    "logo": "new_haven.png"
+  },
+  "University of West Georgia": {
+    "division": "D1 FCS",
+    "logo": "west_georgia.png"
+  },
+  "Adams State University": {
+    "division": "D2",
+    "logo": "adams_state.png"
+  },
+  "Albany State University": {
+    "division": "D2",
+    "logo": "albany_state.png"
+  },
+  "Allen University": {
+    "division": "D2",
+    "logo": "allen.png"
+  },
+  "American International College": {
+    "division": "D2",
+    "logo": "american_international.png"
+  },
+  "Anderson University (South Carolina)": {
+    "division": "D2",
+    "logo": "anderson_south_carolina.png"
+  },
+  "Angelo State University": {
+    "division": "D2",
+    "logo": "angelo_state.png"
+  },
+  "Arkansas Tech University": {
+    "division": "D2",
+    "logo": "arkansas_tech.png"
+  },
+  "University of Arkansas at Monticello": {
+    "division": "D2",
+    "logo": "arkansas_monticello.png"
+  },
+  "Ashland University": {
+    "division": "D2",
+    "logo": "ashland.png"
+  },
+  "Assumption University": {
+    "division": "D2",
+    "logo": "assumption.png"
+  },
+  "Augustana University (South Dakota)": {
+    "division": "D2",
+    "logo": "augustana_south_dakota.png"
+  },
+  "Barton College": {
+    "division": "D2",
+    "logo": "barton.png"
+  },
+  "Bemidji State University": {
+    "division": "D2",
+    "logo": "bemidji_state.png"
+  },
+  "Benedict College": {
+    "division": "D2",
+    "logo": "benedict.png"
+  },
+  "Bentley University": {
+    "division": "D2",
+    "logo": "bentley.png"
+  },
+  "Black Hills State University": {
+    "division": "D2",
+    "logo": "black_hills_state.png"
+  },
+  "Bloomsburg University of Pennsylvania": {
+    "division": "D2",
+    "logo": "bloomsburg_pennsylvania.png"
+  },
+  "Bluefield State College": {
+    "division": "D2",
+    "logo": "bluefield_state.png"
+  },
+  "Bowie State University": {
+    "division": "D2",
+    "logo": "bowie_state.png"
+  },
+  "California University of Pennsylvania": {
+    "division": "D2",
+    "logo": "pennsylvania_california.png"
+  },
+  "Carson-Newman University": {
+    "division": "D2",
+    "logo": "carson_newman.png"
+  },
+  "Catawba College": {
+    "division": "D2",
+    "logo": "catawba.png"
+  },
+  "University of Central Missouri": {
+    "division": "D2",
+    "logo": "central_missouri.png"
+  },
+  "University of Central Oklahoma": {
+    "division": "D2",
+    "logo": "central_oklahoma.png"
+  },
+  "Central State University (Ohio)": {
+    "division": "D2",
+    "logo": "central_state_ohio.png"
+  },
+  "Central Washington University": {
+    "division": "D2",
+    "logo": "central_washington.jpeg"
+  },
+  "Chadron State College": {
+    "division": "D2",
+    "logo": "chadron_state.png"
+  },
+  "University of Charleston (West Virginia)": {
+    "division": "D2",
+    "logo": "charleston_west_virginia.png"
+  },
+  "Chowan University": {
+    "division": "D2",
+    "logo": "chowan.png"
+  },
+  "Clarion University of Pennsylvania": {
+    "division": "D2",
+    "logo": "clarion_pennsylvania.png"
+  },
+  "Clark Atlanta University": {
+    "division": "D2",
+    "logo": "clark_atlanta.png"
+  },
+  "Colorado Mesa University": {
+    "division": "D2",
+    "logo": "colorado_mesa.png"
+  },
+  "Colorado School of Mines": {
+    "division": "D2",
+    "logo": "colorado_school_mines.png"
+  },
+  "Colorado State University Pueblo": {
+    "division": "D2",
+    "logo": "colorado_state_pueblo.png"
+  },
+  "Concord University": {
+    "division": "D2",
+    "logo": "concord.jpeg"
+  },
+  "Concordia University, Saint Paul": {
+    "division": "D2",
+    "logo": "concordia_st_paul.png"
+  },
+  "Davenport University": {
+    "division": "D2",
+    "logo": "davenport.png"
+  },
+  "Delta State University": {
+    "division": "D2",
+    "logo": "delta_state.png"
+  },
+  "East Central University": {
+    "division": "D2",
+    "logo": "east_central.png"
+  },
+  "East Stroudsburg University of Pennsylvania": {
+    "division": "D2",
+    "logo": "east_stroudsburg_pennsylvania.png"
+  },
+  "Eastern New Mexico University": {
+    "division": "D2",
+    "logo": "eastern_new_mexico.png"
+  },
+  "Edinboro University of Pennsylvania": {
+    "division": "D2",
+    "logo": "edinboro_pennsylvania.png"
+  },
+  "Edward Waters University": {
+    "division": "D2",
+    "logo": "edward_waters_university.png"
+  },
+  "Elizabeth City State University": {
+    "division": "D2",
+    "logo": "elizabeth_city_state.png"
+  },
+  "Emory & Henry College": {
+    "division": "D2",
+    "logo": "emory_&_henry.png"
+  },
+  "Emporia State University": {
+    "division": "D2",
+    "logo": "emporia_state.png"
+  },
+  "Erskine College": {
+    "division": "D2",
+    "logo": "erskine.png"
+  },
+  "Fairmont State University": {
+    "division": "D2",
+    "logo": "fairmont_state.png"
+  },
+  "Fayetteville State University": {
+    "division": "D2",
+    "logo": "fayetteville_state.png"
+  },
+  "Ferris State University": {
+    "division": "D2",
+    "logo": "ferris_state.png"
+  },
+  "Ferrum College": {
+    "division": "D3",
+    "logo": "ferrum.png"
+  },
+  "University of Findlay": {
+    "division": "D2",
+    "logo": "findlay.png"
+  },
+  "Fort Hays State University": {
+    "division": "D2",
+    "logo": "fort_hays_state.png"
+  },
+  "Fort Lewis College": {
+    "division": "D2",
+    "logo": "fort_lewis.png"
+  },
+  "Fort Valley State University": {
+    "division": "D2",
+    "logo": "fort_valley_state.png"
+  },
+  "Franklin Pierce University": {
+    "division": "D2",
+    "logo": "franklin_pierce.png"
+  },
+  "Frostburg State University": {
+    "division": "D2",
+    "logo": "frostburg_state.png"
+  },
+  "Gannon University": {
+    "division": "D2",
+    "logo": "gannon.png"
+  },
+  "Glenville State University": {
+    "division": "D2",
+    "logo": "glenville_state.png"
+  },
+  "Grand Valley State University": {
+    "division": "D2",
+    "logo": "grand_valley_state.png"
+  },
+  "Harding University": {
+    "division": "D2",
+    "logo": "harding.png"
+  },
+  "Henderson State University": {
+    "division": "D2",
+    "logo": "henderson_state.png"
+  },
+  "Hillsdale College": {
+    "division": "D2",
+    "logo": "hillsdale.png"
+  },
+  "University of Indianapolis": {
+    "division": "D2",
+    "logo": "indianapolis.png"
+  },
+  "Indiana University of Pennsylvania": {
+    "division": "D2",
+    "logo": "indiana_pennsylvania.png"
+  },
+  "University of Jamestown": {
+    "division": "D2",
+    "logo": "jamestown.png"
+  },
+  "Johnson C. Smith University": {
+    "division": "D2",
+    "logo": "johnson_c_smith.png"
+  },
+  "Kentucky State University": {
+    "division": "D2",
+    "logo": "kentucky_state.png"
+  },
+  "Kentucky Wesleyan College": {
+    "division": "D2",
+    "logo": "kentucky_wesleyan.png"
+  },
+  "Kutztown University of Pennsylvania": {
+    "division": "D2",
+    "logo": "kutztown_pennsylvania.png"
+  },
+  "Lake Erie College": {
+    "division": "D2",
+    "logo": "lake_erie.png"
+  },
+  "Lane College": {
+    "division": "D2",
+    "logo": "lane.png"
+  },
+  "Lenoir-Rhyne University": {
+    "division": "D2",
+    "logo": "lenoir_rhyne.png"
+  },
+  "Lincoln University (Missouri)": {
+    "division": "D2",
+    "logo": "lincoln_missouri.png"
+  },
+  "Lincoln University (Pennsylvania)": {
+    "division": "D2",
+    "logo": "lincoln_pennsylvania.png"
+  },
+  "Livingstone College": {
+    "division": "D2",
+    "logo": "livingstone.png"
+  },
+  "Lock Haven University of Pennsylvania": {
+    "division": "D2",
+    "logo": "lock_haven_pennsylvania.png"
+  },
+  "Mars Hill University": {
+    "division": "D2",
+    "logo": "mars_hill.png"
+  },
+  "McKendree University": {
+    "division": "D2",
+    "logo": "mckendree.png"
+  },
+  "Michigan Technological University": {
+    "division": "D2",
+    "logo": "michigan_technological.png"
+  },
+  "Midwestern State University": {
+    "division": "D2",
+    "logo": "midwestern_state.png"
+  },
+  "Miles College": {
+    "division": "D2",
+    "logo": "miles.png"
+  },
+  "Millersville University of Pennsylvania": {
+    "division": "D2",
+    "logo": "millersville_pennsylvania.png"
+  },
+  "Minnesota State University, Mankato": {
+    "division": "D2",
+    "logo": "minnesota_state_mankato.png"
+  },
+  "Minnesota State University Moorhead": {
+    "division": "D2",
+    "logo": "minnesota_state_moorhead.png"
+  },
+  "Minot State University": {
+    "division": "D2",
+    "logo": "minot_state.png"
+  },
+  "Missouri University of Science and Technology": {
+    "division": "D2",
+    "logo": "missouri_science_technology.png"
+  },
+  "Missouri Southern State University": {
+    "division": "D2",
+    "logo": "missouri_southern_state.png"
+  },
+  "Missouri Western State University": {
+    "division": "D2",
+    "logo": "missouri_western_state.png"
+  },
+  "Morehouse College": {
+    "division": "D2",
+    "logo": "morehouse.png"
+  },
+  "New Mexico Highlands University": {
+    "division": "D2",
+    "logo": "new_mexico_highlands.png"
+  },
+  "Newberry College": {
+    "division": "D2",
+    "logo": "newberry.png"
+  },
+  "North Greenville University": {
+    "division": "D2",
+    "logo": "north_greenville.png"
+  },
+  "Northeastern State University": {
+    "division": "D2",
+    "logo": "northeastern_state.png"
+  },
+  "Northern Michigan University": {
+    "division": "D2",
+    "logo": "northern_michigan.png"
+  },
+  "Northern State University": {
+    "division": "D2",
+    "logo": "northern_state.png"
+  },
+  "Northwood University (Michigan)": {
+    "division": "D2",
+    "logo": "northwood_michigan.png"
+  },
+  "Northwest Missouri State University": {
+    "division": "D2",
+    "logo": "northwest_missouri_state.png"
+  },
+  "Northwestern Oklahoma State University": {
+    "division": "D2",
+    "logo": "northwestern_oklahoma_state.png"
+  },
+  "Ohio Dominican University": {
+    "division": "D2",
+    "logo": "ohio_dominican.png"
+  },
+  "Oklahoma Baptist University": {
+    "division": "D2",
+    "logo": "oklahoma_baptist.png"
+  },
+  "Ouachita Baptist University": {
+    "division": "D2",
+    "logo": "ouachita_baptist.png"
+  },
+  "Pace University": {
+    "division": "D2",
+    "logo": "pace.png"
+  },
+  "Pittsburg State University": {
+    "division": "D2",
+    "logo": "pittsburg_state.png"
+  },
+  "Post University": {
+    "division": "D2",
+    "logo": "post.png"
+  },
+  "Quincy University": {
+    "division": "D2",
+    "logo": "quincy.png"
+  },
+  "Roosevelt University": {
+    "division": "D2",
+    "logo": "roosevelt.png"
+  },
+  "Saginaw Valley State University": {
+    "division": "D2",
+    "logo": "saginaw_valley_state.png"
+  },
+  "Saint Anselm College": {
+    "division": "D2",
+    "logo": "saint_anselm.png"
+  },
+  "Savannah State University": {
+    "division": "D2",
+    "logo": "savannah_state.png"
+  },
+  "Seton Hill University": {
+    "division": "D2",
+    "logo": "seton_hill.png"
+  },
+  "Shaw University": {
+    "division": "D2",
+    "logo": "shaw.png"
+  },
+  "Shepherd University": {
+    "division": "D2",
+    "logo": "shepherd.png"
+  },
+  "Shippensburg University of Pennsylvania": {
+    "division": "D2",
+    "logo": "shippensburg_pennsylvania.png"
+  },
+  "Shorter University": {
+    "division": "D2",
+    "logo": "shorter.png"
+  },
+  "Slippery Rock University of Pennsylvania": {
+    "division": "D2",
+    "logo": "slippery_rock_pennsylvania.png"
+  },
+  "South Dakota School of Mines and Technology": {
+    "division": "D2",
+    "logo": "south_dakota_school_mines_technology.png"
+  },
+  "Southeastern Oklahoma State University": {
+    "division": "D2",
+    "logo": "southeastern_oklahoma_state.png"
+  },
+  "Southern Arkansas University": {
+    "division": "D2",
+    "logo": "southern_arkansas.png"
+  },
+  "Southern Connecticut State University": {
+    "division": "D2",
+    "logo": "southern_connecticut_state.png"
+  },
+  "Southern Nazarene University": {
+    "division": "D2",
+    "logo": "southern_nazarene.png"
+  },
+  "Southwest Baptist University": {
+    "division": "D2",
+    "logo": "southwest_baptist.png"
+  },
+  "Southwest Minnesota State University": {
+    "division": "D2",
+    "logo": "southwest_minnesota_state.png"
+  },
+  "Southwestern Oklahoma State University": {
+    "division": "D2",
+    "logo": "southwestern_oklahoma_state.jpeg"
+  },
+  "Sul Ross State University": {
+    "division": "D3",
+    "logo": "sul_ross_state.png"
+  },
+  "Texas A&M University-Kingsville": {
+    "division": "D2",
+    "logo": "texas_a&m_kingsville.png"
+  },
+  "Thomas More University": {
+    "division": "D2",
+    "logo": "thomas_more.png"
+  },
+  "Tiffin University": {
+    "division": "D2",
+    "logo": "tiffin_university.png"
+  },
+  "Truman State University": {
+    "division": "D2",
+    "logo": "truman_state.png"
+  },
+  "Tusculum University": {
+    "division": "D2",
+    "logo": "tusculum.png"
+  },
+  "Tuskegee University": {
+    "division": "D2",
+    "logo": "tuskegee.png"
+  },
+  "University of North Carolina at Pembroke": {
+    "division": "D2",
+    "logo": "north_carolina_pembroke.png"
+  },
+  "Upper Iowa University": {
+    "division": "D2",
+    "logo": "upper_iowa.png"
+  },
+  "University of Texas Permian Basin": {
+    "division": "D2",
+    "logo": "texas_permian_basin.png"
+  },
+  "University of Virginia's College at Wise (UVA Wise)": {
+    "division": "D2",
+    "logo": "uva_wise_virginia.png"
+  },
+  "Valdosta State University": {
+    "division": "D2",
+    "logo": "valdosta_state.png"
+  },
+  "Virginia State University": {
+    "division": "D2",
+    "logo": "virginia_state.png"
+  },
+  "Virginia Union University": {
+    "division": "D2",
+    "logo": "virginia_union.png"
+  },
+  "Walsh University": {
+    "division": "D2",
+    "logo": "walsh.png"
+  },
+  "Washburn University": {
+    "division": "D2",
+    "logo": "washburn.png"
+  },
+  "Wayne State University (Michigan)": {
+    "division": "D2",
+    "logo": "wayne_michigan.png"
+  },
+  "Wayne State College (Nebraska)": {
+    "division": "D2",
+    "logo": "wayne_nebraska.png"
+  },
+  "University of West Alabama": {
+    "division": "D2",
+    "logo": "west_alabama.png"
+  },
+  "West Chester University of Pennsylvania": {
+    "division": "D2",
+    "logo": "west_chester_pennsylvania.png"
+  },
+  "University of West Florida": {
+    "division": "D2",
+    "logo": "west_florida.png"
+  },
+  "West Liberty University": {
+    "division": "D2",
+    "logo": "west_liberty.png"
+  },
+  "West Texas A&M University": {
+    "division": "D2",
+    "logo": "west_texas_a&m.png"
+  },
+  "West Virginia State University": {
+    "division": "D2",
+    "logo": "west_virginia_state.png"
+  },
+  "West Virginia Wesleyan College": {
+    "division": "D2",
+    "logo": "west_virginia_wesleyan.png"
+  },
+  "Western Colorado University": {
+    "division": "D2",
+    "logo": "western_colorado.png"
+  },
+  "Western New Mexico University": {
+    "division": "D2",
+    "logo": "western_new_mexico.png"
+  },
+  "Western Oregon University": {
+    "division": "D2",
+    "logo": "western_oregon.png"
+  },
+  "Wheeling University": {
+    "division": "D2",
+    "logo": "wheeling.png"
+  },
+  "William Jewell College": {
+    "division": "D2",
+    "logo": "william_jewell.png"
+  },
+  "Wingate University": {
+    "division": "D2",
+    "logo": "wingate.png"
+  },
+  "Winona State University": {
+    "division": "D2",
+    "logo": "winona_state.png"
+  },
+  "Winston-Salem State University": {
+    "division": "D2",
+    "logo": "winston_salem_state.png"
+  },
+  "Adrian College": {
+    "division": "D3",
+    "logo": "adrian.png"
+  },
+  "Albertus Magnus College": {
+    "division": "D3",
+    "logo": "albertus_magnus.png"
+  },
+  "Albion College": {
+    "division": "D3",
+    "logo": "albion.png"
+  },
+  "Albright College": {
+    "division": "D3",
+    "logo": "albright.png"
+  },
+  "Alfred State College": {
+    "division": "D3",
+    "logo": "alfred_state.png"
+  },
+  "Alfred University": {
+    "division": "D3",
+    "logo": "alfred.png"
+  },
+  "Allegheny College": {
+    "division": "D3",
+    "logo": "allegheny.png"
+  },
+  "Alma College": {
+    "division": "D3",
+    "logo": "alma.png"
+  },
+  "Alvernia University": {
+    "division": "D3",
+    "logo": "alvernia.png"
+  },
+  "Amherst College": {
+    "division": "D3",
+    "logo": "amherst.png"
+  },
+  "Anderson University - Indiana": {
+    "division": "D3",
+    "logo": "anderson_indiana.png"
+  },
+  "Anna Maria College": {
+    "division": "D3",
+    "logo": "anna_maria.png"
+  },
+  "Augsburg University": {
+    "division": "D3",
+    "logo": "augsburg.png"
+  },
+  "Augustana College - Illinois": {
+    "division": "D3",
+    "logo": "augustana_illinois.png"
+  },
+  "Aurora University": {
+    "division": "D3",
+    "logo": "aurora.png"
+  },
+  "Austin College": {
+    "division": "D3",
+    "logo": "austin.png"
+  },
+  "Averett University": {
+    "division": "D3",
+    "logo": "averett.png"
+  },
+  "Baldwin Wallace University": {
+    "division": "D3",
+    "logo": "baldwin_wallace.png"
+  },
+  "Bates College": {
+    "division": "D3",
+    "logo": "bates.png"
+  },
+  "Belhaven University": {
+    "division": "D3",
+    "logo": "belhaven.png"
+  },
+  "Beloit College": {
+    "division": "D3",
+    "logo": "beloit.png"
+  },
+  "Benedictine University": {
+    "division": "D3",
+    "logo": "benedictine.png"
+  },
+  "Berry College": {
+    "division": "D3",
+    "logo": "berry.png"
+  },
+  "Bethany College - West Virginia": {
+    "division": "D3",
+    "logo": "bethany_west_virginia.png"
+  },
+  "Bethel University - Minnesota": {
+    "division": "D3",
+    "logo": "bethel_minnesota.png"
+  },
+  "Bluffton University": {
+    "division": "D3",
+    "logo": "bluffton.png"
+  },
+  "Bowdoin College": {
+    "division": "D3",
+    "logo": "bowdoin.png"
+  },
+  "Brevard College": {
+    "division": "D3",
+    "logo": "brevard.png"
+  },
+  "Bridgewater College": {
+    "division": "D3",
+    "logo": "bridgewater.png"
+  },
+  "Bridgewater State University": {
+    "division": "D3",
+    "logo": "bridgewater_state.png"
+  },
+  "Buena Vista University": {
+    "division": "D3",
+    "logo": "buena_vista.png"
+  },
+  "Buffalo State College": {
+    "division": "D3",
+    "logo": "buffalo_state.png"
+  },
+  "California Lutheran University": {
+    "division": "D3",
+    "logo": "california_lutheran.png"
+  },
+  "Calvin University": {
+    "division": "D3",
+    "logo": "calvin.png"
+  },
+  "Capital University": {
+    "division": "D3",
+    "logo": "capital.png"
+  },
+  "Carleton College": {
+    "division": "D3",
+    "logo": "carleton.png"
+  },
+  "Carnegie Mellon University": {
+    "division": "D3",
+    "logo": "carnegie_mellon.png"
+  },
+  "Carroll University": {
+    "division": "D3",
+    "logo": "carroll.png"
+  },
+  "Carthage College": {
+    "division": "D3",
+    "logo": "carthage.png"
+  },
+  "Case Western Reserve University": {
+    "division": "D3",
+    "logo": "case_western_reserve.png"
+  },
+  "Catholic University": {
+    "division": "D3",
+    "logo": "catholic.png"
+  },
+  "Cedar Crest College": {
+    "division": "D3",
+    "logo": "cedar_crest.png"
+  },
+  "Centenary College of Louisiana": {
+    "division": "D3",
+    "logo": "centenary_louisiana.png"
+  },
+  "Central College": {
+    "division": "D3",
+    "logo": "central.png"
+  },
+  "Centre College": {
+    "division": "D3",
+    "logo": "centre.png"
+  },
+  "Chapman University": {
+    "division": "D3",
+    "logo": "chapman.png"
+  },
+  "Christopher Newport University": {
+    "division": "D3",
+    "logo": "christopher_newport.png"
+  },
+  "Claremont-Mudd-Scripps Colleges": {
+    "division": "D3",
+    "logo": "claremont_mudd_scripps.png"
+  },
+  "Coe College": {
+    "division": "D3",
+    "logo": "coe.png"
+  },
+  "Colby College": {
+    "division": "D3",
+    "logo": "colby.png"
+  },
+  "College of Wooster": {
+    "division": "D3",
+    "logo": "wooster.png"
+  },
+  "Concordia College - Minnesota": {
+    "division": "D3",
+    "logo": "concordia_minnesota.png"
+  },
+  "Concordia University - Chicago": {
+    "division": "D3",
+    "logo": "concordia_chicago.png"
+  },
+  "Concordia University Wisconsin": {
+    "division": "D3",
+    "logo": "concordia_wisconsin.png"
+  },
+  "Cornell College (Iowa)": {
+    "division": "D3",
+    "logo": "cornell_college.png"
+  },
+  "Crown College": {
+    "division": "D3",
+    "logo": "crown.png"
+  },
+  "Curry College": {
+    "division": "D3",
+    "logo": "curry.png"
+  },
+  "Dean College": {
+    "division": "D3",
+    "logo": "dean.png"
+  },
+  "Delaware Valley University": {
+    "division": "D3",
+    "logo": "delaware_valley.png"
+  },
+  "Denison University": {
+    "division": "D3",
+    "logo": "denison.png"
+  },
+  "DePauw University": {
+    "division": "D3",
+    "logo": "depauw.png"
+  },
+  "Dickinson College": {
+    "division": "D3",
+    "logo": "dickinson.png"
+  },
+  "Drew University": {
+    "division": "D3",
+    "logo": "drew.png"
+  },
+  "Earlham College": {
+    "division": "D3",
+    "logo": "earlham.png"
+  },
+  "East Texas Baptist University": {
+    "division": "D3",
+    "logo": "east_texas_baptist.png"
+  },
+  "Eastern University": {
+    "division": "D3",
+    "logo": "eastern.png"
+  },
+  "Elizabethtown College": {
+    "division": "D3",
+    "logo": "elizabethtown.png"
+  },
+  "Elmhurst University": {
+    "division": "D3",
+    "logo": "elmhurst.png"
+  },
+  "Emory University": {
+    "division": "D3",
+    "logo": "emory.png"
+  },
+  "Endicott College": {
+    "division": "D3",
+    "logo": "endicott.png"
+  },
+  "Eureka College": {
+    "division": "D3",
+    "logo": "eureka.png"
+  },
+  "Fairleigh Dickinson University - Florham": {
+    "division": "D3",
+    "logo": "fairleigh_dickinson_florham.png"
+  },
+  "Fitchburg State University": {
+    "division": "D3",
+    "logo": "fitchburg_state.png"
+  },
+  "Fontbonne University": {
+    "division": "D3",
+    "logo": null
+  },
+  "Framingham State University": {
+    "division": "D3",
+    "logo": "framingham_state.png"
+  },
+  "Franklin & Marshall College": {
+    "division": "D3",
+    "logo": "franklin_marshall.png"
+  },
+  "Franklin College": {
+    "division": "D3",
+    "logo": "franklin.png"
+  },
+  "Gallaudet University": {
+    "division": "D3",
+    "logo": "gallaudet.png"
+  },
+  "Geneva College": {
+    "division": "D3",
+    "logo": "geneva.png"
+  },
+  "George Fox University": {
+    "division": "D3",
+    "logo": "george_fox.png"
+  },
+  "Gettysburg College": {
+    "division": "D3",
+    "logo": "gettysburg.png"
+  },
+  "Greensboro College": {
+    "division": "D3",
+    "logo": "greensboro.png"
+  },
+  "Greenville University": {
+    "division": "D3",
+    "logo": "greenville.png"
+  },
+  "Grinnell College": {
+    "division": "D3",
+    "logo": "grinnell.png"
+  },
+  "Grove City College": {
+    "division": "D3",
+    "logo": "grove_city.png"
+  },
+  "Guilford College": {
+    "division": "D3",
+    "logo": "guilford.png"
+  },
+  "Gustavus Adolphus College": {
+    "division": "D3",
+    "logo": "gustavus_adolphus.png"
+  },
+  "Hamilton College": {
+    "division": "D3",
+    "logo": "hamilton.png"
+  },
+  "Hamline University": {
+    "division": "D3",
+    "logo": "hamline.png"
+  },
+  "Hampden-Sydney College": {
+    "division": "D3",
+    "logo": "hampden_sydney.png"
+  },
+  "Hanover College": {
+    "division": "D3",
+    "logo": "hanover.png"
+  },
+  "Hardin-Simmons University": {
+    "division": "D3",
+    "logo": "hardin_simmons.png"
+  },
+  "Hartwick College": {
+    "division": "D3",
+    "logo": "hartwick.png"
+  },
+  "Heidelberg University": {
+    "division": "D3",
+    "logo": "heidelberg.png"
+  },
+  "Hendrix College": {
+    "division": "D3",
+    "logo": "hendrix.png"
+  },
+  "Hilbert College": {
+    "division": "D3",
+    "logo": "hilbert.png"
+  },
+  "Hiram College": {
+    "division": "D3",
+    "logo": "hiram.png"
+  },
+  "Hobart & William Smith College": {
+    "division": "D3",
+    "logo": "hobart_william_smith.png"
+  },
+  "Hope College": {
+    "division": "D3",
+    "logo": "hope.png"
+  },
+  "Howard Payne University": {
+    "division": "D3",
+    "logo": "howard_payne.png"
+  },
+  "Huntingdon College": {
+    "division": "D3",
+    "logo": "huntingdon.png"
+  },
+  "Husson University": {
+    "division": "D3",
+    "logo": "husson.png"
+  },
+  "Illinois College": {
+    "division": "D3",
+    "logo": "illinois.png"
+  },
+  "Illinois Wesleyan University": {
+    "division": "D3",
+    "logo": "illinois_wesleyan.png"
+  },
+  "Ithaca College": {
+    "division": "D3",
+    "logo": "ithaca.png"
+  },
+  "John Carroll University": {
+    "division": "D3",
+    "logo": "john_carroll.png"
+  },
+  "Johns Hopkins University": {
+    "division": "D3",
+    "logo": "johns_hopkins.png"
+  },
+  "Juniata College": {
+    "division": "D3",
+    "logo": "juniata.png"
+  },
+  "Kalamazoo College": {
+    "division": "D3",
+    "logo": "kalamazoo.png"
+  },
+  "Kean University": {
+    "division": "D3",
+    "logo": "kean.png"
+  },
+  "Kenyon College": {
+    "division": "D3",
+    "logo": "kenyon.png"
+  },
+  "Keystone College": {
+    "division": "D3",
+    "logo": "keystone.png"
+  },
+  "King's College - Pennsylvania": {
+    "division": "D3",
+    "logo": "kings_pennsylvania.png"
+  },
+  "Knox College": {
+    "division": "D3",
+    "logo": "knox.png"
+  },
+  "LaGrange College": {
+    "division": "D3",
+    "logo": "lagrange.png"
+  },
+  "Lake Forest College": {
+    "division": "D3",
+    "logo": "lake_forest.png"
+  },
+  "Lakeland University": {
+    "division": "D3",
+    "logo": "lakeland.png"
+  },
+  "Lawrence University": {
+    "division": "D3",
+    "logo": "lawrence.png"
+  },
+  "Lebanon Valley College": {
+    "division": "D3",
+    "logo": "lebanon_valley.png"
+  },
+  "Lewis & Clark College": {
+    "division": "D3",
+    "logo": "lewis_clark.png"
+  },
+  "Linfield University": {
+    "division": "D3",
+    "logo": "linfield.png"
+  },
+  "Loras College": {
+    "division": "D3",
+    "logo": "loras.png"
+  },
+  "Luther College": {
+    "division": "D3",
+    "logo": "luther.png"
+  },
+  "Lycoming College": {
+    "division": "D3",
+    "logo": "lycoming.png"
+  },
+  "Lyon College": {
+    "division": "D3",
+    "logo": "lyon.png"
+  },
+  "Macalester College": {
+    "division": "D3",
+    "logo": "macalester.png"
+  },
+  "Maine Maritime Academy": {
+    "division": "D3",
+    "logo": "maine_maritime.png"
+  },
+  "Manchester University": {
+    "division": "D3",
+    "logo": "manchester.png"
+  },
+  "Marietta College": {
+    "division": "D3",
+    "logo": "marietta.png"
+  },
+  "Martin Luther College": {
+    "division": "D3",
+    "logo": "martin_luther.png"
+  },
+  "Maryville College": {
+    "division": "D3",
+    "logo": "maryville.png"
+  },
+  "Massachusetts Institute of Technology - MIT": {
+    "division": "D3",
+    "logo": "massachusetts_technology.png"
+  },
+  "Massachusetts Maritime Academy": {
+    "division": "D3",
+    "logo": "massachusetts_maritime.png"
+  },
+  "McDaniel College": {
+    "division": "D3",
+    "logo": "mcdaniel.png"
+  },
+  "McMurry University": {
+    "division": "D3",
+    "logo": "mcmurry.png"
+  },
+  "Methodist University": {
+    "division": "D3",
+    "logo": "methodist.png"
+  },
+  "Middlebury College": {
+    "division": "D3",
+    "logo": "middlebury.png"
+  },
+  "Millikin University": {
+    "division": "D3",
+    "logo": "millikin.png"
+  },
+  "Millsaps College": {
+    "division": "D3",
+    "logo": "millsaps.png"
+  },
+  "Misericordia University": {
+    "division": "D3",
+    "logo": "misericordia.png"
+  },
+  "Monmouth College": {
+    "division": "D3",
+    "logo": "monmouth.png"
+  },
+  "Montclair State University": {
+    "division": "D3",
+    "logo": "montclair_state.png"
+  },
+  "Moravian University": {
+    "division": "D3",
+    "logo": "moravian.png"
+  },
+  "Mount Mary University": {
+    "division": "D3",
+    "logo": "mount_mary.png"
+  },
+  "Mount St. Joseph University": {
+    "division": "D3",
+    "logo": "mount_st_joseph.png"
+  },
+  "Muhlenberg College": {
+    "division": "D3",
+    "logo": "muhlenberg.png"
+  },
+  "Muskingum University": {
+    "division": "D3",
+    "logo": "muskingum.png"
+  },
+  "Nebraska Wesleyan University": {
+    "division": "D3",
+    "logo": "nebraska_wesleyan.png"
+  },
+  "New England College": {
+    "division": "D3",
+    "logo": "new_england_college.png"
+  },
+  "Nichols College": {
+    "division": "D3",
+    "logo": "nichols.png"
+  },
+  "North Carolina Wesleyan University": {
+    "division": "D3",
+    "logo": "north_carolina_wesleyan.png"
+  },
+  "North Central College": {
+    "division": "D3",
+    "logo": "north_central.png"
+  },
+  "North Park University": {
+    "division": "D3",
+    "logo": "north_park.png"
+  },
+  "Norwich University": {
+    "division": "D3",
+    "logo": "norwich.png"
+  },
+  "Oberlin College": {
+    "division": "D3",
+    "logo": "oberlin.png"
+  },
+  "Ohio Northern University": {
+    "division": "D3",
+    "logo": "ohio_northern.png"
+  },
+  "Ohio Wesleyan University": {
+    "division": "D3",
+    "logo": "ohio_wesleyan.png"
+  },
+  "Otterbein University": {
+    "division": "D3",
+    "logo": "otterbein.png"
+  },
+  "Pacific Lutheran University": {
+    "division": "D3",
+    "logo": "pacific_lutheran.png"
+  },
+  "Pacific University": {
+    "division": "D3",
+    "logo": "pacific.png"
+  },
+  "Plymouth State University": {
+    "division": "D3",
+    "logo": "plymouth_state.png"
+  },
+  "Pomona-Pitzer Colleges": {
+    "division": "D3",
+    "logo": "pomona_pitzer.png"
+  },
+  "Randolph-Macon College": {
+    "division": "D3",
+    "logo": "randolph_macon.png"
+  },
+  "Rensselaer Polytechnic Institute - RPI": {
+    "division": "D3",
+    "logo": "rensselaer_polytechnic.png"
+  },
+  "Rhode Island College": {
+    "division": "D3",
+    "logo": "rhode_island.png"
+  },
+  "Rhodes College": {
+    "division": "D3",
+    "logo": "rhodes.png"
+  },
+  "Ripon College": {
+    "division": "D3",
+    "logo": "ripon.png"
+  },
+  "Roanoke College": {
+    "division": "D3",
+    "logo": "roanoke.png"
+  },
+  "Rockford University": {
+    "division": "D3",
+    "logo": "rockford.png"
+  },
+  "Rose-Hulman Institute of Technology": {
+    "division": "D3",
+    "logo": "rose_hulman.png"
+  },
+  "Rowan University": {
+    "division": "D3",
+    "logo": "rowan.png"
+  },
+  "Saint John's University - Minnesota": {
+    "division": "D3",
+    "logo": "saint_johns_minnesota.png"
+  },
+  "Saint Mary's College - Indiana": {
+    "division": "D3",
+    "logo": "indiana.png"
+  },
+  "Saint Vincent College - Pennsylvania": {
+    "division": "D3",
+    "logo": "saint_vincent_pennsylvania.png"
+  },
+  "Salem College": {
+    "division": "D3",
+    "logo": "salem.png"
+  },
+  "Salisbury University": {
+    "division": "D3",
+    "logo": "salisbury.png"
+  },
+  "Salve Regina University": {
+    "division": "D3",
+    "logo": "salve_regina.png"
+  },
+  "Schreiner University": {
+    "division": "D3",
+    "logo": "schreiner.png"
+  },
+  "Sewanee - The University of the South": {
+    "division": "D3",
+    "logo": "sewanee_south.png"
+  },
+  "Shenandoah University": {
+    "division": "D3",
+    "logo": "shenandoah.png"
+  },
+  "Simpson College": {
+    "division": "D3",
+    "logo": "simpson.png"
+  },
+  "Southern Virginia University": {
+    "division": "D3",
+    "logo": "southern_virginia.png"
+  },
+  "Southwestern University": {
+    "division": "D3",
+    "logo": "southwestern.png"
+  },
+  "Springfield College": {
+    "division": "D3",
+    "logo": "springfield.png"
+  },
+  "St. John Fisher College": {
+    "division": "D3",
+    "logo": "st_john_fisher.png"
+  },
+  "St. Lawrence University": {
+    "division": "D3",
+    "logo": "st_lawrence.png"
+  },
+  "St. Norbert College": {
+    "division": "D3",
+    "logo": "st_norbert.png"
+  },
+  "St. Olaf College": {
+    "division": "D3",
+    "logo": "st_olaf.png"
+  },
+  "Stevenson University": {
+    "division": "D3",
+    "logo": "stevenson.png"
+  },
+  "SUNY College at Brockport": {
+    "division": "D3",
+    "logo": "suny_brockport.png"
+  },
+  "SUNY College at Oneonta": {
+    "division": "D3",
+    "logo": "suny_oneonta.png"
+  },
+  "SUNY College of Agriculture & Technology at Cobleskill": {
+    "division": "D3",
+    "logo": "suny_agriculture_technology_cobleskill.png"
+  },
+  "SUNY Cortland": {
+    "division": "D3",
+    "logo": "suny_cortland.png"
+  },
+  "SUNY Maritime College": {
+    "division": "D3",
+    "logo": "suny_maritime.png"
+  },
+  "SUNY Morrisville": {
+    "division": "D3",
+    "logo": "suny_morrisville.png"
+  },
+  "Susquehanna University": {
+    "division": "D3",
+    "logo": "susquehanna.png"
+  },
+  "Texas Lutheran University": {
+    "division": "D3",
+    "logo": "texas_lutheran.png"
+  },
+  "The College of New Jersey": {
+    "division": "D3",
+    "logo": "new_jersey.png"
+  },
+  "The College of St. Scholastica": {
+    "division": "D3",
+    "logo": "st_scholastica.png"
+  },
+  "Thiel College": {
+    "division": "D3",
+    "logo": "thiel.png"
+  },
+  "Thomas College": {
+    "division": "D3",
+    "logo": "thomas.png"
+  },
+  "Trine University": {
+    "division": "D3",
+    "logo": "trine.png"
+  },
+  "Trinity College - Connecticut": {
+    "division": "D3",
+    "logo": "trinity_connecticut.png"
+  },
+  "Trinity University - Texas": {
+    "division": "D3",
+    "logo": "trinity_texas.png"
+  },
+  "Tufts University": {
+    "division": "D3",
+    "logo": "tufts.png"
+  },
+  "Union College - New York": {
+    "division": "D3",
+    "logo": "union_new_york.png"
+  },
+  "United States Coast Guard Academy": {
+    "division": "D3",
+    "logo": "united_states_coast_guard.png"
+  },
+  "United States Merchant Marine Academy": {
+    "division": "D3",
+    "logo": "united_states_merchant_marine.png"
+  },
+  "University of Chicago": {
+    "division": "D3",
+    "logo": "chicago.png"
+  },
+  "University of Dubuque": {
+    "division": "D3",
+    "logo": "dubuque.png"
+  },
+  "University of La Verne": {
+    "division": "D3",
+    "logo": "la_verne.png"
+  },
+  "University of Lynchburg": {
+    "division": "D3",
+    "logo": "lynchburg.png"
+  },
+  "University of Mary Hardin-Baylor": {
+    "division": "D3",
+    "logo": "mary_hardin_baylor.png"
+  },
+  "University of Massachusetts - Dartmouth": {
+    "division": "D3",
+    "logo": "massachusetts_dartmouth.png"
+  },
+  "University of Minnesota - Morris": {
+    "division": "D3",
+    "logo": "minnesota_morris.png"
+  },
+  "University of Mount Union": {
+    "division": "D3",
+    "logo": "mount_union.png"
+  },
+  "University of New England": {
+    "division": "D3",
+    "logo": "new_england.png"
+  },
+  "University of Northwestern - St. Paul": {
+    "division": "D3",
+    "logo": "northwestern_st_paul.png"
+  },
+  "University of Olivet": {
+    "division": "D3",
+    "logo": "olivet.png"
+  },
+  "University of Puget Sound": {
+    "division": "D3",
+    "logo": "puget_sound.png"
+  },
+  "University of Redlands": {
+    "division": "D3",
+    "logo": "redlands.png"
+  },
+  "University of Rochester": {
+    "division": "D3",
+    "logo": "rochester.png"
+  },
+  "University of Wisconsin - Eau Claire": {
+    "division": "D3",
+    "logo": "wisconsin_eau_claire.png"
+  },
+  "University of Wisconsin - La Crosse": {
+    "division": "D3",
+    "logo": "wisconsin_la_crosse.png"
+  },
+  "University of Wisconsin - Oshkosh": {
+    "division": "D3",
+    "logo": "wisconsin_oshkosh.png"
+  },
+  "University of Wisconsin - Platteville": {
+    "division": "D3",
+    "logo": "wisconsin_platteville.png"
+  },
+  "University of Wisconsin - River Falls": {
+    "division": "D3",
+    "logo": "wisconsin_river_falls.png"
+  },
+  "University of Wisconsin - Stevens Point": {
+    "division": "D3",
+    "logo": "wisconsin_stevens_point.png"
+  },
+  "University of Wisconsin - Stout": {
+    "division": "D3",
+    "logo": "wisconsin_stout.png"
+  },
+  "University of Wisconsin - Whitewater": {
+    "division": "D3",
+    "logo": "wisconsin_whitewater.png"
+  },
+  "Ursinus College": {
+    "division": "D3",
+    "logo": "ursinus.png"
+  },
+  "Utica University": {
+    "division": "D3",
+    "logo": "utica.png"
+  },
+  "Vermont State University - Castleton": {
+    "division": "D3",
+    "logo": "vermont_state_castleton.png"
+  },
+  "Wabash College": {
+    "division": "D3",
+    "logo": "wabash.png"
+  },
+  "Wartburg College": {
+    "division": "D3",
+    "logo": "wartburg.png"
+  },
+  "Washington & Jefferson College": {
+    "division": "D3",
+    "logo": "washington_jefferson.png"
+  },
+  "Washington & Lee University": {
+    "division": "D3",
+    "logo": "washington_lee.png"
+  },
+  "Washington University in St. Louis": {
+    "division": "D3",
+    "logo": "washington_st_louis.png"
+  },
+  "Waynesburg University": {
+    "division": "D3",
+    "logo": "waynesburg.png"
+  },
+  "Wesleyan University": {
+    "division": "D3",
+    "logo": "wesleyan.png"
+  },
+  "Western Connecticut State University": {
+    "division": "D3",
+    "logo": "western_connecticut_state.png"
+  },
+  "Western New England University": {
+    "division": "D3",
+    "logo": "western_new_england.png"
+  },
+  "Westfield State University": {
+    "division": "D3",
+    "logo": "westfield_state.png"
+  },
+  "Westminster College - Missouri": {
+    "division": "D3",
+    "logo": "westminster_missouri.png"
+  },
+  "Westminster College - Pennsylvania": {
+    "division": "D3",
+    "logo": "westminster_pennsylvania.png"
+  },
+  "Wheaton College - Illinois": {
+    "division": "D3",
+    "logo": "wheaton.png"
+  },
+  "Whittier College": {
+    "division": "D3",
+    "logo": "whittier.png"
+  },
+  "Whitworth University": {
+    "division": "D3",
+    "logo": "whitworth.png"
+  },
+  "Widener University": {
+    "division": "D3",
+    "logo": "widener.png"
+  },
+  "Wilkes University": {
+    "division": "D3",
+    "logo": "wilkes.png"
+  },
+  "Willamette University": {
+    "division": "D3",
+    "logo": "willamette.png"
+  },
+  "William Paterson University of New Jersey": {
+    "division": "D3",
+    "logo": "william_paterson.png"
+  },
+  "Williams College": {
+    "division": "D3",
+    "logo": "williams.png"
+  },
+  "Wilmington College": {
+    "division": "D3",
+    "logo": "wilmington.png"
+  },
+  "Wisconsin Lutheran College": {
+    "division": "D3",
+    "logo": "wisconsin_lutheran.png"
+  },
+  "Wittenberg University": {
+    "division": "D3",
+    "logo": "wittenberg.png"
+  },
+  "Worcester Polytechnic Institute": {
+    "division": "D3",
+    "logo": "worcester_polytechnic.png"
+  },
+  "Worcester State University": {
+    "division": "D3",
+    "logo": "worcester_state.png"
+  },
+  "Arizona Christian University": {
+    "division": "NAIA",
+    "logo": null
+  },
+  "Arkansas Baptist College": {
+    "division": "NAIA",
+    "logo": null
+  },
+  "Ave Maria University": {
+    "division": "NAIA",
+    "logo": null
+  },
+  "Avila University": {
+    "division": "NAIA",
+    "logo": null
+  },
+  "Baker University": {
+    "division": "NAIA",
+    "logo": null
+  },
+  "Benedictine College": {
+    "division": "NAIA",
+    "logo": null
+  },
+  "Bethany College (Kansas)": {
+    "division": "NAIA",
+    "logo": null
+  },
+  "Bethel College (Kansas)": {
+    "division": "NAIA",
+    "logo": null
+  },
+  "Bethel University (Tennessee)": {
+    "division": "NAIA",
+    "logo": null
+  },
+  "Bluefield University": {
+    "division": "NAIA",
+    "logo": null
+  },
+  "Briar Cliff University": {
+    "division": "NAIA",
+    "logo": null
+  },
+  "Campbellsville University": {
+    "division": "NAIA",
+    "logo": null
+  },
+  "Carroll College (Montana)": {
+    "division": "NAIA",
+    "logo": null
+  },
+  "Central Methodist University": {
+    "division": "NAIA",
+    "logo": null
+  },
+  "Clarke University": {
+    "division": "NAIA",
+    "logo": null
+  },
+  "College of Idaho": {
+    "division": "NAIA",
+    "logo": null
+  },
+  "Concordia University-Nebraska": {
+    "division": "NAIA",
+    "logo": null
+  },
+  "Culver-Stockton College": {
+    "division": "NAIA",
+    "logo": null
+  },
+  "Cumberland University": {
+    "division": "NAIA",
+    "logo": null
+  },
+  "Dakota State University": {
+    "division": "NAIA",
+    "logo": null
+  },
+  "Dakota Wesleyan University": {
+    "division": "NAIA",
+    "logo": null
+  },
+  "Defiance College": {
+    "division": "NAIA",
+    "logo": null
+  },
+  "Dickinson State University": {
+    "division": "NAIA",
+    "logo": null
+  },
+  "Doane University": {
+    "division": "NAIA",
+    "logo": null
+  },
+  "Dordt University": {
+    "division": "NAIA",
+    "logo": null
+  },
+  "Eastern Oregon University": {
+    "division": "NAIA",
+    "logo": null
+  },
+  "Evangel University": {
+    "division": "NAIA",
+    "logo": null
+  },
+  "Faulkner University": {
+    "division": "NAIA",
+    "logo": null
+  },
+  "Florida Memorial University": {
+    "division": "NAIA",
+    "logo": null
+  },
+  "Friends University": {
+    "division": "NAIA",
+    "logo": null
+  },
+  "Georgetown College (Kentucky)": {
+    "division": "NAIA",
+    "logo": null
+  },
+  "Graceland University": {
+    "division": "NAIA",
+    "logo": null
+  },
+  "Grand View University": {
+    "division": "NAIA",
+    "logo": null
+  },
+  "Hastings College": {
+    "division": "NAIA",
+    "logo": null
+  },
+  "Indiana Wesleyan University": {
+    "division": "NAIA",
+    "logo": null
+  },
+  "Judson University": {
+    "division": "NAIA",
+    "logo": null
+  },
+  "Kansas Wesleyan University": {
+    "division": "NAIA",
+    "logo": null
+  },
+  "Keiser University": {
+    "division": "NAIA",
+    "logo": null
+  },
+  "Kentucky Christian University": {
+    "division": "NAIA",
+    "logo": null
+  },
+  "Langston University": {
+    "division": "NAIA",
+    "logo": null
+  },
+  "Lawrence Technological University": {
+    "division": "NAIA",
+    "logo": null
+  },
+  "Lindsey Wilson College": {
+    "division": "NAIA",
+    "logo": null
+  },
+  "Louisiana Christian University": {
+    "division": "NAIA",
+    "logo": null
+  },
+  "Madonna University": {
+    "division": "NAIA",
+    "logo": null
+  },
+  "Marian University (Indiana)": {
+    "division": "NAIA",
+    "logo": null
+  },
+  "Mayville State University": {
+    "division": "NAIA",
+    "logo": null
+  },
+  "McPherson College": {
+    "division": "NAIA",
+    "logo": null
+  },
+  "MidAmerica Nazarene University": {
+    "division": "NAIA",
+    "logo": null
+  },
+  "Midland University": {
+    "division": "NAIA",
+    "logo": null
+  },
+  "Missouri Baptist University": {
+    "division": "NAIA",
+    "logo": null
+  },
+  "Missouri Valley College": {
+    "division": "NAIA",
+    "logo": null
+  },
+  "Montana State University-Northern": {
+    "division": "NAIA",
+    "logo": null
+  },
+  "Montana Technological University": {
+    "division": "NAIA",
+    "logo": null
+  },
+  "Morningside University": {
+    "division": "NAIA",
+    "logo": null
+  },
+  "Mount Marty University": {
+    "division": "NAIA",
+    "logo": null
+  },
+  "Nelson University": {
+    "division": "NAIA",
+    "logo": null
+  },
+  "Northwestern College (Iowa)": {
+    "division": "NAIA",
+    "logo": null
+  },
+  "Oklahoma Panhandle State University": {
+    "division": "NAIA",
+    "logo": null
+  },
+  "Olivet Nazarene University": {
+    "division": "NAIA",
+    "logo": null
+  },
+  "Ottawa University": {
+    "division": "NAIA",
+    "logo": null
+  },
+  "Ottawa University Arizona": {
+    "division": "NAIA",
+    "logo": null
+  },
+  "Peru State College": {
+    "division": "NAIA",
+    "logo": null
+  },
+  "Point University": {
+    "division": "NAIA",
+    "logo": null
+  },
+  "Reinhardt University": {
+    "division": "NAIA",
+    "logo": null
+  },
+  "Rocky Mountain College": {
+    "division": "NAIA",
+    "logo": null
+  },
+  "Saint Thomas University (Florida)": {
+    "division": "NAIA",
+    "logo": null
+  },
+  "Saint Xavier University": {
+    "division": "NAIA",
+    "logo": null
+  },
+  "Siena Heights University": {
+    "division": "NAIA",
+    "logo": null
+  },
+  "Simpson University": {
+    "division": "NAIA",
+    "logo": null
+  },
+  "Southeastern University (Florida)": {
+    "division": "NAIA",
+    "logo": null
+  },
+  "Southern Oregon University": {
+    "division": "NAIA",
+    "logo": null
+  },
+  "Southwestern College (Kansas)": {
+    "division": "NAIA",
+    "logo": null
+  },
+  "St. Ambrose University": {
+    "division": "NAIA",
+    "logo": null
+  },
+  "Sterling College (Kansas)": {
+    "division": "NAIA",
+    "logo": null
+  },
+  "Tabor College": {
+    "division": "NAIA",
+    "logo": null
+  },
+  "Taylor University": {
+    "division": "NAIA",
+    "logo": null
+  },
+  "Texas College": {
+    "division": "NAIA",
+    "logo": null
+  },
+  "Texas Wesleyan University": {
+    "division": "NAIA",
+    "logo": null
+  },
+  "Thomas University": {
+    "division": "NAIA",
+    "logo": null
+  },
+  "Union Commonwealth University": {
+    "division": "NAIA",
+    "logo": null
+  },
+  "University of Montana Western": {
+    "division": "NAIA",
+    "logo": null
+  },
+  "University of Pikeville": {
+    "division": "NAIA",
+    "logo": null
+  },
+  "University of Rio Grande": {
+    "division": "NAIA",
+    "logo": null
+  },
+  "University of Saint Francis (IN)": {
+    "division": "NAIA",
+    "logo": null
+  },
+  "University of Saint Mary": {
+    "division": "NAIA",
+    "logo": null
+  },
+  "University of St. Francis (IL)": {
+    "division": "NAIA",
+    "logo": null
+  },
+  "University of the Cumberlands": {
+    "division": "NAIA",
+    "logo": null
+  },
+  "Valley City State University": {
+    "division": "NAIA",
+    "logo": null
+  },
+  "Waldorf University": {
+    "division": "NAIA",
+    "logo": null
+  },
+  "Warner University": {
+    "division": "NAIA",
+    "logo": null
+  },
+  "Wayland Baptist University": {
+    "division": "NAIA",
+    "logo": null
+  },
+  "Webber International University": {
+    "division": "NAIA",
+    "logo": null
+  },
+  "William Penn University": {
+    "division": "NAIA",
+    "logo": null
+  },
+  "William Woods University": {
+    "division": "NAIA",
+    "logo": null
+  },
+  "Andrew College": {
+    "division": "NJCAA",
+    "logo": null
+  },
+  "Blinn College": {
+    "division": "NJCAA",
+    "logo": null
+  },
+  "Butler Community College": {
+    "division": "NJCAA",
+    "logo": null
+  },
+  "Central Georgia Technical College": {
+    "division": "NJCAA",
+    "logo": null
+  },
+  "Cisco College": {
+    "division": "NJCAA",
+    "logo": null
+  },
+  "Coahoma Community College": {
+    "division": "NJCAA",
+    "logo": null
+  },
+  "Coffeyville Community College": {
+    "division": "NJCAA",
+    "logo": null
+  },
+  "Community Christian College": {
+    "division": "NJCAA",
+    "logo": null
+  },
+  "Community Christian College (Michigan)": {
+    "division": "NJCAA",
+    "logo": null
+  },
+  "Copiah-Lincoln Community College": {
+    "division": "NJCAA",
+    "logo": null
+  },
+  "Dodge City Community College": {
+    "division": "NJCAA",
+    "logo": null
+  },
+  "East Central Community College": {
+    "division": "NJCAA",
+    "logo": null
+  },
+  "East Mississippi Community College": {
+    "division": "NJCAA",
+    "logo": null
+  },
+  "Ellsworth Community College": {
+    "division": "NJCAA",
+    "logo": null
+  },
+  "Garden City Community College": {
+    "division": "NJCAA",
+    "logo": null
+  },
+  "Georgia Military College": {
+    "division": "NJCAA",
+    "logo": null
+  },
+  "Highland Community College (Kansas)": {
+    "division": "NJCAA",
+    "logo": null
+  },
+  "Hinds Community College": {
+    "division": "NJCAA",
+    "logo": null
+  },
+  "Holmes Community College": {
+    "division": "NJCAA",
+    "logo": null
+  },
+  "Hutchinson Community College": {
+    "division": "NJCAA",
+    "logo": null
+  },
+  "Independence Community College": {
+    "division": "NJCAA",
+    "logo": null
+  },
+  "Iowa Central Community College": {
+    "division": "NJCAA",
+    "logo": null
+  },
+  "Iowa Western Community College": {
+    "division": "NJCAA",
+    "logo": null
+  },
+  "Itawamba Community College": {
+    "division": "NJCAA",
+    "logo": null
+  },
+  "Jones College": {
+    "division": "NJCAA",
+    "logo": null
+  },
+  "Kilgore College": {
+    "division": "NJCAA",
+    "logo": null
+  },
+  "Lackawanna College": {
+    "division": "NJCAA",
+    "logo": null
+  },
+  "Mississippi Delta Community College": {
+    "division": "NJCAA",
+    "logo": null
+  },
+  "Mississippi Gulf Coast Community College": {
+    "division": "NJCAA",
+    "logo": null
+  },
+  "Monroe University": {
+    "division": "NJCAA",
+    "logo": null
+  },
+  "Navarro College": {
+    "division": "NJCAA",
+    "logo": null
+  },
+  "New Mexico Military Institute": {
+    "division": "NJCAA",
+    "logo": null
+  },
+  "Northeast Mississippi Community College": {
+    "division": "NJCAA",
+    "logo": null
+  },
+  "Northeastern Oklahoma A&M College": {
+    "division": "NJCAA",
+    "logo": null
+  },
+  "Northwest Mississippi Community College": {
+    "division": "NJCAA",
+    "logo": null
+  },
+  "Pearl River Community College": {
+    "division": "NJCAA",
+    "logo": null
+  },
+  "Snow College": {
+    "division": "NJCAA",
+    "logo": null
+  },
+  "Southwest Mississippi Community College": {
+    "division": "NJCAA",
+    "logo": null
+  },
+  "Sussex County Community College": {
+    "division": "NJCAA",
+    "logo": null
+  },
+  "Trinity Valley Community College": {
+    "division": "NJCAA",
+    "logo": null
+  },
+  "Tyler Junior College": {
+    "division": "NJCAA",
+    "logo": null
+  },
+  "Central Lakes College-Brainerd": {
+    "division": "NJCAA",
+    "logo": null
+  },
+  "College of DuPage": {
+    "division": "NJCAA",
+    "logo": null
+  },
+  "Erie Community College": {
+    "division": "NJCAA",
+    "logo": null
+  },
+  "Hocking College": {
+    "division": "NJCAA",
+    "logo": null
+  },
+  "Hudson Valley Community College": {
+    "division": "NJCAA",
+    "logo": null
+  },
+  "Louisburg College": {
+    "division": "NJCAA",
+    "logo": null
+  },
+  "Minnesota North College-Mesabi Range": {
+    "division": "NJCAA",
+    "logo": null
+  },
+  "Minnesota North College-Vermilion": {
+    "division": "NJCAA",
+    "logo": null
+  },
+  "Minnesota State Community and Technical College": {
+    "division": "NJCAA",
+    "logo": null
+  },
+  "Minnesota West Community & Technical College": {
+    "division": "NJCAA",
+    "logo": null
+  },
+  "Nassau Community College": {
+    "division": "NJCAA",
+    "logo": null
+  },
+  "North Dakota State College of Science": {
+    "division": "NJCAA",
+    "logo": null
+  },
+  "Rochester Community and Technical College": {
+    "division": "NJCAA",
+    "logo": null
+  }
+}
