@@ -352,8 +352,8 @@ document.addEventListener('DOMContentLoaded', function() {
     function formatDivision(division) {
         if (!division) return '';
         const div = division.trim().toUpperCase();
-        if (div === 'FBS') return 'D1 FBS';
-        if (div === 'FCS') return 'D1 FCS';
+        if (div === 'D1 FBS' || div === 'FBS') return 'D1 FBS';
+        if (div === 'D1 FCS' || div === 'FCS') return 'D1 FCS';
         if (div === 'D2' || div === 'DIVISION II') return 'D2';
         if (div === 'D3' || div === 'DIVISION III') return 'D3';
         if (div === 'NAIA') return 'NAIA';
@@ -633,7 +633,7 @@ document.addEventListener('DOMContentLoaded', function() {
     ];
 
     const DIVISION_DEFAULTS = {
-        'FBS': {
+        'D1 FBS': {
             gpa: 2.5,
             QB:  { minHeight: "6'1",  maxHeight: "6'5",  minWeight: 200, maxWeight: 230 },
             RB:  { minHeight: "5'9",  maxHeight: "6'1",  minWeight: 190, maxWeight: 220 },
@@ -648,7 +648,7 @@ document.addEventListener('DOMContentLoaded', function() {
             'K/P': { minHeight: "5'9",  maxHeight: "6'3",  minWeight: 160, maxWeight: 210 },
             ATH: { minHeight: "5'10", maxHeight: "6'4",  minWeight: 180, maxWeight: 230 }
         },
-        'FCS': {
+        'D1 FCS': {
             gpa: 2.5,
             QB:  { minHeight: "5'11", maxHeight: "6'4",  minWeight: 185, maxWeight: 225 },
             RB:  { minHeight: "5'8",  maxHeight: "6'0",  minWeight: 180, maxWeight: 215 },
@@ -710,7 +710,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function getDivision() {
-        return coachDivision || 'FBS';
+        return coachDivision || 'D1 FBS';
     }
 
     function getDefaults() {

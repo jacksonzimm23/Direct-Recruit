@@ -46,7 +46,7 @@ When the coach asks about portal predictions or player signals, respond with ONL
   "signal_filters": {
     "signal_types": ["bio_and_film", "portal_keywords", "browsing_coaches"],
     "position": ["QB", "WR"],
-    "college_division": "FBS",
+    "college_division": "D1 FBS",
     "days": 14
   },
   "summary": "A one-sentence summary of what you're looking for",
@@ -56,7 +56,7 @@ When the coach asks about portal predictions or player signals, respond with ONL
 ## Signal Filter Fields
 - signal_types: Array of signal types to query. Valid values: "bio_and_film", "portal_keywords", "browsing_coaches". Use all three by default unless the coach specifically asks about a particular signal type.
 - position: Array of position codes to filter by. Valid positions: QB, RB, FB, WR, TE, OT, OG, C, DE, DT, NT, ILB, OLB, MLB, CB, FS, SS, S, K, P, LS, ATH. Set to null for all positions.
-- college_division: Filter by the player's current division. Valid: "FBS", "FCS", "D2", "D3", "NAIA", "NJCAA". Set to null for all divisions. Note: "D1" should map to both FBS and FCS.
+- college_division: Filter by the player's current division. Valid: "D1 FBS", "D1 FCS", "D2", "D3", "NAIA", "NJCAA". Set to null for all divisions. Note: "D1" should map to both D1 FBS and D1 FCS.
 - days: Lookback window in days. Default 14. The coach might say "last week" (7), "last month" (30), "last 2 weeks" (14), etc.
 - Set any unused filter to null
 

@@ -1,7 +1,7 @@
 // API Configuration
-// Use 127.0.0.1 to match the frontend origin for proper cookie handling
+// In local dev, use the same hostname as the frontend for proper cookie handling
 const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-    ? 'http://127.0.0.1:5000/api'
+    ? `http://${window.location.hostname}:5000/api`
     : `${window.location.origin}/api`;
 
 // Storage keys
@@ -511,7 +511,7 @@ function buildCommentSubheader(role, data) {
 window.buildCommentSubheader = buildCommentSubheader;
 
 // Shared college division list — the single source of truth
-const COLLEGE_DIVISIONS = ['D1 FBS', 'D1 FCS', 'D2', 'D3', 'NAIA', 'NJCAA', '3C2A'];
+const COLLEGE_DIVISIONS = ['D1 FBS', 'D1 FCS', 'D2', 'D3', 'NAIA', 'NJCAA', 'FBS', 'FCS', '3C2A'];
 
 /**
  * Determines the correct role folder for a user based on their role, transfer status, and division.
@@ -542,6 +542,15 @@ function getProfileFolder(user) {
 }
 window.getProfileFolder = getProfileFolder;
 window.COLLEGE_DIVISIONS = COLLEGE_DIVISIONS;
+
+// Normalize legacy division values for display (e.g. 'FBS' → 'D1 FBS')
+function formatDivisionDisplay(div) {
+    if (!div) return div;
+    if (div === 'FBS') return 'D1 FBS';
+    if (div === 'FCS') return 'D1 FCS';
+    return div;
+}
+window.formatDivisionDisplay = formatDivisionDisplay;
 
 // AI chat API
 const aiAPI = {

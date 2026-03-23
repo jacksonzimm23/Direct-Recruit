@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Direct Recruit — Cost Model</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@300;400;500;600&display=swap');
+
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg-root: #0a0e17;
+  --bg-card: #111827;
+  --bg-input: #0d1220;
+  --border: #1e293b;
+  --border-focus: #38bdf8;
+  --text-primary: #e2e8f0;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --accent-blue: #38bdf8;
+  --accent-teal: #2dd4bf;
+  --accent-cyan: #22d3ee;
+  --accent-amber: #fbbf24;
+  --accent-rose: #fb7185;
+  --accent-violet: #a78bfa;
+  --players-color: #38bdf8;
+  --coaches-color: #2dd4bf;
+  --ai-color: #fbbf24;
+  --grand-color: #e2e8f0;
+  --toggle-off-bg: #1e293b;
+  --toggle-on-bg: #0d9488;
+  --radius: 8px;
+  --radius-lg: 12px;
+}
+
+html { font-size: 14px; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg-root);
+  color: var(--text-primary);
+  min-height: 100vh;
+  line-height: 1.5;
+}
+
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg-root); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; appearance: none; margin: 0; }
+input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
+
+.dashboard { max-width: 1440px; margin: 0 auto; padding: 2rem 1.5rem 3rem; }
+
+.header { margin-bottom: 1.5rem; position: relative; }
+
+.header::after {
+  content: ''; position: absolute; bottom: -1rem; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, var(--accent-blue), var(--accent-teal), transparent);
+}
+
+.header h1 {
+  font-size: 1.75rem; font-weight: 700; letter-spacing: -0.03em;
+  background: linear-gradient(135deg, var(--accent-blue), var(--accent-teal));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+}
+
+.header p {
+  color: var(--text-muted); font-size: 0.85rem; margin-top: 0.25rem;
+  font-family: 'JetBrains Mono', monospace; font-weight: 300;
+}
+
+/* ─── Tabs ─── */
+.tab-bar {
+  display: flex;
+  gap: 0;
+  margin-bottom: 1.5rem;
+  margin-top: 1.5rem;
+  border-bottom: 2px solid var(--border);
+}
+
+.tab-btn {
+  padding: 0.75rem 2rem;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--text-muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+  position: relative;
+  transition: color 0.2s;
+}
+
+.tab-btn:hover { color: var(--text-secondary); }
+
+.tab-btn.active { color: var(--accent-cyan); }
+
+.tab-btn.active.overestimate { color: var(--accent-rose); }
+
+.tab-btn::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0; right: 0;
+  height: 2px;
+  background: transparent;
+  transition: background 0.2s;
+}
+
+.tab-btn.active::after { background: var(--accent-cyan); }
+.tab-btn.active.overestimate::after { background: var(--accent-rose); }
+
+.tab-badge {
+  font-size: 0.6rem;
+  padding: 0.15rem 0.4rem;
+  border-radius: 3px;
+  margin-left: 0.5rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 500;
+  vertical-align: middle;
+}
+
+.tab-badge.actual { background: rgba(34,211,238,0.15); color: var(--accent-cyan); }
+.tab-badge.over { background: rgba(251,113,133,0.15); color: var(--accent-rose); }
+
+/* Card */
+.card {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); padding: 1.25rem; position: relative; overflow: hidden;
+}
+
+.card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, transparent, var(--accent-blue), transparent); opacity: 0.4;
+}
+
+.card-header { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem; }
+
+.card-header .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+.card-header h2 {
+  font-size: 0.8rem; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.08em; color: var(--text-secondary);
+}
+
+.card-header .subtotal {
+  margin-left: auto; font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85rem; font-weight: 600;
+}
+
+/* Inputs */
+.cost-input {
+  font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; font-weight: 400;
+  background: var(--bg-input); border: 1px solid var(--border); border-radius: 4px;
+  color: var(--text-primary); padding: 0.3rem 0.5rem; width: 100px; text-align: right;
+  outline: none; transition: border-color 0.15s;
+}
+
+.cost-input:focus { border-color: var(--border-focus); box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.1); }
+
+.cost-input.narrow { width: 80px; }
+.cost-input.wide { width: 120px; }
+
+.input-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0.35rem 0; border-bottom: 1px solid rgba(30, 41, 59, 0.5);
+}
+
+.input-row:last-child { border-bottom: none; }
+
+.input-row label { font-size: 0.8rem; color: var(--text-secondary); flex: 1; min-width: 0; }
+
+.input-row label .unit { color: var(--text-muted); font-size: 0.7rem; font-family: 'JetBrains Mono', monospace; }
+
+.input-row .computed { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--text-primary); min-width: 90px; text-align: right; }
+
+/* Slider */
+.slider-label { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.5rem; }
+
+.slider-label span { font-size: 0.8rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 500; }
+
+.slider-value { font-family: 'JetBrains Mono', monospace; font-size: 1.4rem; font-weight: 600; }
+
+input[type="range"] {
+  -webkit-appearance: none; appearance: none; width: 100%; height: 6px;
+  background: var(--border); border-radius: 3px; outline: none; cursor: pointer;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none; width: 18px; height: 18px;
+  border-radius: 50%; border: 2px solid var(--bg-root); cursor: grab;
+}
+
+input[type="range"]::-webkit-slider-thumb:active { cursor: grabbing; }
+
+#playersSlider::-webkit-slider-thumb { background: var(--players-color); box-shadow: 0 0 8px rgba(56, 189, 248, 0.4); }
+#coachesSlider::-webkit-slider-thumb { background: var(--coaches-color); box-shadow: 0 0 8px rgba(45, 212, 191, 0.4); }
+
+/* Toggle */
+.toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 0.4rem 0; border-bottom: 1px solid rgba(30, 41, 59, 0.5); gap: 0.5rem; }
+.toggle-row:last-child { border-bottom: none; }
+.toggle-left { flex: 1; min-width: 0; }
+.toggle-left .toggle-name { font-size: 0.78rem; color: var(--text-secondary); }
+.toggle-left .toggle-desc { font-size: 0.65rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
+.toggle-right { display: flex; align-items: center; gap: 0.5rem; flex-shrink: 0; }
+.toggle-switch { position: relative; width: 36px; height: 20px; flex-shrink: 0; }
+.toggle-switch input { opacity: 0; width: 0; height: 0; }
+.toggle-slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background: var(--toggle-off-bg); border-radius: 10px; transition: 0.2s; }
+.toggle-slider::before { content: ''; position: absolute; height: 14px; width: 14px; left: 3px; bottom: 3px; background: var(--text-muted); border-radius: 50%; transition: 0.2s; }
+.toggle-switch input:checked + .toggle-slider { background: var(--toggle-on-bg); }
+.toggle-switch input:checked + .toggle-slider::before { transform: translateX(16px); background: #fff; }
+
+/* Summary */
+.grid-summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.25rem; margin-bottom: 1.25rem; }
+.summary-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1.25rem; text-align: center; }
+.summary-card .label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted); font-weight: 500; margin-bottom: 0.5rem; }
+.summary-card .value { font-family: 'JetBrains Mono', monospace; font-size: 1.6rem; font-weight: 700; }
+.summary-card .sub { font-size: 0.7rem; color: var(--text-muted); margin-top: 0.25rem; font-family: 'JetBrains Mono', monospace; }
+.summary-card.aws-card { border-top: 2px solid var(--accent-cyan); }
+.summary-card.aws-card .value { color: var(--accent-cyan); }
+.summary-card.ai-card { border-top: 2px solid var(--ai-color); }
+.summary-card.ai-card .value { color: var(--ai-color); }
+.summary-card.grand-card { border-top: 2px solid var(--grand-color); background: linear-gradient(135deg, #111827, #1a2332); }
+.summary-card.grand-card .value { color: #fff; font-size: 1.8rem; }
+.summary-card.peruser-card { border-top: 2px solid var(--accent-violet); }
+.summary-card.peruser-card .value { color: var(--accent-violet); }
+
+/* Cost bar */
+.cost-bar { display: flex; height: 8px; border-radius: 4px; overflow: hidden; background: var(--border); margin-top: 0.75rem; }
+.cost-bar div { transition: width 0.3s ease; min-width: 0; }
+.cost-bar .bar-aws { background: var(--accent-cyan); }
+.cost-bar .bar-ai { background: var(--ai-color); }
+.cost-bar-legend { display: flex; gap: 1rem; margin-top: 0.5rem; justify-content: center; }
+.cost-bar-legend span { font-size: 0.65rem; color: var(--text-muted); display: flex; align-items: center; gap: 4px; font-family: 'JetBrains Mono', monospace; }
+.cost-bar-legend .leg-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+
+/* Grids */
+.grid-main { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; margin-bottom: 1.25rem; }
+
+.per-request-display { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid var(--border); }
+.per-request-box { background: var(--bg-input); border: 1px solid var(--border); border-radius: var(--radius); padding: 0.6rem; text-align: center; }
+.per-request-box .prb-label { font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.25rem; }
+.per-request-box .prb-value { font-family: 'JetBrains Mono', monospace; font-size: 1rem; font-weight: 600; color: var(--ai-color); }
+
+/* Chart */
+.chart-wrapper { position: relative; width: 100%; height: 400px; }
+.chart-wrapper canvas { width: 100% !important; height: 100% !important; }
+
+/* Section label */
+.section-label { font-size: 0.65rem; font-family: 'JetBrains Mono', monospace; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.5rem; padding-bottom: 0.35rem; border-bottom: 1px solid var(--border); }
+
+/* Footer */
+.footer { text-align: center; padding-top: 1.5rem; border-top: 1px solid var(--border); color: var(--text-muted); font-size: 0.7rem; font-family: 'JetBrains Mono', monospace; }
+
+/* Responsive */
+@media (max-width: 900px) { .grid-main { grid-template-columns: 1fr; } .grid-summary { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 500px) { .grid-summary { grid-template-columns: 1fr; } .dashboard { padding: 1rem; } }
+</style>
+</head>
+<body>
+<div class="dashboard">
+
+  <div class="header">
+    <h1>Direct Recruit — Cost Model</h1>
+    <p>AWS service pricing &times; users &plus; Claude Haiku API costs</p>
+  </div>
+
+  <!-- ═══ TABS ═══ -->
+  <div class="tab-bar">
+    <button class="tab-btn active" id="tabActual" onclick="switchTab('actual')">Actual<span class="tab-badge actual">AWS RATES</span></button>
+    <button class="tab-btn overestimate" id="tabOver" onclick="switchTab('overestimate')">Overestimate<span class="tab-badge over">SAFE CEILING</span></button>
+  </div>
+
+  <!-- ═══ COGNITO INFO BANNER ═══ -->
+  <div style="background:var(--bg-card);border:1px solid var(--border);border-left:3px solid var(--accent-amber);border-radius:var(--radius);padding:1rem 1.25rem;margin-bottom:1.25rem;font-size:0.8rem;line-height:1.7;">
+    <div style="font-weight:600;color:var(--accent-amber);font-size:0.75rem;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:0.4rem;">AWS Cognito Pricing Threshold</div>
+    <div style="color:var(--text-secondary);">
+      AWS Cognito (user authentication) is <span style="color:var(--accent-teal);font-weight:600;">completely free for the first 50,000 monthly active users</span>. After 50,000 MAU, each additional user costs <span style="color:var(--accent-amber);font-weight:600;">$0.015/user/month</span>. This is the only AWS service with a hard per-user fee — all other AWS costs (EC2, RDS, S3, VPC, etc.) are flat infrastructure rates that stay the same whether you have 1 user or 49,999. This means <span style="color:var(--text-primary);font-weight:500;">AWS infrastructure is essentially a fixed monthly cost until you cross 50k users</span>, at which point Cognito begins scaling linearly.
+    </div>
+    <div style="color:var(--text-muted);font-size:0.7rem;font-family:'JetBrains Mono',monospace;margin-top:0.5rem;">
+      Applies to: Auth — Cognito section below &middot; Editable in "Free tier MAU" and "Price per MAU" inputs
+    </div>
+  </div>
+
+  <!-- ═══ TOTAL USERS ═══ -->
+  <div style="text-align:center;margin-bottom:1rem;">
+    <span style="font-size:0.75rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-muted);font-weight:500;">Total Users</span>
+    <div id="totalUsersDisplay" style="font-family:'JetBrains Mono',monospace;font-size:2.4rem;font-weight:700;color:var(--accent-cyan);line-height:1.2;">0</div>
+    <span style="font-size:0.7rem;color:var(--text-muted);font-family:'JetBrains Mono',monospace;">players + coaches</span>
+  </div>
+
+  <!-- ═══ SLIDERS ═══ -->
+  <div class="card" style="margin-bottom: 1.25rem;">
+    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 2rem; align-items: start;">
+      <div>
+        <div class="slider-label">
+          <span>Players</span>
+          <span class="slider-value" style="color:var(--players-color)" id="playersDisplay">0</span>
+        </div>
+        <input type="range" id="playersSlider" min="0" max="1000" value="0">
+        <div style="display:flex;justify-content:space-between;margin-top:4px;">
+          <span style="font-size:0.6rem;color:var(--text-muted);font-family:'JetBrains Mono',monospace;">0</span>
+          <span style="font-size:0.6rem;color:var(--text-muted);font-family:'JetBrains Mono',monospace;">1,000,000</span>
+        </div>
+      </div>
+      <div>
+        <div class="slider-label">
+          <span>Coaches</span>
+          <span class="slider-value" style="color:var(--coaches-color)" id="coachesDisplay">0</span>
+        </div>
+        <input type="range" id="coachesSlider" min="0" max="1000" value="0">
+        <div style="display:flex;justify-content:space-between;margin-top:4px;">
+          <span style="font-size:0.6rem;color:var(--text-muted);font-family:'JetBrains Mono',monospace;">0</span>
+          <span style="font-size:0.6rem;color:var(--text-muted);font-family:'JetBrains Mono',monospace;">1,000,000</span>
+        </div>
+      </div>
+      <div>
+        <div class="slider-label" style="margin-bottom:0.35rem;">
+          <span>Requests / Coach / Month</span>
+        </div>
+        <input type="number" class="cost-input wide" id="reqPerCoach" value="75" min="0" style="width:100%;">
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ SUMMARY ═══ -->
+  <div class="grid-summary">
+    <div class="summary-card aws-card">
+      <div class="label">AWS Costs</div>
+      <div class="value" id="totalAWS">$0.00</div>
+      <div class="sub">per month</div>
+    </div>
+    <div class="summary-card ai-card">
+      <div class="label">AI Costs (Coaches)</div>
+      <div class="value" id="totalAI">$0.00</div>
+      <div class="sub">per month</div>
+    </div>
+    <div class="summary-card grand-card">
+      <div class="label">Grand Total</div>
+      <div class="value" id="grandTotal">$0.00</div>
+      <div class="sub">per month</div>
+      <div class="cost-bar">
+        <div class="bar-aws" id="barAWS" style="width:0%"></div>
+        <div class="bar-ai" id="barAI" style="width:0%"></div>
+      </div>
+      <div class="cost-bar-legend">
+        <span><span class="leg-dot" style="background:var(--accent-cyan)"></span> AWS</span>
+        <span><span class="leg-dot" style="background:var(--ai-color)"></span> AI</span>
+      </div>
+    </div>
+    <div class="summary-card peruser-card">
+      <div class="label">Cost / User / Month</div>
+      <div class="value" id="perUserMonth">—</div>
+      <div class="sub" id="perUserSub">requires users &gt; 0</div>
+    </div>
+  </div>
+
+  <!-- ═══ MAIN GRID ═══ -->
+  <div class="grid-main">
+
+    <!-- AWS SERVICE COSTS -->
+    <div class="card">
+      <div class="card-header">
+        <span class="dot" style="background:var(--accent-cyan)"></span>
+        <h2>AWS Service Costs</h2>
+        <span class="subtotal" style="color:var(--accent-cyan)" id="awsSubtotal">$0.00</span>
+      </div>
+
+      <div class="section-label">Compute — EC2</div>
+      <div class="input-row"><label>Instance <span class="unit">$/hr</span></label><input type="number" class="cost-input" id="ec2Rate" value="0.0104" step="0.0001"></div>
+      <div class="input-row"><label>Hours / month</label><input type="number" class="cost-input" id="ec2Hours" value="730" step="1"></div>
+      <div class="input-row"><label>EBS Storage <span class="unit">$/GB/mo</span></label><input type="number" class="cost-input" id="ebsRate" value="0.08" step="0.01"></div>
+      <div class="input-row"><label>EBS GB provisioned</label><input type="number" class="cost-input" id="ebsGB" value="20" step="1"></div>
+      <div class="input-row"><label style="color:var(--accent-cyan)">EC2 subtotal</label><span class="computed" id="ec2Cost">$0.00</span></div>
+
+      <div class="section-label" style="margin-top:0.75rem;">Database — RDS PostgreSQL</div>
+      <div class="input-row"><label>Instance <span class="unit">$/hr</span></label><input type="number" class="cost-input" id="rdsRate" value="0.018" step="0.001"></div>
+      <div class="input-row"><label>Hours / month</label><input type="number" class="cost-input" id="rdsHours" value="730" step="1"></div>
+      <div class="input-row"><label>Storage <span class="unit">$/GB/mo (gp2)</span></label><input type="number" class="cost-input" id="rdsStorageRate" value="0.115" step="0.001"></div>
+      <div class="input-row"><label>GB per user <span class="unit">avg</span></label><input type="number" class="cost-input" id="rdsGBPerUser" value="0.00006" step="0.00001"></div>
+      <div class="input-row"><label>Base storage GB</label><input type="number" class="cost-input" id="rdsBaseGB" value="20" step="1"></div>
+      <div class="input-row"><label style="color:var(--accent-cyan)">RDS subtotal</label><span class="computed" id="rdsCost">$0.00</span></div>
+
+      <div class="section-label" style="margin-top:0.75rem;">Storage — S3</div>
+      <div class="input-row"><label>Storage <span class="unit">$/GB/mo</span></label><input type="number" class="cost-input" id="s3StorageRate" value="0.023" step="0.001"></div>
+      <div class="input-row"><label>MB per user <span class="unit">avg</span></label><input type="number" class="cost-input" id="s3MBPerUser" value="24" step="1"></div>
+      <div class="input-row"><label>PUT requests <span class="unit">$/1k</span></label><input type="number" class="cost-input" id="s3PutRate" value="0.005" step="0.001"></div>
+      <div class="input-row"><label>GET requests <span class="unit">$/1k</span></label><input type="number" class="cost-input" id="s3GetRate" value="0.0004" step="0.0001"></div>
+      <div class="input-row"><label>PUTs per user / mo</label><input type="number" class="cost-input" id="s3PutsPerUser" value="3" step="1"></div>
+      <div class="input-row"><label>GETs per user / mo</label><input type="number" class="cost-input" id="s3GetsPerUser" value="300" step="10"></div>
+      <div class="input-row"><label style="color:var(--accent-cyan)">S3 subtotal</label><span class="computed" id="s3Cost">$0.00</span></div>
+
+      <div class="section-label" style="margin-top:0.75rem;">Auth — Cognito</div>
+      <div class="input-row"><label>Free tier MAU</label><input type="number" class="cost-input" id="cognitoFree" value="50000" step="1000"></div>
+      <div class="input-row"><label>Price per MAU above free <span class="unit">$</span></label><input type="number" class="cost-input" id="cognitoRate" value="0.015" step="0.001"></div>
+      <div class="input-row"><label style="color:var(--accent-cyan)">Cognito subtotal</label><span class="computed" id="cognitoCost">$0.00</span></div>
+
+      <div class="section-label" style="margin-top:0.75rem;">Networking</div>
+      <div class="input-row"><label>VPC / NAT Gateway <span class="unit">$/hr</span></label><input type="number" class="cost-input" id="vpcRate" value="0.045" step="0.001"></div>
+      <div class="input-row"><label>NAT data processing <span class="unit">$/GB</span></label><input type="number" class="cost-input" id="natDataRate" value="0.045" step="0.001"></div>
+      <div class="input-row"><label>Data transfer out <span class="unit">$/GB</span></label><input type="number" class="cost-input" id="dataTransferRate" value="0.09" step="0.01"></div>
+      <div class="input-row"><label>MB out per user / mo</label><input type="number" class="cost-input" id="dataTransferPerUser" value="5" step="1"></div>
+      <div class="input-row"><label style="color:var(--accent-cyan)">Networking subtotal</label><span class="computed" id="networkCost">$0.00</span></div>
+
+      <div class="section-label" style="margin-top:0.75rem;">Other Services</div>
+      <div class="input-row"><label>Route 53 hosted zone <span class="unit">$/mo</span></label><input type="number" class="cost-input" id="route53Rate" value="0.50" step="0.01"></div>
+      <div class="input-row"><label>Route 53 queries <span class="unit">$/1M</span></label><input type="number" class="cost-input" id="route53QueryRate" value="0.40" step="0.01"></div>
+      <div class="input-row"><label>Queries per user / mo</label><input type="number" class="cost-input" id="route53QueriesPerUser" value="100" step="10"></div>
+      <div class="input-row"><label>Secrets Manager <span class="unit">$/secret/mo</span></label><input type="number" class="cost-input" id="secretsRate" value="0.40" step="0.01"></div>
+      <div class="input-row"><label># of secrets</label><input type="number" class="cost-input" id="secretsCount" value="1" step="1"></div>
+      <div class="input-row"><label>SES <span class="unit">$/1k emails</span></label><input type="number" class="cost-input" id="sesRate" value="0.10" step="0.01"></div>
+      <div class="input-row"><label>Emails per user / mo</label><input type="number" class="cost-input" id="sesPerUser" value="0.5" step="0.1"></div>
+      <div class="input-row"><label style="color:var(--accent-cyan)">Other subtotal</label><span class="computed" id="otherCost">$0.00</span></div>
+    </div>
+
+    <!-- RIGHT COLUMN -->
+    <div style="display:flex;flex-direction:column;gap:1.25rem;">
+
+      <!-- AI COSTS -->
+      <div class="card">
+        <div class="card-header">
+          <span class="dot" style="background:var(--ai-color)"></span>
+          <h2>Claude Haiku AI Pricing</h2>
+          <span class="subtotal" style="color:var(--ai-color)" id="aiSubtotal">$0.00</span>
+        </div>
+        <div class="input-row"><label>Input price <span class="unit">$/1M tokens</span></label><input type="number" class="cost-input" id="aiInputPrice" value="1.00" step="0.01"></div>
+        <div class="input-row"><label>Output price <span class="unit">$/1M tokens</span></label><input type="number" class="cost-input" id="aiOutputPrice" value="5.00" step="0.01"></div>
+        <div class="input-row"><label>Max input tokens (RA)</label><input type="number" class="cost-input" id="aiRAInput" value="10000" step="100"></div>
+        <div class="input-row"><label>Max input tokens (PI)</label><input type="number" class="cost-input" id="aiPIInput" value="8000" step="100"></div>
+        <div class="input-row"><label>Max output tokens</label><input type="number" class="cost-input" id="aiMaxOutput" value="1024" step="64"></div>
+        <div class="input-row">
+          <label>RA / PI split</label>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <input type="number" class="cost-input narrow" id="aiRASplit" value="60" min="0" max="100" style="width:45px">
+            <span style="color:var(--text-muted);font-size:0.7rem;">/</span>
+            <span style="color:var(--text-muted);font-size:0.75rem;font-family:'JetBrains Mono',monospace;" id="aiPISplitDisplay">40</span>
+          </div>
+        </div>
+        <div class="per-request-display">
+          <div class="per-request-box"><div class="prb-label">Cost / RA Request</div><div class="prb-value" id="costPerRA">$0.01512</div></div>
+          <div class="per-request-box"><div class="prb-label">Cost / PI Request</div><div class="prb-value" id="costPerPI">$0.01312</div></div>
+          <div class="per-request-box"><div class="prb-label">Max / Coach / Month</div><div class="prb-value" id="maxPerCoach">$2.86</div></div>
+          <div class="per-request-box"><div class="prb-label">Current / Coach / Month</div><div class="prb-value" id="currentPerCoach">$0.00</div></div>
+        </div>
+      </div>
+
+      <!-- INFRASTRUCTURE UPGRADES -->
+      <div class="card">
+        <div class="card-header">
+          <span class="dot" style="background:var(--accent-rose)"></span>
+          <h2>Infrastructure Upgrades</h2>
+          <span class="subtotal" style="color:var(--accent-rose)" id="upgradesSubtotal">+$0.00</span>
+        </div>
+        <div class="toggle-row"><div class="toggle-left"><div class="toggle-name">RDS: t3.micro → t3.small</div><div class="toggle-desc">Changes instance rate to $0.036/hr</div></div><div class="toggle-right"><label class="toggle-switch"><input type="checkbox" data-upgrade="rds1" data-rate="0.036"><span class="toggle-slider"></span></label></div></div>
+        <div class="toggle-row"><div class="toggle-left"><div class="toggle-name">RDS: t3.small → t3.medium</div><div class="toggle-desc">Changes instance rate to $0.068/hr</div></div><div class="toggle-right"><label class="toggle-switch"><input type="checkbox" data-upgrade="rds2" data-rate="0.068"><span class="toggle-slider"></span></label></div></div>
+        <div class="toggle-row"><div class="toggle-left"><div class="toggle-name">RDS: t3.medium → m5.large</div><div class="toggle-desc">Changes instance rate to $0.171/hr</div></div><div class="toggle-right"><label class="toggle-switch"><input type="checkbox" data-upgrade="rds3" data-rate="0.171"><span class="toggle-slider"></span></label></div></div>
+        <div class="toggle-row"><div class="toggle-left"><div class="toggle-name">Multi-AZ RDS</div><div class="toggle-desc">Doubles RDS instance cost</div></div><div class="toggle-right"><label class="toggle-switch"><input type="checkbox" data-upgrade="multiaz"><span class="toggle-slider"></span></label></div></div>
+        <div class="toggle-row"><div class="toggle-left"><div class="toggle-name">Dedicated Redis (ElastiCache)</div><div class="toggle-desc">cache.t3.micro $0.017/hr</div></div><div class="toggle-right"><label class="toggle-switch"><input type="checkbox" data-upgrade="redis1" data-rate="0.017"><span class="toggle-slider"></span></label></div></div>
+        <div class="toggle-row"><div class="toggle-left"><div class="toggle-name">Redis: t3.micro → t3.small</div><div class="toggle-desc">Changes rate to $0.034/hr</div></div><div class="toggle-right"><label class="toggle-switch"><input type="checkbox" data-upgrade="redis2" data-rate="0.034"><span class="toggle-slider"></span></label></div></div>
+        <div class="toggle-row"><div class="toggle-left"><div class="toggle-name">EC2: t3.micro → t3.medium</div><div class="toggle-desc">Changes instance rate to $0.0416/hr</div></div><div class="toggle-right"><label class="toggle-switch"><input type="checkbox" data-upgrade="ec2_1" data-rate="0.0416"><span class="toggle-slider"></span></label></div></div>
+        <div class="toggle-row"><div class="toggle-left"><div class="toggle-name">EC2: t3.medium → t3.large</div><div class="toggle-desc">Changes instance rate to $0.0832/hr</div></div><div class="toggle-right"><label class="toggle-switch"><input type="checkbox" data-upgrade="ec2_2" data-rate="0.0832"><span class="toggle-slider"></span></label></div></div>
+        <div class="toggle-row"><div class="toggle-left"><div class="toggle-name">CloudFront CDN</div><div class="toggle-desc">~$0.085/GB transfer, reduces origin egress</div></div><div class="toggle-right"><label class="toggle-switch"><input type="checkbox" data-upgrade="cdn"><span class="toggle-slider"></span></label></div></div>
+      </div>
+
+      <!-- PER-SERVICE BREAKDOWN -->
+      <div class="card">
+        <div class="card-header">
+          <span class="dot" style="background:var(--accent-violet)"></span>
+          <h2>Per-Service Breakdown</h2>
+        </div>
+        <div class="input-row"><label>EC2 (Compute + EBS)</label><span class="computed" id="breakEC2">$0.00</span></div>
+        <div class="input-row"><label>RDS (Instance + Storage)</label><span class="computed" id="breakRDS">$0.00</span></div>
+        <div class="input-row"><label>S3 (Storage + Requests)</label><span class="computed" id="breakS3">$0.00</span></div>
+        <div class="input-row"><label>Cognito</label><span class="computed" id="breakCognito">$0.00</span></div>
+        <div class="input-row"><label>Networking (VPC + Transfer)</label><span class="computed" id="breakNetwork">$0.00</span></div>
+        <div class="input-row"><label>Other (R53, Secrets, SES)</label><span class="computed" id="breakOther">$0.00</span></div>
+        <div class="input-row"><label>Redis (ElastiCache)</label><span class="computed" id="breakRedis">$0.00</span></div>
+        <div class="input-row" style="border-top:1px solid var(--border);padding-top:0.5rem;"><label style="color:var(--ai-color);font-weight:600;">Claude Haiku AI</label><span class="computed" style="color:var(--ai-color);font-weight:600;" id="breakAI">$0.00</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ CHART ═══ -->
+  <div class="card" style="margin-bottom:1.25rem;">
+    <div class="card-header">
+      <span class="dot" style="background:var(--accent-cyan)"></span>
+      <h2>Monthly Cost Projection by User Count</h2>
+    </div>
+    <div class="chart-wrapper"><canvas id="costChart"></canvas></div>
+  </div>
+
+  <div class="footer">
+    All costs derived from AWS published pricing rates &middot; Claude Haiku 4.5 API pricing &middot; All values editable
+  </div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const float = id => parseFloat($(id).value) || 0;
+
+const fmt = n => {
+  if (n >= 10000) return '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  if (n >= 1) return '$' + n.toFixed(2);
+  if (n >= 0.001) return '$' + n.toFixed(4);
+  return '$' + n.toFixed(6);
+};
+
+const fmtShort = n => {
+  if (n >= 1000000) return '$' + (n / 1000000).toFixed(1) + 'M';
+  if (n >= 1000) return '$' + (n / 1000).toFixed(1) + 'k';
+  if (n >= 1) return '$' + n.toFixed(0);
+  return '$' + n.toFixed(2);
+};
+
+const fmtUsers = n => {
+  if (n >= 1000000) return '1M';
+  if (n >= 1000) return (n / 1000).toFixed(n % 1000 === 0 ? 0 : 1) + 'k';
+  return n.toLocaleString();
+};
+
+function sliderToUsers(val) {
+  if (val <= 0) return 0;
+  return Math.round(Math.pow(10, (val / 1000) * 6));
+}
+
+// ─── Presets ───
+const PRESETS = {
+  actual: {
+    ec2Rate: 0.0104, ec2Hours: 730, ebsRate: 0.08, ebsGB: 20,
+    rdsRate: 0.018, rdsHours: 730, rdsStorageRate: 0.115, rdsGBPerUser: 0.00006, rdsBaseGB: 20,
+    s3StorageRate: 0.023, s3MBPerUser: 24, s3PutRate: 0.005, s3GetRate: 0.0004, s3PutsPerUser: 3, s3GetsPerUser: 300,
+    cognitoFree: 50000, cognitoRate: 0.015,
+    vpcRate: 0.045, natDataRate: 0.045, dataTransferRate: 0.09, dataTransferPerUser: 5,
+    route53Rate: 0.50, route53QueryRate: 0.40, route53QueriesPerUser: 100,
+    secretsRate: 0.40, secretsCount: 1, sesRate: 0.10, sesPerUser: 0.5,
+    aiInputPrice: 1.00, aiOutputPrice: 5.00,
+    aiRAInput: 10000, aiPIInput: 8000, aiMaxOutput: 1024, aiRASplit: 60
+  },
+  overestimate: {
+    ec2Rate: 0.021, ec2Hours: 730, ebsRate: 0.10, ebsGB: 30,
+    rdsRate: 0.036, rdsHours: 730, rdsStorageRate: 0.15, rdsGBPerUser: 0.00015, rdsBaseGB: 30,
+    s3StorageRate: 0.025, s3MBPerUser: 50, s3PutRate: 0.005, s3GetRate: 0.0004, s3PutsPerUser: 8, s3GetsPerUser: 600,
+    cognitoFree: 50000, cognitoRate: 0.015,
+    vpcRate: 0.045, natDataRate: 0.045, dataTransferRate: 0.09, dataTransferPerUser: 12,
+    route53Rate: 0.50, route53QueryRate: 0.40, route53QueriesPerUser: 200,
+    secretsRate: 0.40, secretsCount: 3, sesRate: 0.10, sesPerUser: 2,
+    aiInputPrice: 1.00, aiOutputPrice: 5.00,
+    aiRAInput: 15000, aiPIInput: 12000, aiMaxOutput: 1024, aiRASplit: 60
+  }
+};
+
+let currentTab = 'actual';
+
+function switchTab(tab) {
+  currentTab = tab;
+  const preset = PRESETS[tab];
+
+  // Update tab buttons
+  $('tabActual').classList.toggle('active', tab === 'actual');
+  $('tabOver').classList.toggle('active', tab === 'overestimate');
+
+  // Apply preset values
+  Object.keys(preset).forEach(key => {
+    const el = $(key);
+    if (el) el.value = preset[key];
+  });
+
+  // Reset toggles
+  document.querySelectorAll('[data-upgrade]').forEach(t => t.checked = false);
+
+  update();
+}
+
+// ─── Cost Engine ───
+function calcCosts(totalUsers, coaches, reqPerCoach) {
+  let ec2Rate = float('ec2Rate');
+  if (document.querySelector('[data-upgrade="ec2_2"]').checked) ec2Rate = 0.0832;
+  else if (document.querySelector('[data-upgrade="ec2_1"]').checked) ec2Rate = 0.0416;
+  const ec2Total = (ec2Rate * float('ec2Hours')) + (float('ebsRate') * float('ebsGB'));
+
+  let rdsRate = float('rdsRate');
+  if (document.querySelector('[data-upgrade="rds3"]').checked) rdsRate = 0.171;
+  else if (document.querySelector('[data-upgrade="rds2"]').checked) rdsRate = 0.068;
+  else if (document.querySelector('[data-upgrade="rds1"]').checked) rdsRate = 0.036;
+  let rdsInstanceCost = rdsRate * float('rdsHours');
+  if (document.querySelector('[data-upgrade="multiaz"]').checked) rdsInstanceCost *= 2;
+  const rdsTotal = rdsInstanceCost + ((float('rdsBaseGB') + totalUsers * float('rdsGBPerUser')) * float('rdsStorageRate'));
+
+  const s3GB = (totalUsers * float('s3MBPerUser')) / 1024;
+  const s3Total = (s3GB * float('s3StorageRate')) + (totalUsers * float('s3PutsPerUser') / 1000 * float('s3PutRate')) + (totalUsers * float('s3GetsPerUser') / 1000 * float('s3GetRate'));
+
+  const cognitoCost = totalUsers > float('cognitoFree') ? (totalUsers - float('cognitoFree')) * float('cognitoRate') : 0;
+
+  const dataOutGB = (totalUsers * float('dataTransferPerUser')) / 1024;
+  let dtCost = dataOutGB * float('dataTransferRate');
+  if (document.querySelector('[data-upgrade="cdn"]').checked) dtCost = dataOutGB * 0.085;
+  const networkTotal = (float('vpcRate') * 730) + dtCost + (dataOutGB * float('natDataRate'));
+
+  let redisCost = 0;
+  if (document.querySelector('[data-upgrade="redis2"]').checked) redisCost = 0.034 * 730;
+  else if (document.querySelector('[data-upgrade="redis1"]').checked) redisCost = 0.017 * 730;
+
+  const otherTotal = float('route53Rate') + ((totalUsers * float('route53QueriesPerUser')) / 1000000 * float('route53QueryRate')) + (float('secretsRate') * float('secretsCount')) + (totalUsers * float('sesPerUser') / 1000 * float('sesRate'));
+
+  const awsTotal = ec2Total + rdsTotal + s3Total + cognitoCost + networkTotal + redisCost + otherTotal;
+
+  const inputPrice = float('aiInputPrice') / 1000000;
+  const outputPrice = float('aiOutputPrice') / 1000000;
+  let costPerRA, costPerPI;
+  if (currentTab === 'overestimate') {
+    costPerRA = 0.03;
+    costPerPI = 0.03;
+  } else {
+    costPerRA = (float('aiRAInput') * inputPrice) + (float('aiMaxOutput') * outputPrice);
+    costPerPI = (float('aiPIInput') * inputPrice) + (float('aiMaxOutput') * outputPrice);
+  }
+  const raSplit = Math.min(100, Math.max(0, parseFloat($('aiRASplit').value) || 60)) / 100;
+  const costPerCoachMonth = (reqPerCoach * raSplit * costPerRA) + (reqPerCoach * (1 - raSplit) * costPerPI);
+  const maxPerCoach = (200 * raSplit * costPerRA) + (200 * (1 - raSplit) * costPerPI);
+  const aiTotal = coaches * costPerCoachMonth;
+
+  return { ec2Total, rdsTotal, s3Total, cognitoCost, networkTotal, redisCost, otherTotal, awsTotal, costPerRA, costPerPI, costPerCoachMonth, maxPerCoach, aiTotal, grandTotal: awsTotal + aiTotal };
+}
+
+// ─── Chart ───
+const canvas = $('costChart');
+const ctx = canvas.getContext('2d');
+const chartPoints = [0, 10, 50, 100, 500, 1000, 5000, 10000, 25000, 50000, 100000, 500000, 1000000];
+
+function drawChart() {
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.parentElement.getBoundingClientRect();
+  canvas.width = rect.width * dpr;
+  canvas.height = rect.height * dpr;
+  ctx.scale(dpr, dpr);
+  const W = rect.width, H = rect.height;
+  ctx.clearRect(0, 0, W, H);
+
+  const players = sliderToUsers($('playersSlider').value);
+  const coaches = sliderToUsers($('coachesSlider').value);
+  const req = float('reqPerCoach');
+  const totalNow = players + coaches;
+  const coachRatio = totalNow > 0 ? coaches / totalNow : 0;
+
+  const data = chartPoints.map(u => calcCosts(u, Math.round(u * coachRatio), req));
+  const maxVal = Math.max(...data.map(d => d.grandTotal), 1);
+  const ml = 75, mr = 30, mt = 20, mb = 50;
+  const cw = W - ml - mr, ch = H - mt - mb;
+  const xPos = chartPoints.map((_, i) => ml + (i / (chartPoints.length - 1)) * cw);
+  const y = v => mt + ch - (v / maxVal * ch);
+
+  ctx.strokeStyle = 'rgba(30,41,59,0.6)'; ctx.lineWidth = 1;
+  for (let i = 0; i <= 5; i++) {
+    const gv = (maxVal / 5) * i, gy = y(gv);
+    ctx.beginPath(); ctx.moveTo(ml, gy); ctx.lineTo(W - mr, gy); ctx.stroke();
+    ctx.fillStyle = '#64748b'; ctx.font = '11px JetBrains Mono, monospace'; ctx.textAlign = 'right';
+    ctx.fillText(fmtShort(gv), ml - 8, gy + 4);
+  }
+
+  ctx.font = '10px JetBrains Mono, monospace'; ctx.textAlign = 'center'; ctx.fillStyle = '#64748b';
+  chartPoints.forEach((u, i) => ctx.fillText(fmtUsers(u), xPos[i], H - mb + 18));
+  ctx.fillStyle = '#94a3b8'; ctx.font = '11px DM Sans, sans-serif';
+  ctx.fillText('Total Users (Players + Coaches)', W / 2, H - 5);
+
+  function drawArea(getTop, getBottom, color) {
+    ctx.beginPath(); ctx.moveTo(xPos[0], getBottom(0));
+    for (let i = 0; i < data.length; i++) ctx.lineTo(xPos[i], getTop(i));
+    for (let i = data.length - 1; i >= 0; i--) ctx.lineTo(xPos[i], getBottom(i));
+    ctx.closePath(); ctx.fillStyle = color; ctx.fill();
+  }
+
+  drawArea(i => y(data[i].grandTotal), i => y(data[i].awsTotal), 'rgba(251,191,36,0.25)');
+  drawArea(i => y(data[i].awsTotal), i => y(0), 'rgba(34,211,238,0.2)');
+
+  function drawLine(getData, color) {
+    ctx.beginPath(); ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.lineJoin = 'round';
+    data.forEach((d, i) => { i === 0 ? ctx.moveTo(xPos[i], y(getData(d))) : ctx.lineTo(xPos[i], y(getData(d))); });
+    ctx.stroke();
+  }
+
+  drawLine(d => d.awsTotal, 'rgba(34,211,238,0.8)');
+  drawLine(d => d.grandTotal, 'rgba(251,191,36,0.9)');
+
+  data.forEach((d, i) => { ctx.beginPath(); ctx.arc(xPos[i], y(d.grandTotal), 3, 0, Math.PI * 2); ctx.fillStyle = '#fbbf24'; ctx.fill(); });
+
+  if (totalNow > 0) {
+    let idx = 0;
+    for (let i = 0; i < chartPoints.length - 1; i++) {
+      if (totalNow >= chartPoints[i] && totalNow <= chartPoints[i + 1]) { idx = i; break; }
+      if (totalNow > chartPoints[chartPoints.length - 1]) idx = chartPoints.length - 2;
+    }
+    const t = chartPoints[idx + 1] === chartPoints[idx] ? 0 : (totalNow - chartPoints[idx]) / (chartPoints[idx + 1] - chartPoints[idx]);
+    const cx = xPos[idx] + t * (xPos[idx + 1] - xPos[idx]);
+    const currentData = calcCosts(totalNow, coaches, req);
+    const cy = y(currentData.grandTotal);
+
+    ctx.strokeStyle = 'rgba(226,232,240,0.3)'; ctx.lineWidth = 1; ctx.setLineDash([4, 4]);
+    ctx.beginPath(); ctx.moveTo(cx, mt); ctx.lineTo(cx, mt + ch); ctx.stroke(); ctx.setLineDash([]);
+    ctx.beginPath(); ctx.arc(cx, cy, 6, 0, Math.PI * 2); ctx.fillStyle = '#e2e8f0'; ctx.fill();
+    ctx.strokeStyle = '#0a0e17'; ctx.lineWidth = 2; ctx.stroke();
+    ctx.fillStyle = '#e2e8f0'; ctx.font = 'bold 11px JetBrains Mono, monospace'; ctx.textAlign = 'center';
+    const labelY = cy - 14;
+    ctx.fillText(fmtShort(currentData.grandTotal) + '/mo', cx, labelY < mt + 12 ? cy + 20 : labelY);
+  }
+}
+
+// ─── Update ───
+function update() {
+  const players = sliderToUsers($('playersSlider').value);
+  const coaches = sliderToUsers($('coachesSlider').value);
+  const totalUsers = players + coaches;
+  const req = float('reqPerCoach');
+
+  $('playersDisplay').textContent = players.toLocaleString();
+  $('coachesDisplay').textContent = coaches.toLocaleString();
+  $('totalUsersDisplay').textContent = totalUsers.toLocaleString();
+
+  const raSplit = Math.min(100, Math.max(0, parseFloat($('aiRASplit').value) || 60));
+  $('aiPISplitDisplay').textContent = (100 - raSplit).toString();
+
+  const costs = calcCosts(totalUsers, coaches, req);
+
+  $('ec2Cost').textContent = '$' + costs.ec2Total.toFixed(2);
+  $('rdsCost').textContent = '$' + costs.rdsTotal.toFixed(2);
+  $('s3Cost').textContent = '$' + costs.s3Total.toFixed(2);
+  $('cognitoCost').textContent = '$' + costs.cognitoCost.toFixed(2);
+  $('networkCost').textContent = '$' + costs.networkTotal.toFixed(2);
+  $('otherCost').textContent = '$' + costs.otherTotal.toFixed(2);
+
+  $('awsSubtotal').textContent = '$' + costs.awsTotal.toFixed(2);
+  $('totalAWS').textContent = '$' + costs.awsTotal.toFixed(2);
+
+  $('costPerRA').textContent = '$' + costs.costPerRA.toFixed(5);
+  $('costPerPI').textContent = '$' + costs.costPerPI.toFixed(5);
+  $('maxPerCoach').textContent = '$' + costs.maxPerCoach.toFixed(2);
+  $('currentPerCoach').textContent = '$' + costs.costPerCoachMonth.toFixed(2);
+  $('aiSubtotal').textContent = '$' + costs.aiTotal.toFixed(2);
+  $('totalAI').textContent = '$' + costs.aiTotal.toFixed(2);
+
+  // Upgrades delta
+  let upgradeDelta = 0;
+  const baseEC2 = parseFloat($('ec2Rate').value) || 0.0104;
+  let effEC2 = baseEC2;
+  if (document.querySelector('[data-upgrade="ec2_2"]').checked) effEC2 = 0.0832;
+  else if (document.querySelector('[data-upgrade="ec2_1"]').checked) effEC2 = 0.0416;
+  upgradeDelta += (effEC2 - baseEC2) * float('ec2Hours');
+  const baseRDS = parseFloat($('rdsRate').value) || 0.018;
+  let effRDS = baseRDS;
+  if (document.querySelector('[data-upgrade="rds3"]').checked) effRDS = 0.171;
+  else if (document.querySelector('[data-upgrade="rds2"]').checked) effRDS = 0.068;
+  else if (document.querySelector('[data-upgrade="rds1"]').checked) effRDS = 0.036;
+  let rdsDelta = (effRDS - baseRDS) * float('rdsHours');
+  if (document.querySelector('[data-upgrade="multiaz"]').checked) rdsDelta = (effRDS * float('rdsHours') * 2) - (baseRDS * float('rdsHours'));
+  upgradeDelta += rdsDelta;
+  if (document.querySelector('[data-upgrade="redis2"]').checked) upgradeDelta += 0.034 * 730;
+  else if (document.querySelector('[data-upgrade="redis1"]').checked) upgradeDelta += 0.017 * 730;
+  $('upgradesSubtotal').textContent = '+$' + Math.max(0, upgradeDelta).toFixed(2);
+
+  $('grandTotal').textContent = '$' + costs.grandTotal.toFixed(2);
+
+  const gt = costs.grandTotal || 1;
+  $('barAWS').style.width = ((costs.awsTotal / gt) * 100) + '%';
+  $('barAI').style.width = ((costs.aiTotal / gt) * 100) + '%';
+
+  if (totalUsers > 0) {
+    const pm = costs.grandTotal / totalUsers;
+    $('perUserMonth').textContent = fmt(pm);
+    $('perUserSub').textContent = totalUsers.toLocaleString() + ' users · $' + (pm * 12).toFixed(2) + '/yr';
+  } else {
+    $('perUserMonth').textContent = '—';
+    $('perUserSub').textContent = 'requires users > 0';
+  }
+
+  $('breakEC2').textContent = '$' + costs.ec2Total.toFixed(2);
+  $('breakRDS').textContent = '$' + costs.rdsTotal.toFixed(2);
+  $('breakS3').textContent = '$' + costs.s3Total.toFixed(2);
+  $('breakCognito').textContent = '$' + costs.cognitoCost.toFixed(2);
+  $('breakNetwork').textContent = '$' + costs.networkTotal.toFixed(2);
+  $('breakOther').textContent = '$' + costs.otherTotal.toFixed(2);
+  $('breakRedis').textContent = '$' + (costs.redisCost || 0).toFixed(2);
+  $('breakAI').textContent = '$' + costs.aiTotal.toFixed(2);
+
+  drawChart();
+}
+
+// ─── Events ───
+document.querySelectorAll('input[type="number"], input[type="range"]').forEach(el => el.addEventListener('input', update));
+document.querySelectorAll('[data-upgrade]').forEach(el => el.addEventListener('change', update));
+window.addEventListener('resize', drawChart);
+
+update();
+</script>
+</body>
+</html>

@@ -2276,7 +2276,7 @@ async function saveProfileChanges() {
             }
 
             // Check if coach type changed (College to HS) - redirect to appropriate folder
-            const collegeDivisions = ['D1 FBS', 'D1 FCS', 'D2', 'D3', 'NAIA', 'NJCAA', '3C2A'];
+            const collegeDivisions = ['D1 FBS', 'D1 FCS', 'D2', 'D3', 'NAIA', 'NJCAA', 'FBS', 'FCS', '3C2A'];
             const newCollegeDivision = formData.college_division;
             const isStillCollegeCoach = newCollegeDivision && collegeDivisions.includes(newCollegeDivision);
 
@@ -2634,7 +2634,7 @@ function getFollowListRoleInfo(user) {
         // Determine player type
         const isTransfer = user.is_transfer === 'y' || user.is_transfer === true;
         const hasCollegeDivision = user.player_college_division &&
-            ['D1 FBS', 'D1 FCS', 'D2', 'D3', 'NAIA', 'NJCAA', '3C2A'].includes(user.player_college_division);
+            ['D1 FBS', 'D1 FCS', 'D2', 'D3', 'NAIA', 'NJCAA', 'FBS', 'FCS', '3C2A'].includes(user.player_college_division);
 
         if (isTransfer) {
             // Transfer Player: position • height • weight • YOE
@@ -2655,7 +2655,7 @@ function getFollowListRoleInfo(user) {
             if (user.player_team_name) schoolParts.push(user.player_team_name);
             if (user.player_state) schoolParts.push(user.player_state);
             if (schoolParts.length > 0) parts.push(schoolParts.join(', '));
-            if (user.player_college_division) parts.push(user.player_college_division);
+            if (user.player_college_division) parts.push(formatDivisionDisplay(user.player_college_division));
             text = parts.join(' • ') || 'College Player';
         } else {
             // HS Player: position • height • weight • class
@@ -2670,7 +2670,7 @@ function getFollowListRoleInfo(user) {
         }
     } else if (role === 'coach') {
         const hasCollegeDivision = user.coach_college_division &&
-            ['D1 FBS', 'D1 FCS', 'D2', 'D3', 'NAIA', 'NJCAA', '3C2A'].includes(user.coach_college_division);
+            ['D1 FBS', 'D1 FCS', 'D2', 'D3', 'NAIA', 'NJCAA', 'FBS', 'FCS', '3C2A'].includes(user.coach_college_division);
 
         if (hasCollegeDivision) {
             // College Coach: team, state • division
@@ -2680,7 +2680,7 @@ function getFollowListRoleInfo(user) {
             if (user.coach_team_name) teamParts.push(user.coach_team_name);
             if (user.coach_state) teamParts.push(user.coach_state);
             if (teamParts.length > 0) parts.push(teamParts.join(', '));
-            if (user.coach_college_division) parts.push(user.coach_college_division);
+            if (user.coach_college_division) parts.push(formatDivisionDisplay(user.coach_college_division));
             text = parts.join(' • ') || 'College Coach';
         } else {
             // HS Coach: team, state

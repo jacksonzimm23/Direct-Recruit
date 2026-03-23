@@ -317,8 +317,8 @@ function formatHeight(height) {
 function formatDivision(division) {
     if (!division) return '';
     const div = division.toUpperCase();
-    if (div === 'FBS' || div === 'DIVISION I FBS') return 'FBS';
-    if (div === 'FCS' || div === 'DIVISION I FCS') return 'FCS';
+    if (div === 'D1 FBS' || div === 'FBS' || div === 'DIVISION I FBS') return 'D1 FBS';
+    if (div === 'D1 FCS' || div === 'FCS' || div === 'DIVISION I FCS') return 'D1 FCS';
     if (div === 'D2' || div === 'DIVISION II') return 'D2';
     if (div === 'D3' || div === 'DIVISION III') return 'D3';
     if (div === 'NAIA') return 'NAIA';

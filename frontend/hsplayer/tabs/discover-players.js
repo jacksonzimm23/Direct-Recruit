@@ -339,8 +339,8 @@ document.addEventListener('DOMContentLoaded', function() {
         if (div.toLowerCase() === 'junior college') return div;
         // Map acronyms to full text
         const divisionMap = {
-            'FBS': 'Division I - FBS',
-            'FCS': 'Division I - FCS',
+            'D1 FBS': 'D1 FBS',
+            'D1 FCS': 'D1 FCS',
             'D1': 'Division I',
             'D2': 'Division II',
             'D3': 'Division III',
@@ -660,8 +660,8 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!division) return '';
 
         const divisionMap = {
-            'FBS': 'Division I - FBS',
-            'FCS': 'Division I - FCS',
+            'D1 FBS': 'D1 FBS',
+            'D1 FCS': 'D1 FCS',
             'D1-FBS': 'Division I - FBS',
             'D1-FCS': 'Division I - FCS',
             'D1': 'Division I',

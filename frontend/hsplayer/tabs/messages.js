@@ -376,11 +376,11 @@ function updateThreadHeader(participant) {
 
                 roleText = parts.join(' • ') || 'Transfer Player';
                 threadUserRole.style.color = '#b91c1c'; // Transfer player red
-            } else if (participant.college_division && ['D1 FBS', 'D1 FCS', 'D2', 'D3', 'NAIA', 'NJCAA', '3C2A'].includes(participant.college_division)) {
+            } else if (participant.college_division && ['D1 FBS', 'D1 FCS', 'D2', 'D3', 'NAIA', 'NJCAA', 'FBS', 'FCS', '3C2A'].includes(participant.college_division)) {
                 // College Player: Position • College • Division
                 if (participant.position) parts.push(participant.position);
                 if (participant.team_name) parts.push(participant.team_name);
-                if (participant.college_division) parts.push(participant.college_division);
+                if (participant.college_division) parts.push(formatDivisionDisplay(participant.college_division));
                 roleText = parts.join(' • ') || 'Player';
                 threadUserRole.style.color = '';
             } else {
@@ -409,7 +409,7 @@ function updateThreadHeader(participant) {
                 } else if (participant.state) {
                     parts.push(participant.state);
                 }
-                if (participant.college_division) parts.push(participant.college_division);
+                if (participant.college_division) parts.push(formatDivisionDisplay(participant.college_division));
                 roleText = parts.join(' • ') || 'Coach';
             } else {
                 // HS Coach: School, State (comma-separated like sidebar)

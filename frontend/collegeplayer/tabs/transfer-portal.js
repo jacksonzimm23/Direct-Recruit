@@ -356,8 +356,8 @@ async function showInfoFormModal() {
                         <label for="transferPrevDivision">Previous Division <span class="required">*</span></label>
                         <select id="transferPrevDivision" name="prevDivision" required>
                             <option value="">Select Division</option>
-                            <option value="FBS" ${profileData.college_division === 'FBS' ? 'selected' : ''}>D1 FBS</option>
-                            <option value="FCS" ${profileData.college_division === 'FCS' ? 'selected' : ''}>D1 FCS</option>
+                            <option value="D1 FBS" ${profileData.college_division === 'D1 FBS' ? 'selected' : ''}>D1 FBS</option>
+                            <option value="D1 FCS" ${profileData.college_division === 'D1 FCS' ? 'selected' : ''}>D1 FCS</option>
                             <option value="D2" ${profileData.college_division === 'D2' ? 'selected' : ''}>D2</option>
                             <option value="D3" ${profileData.college_division === 'D3' ? 'selected' : ''}>D3</option>
                             <option value="NAIA" ${profileData.college_division === 'NAIA' ? 'selected' : ''}>NAIA</option>

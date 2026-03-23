@@ -50,12 +50,12 @@ async function updateMobileHeader() {
                             parts.push(`YOE: ${profile.eligibility} ${yt}`);
                         }
                         roleText = parts.join(' • ') || 'Transfer Player';
-                    } else if (profile.college_division && ['D1 FBS', 'D1 FCS', 'D2', 'D3', 'NAIA', 'NJCAA', '3C2A'].includes(profile.college_division)) {
+                    } else if (profile.college_division && ['D1 FBS', 'D1 FCS', 'D2', 'D3', 'NAIA', 'NJCAA', 'FBS', 'FCS', '3C2A'].includes(profile.college_division)) {
                         // College Player: Position • Team • Division
                         const parts = [];
                         if (profile.position) parts.push(profile.position);
                         if (profile.team_name) parts.push(profile.team_name);
-                        if (profile.college_division) parts.push(profile.college_division);
+                        if (profile.college_division) parts.push(formatDivisionDisplay(profile.college_division));
                         roleText = parts.join(' • ') || 'College Player';
                     } else {
                         // HS Player: Position • Height • Weight • GradYear
@@ -85,7 +85,7 @@ async function updateMobileHeader() {
                             parts.push(profile.state);
                         }
                         if (profile.college_division) {
-                            parts.push(profile.college_division);
+                            parts.push(formatDivisionDisplay(profile.college_division));
                         }
                         roleText = parts.join(' • ') || 'College Coach';
                     } else {

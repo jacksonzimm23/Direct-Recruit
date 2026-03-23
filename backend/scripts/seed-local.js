@@ -354,7 +354,7 @@ async function seedProfiles(users) {
       `INSERT INTO player_profiles (user_id, first_name, last_name, position, height, weight, graduation_year,
        gpa, team_name, city, state, bio, username, college_division)
        VALUES ($1, 'Marcus', 'Williams', 'WR', 73, 185, 2026, 3.5, 'Colorado Buffaloes', 'Boulder', 'Colorado',
-       'Speed receiver with great route-running ability. Big 12 Conference.', 'marcuswilliams', 'FBS')`,
+       'Speed receiver with great route-running ability. Big 12 Conference.', 'marcuswilliams', 'D1 FBS')`,
       [collegePlayerId]
     );
     console.log('  CREATED: College Player profile (Marcus Williams)');
@@ -370,7 +370,7 @@ async function seedProfiles(users) {
       `INSERT INTO player_profiles (user_id, first_name, last_name, position, height, weight, graduation_year,
        gpa, team_name, city, state, bio, username, college_division, transfer)
        VALUES ($1, 'DeShawn', 'Carter', 'RB', 71, 210, 2025, 3.2, 'Oregon State Beavers', 'Corvallis', 'Oregon',
-       'Physical runner with great vision. Seeking new opportunity in the portal.', 'deshawncarter', 'FBS', 'y')`,
+       'Physical runner with great vision. Seeking new opportunity in the portal.', 'deshawncarter', 'D1 FBS', 'y')`,
       [transferPlayerId]
     );
     console.log('  CREATED: Transfer Player profile (DeShawn Carter)');
@@ -400,7 +400,7 @@ async function seedProfiles(users) {
     await pool.query(
       `INSERT INTO coach_profiles (user_id, first_name, last_name, team_name, college_division, position_title,
        city, state, bio, username, conference)
-       VALUES ($1, 'Sarah', 'Johnson', 'Colorado Buffaloes', 'FBS', 'Recruiting Coordinator', 'Boulder', 'Colorado',
+       VALUES ($1, 'Sarah', 'Johnson', 'Colorado Buffaloes', 'D1 FBS', 'Recruiting Coordinator', 'Boulder', 'Colorado',
        'Passionate about finding the best talent and building winning programs.', 'coachjohnson', 'Big 12')`,
       [collegeCoachId]
     );
