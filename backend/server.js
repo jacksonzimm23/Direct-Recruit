@@ -22,6 +22,7 @@ const settingsRoutes = require('./routes/settings');
 const aiRoutes = require('./routes/ai');
 const initializeSocket = require('./socket');
 const { apiLimiter } = require('./middleware/rateLimit');
+const logger = require('./utils/logger');
 
 const app = express();
 const server = http.createServer(app);
@@ -77,7 +78,11 @@ app.get('/health', (req, res) => {
 
 // Error handler
 app.use((err, req, res, next) => {
-  console.error(err.stack);
+  if (process.env.NODE_ENV !== 'production') {
+    logger.error(err.stack);
+  } else {
+    logger.error(`[ERROR] ${req.method} ${req.path}: ${err.message}`);
+  }
   res.status(500).json({ error: 'Something went wrong!' });
 });
 
@@ -87,18 +92,18 @@ app.use((req, res) => {
 });
 
 server.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-  console.log(`WebSocket server running`);
-  console.log(`Environment: ${process.env.NODE_ENV}`);
+  logger.info(`Server running on port ${PORT}`);
+  logger.info(`WebSocket server running`);
+  logger.info(`Environment: ${process.env.NODE_ENV}`);
 
   if (process.env.NODE_ENV !== 'production') {
-    console.log('');
-    console.log('LOCAL DEV MODE — AWS services are mocked:');
-    console.log('  Auth: bcrypt-based (no Cognito)');
-    console.log('  Storage: local filesystem (no S3)');
-    console.log('  Email: console output (no SES)');
-    console.log(`  Verification code: ${process.env.LOCAL_DEV_VERIFICATION_CODE || '123456'}`);
-    console.log('');
+    logger.info('');
+    logger.info('LOCAL DEV MODE — AWS services are mocked:');
+    logger.info('  Auth: bcrypt-based (no Cognito)');
+    logger.info('  Storage: local filesystem (no S3)');
+    logger.info('  Email: console output (no SES)');
+    logger.info(`  Verification code: ${process.env.LOCAL_DEV_VERIFICATION_CODE || '123456'}`);
+    logger.info('');
   }
 });
 

@@ -7,6 +7,8 @@ let viewingUserId = null;
 let isOwnProfile = true;
 let originalUsername = '';
 let loggedInUserFolder = '';
+let isEditUsernameAvailable = true;
+let editUsernameCheckTimeout;
 
 // Profile posts, replies, and likes state
 let profilePostsLoaded = false;
@@ -1438,19 +1440,50 @@ function initializeEditProfileModal() {
 
     // Initialize username availability check
     const usernameInput = document.getElementById('editUsername');
-    if (usernameInput) {
-        let usernameCheckTimeout;
+    const editUsernameError = document.getElementById('editUsernameError');
+    const editUsernameHint = document.getElementById('editUsernameHint');
+    if (usernameInput && editUsernameError) {
         usernameInput.addEventListener('input', function() {
-            clearTimeout(usernameCheckTimeout);
+            this.value = this.value.toLowerCase();
             const username = this.value.trim();
 
-            // Update character counter
             const charCounter = document.getElementById('editUsernameCharCounter');
             if (charCounter) {
                 charCounter.textContent = `${this.value.length}/15`;
             }
 
-            // TODO: Add backend check for username availability
+            clearTimeout(editUsernameCheckTimeout);
+
+            editUsernameError.style.display = 'none';
+            if (editUsernameHint) editUsernameHint.style.display = 'block';
+            usernameInput.style.borderColor = '';
+            isEditUsernameAvailable = false;
+
+            if (username === originalUsername) {
+                usernameInput.style.borderColor = '#4caf50';
+                isEditUsernameAvailable = true;
+                return;
+            }
+
+            if (username.length >= 3 && /^[a-z0-9_]+$/.test(username)) {
+                editUsernameCheckTimeout = setTimeout(async () => {
+                    try {
+                        const response = await API.get(`/profile/check-username/${username}`);
+                        if (!response.available) {
+                            editUsernameError.style.display = 'block';
+                            if (editUsernameHint) editUsernameHint.style.display = 'none';
+                            usernameInput.style.borderColor = '#ff6b6b';
+                            isEditUsernameAvailable = false;
+                        } else {
+                            usernameInput.style.borderColor = '#4caf50';
+                            isEditUsernameAvailable = true;
+                        }
+                    } catch (error) {
+                        // Allow save on check failure
+                        isEditUsernameAvailable = true;
+                    }
+                }, 500);
+            }
         });
     }
 }
@@ -1547,6 +1580,12 @@ async function saveProfileChanges() {
     // Validate username format (letters, numbers, underscores only)
     if (!/^[a-zA-Z0-9_]+$/.test(formData.username)) {
         showToast('Username can only contain letters, numbers, and underscores');
+        return;
+    }
+
+    // Check username availability
+    if (formData.username !== originalUsername && !isEditUsernameAvailable) {
+        showToast('That username is already taken');
         return;
     }
 

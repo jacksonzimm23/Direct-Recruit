@@ -4,6 +4,7 @@ const PlayerGameStats = require('../models/PlayerGameStats');
 const PlayerProfile = require('../models/PlayerProfile');
 const Follow = require('../models/Follow');
 const { authMiddleware, validateUUID } = require('../middleware/auth');
+const logger = require('../utils/logger');
 
 // Get all games/stats for the logged-in player
 router.get('/my-games', authMiddleware, async (req, res) => {
@@ -11,7 +12,7 @@ router.get('/my-games', authMiddleware, async (req, res) => {
     const games = await PlayerGameStats.getByUserId(req.userId);
     res.json({ games });
   } catch (error) {
-    console.error('Get games error:', error);
+    logger.error('Get games error:', error);
     res.status(500).json({ error: 'Failed to fetch games' });
   }
 });
@@ -40,7 +41,7 @@ router.get('/player/:username', authMiddleware, async (req, res) => {
     const games = await PlayerGameStats.getByUsername(req.params.username);
     res.json({ games });
   } catch (error) {
-    console.error('Get player games error:', error);
+    logger.error('Get player games error:', error);
     res.status(500).json({ error: 'Failed to fetch games' });
   }
 });
@@ -54,7 +55,7 @@ router.get('/game/:gameId', authMiddleware, validateUUID('gameId'), async (req, 
     }
     res.json({ game });
   } catch (error) {
-    console.error('Get game error:', error);
+    logger.error('Get game error:', error);
     res.status(500).json({ error: 'Failed to fetch game' });
   }
 });
@@ -89,7 +90,7 @@ router.post('/', authMiddleware, async (req, res) => {
       game
     });
   } catch (error) {
-    console.error('Add game stats error:', error);
+    logger.error('Add game stats error:', error);
     res.status(500).json({ error: 'Failed to add game stats' });
   }
 });
@@ -117,7 +118,7 @@ router.put('/:gameId', authMiddleware, validateUUID('gameId'), async (req, res) 
       game
     });
   } catch (error) {
-    console.error('Update game stats error:', error);
+    logger.error('Update game stats error:', error);
     if (error.message === 'Game not found or unauthorized') {
       return res.status(404).json({ error: 'Game not found or unauthorized' });
     }
@@ -139,7 +140,7 @@ router.delete('/:gameId', authMiddleware, validateUUID('gameId'), async (req, re
       message: 'Game stats deleted successfully'
     });
   } catch (error) {
-    console.error('Delete game stats error:', error);
+    logger.error('Delete game stats error:', error);
     res.status(500).json({ error: 'Failed to delete game stats' });
   }
 });

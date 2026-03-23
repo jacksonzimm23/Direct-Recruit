@@ -13,6 +13,7 @@ const { authMiddleware, requireRole, validateUUID } = require('../middleware/aut
 const { validatePlayerProfile, validateCoachProfile, handleValidationErrors } = require('../middleware/validation');
 const { getSignedS3Url } = require('../utils/s3');
 const { apiLimiter } = require('../middleware/rateLimit');
+const logger = require('../utils/logger');
 
 // Helper function to convert S3 key to signed URL in profile
 async function addSignedUrlToProfile(profile) {
@@ -23,7 +24,7 @@ async function addSignedUrlToProfile(profile) {
     try {
       profile.profile_image_url = await getSignedS3Url(profile.profile_image_url);
     } catch (error) {
-      console.error('Error generating signed URL:', error);
+      logger.error('Error generating signed URL:', error);
       profile.profile_image_url = null;
     }
   }
@@ -33,7 +34,7 @@ async function addSignedUrlToProfile(profile) {
     try {
       profile.profile_picture_url = await getSignedS3Url(profile.profile_picture_url);
     } catch (error) {
-      console.error('Error generating signed URL for profile_picture_url:', error);
+      logger.error('Error generating signed URL for profile_picture_url:', error);
       profile.profile_picture_url = null;
     }
   }
@@ -162,7 +163,7 @@ router.post('/player', authMiddleware, requireRole('player'), validatePlayerProf
             await Notification.createPortalEntryNotification(coachId, req.userId, playerName, profile.position, profile.team_name);
           }
         } catch (notifError) {
-          console.error('Failed to send portal watchlist notifications:', notifError);
+          logger.error('Failed to send portal watchlist notifications:', notifError);
         }
       }
     } else {
@@ -179,7 +180,7 @@ router.post('/player', authMiddleware, requireRole('player'), validatePlayerProf
       profile
     });
   } catch (error) {
-    console.error('Player profile error:', error);
+    logger.error('Player profile error:', error);
     res.status(500).json({ error: 'Failed to save profile' });
   }
 });
@@ -205,7 +206,7 @@ router.put('/', authMiddleware, async (req, res) => {
             await Notification.createPortalEntryNotification(coachId, req.userId, playerName, profile.position, profile.team_name);
           }
         } catch (notifError) {
-          console.error('Failed to send portal watchlist notifications:', notifError);
+          logger.error('Failed to send portal watchlist notifications:', notifError);
         }
       }
     } else if (user.role === 'coach') {
@@ -227,7 +228,7 @@ router.put('/', authMiddleware, async (req, res) => {
       profile
     });
   } catch (error) {
-    console.error('Profile update error:', error);
+    logger.error('Profile update error:', error);
     res.status(500).json({ error: 'Failed to update profile' });
   }
 });
@@ -258,7 +259,7 @@ router.post('/coach', authMiddleware, requireRole('coach'), validateCoachProfile
       profile
     });
   } catch (error) {
-    console.error('Coach profile error:', error);
+    logger.error('Coach profile error:', error);
     res.status(500).json({ error: 'Failed to save profile' });
   }
 });
@@ -289,7 +290,7 @@ router.post('/other', authMiddleware, requireRole('other'), async (req, res) => 
       profile
     });
   } catch (error) {
-    console.error('Other profile error:', error);
+    logger.error('Other profile error:', error);
     res.status(500).json({ error: 'Failed to save profile' });
   }
 });
@@ -320,7 +321,7 @@ router.get('/other/:userId', authMiddleware, validateUUID('userId'), async (req,
       hasPendingRequest: viewAccess.hasPendingRequest || false
     });
   } catch (error) {
-    console.error('Get other profile error:', error);
+    logger.error('Get other profile error:', error);
     res.status(500).json({ error: 'Failed to fetch profile' });
   }
 });
@@ -351,7 +352,7 @@ router.get('/player/:userId', authMiddleware, validateUUID('userId'), async (req
       hasPendingRequest: viewAccess.hasPendingRequest || false
     });
   } catch (error) {
-    console.error('Get player profile error:', error);
+    logger.error('Get player profile error:', error);
     res.status(500).json({ error: 'Failed to fetch profile' });
   }
 });
@@ -382,7 +383,7 @@ router.get('/coach/:userId', authMiddleware, validateUUID('userId'), async (req,
       hasPendingRequest: viewAccess.hasPendingRequest || false
     });
   } catch (error) {
-    console.error('Get coach profile error:', error);
+    logger.error('Get coach profile error:', error);
     res.status(500).json({ error: 'Failed to fetch profile' });
   }
 });
@@ -400,7 +401,7 @@ router.get('/search/players', authMiddleware, async (req, res) => {
     players = await addSignedUrlsToProfiles(players);
     res.json({ players });
   } catch (error) {
-    console.error('Search players error:', error);
+    logger.error('Search players error:', error);
     res.status(500).json({ error: 'Search failed' });
   }
 });
@@ -425,7 +426,7 @@ router.get('/discover/hsplayers', authMiddleware, async (req, res) => {
     result.players = await addSignedUrlsToProfiles(result.players);
     res.json({ players: result.players, hasMore: result.hasMore });
   } catch (error) {
-    console.error('Discover HS players error:', error);
+    logger.error('Discover HS players error:', error);
     res.status(500).json({ error: 'Failed to fetch HS players' });
   }
 });
@@ -447,7 +448,7 @@ router.get('/discover/collegeplayers', authMiddleware, async (req, res) => {
     result.players = await addSignedUrlsToProfiles(result.players);
     res.json({ players: result.players, hasMore: result.hasMore });
   } catch (error) {
-    console.error('Discover college players error:', error);
+    logger.error('Discover college players error:', error);
     res.status(500).json({ error: 'Failed to fetch college players' });
   }
 });
@@ -472,7 +473,7 @@ router.get('/discover/transferplayers', authMiddleware, async (req, res) => {
     result.players = await addSignedUrlsToProfiles(result.players);
     res.json({ players: result.players, hasMore: result.hasMore });
   } catch (error) {
-    console.error('Discover transfer players error:', error);
+    logger.error('Discover transfer players error:', error);
     res.status(500).json({ error: 'Failed to fetch transfer players' });
   }
 });
@@ -491,7 +492,7 @@ router.get('/discover/other', authMiddleware, async (req, res) => {
     result.profiles = await addSignedUrlsToProfiles(result.profiles);
     res.json({ profiles: result.profiles, hasMore: result.hasMore });
   } catch (error) {
-    console.error('Discover other profiles error:', error);
+    logger.error('Discover other profiles error:', error);
     res.status(500).json({ error: 'Failed to fetch other profiles' });
   }
 });
@@ -508,7 +509,7 @@ router.get('/search/coaches', authMiddleware, async (req, res) => {
     coaches = await addSignedUrlsToProfiles(coaches);
     res.json({ coaches });
   } catch (error) {
-    console.error('Search coaches error:', error);
+    logger.error('Search coaches error:', error);
     res.status(500).json({ error: 'Search failed' });
   }
 });
@@ -544,7 +545,7 @@ router.get('/search', authMiddleware, async (req, res) => {
 
     res.json({ results });
   } catch (error) {
-    console.error('Universal search error:', error);
+    logger.error('Universal search error:', error);
     res.status(500).json({ error: 'Search failed' });
   }
 });
@@ -562,7 +563,7 @@ router.get('/check-username/:username', apiLimiter, async (req, res) => {
       username: username
     });
   } catch (error) {
-    console.error('Check username error:', error);
+    logger.error('Check username error:', error);
     // Return available: true on error so user can proceed (server-side validation will still happen)
     res.json({ available: true, username: req.params.username });
   }
@@ -581,7 +582,7 @@ router.get('/check-email/:email', apiLimiter, async (req, res) => {
       email: email
     });
   } catch (error) {
-    console.error('Check email error:', error);
+    logger.error('Check email error:', error);
     res.status(500).json({ error: 'Failed to check email' });
   }
 });
@@ -637,7 +638,7 @@ router.get('/username/:username', authMiddleware, async (req, res) => {
       hasPendingRequest: viewAccess.hasPendingRequest || false
     });
   } catch (error) {
-    console.error('Get profile by username error:', error);
+    logger.error('Get profile by username error:', error);
     res.status(500).json({ error: 'Failed to fetch profile' });
   }
 });
@@ -667,7 +668,7 @@ router.post('/view/:userId', authMiddleware, validateUUID('userId'), async (req,
       viewCount: await ProfileView.getViewCount(viewedPlayerId)
     });
   } catch (error) {
-    console.error('Record profile view error:', error);
+    logger.error('Record profile view error:', error);
     res.status(500).json({ error: 'Failed to record profile view' });
   }
 });
@@ -693,7 +694,7 @@ router.post('/coach-view/:userId', authMiddleware, validateUUID('userId'), async
     await CoachProfileView.recordView(viewedCoachId, viewerId);
     res.json({ success: true, recorded: true });
   } catch (error) {
-    console.error('Record coach profile view error:', error);
+    logger.error('Record coach profile view error:', error);
     res.status(500).json({ error: 'Failed to record coach profile view' });
   }
 });
@@ -712,7 +713,7 @@ router.get('/views/:userId', authMiddleware, validateUUID('userId'), async (req,
 
     res.json({ viewCount });
   } catch (error) {
-    console.error('Get view count error:', error);
+    logger.error('Get view count error:', error);
     res.status(500).json({ error: 'Failed to get view count' });
   }
 });
@@ -733,7 +734,7 @@ router.get('/viewers/:userId', authMiddleware, validateUUID('userId'), async (re
 
     res.json({ viewers });
   } catch (error) {
-    console.error('Get viewers error:', error);
+    logger.error('Get viewers error:', error);
     res.status(500).json({ error: 'Failed to get viewers' });
   }
 });
@@ -814,7 +815,7 @@ router.get('/suggested-connections', authMiddleware, async (req, res) => {
       hasMore
     });
   } catch (error) {
-    console.error('Get suggested connections error:', error);
+    logger.error('Get suggested connections error:', error);
     res.status(500).json({ error: 'Failed to fetch suggested connections' });
   }
 });

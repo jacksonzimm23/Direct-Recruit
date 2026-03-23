@@ -5,6 +5,7 @@ const pool = require('../config/database');
 const { authMiddleware, validateUUID } = require('../middleware/auth');
 const { uploadToS3, getSignedVideoUrl, deleteFromS3, generateHighlightVideoKey } = require('../utils/s3');
 const Follow = require('../models/Follow');
+const logger = require('../utils/logger');
 
 // Configure multer for video uploads
 const storage = multer.memoryStorage();
@@ -31,7 +32,7 @@ async function addSignedUrlsToHighlights(highlights) {
       try {
         highlight.video_signed_url = await getSignedVideoUrl(highlight.video_url);
       } catch (error) {
-        console.error('Error generating signed URL for highlight:', error);
+        logger.error('Error generating signed URL for highlight:', error);
         highlight.video_signed_url = null;
       }
     }
@@ -90,7 +91,7 @@ router.post('/upload', authMiddleware, upload.single('video_file'), async (req, 
       highlight: highlight
     });
   } catch (error) {
-    console.error('Upload highlight error:', error);
+    logger.error('Upload highlight error:', error);
 
     // Handle multer errors - return generic message
     if (error.message && error.message.includes('Invalid file type')) {
@@ -141,7 +142,7 @@ router.get('/:userId', authMiddleware, validateUUID('userId'), async (req, res) 
       highlights: highlightsWithUrls
     });
   } catch (error) {
-    console.error('Get highlights error:', error);
+    logger.error('Get highlights error:', error);
     res.status(500).json({ error: 'Failed to fetch highlights' });
   }
 });
@@ -173,7 +174,7 @@ router.post('/', authMiddleware, async (req, res) => {
       highlight: result.rows[0]
     });
   } catch (error) {
-    console.error('Add highlight error:', error);
+    logger.error('Add highlight error:', error);
     res.status(500).json({ error: 'Failed to add highlight' });
   }
 });
@@ -216,7 +217,7 @@ router.put('/:highlightId', authMiddleware, validateUUID('highlightId'), async (
       highlight: result.rows[0]
     });
   } catch (error) {
-    console.error('Update highlight error:', error);
+    logger.error('Update highlight error:', error);
     res.status(500).json({ error: 'Failed to update highlight' });
   }
 });
@@ -246,7 +247,7 @@ router.delete('/:highlightId', authMiddleware, validateUUID('highlightId'), asyn
       try {
         await deleteFromS3(videoUrl);
       } catch (s3Error) {
-        console.error('Error deleting video from S3:', s3Error);
+        logger.error('Error deleting video from S3:', s3Error);
         // Continue with database deletion even if S3 delete fails
       }
     }
@@ -258,7 +259,7 @@ router.delete('/:highlightId', authMiddleware, validateUUID('highlightId'), asyn
       message: 'Highlight deleted successfully'
     });
   } catch (error) {
-    console.error('Delete highlight error:', error);
+    logger.error('Delete highlight error:', error);
     res.status(500).json({ error: 'Failed to delete highlight' });
   }
 });

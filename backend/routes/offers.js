@@ -4,6 +4,7 @@ const PlayerOffer = require('../models/PlayerOffer');
 const PlayerProfile = require('../models/PlayerProfile');
 const Follow = require('../models/Follow');
 const { authMiddleware } = require('../middleware/auth');
+const logger = require('../utils/logger');
 
 // Get all offers for the logged-in player
 router.get('/my-offers', authMiddleware, async (req, res) => {
@@ -11,7 +12,7 @@ router.get('/my-offers', authMiddleware, async (req, res) => {
     const offers = await PlayerOffer.getByUserId(req.userId);
     res.json({ offers });
   } catch (error) {
-    console.error('Get offers error:', error);
+    logger.error('Get offers error:', error);
     res.status(500).json({ error: 'Failed to fetch offers' });
   }
 });
@@ -40,7 +41,7 @@ router.get('/player/:username', authMiddleware, async (req, res) => {
     const offers = await PlayerOffer.getByUsername(req.params.username);
     res.json({ offers });
   } catch (error) {
-    console.error('Get player offers error:', error);
+    logger.error('Get player offers error:', error);
     res.status(500).json({ error: 'Failed to fetch offers' });
   }
 });
@@ -64,7 +65,7 @@ router.post('/', authMiddleware, async (req, res) => {
       offer
     });
   } catch (error) {
-    console.error('Add offer error:', error);
+    logger.error('Add offer error:', error);
     res.status(500).json({ error: 'Failed to add offer' });
   }
 });
@@ -92,7 +93,7 @@ router.put('/:offerIndex', authMiddleware, async (req, res) => {
       offer: result
     });
   } catch (error) {
-    console.error('Update offer error:', error);
+    logger.error('Update offer error:', error);
     res.status(500).json({ error: 'Failed to update offer' });
   }
 });
@@ -112,7 +113,7 @@ router.delete('/:offerIndex', authMiddleware, async (req, res) => {
       message: 'Offer deleted successfully'
     });
   } catch (error) {
-    console.error('Delete offer error:', error);
+    logger.error('Delete offer error:', error);
     res.status(500).json({ error: 'Failed to delete offer' });
   }
 });

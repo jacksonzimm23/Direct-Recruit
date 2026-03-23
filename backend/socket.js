@@ -2,6 +2,7 @@ const { Server } = require('socket.io');
 const jwt = require('jsonwebtoken');
 const cookie = require('cookie');
 const Message = require('./models/Message');
+const logger = require('./utils/logger');
 
 function initializeSocket(server) {
   const allowedOrigins = process.env.NODE_ENV === 'production'
@@ -43,7 +44,7 @@ function initializeSocket(server) {
   });
 
   io.on('connection', (socket) => {
-    console.log(`User connected: ${socket.userId}`);
+    logger.info(`User connected: ${socket.userId}`);
 
     // Join user's personal room
     socket.join(socket.userId);
@@ -57,7 +58,7 @@ function initializeSocket(server) {
           socket.emit('joined_conversation', { conversationId });
         }
       } catch (error) {
-        console.error('Join conversation error:', error);
+        logger.error('Join conversation error:', error);
       }
     });
 
@@ -87,14 +88,14 @@ function initializeSocket(server) {
         const message = await Message.sendMessage(conversationId, socket.userId, content);
         io.to(conversationId).emit('new_message', message);
       } catch (error) {
-        console.error('Send message error:', error);
+        logger.error('Send message error:', error);
         socket.emit('error', { message: 'Failed to send message' });
       }
     });
 
     // Online status
     socket.on('disconnect', () => {
-      console.log(`User disconnected: ${socket.userId}`);
+      logger.info(`User disconnected: ${socket.userId}`);
     });
   });
 

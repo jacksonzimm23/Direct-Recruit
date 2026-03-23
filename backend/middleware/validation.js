@@ -1,4 +1,5 @@
 const { body, validationResult } = require('express-validator');
+const logger = require('../utils/logger');
 
 const validateRegistration = [
   body('email').isEmail().normalizeEmail().withMessage('Valid email required'),
@@ -75,7 +76,7 @@ const handleValidationErrors = (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     const errorMessages = errors.array().map(err => err.msg).join(', ');
-    console.error('Validation errors:', errors.array());
+    logger.error('Validation errors:', errors.array());
     return res.status(400).json({
       error: errorMessages,
       details: errors.array()

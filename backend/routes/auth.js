@@ -10,6 +10,7 @@ const { authMiddleware } = require('../middleware/auth');
 const { authLimiter } = require('../middleware/rateLimit');
 const { getSignedS3Url } = require('../utils/s3');
 const cognito = require('../utils/cognito');
+const logger = require('../utils/logger');
 
 // Cookie configuration
 const COOKIE_OPTIONS = {
@@ -33,7 +34,7 @@ async function addSignedUrlToProfile(profile) {
     try {
       profile.profile_image_url = await getSignedS3Url(profile.profile_image_url);
     } catch (error) {
-      console.error('Error generating signed URL:', error);
+      logger.error('Error generating signed URL:', error);
       profile.profile_image_url = null;
     }
   }
@@ -43,7 +44,7 @@ async function addSignedUrlToProfile(profile) {
     try {
       profile.profile_picture_url = await getSignedS3Url(profile.profile_picture_url);
     } catch (error) {
-      console.error('Error generating signed URL for profile_picture_url:', error);
+      logger.error('Error generating signed URL for profile_picture_url:', error);
       profile.profile_picture_url = null;
     }
   }
@@ -91,7 +92,7 @@ router.post('/register', authLimiter, validateRegistration, handleValidationErro
       requiresVerification: !cognitoResult.userConfirmed
     });
   } catch (error) {
-    console.error('Registration error:', error.name);
+    logger.error('Registration error:', error.name);
     res.status(500).json({ error: 'Registration failed. Please try again.' });
   }
 });
@@ -130,7 +131,7 @@ router.post('/verify-email', authLimiter, async (req, res) => {
       res.json({ message: 'Email verified successfully' });
     }
   } catch (error) {
-    console.error('Verification error:', error);
+    logger.error('Verification error:', error);
     if (error.name === 'CodeMismatchException') {
       return res.status(400).json({ error: 'Invalid verification code' });
     }
@@ -157,7 +158,7 @@ router.post('/resend-verification', authLimiter, async (req, res) => {
       destination: result.destination
     });
   } catch (error) {
-    console.error('Resend verification error:', error);
+    logger.error('Resend verification error:', error);
     if (error.name === 'UserNotFoundException') {
       return res.status(400).json({ error: 'User not found' });
     }
@@ -213,7 +214,7 @@ router.post('/login', authLimiter, async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Login error:', error);
+    logger.error('Login error:', error);
     res.status(500).json({ error: 'Login failed' });
   }
 });
@@ -244,7 +245,7 @@ router.post('/forgot-password', authLimiter, async (req, res) => {
       destination: result.destination
     });
   } catch (error) {
-    console.error('Forgot password error:', error);
+    logger.error('Forgot password error:', error);
     if (error.name === 'UserNotFoundException') {
       // Don't reveal if user exists
       return res.json({ message: 'If an account exists with this email, a password reset code has been sent.' });
@@ -275,7 +276,7 @@ router.post('/reset-password', authLimiter, async (req, res) => {
       // UserNotFoundException means user doesn't exist (will be caught by confirmForgotPassword)
       // Any other error, we proceed and let confirmForgotPassword handle it
       if (signInError.name !== 'NotAuthorizedException' && signInError.name !== 'UserNotFoundException') {
-        console.log('Password check error (non-blocking):', signInError.name);
+        logger.info('Password check error (non-blocking):', signInError.name);
       }
     }
 
@@ -283,7 +284,7 @@ router.post('/reset-password', authLimiter, async (req, res) => {
 
     res.json({ message: 'Password reset successfully' });
   } catch (error) {
-    console.error('Reset password error:', error);
+    logger.error('Reset password error:', error);
     if (error.name === 'CodeMismatchException') {
       return res.status(400).json({ error: 'Invalid reset code' });
     }
@@ -343,7 +344,7 @@ router.get('/me', authMiddleware, async (req, res) => {
       profile
     });
   } catch (error) {
-    console.error('Get user error:', error);
+    logger.error('Get user error:', error);
     res.status(500).json({ error: 'Failed to fetch user data' });
   }
 });

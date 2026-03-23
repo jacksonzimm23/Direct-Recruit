@@ -10,6 +10,7 @@ const PortalSignal = require('../models/PortalSignal');
 const PortalWatchlist = require('../models/PortalWatchlist');
 const { getSignedS3Url } = require('../utils/s3');
 const PlayerGameStats = require('../models/PlayerGameStats');
+const logger = require('../utils/logger');
 
 // Helper: add signed URLs to player profiles (same pattern as profile.js)
 async function addSignedUrlsToProfiles(players) {
@@ -33,7 +34,7 @@ router.get('/chats', async (req, res) => {
     const chats = await AiChat.getChatsByCoach(req.userId, chatType);
     res.json({ chats });
   } catch (error) {
-    console.error('Get AI chats error:', error);
+    logger.error('Get AI chats error:', error);
     res.status(500).json({ error: 'Failed to fetch chats' });
   }
 });
@@ -45,7 +46,7 @@ router.post('/chats', async (req, res) => {
     const chat = await AiChat.createChat(req.userId, chat_type, title);
     res.json({ chat });
   } catch (error) {
-    console.error('Create AI chat error:', error);
+    logger.error('Create AI chat error:', error);
     res.status(500).json({ error: 'Failed to create chat' });
   }
 });
@@ -73,7 +74,7 @@ router.get('/chats/:chatId', validateUUID('chatId'), async (req, res) => {
 
     res.json({ chat });
   } catch (error) {
-    console.error('Get AI chat error:', error);
+    logger.error('Get AI chat error:', error);
     res.status(500).json({ error: 'Failed to fetch chat' });
   }
 });
@@ -88,7 +89,7 @@ router.put('/chats/:chatId/title', validateUUID('chatId'), async (req, res) => {
     }
     res.json({ chat });
   } catch (error) {
-    console.error('Update AI chat title error:', error);
+    logger.error('Update AI chat title error:', error);
     res.status(500).json({ error: 'Failed to update title' });
   }
 });
@@ -102,7 +103,7 @@ router.delete('/chats/:chatId', validateUUID('chatId'), async (req, res) => {
     }
     res.json({ success: true });
   } catch (error) {
-    console.error('Delete AI chat error:', error);
+    logger.error('Delete AI chat error:', error);
     res.status(500).json({ error: 'Failed to delete chat' });
   }
 });
@@ -131,7 +132,7 @@ router.post('/search', async (req, res) => {
       hasMore: result.hasMore
     });
   } catch (error) {
-    console.error('AI re-search error:', error);
+    logger.error('AI re-search error:', error);
     res.status(500).json({ error: 'Failed to search' });
   }
 });
@@ -311,7 +312,7 @@ router.post('/chats/:chatId/message', validateUUID('chatId'), async (req, res) =
     });
 
   } catch (error) {
-    console.error('AI message error:', error);
+    logger.error('AI message error:', error);
     res.status(500).json({ error: 'Failed to process message' });
   }
 });
@@ -491,7 +492,7 @@ router.post('/chats/:chatId/pi-message', validateUUID('chatId'), async (req, res
     });
 
   } catch (error) {
-    console.error('Portal Intelligence message error:', error);
+    logger.error('Portal Intelligence message error:', error);
     res.status(500).json({ error: 'Failed to process portal intelligence message' });
   }
 });
@@ -508,7 +509,7 @@ router.get('/watchlist', async (req, res) => {
     const count = players.length;
     res.json({ players, count, max: 50 });
   } catch (error) {
-    console.error('Get watchlist error:', error);
+    logger.error('Get watchlist error:', error);
     res.status(500).json({ error: 'Failed to get watchlist' });
   }
 });
@@ -523,7 +524,7 @@ router.get('/watchlist/check', async (req, res) => {
     const watchedIds = await PortalWatchlist.checkPlayers(req.userId, playerIds);
     res.json({ watchedIds });
   } catch (error) {
-    console.error('Check watchlist error:', error);
+    logger.error('Check watchlist error:', error);
     res.status(500).json({ error: 'Failed to check watchlist' });
   }
 });
@@ -538,7 +539,7 @@ router.post('/watchlist/:playerUserId', async (req, res) => {
     }
     res.json({ success: true, count: result.count });
   } catch (error) {
-    console.error('Add to watchlist error:', error);
+    logger.error('Add to watchlist error:', error);
     res.status(500).json({ error: 'Failed to add to watchlist' });
   }
 });
@@ -550,7 +551,7 @@ router.delete('/watchlist/:playerUserId', async (req, res) => {
     const result = await PortalWatchlist.removePlayer(req.userId, playerUserId);
     res.json({ success: true, count: result.count });
   } catch (error) {
-    console.error('Remove from watchlist error:', error);
+    logger.error('Remove from watchlist error:', error);
     res.status(500).json({ error: 'Failed to remove from watchlist' });
   }
 });
@@ -561,7 +562,7 @@ router.delete('/watchlist', async (req, res) => {
     await PortalWatchlist.removeAll(req.userId);
     res.json({ success: true, count: 0 });
   } catch (error) {
-    console.error('Clear watchlist error:', error);
+    logger.error('Clear watchlist error:', error);
     res.status(500).json({ error: 'Failed to clear watchlist' });
   }
 });

@@ -1,5 +1,6 @@
 const { Pool, types } = require('pg');
 require('dotenv').config();
+const logger = require('../utils/logger');
 
 // Override how pg parses TIMESTAMPTZ - return raw string without timezone conversion
 // This prevents the pg driver from misinterpreting timezone data
@@ -16,7 +17,7 @@ const pool = new Pool({
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 10000,
   ssl: process.env.DB_HOST !== 'localhost' ? {
-    rejectUnauthorized: false
+    rejectUnauthorized: process.env.DB_SSL_REJECT_UNAUTHORIZED !== 'false'
   } : false,
 });
 
@@ -26,7 +27,7 @@ pool.on('connect', (client) => {
 });
 
 pool.on('error', (err) => {
-  console.error('Unexpected error on idle client', err);
+  logger.error('Unexpected error on idle client', err);
   process.exit(-1);
 });
 

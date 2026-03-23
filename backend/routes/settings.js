@@ -10,6 +10,7 @@ const { authMiddleware } = require('../middleware/auth');
 const { authLimiter } = require('../middleware/rateLimit');
 const cognito = require('../utils/cognito');
 const email = require('../utils/email');
+const logger = require('../utils/logger');
 
 // Get current account settings (email from database)
 router.get('/account', authMiddleware, async (req, res) => {
@@ -24,7 +25,7 @@ router.get('/account', authMiddleware, async (req, res) => {
       emailVerified: user.email_verified
     });
   } catch (error) {
-    console.error('Get account settings error:', error);
+    logger.error('Get account settings error:', error);
     res.status(500).json({ error: 'Failed to fetch account settings' });
   }
 });
@@ -89,7 +90,7 @@ router.put('/privacy', authMiddleware, async (req, res) => {
       message_permissions: updatedProfile.message_permissions
     });
   } catch (error) {
-    console.error('Update privacy settings error:', error);
+    logger.error('Update privacy settings error:', error);
     res.status(500).json({ error: 'Failed to update privacy settings' });
   }
 });
@@ -111,7 +112,7 @@ router.get('/email/check-availability', authMiddleware, async (req, res) => {
       message: existingUser ? 'This email is already in use' : 'Email is available'
     });
   } catch (error) {
-    console.error('Check email availability error:', error);
+    logger.error('Check email availability error:', error);
     res.status(500).json({ error: 'Failed to check email availability' });
   }
 });
@@ -175,7 +176,7 @@ router.post('/email/request-change', authMiddleware, authLimiter, async (req, re
     try {
       await email.sendEmailChangeVerification(newEmail, verificationCode);
     } catch (emailError) {
-      console.error('[Settings] Failed to send verification email:', emailError);
+      logger.error('[Settings] Failed to send verification email:', emailError);
       // Clean up the pending change
       await PendingEmailChange.delete(req.userId);
 
@@ -193,7 +194,7 @@ router.post('/email/request-change', authMiddleware, authLimiter, async (req, re
       newEmail: newEmail
     });
   } catch (error) {
-    console.error('Email change request error:', error);
+    logger.error('Email change request error:', error);
     res.status(500).json({ error: 'Failed to initiate email change' });
   }
 });
@@ -225,7 +226,7 @@ router.post('/email/verify-change', authMiddleware, async (req, res) => {
     try {
       await cognito.adminUpdateUserEmail(pendingChange.current_email, pendingChange.new_email);
     } catch (cognitoError) {
-      console.error('Cognito email update error:', cognitoError.name);
+      logger.error('Cognito email update error:', cognitoError.name);
       return res.status(500).json({ error: 'Failed to update email in authentication system' });
     }
 
@@ -237,14 +238,14 @@ router.post('/email/verify-change', authMiddleware, async (req, res) => {
 
     // Send confirmation email to the new address (non-blocking)
     email.sendEmailChangeConfirmation(pendingChange.new_email)
-      .catch(err => console.error('Failed to send confirmation email:', err.name));
+      .catch(err => logger.error('Failed to send confirmation email:', err.name));
 
     res.json({
       message: 'Email changed successfully',
       email: updatedUser.email
     });
   } catch (error) {
-    console.error('Email verification error:', error);
+    logger.error('Email verification error:', error);
     res.status(500).json({ error: 'Failed to verify email change' });
   }
 });
@@ -296,7 +297,7 @@ router.post('/email/resend-code', authMiddleware, async (req, res) => {
     try {
       await email.sendEmailChangeVerification(pendingChange.new_email, verificationCode);
     } catch (emailError) {
-      console.error('Failed to resend verification email:', emailError.name);
+      logger.error('Failed to resend verification email:', emailError.name);
       throw emailError;
     }
 
@@ -306,7 +307,7 @@ router.post('/email/resend-code', authMiddleware, async (req, res) => {
       resendsRemaining
     });
   } catch (error) {
-    console.error('Resend code error:', error);
+    logger.error('Resend code error:', error);
     res.status(500).json({ error: 'Failed to resend verification code' });
   }
 });
@@ -317,7 +318,7 @@ router.post('/email/cancel-change', authMiddleware, async (req, res) => {
     await PendingEmailChange.delete(req.userId);
     res.json({ message: 'Email change cancelled' });
   } catch (error) {
-    console.error('Cancel email change error:', error);
+    logger.error('Cancel email change error:', error);
     res.status(500).json({ error: 'Failed to cancel email change' });
   }
 });
@@ -392,11 +393,11 @@ router.post('/password/change', authMiddleware, async (req, res) => {
 
     // Send confirmation email (non-blocking)
     email.sendPasswordChangeConfirmation(currentUser.email)
-      .catch(err => console.error('Failed to send password change confirmation email:', err.name));
+      .catch(err => logger.error('Failed to send password change confirmation email:', err.name));
 
     res.json({ message: 'Password changed successfully' });
   } catch (error) {
-    console.error('Password change error:', error.name);
+    logger.error('Password change error:', error.name);
     res.status(500).json({ error: 'Failed to change password' });
   }
 });
@@ -422,7 +423,7 @@ router.post('/password/forgot/request', authMiddleware, async (req, res) => {
     try {
       await email.sendPasswordResetVerification(currentUser.email, verificationCode);
     } catch (emailError) {
-      console.error('Failed to send password reset email:', emailError.name);
+      logger.error('Failed to send password reset email:', emailError.name);
       // Clean up the pending reset
       await PendingPasswordReset.delete(req.userId);
 
@@ -440,7 +441,7 @@ router.post('/password/forgot/request', authMiddleware, async (req, res) => {
       email: currentUser.email
     });
   } catch (error) {
-    console.error('Password reset request error:', error);
+    logger.error('Password reset request error:', error);
     res.status(500).json({ error: 'Failed to initiate password reset' });
   }
 });
@@ -468,7 +469,7 @@ router.post('/password/forgot/verify', authMiddleware, async (req, res) => {
       email: pendingReset.email
     });
   } catch (error) {
-    console.error('Password reset verify error:', error);
+    logger.error('Password reset verify error:', error);
     res.status(500).json({ error: 'Failed to verify code' });
   }
 });
@@ -566,11 +567,11 @@ router.post('/password/forgot/set', authMiddleware, async (req, res) => {
 
     // Send confirmation email (non-blocking)
     email.sendPasswordChangeConfirmation(pendingReset.email)
-      .catch(err => console.error('Failed to send password reset confirmation email:', err.name));
+      .catch(err => logger.error('Failed to send password reset confirmation email:', err.name));
 
     res.json({ message: 'Password reset successfully' });
   } catch (error) {
-    console.error('Password reset set error:', error.name);
+    logger.error('Password reset set error:', error.name);
     res.status(500).json({ error: 'Failed to reset password' });
   }
 });
@@ -622,7 +623,7 @@ router.post('/password/forgot/resend', authMiddleware, async (req, res) => {
     try {
       await email.sendPasswordResetVerification(pendingReset.email, verificationCode);
     } catch (emailError) {
-      console.error('Failed to resend password reset email:', emailError.name);
+      logger.error('Failed to resend password reset email:', emailError.name);
       throw emailError;
     }
 
@@ -632,7 +633,7 @@ router.post('/password/forgot/resend', authMiddleware, async (req, res) => {
       resendsRemaining
     });
   } catch (error) {
-    console.error('Resend password reset code error:', error);
+    logger.error('Resend password reset code error:', error);
     res.status(500).json({ error: 'Failed to resend verification code' });
   }
 });
@@ -643,7 +644,7 @@ router.post('/password/forgot/cancel', authMiddleware, async (req, res) => {
     await PendingPasswordReset.delete(req.userId);
     res.json({ message: 'Password reset cancelled' });
   } catch (error) {
-    console.error('Cancel password reset error:', error);
+    logger.error('Cancel password reset error:', error);
     res.status(500).json({ error: 'Failed to cancel password reset' });
   }
 });
@@ -687,7 +688,7 @@ router.delete('/account/delete', authMiddleware, async (req, res) => {
     } catch (cognitoError) {
       // Only fail if it's not a "user not found" error (already deleted)
       if (cognitoError.name !== 'UserNotFoundException') {
-        console.error('Cognito deletion error:', cognitoError.name);
+        logger.error('Cognito deletion error:', cognitoError.name);
         return res.status(500).json({ error: 'Failed to delete account from authentication system' });
       }
       // User not found in Cognito is fine - continue with PostgreSQL deletion
@@ -698,11 +699,11 @@ router.delete('/account/delete', authMiddleware, async (req, res) => {
 
     // Send goodbye email (non-blocking)
     email.sendAccountDeletionConfirmation(userEmail)
-      .catch(err => console.error('Failed to send account deletion email:', err.name));
+      .catch(err => logger.error('Failed to send account deletion email:', err.name));
 
     res.json({ message: 'Account deleted successfully' });
   } catch (error) {
-    console.error('Delete account error:', error);
+    logger.error('Delete account error:', error);
     res.status(500).json({ error: 'Failed to delete account' });
   }
 });

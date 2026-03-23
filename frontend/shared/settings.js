@@ -10,7 +10,6 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeDeleteAccount();
     initializePasswordChange();
     initializeEmailChange();
-    initializeSessionRevoke();
 
     // Set initial button states
     resetModifiedState();
@@ -1277,36 +1276,6 @@ function clearVerificationSuccess() {
     }
 }
 
-// Session Revoke Handlers
-function initializeSessionRevoke() {
-    const revokeButtons = document.querySelectorAll('.btn-session-revoke');
-
-    revokeButtons.forEach(button => {
-        button.addEventListener('click', function() {
-            handleSessionRevoke(this);
-        });
-    });
-}
-
-function handleSessionRevoke(button) {
-    if (confirm('Are you sure you want to revoke this session?')) {
-        const sessionItem = button.closest('.session-item');
-        const sessionName = sessionItem.querySelector('.session-name').textContent;
-
-        // Show loading state
-        button.textContent = 'Revoking...';
-        button.disabled = true;
-
-        // TODO: Replace with actual API call
-        setTimeout(() => {
-            sessionItem.style.opacity = '0';
-            setTimeout(() => {
-                sessionItem.remove();
-                showNotification(`Session "${sessionName}" has been revoked`, 'success');
-            }, 300);
-        }, 1000);
-    }
-}
 
 // Show Notification
 function showNotification(message, type = 'info') {
