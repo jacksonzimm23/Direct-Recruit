@@ -103,7 +103,7 @@ async function loadCurrentUser() {
                     if (profile.position) parts.push(profile.position);
                     if (profile.team_name) parts.push(profile.team_name);
                     if (profile.college_division) {
-                        parts.push(profile.college_division);
+                        parts.push(formatDivisionDisplay(profile.college_division));
                     }
                     userRole.textContent = parts.join(' • ') || 'Player';
                 }
