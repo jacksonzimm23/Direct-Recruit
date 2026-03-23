@@ -772,9 +772,6 @@ class FeedManager {
                     </div>
                 </div>
                 <div class="post-header-actions">
-                    ${!isOwnPost && !post.is_following ? `
-                        <button class="btn-follow-small" onclick="feedManager.followUser('${post.user_id}', this)">Follow</button>
-                    ` : ''}
                     <button class="post-more-btn" onclick="feedManager.showPostMenu('${postId}', ${isOwnPost}, event)">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <circle cx="12" cy="12" r="1"></circle>
