@@ -34,6 +34,9 @@ uploads/
 *.tmp
 *.temp
 
+# Sensitive business docs
+cost-model.html
+
 # Capacitor native platforms (regenerate with npx cap add ios/android)
 # Only ignore root-level ios/ and android/ folders, not icon subfolders
 /ios/
