@@ -7,6 +7,7 @@ const CoachProfile = require('../models/CoachProfile');
 const User = require('../models/User');
 const { authMiddleware, validateUUID } = require('../middleware/auth');
 const { getSignedS3Url } = require('../utils/s3');
+const logger = require('../utils/logger');
 
 // Helper function to add signed URLs to profiles array
 async function addSignedUrlsToProfiles(profiles) {
@@ -17,7 +18,7 @@ async function addSignedUrlsToProfiles(profiles) {
       try {
         profile.profile_image_url = await getSignedS3Url(profile.profile_image_url);
       } catch (error) {
-        console.error('Error generating signed URL:', error);
+        logger.error('Error generating signed URL:', error);
         profile.profile_image_url = null;
       }
     }
@@ -73,7 +74,7 @@ router.post('/:userId', authMiddleware, validateUUID('userId'), async (req, res)
         const requesterName = await getUserName(req.userId);
         await Notification.createFollowRequestNotification(userId, req.userId, requesterName);
       } catch (notifError) {
-        console.error('Failed to create follow request notification:', notifError);
+        logger.error('Failed to create follow request notification:', notifError);
       }
 
       res.json({ message: 'Follow request sent', requestPending: true });
@@ -86,14 +87,14 @@ router.post('/:userId', authMiddleware, validateUUID('userId'), async (req, res)
         const followerName = await getUserName(req.userId);
         await Notification.createFollowNotification(userId, req.userId, followerName);
       } catch (notifError) {
-        console.error('Failed to create follow notification:', notifError);
+        logger.error('Failed to create follow notification:', notifError);
         // Don't fail the follow action if notification fails
       }
 
       res.json({ message: 'Successfully followed user', requestPending: false });
     }
   } catch (error) {
-    console.error('Follow error:', error);
+    logger.error('Follow error:', error);
     res.status(500).json({ error: 'Failed to follow user' });
   }
 });
@@ -110,7 +111,7 @@ router.delete('/:userId', authMiddleware, validateUUID('userId'), async (req, re
 
     res.json({ message: 'Successfully unfollowed user' });
   } catch (error) {
-    console.error('Unfollow error:', error);
+    logger.error('Unfollow error:', error);
     res.status(500).json({ error: 'Failed to unfollow user' });
   }
 });
@@ -134,7 +135,7 @@ router.get('/:userId/followers', authMiddleware, validateUUID('userId'), async (
     followers = await addSignedUrlsToProfiles(followers);
     res.json({ followers, count: followers.length });
   } catch (error) {
-    console.error('Get followers error:', error);
+    logger.error('Get followers error:', error);
     res.status(500).json({ error: 'Failed to fetch followers' });
   }
 });
@@ -158,7 +159,7 @@ router.get('/:userId/following', authMiddleware, validateUUID('userId'), async (
     following = await addSignedUrlsToProfiles(following);
     res.json({ following, count: following.length });
   } catch (error) {
-    console.error('Get following error:', error);
+    logger.error('Get following error:', error);
     res.status(500).json({ error: 'Failed to fetch following' });
   }
 });
@@ -170,7 +171,7 @@ router.get('/:userId/counts', authMiddleware, validateUUID('userId'), async (req
     const counts = await Follow.getFollowCounts(userId);
     res.json(counts);
   } catch (error) {
-    console.error('Get counts error:', error);
+    logger.error('Get counts error:', error);
     res.status(500).json({ error: 'Failed to fetch counts' });
   }
 });
@@ -182,7 +183,7 @@ router.get('/:userId/check', authMiddleware, validateUUID('userId'), async (req,
     const isFollowing = await Follow.isFollowing(req.userId, userId);
     res.json({ isFollowing });
   } catch (error) {
-    console.error('Check follow error:', error);
+    logger.error('Check follow error:', error);
     res.status(500).json({ error: 'Failed to check follow status' });
   }
 });
@@ -194,7 +195,7 @@ router.get('/:userId/follows-me', authMiddleware, validateUUID('userId'), async 
     const followsMe = await Follow.isFollowing(userId, req.userId);
     res.json({ followsMe });
   } catch (error) {
-    console.error('Check follows me error:', error);
+    logger.error('Check follows me error:', error);
     res.status(500).json({ error: 'Failed to check follow status' });
   }
 });
@@ -207,7 +208,7 @@ router.get('/:userId/request-status', authMiddleware, validateUUID('userId'), as
     const isPrivate = await Follow.isPrivateProfile(userId);
     res.json({ hasPendingRequest: hasPending, isPrivateProfile: isPrivate });
   } catch (error) {
-    console.error('Check request status error:', error);
+    logger.error('Check request status error:', error);
     res.status(500).json({ error: 'Failed to check request status' });
   }
 });
@@ -222,7 +223,7 @@ router.delete('/:userId/request', authMiddleware, validateUUID('userId'), async 
     }
     res.json({ message: 'Follow request cancelled' });
   } catch (error) {
-    console.error('Cancel follow request error:', error);
+    logger.error('Cancel follow request error:', error);
     res.status(500).json({ error: 'Failed to cancel follow request' });
   }
 });
@@ -236,7 +237,7 @@ router.get('/requests/incoming', authMiddleware, async (req, res) => {
     requests = await addSignedUrlsToProfiles(requests);
     res.json({ requests, count: requests.length });
   } catch (error) {
-    console.error('Get incoming requests error:', error);
+    logger.error('Get incoming requests error:', error);
     res.status(500).json({ error: 'Failed to fetch incoming follow requests' });
   }
 });
@@ -250,7 +251,7 @@ router.get('/requests/outgoing', authMiddleware, async (req, res) => {
     requests = await addSignedUrlsToProfiles(requests);
     res.json({ requests, count: requests.length });
   } catch (error) {
-    console.error('Get outgoing requests error:', error);
+    logger.error('Get outgoing requests error:', error);
     res.status(500).json({ error: 'Failed to fetch outgoing follow requests' });
   }
 });
@@ -261,7 +262,7 @@ router.get('/requests/count', authMiddleware, async (req, res) => {
     const count = await Follow.countPendingFollowRequests(req.userId);
     res.json({ count });
   } catch (error) {
-    console.error('Get request count error:', error);
+    logger.error('Get request count error:', error);
     res.status(500).json({ error: 'Failed to fetch follow request count' });
   }
 });
@@ -290,12 +291,12 @@ router.post('/requests/:requestId/accept', authMiddleware, validateUUID('request
       const accepterName = await getUserName(req.userId);
       await Notification.createFollowRequestAcceptedNotification(request.requester_id, req.userId, accepterName);
     } catch (notifError) {
-      console.error('Failed to create follow request accepted notification:', notifError);
+      logger.error('Failed to create follow request accepted notification:', notifError);
     }
 
     res.json({ message: 'Follow request accepted' });
   } catch (error) {
-    console.error('Accept follow request error:', error);
+    logger.error('Accept follow request error:', error);
     res.status(500).json({ error: 'Failed to accept follow request' });
   }
 });
@@ -320,7 +321,7 @@ router.post('/requests/:requestId/decline', authMiddleware, validateUUID('reques
     await Follow.declineFollowRequest(requestId);
     res.json({ message: 'Follow request declined' });
   } catch (error) {
-    console.error('Decline follow request error:', error);
+    logger.error('Decline follow request error:', error);
     res.status(500).json({ error: 'Failed to decline follow request' });
   }
 });
@@ -345,12 +346,12 @@ router.post('/requests/user/:userId/accept', authMiddleware, validateUUID('userI
       const accepterName = await getUserName(req.userId);
       await Notification.createFollowRequestAcceptedNotification(userId, req.userId, accepterName);
     } catch (notifError) {
-      console.error('Failed to create follow request accepted notification:', notifError);
+      logger.error('Failed to create follow request accepted notification:', notifError);
     }
 
     res.json({ message: 'Follow request accepted', requestCancelled: false });
   } catch (error) {
-    console.error('Accept follow request by user error:', error);
+    logger.error('Accept follow request by user error:', error);
     res.status(500).json({ error: 'Failed to accept follow request' });
   }
 });
@@ -371,7 +372,7 @@ router.post('/requests/user/:userId/decline', authMiddleware, validateUUID('user
     await Follow.declineFollowRequest(request.id);
     res.json({ message: 'Follow request declined', requestCancelled: false });
   } catch (error) {
-    console.error('Decline follow request by user error:', error);
+    logger.error('Decline follow request by user error:', error);
     res.status(500).json({ error: 'Failed to decline follow request' });
   }
 });
@@ -383,7 +384,7 @@ router.get('/can-message/:userId', authMiddleware, validateUUID('userId'), async
     const result = await Follow.canMessage(req.userId, userId);
     res.json(result);
   } catch (error) {
-    console.error('Check can message error:', error);
+    logger.error('Check can message error:', error);
     res.status(500).json({ error: 'Failed to check message permissions' });
   }
 });

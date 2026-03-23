@@ -1,6 +1,7 @@
 // In development, use console logging instead of AWS SES
 if (process.env.NODE_ENV !== 'production') { module.exports = require('./local/email-local'); return; }
 
+const logger = require('./logger');
 const { SESClient, SendEmailCommand } = require('@aws-sdk/client-ses');
 
 const sesClient = new SESClient({
@@ -107,10 +108,10 @@ If you didn't request this change, you can safely ignore this email.
   try {
     const command = new SendEmailCommand(params);
     const response = await sesClient.send(command);
-    console.log('[Email] Verification email sent to:', toEmail, 'MessageId:', response.MessageId);
+    logger.info('[Email] Verification email sent to:', toEmail, 'MessageId:', response.MessageId);
     return { success: true, messageId: response.MessageId };
   } catch (error) {
-    console.error('[Email] Failed to send verification email:', error);
+    logger.error('[Email] Failed to send verification email:', error);
     throw error;
   }
 }
@@ -222,10 +223,10 @@ If you did not make this change, please contact our support team immediately.
   try {
     const command = new SendEmailCommand(params);
     const response = await sesClient.send(command);
-    console.log('[Email] Email change confirmation sent to:', toEmail, 'MessageId:', response.MessageId);
+    logger.info('[Email] Email change confirmation sent to:', toEmail, 'MessageId:', response.MessageId);
     return { success: true, messageId: response.MessageId };
   } catch (error) {
-    console.error('[Email] Failed to send email change confirmation:', error);
+    logger.error('[Email] Failed to send email change confirmation:', error);
     // Don't throw - this is a non-critical notification
     return { success: false, error: error.message };
   }
@@ -349,10 +350,10 @@ WARNING: If you didn't make this change, please reset your password immediately 
   try {
     const command = new SendEmailCommand(params);
     const response = await sesClient.send(command);
-    console.log('[Email] Password change confirmation sent to:', toEmail, 'MessageId:', response.MessageId);
+    logger.info('[Email] Password change confirmation sent to:', toEmail, 'MessageId:', response.MessageId);
     return { success: true, messageId: response.MessageId };
   } catch (error) {
-    console.error('[Email] Failed to send password change confirmation:', error);
+    logger.error('[Email] Failed to send password change confirmation:', error);
     // Don't throw - this is a non-critical notification
     return { success: false, error: error.message };
   }
@@ -468,10 +469,10 @@ If you didn't request this reset, you can safely ignore this email.
   try {
     const command = new SendEmailCommand(params);
     const response = await sesClient.send(command);
-    console.log('[Email] Password reset verification sent to:', toEmail, 'MessageId:', response.MessageId);
+    logger.info('[Email] Password reset verification sent to:', toEmail, 'MessageId:', response.MessageId);
     return { success: true, messageId: response.MessageId };
   } catch (error) {
-    console.error('[Email] Failed to send password reset verification:', error);
+    logger.error('[Email] Failed to send password reset verification:', error);
     throw error;
   }
 }
@@ -574,10 +575,10 @@ Thank you for being part of the Direct Recruit community. We wish you all the be
   try {
     const command = new SendEmailCommand(params);
     const response = await sesClient.send(command);
-    console.log('[Email] Account deletion confirmation sent to:', toEmail, 'MessageId:', response.MessageId);
+    logger.info('[Email] Account deletion confirmation sent to:', toEmail, 'MessageId:', response.MessageId);
     return { success: true, messageId: response.MessageId };
   } catch (error) {
-    console.error('[Email] Failed to send account deletion confirmation:', error);
+    logger.error('[Email] Failed to send account deletion confirmation:', error);
     // Don't throw - this is a non-critical notification
     return { success: false, error: error.message };
   }

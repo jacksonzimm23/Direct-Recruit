@@ -1,4 +1,5 @@
 const pool = require('../config/database');
+const logger = require('../utils/logger');
 
 class ProfileView {
   // Record a profile view (only for HS players)
@@ -32,7 +33,7 @@ class ProfileView {
 
       return false; // Already viewed before
     } catch (error) {
-      console.error('Error recording profile view:', error);
+      logger.error('Error recording profile view:', error);
       throw error;
     }
   }

@@ -10,6 +10,7 @@ const { authMiddleware, validateUUID } = require('../middleware/auth');
 const { body, validationResult } = require('express-validator');
 const { messageLimiter } = require('../middleware/rateLimit');
 const { getSignedS3Url } = require('../utils/s3');
+const logger = require('../utils/logger');
 
 // Helper function to add signed URLs to conversations/messages with profile images
 async function addSignedUrlsToConversations(conversations) {
@@ -21,7 +22,7 @@ async function addSignedUrlsToConversations(conversations) {
       try {
         conv.other_user_profile_image = await getSignedS3Url(conv.other_user_profile_image);
       } catch (error) {
-        console.error('Error generating signed URL:', error);
+        logger.error('Error generating signed URL:', error);
         conv.other_user_profile_image = null;
       }
     }
@@ -33,7 +34,7 @@ async function addSignedUrlsToConversations(conversations) {
           try {
             participant.profile_image = await getSignedS3Url(participant.profile_image);
           } catch (error) {
-            console.error('Error generating signed URL for participant:', error);
+            logger.error('Error generating signed URL for participant:', error);
             participant.profile_image = null;
           }
         }
@@ -51,7 +52,7 @@ router.get('/unread-count', authMiddleware, async (req, res) => {
     const count = await Message.getUnreadCount(req.userId);
     res.json({ unreadCount: count });
   } catch (error) {
-    console.error('Get unread count error:', error);
+    logger.error('Get unread count error:', error);
     res.status(500).json({ error: 'Failed to fetch unread count' });
   }
 });
@@ -66,7 +67,7 @@ router.get('/conversations', authMiddleware, async (req, res) => {
     conversations = await addSignedUrlsToConversations(conversations);
     res.json({ conversations, count: conversations.length });
   } catch (error) {
-    console.error('Get conversations error:', error);
+    logger.error('Get conversations error:', error);
     res.status(500).json({ error: 'Failed to fetch conversations' });
   }
 });
@@ -90,7 +91,7 @@ router.post('/conversations', authMiddleware, [
     const conversation = await Message.getOrCreateConversation(req.userId, otherUserId);
     res.json({ conversation });
   } catch (error) {
-    console.error('Create conversation error:', error);
+    logger.error('Create conversation error:', error);
     res.status(500).json({ error: 'Failed to create conversation' });
   }
 });
@@ -118,7 +119,7 @@ router.get('/conversations/:conversationId', authMiddleware, validateUUID('conve
 
     res.json({ messages, count: messages.length });
   } catch (error) {
-    console.error('Get messages error:', error);
+    logger.error('Get messages error:', error);
     res.status(500).json({ error: 'Failed to fetch messages' });
   }
 });
@@ -178,13 +179,13 @@ router.post('/conversations/:conversationId/messages', authMiddleware, validateU
         );
       }
     } catch (notifError) {
-      console.error('Failed to create message notification:', notifError);
+      logger.error('Failed to create message notification:', notifError);
       // Don't fail the message send if notification fails
     }
 
     res.status(201).json({ message });
   } catch (error) {
-    console.error('Send message error:', error);
+    logger.error('Send message error:', error);
     res.status(500).json({ error: 'Failed to send message' });
   }
 });
@@ -202,7 +203,7 @@ router.delete('/conversations/:conversationId', authMiddleware, validateUUID('co
     await Message.hideConversation(conversationId, req.userId);
     res.json({ success: true, message: 'Conversation hidden' });
   } catch (error) {
-    console.error('Hide conversation error:', error);
+    logger.error('Hide conversation error:', error);
     res.status(500).json({ error: 'Failed to hide conversation' });
   }
 });

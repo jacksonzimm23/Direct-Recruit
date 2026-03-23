@@ -3,6 +3,7 @@ const router = express.Router();
 const Notification = require('../models/Notification');
 const { authMiddleware, validateUUID } = require('../middleware/auth');
 const { getSignedS3Url } = require('../utils/s3');
+const logger = require('../utils/logger');
 
 // Helper function to add signed URLs to notifications with profile images
 async function addSignedUrlsToNotifications(notifications) {
@@ -14,7 +15,7 @@ async function addSignedUrlsToNotifications(notifications) {
       try {
         notification.actor_profile_image_url = await getSignedS3Url(notification.actor_profile_image_url);
       } catch (error) {
-        console.error('Error generating signed URL for actor_profile_image_url:', error);
+        logger.error('Error generating signed URL for actor_profile_image_url:', error);
         notification.actor_profile_image_url = null;
       }
     }
@@ -23,7 +24,7 @@ async function addSignedUrlsToNotifications(notifications) {
       try {
         notification.related_user_profile_image = await getSignedS3Url(notification.related_user_profile_image);
       } catch (error) {
-        console.error('Error generating signed URL for related_user_profile_image:', error);
+        logger.error('Error generating signed URL for related_user_profile_image:', error);
         notification.related_user_profile_image = null;
       }
     }
@@ -46,7 +47,7 @@ router.get('/', authMiddleware, async (req, res) => {
 
     res.json({ notifications, count: notifications.length });
   } catch (error) {
-    console.error('Get notifications error:', error);
+    logger.error('Get notifications error:', error);
     res.status(500).json({ error: 'Failed to fetch notifications' });
   }
 });
@@ -58,7 +59,7 @@ router.get('/unread-count', authMiddleware, async (req, res) => {
     const count = await Notification.getUnreadCount(req.userId, type || null);
     res.json({ unreadCount: count });
   } catch (error) {
-    console.error('Get unread count error:', error);
+    logger.error('Get unread count error:', error);
     res.status(500).json({ error: 'Failed to fetch unread count' });
   }
 });
@@ -69,7 +70,7 @@ router.get('/counts', authMiddleware, async (req, res) => {
     const counts = await Notification.getCountsByType(req.userId);
     res.json({ counts });
   } catch (error) {
-    console.error('Get counts error:', error);
+    logger.error('Get counts error:', error);
     res.status(500).json({ error: 'Failed to fetch counts' });
   }
 });
@@ -86,7 +87,7 @@ router.put('/:notificationId/read', authMiddleware, validateUUID('notificationId
 
     res.json({ message: 'Notification marked as read', notification });
   } catch (error) {
-    console.error('Mark as read error:', error);
+    logger.error('Mark as read error:', error);
     res.status(500).json({ error: 'Failed to mark notification as read' });
   }
 });
@@ -98,7 +99,7 @@ router.put('/read-all', authMiddleware, async (req, res) => {
     const count = await Notification.markAllAsRead(req.userId, type || null);
     res.json({ message: 'All notifications marked as read', count });
   } catch (error) {
-    console.error('Mark all as read error:', error);
+    logger.error('Mark all as read error:', error);
     res.status(500).json({ error: 'Failed to mark notifications as read' });
   }
 });
@@ -115,7 +116,7 @@ router.delete('/:notificationId', authMiddleware, validateUUID('notificationId')
 
     res.json({ message: 'Notification deleted' });
   } catch (error) {
-    console.error('Delete notification error:', error);
+    logger.error('Delete notification error:', error);
     res.status(500).json({ error: 'Failed to delete notification' });
   }
 });
@@ -127,7 +128,7 @@ router.delete('/', authMiddleware, async (req, res) => {
     const count = await Notification.deleteAll(req.userId, type || null);
     res.json({ message: 'Notifications deleted', count });
   } catch (error) {
-    console.error('Delete all notifications error:', error);
+    logger.error('Delete all notifications error:', error);
     res.status(500).json({ error: 'Failed to delete notifications' });
   }
 });

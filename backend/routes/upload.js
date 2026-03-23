@@ -8,6 +8,7 @@ const OtherProfile = require('../models/OtherProfile');
 const path = require('path');
 const multer = require('multer');
 const { uploadToS3, getSignedS3Url, generateProfileImageKey, generatePostMediaKey, deleteFromS3 } = require('../utils/s3');
+const logger = require('../utils/logger');
 
 // Memory storage for S3 uploads (keeps file in buffer instead of disk)
 const memoryStorage = multer.memoryStorage();
@@ -75,10 +76,10 @@ router.post('/profile-image', authMiddleware, s3Upload.single('profile_image'), 
     if (existingImageUrl && existingImageUrl.startsWith('profiles/')) {
       try {
         await deleteFromS3(existingImageUrl);
-        console.log('Deleted old profile image:', existingImageUrl);
+        logger.info('Deleted old profile image:', existingImageUrl);
       } catch (deleteError) {
         // Log but don't fail the upload if delete fails
-        console.error('Failed to delete old profile image:', deleteError);
+        logger.error('Failed to delete old profile image:', deleteError);
       }
     }
 
@@ -88,7 +89,7 @@ router.post('/profile-image', authMiddleware, s3Upload.single('profile_image'), 
     // Upload to S3
     await uploadToS3(req.file.buffer, s3Key, req.file.mimetype);
 
-    console.log('File uploaded to S3:', {
+    logger.info('File uploaded to S3:', {
       key: s3Key,
       contentType: req.file.mimetype,
       size: req.file.size
@@ -114,7 +115,7 @@ router.post('/profile-image', authMiddleware, s3Upload.single('profile_image'), 
       s3Key: s3Key
     });
   } catch (error) {
-    console.error('Upload profile image error:', error);
+    logger.error('Upload profile image error:', error);
     res.status(500).json({ error: 'Failed to upload image' });
   }
 });
@@ -156,7 +157,7 @@ router.post('/post-media', authMiddleware, postMediaUpload.array('media', 4), as
         originalName: file.originalname
       });
 
-      console.log('Post media uploaded to S3:', {
+      logger.info('Post media uploaded to S3:', {
         key: s3Key,
         contentType: file.mimetype,
         size: file.size
@@ -181,7 +182,7 @@ router.post('/post-media', authMiddleware, postMediaUpload.array('media', 4), as
       s3Key: uploadedMedia[0]?.s3Key
     });
   } catch (error) {
-    console.error('Upload post media error:', error);
+    logger.error('Upload post media error:', error);
     if (error.message && error.message.includes('Only image files')) {
       return res.status(400).json({ error: 'Only image files are allowed' });
     }

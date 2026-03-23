@@ -3,6 +3,7 @@ const router = express.Router();
 const pool = require('../config/database');
 const { getSignedS3Url } = require('../utils/s3');
 const { authMiddleware } = require('../middleware/auth');
+const logger = require('../utils/logger');
 
 // Helper function to add signed URLs to coach profiles
 async function addSignedUrlsToCoaches(coaches) {
@@ -13,7 +14,7 @@ async function addSignedUrlsToCoaches(coaches) {
       try {
         coach.profile_image_url = await getSignedS3Url(coach.profile_image_url);
       } catch (error) {
-        console.error('Error generating signed URL for coach:', error);
+        logger.error('Error generating signed URL for coach:', error);
         coach.profile_image_url = null;
       }
     }
@@ -88,7 +89,7 @@ router.get('/college', authMiddleware, async (req, res) => {
             limit
         });
     } catch (error) {
-        console.error('Error fetching college coaches:', error);
+        logger.error('Error fetching college coaches:', error);
         res.status(500).json({ error: 'Server error' });
     }
 });
@@ -108,7 +109,7 @@ router.get('/college-coach', async (req, res) => {
 
         res.json(result.rows[0]);
     } catch (error) {
-        console.error('Error fetching college coach:', error);
+        logger.error('Error fetching college coach:', error);
         res.status(500).json({ error: 'Server error' });
     }
 });

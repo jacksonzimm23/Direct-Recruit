@@ -1,6 +1,7 @@
 // In development, use local mock instead of AWS Cognito
 if (process.env.NODE_ENV !== 'production') { module.exports = require('./local/cognito-local'); return; }
 
+const logger = require('./logger');
 const {
   CognitoIdentityProviderClient,
   SignUpCommand,
@@ -64,7 +65,7 @@ async function signUp(email, password, role) {
       userConfirmed: response.UserConfirmed
     };
   } catch (error) {
-    console.error('Cognito signUp error:', error);
+    logger.error('Cognito signUp error:', error);
     throw error;
   }
 }
@@ -88,7 +89,7 @@ async function confirmSignUp(email, code) {
     await client.send(command);
     return { success: true };
   } catch (error) {
-    console.error('Cognito confirmSignUp error:', error);
+    logger.error('Cognito confirmSignUp error:', error);
     throw error;
   }
 }
@@ -115,7 +116,7 @@ async function resendConfirmationCode(email) {
       destination: response.CodeDeliveryDetails?.Destination
     };
   } catch (error) {
-    console.error('Cognito resendConfirmationCode error:', error);
+    logger.error('Cognito resendConfirmationCode error:', error);
     throw error;
   }
 }
@@ -148,7 +149,7 @@ async function signIn(email, password) {
       expiresIn: response.AuthenticationResult.ExpiresIn
     };
   } catch (error) {
-    console.error('Cognito signIn error:', error);
+    logger.error('Cognito signIn error:', error);
     throw error;
   }
 }
@@ -180,7 +181,7 @@ async function adminCreateUser(email, role, temporaryPassword = null) {
     if (error.name === 'UsernameExistsException') {
       return { success: false, error: 'User already exists in Cognito' };
     }
-    console.error('Cognito adminCreateUser error:', error);
+    logger.error('Cognito adminCreateUser error:', error);
     throw error;
   }
 }
@@ -198,7 +199,7 @@ async function adminSetUserPassword(email, password) {
     await client.send(command);
     return { success: true };
   } catch (error) {
-    console.error('Cognito adminSetUserPassword error:', error);
+    logger.error('Cognito adminSetUserPassword error:', error);
     throw error;
   }
 }
@@ -226,7 +227,7 @@ async function adminGetUser(email) {
     if (error.name === 'UserNotFoundException') {
       return { success: false, error: 'User not found' };
     }
-    console.error('Cognito adminGetUser error:', error);
+    logger.error('Cognito adminGetUser error:', error);
     throw error;
   }
 }
@@ -253,7 +254,7 @@ async function forgotPassword(email) {
       destination: response.CodeDeliveryDetails?.Destination
     };
   } catch (error) {
-    console.error('Cognito forgotPassword error:', error);
+    logger.error('Cognito forgotPassword error:', error);
     throw error;
   }
 }
@@ -278,7 +279,7 @@ async function confirmForgotPassword(email, code, newPassword) {
     await client.send(command);
     return { success: true };
   } catch (error) {
-    console.error('Cognito confirmForgotPassword error:', error);
+    logger.error('Cognito confirmForgotPassword error:', error);
     throw error;
   }
 }
@@ -295,7 +296,7 @@ async function changePassword(accessToken, oldPassword, newPassword) {
     await client.send(command);
     return { success: true };
   } catch (error) {
-    console.error('Cognito changePassword error:', error);
+    logger.error('Cognito changePassword error:', error);
     throw error;
   }
 }
@@ -310,7 +311,7 @@ async function globalSignOut(accessToken) {
     await client.send(command);
     return { success: true };
   } catch (error) {
-    console.error('Cognito globalSignOut error:', error);
+    logger.error('Cognito globalSignOut error:', error);
     throw error;
   }
 }
@@ -359,7 +360,7 @@ async function adminUpdateUserEmail(currentEmail, newEmail) {
     await client.send(command);
     return { success: true };
   } catch (error) {
-    console.error('Cognito adminUpdateUserEmail error:', error);
+    logger.error('Cognito adminUpdateUserEmail error:', error);
     throw error;
   }
 }
@@ -373,10 +374,10 @@ async function adminDeleteUser(email) {
 
   try {
     await client.send(command);
-    console.log('[Cognito] User deleted:', email);
+    logger.info('[Cognito] User deleted:', email);
     return { success: true };
   } catch (error) {
-    console.error('Cognito adminDeleteUser error:', error);
+    logger.error('Cognito adminDeleteUser error:', error);
     throw error;
   }
 }

@@ -12,6 +12,7 @@ const { authMiddleware, validateUUID } = require('../middleware/auth');
 const { body, validationResult } = require('express-validator');
 const { postLimiter } = require('../middleware/rateLimit');
 const { getSignedS3Url } = require('../utils/s3');
+const logger = require('../utils/logger');
 
 // Helper function to check if viewer can access a user's content
 async function canAccessUserContent(viewerId, targetUserId) {
@@ -40,7 +41,7 @@ async function addSignedUrlsToPosts(posts) {
       try {
         post.author_image = await getSignedS3Url(post.author_image);
       } catch (error) {
-        console.error('Error generating signed URL for author_image:', error);
+        logger.error('Error generating signed URL for author_image:', error);
         post.author_image = null;
       }
     }
@@ -49,7 +50,7 @@ async function addSignedUrlsToPosts(posts) {
       try {
         post.quoter_image = await getSignedS3Url(post.quoter_image);
       } catch (error) {
-        console.error('Error generating signed URL for quoter_image:', error);
+        logger.error('Error generating signed URL for quoter_image:', error);
         post.quoter_image = null;
       }
     }
@@ -58,7 +59,7 @@ async function addSignedUrlsToPosts(posts) {
       try {
         post.original_author_image = await getSignedS3Url(post.original_author_image);
       } catch (error) {
-        console.error('Error generating signed URL for original_author_image:', error);
+        logger.error('Error generating signed URL for original_author_image:', error);
         post.original_author_image = null;
       }
     }
@@ -67,7 +68,7 @@ async function addSignedUrlsToPosts(posts) {
       try {
         post.reposter_image = await getSignedS3Url(post.reposter_image);
       } catch (error) {
-        console.error('Error generating signed URL for reposter_image:', error);
+        logger.error('Error generating signed URL for reposter_image:', error);
         post.reposter_image = null;
       }
     }
@@ -88,7 +89,7 @@ async function addSignedUrlsToPosts(posts) {
         // Also update media_urls to signed for backwards compatibility
         post.media_urls = post.signed_media_urls;
       } catch (error) {
-        console.error('Error generating signed URLs for media_urls:', error);
+        logger.error('Error generating signed URLs for media_urls:', error);
       }
     }
     // Handle original_media_urls for reposts/quotes
@@ -103,7 +104,7 @@ async function addSignedUrlsToPosts(posts) {
           })
         );
       } catch (error) {
-        console.error('Error generating signed URLs for original_media_urls:', error);
+        logger.error('Error generating signed URLs for original_media_urls:', error);
       }
     }
     // Handle quote_media_urls for quote posts with their own media
@@ -122,7 +123,7 @@ async function addSignedUrlsToPosts(posts) {
         // Also update quote_media_urls to signed for backwards compatibility
         post.quote_media_urls = post.signed_quote_media_urls;
       } catch (error) {
-        console.error('Error generating signed URLs for quote_media_urls:', error);
+        logger.error('Error generating signed URLs for quote_media_urls:', error);
       }
     }
     return post;
@@ -138,7 +139,7 @@ async function addSignedUrlsToUsers(users) {
       try {
         user.profile_image_url = await getSignedS3Url(user.profile_image_url);
       } catch (error) {
-        console.error('Error generating signed URL for profile_image_url:', error);
+        logger.error('Error generating signed URL for profile_image_url:', error);
         user.profile_image_url = null;
       }
     }
@@ -177,7 +178,7 @@ router.get('/feed/combined', authMiddleware, async (req, res) => {
     posts = await addSignedUrlsToPosts(posts);
     res.json({ posts, count: posts.length });
   } catch (error) {
-    console.error('Get combined feed error:', error);
+    logger.error('Get combined feed error:', error);
     res.status(500).json({ error: 'Failed to fetch feed' });
   }
 });
@@ -192,7 +193,7 @@ router.get('/feed/following', authMiddleware, async (req, res) => {
     posts = await addSignedUrlsToPosts(posts);
     res.json({ posts, count: posts.length });
   } catch (error) {
-    console.error('Get following feed error:', error);
+    logger.error('Get following feed error:', error);
     res.status(500).json({ error: 'Failed to fetch following feed' });
   }
 });
@@ -207,7 +208,7 @@ router.get('/feed/discover', authMiddleware, async (req, res) => {
     posts = await addSignedUrlsToPosts(posts);
     res.json({ posts, count: posts.length });
   } catch (error) {
-    console.error('Get discover feed error:', error);
+    logger.error('Get discover feed error:', error);
     res.status(500).json({ error: 'Failed to fetch discover feed' });
   }
 });
@@ -229,7 +230,7 @@ router.get('/feed/new-posts-count', authMiddleware, async (req, res) => {
     const count = await Post.getNewPostsCount(req.userId, sinceDate, feedType);
     res.json({ newPostsCount: count });
   } catch (error) {
-    console.error('Get new posts count error:', error);
+    logger.error('Get new posts count error:', error);
     res.status(500).json({ error: 'Failed to check for new posts' });
   }
 });
@@ -244,7 +245,7 @@ router.get('/feed', authMiddleware, async (req, res) => {
     posts = await addSignedUrlsToPosts(posts);
     res.json({ posts, count: posts.length });
   } catch (error) {
-    console.error('Get feed error:', error);
+    logger.error('Get feed error:', error);
     res.status(500).json({ error: 'Failed to fetch feed' });
   }
 });
@@ -266,7 +267,7 @@ router.get('/user/:userId', authMiddleware, validateUUID('userId'), async (req, 
     posts = await addSignedUrlsToPosts(posts);
     res.json({ posts, count: posts.length });
   } catch (error) {
-    console.error('Get user posts error:', error);
+    logger.error('Get user posts error:', error);
     res.status(500).json({ error: 'Failed to fetch posts' });
   }
 });
@@ -287,7 +288,7 @@ router.get('/user/:userId/replies', authMiddleware, validateUUID('userId'), asyn
     replies = await addSignedUrlsToPosts(replies);
     res.json({ replies, count: replies.length });
   } catch (error) {
-    console.error('Get user replies error:', error);
+    logger.error('Get user replies error:', error);
     res.status(500).json({ error: 'Failed to fetch replies' });
   }
 });
@@ -308,7 +309,7 @@ router.get('/user/:userId/likes', authMiddleware, validateUUID('userId'), async 
     posts = await addSignedUrlsToPosts(posts);
     res.json({ posts, count: posts.length });
   } catch (error) {
-    console.error('Get liked posts error:', error);
+    logger.error('Get liked posts error:', error);
     res.status(500).json({ error: 'Failed to fetch liked posts' });
   }
 });
@@ -323,7 +324,7 @@ router.get('/saved/list', authMiddleware, async (req, res) => {
     posts = await addSignedUrlsToPosts(posts);
     res.json({ posts, count: posts.length });
   } catch (error) {
-    console.error('Get saved posts error:', error);
+    logger.error('Get saved posts error:', error);
     res.status(500).json({ error: 'Failed to fetch saved posts' });
   }
 });
@@ -338,7 +339,7 @@ router.get('/reposts/mine', authMiddleware, async (req, res) => {
     posts = await addSignedUrlsToPosts(posts);
     res.json({ posts, count: posts.length });
   } catch (error) {
-    console.error('Get reposts error:', error);
+    logger.error('Get reposts error:', error);
     res.status(500).json({ error: 'Failed to fetch reposts' });
   }
 });
@@ -355,7 +356,7 @@ router.get('/comments/:commentId/replies', authMiddleware, validateUUID('comment
     replies = await addSignedUrlsToPosts(replies); // Comments have author_image field
     res.json({ replies, count: replies.length });
   } catch (error) {
-    console.error('Get replies error:', error);
+    logger.error('Get replies error:', error);
     res.status(500).json({ error: 'Failed to fetch replies' });
   }
 });
@@ -387,13 +388,13 @@ router.post('/comments/:commentId/like', authMiddleware, validateUUID('commentId
           }
         }
       } catch (notifError) {
-        console.error('Failed to create comment like notification:', notifError);
+        logger.error('Failed to create comment like notification:', notifError);
       }
     }
 
     res.json({ message: 'Comment liked', liked: !!result });
   } catch (error) {
-    console.error('Like comment error:', error);
+    logger.error('Like comment error:', error);
     res.status(500).json({ error: 'Failed to like comment' });
   }
 });
@@ -407,7 +408,7 @@ router.delete('/comments/:commentId/like', authMiddleware, validateUUID('comment
     }
     res.json({ message: 'Comment unliked' });
   } catch (error) {
-    console.error('Unlike comment error:', error);
+    logger.error('Unlike comment error:', error);
     res.status(500).json({ error: 'Failed to unlike comment' });
   }
 });
@@ -423,7 +424,7 @@ router.delete('/shares/:shareId', authMiddleware, validateUUID('shareId'), async
     }
     res.json({ message: 'Share removed' });
   } catch (error) {
-    console.error('Unshare post error:', error);
+    logger.error('Unshare post error:', error);
     res.status(500).json({ error: 'Failed to remove share' });
   }
 });
@@ -446,7 +447,7 @@ router.post('/', authMiddleware, postLimiter, [
     const post = await Post.create(req.userId, req.body);
     res.status(201).json({ message: 'Post created', post });
   } catch (error) {
-    console.error('Create post error:', error);
+    logger.error('Create post error:', error);
     res.status(500).json({ error: 'Failed to create post' });
   }
 });
@@ -464,7 +465,7 @@ router.get('/share/:shareId', authMiddleware, validateUUID('shareId'), async (re
     share = sharesWithSignedUrls[0];
     res.json({ share });
   } catch (error) {
-    console.error('Get share error:', error);
+    logger.error('Get share error:', error);
     res.status(500).json({ error: 'Failed to fetch share' });
   }
 });
@@ -486,7 +487,7 @@ router.put('/share/:shareId', authMiddleware, validateUUID('shareId'), [
     }
     res.json({ message: 'Quote updated', share: result });
   } catch (error) {
-    console.error('Update share quote error:', error);
+    logger.error('Update share quote error:', error);
     res.status(500).json({ error: 'Failed to update quote' });
   }
 });
@@ -503,7 +504,7 @@ router.get('/:postId', authMiddleware, validateUUID('postId'), async (req, res) 
     post = postsWithSignedUrls[0];
     res.json({ post });
   } catch (error) {
-    console.error('Get post error:', error);
+    logger.error('Get post error:', error);
     res.status(500).json({ error: 'Failed to fetch post' });
   }
 });
@@ -517,7 +518,7 @@ router.put('/:postId', authMiddleware, validateUUID('postId'), async (req, res) 
     }
     res.json({ message: 'Post updated', post });
   } catch (error) {
-    console.error('Update post error:', error);
+    logger.error('Update post error:', error);
     res.status(500).json({ error: 'Failed to update post' });
   }
 });
@@ -531,7 +532,7 @@ router.delete('/:postId', authMiddleware, validateUUID('postId'), async (req, re
     }
     res.json({ message: 'Post deleted' });
   } catch (error) {
-    console.error('Delete post error:', error);
+    logger.error('Delete post error:', error);
     res.status(500).json({ error: 'Failed to delete post' });
   }
 });
@@ -552,13 +553,13 @@ router.post('/:postId/like', authMiddleware, validateUUID('postId'), async (req,
           await Notification.createLikeNotification(post.user_id, req.userId, likerName, req.params.postId);
         }
       } catch (notifError) {
-        console.error('Failed to create like notification:', notifError);
+        logger.error('Failed to create like notification:', notifError);
       }
     }
 
     res.json({ message: 'Post liked', liked: !!result });
   } catch (error) {
-    console.error('Like post error:', error);
+    logger.error('Like post error:', error);
     res.status(500).json({ error: 'Failed to like post' });
   }
 });
@@ -572,7 +573,7 @@ router.delete('/:postId/like', authMiddleware, validateUUID('postId'), async (re
     }
     res.json({ message: 'Post unliked' });
   } catch (error) {
-    console.error('Unlike post error:', error);
+    logger.error('Unlike post error:', error);
     res.status(500).json({ error: 'Failed to unlike post' });
   }
 });
@@ -587,7 +588,7 @@ router.get('/:postId/likes', authMiddleware, validateUUID('postId'), async (req,
     likes = await addSignedUrlsToUsers(likes);
     res.json({ likes, count: likes.length });
   } catch (error) {
-    console.error('Get likes error:', error);
+    logger.error('Get likes error:', error);
     res.status(500).json({ error: 'Failed to fetch likes' });
   }
 });
@@ -605,7 +606,7 @@ router.get('/:postId/shares', authMiddleware, validateUUID('postId'), async (req
     shares.quotes = await addSignedUrlsToUsers(shares.quotes);
     res.json(shares);
   } catch (error) {
-    console.error('Get shares error:', error);
+    logger.error('Get shares error:', error);
     res.status(500).json({ error: 'Failed to fetch shares' });
   }
 });
@@ -638,7 +639,7 @@ router.post('/:postId/comments', authMiddleware, validateUUID('postId'), [
         await Notification.createCommentNotification(post.user_id, req.userId, commenterName, req.params.postId, req.body.content);
       }
     } catch (notifError) {
-      console.error('Failed to create comment notification:', notifError);
+      logger.error('Failed to create comment notification:', notifError);
     }
 
     // Create notification for the parent comment owner (for replies)
@@ -662,13 +663,13 @@ router.post('/:postId/comments', authMiddleware, validateUUID('postId'), [
           }
         }
       } catch (notifError) {
-        console.error('Failed to create comment reply notification:', notifError);
+        logger.error('Failed to create comment reply notification:', notifError);
       }
     }
 
     res.status(201).json({ message: 'Comment added', comment });
   } catch (error) {
-    console.error('Add comment error:', error);
+    logger.error('Add comment error:', error);
     res.status(500).json({ error: 'Failed to add comment' });
   }
 });
@@ -683,7 +684,7 @@ router.get('/:postId/comments', authMiddleware, validateUUID('postId'), async (r
     comments = await addSignedUrlsToPosts(comments); // Comments have author_image field
     res.json({ comments, count: comments.length });
   } catch (error) {
-    console.error('Get comments error:', error);
+    logger.error('Get comments error:', error);
     res.status(500).json({ error: 'Failed to fetch comments' });
   }
 });
@@ -697,7 +698,7 @@ router.delete('/:postId/comments/:commentId', authMiddleware, validateUUID('post
     }
     res.json({ message: 'Comment deleted' });
   } catch (error) {
-    console.error('Delete comment error:', error);
+    logger.error('Delete comment error:', error);
     res.status(500).json({ error: 'Failed to delete comment' });
   }
 });
@@ -715,7 +716,7 @@ router.put('/:postId/comments/:commentId', authMiddleware, validateUUID('postId'
     }
     res.json({ message: 'Comment updated', comment: result });
   } catch (error) {
-    console.error('Update comment error:', error);
+    logger.error('Update comment error:', error);
     res.status(500).json({ error: 'Failed to update comment' });
   }
 });
@@ -728,7 +729,7 @@ router.post('/:postId/save', authMiddleware, validateUUID('postId'), async (req,
     const result = await Post.savePost(req.params.postId, req.userId);
     res.json({ message: 'Post saved', saved: !!result });
   } catch (error) {
-    console.error('Save post error:', error);
+    logger.error('Save post error:', error);
     res.status(500).json({ error: 'Failed to save post' });
   }
 });
@@ -742,7 +743,7 @@ router.delete('/:postId/save', authMiddleware, validateUUID('postId'), async (re
     }
     res.json({ message: 'Post unsaved' });
   } catch (error) {
-    console.error('Unsave post error:', error);
+    logger.error('Unsave post error:', error);
     res.status(500).json({ error: 'Failed to unsave post' });
   }
 });
@@ -783,12 +784,12 @@ router.post('/:postId/share', authMiddleware, validateUUID('postId'), [
         );
       }
     } catch (notifError) {
-      console.error('Failed to create share notification:', notifError);
+      logger.error('Failed to create share notification:', notifError);
     }
 
     res.status(201).json({ message: 'Post shared', share: result });
   } catch (error) {
-    console.error('Share post error:', error);
+    logger.error('Share post error:', error);
     res.status(500).json({ error: 'Failed to share post' });
   }
 });
@@ -802,7 +803,7 @@ router.delete('/:postId/repost', authMiddleware, validateUUID('postId'), async (
     }
     res.json({ message: 'Repost removed' });
   } catch (error) {
-    console.error('Unrepost error:', error);
+    logger.error('Unrepost error:', error);
     res.status(500).json({ error: 'Failed to remove repost' });
   }
 });
@@ -818,7 +819,7 @@ router.post('/:postId/pin', authMiddleware, validateUUID('postId'), async (req, 
     }
     res.json({ message: 'Post pinned', post: result });
   } catch (error) {
-    console.error('Pin post error:', error);
+    logger.error('Pin post error:', error);
     res.status(500).json({ error: 'Failed to pin post' });
   }
 });
@@ -832,7 +833,7 @@ router.delete('/:postId/pin', authMiddleware, validateUUID('postId'), async (req
     }
     res.json({ message: 'Post unpinned', post: result });
   } catch (error) {
-    console.error('Unpin post error:', error);
+    logger.error('Unpin post error:', error);
     res.status(500).json({ error: 'Failed to unpin post' });
   }
 });
@@ -854,13 +855,13 @@ router.post('/share/:shareId/like', authMiddleware, validateUUID('shareId'), asy
           await Notification.createShareLikeNotification(share.quoter_user_id, req.userId, likerName, req.params.shareId);
         }
       } catch (notifError) {
-        console.error('Failed to create share like notification:', notifError);
+        logger.error('Failed to create share like notification:', notifError);
       }
     }
 
     res.json({ message: 'Share liked', liked: !!result });
   } catch (error) {
-    console.error('Like share error:', error);
+    logger.error('Like share error:', error);
     res.status(500).json({ error: 'Failed to like share' });
   }
 });
@@ -874,7 +875,7 @@ router.delete('/share/:shareId/like', authMiddleware, validateUUID('shareId'), a
     }
     res.json({ message: 'Share unliked' });
   } catch (error) {
-    console.error('Unlike share error:', error);
+    logger.error('Unlike share error:', error);
     res.status(500).json({ error: 'Failed to unlike share' });
   }
 });
@@ -889,7 +890,7 @@ router.get('/share/:shareId/likes', authMiddleware, validateUUID('shareId'), asy
     likes = await addSignedUrlsToUsers(likes);
     res.json({ likes, count: likes.length });
   } catch (error) {
-    console.error('Get share likes error:', error);
+    logger.error('Get share likes error:', error);
     res.status(500).json({ error: 'Failed to fetch share likes' });
   }
 });
@@ -900,7 +901,7 @@ router.post('/share/:shareId/save', authMiddleware, validateUUID('shareId'), asy
     const result = await Post.saveShare(req.params.shareId, req.userId);
     res.json({ message: 'Share saved', saved: !!result });
   } catch (error) {
-    console.error('Save share error:', error);
+    logger.error('Save share error:', error);
     res.status(500).json({ error: 'Failed to save share' });
   }
 });
@@ -914,7 +915,7 @@ router.delete('/share/:shareId/save', authMiddleware, validateUUID('shareId'), a
     }
     res.json({ message: 'Share unsaved' });
   } catch (error) {
-    console.error('Unsave share error:', error);
+    logger.error('Unsave share error:', error);
     res.status(500).json({ error: 'Failed to unsave share' });
   }
 });
@@ -940,12 +941,12 @@ router.post('/share/:shareId/comments', authMiddleware, validateUUID('shareId'),
         await Notification.createShareCommentNotification(share.quoter_user_id, req.userId, commenterName, req.params.shareId);
       }
     } catch (notifError) {
-      console.error('Failed to create share comment notification:', notifError);
+      logger.error('Failed to create share comment notification:', notifError);
     }
 
     res.status(201).json({ comment });
   } catch (error) {
-    console.error('Add share comment error:', error);
+    logger.error('Add share comment error:', error);
     res.status(500).json({ error: 'Failed to add comment' });
   }
 });
@@ -960,7 +961,7 @@ router.get('/share/:shareId/comments', authMiddleware, validateUUID('shareId'), 
     comments = await addSignedUrlsToUsers(comments);
     res.json({ comments });
   } catch (error) {
-    console.error('Get share comments error:', error);
+    logger.error('Get share comments error:', error);
     res.status(500).json({ error: 'Failed to fetch comments' });
   }
 });
@@ -974,7 +975,7 @@ router.delete('/share/comments/:commentId', authMiddleware, validateUUID('commen
     }
     res.json({ message: 'Comment deleted' });
   } catch (error) {
-    console.error('Delete share comment error:', error);
+    logger.error('Delete share comment error:', error);
     res.status(500).json({ error: 'Failed to delete comment' });
   }
 });
@@ -985,7 +986,7 @@ router.post('/share/comments/:commentId/like', authMiddleware, validateUUID('com
     const result = await Post.likeShareComment(req.params.commentId, req.userId);
     res.json({ message: 'Comment liked', liked: !!result });
   } catch (error) {
-    console.error('Like share comment error:', error);
+    logger.error('Like share comment error:', error);
     res.status(500).json({ error: 'Failed to like comment' });
   }
 });
@@ -999,7 +1000,7 @@ router.delete('/share/comments/:commentId/like', authMiddleware, validateUUID('c
     }
     res.json({ message: 'Comment unliked' });
   } catch (error) {
-    console.error('Unlike share comment error:', error);
+    logger.error('Unlike share comment error:', error);
     res.status(500).json({ error: 'Failed to unlike comment' });
   }
 });

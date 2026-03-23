@@ -5,6 +5,7 @@ const Notification = require('../models/Notification');
 const { authMiddleware, requireRole, validateUUID } = require('../middleware/auth');
 const pool = require('../config/database');
 const { getSignedS3Url } = require('../utils/s3');
+const logger = require('../utils/logger');
 
 // Helper function to add signed URLs to profiles/players
 async function addSignedUrlsToPlayers(players) {
@@ -15,7 +16,7 @@ async function addSignedUrlsToPlayers(players) {
       try {
         player.profile_image_url = await getSignedS3Url(player.profile_image_url);
       } catch (error) {
-        console.error('Error generating signed URL:', error);
+        logger.error('Error generating signed URL:', error);
         player.profile_image_url = null;
       }
     }
@@ -31,7 +32,7 @@ router.get('/personal/init', authMiddleware, requireRole('coach'), async (req, r
     const board = await RecruitingBoard.getOrCreatePersonalBoard(req.userId);
     res.json({ board });
   } catch (error) {
-    console.error('Error initializing personal board:', error);
+    logger.error('Error initializing personal board:', error);
     res.status(500).json({ error: 'Failed to initialize personal board' });
   }
 });
@@ -42,7 +43,7 @@ router.get('/personal/config', authMiddleware, requireRole('coach'), async (req,
     const config = await RecruitingBoard.getPositionConfig(req.userId);
     res.json(config);
   } catch (error) {
-    console.error('Error fetching personal board config:', error);
+    logger.error('Error fetching personal board config:', error);
     res.status(500).json({ error: 'Failed to fetch position configuration' });
   }
 });
@@ -64,7 +65,7 @@ router.put('/personal/config', authMiddleware, requireRole('coach'), async (req,
       defensePositions
     });
   } catch (error) {
-    console.error('Error saving personal board config:', error);
+    logger.error('Error saving personal board config:', error);
     res.status(500).json({ error: 'Failed to save position configuration' });
   }
 });
@@ -77,7 +78,7 @@ router.get('/personal/:classYear/players', authMiddleware, requireRole('coach'),
     players = await addSignedUrlsToPlayers(players);
     res.json(players);
   } catch (error) {
-    console.error('Error fetching personal board players:', error);
+    logger.error('Error fetching personal board players:', error);
     res.status(500).json({ error: 'Failed to fetch players' });
   }
 });
@@ -99,7 +100,7 @@ router.post('/personal/:classYear/players', authMiddleware, requireRole('coach')
       player: playerData
     });
   } catch (error) {
-    console.error('Error adding player to personal board:', error);
+    logger.error('Error adding player to personal board:', error);
     if (error.message === 'Player already on board for this position') {
       return res.status(400).json({ error: 'Player is already on the board for this position' });
     }
@@ -116,7 +117,7 @@ router.delete('/personal/:classYear/players/:playerId', authMiddleware, requireR
     await RecruitingBoard.removePlayerFromPersonalBoard(req.userId, parseInt(classYear), playerId, position);
     res.json({ message: 'Player removed from recruiting board' });
   } catch (error) {
-    console.error('Error removing player from personal board:', error);
+    logger.error('Error removing player from personal board:', error);
     res.status(500).json({ error: 'Failed to remove player from recruiting board' });
   }
 });
@@ -134,7 +135,7 @@ router.put('/personal/:classYear/players/:playerId/position', authMiddleware, re
     await RecruitingBoard.updatePlayerPositionOnPersonalBoard(req.userId, parseInt(classYear), playerId, oldPosition, newPosition);
     res.json({ message: 'Player position updated' });
   } catch (error) {
-    console.error('Error updating player position:', error);
+    logger.error('Error updating player position:', error);
     res.status(500).json({ error: 'Failed to update player position' });
   }
 });
@@ -153,7 +154,7 @@ router.post('/shared', authMiddleware, requireRole('coach'), async (req, res) =>
     const board = await RecruitingBoard.createSharedBoard(req.userId, boardName.trim());
     res.json({ success: true, board });
   } catch (error) {
-    console.error('Error creating shared board:', error);
+    logger.error('Error creating shared board:', error);
     res.status(500).json({ error: 'Failed to create shared board' });
   }
 });
@@ -169,7 +170,7 @@ router.get('/shared', authMiddleware, requireRole('coach'), async (req, res) => 
       collaboratorBoards
     });
   } catch (error) {
-    console.error('Error getting shared boards:', error);
+    logger.error('Error getting shared boards:', error);
     res.status(500).json({ error: 'Failed to get shared boards' });
   }
 });
@@ -197,7 +198,7 @@ router.get('/shared/:boardId', authMiddleware, requireRole('coach'), validateUUI
       userRole: accessInfo.role
     });
   } catch (error) {
-    console.error('Error getting shared board:', error);
+    logger.error('Error getting shared board:', error);
     res.status(500).json({ error: 'Failed to get shared board' });
   }
 });
@@ -220,7 +221,7 @@ router.put('/shared/:boardId/name', authMiddleware, requireRole('coach'), valida
 
     res.json({ success: true, board });
   } catch (error) {
-    console.error('Error updating board name:', error);
+    logger.error('Error updating board name:', error);
     res.status(500).json({ error: 'Failed to update board name' });
   }
 });
@@ -232,7 +233,7 @@ router.delete('/shared/:boardId', authMiddleware, requireRole('coach'), validate
     await RecruitingBoard.deleteSharedBoard(boardId, req.userId);
     res.json({ success: true, message: 'Board deleted' });
   } catch (error) {
-    console.error('Error deleting shared board:', error);
+    logger.error('Error deleting shared board:', error);
     res.status(500).json({ error: 'Failed to delete board' });
   }
 });
@@ -261,7 +262,7 @@ router.put('/shared/:boardId/config', authMiddleware, requireRole('coach'), vali
       defensePositions
     });
   } catch (error) {
-    console.error('Error saving shared board config:', error);
+    logger.error('Error saving shared board config:', error);
     res.status(500).json({ error: 'Failed to save position configuration' });
   }
 });
@@ -281,7 +282,7 @@ router.get('/shared/:boardId/:classYear/players', authMiddleware, requireRole('c
     players = await addSignedUrlsToPlayers(players);
     res.json(players);
   } catch (error) {
-    console.error('Error fetching shared board players:', error);
+    logger.error('Error fetching shared board players:', error);
     res.status(500).json({ error: 'Failed to fetch players' });
   }
 });
@@ -309,7 +310,7 @@ router.post('/shared/:boardId/:classYear/players', authMiddleware, requireRole('
       player: playerData
     });
   } catch (error) {
-    console.error('Error adding player to shared board:', error);
+    logger.error('Error adding player to shared board:', error);
     if (error.message === 'Player already on board for this position') {
       return res.status(400).json({ error: 'Player is already on the board for this position' });
     }
@@ -332,7 +333,7 @@ router.delete('/shared/:boardId/:classYear/players/:playerId', authMiddleware, r
     await RecruitingBoard.removePlayerFromSharedBoard(boardId, parseInt(classYear), playerId, position);
     res.json({ message: 'Player removed from recruiting board' });
   } catch (error) {
-    console.error('Error removing player from shared board:', error);
+    logger.error('Error removing player from shared board:', error);
     res.status(500).json({ error: 'Failed to remove player from recruiting board' });
   }
 });
@@ -356,7 +357,7 @@ router.put('/shared/:boardId/:classYear/players/:playerId/position', authMiddlew
     await RecruitingBoard.updatePlayerPositionOnSharedBoard(boardId, parseInt(classYear), playerId, oldPosition, newPosition);
     res.json({ message: 'Player position updated' });
   } catch (error) {
-    console.error('Error updating player position:', error);
+    logger.error('Error updating player position:', error);
     res.status(500).json({ error: 'Failed to update player position' });
   }
 });
@@ -402,7 +403,7 @@ router.get('/search-coaches', authMiddleware, requireRole('coach'), async (req, 
 
     res.json({ coaches: result.rows });
   } catch (error) {
-    console.error('Error searching coaches:', error);
+    logger.error('Error searching coaches:', error);
     res.status(500).json({ error: 'Failed to search coaches' });
   }
 });
@@ -427,7 +428,7 @@ router.get('/shared/:boardId/pending-invites', authMiddleware, requireRole('coac
 
     res.json({ pendingInvites: pendingResult.rows });
   } catch (error) {
-    console.error('Error getting pending invites:', error);
+    logger.error('Error getting pending invites:', error);
     res.status(500).json({ error: 'Failed to get pending invites' });
   }
 });
@@ -517,7 +518,7 @@ router.post('/shared/:boardId/invite', authMiddleware, requireRole('coach'), val
 
     res.json({ success: true, message: 'Invite sent successfully' });
   } catch (error) {
-    console.error('Error sending invite:', error);
+    logger.error('Error sending invite:', error);
     res.status(500).json({ error: 'Failed to send invite' });
   }
 });
@@ -593,7 +594,7 @@ router.post('/invite/accept', authMiddleware, requireRole('coach'), async (req, 
 
     res.json({ success: true, message: 'Invite accepted' });
   } catch (error) {
-    console.error('Error accepting invite:', error);
+    logger.error('Error accepting invite:', error);
     res.status(500).json({ error: 'Failed to accept invite' });
   }
 });
@@ -647,7 +648,7 @@ router.post('/invite/decline', authMiddleware, requireRole('coach'), async (req,
 
     res.json({ success: true, message: 'Invite declined' });
   } catch (error) {
-    console.error('Error declining invite:', error);
+    logger.error('Error declining invite:', error);
     res.status(500).json({ error: 'Failed to decline invite' });
   }
 });
@@ -687,7 +688,7 @@ router.delete('/shared/:boardId/collaborator/:collaboratorId', authMiddleware, r
 
     res.json({ success: true, message: 'Collaborator removed' });
   } catch (error) {
-    console.error('Error removing collaborator:', error);
+    logger.error('Error removing collaborator:', error);
     res.status(500).json({ error: 'Failed to remove collaborator' });
   }
 });
@@ -727,7 +728,7 @@ router.post('/shared/:boardId/leave', authMiddleware, requireRole('coach'), vali
 
     res.json({ success: true, message: 'Left board successfully' });
   } catch (error) {
-    console.error('Error leaving board:', error);
+    logger.error('Error leaving board:', error);
     res.status(500).json({ error: 'Failed to leave board' });
   }
 });
@@ -769,7 +770,7 @@ router.post('/shared/:boardId/transfer-ownership', authMiddleware, requireRole('
 
     res.json({ success: true, message: 'Ownership transferred successfully' });
   } catch (error) {
-    console.error('Error transferring ownership:', error);
+    logger.error('Error transferring ownership:', error);
     res.status(500).json({ error: 'Failed to transfer ownership' });
   }
 });
@@ -801,7 +802,7 @@ router.delete('/shared/:boardId/invite/:inviteeId', authMiddleware, requireRole(
 
     res.json({ success: true, message: 'Invite cancelled' });
   } catch (error) {
-    console.error('Error cancelling invite:', error);
+    logger.error('Error cancelling invite:', error);
     res.status(500).json({ error: 'Failed to cancel invite' });
   }
 });
@@ -815,7 +816,7 @@ router.get('/check/:playerId', authMiddleware, requireRole('coach'), validateUUI
     const result = await RecruitingBoard.checkPlayerOnBoards(req.userId, playerId);
     res.json(result);
   } catch (error) {
-    console.error('Error checking player on recruiting board:', error);
+    logger.error('Error checking player on recruiting board:', error);
     res.status(500).json({ error: 'Failed to check player status' });
   }
 });

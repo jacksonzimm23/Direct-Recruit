@@ -1,4 +1,5 @@
 const pool = require('../config/database');
+const logger = require('../utils/logger');
 
 class CoachProfileView {
   // Record a coach profile view (no dedup — every view counts for frequency analysis)
@@ -13,7 +14,7 @@ class CoachProfileView {
       );
       return true;
     } catch (error) {
-      console.error('Error recording coach profile view:', error);
+      logger.error('Error recording coach profile view:', error);
       throw error;
     }
   }

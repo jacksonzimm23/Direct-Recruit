@@ -1,5 +1,6 @@
 const redis = require('redis');
 require('dotenv').config();
+const logger = require('../utils/logger');
 
 // In development, export a stub so the app starts without Redis
 if (process.env.NODE_ENV !== 'production') {
@@ -9,7 +10,7 @@ if (process.env.NODE_ENV !== 'production') {
     on: () => stub,
     isReady: false
   };
-  console.log('[Redis] Skipped — using in-memory stub for development');
+  logger.info('[Redis] Skipped — using in-memory stub for development');
   module.exports = stub;
   return;
 }
@@ -21,8 +22,8 @@ const redisClient = redis.createClient({
   }
 });
 
-redisClient.on('error', (err) => console.error('Redis Client Error', err));
-redisClient.on('connect', () => console.log('Redis connected'));
+redisClient.on('error', (err) => logger.error('Redis Client Error', err));
+redisClient.on('connect', () => logger.info('Redis connected'));
 
 (async () => {
   await redisClient.connect();
