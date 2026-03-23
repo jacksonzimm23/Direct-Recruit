@@ -59,7 +59,7 @@ CREATE TABLE coach_profiles (
     first_name VARCHAR(100) NOT NULL,
     last_name VARCHAR(100) NOT NULL,
     team_name VARCHAR(255) NOT NULL,
-    college_division VARCHAR(50), -- FBS, FCS, D2, D3, NAIA, JUCO
+    college_division VARCHAR(50), -- D1 FBS, D1 FCS, D2, D3, NAIA, NJCAA
     position_title VARCHAR(100), -- Head Coach, OC, DC, Position Coach, etc.
     city VARCHAR(100),
     state VARCHAR(50),

@@ -93,7 +93,7 @@ async function populateSidebarFooter() {
             } else if (userFolder === 'collegeplayer') {
                 if (profile.position) parts.push(profile.position);
                 if (profile.team_name) parts.push(profile.team_name);
-                if (profile.college_division) parts.push(profile.college_division);
+                if (profile.college_division) parts.push(formatDivisionDisplay(profile.college_division));
                 userRole.textContent = parts.join(' • ') || 'Player';
             } else if (userFolder === 'hscoach') {
                 if (profile.team_name) parts.push(profile.team_name);
@@ -108,7 +108,7 @@ async function populateSidebarFooter() {
                 } else if (profile.state) {
                     parts.push(profile.state);
                 }
-                if (profile.college_division) parts.push(profile.college_division);
+                if (profile.college_division) parts.push(formatDivisionDisplay(profile.college_division));
                 userRole.textContent = parts.join(' • ') || 'College Coach';
                 color = '#ff6b35';
             } else if (userFolder === 'other') {

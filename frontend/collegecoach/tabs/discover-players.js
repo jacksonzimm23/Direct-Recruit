@@ -589,8 +589,8 @@ document.addEventListener('DOMContentLoaded', async function() {
     function formatDivision(division) {
         if (!division) return '';
         const divisionMap = {
-            'FBS': 'Division I - FBS',
-            'FCS': 'Division I - FCS',
+            'D1 FBS': 'D1 FBS',
+            'D1 FCS': 'D1 FCS',
             'D1-FBS': 'Division I - FBS',
             'D1-FCS': 'Division I - FCS',
             'D1': 'Division I',

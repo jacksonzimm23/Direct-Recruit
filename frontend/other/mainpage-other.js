@@ -1,6 +1,32 @@
 // Dashboard Main Page JavaScript - Other Users Version
 
+async function verifyUserType() {
+    try {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('username')) return;
+
+        const response = await API.get('/auth/me');
+        if (response.user && response.profile) {
+            const correctFolder = getProfileFolder({
+                role: response.user.role,
+                is_transfer_player: response.user.is_transfer_player,
+                ...response.profile
+            });
+            if (correctFolder !== 'other') {
+                const pageName = response.user.role === 'coach' ? 'mainpage-coach.html' : 'mainpage-player.html';
+                window.location.href = `../${correctFolder}/${pageName}`;
+                return;
+            }
+        }
+    } catch (error) {
+        console.error('Error verifying user type:', error);
+    }
+}
+
 document.addEventListener('DOMContentLoaded', async function() {
+
+    // Verify user belongs in the 'other' folder
+    await verifyUserType();
 
     // Update sidebar footer with user info
     await updateSidebarFooter();
@@ -282,11 +308,16 @@ function showLogoutModal() {
 }
 
 // Update sidebar footer with current user info
+// Update sidebar footer with current user info (uses getProfileFolder for correct format)
 async function updateSidebarFooter() {
     try {
         const response = await API.get('/auth/me');
         if (response.user && response.profile) {
             const profile = response.profile;
+            const user = response.user;
+            const userFolder = window.getProfileFolder
+                ? getProfileFolder({ role: user.role, is_transfer_player: user.is_transfer_player, transfer: profile.transfer, college_division: profile.college_division })
+                : 'other';
 
             // Update name
             const userName = document.querySelector('.sidebar-footer .user-name');
@@ -294,28 +325,90 @@ async function updateSidebarFooter() {
                 userName.textContent = `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || 'Other User';
             }
 
-            // Update subheader line
+            // Update role/info subtitle based on logged-in user's actual profile type
             const userRoleElement = document.querySelector('.sidebar-footer .user-role');
             if (userRoleElement) {
-                // Use subheader if available, otherwise show empty or placeholder
-                userRoleElement.textContent = profile.subheader || '';
-                userRoleElement.style.color = '#d4a017'; // Yellow color for other profile
+                const parts = [];
+                let color = '#1282a2';
+
+                if (userFolder === 'transferplayer') {
+                    if (profile.position) parts.push(profile.position);
+                    if (profile.height) {
+                        if (typeof profile.height === 'string' && (profile.height.includes("'") || profile.height.includes('"'))) {
+                            parts.push(profile.height);
+                        } else {
+                            const totalInches = parseInt(profile.height);
+                            const feet = Math.floor(totalInches / 12);
+                            const inches = totalInches % 12;
+                            parts.push(`${feet}'${inches}"`);
+                        }
+                    }
+                    if (profile.weight) parts.push(`${profile.weight} lbs`);
+                    if (profile.eligibility) {
+                        const yearText = profile.eligibility === 1 ? 'year' : 'years';
+                        parts.push(`YOE: ${profile.eligibility} ${yearText}`);
+                    }
+                    userRoleElement.textContent = parts.join(' • ') || 'Transfer Player';
+                    color = '#b91c1c';
+                } else if (userFolder === 'hsplayer') {
+                    if (profile.position) parts.push(profile.position);
+                    if (profile.height) {
+                        if (typeof profile.height === 'string' && (profile.height.includes("'") || profile.height.includes('"'))) {
+                            parts.push(profile.height);
+                        } else {
+                            const totalInches = parseInt(profile.height);
+                            const feet = Math.floor(totalInches / 12);
+                            const inches = totalInches % 12;
+                            parts.push(`${feet}'${inches}"`);
+                        }
+                    }
+                    if (profile.weight) parts.push(`${profile.weight} lbs`);
+                    if (profile.graduation_year) parts.push(profile.graduation_year);
+                    userRoleElement.textContent = parts.join(' • ') || 'Player';
+                } else if (userFolder === 'collegeplayer') {
+                    if (profile.position) parts.push(profile.position);
+                    if (profile.team_name) parts.push(profile.team_name);
+                    if (profile.college_division) parts.push(formatDivisionDisplay(profile.college_division));
+                    userRoleElement.textContent = parts.join(' • ') || 'Player';
+                } else if (userFolder === 'hscoach') {
+                    if (profile.team_name) parts.push(profile.team_name);
+                    if (profile.state) parts.push(profile.state);
+                    userRoleElement.textContent = parts.join(', ') || 'HS Coach';
+                    color = '#ff6b35';
+                } else if (userFolder === 'collegecoach') {
+                    if (profile.team_name && profile.state) {
+                        parts.push(`${profile.team_name}, ${profile.state}`);
+                    } else if (profile.team_name) {
+                        parts.push(profile.team_name);
+                    } else if (profile.state) {
+                        parts.push(profile.state);
+                    }
+                    if (profile.college_division) parts.push(formatDivisionDisplay(profile.college_division));
+                    userRoleElement.textContent = parts.join(' • ') || 'College Coach';
+                    color = '#ff6b35';
+                } else if (userFolder === 'other') {
+                    userRoleElement.textContent = profile.subheader || '';
+                }
+
+                userRoleElement.style.color = color;
             }
 
             // Update avatar and show it (was hidden initially to prevent flash)
+            const avatarUrl = profile.profile_image_url || profile.profile_picture_url;
             const avatarElement = document.querySelector('.sidebar-footer .user-avatar-circle');
             if (avatarElement) {
-                if (profile.profile_picture_url) {
-                    avatarElement.innerHTML = `<img src="${profile.profile_picture_url}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
+                if (avatarUrl) {
+                    avatarElement.innerHTML = `<img src="${avatarUrl}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
                 }
-                avatarElement.style.border = `2px solid ${getRoleBorderColor(response.user.role, response.user.is_transfer_player, profile.college_division)}`;
+                avatarElement.style.border = `2px solid ${getRoleBorderColor(user.role, user.is_transfer_player, profile.college_division)}`;
                 avatarElement.style.visibility = 'visible';
             }
 
             // Update post creation box avatar
             const postAvatarElement = document.querySelector('.create-post-box .post-avatar-circle');
-            if (postAvatarElement && profile.profile_picture_url) {
-                postAvatarElement.innerHTML = `<img src="${profile.profile_picture_url}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
+            if (postAvatarElement && (profile.profile_picture_url || profile.profile_image_url)) {
+                const postAvatarUrl = profile.profile_picture_url || profile.profile_image_url;
+                postAvatarElement.innerHTML = `<img src="${postAvatarUrl}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
             }
 
             // Mobile header/sidebar user info is handled by mobile-header.js

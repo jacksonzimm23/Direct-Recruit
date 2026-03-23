@@ -17,65 +17,24 @@ if (document.getElementById('signinForm')) {
         try {
             const data = await authAPI.login(email, password);
 
-            // Always redirect to main page after login
-            if (data.user.role === 'player') {
-                // Fetch player profile to determine if high school or college player
+            // Redirect to correct role folder after login
+            if (data.user.role === 'player' || data.user.role === 'coach') {
                 try {
-                    const meResponse = await fetch(`${API_BASE}/auth/me`, {
-                        credentials: 'include'
-                    });
+                    const meResponse = await fetch(`${API_BASE}/auth/me`, { credentials: 'include' });
                     const meData = await meResponse.json();
-
-                    // Determine player type using college_division field
-                    // College player: has a real division (FBS, FCS, D2, D3, NAIA, NJCAA)
-                    // HS player: no division or empty
-                    const collegeDivision = meData.profile?.college_division;
-                    const collegeDivisions = ['FBS', 'FCS', 'D2', 'D3', 'NAIA', 'NJCAA'];
-                    const isCollegePlayer = collegeDivision && collegeDivisions.includes(collegeDivision);
-
-
-                    if (isCollegePlayer) {
-                        window.location.href = '../collegeplayer/mainpage-player.html';
-                    } else {
-                        // Default to HS player
-                        window.location.href = '../hsplayer/mainpage-player.html';
-                    }
-                } catch (profileError) {
-                    // If profile fetch fails, default to HS player (safer default)
-                    window.location.href = '../hsplayer/mainpage-player.html';
-                }
-            } else if (data.user.role === 'coach') {
-                // Fetch coach profile to determine if high school or college coach
-                try {
-                    const meResponse = await fetch(`${API_BASE}/auth/me`, {
-                        credentials: 'include'
+                    const folder = getProfileFolder({
+                        role: meData.user.role,
+                        is_transfer_player: meData.user.is_transfer_player,
+                        ...meData.profile
                     });
-                    const meData = await meResponse.json();
-
-                    // Determine coach type using school_type and college_division fields
-                    const schoolType = meData.profile?.school_type;
-                    const collegeDivision = meData.profile?.college_division;
-
-
-                    // College coach: school_type = 'college' OR college_division is a real division (FBS, FCS, D2, D3, NAIA, NJCAA)
-                    const collegeDivisions = ['FBS', 'FCS', 'D2', 'D3', 'NAIA', 'NJCAA'];
-                    const isCollegeCoach =
-                        schoolType === 'college' ||
-                        (collegeDivision && collegeDivisions.includes(collegeDivision));
-
-                    // HS coach: school_type = 'high_school' OR college_division is empty/undefined/'High School'
-                    if (isCollegeCoach) {
-                        window.location.href = '../collegecoach/mainpage-coach.html';
-                    } else {
-                        // Default to HS coach (includes school_type = 'high_school', empty division, or 'High School')
-                        window.location.href = '../hscoach/mainpage-coach.html';
-                    }
+                    const pageName = data.user.role === 'player' ? 'mainpage-player.html' : 'mainpage-coach.html';
+                    window.location.href = `../${folder}/${pageName}`;
                 } catch (profileError) {
-                    // If profile fetch fails, default to HS coach (safer default)
-                    window.location.href = '../hscoach/mainpage-coach.html';
+                    // If profile fetch fails, use safe defaults
+                    const fallback = data.user.role === 'player' ? '../hsplayer/mainpage-player.html' : '../hscoach/mainpage-coach.html';
+                    window.location.href = fallback;
                 }
             } else if (data.user.role === 'other') {
-                // Redirect to other user dashboard
                 window.location.href = '../other/mainpage-other.html';
             }
         } catch (error) {

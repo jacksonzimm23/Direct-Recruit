@@ -687,13 +687,13 @@ const RA_GLOSSARY = {
     // ========================================================
 
     divisionAliases: {
-        'fbs':       'FBS',
-        'd1':        'FBS',       // ambiguous — defaults to FBS
-        'division 1':'FBS',
-        'division i':'FBS',
-        'fcs':       'FCS',
-        '1-aa':      'FCS',
-        'division 1-aa': 'FCS',
+        'fbs':       'D1 FBS',
+        'd1':        'D1 FBS',       // ambiguous — defaults to D1 FBS
+        'division 1':'D1 FBS',
+        'division i':'D1 FBS',
+        'fcs':       'D1 FCS',
+        '1-aa':      'D1 FCS',
+        'division 1-aa': 'D1 FCS',
         'd2':        'D2',
         'division 2':'D2',
         'division ii':'D2',

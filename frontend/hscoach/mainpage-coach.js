@@ -358,31 +358,98 @@ async function updateUnreadNotificationsBadge() {
 }
 
 // Helper function to populate sidebar footer from profile data
-function populateSidebarFooter(profile) {
+// Populate sidebar footer with profile data using universal format logic
+function populateSidebarFooter(profile, user) {
     if (!profile) return;
 
-    // Update name (first row)
+    const userFolder = window.getProfileFolder && user
+        ? getProfileFolder({ role: user.role, is_transfer_player: user.is_transfer_player, transfer: profile.transfer, college_division: profile.college_division })
+        : 'hscoach';
+
+    // Update name
     const userName = document.querySelector('.sidebar-footer .user-name');
     if (userName) {
         userName.textContent = `${profile.first_name} ${profile.last_name}`;
     }
 
-    // Update school, state (second row) - HS coaches use college_name for their school name
-    const userRole = document.querySelector('.sidebar-footer .user-role');
-    if (userRole) {
+    // Update role/info subtitle based on logged-in user's actual profile type
+    const userRoleElement = document.querySelector('.sidebar-footer .user-role');
+    if (userRoleElement) {
         const parts = [];
-        if (profile.team_name) parts.push(profile.team_name);
-        if (profile.state) parts.push(profile.state);
-        userRole.textContent = parts.join(', ') || 'HS Coach';
+        let color = '#1282a2';
+
+        if (userFolder === 'transferplayer') {
+            if (profile.position) parts.push(profile.position);
+            if (profile.height) {
+                if (typeof profile.height === 'string' && (profile.height.includes("'") || profile.height.includes('"'))) {
+                    parts.push(profile.height);
+                } else {
+                    const totalInches = parseInt(profile.height);
+                    const feet = Math.floor(totalInches / 12);
+                    const inches = totalInches % 12;
+                    parts.push(`${feet}'${inches}"`);
+                }
+            }
+            if (profile.weight) parts.push(`${profile.weight} lbs`);
+            if (profile.eligibility) {
+                const yearText = profile.eligibility === 1 ? 'year' : 'years';
+                parts.push(`YOE: ${profile.eligibility} ${yearText}`);
+            }
+            userRoleElement.textContent = parts.join(' • ') || 'Transfer Player';
+            color = '#b91c1c';
+        } else if (userFolder === 'hsplayer') {
+            if (profile.position) parts.push(profile.position);
+            if (profile.height) {
+                if (typeof profile.height === 'string' && (profile.height.includes("'") || profile.height.includes('"'))) {
+                    parts.push(profile.height);
+                } else {
+                    const totalInches = parseInt(profile.height);
+                    const feet = Math.floor(totalInches / 12);
+                    const inches = totalInches % 12;
+                    parts.push(`${feet}'${inches}"`);
+                }
+            }
+            if (profile.weight) parts.push(`${profile.weight} lbs`);
+            if (profile.graduation_year) parts.push(profile.graduation_year);
+            userRoleElement.textContent = parts.join(' • ') || 'Player';
+        } else if (userFolder === 'collegeplayer') {
+            if (profile.position) parts.push(profile.position);
+            if (profile.team_name) parts.push(profile.team_name);
+            if (profile.college_division) parts.push(formatDivisionDisplay(profile.college_division));
+            userRoleElement.textContent = parts.join(' • ') || 'Player';
+        } else if (userFolder === 'hscoach') {
+            if (profile.team_name) parts.push(profile.team_name);
+            if (profile.state) parts.push(profile.state);
+            userRoleElement.textContent = parts.join(', ') || 'HS Coach';
+            color = '#ff6b35';
+        } else if (userFolder === 'collegecoach') {
+            if (profile.team_name && profile.state) {
+                parts.push(`${profile.team_name}, ${profile.state}`);
+            } else if (profile.team_name) {
+                parts.push(profile.team_name);
+            } else if (profile.state) {
+                parts.push(profile.state);
+            }
+            if (profile.college_division) parts.push(formatDivisionDisplay(profile.college_division));
+            userRoleElement.textContent = parts.join(' • ') || 'College Coach';
+            color = '#ff6b35';
+        } else if (userFolder === 'other') {
+            userRoleElement.textContent = profile.subheader || '';
+        }
+
+        userRoleElement.style.color = color;
     }
 
     // Update avatar and show it (was hidden initially to prevent flash)
+    const avatarUrl = profile.profile_image_url || profile.profile_picture_url;
     const avatarElement = document.querySelector('.sidebar-footer .user-avatar-circle');
     if (avatarElement) {
-        if (profile.profile_image_url) {
-            avatarElement.innerHTML = `<img src="${profile.profile_image_url}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
+        if (avatarUrl) {
+            avatarElement.innerHTML = `<img src="${avatarUrl}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
         }
-        avatarElement.style.border = `2px solid ${getRoleBorderColor('coach', false, profile.college_division)}`;
+        if (user) {
+            avatarElement.style.border = `2px solid ${getRoleBorderColor(user.role, user.is_transfer_player, profile.college_division)}`;
+        }
         avatarElement.style.visibility = 'visible';
     }
 
@@ -391,30 +458,30 @@ function populateSidebarFooter(profile) {
 
 // Immediately populate sidebar footer from cache (called on script load, before DOMContentLoaded)
 function populateSidebarFooterFromCache() {
-    const cachedProfile = localStorage.getItem('sidebarFooterProfile');
-    if (cachedProfile) {
+    const cachedData = localStorage.getItem('sidebarFooterData');
+    if (cachedData) {
         try {
-            const profile = JSON.parse(cachedProfile);
-            populateSidebarFooter(profile);
+            const data = JSON.parse(cachedData);
+            populateSidebarFooter(data.profile, data.user);
         } catch (e) {
-            console.error('Error parsing cached profile:', e);
+            // Fallback: try old cache format
+            const cachedProfile = localStorage.getItem('sidebarFooterProfile');
+            if (cachedProfile) {
+                try { populateSidebarFooter(JSON.parse(cachedProfile)); } catch (e2) {}
+            }
         }
     }
 }
 
-// Update sidebar footer with current coach info
+// Update sidebar footer with current user info (uses getProfileFolder for correct format)
 async function updateSidebarFooter() {
     try {
-        // Fetch fresh data from API
         const response = await API.get('/auth/me');
         if (response.user && response.profile) {
-            const profile = response.profile;
+            // Cache both profile and user data for next page load
+            localStorage.setItem('sidebarFooterData', JSON.stringify({ profile: response.profile, user: response.user }));
 
-            // Cache the profile data for next page load
-            localStorage.setItem('sidebarFooterProfile', JSON.stringify(profile));
-
-            // Update the sidebar footer with fresh data
-            populateSidebarFooter(profile);
+            populateSidebarFooter(response.profile, response.user);
         }
     } catch (error) {
         console.error('Error updating sidebar footer:', error);

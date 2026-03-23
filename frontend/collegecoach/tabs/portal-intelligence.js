@@ -559,8 +559,8 @@ document.addEventListener('DOMContentLoaded', function() {
     function formatDivision(division) {
         if (!division) return '';
         const div = division.trim().toUpperCase();
-        if (div === 'FBS') return 'D1 FBS';
-        if (div === 'FCS') return 'D1 FCS';
+        if (div === 'D1 FBS' || div === 'FBS') return 'D1 FBS';
+        if (div === 'D1 FCS' || div === 'FCS') return 'D1 FCS';
         if (div === 'D2' || div === 'DIVISION II') return 'D2';
         if (div === 'D3' || div === 'DIVISION III') return 'D3';
         if (div === 'NAIA') return 'NAIA';

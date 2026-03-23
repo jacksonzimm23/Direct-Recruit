@@ -23,6 +23,9 @@ const authMiddleware = async (req, res, next) => {
     const token = req.cookies?.token || req.header('Authorization')?.replace('Bearer ', '');
 
     if (!token) {
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('[AUTH DEBUG] No token found. Cookies:', JSON.stringify(req.cookies), 'Origin:', req.headers.origin);
+      }
       return res.status(401).json({ error: 'Authentication required' });
     }
 
@@ -37,6 +40,9 @@ const authMiddleware = async (req, res, next) => {
     req.userId = user.id;
     next();
   } catch (error) {
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('[AUTH DEBUG] Token verify failed:', error.message);
+    }
     res.status(401).json({ error: 'Invalid authentication' });
   }
 };

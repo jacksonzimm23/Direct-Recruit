@@ -261,8 +261,8 @@ document.addEventListener('DOMContentLoaded', function() {
         if (div.toLowerCase().startsWith('division')) return div;
         if (div.toLowerCase() === 'junior college') return div;
         const divisionMap = {
-            'FBS': 'Division I - FBS',
-            'FCS': 'Division I - FCS',
+            'D1 FBS': 'D1 FBS',
+            'D1 FCS': 'D1 FCS',
             'D1': 'Division I',
             'D2': 'Division II',
             'D3': 'Division III',
