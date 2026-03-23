@@ -392,22 +392,35 @@ function updateNavbarForLoggedInUser(user, profile) {
                 userRole.textContent = parts.join(' • ') || 'Transfer Player';
                 userRole.style.color = '#b91c1c';
             } else if (userFolder === 'hsplayer') {
+                // HS Player: Position • Height • Weight • GradYear
                 if (profile.position) parts.push(profile.position);
-                if (profile.team_name) parts.push(profile.team_name);
-                if (profile.graduation_year) parts.push(`Class of ${profile.graduation_year}`);
+                if (profile.height) {
+                    if (typeof profile.height === 'string' && (profile.height.includes("'") || profile.height.includes('"'))) {
+                        parts.push(profile.height);
+                    } else {
+                        const totalInches = parseInt(profile.height);
+                        const feet = Math.floor(totalInches / 12);
+                        const inches = totalInches % 12;
+                        parts.push(`${feet}'${inches}"`);
+                    }
+                }
+                if (profile.weight) parts.push(`${profile.weight} lbs`);
+                if (profile.graduation_year) parts.push(profile.graduation_year);
                 userRole.textContent = parts.join(' • ') || 'Player';
             } else if (userFolder === 'collegeplayer') {
+                // College Player: Position • Team • Division
                 if (profile.position) parts.push(profile.position);
                 if (profile.team_name) parts.push(profile.team_name);
-                if (profile.college_division) {
-                    parts.push(profile.college_division);
-                }
+                if (profile.college_division) parts.push(formatDivisionDisplay(profile.college_division));
                 userRole.textContent = parts.join(' • ') || 'Player';
             } else if (userFolder === 'hscoach') {
+                // HS Coach: Team, State
                 if (profile.team_name) parts.push(profile.team_name);
                 if (profile.state) parts.push(profile.state);
                 userRole.textContent = parts.join(', ') || 'HS Coach';
+                userRole.style.color = '#ff6b35';
             } else if (userFolder === 'collegecoach') {
+                // College Coach: Team, State • Division
                 if (profile.team_name && profile.state) {
                     parts.push(`${profile.team_name}, ${profile.state}`);
                 } else if (profile.team_name) {
@@ -415,13 +428,12 @@ function updateNavbarForLoggedInUser(user, profile) {
                 } else if (profile.state) {
                     parts.push(profile.state);
                 }
-                if (profile.college_division) {
-                    parts.push(profile.college_division);
-                }
+                if (profile.college_division) parts.push(formatDivisionDisplay(profile.college_division));
                 userRole.textContent = parts.join(' • ') || 'College Coach';
+                userRole.style.color = '#ff6b35';
             } else if (userFolder === 'other') {
                 userRole.textContent = profile.subheader || '';
-                userRole.style.color = '#d4a017';
+                userRole.style.color = '#1282a2';
             }
         }
 
@@ -969,7 +981,7 @@ function displayPlayerProfile(profile) {
             parts.push(`${profile.weight} lbs`);
         }
         if (profile.college_division) {
-            parts.push(profile.college_division);
+            parts.push(formatDivisionDisplay(profile.college_division));
         }
         positionElement.textContent = parts.join(' • ') || 'Player';
         positionElement.style.color = '#1282a2'; // Blue for players
@@ -984,7 +996,7 @@ function displayCoachProfile(profile) {
         if (profile.position_title) parts.push(profile.position_title);
         if (profile.team_name) parts.push(profile.team_name);
         if (profile.college_division) {
-            parts.push(profile.college_division);
+            parts.push(formatDivisionDisplay(profile.college_division));
         }
         positionElement.textContent = parts.join(' • ') || 'Coach';
         positionElement.style.color = '#f47521'; // Orange for coaches

@@ -590,12 +590,13 @@ function updateNavbarForLoggedInUser(user, profile) {
                 if (profile.college_division) parts.push(formatDivisionDisplay(profile.college_division));
                 userRole.textContent = parts.join(' • ') || 'Player';
             } else if (userFolder === 'hscoach') {
-                // HS Coach: college_name, state (comma separator)
+                // HS Coach: Team, State
                 if (profile.team_name) parts.push(profile.team_name);
                 if (profile.state) parts.push(profile.state);
                 userRole.textContent = parts.join(', ') || 'HS Coach';
+                userRole.style.color = '#ff6b35';
             } else if (userFolder === 'collegecoach') {
-                // College Coach: college_name, state • division
+                // College Coach: Team, State • Division
                 if (profile.team_name && profile.state) {
                     parts.push(`${profile.team_name}, ${profile.state}`);
                 } else if (profile.team_name) {
@@ -603,13 +604,12 @@ function updateNavbarForLoggedInUser(user, profile) {
                 } else if (profile.state) {
                     parts.push(profile.state);
                 }
-                if (profile.college_division) {
-                    parts.push(formatDivisionDisplay(profile.college_division));
-                }
+                if (profile.college_division) parts.push(formatDivisionDisplay(profile.college_division));
                 userRole.textContent = parts.join(' • ') || 'College Coach';
+                userRole.style.color = '#ff6b35';
             } else if (userFolder === 'other') {
                 userRole.textContent = profile.subheader || '';
-                userRole.style.color = '#d4a017';
+                userRole.style.color = '#1282a2';
             }
         }
 
