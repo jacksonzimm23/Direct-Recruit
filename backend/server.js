@@ -3,6 +3,8 @@ const http = require('http');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const helmet = require('helmet');
+const morgan = require('morgan');
+const { v4: uuidv4 } = require('uuid');
 const path = require('path');
 require('dotenv').config();
 
@@ -43,6 +45,19 @@ app.use(cors({
 app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Assign a unique request ID to every request for log tracing
+app.use((req, res, next) => {
+  req.requestId = uuidv4().slice(0, 8);
+  res.setHeader('X-Request-Id', req.requestId);
+  next();
+});
+
+// HTTP request logging — streams through Winston
+app.use(morgan(':method :url :status :response-time ms', {
+  stream: { write: (msg) => logger.info(msg.trim()) },
+  skip: (req) => req.url === '/health',
+}));
 // Serve static uploads BEFORE helmet to avoid security headers blocking images
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use(helmet({
@@ -71,18 +86,55 @@ if (process.env.NODE_ENV !== 'production') {
   app.use('/frontend', express.static(path.join(__dirname, '..', 'frontend')));
 }
 
-// Health check
-app.get('/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+// Health check — verifies DB and Redis connectivity
+app.get('/health', async (req, res) => {
+  const health = {
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    services: {}
+  };
+
+  // Check database
+  try {
+    const pool = require('./config/database');
+    const result = await pool.query('SELECT 1');
+    health.services.database = 'connected';
+  } catch (error) {
+    health.status = 'degraded';
+    health.services.database = 'disconnected';
+    logger.error('Health check: database unreachable', { error: error.message });
+  }
+
+  // Check Redis (only in production — dev uses a stub)
+  try {
+    const redis = require('./config/redis');
+    if (process.env.NODE_ENV === 'production' && redis.isReady) {
+      await redis.sendCommand(['PING']);
+      health.services.redis = 'connected';
+    } else if (process.env.NODE_ENV === 'production') {
+      health.status = 'degraded';
+      health.services.redis = 'disconnected';
+    } else {
+      health.services.redis = 'stub (dev)';
+    }
+  } catch (error) {
+    health.status = 'degraded';
+    health.services.redis = 'disconnected';
+    logger.error('Health check: redis unreachable', { error: error.message });
+  }
+
+  const statusCode = health.status === 'ok' ? 200 : 503;
+  res.status(statusCode).json(health);
 });
 
 // Error handler
 app.use((err, req, res, next) => {
-  if (process.env.NODE_ENV !== 'production') {
-    logger.error(err.stack);
-  } else {
-    logger.error(`[ERROR] ${req.method} ${req.path}: ${err.message}`);
-  }
+  logger.error(err.message, {
+    requestId: req.requestId,
+    method: req.method,
+    path: req.path,
+    stack: err.stack,
+  });
   res.status(500).json({ error: 'Something went wrong!' });
 });
 
