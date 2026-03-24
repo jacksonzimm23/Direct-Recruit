@@ -10,6 +10,8 @@ const { authMiddleware } = require('../middleware/auth');
 const { authLimiter } = require('../middleware/rateLimit');
 const cognito = require('../utils/cognito');
 const email = require('../utils/email');
+const { deleteFromS3 } = require('../utils/s3');
+const pool = require('../config/database');
 const logger = require('../utils/logger');
 
 // Get current account settings (email from database)
@@ -692,6 +694,50 @@ router.delete('/account/delete', authMiddleware, async (req, res) => {
         return res.status(500).json({ error: 'Failed to delete account from authentication system' });
       }
       // User not found in Cognito is fine - continue with PostgreSQL deletion
+    }
+
+    // Clean up S3 files before database cascade delete
+    try {
+      const s3Keys = [];
+
+      // Profile images + highlight videos
+      const playerProfile = await pool.query(
+        'SELECT profile_image_url, highlight_video_url FROM player_profiles WHERE user_id = $1', [req.userId]
+      );
+      if (playerProfile.rows[0]) {
+        if (playerProfile.rows[0].profile_image_url) s3Keys.push(playerProfile.rows[0].profile_image_url);
+        if (playerProfile.rows[0].highlight_video_url) s3Keys.push(playerProfile.rows[0].highlight_video_url);
+      }
+      const coachProfile = await pool.query(
+        'SELECT profile_image_url FROM coach_profiles WHERE user_id = $1', [req.userId]
+      );
+      if (coachProfile.rows[0]?.profile_image_url) s3Keys.push(coachProfile.rows[0].profile_image_url);
+
+      // Post media
+      const posts = await pool.query(
+        'SELECT media_urls FROM posts WHERE user_id = $1 AND media_urls IS NOT NULL', [req.userId]
+      );
+      for (const post of posts.rows) {
+        if (post.media_urls) s3Keys.push(...post.media_urls);
+      }
+
+      // Highlight videos (uploaded separately)
+      const highlights = await pool.query(
+        'SELECT video_url FROM player_highlights WHERE user_id = $1 AND video_url IS NOT NULL', [req.userId]
+      );
+      for (const h of highlights.rows) {
+        if (h.video_url) s3Keys.push(h.video_url);
+      }
+
+      // Delete all S3 files (non-blocking — don't fail account deletion if S3 cleanup fails)
+      await Promise.allSettled(
+        s3Keys.filter(key => key && key.startsWith('profiles/') || key.startsWith('post-media/') || key.startsWith('highlights/'))
+          .map(key => deleteFromS3(key))
+      );
+      logger.info(`Cleaned up ${s3Keys.length} S3 files for deleted account ${req.userId}`);
+    } catch (s3Error) {
+      logger.error('S3 cleanup error during account deletion:', s3Error);
+      // Continue with account deletion even if S3 cleanup fails
     }
 
     // Delete from PostgreSQL (cascades to all related tables)
