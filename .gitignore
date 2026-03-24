@@ -26,6 +26,7 @@ nul
 # Logs
 *.log
 npm-debug.log*
+backend/logs/
 
 # Uploads (if local)
 uploads/

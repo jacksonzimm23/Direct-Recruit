@@ -31,4 +31,20 @@ pool.on('error', (err) => {
   process.exit(-1);
 });
 
+// Wrap pool.query to log database errors with query context
+const originalQuery = pool.query.bind(pool);
+pool.query = async (...args) => {
+  try {
+    return await originalQuery(...args);
+  } catch (error) {
+    // Log the failed query text (but not parameter values, which may contain user data)
+    const queryText = typeof args[0] === 'string' ? args[0] : args[0]?.text;
+    logger.error('Database query failed', {
+      query: queryText?.slice(0, 200),
+      error: error.message,
+    });
+    throw error;
+  }
+};
+
 module.exports = pool;
