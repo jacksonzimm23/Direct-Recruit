@@ -10,7 +10,7 @@ const Follow = require('../models/Follow');
 const Notification = require('../models/Notification');
 const PortalWatchlist = require('../models/PortalWatchlist');
 const { authMiddleware, requireRole, validateUUID } = require('../middleware/auth');
-const { validatePlayerProfile, validateCoachProfile, handleValidationErrors } = require('../middleware/validation');
+const { validatePlayerProfile, validateCoachProfile, handleValidationErrors, sanitizeBody } = require('../middleware/validation');
 const { getSignedS3Url } = require('../utils/s3');
 const { apiLimiter } = require('../middleware/rateLimit');
 const logger = require('../utils/logger');
@@ -142,7 +142,7 @@ async function canViewFullProfile(viewerId, profileUserId) {
 }
 
 // Create/Update Player Profile
-router.post('/player', authMiddleware, requireRole('player'), validatePlayerProfile, handleValidationErrors, async (req, res) => {
+router.post('/player', authMiddleware, requireRole('player'), sanitizeBody, validatePlayerProfile, handleValidationErrors, async (req, res) => {
   try {
     const existingProfile = await PlayerProfile.findByUserId(req.userId);
 
@@ -186,7 +186,7 @@ router.post('/player', authMiddleware, requireRole('player'), validatePlayerProf
 });
 
 // Universal update endpoint (PUT /profile)
-router.put('/', authMiddleware, async (req, res) => {
+router.put('/', authMiddleware, sanitizeBody, async (req, res) => {
   try {
     const user = await User.findById(req.userId);
     if (!user) {
@@ -234,7 +234,7 @@ router.put('/', authMiddleware, async (req, res) => {
 });
 
 // Create/Update Coach Profile
-router.post('/coach', authMiddleware, requireRole('coach'), validateCoachProfile, handleValidationErrors, async (req, res) => {
+router.post('/coach', authMiddleware, requireRole('coach'), sanitizeBody, validateCoachProfile, handleValidationErrors, async (req, res) => {
   try {
     const existingProfile = await CoachProfile.findByUserId(req.userId);
 
@@ -265,7 +265,7 @@ router.post('/coach', authMiddleware, requireRole('coach'), validateCoachProfile
 });
 
 // Create/Update Other Profile
-router.post('/other', authMiddleware, requireRole('other'), async (req, res) => {
+router.post('/other', authMiddleware, requireRole('other'), sanitizeBody, async (req, res) => {
   try {
     const existingProfile = await OtherProfile.findByUserId(req.userId);
 

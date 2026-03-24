@@ -20,6 +20,7 @@ class SearchComponent {
                 this.currentUserRole = response.user.role;
             }
         } catch (error) {
+            console.error('Error loading current user role:', error);
         }
     }
 

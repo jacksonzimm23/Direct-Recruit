@@ -422,7 +422,7 @@ function updateThreadHeader(participant) {
     if (threadAvatarCircle) {
         threadAvatarCircle.style.border = `2px solid ${getRoleBorderColor(participant.role, participant.transfer === 'y', participant.college_division)}`;
         if (participant.profile_image) {
-            threadAvatarCircle.innerHTML = `<img src="${participant.profile_image}" alt="${participant.first_name}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
+            threadAvatarCircle.innerHTML = `<img src="${escapeHtml(participant.profile_image)}" alt="${escapeHtml(participant.first_name)}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
         }
     }
 }

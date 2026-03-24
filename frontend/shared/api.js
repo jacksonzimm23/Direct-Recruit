@@ -1,4 +1,54 @@
-// API Configuration
+// ==================== Global Error Handlers & Toast System ====================
+
+// Toast notification system
+function showToast(message, type = 'error', duration = 4000) {
+    let container = document.getElementById('toast-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'toast-container';
+        container.style.cssText = 'position:fixed;top:20px;right:20px;z-index:99999;display:flex;flex-direction:column;gap:8px;pointer-events:none;';
+        document.body.appendChild(container);
+    }
+
+    const toast = document.createElement('div');
+    const bgColor = type === 'error' ? '#dc3545' : type === 'success' ? '#28a745' : '#ffc107';
+    const textColor = type === 'warning' ? '#333' : '#fff';
+    toast.style.cssText = `background:${bgColor};color:${textColor};padding:12px 20px;border-radius:8px;font-size:14px;font-family:-apple-system,BlinkMacSystemFont,sans-serif;box-shadow:0 4px 12px rgba(0,0,0,0.15);pointer-events:auto;max-width:380px;word-wrap:break-word;opacity:0;transform:translateX(20px);transition:opacity 0.3s,transform 0.3s;`;
+    toast.textContent = message;
+    container.appendChild(toast);
+
+    requestAnimationFrame(() => {
+        toast.style.opacity = '1';
+        toast.style.transform = 'translateX(0)';
+    });
+
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateX(20px)';
+        setTimeout(() => toast.remove(), 300);
+    }, duration);
+}
+
+// Global error handler — catches uncaught exceptions
+window.onerror = function(message, source, lineno, colno, error) {
+    console.error('Uncaught error:', { message, source, lineno, colno, error });
+    showToast('Something went wrong. Please try again.');
+    return true;
+};
+
+// Global handler — catches unhandled promise rejections (async/await without try/catch)
+window.addEventListener('unhandledrejection', function(event) {
+    console.error('Unhandled promise rejection:', event.reason);
+    // Don't toast for network errors during polling (badge updates, new post checks, etc.)
+    const msg = event.reason?.message || '';
+    if (!msg.includes('Failed to fetch') && !msg.includes('NetworkError')) {
+        showToast('Something went wrong. Please try again.');
+    }
+    event.preventDefault();
+});
+
+// ==================== API Configuration ====================
+
 // In local dev, use the same hostname as the frontend for proper cookie handling
 const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
     ? `http://${window.location.hostname}:5000/api`

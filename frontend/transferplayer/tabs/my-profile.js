@@ -1,5 +1,12 @@
 // My Profile JavaScript - Dynamic Version
 
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
 let currentProfile = null;
 let currentUserId = null;
 let viewingUserId = null;
@@ -2035,22 +2042,22 @@ function setupRemoveFromBoardButton(boardEntries) {
 
         if (selectedValue === 'all') {
             const boardList = boardEntries.map(e => {
-                const boardName = e.board_name || (e.board_type === 'personal' ? 'Personal Board' : 'Shared Board');
-                return `${boardName} - Class of ${e.class_year} (${e.position})`;
-            }).join('\n');
-            boardInfo.innerHTML = `<strong>Will remove from:</strong><br>${boardList.replace(/\n/g, '<br>')}`;
+                const boardName = escapeHtml(e.board_name) || (e.board_type === 'personal' ? 'Personal Board' : 'Shared Board');
+                return `${boardName} - Class of ${escapeHtml(e.class_year)} (${escapeHtml(e.position)})`;
+            }).join('<br>');
+            boardInfo.innerHTML = `<strong>Will remove from:</strong><br>${boardList}`;
         } else {
             const entry = boardEntries[parseInt(selectedValue)];
             if (entry) {
-                const boardName = entry.board_name || (entry.board_type === 'personal' ? 'Personal Board' : 'Shared Board');
-                boardInfo.innerHTML = `<strong>Will remove from:</strong> ${boardName} - Class of ${entry.class_year} (${entry.position})`;
+                const boardName = escapeHtml(entry.board_name) || (entry.board_type === 'personal' ? 'Personal Board' : 'Shared Board');
+                boardInfo.innerHTML = `<strong>Will remove from:</strong> ${boardName} - Class of ${escapeHtml(entry.class_year)} (${escapeHtml(entry.position)})`;
             }
         }
     }
 
     // Open remove modal on button click
     newBtn.addEventListener('click', () => {
-        const playerName = `${currentProfile.first_name} ${currentProfile.last_name}`;
+        const playerName = `${escapeHtml(currentProfile.first_name)} ${escapeHtml(currentProfile.last_name)}`;
         confirmText.innerHTML = `Remove <strong>${playerName}</strong> from recruiting board?`;
 
         // Populate and show the board selector

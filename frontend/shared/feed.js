@@ -82,6 +82,7 @@ class FeedManager {
                 }
             }
         } catch (error) {
+            console.error('Error loading post creator avatar:', error);
         }
     }
 
@@ -494,6 +495,7 @@ class FeedManager {
                 this.showNewPostsButton(response.newPostsCount);
             }
         } catch (error) {
+            console.error('Error checking for new posts:', error);
         }
     }
 
@@ -2629,6 +2631,8 @@ class FeedManager {
                 listEl.innerHTML = '<p class="no-comments">No comments yet. Be the first to comment!</p>';
             }
         } catch (error) {
+            console.error('Error loading share comments:', error);
+            showToast('Failed to load comments.');
         }
     }
 
@@ -2688,6 +2692,8 @@ class FeedManager {
             const currentCount = match ? parseInt(match[1]) : 0;
             button.textContent = `Like (${currentCount + 1})`;
         } catch (error) {
+            console.error('Error liking comment:', error);
+            showToast('Failed to like comment.');
         }
     }
 
@@ -3028,6 +3034,8 @@ class FeedManager {
             button.classList.remove('following');
             button.onclick = () => this.followUser(userId, button);
         } catch (error) {
+            console.error('Error unfollowing user:', error);
+            showToast('Failed to unfollow user.');
         }
     }
 
@@ -3182,6 +3190,8 @@ class FeedManager {
                 });
             }
         } catch (error) {
+            console.error('Error loading feed:', error);
+            showToast('Failed to load feed. Please refresh.');
         } finally {
             this.isLoading = false;
         }
@@ -3404,6 +3414,8 @@ class FeedManager {
             }
             countSpan.textContent = count;
         } catch (error) {
+            console.error('Error liking comment:', error);
+            showToast('Failed to like comment.');
         }
     }
 
