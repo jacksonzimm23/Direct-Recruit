@@ -123,13 +123,12 @@ router.get('/:userId/followers', authMiddleware, validateUUID('userId'), async (
     const limit = parseInt(req.query.limit) || 50;
     const offset = parseInt(req.query.offset) || 0;
 
-    // Private profile restrictions disabled - will be added later
-    // const isPrivate = await Follow.isPrivateProfile(userId);
-    // const isOwnProfile = req.userId === userId;
-    // const isFollowing = await Follow.isFollowing(req.userId, userId);
-    // if (isPrivate && !isOwnProfile && !isFollowing) {
-    //   return res.status(403).json({ error: 'This account is private', isPrivate: true });
-    // }
+    const isPrivate = await Follow.isPrivateProfile(userId);
+    const isOwnProfile = req.userId === userId;
+    const isFollowing = await Follow.isFollowing(req.userId, userId);
+    if (isPrivate && !isOwnProfile && !isFollowing) {
+      return res.status(403).json({ error: 'This account is private', isPrivate: true });
+    }
 
     let followers = await Follow.getFollowers(userId, limit, offset);
     followers = await addSignedUrlsToProfiles(followers);
@@ -147,13 +146,12 @@ router.get('/:userId/following', authMiddleware, validateUUID('userId'), async (
     const limit = parseInt(req.query.limit) || 50;
     const offset = parseInt(req.query.offset) || 0;
 
-    // Private profile restrictions disabled - will be added later
-    // const isPrivate = await Follow.isPrivateProfile(userId);
-    // const isOwnProfile = req.userId === userId;
-    // const isFollowing = await Follow.isFollowing(req.userId, userId);
-    // if (isPrivate && !isOwnProfile && !isFollowing) {
-    //   return res.status(403).json({ error: 'This account is private', isPrivate: true });
-    // }
+    const isPrivate = await Follow.isPrivateProfile(userId);
+    const isOwnProfile = req.userId === userId;
+    const isFollowing = await Follow.isFollowing(req.userId, userId);
+    if (isPrivate && !isOwnProfile && !isFollowing) {
+      return res.status(403).json({ error: 'This account is private', isPrivate: true });
+    }
 
     let following = await Follow.getFollowing(userId, limit, offset);
     following = await addSignedUrlsToProfiles(following);
