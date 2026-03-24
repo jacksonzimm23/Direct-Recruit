@@ -177,6 +177,15 @@ class Notification {
     return result.rowCount;
   }
 
+  // Delete all notifications referencing a specific entity (e.g. when a post is deleted)
+  static async deleteByEntityId(entityId) {
+    const result = await pool.query(
+      `DELETE FROM notifications WHERE related_entity_id = $1`,
+      [entityId]
+    );
+    return result.rowCount;
+  }
+
   // Check if a notification already exists (to prevent duplicates)
   static async exists({ userId, type, relatedUserId, relatedEntityId, withinHours = 24 }) {
     const result = await pool.query(
