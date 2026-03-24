@@ -12,7 +12,7 @@ const PortalWatchlist = require('../models/PortalWatchlist');
 const { authMiddleware, requireRole, validateUUID } = require('../middleware/auth');
 const { validatePlayerProfile, validateCoachProfile, handleValidationErrors, sanitizeBody } = require('../middleware/validation');
 const { getSignedS3Url } = require('../utils/s3');
-const { apiLimiter } = require('../middleware/rateLimit');
+const { apiLimiter, availabilityLimiter } = require('../middleware/rateLimit');
 const logger = require('../utils/logger');
 
 // Helper function to convert S3 key to signed URL in profile
@@ -551,7 +551,7 @@ router.get('/search', authMiddleware, async (req, res) => {
 });
 
 // Check username availability
-router.get('/check-username/:username', apiLimiter, async (req, res) => {
+router.get('/check-username/:username', availabilityLimiter, async (req, res) => {
   try {
     const { username } = req.params;
 
@@ -570,7 +570,7 @@ router.get('/check-username/:username', apiLimiter, async (req, res) => {
 });
 
 // Check email availability
-router.get('/check-email/:email', apiLimiter, async (req, res) => {
+router.get('/check-email/:email', availabilityLimiter, async (req, res) => {
   try {
     const { email } = req.params;
 

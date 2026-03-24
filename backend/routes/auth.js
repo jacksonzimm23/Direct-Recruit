@@ -7,7 +7,7 @@ const OtherProfile = require('../models/OtherProfile');
 const { generateToken } = require('../utils/jwt');
 const { validateRegistration, validatePlayerProfile, validateCoachProfile, handleValidationErrors } = require('../middleware/validation');
 const { authMiddleware } = require('../middleware/auth');
-const { authLimiter } = require('../middleware/rateLimit');
+const { authLimiter, passwordResetLimiter } = require('../middleware/rateLimit');
 const { getSignedS3Url } = require('../utils/s3');
 const cognito = require('../utils/cognito');
 const logger = require('../utils/logger');
@@ -230,7 +230,7 @@ router.post('/logout', (req, res) => {
 });
 
 // Forgot password - initiate reset
-router.post('/forgot-password', authLimiter, async (req, res) => {
+router.post('/forgot-password', authLimiter, passwordResetLimiter, async (req, res) => {
   try {
     const { email } = req.body;
 
