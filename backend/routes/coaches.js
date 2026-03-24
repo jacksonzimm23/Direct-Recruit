@@ -95,7 +95,7 @@ router.get('/college', authMiddleware, async (req, res) => {
 });
 
 // Get college coach by first_name='College' and last_name='Coach' (legacy endpoint)
-router.get('/college-coach', async (req, res) => {
+router.get('/college-coach', authMiddleware, async (req, res) => {
     try {
         const result = await pool.query(
             `SELECT * FROM coach_profiles

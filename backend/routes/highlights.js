@@ -5,6 +5,7 @@ const pool = require('../config/database');
 const { authMiddleware, validateUUID } = require('../middleware/auth');
 const { uploadToS3, getSignedVideoUrl, deleteFromS3, generateHighlightVideoKey } = require('../utils/s3');
 const Follow = require('../models/Follow');
+const { sanitizeBody } = require('../middleware/validation');
 const logger = require('../utils/logger');
 
 // Configure multer for video uploads
@@ -148,7 +149,7 @@ router.get('/:userId', authMiddleware, validateUUID('userId'), async (req, res) 
 });
 
 // Add a new highlight
-router.post('/', authMiddleware, async (req, res) => {
+router.post('/', authMiddleware, sanitizeBody, async (req, res) => {
   try {
     const { highlight_type, title, hudl_link } = req.body;
 
@@ -159,6 +160,12 @@ router.post('/', authMiddleware, async (req, res) => {
     // Validate highlight_type
     if (!['season', 'game'].includes(highlight_type)) {
       return res.status(400).json({ error: 'Invalid highlight type. Must be "season" or "game"' });
+    }
+    if (title.length > 200) {
+      return res.status(400).json({ error: 'Title must be 200 characters or less' });
+    }
+    if (hudl_link.length > 500) {
+      return res.status(400).json({ error: 'Hudl link must be 500 characters or less' });
     }
 
     const result = await pool.query(
@@ -180,13 +187,19 @@ router.post('/', authMiddleware, async (req, res) => {
 });
 
 // Update a highlight
-router.put('/:highlightId', authMiddleware, validateUUID('highlightId'), async (req, res) => {
+router.put('/:highlightId', authMiddleware, validateUUID('highlightId'), sanitizeBody, async (req, res) => {
   try {
     const { highlightId } = req.params;
     const { title, hudl_link } = req.body;
 
     if (!title || !hudl_link) {
       return res.status(400).json({ error: 'Title and Hudl link are required' });
+    }
+    if (title.length > 200) {
+      return res.status(400).json({ error: 'Title must be 200 characters or less' });
+    }
+    if (hudl_link.length > 500) {
+      return res.status(400).json({ error: 'Hudl link must be 500 characters or less' });
     }
 
     // Verify ownership

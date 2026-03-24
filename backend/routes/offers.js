@@ -4,6 +4,7 @@ const PlayerOffer = require('../models/PlayerOffer');
 const PlayerProfile = require('../models/PlayerProfile');
 const Follow = require('../models/Follow');
 const { authMiddleware } = require('../middleware/auth');
+const { sanitizeBody } = require('../middleware/validation');
 const logger = require('../utils/logger');
 
 // Get all offers for the logged-in player
@@ -47,12 +48,18 @@ router.get('/player/:username', authMiddleware, async (req, res) => {
 });
 
 // Add a new offer
-router.post('/', authMiddleware, async (req, res) => {
+router.post('/', authMiddleware, sanitizeBody, async (req, res) => {
   try {
     const { collegeName, division } = req.body;
 
     if (!collegeName || !division) {
       return res.status(400).json({ error: 'College name and division are required' });
+    }
+    if (collegeName.length > 150) {
+      return res.status(400).json({ error: 'College name must be 150 characters or less' });
+    }
+    if (division.length > 20) {
+      return res.status(400).json({ error: 'Division must be 20 characters or less' });
     }
 
     // Format as "School Name, Division"
@@ -71,13 +78,19 @@ router.post('/', authMiddleware, async (req, res) => {
 });
 
 // Update an offer by index
-router.put('/:offerIndex', authMiddleware, async (req, res) => {
+router.put('/:offerIndex', authMiddleware, sanitizeBody, async (req, res) => {
   try {
     const offerIndex = parseInt(req.params.offerIndex);
     const { collegeName, division } = req.body;
 
     if (!collegeName || !division) {
       return res.status(400).json({ error: 'College name and division are required' });
+    }
+    if (collegeName.length > 150) {
+      return res.status(400).json({ error: 'College name must be 150 characters or less' });
+    }
+    if (division.length > 20) {
+      return res.status(400).json({ error: 'Division must be 20 characters or less' });
     }
 
     const offerData = `${collegeName}, ${division}`;
