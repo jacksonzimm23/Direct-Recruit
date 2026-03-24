@@ -539,6 +539,10 @@ router.delete('/:postId', authMiddleware, validateUUID('postId'), async (req, re
       ).catch(err => logger.error('S3 cleanup error on post delete:', err));
     }
 
+    // Clean up notifications referencing this post (non-blocking)
+    Notification.deleteByEntityId(req.params.postId)
+      .catch(err => logger.error('Notification cleanup error on post delete:', err));
+
     res.json({ message: 'Post deleted' });
   } catch (error) {
     logger.error('Delete post error:', error);
