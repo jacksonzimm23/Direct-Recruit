@@ -135,12 +135,18 @@ app.use((err, req, res, next) => {
     path: req.path,
     stack: err.stack,
   });
-  res.status(500).json({ error: 'Something went wrong!' });
+  if (req.path.startsWith('/api/')) {
+    return res.status(500).json({ error: 'Something went wrong!' });
+  }
+  res.status(500).sendFile(path.join(__dirname, '..', 'frontend', '500.html'));
 });
 
 // 404 handler
 app.use((req, res) => {
-  res.status(404).json({ error: 'Route not found' });
+  if (req.path.startsWith('/api/')) {
+    return res.status(404).json({ error: 'Route not found' });
+  }
+  res.status(404).sendFile(path.join(__dirname, '..', 'frontend', '404.html'));
 });
 
 server.listen(PORT, () => {
