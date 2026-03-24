@@ -12,7 +12,7 @@
 
       navigator.serviceWorker.register(swPath)
         .then(function(registration) {
-          console.log('[SW] Service Worker registered with scope:', registration.scope);
+          // Service Worker registered successfully
 
           // Check for updates periodically
           setInterval(function() {
@@ -26,13 +26,13 @@
             newWorker.addEventListener('statechange', function() {
               if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
                 // New service worker available, notify user if needed
-                console.log('[SW] New version available');
+                // New version available — will activate on next page load
               }
             });
           });
         })
         .catch(function(error) {
-          console.log('[SW] Service Worker registration failed:', error);
+          // Service Worker registration failed — non-critical, app works without it
         });
     });
   }

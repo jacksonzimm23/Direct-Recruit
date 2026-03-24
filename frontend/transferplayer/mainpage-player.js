@@ -91,7 +91,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             if (e.key === 'Enter') {
                 const query = this.value.trim();
                 if (query) {
-                    alert('Search functionality will be connected to your backend.');
+                    // Search handled by shared search component
                 }
             }
         });
