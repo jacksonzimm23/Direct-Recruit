@@ -1,5 +1,5 @@
 // Sign In Form Handler
-const API_BASE = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? 'http://localhost:5000/api' : window.location.origin + '/api';
+// Uses API_BASE_URL from shared/api.js
 if (document.getElementById('signinForm')) {
     const form = document.getElementById('signinForm');
 
@@ -20,7 +20,7 @@ if (document.getElementById('signinForm')) {
             // Redirect to correct role folder after login
             if (data.user.role === 'player' || data.user.role === 'coach') {
                 try {
-                    const meResponse = await fetch(`${API_BASE}/auth/me`, { credentials: 'include' });
+                    const meResponse = await fetch(`${API_BASE_URL}/auth/me`, { credentials: 'include' });
                     const meData = await meResponse.json();
                     const folder = getProfileFolder({
                         role: meData.user.role,

@@ -1,5 +1,5 @@
 // Forgot Password Page JavaScript
-const API_BASE = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? 'http://localhost:5000' : window.location.origin;
+// Uses API_BASE_URL from shared/api.js
 
 document.addEventListener('DOMContentLoaded', function() {
     // Elements
@@ -48,7 +48,7 @@ document.addEventListener('DOMContentLoaded', function() {
         sendCodeBtn.innerHTML = 'Sending...';
 
         try {
-            const response = await fetch(`${API_BASE}/api/auth/forgot-password`, {
+            const response = await fetch(`${API_BASE_URL}/auth/forgot-password`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -252,7 +252,7 @@ document.addEventListener('DOMContentLoaded', function() {
         resetBtn.innerHTML = 'Resetting...';
 
         try {
-            const response = await fetch(`${API_BASE}/api/auth/reset-password`, {
+            const response = await fetch(`${API_BASE_URL}/auth/reset-password`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -302,7 +302,7 @@ document.addEventListener('DOMContentLoaded', function() {
         resendBtn.textContent = 'Sending...';
 
         try {
-            const response = await fetch(`${API_BASE}/api/auth/forgot-password`, {
+            const response = await fetch(`${API_BASE_URL}/auth/forgot-password`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
