@@ -45,6 +45,8 @@ async function loadUserSettings() {
             populateSettingsForm(data);
         }
     } catch (error) {
+        console.error('Error loading settings:', error);
+        showToast('Failed to load settings.');
     }
 }
 

@@ -11,6 +11,7 @@ const pool = require('../config/database');
 const { authMiddleware, validateUUID } = require('../middleware/auth');
 const { body, validationResult } = require('express-validator');
 const { postLimiter } = require('../middleware/rateLimit');
+const { sanitizeBody } = require('../middleware/validation');
 const { getSignedS3Url } = require('../utils/s3');
 const logger = require('../utils/logger');
 
@@ -432,8 +433,8 @@ router.delete('/shares/:shareId', authMiddleware, validateUUID('shareId'), async
 // ==================== POST CRUD ====================
 
 // Create post
-router.post('/', authMiddleware, postLimiter, [
-  body('content').trim().notEmpty().withMessage('Content required'),
+router.post('/', authMiddleware, postLimiter, sanitizeBody, [
+  body('content').trim().notEmpty().withMessage('Content required').isLength({ max: 5000 }).withMessage('Post content must be 5000 characters or less'),
   body('media_urls').optional().isArray(),
   body('media_type').optional().isIn(['image', 'video', 'mixed']),
   body('visibility').optional().isIn(['public', 'followers_only', 'private'])
@@ -614,8 +615,8 @@ router.get('/:postId/shares', authMiddleware, validateUUID('postId'), async (req
 // ==================== COMMENTS ====================
 
 // Add comment
-router.post('/:postId/comments', authMiddleware, validateUUID('postId'), [
-  body('content').trim().notEmpty().withMessage('Comment content required'),
+router.post('/:postId/comments', authMiddleware, validateUUID('postId'), sanitizeBody, [
+  body('content').trim().notEmpty().withMessage('Comment content required').isLength({ max: 2000 }).withMessage('Comment must be 2000 characters or less'),
   body('parent_comment_id').optional().isUUID()
 ], async (req, res) => {
   const errors = validationResult(req);
@@ -921,8 +922,8 @@ router.delete('/share/:shareId/save', authMiddleware, validateUUID('shareId'), a
 });
 
 // Add comment to a share (quote post)
-router.post('/share/:shareId/comments', authMiddleware, validateUUID('shareId'), [
-  body('content').trim().notEmpty().withMessage('Comment content is required')
+router.post('/share/:shareId/comments', authMiddleware, validateUUID('shareId'), sanitizeBody, [
+  body('content').trim().notEmpty().withMessage('Comment content is required').isLength({ max: 2000 }).withMessage('Comment must be 2000 characters or less')
 ], async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {

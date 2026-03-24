@@ -1,6 +1,24 @@
 const { body, validationResult } = require('express-validator');
 const logger = require('../utils/logger');
 
+// Strip HTML tags from a string (prevents stored XSS)
+function stripHtml(str) {
+  if (typeof str !== 'string') return str;
+  return str.replace(/<[^>]*>/g, '');
+}
+
+// Middleware: strip HTML tags from all string fields in req.body
+const sanitizeBody = (req, res, next) => {
+  if (req.body && typeof req.body === 'object') {
+    for (const key of Object.keys(req.body)) {
+      if (typeof req.body[key] === 'string') {
+        req.body[key] = stripHtml(req.body[key]);
+      }
+    }
+  }
+  next();
+};
+
 const validateRegistration = [
   body('email').isEmail().normalizeEmail().withMessage('Valid email required'),
   body('password').isLength({ min: 8 }).withMessage('Password must be at least 8 characters'),
@@ -8,9 +26,10 @@ const validateRegistration = [
 ];
 
 const validatePlayerProfile = [
-  body('first_name').trim().notEmpty().withMessage('First name required'),
-  body('last_name').trim().notEmpty().withMessage('Last name required'),
-  body('team_name').optional({ nullable: true }).trim(),
+  body('first_name').trim().notEmpty().withMessage('First name required').isLength({ max: 50 }).withMessage('First name must be 50 characters or less'),
+  body('last_name').trim().notEmpty().withMessage('Last name required').isLength({ max: 50 }).withMessage('Last name must be 50 characters or less'),
+  body('team_name').optional({ nullable: true }).trim().isLength({ max: 100 }).withMessage('Team name must be 100 characters or less'),
+  body('bio').optional({ nullable: true }).trim().isLength({ max: 1000 }).withMessage('Bio must be 1000 characters or less'),
   body('graduation_year').optional({ nullable: true }).custom((value) => {
     if (value === null || value === undefined) return true;
     const year = parseInt(value);
@@ -65,11 +84,12 @@ const validatePlayerProfile = [
 ];
 
 const validateCoachProfile = [
-  body('first_name').trim().notEmpty().withMessage('First name required'),
-  body('last_name').trim().notEmpty().withMessage('Last name required'),
-  body('team_name').optional({ nullable: true }).trim(),
+  body('first_name').trim().notEmpty().withMessage('First name required').isLength({ max: 50 }).withMessage('First name must be 50 characters or less'),
+  body('last_name').trim().notEmpty().withMessage('Last name required').isLength({ max: 50 }).withMessage('Last name must be 50 characters or less'),
+  body('team_name').optional({ nullable: true }).trim().isLength({ max: 100 }).withMessage('Team name must be 100 characters or less'),
   body('college_division').optional({ nullable: true }).trim(),
-  body('position_title').optional({ nullable: true }).trim(),
+  body('position_title').optional({ nullable: true }).trim().isLength({ max: 100 }).withMessage('Position title must be 100 characters or less'),
+  body('bio').optional({ nullable: true }).trim().isLength({ max: 1000 }).withMessage('Bio must be 1000 characters or less'),
 ];
 
 const handleValidationErrors = (req, res, next) => {
@@ -89,5 +109,6 @@ module.exports = {
   validateRegistration,
   validatePlayerProfile,
   validateCoachProfile,
-  handleValidationErrors
+  handleValidationErrors,
+  sanitizeBody
 };

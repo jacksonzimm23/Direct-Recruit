@@ -9,6 +9,7 @@ const pool = require('../config/database');
 const { authMiddleware, validateUUID } = require('../middleware/auth');
 const { body, validationResult } = require('express-validator');
 const { messageLimiter } = require('../middleware/rateLimit');
+const { sanitizeBody } = require('../middleware/validation');
 const { getSignedS3Url } = require('../utils/s3');
 const logger = require('../utils/logger');
 
@@ -125,8 +126,8 @@ router.get('/conversations/:conversationId', authMiddleware, validateUUID('conve
 });
 
 // Send message
-router.post('/conversations/:conversationId/messages', authMiddleware, validateUUID('conversationId'), messageLimiter, [
-  body('content').trim().notEmpty().withMessage('Message content required')
+router.post('/conversations/:conversationId/messages', authMiddleware, validateUUID('conversationId'), messageLimiter, sanitizeBody, [
+  body('content').trim().notEmpty().withMessage('Message content required').isLength({ max: 5000 }).withMessage('Message must be 5000 characters or less')
 ], async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
