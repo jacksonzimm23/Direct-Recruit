@@ -12,7 +12,7 @@ const { authMiddleware, validateUUID } = require('../middleware/auth');
 const { body, validationResult } = require('express-validator');
 const { postLimiter } = require('../middleware/rateLimit');
 const { sanitizeBody } = require('../middleware/validation');
-const { getSignedS3Url } = require('../utils/s3');
+const { getSignedS3Url, deleteFromS3 } = require('../utils/s3');
 const logger = require('../utils/logger');
 
 // Helper function to check if viewer can access a user's content
@@ -531,6 +531,14 @@ router.delete('/:postId', authMiddleware, validateUUID('postId'), async (req, re
     if (!post) {
       return res.status(404).json({ error: 'Post not found or unauthorized' });
     }
+
+    // Clean up S3 media files (non-blocking)
+    if (post.media_urls && Array.isArray(post.media_urls)) {
+      Promise.allSettled(
+        post.media_urls.filter(key => key).map(key => deleteFromS3(key))
+      ).catch(err => logger.error('S3 cleanup error on post delete:', err));
+    }
+
     res.json({ message: 'Post deleted' });
   } catch (error) {
     logger.error('Delete post error:', error);
