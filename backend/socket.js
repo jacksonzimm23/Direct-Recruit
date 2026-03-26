@@ -4,26 +4,44 @@ const cookie = require('cookie');
 const Message = require('./models/Message');
 const logger = require('./utils/logger');
 
-// Simple in-memory rate limiter for socket events
+// Redis-backed rate limiter for socket events (falls back to in-memory in dev)
 function createSocketRateLimiter(maxEvents, windowMs) {
-  const counters = new Map();
-  // Clean up expired entries every minute
-  setInterval(() => {
-    const now = Date.now();
-    for (const [key, data] of counters) {
-      if (now - data.start > windowMs) counters.delete(key);
-    }
-  }, 60000);
+  const redis = require('./config/redis');
+  const useRedis = process.env.NODE_ENV === 'production' && redis.isReady;
 
-  return (socketId) => {
-    const now = Date.now();
-    const data = counters.get(socketId);
-    if (!data || now - data.start > windowMs) {
-      counters.set(socketId, { count: 1, start: now });
-      return true;
+  if (!useRedis) {
+    // In-memory fallback for development
+    const counters = new Map();
+    setInterval(() => {
+      const now = Date.now();
+      for (const [key, data] of counters) {
+        if (now - data.start > windowMs) counters.delete(key);
+      }
+    }, 60000);
+
+    return (socketId) => {
+      const now = Date.now();
+      const data = counters.get(socketId);
+      if (!data || now - data.start > windowMs) {
+        counters.set(socketId, { count: 1, start: now });
+        return true;
+      }
+      data.count++;
+      return data.count <= maxEvents;
+    };
+  }
+
+  // Redis-backed limiter for production
+  const windowSec = Math.ceil(windowMs / 1000);
+  return async (socketId) => {
+    try {
+      const key = `sock_rl:${socketId}`;
+      const count = await redis.incr(key);
+      if (count === 1) await redis.expire(key, windowSec);
+      return count <= maxEvents;
+    } catch {
+      return true; // Allow on Redis error to avoid blocking users
     }
-    data.count++;
-    return data.count <= maxEvents;
   };
 }
 
@@ -95,20 +113,20 @@ function initializeSocket(server) {
     });
 
     // Typing indicator (rate limited)
-    socket.on('typing_start', (conversationId) => {
-      if (!typingRateLimit(socket.id)) return;
+    socket.on('typing_start', async (conversationId) => {
+      if (!(await typingRateLimit(socket.id))) return;
       socket.to(conversationId).emit('user_typing', { userId: socket.userId, conversationId });
     });
 
-    socket.on('typing_stop', (conversationId) => {
-      if (!typingRateLimit(socket.id)) return;
+    socket.on('typing_stop', async (conversationId) => {
+      if (!(await typingRateLimit(socket.id))) return;
       socket.to(conversationId).emit('user_stopped_typing', { userId: socket.userId, conversationId });
     });
 
     // Send message via socket (alternative to REST endpoint)
     socket.on('send_message', async ({ conversationId, content }) => {
       try {
-        if (!messageRateLimit(socket.id)) {
+        if (!(await messageRateLimit(socket.id))) {
           socket.emit('error', { message: 'Too many messages. Please slow down.' });
           return;
         }
