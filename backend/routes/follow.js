@@ -120,8 +120,8 @@ router.delete('/:userId', authMiddleware, validateUUID('userId'), async (req, re
 router.get('/:userId/followers', authMiddleware, validateUUID('userId'), async (req, res) => {
   try {
     const { userId } = req.params;
-    const limit = parseInt(req.query.limit) || 50;
-    const offset = parseInt(req.query.offset) || 0;
+    const limit = Math.min(parseInt(req.query.limit) || 50, 100);
+    const offset = Math.max(parseInt(req.query.offset) || 0, 0);
 
     const isPrivate = await Follow.isPrivateProfile(userId);
     const isOwnProfile = req.userId === userId;
@@ -143,8 +143,8 @@ router.get('/:userId/followers', authMiddleware, validateUUID('userId'), async (
 router.get('/:userId/following', authMiddleware, validateUUID('userId'), async (req, res) => {
   try {
     const { userId } = req.params;
-    const limit = parseInt(req.query.limit) || 50;
-    const offset = parseInt(req.query.offset) || 0;
+    const limit = Math.min(parseInt(req.query.limit) || 50, 100);
+    const offset = Math.max(parseInt(req.query.offset) || 0, 0);
 
     const isPrivate = await Follow.isPrivateProfile(userId);
     const isOwnProfile = req.userId === userId;
@@ -229,8 +229,8 @@ router.delete('/:userId/request', authMiddleware, validateUUID('userId'), async 
 // Get incoming follow requests (requests others have sent to the user)
 router.get('/requests/incoming', authMiddleware, async (req, res) => {
   try {
-    const limit = parseInt(req.query.limit) || 50;
-    const offset = parseInt(req.query.offset) || 0;
+    const limit = Math.min(parseInt(req.query.limit) || 50, 100);
+    const offset = Math.max(parseInt(req.query.offset) || 0, 0);
     let requests = await Follow.getIncomingFollowRequests(req.userId, limit, offset);
     requests = await addSignedUrlsToProfiles(requests);
     res.json({ requests, count: requests.length });
@@ -243,8 +243,8 @@ router.get('/requests/incoming', authMiddleware, async (req, res) => {
 // Get outgoing follow requests (requests the user has sent)
 router.get('/requests/outgoing', authMiddleware, async (req, res) => {
   try {
-    const limit = parseInt(req.query.limit) || 50;
-    const offset = parseInt(req.query.offset) || 0;
+    const limit = Math.min(parseInt(req.query.limit) || 50, 100);
+    const offset = Math.max(parseInt(req.query.offset) || 0, 0);
     let requests = await Follow.getOutgoingFollowRequests(req.userId, limit, offset);
     requests = await addSignedUrlsToProfiles(requests);
     res.json({ requests, count: requests.length });

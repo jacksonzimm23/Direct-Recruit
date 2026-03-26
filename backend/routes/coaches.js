@@ -26,8 +26,8 @@ async function addSignedUrlsToCoaches(coaches) {
 // College coaches have a college_division set (not null/empty)
 router.get('/college', authMiddleware, async (req, res) => {
     try {
-        const limit = parseInt(req.query.limit) || 12;
-        const offset = parseInt(req.query.offset) || 0;
+        const limit = Math.min(parseInt(req.query.limit) || 12, 100);
+        const offset = Math.max(parseInt(req.query.offset) || 0, 0);
         const state = req.query.state;
         const collegeDivision = req.query.college_division;
 

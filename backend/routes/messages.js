@@ -61,8 +61,8 @@ router.get('/unread-count', authMiddleware, async (req, res) => {
 // Get user's conversations
 router.get('/conversations', authMiddleware, async (req, res) => {
   try {
-    const limit = parseInt(req.query.limit) || 20;
-    const offset = parseInt(req.query.offset) || 0;
+    const limit = Math.min(parseInt(req.query.limit) || 20, 100);
+    const offset = Math.max(parseInt(req.query.offset) || 0, 0);
 
     let conversations = await Message.getUserConversations(req.userId, limit, offset);
     conversations = await addSignedUrlsToConversations(conversations);
@@ -107,8 +107,8 @@ router.get('/conversations/:conversationId', authMiddleware, validateUUID('conve
       return res.status(403).json({ error: 'Not a participant in this conversation' });
     }
 
-    const limit = parseInt(req.query.limit) || 50;
-    const offset = parseInt(req.query.offset) || 0;
+    const limit = Math.min(parseInt(req.query.limit) || 50, 100);
+    const offset = Math.max(parseInt(req.query.offset) || 0, 0);
     const markRead = req.query.markRead !== 'false'; // Default to true, only skip if explicitly 'false'
 
     const messages = await Message.getConversationMessages(conversationId, limit, offset);

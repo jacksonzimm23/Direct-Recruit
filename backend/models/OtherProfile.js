@@ -30,12 +30,17 @@ class OtherProfile {
   }
 
   static async update(userId, profileData) {
+    const allowedColumns = new Set([
+      'first_name', 'last_name', 'username', 'subheader',
+      'profile_image_url', 'bio'
+    ]);
+
     const fields = [];
     const values = [];
     let paramCount = 1;
 
     Object.keys(profileData).forEach(key => {
-      if (profileData[key] !== undefined) {
+      if (profileData[key] !== undefined && allowedColumns.has(key)) {
         fields.push(`${key} = $${paramCount}`);
         values.push(profileData[key]);
         paramCount++;

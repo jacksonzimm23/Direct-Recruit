@@ -172,8 +172,8 @@ async function getUserName(userId) {
 // Get combined feed (Option 4: Following posts first, then Discover)
 router.get('/feed/combined', authMiddleware, async (req, res) => {
   try {
-    const limit = parseInt(req.query.limit) || 20;
-    const offset = parseInt(req.query.offset) || 0;
+    const limit = Math.min(parseInt(req.query.limit) || 20, 100);
+    const offset = Math.max(parseInt(req.query.offset) || 0, 0);
 
     let posts = await Post.getCombinedFeed(req.userId, limit, offset);
     posts = await addSignedUrlsToPosts(posts);
@@ -187,8 +187,8 @@ router.get('/feed/combined', authMiddleware, async (req, res) => {
 // Get following feed only (Your Network)
 router.get('/feed/following', authMiddleware, async (req, res) => {
   try {
-    const limit = parseInt(req.query.limit) || 20;
-    const offset = parseInt(req.query.offset) || 0;
+    const limit = Math.min(parseInt(req.query.limit) || 20, 100);
+    const offset = Math.max(parseInt(req.query.offset) || 0, 0);
 
     let posts = await Post.getFollowingFeed(req.userId, limit, offset);
     posts = await addSignedUrlsToPosts(posts);
@@ -202,8 +202,8 @@ router.get('/feed/following', authMiddleware, async (req, res) => {
 // Get discover feed only
 router.get('/feed/discover', authMiddleware, async (req, res) => {
   try {
-    const limit = parseInt(req.query.limit) || 20;
-    const offset = parseInt(req.query.offset) || 0;
+    const limit = Math.min(parseInt(req.query.limit) || 20, 100);
+    const offset = Math.max(parseInt(req.query.offset) || 0, 0);
 
     let posts = await Post.getDiscoverFeed(req.userId, limit, offset);
     posts = await addSignedUrlsToPosts(posts);
@@ -239,8 +239,8 @@ router.get('/feed/new-posts-count', authMiddleware, async (req, res) => {
 // Legacy feed endpoint (backwards compatible - returns combined feed)
 router.get('/feed', authMiddleware, async (req, res) => {
   try {
-    const limit = parseInt(req.query.limit) || 20;
-    const offset = parseInt(req.query.offset) || 0;
+    const limit = Math.min(parseInt(req.query.limit) || 20, 100);
+    const offset = Math.max(parseInt(req.query.offset) || 0, 0);
 
     let posts = await Post.getCombinedFeed(req.userId, limit, offset);
     posts = await addSignedUrlsToPosts(posts);
@@ -254,8 +254,8 @@ router.get('/feed', authMiddleware, async (req, res) => {
 // Get user's posts (includes original posts, reposts, and quote posts)
 router.get('/user/:userId', authMiddleware, validateUUID('userId'), async (req, res) => {
   try {
-    const limit = parseInt(req.query.limit) || 20;
-    const offset = parseInt(req.query.offset) || 0;
+    const limit = Math.min(parseInt(req.query.limit) || 20, 100);
+    const offset = Math.max(parseInt(req.query.offset) || 0, 0);
 
     // Check if viewer can access this user's content (private profile check)
     const canAccess = await canAccessUserContent(req.userId, req.params.userId);
@@ -276,8 +276,8 @@ router.get('/user/:userId', authMiddleware, validateUUID('userId'), async (req, 
 // Get user's replies/comments (for profile Replies tab)
 router.get('/user/:userId/replies', authMiddleware, validateUUID('userId'), async (req, res) => {
   try {
-    const limit = parseInt(req.query.limit) || 10;
-    const offset = parseInt(req.query.offset) || 0;
+    const limit = Math.min(parseInt(req.query.limit) || 10, 100);
+    const offset = Math.max(parseInt(req.query.offset) || 0, 0);
 
     // Check if viewer can access this user's content (private profile check)
     const canAccess = await canAccessUserContent(req.userId, req.params.userId);
@@ -297,8 +297,8 @@ router.get('/user/:userId/replies', authMiddleware, validateUUID('userId'), asyn
 // Get user's liked posts (for profile Likes tab)
 router.get('/user/:userId/likes', authMiddleware, validateUUID('userId'), async (req, res) => {
   try {
-    const limit = parseInt(req.query.limit) || 10;
-    const offset = parseInt(req.query.offset) || 0;
+    const limit = Math.min(parseInt(req.query.limit) || 10, 100);
+    const offset = Math.max(parseInt(req.query.offset) || 0, 0);
 
     // Check if viewer can access this user's content (private profile check)
     const canAccess = await canAccessUserContent(req.userId, req.params.userId);
@@ -318,8 +318,8 @@ router.get('/user/:userId/likes', authMiddleware, validateUUID('userId'), async 
 // Get saved posts
 router.get('/saved/list', authMiddleware, async (req, res) => {
   try {
-    const limit = parseInt(req.query.limit) || 20;
-    const offset = parseInt(req.query.offset) || 0;
+    const limit = Math.min(parseInt(req.query.limit) || 20, 100);
+    const offset = Math.max(parseInt(req.query.offset) || 0, 0);
 
     let posts = await Post.getSavedPosts(req.userId, limit, offset);
     posts = await addSignedUrlsToPosts(posts);
@@ -333,8 +333,8 @@ router.get('/saved/list', authMiddleware, async (req, res) => {
 // Get user's reposts (for showing at top of feed)
 router.get('/reposts/mine', authMiddleware, async (req, res) => {
   try {
-    const limit = parseInt(req.query.limit) || 10;
-    const offset = parseInt(req.query.offset) || 0;
+    const limit = Math.min(parseInt(req.query.limit) || 10, 100);
+    const offset = Math.max(parseInt(req.query.offset) || 0, 0);
 
     let posts = await Post.getUserReposts(req.userId, limit, offset);
     posts = await addSignedUrlsToPosts(posts);
@@ -350,8 +350,8 @@ router.get('/reposts/mine', authMiddleware, async (req, res) => {
 // Get comment replies
 router.get('/comments/:commentId/replies', authMiddleware, validateUUID('commentId'), async (req, res) => {
   try {
-    const limit = parseInt(req.query.limit) || 20;
-    const offset = parseInt(req.query.offset) || 0;
+    const limit = Math.min(parseInt(req.query.limit) || 20, 100);
+    const offset = Math.max(parseInt(req.query.offset) || 0, 0);
 
     let replies = await Post.getCommentReplies(req.params.commentId, limit, offset);
     replies = await addSignedUrlsToPosts(replies); // Comments have author_image field
@@ -594,8 +594,8 @@ router.delete('/:postId/like', authMiddleware, validateUUID('postId'), async (re
 // Get post likes
 router.get('/:postId/likes', authMiddleware, validateUUID('postId'), async (req, res) => {
   try {
-    const limit = parseInt(req.query.limit) || 50;
-    const offset = parseInt(req.query.offset) || 0;
+    const limit = Math.min(parseInt(req.query.limit) || 50, 100);
+    const offset = Math.max(parseInt(req.query.offset) || 0, 0);
 
     let likes = await Post.getLikes(req.params.postId, limit, offset);
     likes = await addSignedUrlsToUsers(likes);
@@ -609,8 +609,8 @@ router.get('/:postId/likes', authMiddleware, validateUUID('postId'), async (req,
 // Get post shares (reposts and quotes)
 router.get('/:postId/shares', authMiddleware, validateUUID('postId'), async (req, res) => {
   try {
-    const limit = parseInt(req.query.limit) || 50;
-    const offset = parseInt(req.query.offset) || 0;
+    const limit = Math.min(parseInt(req.query.limit) || 50, 100);
+    const offset = Math.max(parseInt(req.query.offset) || 0, 0);
 
     const shares = await Post.getShares(req.params.postId, limit, offset);
     // Add signed URLs to all share arrays
@@ -690,8 +690,8 @@ router.post('/:postId/comments', authMiddleware, validateUUID('postId'), sanitiz
 // Get comments
 router.get('/:postId/comments', authMiddleware, validateUUID('postId'), async (req, res) => {
   try {
-    const limit = parseInt(req.query.limit) || 50;
-    const offset = parseInt(req.query.offset) || 0;
+    const limit = Math.min(parseInt(req.query.limit) || 50, 100);
+    const offset = Math.max(parseInt(req.query.offset) || 0, 0);
 
     let comments = await Post.getComments(req.params.postId, req.userId, limit, offset);
     comments = await addSignedUrlsToPosts(comments); // Comments have author_image field
@@ -896,8 +896,8 @@ router.delete('/share/:shareId/like', authMiddleware, validateUUID('shareId'), a
 // Get share likes
 router.get('/share/:shareId/likes', authMiddleware, validateUUID('shareId'), async (req, res) => {
   try {
-    const limit = parseInt(req.query.limit) || 50;
-    const offset = parseInt(req.query.offset) || 0;
+    const limit = Math.min(parseInt(req.query.limit) || 50, 100);
+    const offset = Math.max(parseInt(req.query.offset) || 0, 0);
 
     let likes = await Post.getShareLikes(req.params.shareId, limit, offset);
     likes = await addSignedUrlsToUsers(likes);
@@ -967,8 +967,8 @@ router.post('/share/:shareId/comments', authMiddleware, validateUUID('shareId'),
 // Get comments for a share (quote post)
 router.get('/share/:shareId/comments', authMiddleware, validateUUID('shareId'), async (req, res) => {
   try {
-    const limit = parseInt(req.query.limit) || 50;
-    const offset = parseInt(req.query.offset) || 0;
+    const limit = Math.min(parseInt(req.query.limit) || 50, 100);
+    const offset = Math.max(parseInt(req.query.offset) || 0, 0);
 
     let comments = await Post.getShareComments(req.params.shareId, limit, offset);
     comments = await addSignedUrlsToUsers(comments);

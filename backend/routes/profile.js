@@ -419,8 +419,8 @@ router.get('/discover/hsplayers', authMiddleware, async (req, res) => {
       searchTerm: req.query.q,
       excludeUserId: req.userId // Exclude current user's profile
     };
-    const limit = parseInt(req.query.limit) || 9;
-    const offset = parseInt(req.query.offset) || 0;
+    const limit = Math.min(parseInt(req.query.limit) || 9, 100);
+    const offset = Math.max(parseInt(req.query.offset) || 0, 0);
 
     const result = await PlayerProfile.searchHSPlayers(filters, limit, offset);
     result.players = await addSignedUrlsToProfiles(result.players);
@@ -441,8 +441,8 @@ router.get('/discover/collegeplayers', authMiddleware, async (req, res) => {
       searchTerm: req.query.q,
       excludeUserId: req.userId // Exclude current user's profile
     };
-    const limit = parseInt(req.query.limit) || 9;
-    const offset = parseInt(req.query.offset) || 0;
+    const limit = Math.min(parseInt(req.query.limit) || 9, 100);
+    const offset = Math.max(parseInt(req.query.offset) || 0, 0);
 
     const result = await PlayerProfile.searchCollegePlayers(filters, limit, offset);
     result.players = await addSignedUrlsToProfiles(result.players);
@@ -466,8 +466,8 @@ router.get('/discover/transferplayers', authMiddleware, async (req, res) => {
       searchTerm: req.query.q,
       excludeUserId: req.userId // Exclude current user's profile
     };
-    const limit = parseInt(req.query.limit) || 9;
-    const offset = parseInt(req.query.offset) || 0;
+    const limit = Math.min(parseInt(req.query.limit) || 9, 100);
+    const offset = Math.max(parseInt(req.query.offset) || 0, 0);
 
     const result = await PlayerProfile.searchTransferPlayers(filters, limit, offset);
     result.players = await addSignedUrlsToProfiles(result.players);
@@ -485,8 +485,8 @@ router.get('/discover/other', authMiddleware, async (req, res) => {
       searchTerm: req.query.q,
       excludeUserId: req.userId // Exclude current user's profile
     };
-    const limit = parseInt(req.query.limit) || 12;
-    const offset = parseInt(req.query.offset) || 0;
+    const limit = Math.min(parseInt(req.query.limit) || 12, 100);
+    const offset = Math.max(parseInt(req.query.offset) || 0, 0);
 
     const result = await OtherProfile.discover(filters, limit, offset);
     result.profiles = await addSignedUrlsToProfiles(result.profiles);
@@ -742,8 +742,8 @@ router.get('/viewers/:userId', authMiddleware, validateUUID('userId'), async (re
 // Get random suggested connections (excludes current user)
 router.get('/suggested-connections', authMiddleware, async (req, res) => {
   try {
-    const limit = parseInt(req.query.limit) || 5;
-    const offset = parseInt(req.query.offset) || 0;
+    const limit = Math.min(parseInt(req.query.limit) || 5, 100);
+    const offset = Math.max(parseInt(req.query.offset) || 0, 0);
     const currentUserId = req.userId;
 
     // Query to get random users from all profile types, excluding current user

@@ -131,7 +131,7 @@ class Follow {
 
       // Create the actual follow relationship
       await client.query(
-        'INSERT INTO follows (follower_id, following_id) VALUES ($1, $2)',
+        'INSERT INTO follows (follower_id, following_id) VALUES ($1, $2) ON CONFLICT DO NOTHING',
         [request.requester_id, request.target_id]
       );
 
@@ -273,7 +273,7 @@ class Follow {
       await client.query('BEGIN');
 
       const result = await client.query(
-        'INSERT INTO follows (follower_id, following_id) VALUES ($1, $2) RETURNING *',
+        'INSERT INTO follows (follower_id, following_id) VALUES ($1, $2) ON CONFLICT DO NOTHING RETURNING *',
         [followerId, followingId]
       );
 
