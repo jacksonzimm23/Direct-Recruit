@@ -61,7 +61,25 @@ app.use(morgan(':method :url :status :response-time ms', {
 // Serve static uploads BEFORE helmet to avoid security headers blocking images
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use(helmet({
-  crossOriginResourcePolicy: { policy: "cross-origin" }
+  crossOriginResourcePolicy: { policy: "cross-origin" },
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+      fontSrc: ["'self'", "https://fonts.gstatic.com"],
+      imgSrc: ["'self'", "data:", "blob:", "https://res.cloudinary.com", "https://*.amazonaws.com"],
+      connectSrc: ["'self'", "wss:", "ws:"],
+      mediaSrc: ["'self'", "blob:", "https://*.amazonaws.com"],
+      frameSrc: ["'none'"],
+      objectSrc: ["'none'"]
+    }
+  },
+  hsts: {
+    maxAge: 31536000,
+    includeSubDomains: true,
+    preload: true
+  }
 }));
 app.use('/api/', apiLimiter);
 
@@ -149,6 +167,9 @@ app.use((req, res) => {
   res.status(404).sendFile(path.join(__dirname, '..', 'frontend', '404.html'));
 });
 
+// Kill stalled connections after 30 seconds
+server.setTimeout(30000);
+
 server.listen(PORT, () => {
   logger.info(`Server running on port ${PORT}`);
   logger.info(`WebSocket server running`);
@@ -164,5 +185,42 @@ server.listen(PORT, () => {
     logger.info('');
   }
 });
+
+// Graceful shutdown — drain connections before exiting
+function gracefulShutdown(signal) {
+  logger.info(`${signal} received, shutting down gracefully...`);
+
+  server.close(() => {
+    logger.info('HTTP server closed');
+
+    const pool = require('./config/database');
+    pool.end(() => {
+      logger.info('Database connections closed');
+
+      try {
+        const redis = require('./config/redis');
+        if (redis.isReady) {
+          redis.quit().then(() => {
+            logger.info('Redis connection closed');
+            process.exit(0);
+          });
+        } else {
+          process.exit(0);
+        }
+      } catch {
+        process.exit(0);
+      }
+    });
+  });
+
+  // Force exit after 30s if something hangs
+  setTimeout(() => {
+    logger.error('Forced shutdown after 30s timeout');
+    process.exit(1);
+  }, 30000);
+}
+
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
 module.exports = app;

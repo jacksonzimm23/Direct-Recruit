@@ -26,7 +26,12 @@ redisClient.on('error', (err) => logger.error('Redis Client Error', err));
 redisClient.on('connect', () => logger.info('Redis connected'));
 
 (async () => {
-  await redisClient.connect();
+  try {
+    await redisClient.connect();
+  } catch (error) {
+    logger.error('FATAL: Redis connection failed on startup', { error: error.message });
+    process.exit(1);
+  }
 })();
 
 module.exports = redisClient;
