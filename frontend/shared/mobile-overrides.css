@@ -2512,6 +2512,13 @@ html {
         color: #fefcfb;
     }
 
+    .mobile-filter-group select optgroup {
+        background: #0a1128;
+        color: #fefcfb;
+        padding: 0;
+        margin: 0;
+    }
+
     /* Slider styles for mobile filter modal */
     .mobile-filter-group .slider-container {
         display: flex;

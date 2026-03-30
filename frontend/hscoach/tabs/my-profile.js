@@ -2867,7 +2867,7 @@ function buildPostMetaInfo(post) {
             // College Player: Position • College • Division
             if (post.author_position) parts.push(post.author_position);
             if (post.author_school) parts.push(post.author_school);
-            if (post.author_division) parts.push(post.author_division);
+            if (post.author_division) parts.push(formatDivisionDisplay(post.author_division));
         } else {
             // HS Player: Position • High School • Class of Year
             if (post.author_position) parts.push(post.author_position);
@@ -2890,7 +2890,7 @@ function buildPostMetaInfo(post) {
             } else if (post.author_state) {
                 parts.push(post.author_state);
             }
-            if (post.author_division) parts.push(post.author_division);
+            if (post.author_division) parts.push(formatDivisionDisplay(post.author_division));
             parts.push(timeAgo);
             metaInfo = parts.join(' • ');
         } else {
@@ -3949,7 +3949,7 @@ function buildCommentSubheader(role, data) {
         } else if (data.division) {
             if (data.position) parts.push(data.position);
             if (data.school) parts.push(data.school);
-            if (data.division) parts.push(data.division);
+            if (data.division) parts.push(formatDivisionDisplay(data.division));
             return parts.length ? `<span style="color:#1282a2;font-size:11px;">${parts.join(' • ')}</span>` : '';
         } else {
             if (data.position) parts.push(data.position);
@@ -3962,7 +3962,7 @@ function buildCommentSubheader(role, data) {
             if (data.school && data.state) parts.push(`${data.school}, ${data.state}`);
             else if (data.school) parts.push(data.school);
             else if (data.state) parts.push(data.state);
-            if (data.division) parts.push(data.division);
+            if (data.division) parts.push(formatDivisionDisplay(data.division));
             return parts.length ? `<span style="color:#ff6b35;font-size:11px;">${parts.join(' • ')}</span>` : '';
         } else {
             if (data.school) parts.push(data.school);

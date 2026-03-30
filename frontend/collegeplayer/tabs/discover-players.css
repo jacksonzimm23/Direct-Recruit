@@ -96,6 +96,13 @@
     color: var(--white);
 }
 
+.filter-select optgroup {
+    background: var(--oxford-blue);
+    color: var(--white);
+    padding: 0;
+    margin: 0;
+}
+
 .btn-reset-filters {
     background: transparent;
     border: 1px solid rgba(18, 130, 162, 0.3);
