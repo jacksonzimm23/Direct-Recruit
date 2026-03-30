@@ -642,12 +642,23 @@ class FeedManager {
                 if (post.author_school) parts.push(post.author_school);
                 if (post.author_division) parts.push(formatDivisionDisplay(post.author_division));
             } else {
-                // HS Player: Position • High School • Year
+                // HS Player: Position • Height • Weight • GradYear
                 if (post.author_position) parts.push(post.author_position);
-                if (post.author_school) parts.push(post.author_school);
-                if (post.author_grad_year) {
-                    parts.push(post.author_grad_year);
+                if (post.author_height) {
+                    const heightStr = String(post.author_height);
+                    if (heightStr.includes("'")) {
+                        parts.push(heightStr);
+                    } else {
+                        const totalInches = parseInt(heightStr);
+                        if (!isNaN(totalInches) && totalInches > 0) {
+                            const feet = Math.floor(totalInches / 12);
+                            const inches = totalInches % 12;
+                            parts.push(`${feet}'${inches}"`);
+                        }
+                    }
                 }
+                if (post.author_weight) parts.push(`${post.author_weight} lbs`);
+                if (post.author_grad_year) parts.push(post.author_grad_year);
             }
 
             parts.push(timeAgo);
@@ -1289,9 +1300,14 @@ class FeedManager {
                 if (share.quoter_school) parts.push(share.quoter_school);
                 if (share.quoter_division) parts.push(formatDivisionDisplay(share.quoter_division));
             } else {
-                // HS player
+                // HS player: Position • Height • Weight • GradYear
                 if (share.quoter_position) parts.push(share.quoter_position);
-                if (share.quoter_school) parts.push(share.quoter_school);
+                if (share.quoter_height) {
+                    const h = String(share.quoter_height);
+                    if (h.includes("'")) { parts.push(h); }
+                    else { const t = parseInt(h); if (!isNaN(t) && t > 0) parts.push(`${Math.floor(t/12)}'${t%12}"`); }
+                }
+                if (share.quoter_weight) parts.push(`${share.quoter_weight} lbs`);
                 if (share.quoter_grad_year) parts.push(share.quoter_grad_year);
             }
             parts.push(timeAgo);
@@ -1362,8 +1378,14 @@ class FeedManager {
                 if (post.author_school) parts.push(post.author_school);
                 if (post.author_division) parts.push(formatDivisionDisplay(post.author_division));
             } else {
+                // HS Player: Position • Height • Weight • GradYear
                 if (post.author_position) parts.push(post.author_position);
-                if (post.author_school) parts.push(post.author_school);
+                if (post.author_height) {
+                    const heightStr = String(post.author_height);
+                    if (heightStr.includes("'")) { parts.push(heightStr); }
+                    else { const t = parseInt(heightStr); if (!isNaN(t) && t > 0) parts.push(`${Math.floor(t/12)}'${t%12}"`); }
+                }
+                if (post.author_weight) parts.push(`${post.author_weight} lbs`);
                 if (post.author_grad_year) parts.push(post.author_grad_year);
             }
             parts.push(timeAgo);
@@ -1401,27 +1423,39 @@ class FeedManager {
         const role = post.reposter_role;
 
         if (role === 'player') {
-            // Check if college player (has division) vs HS player
-            if (post.reposter_division) {
-                // College player or transfer player
-                const parts = [];
+            const parts = [];
+            if (post.reposter_transfer === 'y') {
+                // Transfer Player: Position • Height • Weight • YOE
+                if (post.reposter_position) parts.push(post.reposter_position);
+                if (post.reposter_height) {
+                    const h = String(post.reposter_height);
+                    if (h.includes("'")) { parts.push(h); }
+                    else { const t = parseInt(h); if (!isNaN(t) && t > 0) parts.push(`${Math.floor(t/12)}'${t%12}"`); }
+                }
+                if (post.reposter_weight) parts.push(`${post.reposter_weight} lbs`);
+                if (post.reposter_eligibility) {
+                    const yt = post.reposter_eligibility === 1 ? 'year' : 'years';
+                    parts.push(`YOE: ${post.reposter_eligibility} ${yt}`);
+                }
+                parts.push(timeAgo);
+                metaInfo = parts.join(' • ');
+            } else if (post.reposter_division) {
+                // College Player: Position • School • Division
                 if (post.reposter_position) parts.push(post.reposter_position);
                 if (post.reposter_school) parts.push(post.reposter_school);
                 if (post.reposter_division) parts.push(formatDivisionDisplay(post.reposter_division));
                 parts.push(timeAgo);
                 metaInfo = parts.join(' • ');
             } else {
-                // HS player
-                const parts = [];
+                // HS Player: Position • Height • Weight • GradYear
                 if (post.reposter_position) parts.push(post.reposter_position);
-                if (post.reposter_school && post.reposter_state) {
-                    parts.push(`${post.reposter_school}, ${post.reposter_state}`);
-                } else if (post.reposter_school) {
-                    parts.push(post.reposter_school);
-                } else if (post.reposter_state) {
-                    parts.push(post.reposter_state);
+                if (post.reposter_height) {
+                    const h = String(post.reposter_height);
+                    if (h.includes("'")) { parts.push(h); }
+                    else { const t = parseInt(h); if (!isNaN(t) && t > 0) parts.push(`${Math.floor(t/12)}'${t%12}"`); }
                 }
-                if (post.reposter_grad_year) parts.push(`'${String(post.reposter_grad_year).slice(-2)}`);
+                if (post.reposter_weight) parts.push(`${post.reposter_weight} lbs`);
+                if (post.reposter_grad_year) parts.push(post.reposter_grad_year);
                 parts.push(timeAgo);
                 metaInfo = parts.join(' • ');
             }
