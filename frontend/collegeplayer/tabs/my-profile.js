@@ -4124,8 +4124,13 @@ function buildCommentSubheader(role, data) {
             if (data.division) parts.push(formatDivisionDisplay(data.division));
             return parts.length ? `<span style="color:#1282a2;font-size:11px;">${parts.join(' • ')}</span>` : '';
         } else {
+            // HS Player: Position • Height • Weight • GradYear
             if (data.position) parts.push(data.position);
-            if (data.school) parts.push(data.school);
+            if (data.height) {
+                const h = String(data.height);
+                if (h.includes("'")) { parts.push(h); } else { const t = parseInt(h); if (!isNaN(t) && t > 0) parts.push(`${Math.floor(t/12)}'${t%12}"`); }
+            }
+            if (data.weight) parts.push(`${data.weight} lbs`);
             if (data.grad_year) parts.push(data.grad_year);
             return parts.length ? `<span style="color:#1282a2;font-size:11px;">${parts.join(' • ')}</span>` : '';
         }
@@ -4494,6 +4499,13 @@ async function loadShareComments(shareId) {
                     school: comment.team_name, grad_year: comment.grad_year, state: comment.state,
                     subheader: comment.subheader
                 });
+                const commentTimeAgo = formatTimeAgo(comment.created_at);
+                let commentMetaLine = '';
+                if (shareSubheader) {
+                    commentMetaLine = shareSubheader.replace(/<\/span>$/, ` \u2022 ${commentTimeAgo}</span>`);
+                } else {
+                    commentMetaLine = `<span style="font-size:11px;color:rgba(254,252,251,0.5);">${commentTimeAgo}</span>`;
+                }
                 return `
                 <div class="comment" data-comment-id="${comment.id}">
                     <div class="comment-avatar" onclick="goToProfile('${comment.username || comment.user_id}', '${comment.role || 'player'}', '${comment.division || ''}', '${comment.user_id}', ${comment.transfer === 'y'})" style="cursor: pointer; border: 2px solid ${getRoleBorderColor(comment.role || 'player', comment.transfer === 'y', comment.division)}">
@@ -4505,9 +4517,9 @@ async function loadShareComments(shareId) {
                     <div class="comment-content">
                         <div class="comment-header">
                             <span class="comment-author" onclick="goToProfile('${comment.username || comment.user_id}', '${comment.role || 'player'}', '${comment.division || ''}', '${comment.user_id}', ${comment.transfer === 'y'})" style="cursor: pointer;">${comment.first_name} ${comment.last_name}</span>
-                            <span class="comment-time">${formatTimeAgo(comment.created_at)}</span>
+                            ${comment.username ? `<span class="comment-username" style="color: rgba(254,252,251,0.5); font-size: 12px; font-weight: 400;">@${comment.username}</span>` : ''}
                         </div>
-                        ${shareSubheader ? `<div class="comment-subheader">${shareSubheader}</div>` : ''}
+                        <div class="comment-subheader">${commentMetaLine}</div>
                         <p>${formatPostContent(comment.content)}</p>
                         <div class="comment-actions">
                             <button class="comment-like-btn ${comment.user_liked ? 'liked' : ''}" onclick="event.stopPropagation(); likeShareComment('${comment.id}', this)">

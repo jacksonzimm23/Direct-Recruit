@@ -536,8 +536,13 @@ function buildCommentSubheader(role, data) {
             if (data.division) parts.push(formatDivisionDisplay(data.division));
             return parts.length ? `<span style="color:#1282a2;font-size:11px;">${parts.join(' \u2022 ')}</span>` : '';
         } else {
+            // HS Player: Position • Height • Weight • GradYear
             if (data.position) parts.push(data.position);
-            if (data.school) parts.push(data.school);
+            if (data.height) {
+                const h = String(data.height);
+                if (h.includes("'")) { parts.push(h); } else { const t = parseInt(h); if (!isNaN(t) && t > 0) parts.push(`${Math.floor(t/12)}'${t%12}"`); }
+            }
+            if (data.weight) parts.push(`${data.weight} lbs`);
             if (data.grad_year) parts.push(data.grad_year);
             return parts.length ? `<span style="color:#1282a2;font-size:11px;">${parts.join(' \u2022 ')}</span>` : '';
         }
