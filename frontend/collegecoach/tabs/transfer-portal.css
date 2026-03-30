@@ -96,6 +96,13 @@
     color: var(--white);
 }
 
+.filter-select optgroup {
+    background: var(--penn-blue);
+    color: var(--white);
+    padding: 0;
+    margin: 0;
+}
+
 /* Slider Styles */
 .slider-group {
     position: relative;

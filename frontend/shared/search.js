@@ -195,7 +195,7 @@ class SearchComponent {
                 if (result.position) subtitle.push(result.position);
                 if (result.team_name) subtitle.push(result.team_name);
                 if (result.college_division) {
-                    subtitle.push(result.college_division);
+                    subtitle.push(formatDivisionDisplay(result.college_division));
                 }
             } else {
                 // HS Player: Position • Height • Weight • Graduation Year
@@ -224,7 +224,7 @@ class SearchComponent {
                     subtitle.push(result.state);
                 }
                 if (result.college_division) {
-                    subtitle.push(result.college_division);
+                    subtitle.push(formatDivisionDisplay(result.college_division));
                 }
             } else {
                 // HS Coach: Position Title • Team Name • State

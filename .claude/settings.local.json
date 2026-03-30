@@ -73,7 +73,12 @@
       "Bash(cp /tmp/pg_hba_new.conf 'C:\\\\Program Files\\\\PostgreSQL\\\\18\\\\data\\\\pg_hba.conf')",
       "Bash(pg_ctl reload:*)",
       "Bash(net stop:*)",
-      "Bash(net start:*)"
+      "Bash(net start:*)",
+      "Bash(for role:*)",
+      "Bash(do echo:*)",
+      "Bash(xargs -I {} basename {})",
+      "Bash(for file:*)",
+      "Read(//c/Users/jacks/OneDrive - Colorado School of Mines/Desktop/direct-recruit/**)"
     ],
     "deny": [],
     "ask": []

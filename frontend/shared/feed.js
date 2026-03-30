@@ -640,7 +640,7 @@ class FeedManager {
                 // College Player: Position • College • Division
                 if (post.author_position) parts.push(post.author_position);
                 if (post.author_school) parts.push(post.author_school);
-                if (post.author_division) parts.push(post.author_division);
+                if (post.author_division) parts.push(formatDivisionDisplay(post.author_division));
             } else {
                 // HS Player: Position • High School • Year
                 if (post.author_position) parts.push(post.author_position);
@@ -673,7 +673,7 @@ class FeedManager {
                 } else if (post.author_state) {
                     parts.push(post.author_state);
                 }
-                if (post.author_division) parts.push(post.author_division);
+                if (post.author_division) parts.push(formatDivisionDisplay(post.author_division));
                 parts.push(timeAgo);
                 metaInfo = parts.join(' • ');
             } else {
@@ -1287,7 +1287,7 @@ class FeedManager {
                 // College player
                 if (share.quoter_position) parts.push(share.quoter_position);
                 if (share.quoter_school) parts.push(share.quoter_school);
-                if (share.quoter_division) parts.push(share.quoter_division);
+                if (share.quoter_division) parts.push(formatDivisionDisplay(share.quoter_division));
             } else {
                 // HS player
                 if (share.quoter_position) parts.push(share.quoter_position);
@@ -1306,7 +1306,7 @@ class FeedManager {
             const parts = [];
             if (share.quoter_division) {
                 if (share.quoter_school) parts.push(share.quoter_school);
-                if (share.quoter_division) parts.push(share.quoter_division);
+                if (share.quoter_division) parts.push(formatDivisionDisplay(share.quoter_division));
                 parts.push(timeAgo);
                 metaInfo = parts.join(' • ');
             } else {
@@ -1360,7 +1360,7 @@ class FeedManager {
             } else if (post.author_division) {
                 if (post.author_position) parts.push(post.author_position);
                 if (post.author_school) parts.push(post.author_school);
-                if (post.author_division) parts.push(post.author_division);
+                if (post.author_division) parts.push(formatDivisionDisplay(post.author_division));
             } else {
                 if (post.author_position) parts.push(post.author_position);
                 if (post.author_school) parts.push(post.author_school);
@@ -1378,7 +1378,7 @@ class FeedManager {
             const parts = [];
             if (post.author_division) {
                 if (post.author_school) parts.push(post.author_school);
-                if (post.author_division) parts.push(post.author_division);
+                if (post.author_division) parts.push(formatDivisionDisplay(post.author_division));
                 parts.push(timeAgo);
                 metaInfo = parts.join(' • ');
             } else {
@@ -1407,7 +1407,7 @@ class FeedManager {
                 const parts = [];
                 if (post.reposter_position) parts.push(post.reposter_position);
                 if (post.reposter_school) parts.push(post.reposter_school);
-                if (post.reposter_division) parts.push(post.reposter_division);
+                if (post.reposter_division) parts.push(formatDivisionDisplay(post.reposter_division));
                 parts.push(timeAgo);
                 metaInfo = parts.join(' • ');
             } else {
@@ -1429,7 +1429,7 @@ class FeedManager {
             const parts = [];
             if (post.reposter_division) {
                 if (post.reposter_school) parts.push(post.reposter_school);
-                if (post.reposter_division) parts.push(post.reposter_division);
+                if (post.reposter_division) parts.push(formatDivisionDisplay(post.reposter_division));
                 parts.push(timeAgo);
                 metaInfo = parts.join(' • ');
             } else {

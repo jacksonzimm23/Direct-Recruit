@@ -533,7 +533,7 @@ function buildCommentSubheader(role, data) {
         } else if (data.division) {
             if (data.position) parts.push(data.position);
             if (data.school) parts.push(data.school);
-            if (data.division) parts.push(data.division);
+            if (data.division) parts.push(formatDivisionDisplay(data.division));
             return parts.length ? `<span style="color:#1282a2;font-size:11px;">${parts.join(' \u2022 ')}</span>` : '';
         } else {
             if (data.position) parts.push(data.position);
@@ -546,7 +546,7 @@ function buildCommentSubheader(role, data) {
             if (data.school && data.state) parts.push(`${data.school}, ${data.state}`);
             else if (data.school) parts.push(data.school);
             else if (data.state) parts.push(data.state);
-            if (data.division) parts.push(data.division);
+            if (data.division) parts.push(formatDivisionDisplay(data.division));
             return parts.length ? `<span style="color:#ff6b35;font-size:11px;">${parts.join(' \u2022 ')}</span>` : '';
         } else {
             if (data.school) parts.push(data.school);
