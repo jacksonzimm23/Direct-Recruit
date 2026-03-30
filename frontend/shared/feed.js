@@ -2358,6 +2358,15 @@ class FeedManager {
                         school: comment.author_school, grad_year: comment.author_grad_year, state: comment.author_state,
                         subheader: comment.author_subheader
                     });
+                    const commentTimeAgo = this.getTimeAgo(comment.created_at);
+                    // Append timeAgo to subheader to match post format
+                    let commentMetaLine = '';
+                    if (commentSub) {
+                        // Insert timeAgo before closing </span>
+                        commentMetaLine = commentSub.replace(/<\/span>$/, ` \u2022 ${commentTimeAgo}</span>`);
+                    } else {
+                        commentMetaLine = `<span style="font-size:11px;color:rgba(254,252,251,0.5);">${commentTimeAgo}</span>`;
+                    }
                     return `
                     <div class="comment" data-comment-id="${comment.id}">
                         <div class="comment-avatar clickable-profile" onclick="feedManager.goToProfile('${comment.author_username || comment.user_id}', '${comment.author_role || 'player'}', '${comment.author_division || ''}', '${comment.user_id}', ${comment.author_transfer === 'y'})" style="border: 2px solid ${getRoleBorderColor(comment.author_role || 'player', comment.author_transfer === 'y', comment.author_division)}">
@@ -2369,9 +2378,9 @@ class FeedManager {
                         <div class="comment-body">
                             <div class="comment-header">
                                 <span class="comment-author clickable-profile" onclick="feedManager.goToProfile('${comment.author_username || comment.user_id}', '${comment.author_role || 'player'}', '${comment.author_division || ''}', '${comment.user_id}', ${comment.author_transfer === 'y'})">${comment.author_first_name || ''} ${comment.author_last_name || ''}</span>
-                                <span class="comment-time">${this.getTimeAgo(comment.created_at)}</span>
+                                ${comment.author_username ? `<span class="comment-username" style="color: rgba(254,252,251,0.5); font-size: 12px; font-weight: 400;">@${comment.author_username}</span>` : ''}
                             </div>
-                            ${commentSub ? `<div class="comment-subheader">${commentSub}</div>` : ''}
+                            <div class="comment-subheader">${commentMetaLine}</div>
                             <div class="comment-content">${this.escapeHtml(comment.content)}</div>
                             <div class="comment-actions">
                                 <button class="comment-like-btn ${comment.user_liked ? 'liked' : ''}" data-liked="${comment.user_liked ? 'true' : 'false'}" onclick="feedManager.toggleCommentLike('${comment.id}', this)">
@@ -2592,6 +2601,13 @@ class FeedManager {
                         school: comment.team_name, grad_year: comment.grad_year, state: comment.state,
                         subheader: comment.subheader
                     });
+                    const shareCommentTimeAgo = this.getTimeAgo(comment.created_at);
+                    let shareCommentMetaLine = '';
+                    if (shareSub) {
+                        shareCommentMetaLine = shareSub.replace(/<\/span>$/, ` \u2022 ${shareCommentTimeAgo}</span>`);
+                    } else {
+                        shareCommentMetaLine = `<span style="font-size:11px;color:rgba(254,252,251,0.5);">${shareCommentTimeAgo}</span>`;
+                    }
                     return `
                     <div class="comment" data-comment-id="${comment.id}">
                         <div class="comment-avatar clickable-profile" onclick="feedManager.goToProfile('${comment.username || comment.user_id}', '${comment.role || 'player'}', '${comment.division || ''}', '${comment.user_id}', ${comment.transfer === 'y'})" style="border: 2px solid ${getRoleBorderColor(comment.role || 'player', comment.transfer === 'y', comment.division)}">
@@ -2603,9 +2619,9 @@ class FeedManager {
                         <div class="comment-content">
                             <div class="comment-header">
                                 <span class="comment-author clickable-profile" onclick="feedManager.goToProfile('${comment.username || comment.user_id}', '${comment.role || 'player'}', '${comment.division || ''}', '${comment.user_id}', ${comment.transfer === 'y'})">${comment.first_name} ${comment.last_name}</span>
-                                <span class="comment-time">${this.getTimeAgo(comment.created_at)}</span>
+                                ${comment.username ? `<span class="comment-username" style="color: rgba(254,252,251,0.5); font-size: 12px; font-weight: 400;">@${comment.username}</span>` : ''}
                             </div>
-                            ${shareSub ? `<div class="comment-subheader">${shareSub}</div>` : ''}
+                            <div class="comment-subheader">${shareCommentMetaLine}</div>
                             <p>${this.formatContent(comment.content)}</p>
                             <div class="comment-actions">
                                 <button class="comment-like-btn" onclick="feedManager.likeShareComment('${comment.id}', this)">
