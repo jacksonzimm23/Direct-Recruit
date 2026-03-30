@@ -821,6 +821,16 @@ class Post {
               COALESCE(pp.first_name, cp.first_name, op.first_name) as first_name,
               COALESCE(pp.last_name, cp.last_name, op.last_name) as last_name,
               COALESCE(pp.profile_image_url, cp.profile_image_url, op.profile_picture_url) as profile_image_url,
+              COALESCE(pp.position, cp.position_title) as position,
+              COALESCE(pp.team_name, cp.team_name) as school,
+              COALESCE(pp.college_division, cp.college_division) as division,
+              pp.transfer,
+              pp.height,
+              pp.weight,
+              pp.graduation_year as grad_year,
+              pp.eligibility,
+              COALESCE(pp.state, cp.state) as state,
+              op.subheader,
               pl.created_at as liked_at
        FROM post_likes pl
        JOIN users u ON pl.user_id = u.id
@@ -1378,7 +1388,15 @@ class Post {
               COALESCE(pp.last_name, cp.last_name, op.last_name) as last_name,
               COALESCE(pp.profile_image_url, cp.profile_image_url, op.profile_picture_url) as profile_image_url,
               COALESCE(pp.position, cp.position_title) as position,
-              COALESCE(pp.team_name, cp.team_name) as school
+              COALESCE(pp.team_name, cp.team_name) as school,
+              COALESCE(pp.college_division, cp.college_division) as division,
+              pp.transfer,
+              pp.height,
+              pp.weight,
+              pp.graduation_year as grad_year,
+              pp.eligibility,
+              COALESCE(pp.state, cp.state) as state,
+              op.subheader
        FROM post_shares ps
        JOIN users u ON ps.user_id = u.id
        LEFT JOIN player_profiles pp ON u.id = pp.user_id
@@ -1680,8 +1698,16 @@ class Post {
         COALESCE(pp.last_name, cp.last_name, op.last_name) as last_name,
         COALESCE(pp.username, cp.username, op.username) as username,
         COALESCE(pp.profile_image_url, cp.profile_image_url, op.profile_picture_url) as profile_image,
+        COALESCE(pp.position, cp.position_title) as position,
+        COALESCE(pp.team_name, cp.team_name) as school,
         COALESCE(pp.college_division, cp.college_division) as division,
-        pp.transfer
+        pp.transfer,
+        pp.height,
+        pp.weight,
+        pp.graduation_year as grad_year,
+        pp.eligibility,
+        COALESCE(pp.state, cp.state) as state,
+        op.subheader
        FROM share_likes sl
        JOIN users u ON sl.user_id = u.id
        LEFT JOIN player_profiles pp ON u.id = pp.user_id
