@@ -2819,7 +2819,7 @@ class FeedManager {
                                 }
                             </div>
                             <div class="share-item-info">
-                                <div class="share-item-name">${like.first_name || ''} ${like.last_name || ''}</div>
+                                <div class="share-item-name">${like.first_name || ''} ${like.last_name || ''} ${like.username ? `<span style="color: rgba(254,252,251,0.5); font-weight: 400;">@${like.username}</span>` : ''}</div>
                                 <div class="share-item-meta">${likeSub || ''}</div>
                             </div>
                         </div>
@@ -3998,7 +3998,7 @@ class FeedManager {
                     }
                 </div>
                 <div class="share-item-info">
-                    <div class="share-item-name">${share.first_name || ''} ${share.last_name || ''}</div>
+                    <div class="share-item-name">${share.first_name || ''} ${share.last_name || ''} ${share.username ? `<span style="color: rgba(254,252,251,0.5); font-weight: 400;">@${share.username}</span>` : ''}</div>
                     <div class="share-item-meta">${shareSub || ''} <span style="opacity:0.5;">• ${shareTypeLabel}</span></div>
                     ${share.share_type === 'quote' && share.quote_content ? `
                         <div class="share-item-quote">"${this.escapeHtml(share.quote_content.substring(0, 100))}${share.quote_content.length > 100 ? '...' : ''}"</div>
@@ -4079,7 +4079,7 @@ class FeedManager {
                                 }
                             </div>
                             <div class="share-item-info">
-                                <div class="share-item-name">${like.first_name || ''} ${like.last_name || ''}</div>
+                                <div class="share-item-name">${like.first_name || ''} ${like.last_name || ''} ${like.username ? `<span style="color: rgba(254,252,251,0.5); font-weight: 400;">@${like.username}</span>` : ''}</div>
                                 <div class="share-item-meta">${likeSub || ''}</div>
                             </div>
                         </div>
