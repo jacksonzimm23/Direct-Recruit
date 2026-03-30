@@ -913,14 +913,11 @@ class Post {
     try {
       await client.query('BEGIN');
 
-      // Soft delete - archive content to deleted_content column, then mark as deleted
+      // Soft delete - mark as deleted and clear content
       const result = await client.query(
         `UPDATE post_comments
          SET is_deleted = true,
-             deleted_content = jsonb_build_object(
-               'content', content,
-               'deleted_at', NOW()
-             )
+             content = '[deleted]'
          WHERE id = $1 AND user_id = $2
          RETURNING *`,
         [commentId, userId]
