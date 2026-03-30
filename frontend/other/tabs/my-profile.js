@@ -3568,12 +3568,15 @@ function buildPostMetaInfo(post) {
             if (post.author_school) parts.push(post.author_school);
             if (post.author_division) parts.push(formatDivisionDisplay(post.author_division));
         } else {
-            // HS Player: Position • High School • Class of Year
+            // HS Player: Position • Height • Weight • GradYear
             if (post.author_position) parts.push(post.author_position);
-            if (post.author_school) parts.push(post.author_school);
-            if (post.author_grad_year) {
-                parts.push(`Class of ${post.author_grad_year}`);
+            if (post.author_height) {
+                const h = String(post.author_height);
+                if (h.includes("'")) { parts.push(h); }
+                else { const t = parseInt(h); if (!isNaN(t) && t > 0) parts.push(`${Math.floor(t/12)}'${t%12}"`); }
             }
+            if (post.author_weight) parts.push(`${post.author_weight} lbs`);
+            if (post.author_grad_year) parts.push(post.author_grad_year);
         }
         parts.push(timeAgo);
         metaInfo = starsHtml + parts.join(' • ');
