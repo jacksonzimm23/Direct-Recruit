@@ -10,7 +10,8 @@ const Follow = require('../models/Follow');
 const Notification = require('../models/Notification');
 const PortalWatchlist = require('../models/PortalWatchlist');
 const { authMiddleware, requireRole, validateUUID } = require('../middleware/auth');
-const { validatePlayerProfile, validateCoachProfile, handleValidationErrors, sanitizeBody } = require('../middleware/validation');
+const { validationResult } = require('express-validator');
+const { validatePlayerProfile, validateCoachProfile, validateOtherProfile, validatePlayerProfileUpdate, validateCoachProfileUpdate, validateOtherProfileUpdate, handleValidationErrors, sanitizeBody } = require('../middleware/validation');
 const { getSignedS3Url } = require('../utils/s3');
 const { apiLimiter, availabilityLimiter } = require('../middleware/rateLimit');
 const logger = require('../utils/logger');
@@ -193,6 +194,28 @@ router.put('/', authMiddleware, sanitizeBody, async (req, res) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
+    // Run role-specific validation before updating
+    let validators;
+    if (user.role === 'player') {
+      validators = validatePlayerProfileUpdate;
+    } else if (user.role === 'coach') {
+      validators = validateCoachProfileUpdate;
+    } else if (user.role === 'other') {
+      validators = validateOtherProfileUpdate;
+    } else {
+      return res.status(400).json({ error: 'Invalid user role' });
+    }
+
+    await Promise.all(validators.map(v => v.run(req)));
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      const errorMessages = errors.array().map(err => err.msg).join(', ');
+      return res.status(400).json({
+        error: errorMessages,
+        details: errors.array()
+      });
+    }
+
     let profile;
     if (user.role === 'player') {
       const oldProfile = await PlayerProfile.findByUserId(req.userId);
@@ -213,8 +236,6 @@ router.put('/', authMiddleware, sanitizeBody, async (req, res) => {
       profile = await CoachProfile.update(req.userId, req.body);
     } else if (user.role === 'other') {
       profile = await OtherProfile.update(req.userId, req.body);
-    } else {
-      return res.status(400).json({ error: 'Invalid user role' });
     }
 
     // Update username in users table if it changed
@@ -265,7 +286,7 @@ router.post('/coach', authMiddleware, requireRole('coach'), sanitizeBody, valida
 });
 
 // Create/Update Other Profile
-router.post('/other', authMiddleware, requireRole('other'), sanitizeBody, async (req, res) => {
+router.post('/other', authMiddleware, requireRole('other'), sanitizeBody, validateOtherProfile, handleValidationErrors, async (req, res) => {
   try {
     const existingProfile = await OtherProfile.findByUserId(req.userId);
 
