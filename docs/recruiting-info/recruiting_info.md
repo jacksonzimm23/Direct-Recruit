@@ -73,3 +73,14 @@ Visit Duration & Scope: Visits cannot exceed two days and two nights, restricted
 Off-Campus Contact: Allowed, but usually, coaches work within smaller, personal networks due to smaller budgets compared to NCAA.
 Signing Letters of Intent: If a student signs an NJCAA Letter of Intent, all other NJCAA institutions must cease recruitment.
 Meals: Coaches may pay for meals during an on-campus visit.
+
+The NAIA does not enforce a strict recruiting calendar, dead periods, or quiet periods, allowing coaches to contact prospective student-athletes at any time during high school. Rules are flexible, with no restrictions on the method or frequency of communication. 
+NCSA
+NCSA
+ +2
+Key NAIA Recruiting Rules & Timeline
+Communication: Coaches can call, text, email, or message recruits year-round.
+Visits & Tryouts: Official and unofficial visits can occur at any time.
+Tryout Limit: Athletes are limited to a maximum of two days of tryouts per NAIA institution during their career.
+Junior College (JUCO) Transfers: As of April 7, 2025, NAIA coaches may initiate contact with a junior college student-athlete at any time, removing previous restrictions.
+General Timeline: While allowed earlier, most NAIA recruiting activity begins during a student’s junior year

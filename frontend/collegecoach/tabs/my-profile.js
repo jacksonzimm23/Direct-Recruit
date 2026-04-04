@@ -258,12 +258,6 @@ function updateNavbarForLoggedInUser(user, profile) {
                     </svg>
                     <span>My Profile</span>
                 </a>
-                <a href="/frontend/${userFolder}/tabs/ai-rep.html" class="nav-item nav-item-ai-rep">
-                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 16.8l-6.2 4.5 2.4-7.4L2 9.4h7.6z"/>
-                    </svg>
-                    <span>AI Rep</span>
-                </a>
                 <a href="/frontend/${userFolder}/tabs/messages.html" class="nav-item ${messagesActive}" id="messagesNavItem">
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
@@ -320,12 +314,6 @@ function updateNavbarForLoggedInUser(user, profile) {
                         <circle cx="12" cy="7" r="4"></circle>
                     </svg>
                     <span>My Profile</span>
-                </a>
-                <a href="/frontend/${userFolder}/tabs/ai-rep.html" class="nav-item nav-item-ai-rep">
-                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 16.8l-6.2 4.5 2.4-7.4L2 9.4h7.6z"/>
-                    </svg>
-                    <span>AI Rep</span>
                 </a>
                 <a href="/frontend/${userFolder}/tabs/messages.html" class="nav-item ${messagesActive}" id="messagesNavItem">
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -392,12 +380,6 @@ function updateNavbarForLoggedInUser(user, profile) {
                         <circle cx="12" cy="7" r="4"></circle>
                     </svg>
                     <span>My Profile</span>
-                </a>
-                <a href="/frontend/other/tabs/ai-rep.html" class="nav-item nav-item-ai-rep">
-                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 16.8l-6.2 4.5 2.4-7.4L2 9.4h7.6z"/>
-                    </svg>
-                    <span>AI Rep</span>
                 </a>
                 <a href="/frontend/other/tabs/messages.html" class="nav-item ${messagesActive}" id="messagesNavItem">
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
