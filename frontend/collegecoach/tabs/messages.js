@@ -5,6 +5,7 @@ let currentConversationId = null;
 let conversations = [];
 let pollingInterval = null;
 let currentAttachment = null; // Store current attachment {type: 'image'|'file', file: File, preview: string}
+let currentCoachDivision = null;
 
 // Common emojis for the picker
 const emojis = [
@@ -61,6 +62,7 @@ async function loadCurrentUser() {
         const response = await API.get('/auth/me');
         if (response.user) {
             currentUserId = response.user.id;
+            currentCoachDivision = response.profile?.college_division || null;
 
             // Update sidebar user info
             const userName = document.querySelector('.sidebar-footer .user-name');
@@ -423,6 +425,8 @@ function updateThreadHeader(participant) {
             threadAvatarCircle.innerHTML = `<img src="${escapeHtml(participant.profile_image)}" alt="${escapeHtml(participant.first_name)}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
         }
     }
+
+    updateRecruitingPeriodIndicator(participant);
 }
 
 async function sendMessage() {
@@ -1038,6 +1042,141 @@ async function deleteConversation() {
         alert('Failed to delete conversation. Please try again.');
     }
 }
+
+// ========================
+// RECRUITING PERIOD INDICATOR
+// ========================
+
+// 2025-26 NCAA Recruiting Calendar Data (Aug 1 2025 – July 31 2026)
+// Exceptions listed first so they take priority over general ranges
+const RECRUITING_CALENDARS = {
+    FBS: [
+        { m1: 1, d1: 11, m2: 1, d2: 11, type: 'quiet', name: 'Quiet Period' },
+        { m1: 1, d1: 12, m2: 1, d2: 14, type: 'dead', name: 'Dead Period' },
+        { m1: 8, d1: 1,  m2: 8, d2: 31, type: 'dead', name: 'Dead Period' },
+        { m1: 9, d1: 1,  m2: 11, d2: 30, type: 'evaluation', name: 'Evaluation Period' },
+        { m1: 12, d1: 1, m2: 1, d2: 4, type: 'dead', name: 'Dead Period' },
+        { m1: 1, d1: 5,  m2: 1, d2: 31, type: 'contact', name: 'Contact Period' },
+        { m1: 2, d1: 1,  m2: 2, d2: 1, type: 'quiet', name: 'Quiet Period' },
+        { m1: 2, d1: 2,  m2: 3, d2: 1, type: 'dead', name: 'Dead Period' },
+        { m1: 3, d1: 2,  m2: 4, d2: 14, type: 'quiet', name: 'Quiet Period' },
+        { m1: 4, d1: 15, m2: 5, d2: 23, type: 'contact', name: 'Contact Period' },
+        { m1: 5, d1: 24, m2: 5, d2: 27, type: 'dead', name: 'Dead Period' },
+        { m1: 5, d1: 28, m2: 6, d2: 21, type: 'quiet', name: 'Quiet Period' },
+        { m1: 6, d1: 22, m2: 7, d2: 31, type: 'dead', name: 'Dead Period' },
+    ],
+    FCS: [
+        { m1: 1, d1: 11, m2: 1, d2: 11, type: 'quiet', name: 'Quiet Period' },
+        { m1: 1, d1: 12, m2: 1, d2: 14, type: 'dead', name: 'Dead Period' },
+        { m1: 8, d1: 1,  m2: 8, d2: 31, type: 'dead', name: 'Dead Period' },
+        { m1: 9, d1: 1,  m2: 11, d2: 30, type: 'evaluation', name: 'Evaluation Period' },
+        { m1: 12, d1: 1, m2: 12, d2: 4, type: 'dead', name: 'Dead Period' },
+        { m1: 12, d1: 5, m2: 12, d2: 18, type: 'contact', name: 'Contact Period' },
+        { m1: 12, d1: 19, m2: 12, d2: 21, type: 'quiet', name: 'Quiet Period' },
+        { m1: 12, d1: 22, m2: 1, d2: 4, type: 'dead', name: 'Dead Period' },
+        { m1: 1, d1: 5,  m2: 1, d2: 31, type: 'contact', name: 'Contact Period' },
+        { m1: 2, d1: 1,  m2: 2, d2: 1, type: 'quiet', name: 'Quiet Period' },
+        { m1: 2, d1: 2,  m2: 3, d2: 1, type: 'dead', name: 'Dead Period' },
+        { m1: 3, d1: 2,  m2: 4, d2: 14, type: 'quiet', name: 'Quiet Period' },
+        { m1: 4, d1: 15, m2: 5, d2: 23, type: 'contact', name: 'Contact Period' },
+        { m1: 5, d1: 24, m2: 5, d2: 27, type: 'dead', name: 'Dead Period' },
+        { m1: 5, d1: 28, m2: 7, d2: 31, type: 'quiet', name: 'Quiet Period' },
+    ],
+    D2: [
+        { m1: 12, d1: 1, m2: 12, d2: 3, type: 'dead', name: 'Signing Dead Period' },
+        { m1: 2, d1: 2,  m2: 2, d2: 4, type: 'dead', name: 'Signing Dead Period' },
+        { m1: 11, d1: 10, m2: 11, d2: 12, type: 'dead', name: 'Signing Dead Period' },
+    ]
+};
+
+function toMMDD(month, day) {
+    return month * 100 + day;
+}
+
+function getRecruitingPeriod(division, date) {
+    const div = (division || '').toUpperCase().replace(/\s+/g, '');
+
+    if (['D3', 'NAIA'].includes(div)) {
+        return { name: 'No Formal Periods', type: 'contact' };
+    }
+    if (div === 'NJCAA') {
+        return { name: 'No Regulated Calendar', type: 'contact' };
+    }
+
+    const calKey = div === 'FCS' ? 'FCS' : div === 'D2' ? 'D2' : 'FBS';
+    const calendar = RECRUITING_CALENDARS[calKey];
+    const m = date.getMonth() + 1;
+    const d = date.getDate();
+    const dateVal = toMMDD(m, d);
+
+    for (const entry of calendar) {
+        const startVal = toMMDD(entry.m1, entry.d1);
+        const endVal = toMMDD(entry.m2, entry.d2);
+
+        if (startVal <= endVal) {
+            if (dateVal >= startVal && dateVal <= endVal) return { name: entry.name, type: entry.type };
+        } else {
+            // Cross-year range (e.g., Dec 1 → Jan 4)
+            if (dateVal >= startVal || dateVal <= endVal) return { name: entry.name, type: entry.type };
+        }
+    }
+
+    // D2 default: contact period year-round
+    if (calKey === 'D2') return { name: 'Contact Period', type: 'contact' };
+
+    return { name: 'Unknown Period', type: 'quiet' };
+}
+
+function getPermissionSummary(periodType) {
+    switch (periodType) {
+        case 'contact':
+            return 'Call \u00b7 Watch \u00b7 Visit \u00b7 Face-to-face \u2714';
+        case 'evaluation':
+            return 'Call \u00b7 Watch \u00b7 Visit \u2714 \u00b7 Face-to-face: campus only';
+        case 'quiet':
+            return 'Call/email only \u00b7 No visits \u00b7 Face-to-face: campus only';
+        case 'dead':
+            return 'Call/email only \u00b7 No in-person contact';
+        default:
+            return '';
+    }
+}
+
+function isHSPlayer(participant) {
+    return participant.role === 'player'
+        && participant.transfer !== 'y'
+        && !participant.college_division;
+}
+
+function updateRecruitingPeriodIndicator(participant) {
+    const indicator = document.getElementById('recruitingPeriodIndicator');
+    if (!indicator) return;
+
+    if (!isHSPlayer(participant) || !currentCoachDivision) {
+        indicator.style.display = 'none';
+        return;
+    }
+
+    const period = getRecruitingPeriod(currentCoachDivision, new Date());
+    const divLabel = document.getElementById('rpiDivision');
+    const badge = document.getElementById('rpiBadge');
+    const permissions = document.getElementById('rpiPermissions');
+
+    if (divLabel) {
+        divLabel.textContent = formatDivisionDisplay(currentCoachDivision) + ':';
+    }
+    if (badge) {
+        badge.textContent = period.name;
+        badge.className = 'rpi-badge ' + period.type;
+    }
+    if (permissions) {
+        permissions.textContent = getPermissionSummary(period.type);
+    }
+
+    indicator.style.display = 'flex';
+
+}
+
 
 // ========================
 // RECRUITING CALENDAR MODAL
