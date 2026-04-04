@@ -61,6 +61,14 @@
             pages: ['my-profile']
         },
         {
+            href: `${tabsPath}ai-rep.html`,
+            id: '',
+            icon: `<path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 16.8l-6.2 4.5 2.4-7.4L2 9.4h7.6z"/>`,
+            label: 'AI Rep',
+            pages: ['ai-rep'],
+            extraClass: 'nav-item-ai-rep'
+        },
+        {
             href: `${tabsPath}messages.html`,
             id: 'messagesNavItem',
             icon: `<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>`,
@@ -92,11 +100,12 @@
     navItems.forEach(item => {
         const isActive = item.pages.includes(activePageName);
         const activeClass = isActive ? ' active' : '';
+        const extraClass = item.extraClass ? ` ${item.extraClass}` : '';
         const idAttr = item.id ? ` id="${item.id}"` : '';
         const badgeHTML = item.hasBadge ? '<span class="notification-badge" style="display: none;"></span>' : '';
 
         navHTML += `
-            <a href="${item.href}" class="nav-item${activeClass}"${idAttr}>
+            <a href="${item.href}" class="nav-item${activeClass}${extraClass}"${idAttr}>
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     ${item.icon}
                 </svg>
