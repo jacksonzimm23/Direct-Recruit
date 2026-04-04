@@ -1,13 +1,45 @@
 # Direct Recruit - Pre-Launch QA Checklist
 
-> **Instructions:** Work through each section on both desktop and mobile. Check the box when verified. Run the DB queries in a terminal connected to your Docker Postgres container:
-> ```bash
-> docker exec -it dr-postgres psql -U postgres -d direct_recruit
-> ```
-> After each major action, verify the database. Reset the environment anytime with:
-> ```bash
-> docker-compose down -v && docker-compose up -d && cd backend && npm run seed
-> ```
+## Quick Reference: Docker & Database Commands
+
+**Start Docker containers:**
+```bash
+docker-compose up -d
+```
+
+**Stop Docker containers:**
+```bash
+docker-compose down
+```
+
+**Stop and wipe all data (full reset):**
+```bash
+docker-compose down -v && docker-compose up -d && cd backend && npm run seed
+```
+
+**Seed the database:**
+```bash
+cd backend && npm run seed
+```
+
+**Start the backend:**
+```bash
+node backend/server.js
+```
+
+**Connect to the local database:**
+```bash
+docker exec -it dr-postgres psql -U postgres -d direct_recruit
+```
+
+**Inside the database terminal:**
+- Run SQL queries directly (e.g., `SELECT * FROM users;`)
+- Disable pager (so results don't get stuck): `\pset pager off`
+- Exit the database terminal: `\q`
+
+---
+
+> **Instructions:** Work through each section on both desktop and mobile. Check the box when verified. Run the DB queries in a terminal connected to your Docker Postgres container. After each major action, verify the database.
 
 ---
 
@@ -29,60 +61,60 @@
 ## Part 1: Landing Pages (No Login Required)
 
 ### 1.1 Homepage (`/frontend/landingpage/index.html`)
-- [ ] Page loads with hero section, features, and CTA buttons
-- [ ] "Create Your Profile" button navigates to get-started page
-- [ ] "Sign In" nav link navigates to sign-in page
-- [ ] Nav links (Home, Features, How It Works, About) scroll/navigate correctly
+- [x] Page loads with hero section, features, and CTA buttons
+- [x] "Create Your Profile" button navigates to get-started page
+- [x] "Sign In" nav link navigates to sign-in page
+- [x] Nav links (Home, Features, How It Works, About) scroll/navigate correctly
 - [ ] Mobile: hamburger menu opens and all links work
 
 ### 1.2 Get Started (`/frontend/landingpage/get-started.html`)
-- [ ] Three role cards display: Player, Coach, Other
-- [ ] Each card shows icon, description, and benefits list
-- [ ] "Continue" on Player card navigates to HS player create-profile
-- [ ] "Continue" on Coach card navigates to HS coach create-coach-profile
-- [ ] "Continue" on Other card navigates to other create-profile
-- [ ] "Already have an account? Sign In" link works
+- [x] Three role cards display: Player, Coach, Other
+- [x] Each card shows icon, description, and benefits list
+- [x] "Continue" on Player card navigates to HS player create-profile
+- [x] "Continue" on Coach card navigates to HS coach create-coach-profile
+- [x] "Continue" on Other card navigates to other create-profile
+- [x] "Already have an account? Sign In" link works
 
 ### 1.3 Sign In (`/frontend/landingpage/signin.html`)
-- [ ] Email and password fields present
-- [ ] Login with `hsplayer@test.com` / `Test123!@#` succeeds and redirects to HS player dashboard
-- [ ] Login with invalid credentials shows error message
-- [ ] "Forgot Password?" link navigates to forgot-password page
-- [ ] "Create Account" / sign-up link navigates to get-started page
+- [x] Email and password fields present
+- [x] Login with `hsplayer@test.com` / `Test123!@#` succeeds and redirects to HS player dashboard
+- [x] Login with invalid credentials shows error message
+- [x] "Forgot Password?" link navigates to forgot-password page
+- [x] "Create Account" / sign-up link navigates to get-started page
 
 ### 1.4 Forgot Password (`/frontend/landingpage/forgot-password.html`)
-- [ ] Enter email field works
-- [ ] Submit sends reset request (check terminal for verification code log)
-- [ ] Verification code input appears
-- [ ] Enter `123456` and new password — password resets successfully
+- [x] Enter email field works
+- [x] Submit sends reset request (check terminal for verification code log)
+- [x] Verification code input appears
+- [x] Enter `123456` and new password — password resets successfully
 - [ ] DB: `SELECT * FROM pending_password_resets ORDER BY created_at DESC LIMIT 1;`
 
 ### 1.5 Static Pages
-- [ ] About page (`/frontend/landingpage/about.html`) loads correctly
-- [ ] Privacy Policy page (`/frontend/landingpage/privacy-policy.html`) loads correctly
-- [ ] Support page (`/frontend/landingpage/support.html`) loads correctly
-- [ ] 404 page (`/frontend/404.html`) displays branded error page
-- [ ] 500 page (`/frontend/500.html`) displays branded error page
+- [x] About page (`/frontend/landingpage/about.html`) loads correctly
+- [x] Privacy Policy page (`/frontend/landingpage/privacy-policy.html`) loads correctly
+- [x] Support page (`/frontend/landingpage/support.html`) loads correctly
+- [x] 404 page (`/frontend/404.html`) displays branded error page
+- [x] 500 page (`/frontend/500.html`) displays branded error page
 
 ---
 
 ## Part 2: High School Player (hsplayer@test.com)
 
 ### 2.1 Login & Dashboard
-- [ ] Login with `hsplayer@test.com` / `Test123!@#`
-- [ ] Redirected to `hsplayer/mainpage-player.html`
-- [ ] Sidebar nav displays all links: Feed, Discover, Messages, Notifications, Settings
-- [ ] Sidebar footer shows user avatar, name "Jake Thompson", and subtitle (position, height, weight, grad year)
-- [ ] Right sidebar shows "Suggested Connections" with user cards
-- [ ] Unread message badge shows in sidebar (if unread messages exist)
-- [ ] Unread notification badge shows in sidebar (if unread notifications exist)
-- [ ] DB: `SELECT u.username, u.role, pp.first_name, pp.last_name, pp.position, pp.graduation_year FROM users u JOIN player_profiles pp ON u.id = pp.user_id WHERE u.email = 'hsplayer@test.com';`
+- [x] Login with `hsplayer@test.com` / `Test123!@#`
+- [x] Redirected to `hsplayer/mainpage-player.html`
+- [x] Sidebar nav displays all links: Feed, Discover, Messages, Notifications, Settings
+- [x] Sidebar footer shows user avatar, name "Jake Thompson", and subtitle (position, height, weight, grad year)
+- [x] Right sidebar shows "Suggested Connections" with user cards
+- [x] Unread message badge shows in sidebar (if unread messages exist)
+- [x] Unread notification badge shows in sidebar (if unread notifications exist)
+- [x] DB: `SELECT u.username, u.role, pp.first_name, pp.last_name, pp.position, pp.graduation_year FROM users u JOIN player_profiles pp ON u.id = pp.user_id WHERE u.email = 'hsplayer@test.com';`
 
 ### 2.2 Feed
-- [ ] "Following" feed tab loads (may be empty if not following anyone)
-- [ ] "Discover" feed tab loads with posts from other users
-- [ ] Feed posts show: author avatar, name, username, timestamp, content, media (if any)
-- [ ] Each post shows like, comment, repost, save buttons with counts
+- [x] "Following" feed tab loads (may be empty if not following anyone)
+- [x] "Discover" feed tab loads with posts from other users
+- [x] Feed posts show: author avatar, name, username, timestamp, content, media (if any)
+- [x] Each post shows like, comment, repost, save buttons with counts
 
 ### 2.3 Create a Post
 - [ ] Post creation textarea visible at top of feed

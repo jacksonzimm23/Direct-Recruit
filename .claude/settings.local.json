@@ -78,7 +78,12 @@
       "Bash(do echo:*)",
       "Bash(xargs -I {} basename {})",
       "Bash(for file:*)",
-      "Read(//c/Users/jacks/OneDrive - Colorado School of Mines/Desktop/direct-recruit/**)"
+      "Read(//c/Users/jacks/OneDrive - Colorado School of Mines/Desktop/direct-recruit/**)",
+      "Bash(find /c/Users/jacks/OneDrive - Colorado School of Mines/Desktop/direct-recruit/backend -type f \\\\\\(-name *.js -o -name *.ts \\\\\\) ! -path */node_modules/*)",
+      "Bash(/tmp/ai_files_summary.txt:*)",
+      "Read(//tmp/**)",
+      "Bash(sed -n '1160,1579p' \"c:/Users/jacks/OneDrive - Colorado School of Mines/Desktop/direct-recruit/frontend/collegecoach/tabs/messages.css\")",
+      "Bash(sed -n '1040,1077p' \"c:/Users/jacks/OneDrive - Colorado School of Mines/Desktop/direct-recruit/frontend/collegecoach/tabs/messages.js\")"
     ],
     "deny": [],
     "ask": []
