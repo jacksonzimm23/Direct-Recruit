@@ -1130,13 +1130,13 @@ function getRecruitingPeriod(division, date) {
 function getPermissionSummary(periodType) {
     switch (periodType) {
         case 'contact':
-            return 'Call \u00b7 Watch \u00b7 Visit \u00b7 Face-to-face \u2714';
+            return 'Call/text/email \u2714 \u00b7 Watch \u2714 \u00b7 Visit \u2714 \u00b7 Face-to-face \u2714';
         case 'evaluation':
-            return 'Call \u00b7 Watch \u00b7 Visit \u2714 \u00b7 Face-to-face: campus only';
+            return 'Call/text/email \u2714 \u00b7 Watch \u2714 \u00b7 Visit \u2714 \u00b7 Face-to-face: campus only';
         case 'quiet':
-            return 'Call/email only \u00b7 No visits \u00b7 Face-to-face: campus only';
+            return 'Call/text/email \u2714 \u00b7 No watching \u00b7 No visits \u00b7 Face-to-face: campus only';
         case 'dead':
-            return 'Call/email only \u00b7 No in-person contact';
+            return 'Call/text/email \u2714 \u00b7 No in-person contact';
         default:
             return '';
     }

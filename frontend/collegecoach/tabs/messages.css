@@ -556,6 +556,61 @@
 }
 
 /* Message Input Container */
+/* Recruiting Period Indicator */
+.recruiting-period-indicator {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.4rem 1.5rem;
+    border-top: 1px solid rgba(18, 130, 162, 0.12);
+    background: rgba(254, 252, 251, 0.02);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.75rem;
+    color: rgba(254, 252, 251, 0.55);
+    gap: 0.75rem;
+    flex-shrink: 0;
+}
+
+.rpi-content {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    overflow: hidden;
+    min-width: 0;
+}
+
+.rpi-division {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: rgba(254, 252, 251, 0.4);
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.rpi-badge {
+    display: inline-block;
+    padding: 0.15rem 0.55rem;
+    border-radius: 5px;
+    font-weight: 700;
+    font-size: 0.68rem;
+    white-space: nowrap;
+    flex-shrink: 0;
+    letter-spacing: 0.01em;
+}
+
+.rpi-badge.contact { background: rgba(34, 197, 94, 0.12); color: #22c55e; border: 1px solid rgba(34, 197, 94, 0.25); }
+.rpi-badge.evaluation { background: rgba(59, 130, 246, 0.12); color: #3b82f6; border: 1px solid rgba(59, 130, 246, 0.25); }
+.rpi-badge.quiet { background: rgba(254, 252, 251, 0.06); color: rgba(254, 252, 251, 0.55); border: 1px solid rgba(254, 252, 251, 0.12); }
+.rpi-badge.dead { background: rgba(239, 68, 68, 0.12); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.25); }
+
+.rpi-permissions {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 0.72rem;
+}
+
+
 .message-input-container {
     display: flex;
     align-items: flex-end;
@@ -958,6 +1013,15 @@
 
     .message-content {
         max-width: 85%;
+    }
+
+    .recruiting-period-indicator {
+        padding: 0.3rem 0.75rem;
+        font-size: 0.68rem;
+    }
+
+    .rpi-permissions {
+        font-size: 0.65rem;
     }
 
     .message-input-container {
