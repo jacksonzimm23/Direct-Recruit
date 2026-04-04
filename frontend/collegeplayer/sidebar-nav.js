@@ -62,6 +62,13 @@
             pages: ['my-profile']
         },
         {
+            href: `${tabsPath}ai-rep.html`,
+            id: '',
+            icon: `<path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 16.8l-6.2 4.5 2.4-7.4L2 9.4h7.6z"/>`,
+            label: 'AI Rep',
+            pages: ['ai-rep']
+        },
+        {
             href: `${tabsPath}messages.html`,
             id: 'messagesNavItem',
             icon: `<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>`,

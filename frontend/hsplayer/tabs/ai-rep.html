@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#0a1128">
+    <link rel="apple-touch-icon" href="../../icons/ios/180.png">
+    <link rel="manifest" href="../../manifest.json">
+    <link rel="icon" type="image/png" href="https://res.cloudinary.com/dzmsj6nwv/image/upload/v1770078659/LOGO.PNG_i0uvv4.png">
+    <title>AI Rep - Direct Recruit</title>
+    <link rel="stylesheet" href="../../landingpage/styles.css">
+    <link rel="stylesheet" href="../mainpage-player.css">
+    <link rel="stylesheet" href="ai-rep.css">
+    <link rel="stylesheet" href="../../shared/mobile-overrides.css?v=3">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script src="../../shared/sw-register.js"></script>
+</head>
+<body class="dashboard-body profile-type-player">
+    <!-- Mobile Header (visible only on mobile) -->
+    <header class="mobile-header" id="mobileHeader">
+        <div class="mobile-header-left">
+            <button class="mobile-avatar-circle" id="mobileProfilePic" aria-label="Open menu">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+            </button>
+            <div class="mobile-user-info">
+                <div class="mobile-user-name" id="mobileUserName">User</div>
+                <div class="mobile-user-role" id="mobileUserRole"></div>
+            </div>
+        </div>
+        <div class="mobile-header-right">
+            <img src="https://res.cloudinary.com/dzmsj6nwv/image/upload/v1770078659/LOGO.PNG_i0uvv4.png" alt="Direct Recruit" class="mobile-header-logo">
+        </div>
+    </header>
+
+    <!-- Mobile Sidebar Overlay -->
+    <div class="mobile-sidebar-overlay" id="mobileSidebarOverlay"></div>
+
+    <!-- Mobile Sidebar (Profile Menu) -->
+    <aside class="mobile-sidebar" id="mobileSidebar">
+        <a href="my-profile.html" class="mobile-sidebar-header" id="mobileSidebarProfileLink">
+            <div class="mobile-sidebar-avatar-circle" id="mobileSidebarAvatar">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+            </div>
+            <div class="mobile-sidebar-user-info">
+                <div class="mobile-sidebar-user-name" id="mobileSidebarUserName">User</div>
+                <div class="mobile-sidebar-user-role" id="mobileSidebarUserRole"></div>
+            </div>
+        </a>
+        <nav class="mobile-sidebar-nav">
+            <a href="my-profile.html" class="mobile-sidebar-nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+                <span>My Profile</span>
+            </a>
+            <a href="settings.html" class="mobile-sidebar-nav-item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="3"></circle>
+                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                </svg>
+                <span>Settings</span>
+            </a>
+            <div class="mobile-sidebar-divider"></div>
+            <a href="#" class="mobile-sidebar-nav-item mobile-sidebar-stat-item" id="mobileProfileViewsLink">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+                <span>Profile Views</span>
+                <span class="mobile-stat-value" id="mobileProfileViewsCount">0</span>
+            </a>
+        </nav>
+        <div class="mobile-sidebar-footer">
+            <img src="https://res.cloudinary.com/dzmsj6nwv/image/upload/v1770078659/LOGO.PNG_i0uvv4.png" alt="Direct Recruit" class="mobile-sidebar-logo">
+            <button class="mobile-sidebar-logout-btn" id="mobileSidebarLogout">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                    <polyline points="16 17 21 12 16 7"></polyline>
+                    <line x1="21" y1="12" x2="9" y2="12"></line>
+                </svg>
+                <span>Logout</span>
+            </button>
+        </div>
+    </aside>
+
+    <!-- Sidebar Toggle Button -->
+    <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle Sidebar">
+        <svg class="toggle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="3" y1="12" x2="21" y2="12"></line>
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <line x1="3" y1="18" x2="21" y2="18"></line>
+        </svg>
+    </button>
+
+    <!-- Main Container -->
+    <div class="dashboard-container" id="dashboardContainer">
+        <!-- Left Sidebar Navigation -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">
+                    <img src="https://res.cloudinary.com/dzmsj6nwv/image/upload/v1770078659/LOGO.PNG_i0uvv4.png" alt="Direct Recruit Logo" class="logo-icon">
+                    <div class="logo-text">
+                        <span class="logo-title">Direct Recruit</span>
+                        <span class="logo-subtitle">GET RECRUITED &middot; THE RIGHT WAY</span>
+                    </div>
+                </div>
+            </div>
+
+            <nav class="sidebar-nav">
+                <!-- Navigation items injected by sidebar-nav.js -->
+            </nav>
+
+            <div class="sidebar-footer">
+                <!-- Footer content injected by sidebar-footer.js -->
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content ai-rep-content">
+            <div class="ai-rep-page">
+
+                <!-- Hero Banner -->
+                <div class="ai-rep-hero">
+                    <div class="ai-rep-hero-glow"></div>
+                    <div class="ai-rep-hero-icon">
+                        <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 16.8l-6.2 4.5 2.4-7.4L2 9.4h7.6z"/>
+                        </svg>
+                    </div>
+                    <div class="ai-rep-hero-text">
+                        <h1 class="ai-rep-hero-title">AI Rep</h1>
+                        <p class="ai-rep-hero-subtitle">Your personal recruiting representative, working in the background.</p>
+                    </div>
+                </div>
+
+                <!-- Section 1: Match Feed -->
+                <div class="ai-rep-section">
+                    <div class="ai-rep-section-header">
+                        <h2 class="ai-rep-section-title">
+                            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="11" cy="11" r="8"/>
+                                <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                            </svg>
+                            Match Feed
+                        </h2>
+                        <span class="ai-rep-badge">12 matches this week</span>
+                    </div>
+
+                    <div class="ai-rep-match-list" id="aiRepMatchList">
+                        <!-- Match Card 1 -->
+                        <div class="ai-rep-match-card">
+                            <div class="ai-rep-match-card-header">
+                                <div class="ai-rep-match-headline">
+                                    <span class="ai-rep-division-badge">D2</span>
+                                    <span class="ai-rep-match-text">A D2 coach matched with your profile</span>
+                                </div>
+                                <span class="ai-rep-match-date">Mar 31, 2026</span>
+                            </div>
+                            <div class="ai-rep-match-body">
+                                <span class="ai-rep-criteria-label">Matched on</span>
+                                <div class="ai-rep-tags">
+                                    <span class="ai-rep-tag-match">CB</span>
+                                    <span class="ai-rep-tag-match">5'11"+</span>
+                                    <span class="ai-rep-tag-match">4.48 40-yd</span>
+                                    <span class="ai-rep-tag-match">Colorado</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Match Card 2 -->
+                        <div class="ai-rep-match-card">
+                            <div class="ai-rep-match-card-header">
+                                <div class="ai-rep-match-headline">
+                                    <span class="ai-rep-division-badge">D1 FCS</span>
+                                    <span class="ai-rep-match-text">A D1 FCS coach matched with your profile</span>
+                                </div>
+                                <span class="ai-rep-match-date">Mar 29, 2026</span>
+                            </div>
+                            <div class="ai-rep-match-body">
+                                <span class="ai-rep-criteria-label">Matched on</span>
+                                <div class="ai-rep-tags">
+                                    <span class="ai-rep-tag-match">CB / S</span>
+                                    <span class="ai-rep-tag-match">3.4+ GPA</span>
+                                    <span class="ai-rep-tag-match">Class of 2027</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Match Card 3 -->
+                        <div class="ai-rep-match-card">
+                            <div class="ai-rep-match-card-header">
+                                <div class="ai-rep-match-headline">
+                                    <span class="ai-rep-division-badge">NAIA</span>
+                                    <span class="ai-rep-match-text">A NAIA coach matched with your profile</span>
+                                </div>
+                                <span class="ai-rep-match-date">Mar 27, 2026</span>
+                            </div>
+                            <div class="ai-rep-match-body">
+                                <span class="ai-rep-criteria-label">Matched on</span>
+                                <div class="ai-rep-tags">
+                                    <span class="ai-rep-tag-match">CB</span>
+                                    <span class="ai-rep-tag-match">5'11"</span>
+                                    <span class="ai-rep-tag-match">175 lbs</span>
+                                    <span class="ai-rep-tag-match">4.48 40-yd</span>
+                                    <span class="ai-rep-tag-match">Colorado</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Match Card 4 -->
+                        <div class="ai-rep-match-card">
+                            <div class="ai-rep-match-card-header">
+                                <div class="ai-rep-match-headline">
+                                    <span class="ai-rep-division-badge">D2</span>
+                                    <span class="ai-rep-match-text">A D2 coach matched with your profile</span>
+                                </div>
+                                <span class="ai-rep-match-date">Mar 25, 2026</span>
+                            </div>
+                            <div class="ai-rep-match-body">
+                                <span class="ai-rep-criteria-label">Matched on</span>
+                                <div class="ai-rep-tags">
+                                    <span class="ai-rep-tag-match">CB</span>
+                                    <span class="ai-rep-tag-match">5'10"+</span>
+                                    <span class="ai-rep-tag-match">Sub-4.5 40-yd</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Match Card 5 -->
+                        <div class="ai-rep-match-card">
+                            <div class="ai-rep-match-card-header">
+                                <div class="ai-rep-match-headline">
+                                    <span class="ai-rep-division-badge">D3</span>
+                                    <span class="ai-rep-match-text">A D3 coach matched with your profile</span>
+                                </div>
+                                <span class="ai-rep-match-date">Mar 23, 2026</span>
+                            </div>
+                            <div class="ai-rep-match-body">
+                                <span class="ai-rep-criteria-label">Matched on</span>
+                                <div class="ai-rep-tags">
+                                    <span class="ai-rep-tag-match">DB</span>
+                                    <span class="ai-rep-tag-match">Colorado</span>
+                                    <span class="ai-rep-tag-match">Class of 2027</span>
+                                    <span class="ai-rep-tag-match">3.0+ GPA</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Match Card 6 (hidden initially) -->
+                        <div class="ai-rep-match-card ai-rep-match-hidden">
+                            <div class="ai-rep-match-card-header">
+                                <div class="ai-rep-match-headline">
+                                    <span class="ai-rep-division-badge">D1 FCS</span>
+                                    <span class="ai-rep-match-text">A D1 FCS coach matched with your profile</span>
+                                </div>
+                                <span class="ai-rep-match-date">Mar 20, 2026</span>
+                            </div>
+                            <div class="ai-rep-match-body">
+                                <span class="ai-rep-criteria-label">Matched on</span>
+                                <div class="ai-rep-tags">
+                                    <span class="ai-rep-tag-match">CB</span>
+                                    <span class="ai-rep-tag-match">5'11"+</span>
+                                    <span class="ai-rep-tag-match">4.5 or faster</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Match Card 7 (hidden initially) -->
+                        <div class="ai-rep-match-card ai-rep-match-hidden">
+                            <div class="ai-rep-match-card-header">
+                                <div class="ai-rep-match-headline">
+                                    <span class="ai-rep-division-badge">D2</span>
+                                    <span class="ai-rep-match-text">A D2 coach matched with your profile</span>
+                                </div>
+                                <span class="ai-rep-match-date">Mar 18, 2026</span>
+                            </div>
+                            <div class="ai-rep-match-body">
+                                <span class="ai-rep-criteria-label">Matched on</span>
+                                <div class="ai-rep-tags">
+                                    <span class="ai-rep-tag-match">CB</span>
+                                    <span class="ai-rep-tag-match">4.48 40-yd</span>
+                                    <span class="ai-rep-tag-match">Colorado</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Match Card 8 (hidden initially) -->
+                        <div class="ai-rep-match-card ai-rep-match-hidden">
+                            <div class="ai-rep-match-card-header">
+                                <div class="ai-rep-match-headline">
+                                    <span class="ai-rep-division-badge">NAIA</span>
+                                    <span class="ai-rep-match-text">A NAIA coach matched with your profile</span>
+                                </div>
+                                <span class="ai-rep-match-date">Mar 15, 2026</span>
+                            </div>
+                            <div class="ai-rep-match-body">
+                                <span class="ai-rep-criteria-label">Matched on</span>
+                                <div class="ai-rep-tags">
+                                    <span class="ai-rep-tag-match">DB</span>
+                                    <span class="ai-rep-tag-match">5'11"</span>
+                                    <span class="ai-rep-tag-match">175 lbs</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Match Card 9 (hidden initially) -->
+                        <div class="ai-rep-match-card ai-rep-match-hidden">
+                            <div class="ai-rep-match-card-header">
+                                <div class="ai-rep-match-headline">
+                                    <span class="ai-rep-division-badge">D2</span>
+                                    <span class="ai-rep-match-text">A D2 coach matched with your profile</span>
+                                </div>
+                                <span class="ai-rep-match-date">Mar 12, 2026</span>
+                            </div>
+                            <div class="ai-rep-match-body">
+                                <span class="ai-rep-criteria-label">Matched on</span>
+                                <div class="ai-rep-tags">
+                                    <span class="ai-rep-tag-match">CB</span>
+                                    <span class="ai-rep-tag-match">Sub-4.5 40-yd</span>
+                                    <span class="ai-rep-tag-match">Class of 2027</span>
+                                    <span class="ai-rep-tag-match">Colorado</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Match Card 10 (hidden initially) -->
+                        <div class="ai-rep-match-card ai-rep-match-hidden">
+                            <div class="ai-rep-match-card-header">
+                                <div class="ai-rep-match-headline">
+                                    <span class="ai-rep-division-badge">D1 FCS</span>
+                                    <span class="ai-rep-match-text">A D1 FCS coach matched with your profile</span>
+                                </div>
+                                <span class="ai-rep-match-date">Mar 9, 2026</span>
+                            </div>
+                            <div class="ai-rep-match-body">
+                                <span class="ai-rep-criteria-label">Matched on</span>
+                                <div class="ai-rep-tags">
+                                    <span class="ai-rep-tag-match">CB / S</span>
+                                    <span class="ai-rep-tag-match">5'10"+</span>
+                                    <span class="ai-rep-tag-match">3.0+ GPA</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Match Card 11 (hidden initially) -->
+                        <div class="ai-rep-match-card ai-rep-match-hidden">
+                            <div class="ai-rep-match-card-header">
+                                <div class="ai-rep-match-headline">
+                                    <span class="ai-rep-division-badge">D3</span>
+                                    <span class="ai-rep-match-text">A D3 coach matched with your profile</span>
+                                </div>
+                                <span class="ai-rep-match-date">Mar 6, 2026</span>
+                            </div>
+                            <div class="ai-rep-match-body">
+                                <span class="ai-rep-criteria-label">Matched on</span>
+                                <div class="ai-rep-tags">
+                                    <span class="ai-rep-tag-match">DB</span>
+                                    <span class="ai-rep-tag-match">Colorado</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Match Card 12 (hidden initially) -->
+                        <div class="ai-rep-match-card ai-rep-match-hidden">
+                            <div class="ai-rep-match-card-header">
+                                <div class="ai-rep-match-headline">
+                                    <span class="ai-rep-division-badge">NAIA</span>
+                                    <span class="ai-rep-match-text">A NAIA coach matched with your profile</span>
+                                </div>
+                                <span class="ai-rep-match-date">Mar 3, 2026</span>
+                            </div>
+                            <div class="ai-rep-match-body">
+                                <span class="ai-rep-criteria-label">Matched on</span>
+                                <div class="ai-rep-tags">
+                                    <span class="ai-rep-tag-match">CB</span>
+                                    <span class="ai-rep-tag-match">5'11"</span>
+                                    <span class="ai-rep-tag-match">4.48 40-yd</span>
+                                    <span class="ai-rep-tag-match">175 lbs</span>
+                                    <span class="ai-rep-tag-match">Colorado</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button class="ai-rep-show-more" id="aiRepShowMore">
+                        <span>Show More</span>
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                    </button>
+
+                    <!-- Division Distribution -->
+                    <div class="ai-rep-card">
+                        <h3 class="ai-rep-card-title">Division Distribution</h3>
+                        <div class="ai-rep-bar-chart">
+                            <div class="ai-rep-bar-row">
+                                <span class="ai-rep-bar-label">D1 FBS</span>
+                                <div class="ai-rep-bar-track"><div class="ai-rep-bar-fill" style="width: 0%"></div></div>
+                                <span class="ai-rep-bar-value">0</span>
+                            </div>
+                            <div class="ai-rep-bar-row">
+                                <span class="ai-rep-bar-label">D1 FCS</span>
+                                <div class="ai-rep-bar-track"><div class="ai-rep-bar-fill" style="width: 25%"></div></div>
+                                <span class="ai-rep-bar-value">2</span>
+                            </div>
+                            <div class="ai-rep-bar-row">
+                                <span class="ai-rep-bar-label">D2</span>
+                                <div class="ai-rep-bar-track"><div class="ai-rep-bar-fill" style="width: 37.5%"></div></div>
+                                <span class="ai-rep-bar-value">3</span>
+                            </div>
+                            <div class="ai-rep-bar-row">
+                                <span class="ai-rep-bar-label">D3</span>
+                                <div class="ai-rep-bar-track"><div class="ai-rep-bar-fill" style="width: 12.5%"></div></div>
+                                <span class="ai-rep-bar-value">1</span>
+                            </div>
+                            <div class="ai-rep-bar-row">
+                                <span class="ai-rep-bar-label">NAIA</span>
+                                <div class="ai-rep-bar-track"><div class="ai-rep-bar-fill" style="width: 25%"></div></div>
+                                <span class="ai-rep-bar-value">2</span>
+                            </div>
+                            <div class="ai-rep-bar-row">
+                                <span class="ai-rep-bar-label">NJCAA</span>
+                                <div class="ai-rep-bar-track"><div class="ai-rep-bar-fill" style="width: 0%"></div></div>
+                                <span class="ai-rep-bar-value">0</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Top Attributes -->
+                    <div class="ai-rep-card">
+                        <h3 class="ai-rep-card-title">Top Attributes Driving Exposure</h3>
+                        <div class="ai-rep-tags">
+                            <span class="ai-rep-tag-attribute">Position: CB</span>
+                            <span class="ai-rep-tag-attribute">40 Time: 4.48</span>
+                            <span class="ai-rep-tag-attribute">State: Colorado</span>
+                            <span class="ai-rep-tag-attribute">Height: 5'11"</span>
+                            <span class="ai-rep-tag-attribute">Class: 2027</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 2: Profile Optimization -->
+                <div class="ai-rep-section">
+                    <div class="ai-rep-section-header">
+                        <h2 class="ai-rep-section-title">
+                            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/>
+                            </svg>
+                            Profile Optimization
+                        </h2>
+                    </div>
+                    <div class="ai-rep-card">
+                        <div class="ai-rep-completion-header">
+                            <span class="ai-rep-completion-label">Profile Completion</span>
+                            <span class="ai-rep-completion-pct">72%</span>
+                        </div>
+                        <div class="ai-rep-progress-bar">
+                            <div class="ai-rep-progress-fill" style="width: 72%"></div>
+                        </div>
+                        <div class="ai-rep-recommendations">
+                            <div class="ai-rep-rec ai-rep-rec-high">
+                                <span class="ai-rep-rec-badge">HIGH</span>
+                                <div class="ai-rep-rec-content">
+                                    <div class="ai-rep-rec-field">Hudl Highlight Reel</div>
+                                    <div class="ai-rep-rec-reason">57% of coach searches in the last 30 days filtered by film availability.</div>
+                                </div>
+                            </div>
+                            <div class="ai-rep-rec ai-rep-rec-med">
+                                <span class="ai-rep-rec-badge">MED</span>
+                                <div class="ai-rep-rec-content">
+                                    <div class="ai-rep-rec-field">GPA</div>
+                                    <div class="ai-rep-rec-reason">38% of D1 FCS and D2 searches include academic filters. Adding your GPA opens these results.</div>
+                                </div>
+                            </div>
+                            <div class="ai-rep-rec ai-rep-rec-low">
+                                <span class="ai-rep-rec-badge">LOW</span>
+                                <div class="ai-rep-rec-content">
+                                    <div class="ai-rep-rec-field">Bench Press</div>
+                                    <div class="ai-rep-rec-reason">12% of searches filter by strength metrics. Nice to have but not critical right now.</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 3: Search Trends -->
+                <div class="ai-rep-section">
+                    <div class="ai-rep-section-header">
+                        <h2 class="ai-rep-section-title">
+                            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
+                                <polyline points="17 6 23 6 23 12"/>
+                            </svg>
+                            Search Trends
+                        </h2>
+                        <span class="ai-rep-date-range">Past 7 Days</span>
+                    </div>
+                    <div class="ai-rep-trends-grid">
+                        <div class="ai-rep-card ai-rep-trend-card">
+                            <div class="ai-rep-trend-number">142</div>
+                            <div class="ai-rep-trend-desc">D2 coaches searched for <strong>CB</strong> this week</div>
+                        </div>
+                        <div class="ai-rep-card ai-rep-trend-card">
+                            <div class="ai-rep-trend-number">89</div>
+                            <div class="ai-rep-trend-desc">D1 FCS coaches searched for <strong>DB</strong> this week</div>
+                        </div>
+                        <div class="ai-rep-card ai-rep-trend-card">
+                            <div class="ai-rep-trend-number">64</div>
+                            <div class="ai-rep-trend-desc">NAIA coaches searched for <strong>CB/S</strong> this week</div>
+                        </div>
+                    </div>
+                    <div class="ai-rep-card">
+                        <h3 class="ai-rep-card-title">Most Common Search Filters (CB Searches)</h3>
+                        <div class="ai-rep-bar-chart">
+                            <div class="ai-rep-bar-row">
+                                <span class="ai-rep-bar-label">Height</span>
+                                <div class="ai-rep-bar-track"><div class="ai-rep-bar-fill" style="width: 82%"></div></div>
+                                <span class="ai-rep-bar-value">82%</span>
+                            </div>
+                            <div class="ai-rep-bar-row">
+                                <span class="ai-rep-bar-label">40-Yard Dash</span>
+                                <div class="ai-rep-bar-track"><div class="ai-rep-bar-fill" style="width: 74%"></div></div>
+                                <span class="ai-rep-bar-value">74%</span>
+                            </div>
+                            <div class="ai-rep-bar-row">
+                                <span class="ai-rep-bar-label">State</span>
+                                <div class="ai-rep-bar-track"><div class="ai-rep-bar-fill" style="width: 61%"></div></div>
+                                <span class="ai-rep-bar-value">61%</span>
+                            </div>
+                            <div class="ai-rep-bar-row">
+                                <span class="ai-rep-bar-label">Film / Highlights</span>
+                                <div class="ai-rep-bar-track"><div class="ai-rep-bar-fill" style="width: 57%"></div></div>
+                                <span class="ai-rep-bar-value">57%</span>
+                            </div>
+                            <div class="ai-rep-bar-row">
+                                <span class="ai-rep-bar-label">GPA</span>
+                                <div class="ai-rep-bar-track"><div class="ai-rep-bar-fill" style="width: 38%"></div></div>
+                                <span class="ai-rep-bar-value">38%</span>
+                            </div>
+                            <div class="ai-rep-bar-row">
+                                <span class="ai-rep-bar-label">Weight</span>
+                                <div class="ai-rep-bar-track"><div class="ai-rep-bar-fill" style="width: 29%"></div></div>
+                                <span class="ai-rep-bar-value">29%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <script src="../../shared/api.js"></script>
+    <script src="../../shared/mobile-header.js?v=4"></script>
+    <script src="../sidebar-nav.js"></script>
+    <script src="../sidebar-footer.js"></script>
+    <script src="../mainpage-player.js"></script>
+    <script src="ai-rep.js"></script>
+</body>
+</html>
