@@ -7,6 +7,9 @@
     "start": "node server.js",
     "dev": "nodemon server.js",
     "migrate": "node scripts/migrate.js",
+    "migrate:prod": "node scripts/run-prod-migration.js",
+    "migrate:status": "node scripts/run-prod-migration.js --status",
+    "migrate:dry-run": "node scripts/run-prod-migration.js --dry-run",
     "seed": "node scripts/seed-local.js"
   },
   "dependencies": {
