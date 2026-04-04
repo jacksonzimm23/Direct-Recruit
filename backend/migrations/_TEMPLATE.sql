@@ -1,0 +1,24 @@
+-- Migration: XXX_description.sql
+-- Date: YYYY-MM-DD
+-- Description: Brief description of what this migration does
+--
+-- INSTRUCTIONS:
+--   1. Copy this file and rename it with the next number prefix:
+--      001_add_some_column.sql, 002_create_some_table.sql, etc.
+--   2. Write your SQL below using IF NOT EXISTS / IF EXISTS where possible
+--      so the migration is safe to retry if it partially fails.
+--   3. Test locally first: docker exec -it dr-postgres psql -U dr_admin -d direct_recruit < this_file.sql
+--   4. Run on prod: cd backend && node scripts/run-prod-migration.js
+--
+-- EXAMPLE — Adding a column:
+--   ALTER TABLE player_profiles ADD COLUMN IF NOT EXISTS some_column VARCHAR(100);
+--
+-- EXAMPLE — Creating a table:
+--   CREATE TABLE IF NOT EXISTS some_table (
+--     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+--     user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+--     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+--   );
+--
+-- EXAMPLE — Adding an index:
+--   CREATE INDEX IF NOT EXISTS idx_some_table_user ON some_table(user_id);
