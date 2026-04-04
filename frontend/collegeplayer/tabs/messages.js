@@ -1049,7 +1049,6 @@ async function deleteConversation() {
         alert('Failed to delete conversation. Please try again.');
     }
 }
-}
 
 // ========================
 // RECRUITING CALENDAR MODAL
