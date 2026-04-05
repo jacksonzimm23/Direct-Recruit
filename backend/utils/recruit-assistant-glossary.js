@@ -379,11 +379,46 @@ const RA_GLOSSARY = {
         'highly recruited': { count_min: 5 },
         'under the radar': { count_max: 1 },
         'hidden gem': { count_max: 2 },
-        'sleeper': { count_max: 2 }
+        'sleeper': { count_max: 2 },
+        // Division-specific offer terms
+        'D1 offers': { division: 'D1 FBS', note: 'Also consider D1 FCS if coach says "D1" generically' },
+        'FBS offers': { division: 'D1 FBS' },
+        'FCS offers': { division: 'D1 FCS' },
+        'D2 offers': { division: 'D2' },
+        'D3 offers': { division: 'D3' },
+        'NAIA offers': { division: 'NAIA' },
+        'JUCO offers': { division: 'NJCAA' },
+        'power conference offers': { division: 'D1 FBS', note: 'Closest filter available — cannot filter by conference' }
+    },
+
+    // Conference limitation — LLM instruction
+    conferenceLimitation: {
+        note: 'Cannot filter offers by conference (Big Ten, SEC, ACC, Big 12, Pac-12, etc.). Only by division level (D1 FBS, D1 FCS, D2, D3, NAIA, NJCAA). If a coach asks about a specific conference, tell them you can only filter by division and offer to do that instead.'
     },
 
     // ========================================================
-    // 14. COMPARISON PATTERNS
+    // 14. HIGHLIGHT / FILM TERMS
+    // ========================================================
+    highlightTerms: {
+        'has film': 'has_highlights',
+        'has highlights': 'has_highlights',
+        'with film': 'has_highlights',
+        'with highlights': 'has_highlights',
+        'with video': 'has_highlights',
+        'has hudl': 'has_highlights',
+        'with hudl': 'has_highlights',
+        'film available': 'has_highlights',
+        'highlight film': 'has_highlights',
+        'game film': 'has_highlights',
+        'tape': 'has_highlights',
+        'has tape': 'has_highlights',
+        'with tape': 'has_highlights',
+        'film on file': 'has_highlights',
+        'watchable': 'has_highlights'
+    },
+
+    // ========================================================
+    // 15. COMPARISON PATTERNS
     // ========================================================
     comparisonPatterns: [
         'at least {value} = >=',

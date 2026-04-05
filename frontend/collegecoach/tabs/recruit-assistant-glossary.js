@@ -750,11 +750,46 @@ const RA_GLOSSARY = {
         'highly recruited':   { type: 'count_min', value: 5 },
         'under the radar':    { type: 'count_max', value: 1 },
         'hidden gem':         { type: 'count_max', value: 2 },
-        'sleeper':            { type: 'count_max', value: 2 }
+        'sleeper':            { type: 'count_max', value: 2 },
+        // Division-specific offer terms
+        'D1 offers':          { type: 'division', division: 'D1 FBS', note: 'Also consider D1 FCS if coach says "D1" generically' },
+        'FBS offers':         { type: 'division', division: 'D1 FBS' },
+        'FCS offers':         { type: 'division', division: 'D1 FCS' },
+        'D2 offers':          { type: 'division', division: 'D2' },
+        'D3 offers':          { type: 'division', division: 'D3' },
+        'NAIA offers':        { type: 'division', division: 'NAIA' },
+        'JUCO offers':        { type: 'division', division: 'NJCAA' },
+        'power conference offers': { type: 'division', division: 'D1 FBS', note: 'Closest filter — cannot filter by conference' }
+    },
+
+    // Conference limitation — LLM instruction
+    conferenceLimitation: {
+        note: 'Cannot filter offers by conference (Big Ten, SEC, ACC, Big 12, Pac-12, etc.). Only by division level (D1 FBS, D1 FCS, D2, D3, NAIA, NJCAA). If a coach asks about a specific conference, tell them you can only filter by division and offer to do that instead.'
     },
 
     // ========================================================
-    // 13. HEIGHT CONVERSION HELPER
+    // 13. HIGHLIGHT / FILM TERMS
+    // ========================================================
+    highlightTerms: {
+        'has film': 'has_highlights',
+        'has highlights': 'has_highlights',
+        'with film': 'has_highlights',
+        'with highlights': 'has_highlights',
+        'with video': 'has_highlights',
+        'has hudl': 'has_highlights',
+        'with hudl': 'has_highlights',
+        'film available': 'has_highlights',
+        'highlight film': 'has_highlights',
+        'game film': 'has_highlights',
+        'tape': 'has_highlights',
+        'has tape': 'has_highlights',
+        'with tape': 'has_highlights',
+        'film on file': 'has_highlights',
+        'watchable': 'has_highlights'
+    },
+
+    // ========================================================
+    // 14. HEIGHT CONVERSION HELPER
     // ========================================================
     // Heights in the database are stored in INCHES.
     // Coach input uses feet'inches format.

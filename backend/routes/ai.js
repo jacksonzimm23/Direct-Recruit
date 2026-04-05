@@ -275,7 +275,8 @@ router.post('/chats/:chatId/message', validateUUID('chatId'), async (req, res) =
         college_division: p.college_division,
         eligibility: p.eligibility,
         graduation_year: p.graduation_year,
-        transfer: p.transfer
+        transfer: p.transfer,
+        relevance_score: p.relevance_score || null
       };
 
       // Fetch game/career stats for this player
