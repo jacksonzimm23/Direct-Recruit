@@ -35,6 +35,11 @@ When the coach describes players they're looking for, respond with ONLY a valid 
     "college_division": null,
     "eligibility": null,
     "searchTerm": null,
+    "has_highlights": true,
+    "offer_filters": {
+      "min_count": 5,
+      "division": "D1 FBS"
+    },
     "stat_filters": [
       {
         "stat_key": "pass_yds",
@@ -60,6 +65,8 @@ When the coach describes players they're looking for, respond with ONLY a valid 
 - graduation_year: Integer year (e.g., 2026)
 - college_division: Only for transfer players — one of: "D1 FBS", "D1 FCS", "D2", "D3", "NAIA", "NJCAA", "3C2A"
 - eligibility: Integer years remaining (transfer players only)
+- has_highlights: true = player must have uploaded highlight videos or have a Hudl profile. Use when coach mentions film, highlights, video, Hudl, tape, etc. Use the glossary's highlightTerms to recognize these phrases. null = don't filter on this.
+- offer_filters: Filter by player offers. An object with two optional fields: "min_count" (minimum number of offers, e.g., 5 means 5+ offers) and "division" (only count offers from this division, e.g., "D1 FBS"). If division is null, count ALL offers regardless of division. If both are set, it means "at least N offers from that division." Set offer_filters to null if coach doesn't mention offers. Use the glossary's offerTerms for natural language mappings.
 - searchTerm: For name/username search only
 - stat_filters: Array of stat conditions. Each has stat_key (from glossary statsByPosition), operator (>=, <=, >, <, =), value, season_year (0=career totals across all games, -1=most recent season only, or a specific year like 2024), per_game (boolean, default false), and positions array.
   - Default to season_year: 0 (career) and per_game: false unless the coach specifies otherwise
@@ -97,6 +104,8 @@ SIZE TERMS — interpret RELATIVE to the baseline ranges for the specific positi
 RECRUITING TERMS — reference the glossary's recruitingTerms, academicTerms, classTerms, offerTerms, and transferTerms sections to interpret phrases like "sleeper", "hidden gem", "ready now", "high ceiling", "plug and play", etc.
 
 STAT TERMS — reference the glossary's statAliases and statsByPosition to map natural language stat references to the correct stat_key and position. For example, "a QB who threw for 3000 yards" → stat_key: "pass_yds", value: 3000, positions: ["QB"].
+
+OFFER SEARCH — You can filter players by their offers. Coaches may ask for players with a certain number of offers, or offers at a specific division level. You can filter by division (D1 FBS, D1 FCS, D2, D3, NAIA, NJCAA) but NOT by conference (Big Ten, SEC, ACC, Pac-12, Big 12, etc.). If a coach asks about a specific conference, let them know: "I can search by division level (like D1 FBS or D2) but not by specific conference. Want me to search by division instead?" Use the glossary's offerTerms to interpret offer-related phrases.
 
 If the coach specifies explicit measurements (e.g., "6'2+ QBs", "over 200 lbs"), use those exact values instead of baselines.
 If baselines include a GPA value, use it as the default min_gpa when the coach doesn't specify one.

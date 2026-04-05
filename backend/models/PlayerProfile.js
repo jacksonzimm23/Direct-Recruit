@@ -1,5 +1,133 @@
 const pool = require('../config/database');
 
+// Build a dynamic SQL scoring expression based on which filters are active.
+// Returns { expr: string, paramCount: number }.
+// Scoring is query-adaptive: factors are weighted based on what the coach asked for.
+function buildRelevanceScoreExpr(filters, heightCaseExpr, validStatKeys, values, paramCount) {
+  const scoreParts = [];
+
+  // --- Filter-driven scoring (only active when filter is present) ---
+
+  // Height excess: reward players taller than the minimum
+  if (filters.min_height) {
+    scoreParts.push(`CASE WHEN (${heightCaseExpr}) > $${paramCount} THEN LEAST((${heightCaseExpr} - $${paramCount}) * 2.0, 16.0) ELSE 0 END`);
+    values.push(filters.min_height);
+    paramCount++;
+  }
+
+  // Weight scoring
+  if (filters.min_weight && filters.max_weight) {
+    // Two-sided range: reward players closer to midpoint
+    const midWeight = (filters.min_weight + filters.max_weight) / 2;
+    scoreParts.push(`CASE WHEN pp.weight IS NOT NULL THEN GREATEST(0, 10.0 - ABS(pp.weight - $${paramCount}) * 0.2) ELSE 0 END`);
+    values.push(midWeight);
+    paramCount++;
+  } else if (filters.min_weight) {
+    // One-sided: reward exceeding minimum
+    scoreParts.push(`CASE WHEN pp.weight IS NOT NULL AND pp.weight > $${paramCount} THEN LEAST((pp.weight - $${paramCount}) / 10.0, 10.0) ELSE 0 END`);
+    values.push(filters.min_weight);
+    paramCount++;
+  }
+
+  // GPA excess: reward higher GPA above minimum
+  if (filters.min_gpa) {
+    scoreParts.push(`CASE WHEN pp.gpa IS NOT NULL AND pp.gpa > $${paramCount} THEN LEAST((pp.gpa - $${paramCount}) * 20.0, 10.0) ELSE 0 END`);
+    values.push(filters.min_gpa);
+    paramCount++;
+  }
+
+  // Stat performance scoring: for each stat filter, reward exceeding the threshold
+  if (filters.stat_filters && filters.stat_filters.length > 0) {
+    filters.stat_filters.forEach((sf, index) => {
+      if (!validStatKeys.has(sf.stat_key)) return;
+
+      const scoreAlias = `score_sg${index}`;
+      const scoreStatsAlias = `score_sf${index}`;
+
+      let statScoreSubquery = `COALESCE((
+        SELECT LEAST(
+          SUM(COALESCE(CAST(${scoreStatsAlias}.stats->>'${sf.stat_key}' AS NUMERIC), 0)) / NULLIF($${paramCount}, 0) * 5.0,
+          10.0
+        )
+        FROM player_games ${scoreAlias}
+        JOIN player_game_stats ${scoreStatsAlias} ON ${scoreAlias}.id = ${scoreStatsAlias}.game_id
+        JOIN player_profiles pp_score ON ${scoreAlias}.player_id = pp_score.id
+        WHERE pp_score.user_id = pp.user_id`;
+
+      values.push(sf.value);
+      paramCount++;
+
+      // Season year filter for scoring (mirror WHERE logic)
+      if (sf.season_year === -1) {
+        statScoreSubquery += ` AND ${scoreAlias}.season_year = (
+          SELECT MAX(sg_inner2.season_year) FROM player_games sg_inner2
+          JOIN player_profiles pp_inner2 ON sg_inner2.player_id = pp_inner2.id
+          WHERE pp_inner2.user_id = pp.user_id AND sg_inner2.season_year > 0
+        )`;
+      } else if (sf.season_year && sf.season_year > 0) {
+        statScoreSubquery += ` AND ${scoreAlias}.season_year = $${paramCount}`;
+        values.push(sf.season_year);
+        paramCount++;
+      }
+
+      // Position filter for scoring
+      if (sf.positions && sf.positions.length > 0) {
+        const posList = sf.positions.map(p => {
+          const param = `$${paramCount}`;
+          values.push(p);
+          paramCount++;
+          return param;
+        });
+        statScoreSubquery += ` AND ${scoreStatsAlias}.position IN (${posList.join(', ')})`;
+      }
+
+      statScoreSubquery += ` GROUP BY pp_score.user_id
+      ), 0)`;
+
+      scoreParts.push(statScoreSubquery);
+    });
+  }
+
+  // --- Profile completeness (always active, lower weight) ---
+
+  // Has profile photo
+  scoreParts.push(`CASE WHEN pp.profile_image_url IS NOT NULL AND pp.profile_image_url != '' THEN 3.0 ELSE 0 END`);
+
+  // Has bio
+  scoreParts.push(`CASE WHEN pp.bio IS NOT NULL AND pp.bio != '' THEN 2.0 ELSE 0 END`);
+
+  // Has highlight videos or Hudl profile
+  scoreParts.push(`CASE WHEN EXISTS (SELECT 1 FROM player_highlights ph WHERE ph.user_id = pp.user_id LIMIT 1) OR (pp.hudl_profile IS NOT NULL AND pp.hudl_profile != '') THEN 3.0 ELSE 0 END`);
+
+  // Offer count bonus (more offers = better, capped at 10 offers * 0.5 = 5 pts)
+  scoreParts.push(`CASE WHEN pp.offers IS NOT NULL AND pp.offers != '' THEN
+    LEAST(array_length(string_to_array(pp.offers, '|'), 1), 10) * 0.5
+  ELSE 0 END`);
+
+  // Offer division quality bonus (D1 FBS worth most, descending by tier, capped at 10 pts)
+  // Count offers per division using lateral unnest for accuracy
+  scoreParts.push(`COALESCE((
+    SELECT LEAST(
+      COALESCE(SUM(CASE
+        WHEN offer_entry ILIKE '%D1 FBS%' THEN 2.0
+        WHEN offer_entry ILIKE '%D1 FCS%' THEN 1.5
+        WHEN offer_entry ILIKE '%, D2' OR offer_entry ILIKE '%, D2|%' THEN 1.0
+        WHEN offer_entry ILIKE '%, D3' OR offer_entry ILIKE '%, D3|%' THEN 0.5
+        WHEN offer_entry ILIKE '%NAIA%' THEN 0.5
+        WHEN offer_entry ILIKE '%NJCAA%' THEN 0.5
+        ELSE 0.0
+      END), 0), 10.0)
+    FROM unnest(string_to_array(COALESCE(pp.offers, ''), '|')) AS offer_entry
+    WHERE offer_entry != ''
+  ), 0)`);
+
+  // Coach interest signal (capped)
+  scoreParts.push(`LEAST(COALESCE(pp.cc_views, 0), 25) * 0.2`);
+
+  const expr = `(${scoreParts.join('\n    + ')})`;
+  return { expr, paramCount };
+}
+
 class PlayerProfile {
   static async create(userId, profileData) {
     const {
@@ -359,7 +487,26 @@ class PlayerProfile {
     const values = [];
     let paramCount = 1;
 
-    let selectCols = `pp.*, u.email`;
+    // Height conversion expression — used in both WHERE and scoring
+    // Cast to text first so regex works whether column is INTEGER or VARCHAR
+    const heightCaseExpr = `
+      CASE
+        WHEN CAST(pp.height AS TEXT) ~ '^[0-9]+''[0-9]+"?$' THEN
+          CAST(SPLIT_PART(CAST(pp.height AS TEXT), '''', 1) AS INTEGER) * 12 +
+          CAST(NULLIF(REGEXP_REPLACE(SPLIT_PART(CAST(pp.height AS TEXT), '''', 2), '[^0-9]', '', 'g'), '') AS INTEGER)
+        WHEN CAST(pp.height AS TEXT) ~ '^[0-9]+'' [0-9]+"?$' THEN
+          CAST(SPLIT_PART(CAST(pp.height AS TEXT), '''', 1) AS INTEGER) * 12 +
+          CAST(NULLIF(REGEXP_REPLACE(SPLIT_PART(CAST(pp.height AS TEXT), '''', 2), '[^0-9]', '', 'g'), '') AS INTEGER)
+        WHEN CAST(pp.height AS TEXT) ~ '^[0-9]+$' THEN
+          CAST(pp.height AS INTEGER)
+        ELSE 0
+      END`;
+
+    // Build relevance scoring expression based on active filters
+    const scoreResult = buildRelevanceScoreExpr(filters, heightCaseExpr, VALID_STAT_KEYS, values, paramCount);
+    paramCount = scoreResult.paramCount;
+
+    let selectCols = `pp.*, u.email, ${scoreResult.expr} AS relevance_score`;
     let fromClause = `FROM player_profiles pp JOIN users u ON pp.user_id = u.id`;
     let whereClauses = [`u.is_active = true`];
 
@@ -424,20 +571,7 @@ class PlayerProfile {
       paramCount++;
     }
 
-    // Height filters (stored as VARCHAR like "6'1"")
-    const heightCaseExpr = `
-      CASE
-        WHEN pp.height ~ '^[0-9]+''[0-9]+"?$' THEN
-          CAST(SPLIT_PART(pp.height, '''', 1) AS INTEGER) * 12 +
-          CAST(NULLIF(REGEXP_REPLACE(SPLIT_PART(pp.height, '''', 2), '[^0-9]', '', 'g'), '') AS INTEGER)
-        WHEN pp.height ~ '^[0-9]+'' [0-9]+"?$' THEN
-          CAST(SPLIT_PART(pp.height, '''', 1) AS INTEGER) * 12 +
-          CAST(NULLIF(REGEXP_REPLACE(SPLIT_PART(pp.height, '''', 2), '[^0-9]', '', 'g'), '') AS INTEGER)
-        WHEN pp.height ~ '^[0-9]+$' THEN
-          CAST(pp.height AS INTEGER)
-        ELSE 0
-      END`;
-
+    // Height filters
     if (filters.min_height) {
       whereClauses.push(`(${heightCaseExpr}) >= $${paramCount}`);
       values.push(filters.min_height);
@@ -480,6 +614,43 @@ class PlayerProfile {
       whereClauses.push(`pp.eligibility = $${paramCount}`);
       values.push(filters.eligibility);
       paramCount++;
+    }
+
+    // Highlight / film filter
+    if (filters.has_highlights === true) {
+      whereClauses.push(`(
+        EXISTS (SELECT 1 FROM player_highlights ph WHERE ph.user_id = pp.user_id LIMIT 1)
+        OR (pp.hudl_profile IS NOT NULL AND pp.hudl_profile != '')
+      )`);
+    }
+
+    // Offer filters (count and/or division)
+    if (filters.offer_filters) {
+      const of = filters.offer_filters;
+      if (of.division && of.min_count) {
+        // Count offers matching a specific division using lateral unnest
+        whereClauses.push(`(
+          pp.offers IS NOT NULL AND pp.offers != '' AND
+          (SELECT COUNT(*) FROM unnest(string_to_array(pp.offers, '|')) AS offer_entry
+           WHERE offer_entry ILIKE $${paramCount}) >= $${paramCount + 1}
+        )`);
+        values.push(`%${of.division}%`);
+        values.push(of.min_count);
+        paramCount += 2;
+      } else if (of.division) {
+        // Has at least 1 offer from this division
+        whereClauses.push(`pp.offers ILIKE $${paramCount}`);
+        values.push(`%${of.division}%`);
+        paramCount++;
+      } else if (of.min_count) {
+        // Count total offers (split by '|')
+        whereClauses.push(`(
+          pp.offers IS NOT NULL AND pp.offers != ''
+          AND array_length(string_to_array(pp.offers, '|'), 1) >= $${paramCount}
+        )`);
+        values.push(of.min_count);
+        paramCount++;
+      }
     }
 
     // Search term (name/username) — fuzzy + ILIKE fallback
@@ -552,14 +723,14 @@ class PlayerProfile {
       });
     }
 
-    // Build final query — rank by similarity when searching by name
+    // Build final query — rank by relevance score, with similarity as primary for name searches
     let orderClause;
     if (filters.searchTerm) {
-      orderClause = `ORDER BY GREATEST(similarity(pp.first_name, $${paramCount}), similarity(pp.last_name, $${paramCount}), similarity(pp.username, $${paramCount})) DESC, pp.created_at DESC`;
+      orderClause = `ORDER BY GREATEST(similarity(pp.first_name, $${paramCount}), similarity(pp.last_name, $${paramCount}), similarity(pp.username, $${paramCount})) DESC, relevance_score DESC`;
       values.push(filters.searchTerm);
       paramCount++;
     } else {
-      orderClause = `ORDER BY pp.created_at DESC`;
+      orderClause = `ORDER BY relevance_score DESC`;
     }
 
     const query = `SELECT ${selectCols} ${fromClause}
