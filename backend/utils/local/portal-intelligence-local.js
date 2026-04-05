@@ -22,12 +22,15 @@ async function getPortalIntelligence(messages, coachState, coachDivision) {
   const lastMessage = messages[messages.length - 1];
   const content = lastMessage ? lastMessage.content.toLowerCase() : '';
 
+  const _meta = { model: 'local-mock', input_tokens: 0, output_tokens: 0, latency_ms: 0 };
+
   // If it looks like a greeting or general question, return conversational response
   if (content.match(/^(hi|hey|hello|sup|what can you|help)/)) {
     return {
       signal_filters: null,
       summary: null,
-      message: 'Hey coach! I monitor player behavior patterns on Direct Recruit to help you spot potential portal candidates early — bio updates, highlight uploads, and coach browsing patterns. Just tell me what you\'re looking for.\n\n[LOCAL DEV - hardcoded sample response. Real AI is disabled.]'
+      message: 'Hey coach! I monitor player behavior patterns on Direct Recruit to help you spot potential portal candidates early — bio updates, highlight uploads, and coach browsing patterns. Just tell me what you\'re looking for.\n\n[LOCAL DEV - hardcoded sample response. Real AI is disabled.]',
+      _meta
     };
   }
 
@@ -40,7 +43,8 @@ async function getPortalIntelligence(messages, coachState, coachDivision) {
       days: 14
     },
     summary: '[LOCAL DEV] Sample search: All signal types, last 14 days',
-    reasoning: '[LOCAL DEV - hardcoded sample response. Real AI is disabled. Connect an Anthropic API key in .env to enable real AI.]'
+    reasoning: '[LOCAL DEV - hardcoded sample response. Real AI is disabled. Connect an Anthropic API key in .env to enable real AI.]',
+    _meta
   };
 }
 

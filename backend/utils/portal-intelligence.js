@@ -129,24 +129,35 @@ async function getPortalIntelligence(messages, coachState, coachDivision) {
     content: msg.content
   }));
 
+  const startTime = Date.now();
+  const modelId = 'claude-haiku-4-5-20251001';
+
   const response = await piClient.messages.create({
-    model: 'claude-haiku-4-5-20251001',
+    model: modelId,
     max_tokens: 1024,
     temperature: 0,
     system: systemPrompt,
     messages: claudeMessages,
   });
 
+  const latencyMs = Date.now() - startTime;
   const text = response.content[0].text.trim();
 
+  const _meta = {
+    model: modelId,
+    input_tokens: response.usage?.input_tokens || null,
+    output_tokens: response.usage?.output_tokens || null,
+    latency_ms: latencyMs
+  };
+
   try {
-    return JSON.parse(text);
+    return { ...JSON.parse(text), _meta };
   } catch (e) {
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
-      return JSON.parse(jsonMatch[0]);
+      return { ...JSON.parse(jsonMatch[0]), _meta };
     }
-    return { signal_filters: null, summary: null, message: text };
+    return { signal_filters: null, summary: null, message: text, _meta };
   }
 }
 

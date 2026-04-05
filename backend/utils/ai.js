@@ -195,27 +195,39 @@ async function getRecruitingFilters(messages, coachBaselines, coachState, coachD
     content: msg.content
   }));
 
+  const startTime = Date.now();
+  const modelId = 'claude-haiku-4-5-20251001';
+
   const response = await client.messages.create({
-    model: 'claude-haiku-4-5-20251001',
+    model: modelId,
     max_tokens: 1024,
     temperature: 0,
     system: systemPrompt,
     messages: claudeMessages,
   });
 
+  const latencyMs = Date.now() - startTime;
   const text = response.content[0].text.trim();
+
+  // Build metadata from API response
+  const _meta = {
+    model: modelId,
+    input_tokens: response.usage?.input_tokens || null,
+    output_tokens: response.usage?.output_tokens || null,
+    latency_ms: latencyMs
+  };
 
   // Parse the JSON response
   try {
-    return JSON.parse(text);
+    return { ...JSON.parse(text), _meta };
   } catch (e) {
     // If Claude returned text with JSON embedded, try to extract it
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
-      return JSON.parse(jsonMatch[0]);
+      return { ...JSON.parse(jsonMatch[0]), _meta };
     }
     // Fallback: return as conversational response
-    return { filters: null, summary: null, message: text };
+    return { filters: null, summary: null, message: text, _meta };
   }
 }
 

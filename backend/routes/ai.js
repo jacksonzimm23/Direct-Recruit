@@ -10,7 +10,31 @@ const PortalSignal = require('../models/PortalSignal');
 const PortalWatchlist = require('../models/PortalWatchlist');
 const { getSignedS3Url } = require('../utils/s3');
 const PlayerGameStats = require('../models/PlayerGameStats');
+const AiAnalytics = require('../models/AiAnalytics');
 const logger = require('../utils/logger');
+
+// Helper: extract active filter names from a filters object for analytics
+function extractActiveFilters(filters) {
+  const active = [];
+  if (filters.position?.length) active.push('position');
+  if (filters.state) active.push('state');
+  if (filters.min_height) active.push('min_height');
+  if (filters.max_height) active.push('max_height');
+  if (filters.min_weight) active.push('min_weight');
+  if (filters.max_weight) active.push('max_weight');
+  if (filters.min_gpa) active.push('min_gpa');
+  if (filters.graduation_year) active.push('graduation_year');
+  if (filters.college_division) active.push('college_division');
+  if (filters.eligibility) active.push('eligibility');
+  if (filters.has_highlights === true) active.push('has_highlights');
+  if (filters.offer_filters) active.push('offer_filters');
+  if (filters.stat_filters?.length) active.push('stat_filters');
+  if (filters.searchTerm) active.push('searchTerm');
+  // Portal Intelligence specific
+  if (filters.signal_types?.length) active.push('signal_types');
+  if (filters.days) active.push('days');
+  return active;
+}
 
 // Helper: add signed URLs to player profiles (same pattern as profile.js)
 async function addSignedUrlsToProfiles(players) {
@@ -304,6 +328,31 @@ router.post('/chats/:chatId/message', validateUUID('chatId'), async (req, res) =
       hasMore: result.hasMore
     });
 
+    // Log analytics (fire-and-forget)
+    const avgScore = result.players.length > 0
+      ? result.players.reduce((sum, p) => sum + (parseFloat(p.relevance_score) || 0), 0) / result.players.length
+      : null;
+    AiAnalytics.log({
+      aiType: 'recruit_assistant',
+      coachDivision: coachDivision,
+      coachState: coachState,
+      rawQuery: message.trim(),
+      filtersJson: aiResponse.filters,
+      activeFilters: extractActiveFilters(aiResponse.filters),
+      resultCount: playerCount,
+      hasMore: result.hasMore,
+      avgRelevanceScore: avgScore ? Math.round(avgScore * 100) / 100 : null,
+      resultPlayers: result.players.map(p => ({
+        player_id: p.user_id,
+        position: p.position,
+        state: p.state
+      })),
+      modelVersion: aiResponse._meta?.model || null,
+      inputTokens: aiResponse._meta?.input_tokens || null,
+      outputTokens: aiResponse._meta?.output_tokens || null,
+      latencyMs: aiResponse._meta?.latency_ms || null
+    }).catch(err => logger.error('AI analytics log error:', err.message));
+
     return res.json({
       response: responseText,
       players: result.players,
@@ -483,6 +532,28 @@ router.post('/chats/:chatId/pi-message', validateUUID('chatId'), async (req, res
       playerCount: playerCount,
       hasMore: result.hasMore
     });
+
+    // Log analytics (fire-and-forget)
+    AiAnalytics.log({
+      aiType: 'portal_intelligence',
+      coachDivision: coachDivision,
+      coachState: coachState,
+      rawQuery: message.trim(),
+      filtersJson: aiResponse.signal_filters,
+      activeFilters: extractActiveFilters(aiResponse.signal_filters),
+      resultCount: playerCount,
+      hasMore: result.hasMore,
+      avgRelevanceScore: null,
+      resultPlayers: result.players.map(p => ({
+        player_id: p.user_id,
+        position: p.position,
+        college_division: p.college_division
+      })),
+      modelVersion: aiResponse._meta?.model || null,
+      inputTokens: aiResponse._meta?.input_tokens || null,
+      outputTokens: aiResponse._meta?.output_tokens || null,
+      latencyMs: aiResponse._meta?.latency_ms || null
+    }).catch(err => logger.error('PI analytics log error:', err.message));
 
     return res.json({
       response: responseText,
