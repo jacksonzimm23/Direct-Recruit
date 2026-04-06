@@ -11,6 +11,7 @@ const PortalWatchlist = require('../models/PortalWatchlist');
 const { getSignedS3Url } = require('../utils/s3');
 const PlayerGameStats = require('../models/PlayerGameStats');
 const AiAnalytics = require('../models/AiAnalytics');
+const RaSavedPlayers = require('../models/RaSavedPlayers');
 const logger = require('../utils/logger');
 
 // Helper: extract active filter names from a filters object for analytics
@@ -636,6 +637,76 @@ router.delete('/watchlist', async (req, res) => {
   } catch (error) {
     logger.error('Clear watchlist error:', error);
     res.status(500).json({ error: 'Failed to clear watchlist' });
+  }
+});
+
+// ================================
+// RA SAVED PLAYERS ROUTES
+// ================================
+
+// Get saved players list with player data
+router.get('/saved', async (req, res) => {
+  try {
+    let players = await RaSavedPlayers.getSavedPlayers(req.userId);
+    players = await addSignedUrlsToProfiles(players);
+    const count = players.length;
+    res.json({ players, count, max: 50 });
+  } catch (error) {
+    logger.error('Get saved players error:', error);
+    res.status(500).json({ error: 'Failed to get saved players' });
+  }
+});
+
+// Batch check which players are saved
+router.get('/saved/check', async (req, res) => {
+  try {
+    const playerIds = req.query.playerIds ? req.query.playerIds.split(',').filter(id => id) : [];
+    if (playerIds.length === 0) {
+      return res.json({ savedIds: [] });
+    }
+    const savedIds = await RaSavedPlayers.checkPlayers(req.userId, playerIds);
+    res.json({ savedIds });
+  } catch (error) {
+    logger.error('Check saved players error:', error);
+    res.status(500).json({ error: 'Failed to check saved players' });
+  }
+});
+
+// Save a player
+router.post('/saved/:playerUserId', async (req, res) => {
+  try {
+    const { playerUserId } = req.params;
+    const result = await RaSavedPlayers.addPlayer(req.userId, playerUserId);
+    if (!result.success) {
+      return res.status(400).json({ error: result.error, count: result.count });
+    }
+    res.json({ success: true, count: result.count });
+  } catch (error) {
+    logger.error('Save player error:', error);
+    res.status(500).json({ error: 'Failed to save player' });
+  }
+});
+
+// Remove a saved player
+router.delete('/saved/:playerUserId', async (req, res) => {
+  try {
+    const { playerUserId } = req.params;
+    const result = await RaSavedPlayers.removePlayer(req.userId, playerUserId);
+    res.json({ success: true, count: result.count });
+  } catch (error) {
+    logger.error('Remove saved player error:', error);
+    res.status(500).json({ error: 'Failed to remove saved player' });
+  }
+});
+
+// Clear all saved players
+router.delete('/saved', async (req, res) => {
+  try {
+    await RaSavedPlayers.removeAll(req.userId);
+    res.json({ success: true, count: 0 });
+  } catch (error) {
+    logger.error('Clear saved players error:', error);
+    res.status(500).json({ error: 'Failed to clear saved players' });
   }
 });
 

@@ -644,6 +644,18 @@ const aiAPI = {
         apiRequest(`/ai/watchlist/${playerUserId}`, { method: 'DELETE' }),
     clearWatchlist: async () =>
         apiRequest('/ai/watchlist', { method: 'DELETE' }),
+
+    // RA Saved Players
+    getSavedPlayers: async () =>
+        apiRequest('/ai/saved'),
+    checkSavedPlayers: async (playerIds) =>
+        apiRequest(`/ai/saved/check?playerIds=${playerIds.join(',')}`),
+    savePlayer: async (playerUserId) =>
+        apiRequest(`/ai/saved/${playerUserId}`, { method: 'POST' }),
+    unsavePlayer: async (playerUserId) =>
+        apiRequest(`/ai/saved/${playerUserId}`, { method: 'DELETE' }),
+    clearSavedPlayers: async () =>
+        apiRequest('/ai/saved', { method: 'DELETE' }),
 };
 
 // Unified API object for convenience
