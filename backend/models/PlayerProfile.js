@@ -121,9 +121,6 @@ function buildRelevanceScoreExpr(filters, heightCaseExpr, validStatKeys, values,
     WHERE offer_entry != ''
   ), 0)`);
 
-  // Coach interest signal (capped)
-  scoreParts.push(`LEAST(COALESCE(pp.cc_views, 0), 25) * 0.2`);
-
   const expr = `(${scoreParts.join('\n    + ')})`;
   return { expr, paramCount };
 }
