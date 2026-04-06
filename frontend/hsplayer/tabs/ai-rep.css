@@ -582,3 +582,173 @@
         padding: 1.15rem;
     }
 }
+
+/* ============ Dynamic Page Additions ============ */
+
+/* Section Controls (badge + dropdown) */
+.ai-rep-section-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+}
+
+/* Period Filter Dropdown */
+.ai-rep-period-filter {
+    background: rgba(254, 252, 251, 0.06);
+    border: 1px solid rgba(18, 130, 162, 0.25);
+    border-radius: 8px;
+    color: rgba(254, 252, 251, 0.75);
+    font-size: 0.8rem;
+    font-weight: 600;
+    font-family: 'Inter', sans-serif;
+    padding: 0.35rem 0.65rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L5 5L9 1' stroke='rgba(254,252,251,0.4)' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.5rem center;
+    padding-right: 1.6rem;
+}
+
+.ai-rep-period-filter:hover {
+    border-color: rgba(18, 130, 162, 0.4);
+    background-color: rgba(254, 252, 251, 0.08);
+}
+
+.ai-rep-period-filter:focus {
+    outline: none;
+    border-color: var(--cerulean);
+}
+
+.ai-rep-period-filter option {
+    background: #0a1128;
+    color: rgba(254, 252, 251, 0.85);
+}
+
+/* Loading State */
+.ai-rep-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem 1rem;
+    color: rgba(254, 252, 251, 0.4);
+    font-size: 0.9rem;
+    font-weight: 600;
+    gap: 1rem;
+}
+
+.ai-rep-loading-dots {
+    display: flex;
+    gap: 0.4rem;
+}
+
+.ai-rep-loading-dots span {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--cerulean);
+    animation: ai-rep-dot-pulse 1.2s ease-in-out infinite;
+}
+
+.ai-rep-loading-dots span:nth-child(2) { animation-delay: 0.2s; }
+.ai-rep-loading-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes ai-rep-dot-pulse {
+    0%, 80%, 100% { opacity: 0.2; transform: scale(0.8); }
+    40% { opacity: 1; transform: scale(1.2); }
+}
+
+/* No Matches State */
+.ai-rep-no-matches {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 3rem 1.5rem;
+    background: rgba(254, 252, 251, 0.03);
+    border: 1px solid rgba(18, 130, 162, 0.15);
+    border-radius: 12px;
+    margin-bottom: 1rem;
+}
+
+.ai-rep-no-matches p {
+    margin: 0;
+    color: rgba(254, 252, 251, 0.6);
+    font-size: 1rem;
+    font-weight: 700;
+}
+
+.ai-rep-no-matches-sub {
+    margin-top: 0.5rem !important;
+    font-size: 0.85rem !important;
+    font-weight: 500 !important;
+    color: rgba(254, 252, 251, 0.35) !important;
+    max-width: 400px;
+}
+
+/* Profile Message */
+.ai-rep-profile-msg {
+    color: rgba(254, 252, 251, 0.5);
+    font-size: 0.88rem;
+    font-weight: 600;
+    margin: 0 0 1rem 0;
+    line-height: 1.4;
+}
+
+/* All Complete State */
+.ai-rep-all-complete {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem 1.15rem;
+    background: rgba(74, 222, 128, 0.06);
+    border: 1px solid rgba(74, 222, 128, 0.2);
+    border-radius: 10px;
+    color: #4ade80;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.ai-rep-all-complete svg {
+    flex-shrink: 0;
+    color: #4ade80;
+}
+
+/* Coming Soon Overlay */
+.ai-rep-coming-soon-wrapper {
+    position: relative;
+}
+
+.ai-rep-coming-soon-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(10, 17, 40, 0.7);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    border-radius: 12px;
+}
+
+.ai-rep-coming-soon-overlay span {
+    background: rgba(18, 130, 162, 0.15);
+    color: var(--cerulean);
+    border: 1px solid rgba(18, 130, 162, 0.3);
+    border-radius: 10px;
+    padding: 0.6rem 1.5rem;
+    font-size: 1rem;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+}
+
+.ai-rep-coming-soon-content {
+    opacity: 0.3;
+    pointer-events: none;
+}
