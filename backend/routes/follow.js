@@ -7,6 +7,7 @@ const CoachProfile = require('../models/CoachProfile');
 const User = require('../models/User');
 const { authMiddleware, validateUUID } = require('../middleware/auth');
 const { getSignedS3Url } = require('../utils/s3');
+const AiEngagement = require('../models/AiEngagement');
 const logger = require('../utils/logger');
 
 // Helper function to add signed URLs to profiles array
@@ -77,6 +78,9 @@ router.post('/:userId', authMiddleware, validateUUID('userId'), async (req, res)
         logger.error('Failed to create follow request notification:', notifError);
       }
 
+      // Track AI engagement (fire-and-forget)
+      AiEngagement.trackIfAiDriven(req.userId, userId, 'follow')
+        .catch(err => logger.error('Engagement track error:', err.message));
       res.json({ message: 'Follow request sent', requestPending: true });
     } else {
       // Public profile - instant follow
@@ -91,6 +95,9 @@ router.post('/:userId', authMiddleware, validateUUID('userId'), async (req, res)
         // Don't fail the follow action if notification fails
       }
 
+      // Track AI engagement (fire-and-forget)
+      AiEngagement.trackIfAiDriven(req.userId, userId, 'follow')
+        .catch(err => logger.error('Engagement track error:', err.message));
       res.json({ message: 'Successfully followed user', requestPending: false });
     }
   } catch (error) {

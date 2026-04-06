@@ -14,6 +14,7 @@ const { validationResult } = require('express-validator');
 const { validatePlayerProfile, validateCoachProfile, validateOtherProfile, validatePlayerProfileUpdate, validateCoachProfileUpdate, validateOtherProfileUpdate, handleValidationErrors, sanitizeBody } = require('../middleware/validation');
 const { getSignedS3Url } = require('../utils/s3');
 const { apiLimiter, availabilityLimiter } = require('../middleware/rateLimit');
+const AiEngagement = require('../models/AiEngagement');
 const logger = require('../utils/logger');
 
 // Helper function to convert S3 key to signed URL in profile
@@ -676,12 +677,19 @@ router.post('/view/:userId', authMiddleware, validateUUID('userId'), async (req,
       return res.status(404).json({ error: 'Player profile not found' });
     }
 
-    // Only track views for HS players (those without college_division)
+    // Only track cc_views for HS players (those without college_division)
     if (playerProfile.college_division && playerProfile.college_division.trim() !== '') {
+      // Still track AI engagement for all player types
+      AiEngagement.trackIfAiDriven(viewerId, viewedPlayerId, 'profile_view')
+        .catch(err => logger.error('Engagement track error:', err.message));
       return res.json({ success: true, isNewView: false, message: 'View tracking only for HS players' });
     }
 
     const isNewView = await ProfileView.recordView(viewedPlayerId, viewerId);
+
+    // Track AI engagement (fire-and-forget)
+    AiEngagement.trackIfAiDriven(viewerId, viewedPlayerId, 'profile_view')
+      .catch(err => logger.error('Engagement track error:', err.message));
 
     res.json({
       success: true,
