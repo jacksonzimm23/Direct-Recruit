@@ -63,6 +63,9 @@ class PortalWatchlist {
         pp.team_name,
         pp.college_division,
         pp.transfer,
+        pp.eligibility,
+        pp.graduation_year,
+        pp.state,
         pp.profile_image_url,
         u.username
        FROM portal_watchlist pw

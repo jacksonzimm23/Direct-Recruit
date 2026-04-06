@@ -712,14 +712,25 @@ document.addEventListener('DOMContentLoaded', function() {
 
             watchlistBody.innerHTML = players.map(player => {
                 const displayName = `${player.first_name || ''} ${player.last_name || ''}`.trim() || 'Unknown Player';
-                const height = formatHeight(player.height);
-                const weight = player.weight ? `${player.weight} lbs` : '';
+                const position = player.position || '—';
+                const heightDisplay = formatHeight(player.height);
+                const weightDisplay = player.weight ? `${player.weight} lbs` : '';
                 const school = player.team_name || '';
                 const division = formatDivision(player.college_division);
                 const inPortal = player.transfer === 'y';
-                const statsText = [height, weight].filter(Boolean).join(' / ');
-                const schoolText = [school, division].filter(Boolean).join(' · ');
                 const profileImage = player.profile_image_url;
+
+                // Role-specific subheader (lesson 7)
+                let subheader, subColor;
+                if (inPortal) {
+                    const elig = player.eligibility ? `YOE: ${player.eligibility} year${player.eligibility > 1 ? 's' : ''}` : '';
+                    subheader = [position, heightDisplay, weightDisplay, elig].filter(Boolean).join(' \u2022 ');
+                    subColor = '#b91c1c';
+                } else {
+                    // College player (not yet in portal)
+                    subheader = [position, school, division].filter(Boolean).join(' \u2022 ');
+                    subColor = '#1282a2';
+                }
 
                 return `
                     <div class="pi-watchlist-item" data-user-id="${player.user_id}" data-username="${player.username || ''}">
@@ -734,8 +745,8 @@ document.addEventListener('DOMContentLoaded', function() {
                         </div>
                         <div class="pi-watchlist-item-info">
                             <div class="pi-watchlist-item-name">${escapeHtml(displayName)}</div>
-                            <div class="pi-watchlist-item-detail">${formatPositions(player.position)} ${statsText ? `<span class="pi-watchlist-item-stats">${statsText}</span>` : ''}</div>
-                            ${schoolText ? `<div class="pi-watchlist-item-school">${escapeHtml(schoolText)}</div>` : ''}
+                            <div class="pi-watchlist-item-detail" style="color: ${subColor}">${escapeHtml(subheader)}</div>
+                            ${!inPortal && school ? `<div class="pi-watchlist-item-school">${escapeHtml(school)}${player.state ? ', ' + escapeHtml(player.state) : ''}</div>` : ''}
                         </div>
                         <div class="pi-watchlist-item-status ${inPortal ? 'in-portal' : 'not-in-portal'}">
                             ${inPortal ? 'In Portal' : 'Not in Portal'}
@@ -750,12 +761,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 `;
             }).join('');
 
-            // Click handlers for watchlist items
+            // Click handlers for watchlist items (save modal state for back navigation)
             watchlistBody.querySelectorAll('.pi-watchlist-item').forEach(item => {
                 item.addEventListener('click', (e) => {
                     if (e.target.closest('.pi-watchlist-item-remove')) return;
                     const username = item.dataset.username;
                     if (username) {
+                        sessionStorage.setItem('piWatchlistModalOpen', 'true');
                         window.location.href = `../../collegeplayer/tabs/my-profile.html?username=${username}&from=transfer-portal`;
                     }
                 });
@@ -855,6 +867,13 @@ document.addEventListener('DOMContentLoaded', function() {
     // ========================
 
     loadWatchlistCount();
+
+    // Auto-reopen watchlist modal if returning from profile view
+    const shouldReopenWatchlist = sessionStorage.getItem('piWatchlistModalOpen');
+    if (shouldReopenWatchlist) {
+        sessionStorage.removeItem('piWatchlistModalOpen');
+        setTimeout(() => openWatchlistModal(), 300);
+    }
 
     loadChats().then(() => {
         if (chats.length > 0) {

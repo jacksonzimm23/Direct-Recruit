@@ -1964,6 +1964,7 @@
     gap: 6px;
     margin-top: 2px;
     flex-wrap: wrap;
+    font-weight: 700;
 }
 
 .pi-watchlist-item-detail .pi-position-badge {

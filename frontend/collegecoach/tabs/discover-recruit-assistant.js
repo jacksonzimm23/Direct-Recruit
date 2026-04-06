@@ -147,6 +147,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                     cardsContainer.appendChild(createPlayerCard(player));
                                 });
                                 messagesContainer.appendChild(cardsContainer);
+                                batchCheckSavedPlayers(cardsContainer);
                             }
                         } catch (searchErr) {
                             console.error('Failed to re-load player cards:', searchErr);
@@ -295,6 +296,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     cardsContainer.appendChild(createPlayerCard(player));
                 });
                 messagesContainer.appendChild(cardsContainer);
+                batchCheckSavedPlayers(cardsContainer);
             }
 
             scrollToBottom();
@@ -470,8 +472,28 @@ document.addEventListener('DOMContentLoaded', function() {
                 ${formatPositions(player.position)}
             </div>
             ${detailsHtml}
-            <button class="ra-btn-view-profile">View Profile</button>
+            <div class="ra-card-actions">
+                <button class="ra-btn-save-player" data-player-id="${player.user_id || ''}" data-saved="false" title="Save player for later">
+                    <svg class="ra-save-icon-outline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                    <svg class="ra-save-icon-filled" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;">
+                        <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                    <span class="ra-save-label">Save</span>
+                </button>
+                <button class="ra-btn-view-profile">View Profile</button>
+            </div>
         `;
+
+        // Save button toggle
+        const saveBtn = card.querySelector('.ra-btn-save-player');
+        if (saveBtn && player.user_id) {
+            saveBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                toggleSavePlayer(saveBtn, player.user_id);
+            });
+        }
 
         card.querySelector('.ra-btn-view-profile').addEventListener('click', (e) => {
             e.stopPropagation();
@@ -884,5 +906,246 @@ document.addEventListener('DOMContentLoaded', function() {
         fetchCoachDivision();
     }
 
+    // ========================
+    // SAVED PLAYERS FUNCTIONS
+    // ========================
+
+    function setSaveState(btn, saved) {
+        btn.dataset.saved = saved ? 'true' : 'false';
+        const outlineIcon = btn.querySelector('.ra-save-icon-outline');
+        const filledIcon = btn.querySelector('.ra-save-icon-filled');
+        const label = btn.querySelector('.ra-save-label');
+        if (saved) {
+            btn.classList.add('saved');
+            if (outlineIcon) outlineIcon.style.display = 'none';
+            if (filledIcon) filledIcon.style.display = '';
+            if (label) label.textContent = 'Saved';
+        } else {
+            btn.classList.remove('saved');
+            if (outlineIcon) outlineIcon.style.display = '';
+            if (filledIcon) filledIcon.style.display = 'none';
+            if (label) label.textContent = 'Save';
+        }
+    }
+
+    async function toggleSavePlayer(btn, playerUserId) {
+        const isSaved = btn.dataset.saved === 'true';
+        try {
+            if (isSaved) {
+                const data = await API.ai.unsavePlayer(playerUserId);
+                setSaveState(btn, false);
+                updateSavedCount(data.count);
+            } else {
+                const data = await API.ai.savePlayer(playerUserId);
+                if (!data.success) {
+                    showSaveError(btn, data.error || 'Failed to save');
+                    return;
+                }
+                setSaveState(btn, true);
+                updateSavedCount(data.count);
+            }
+        } catch (e) {
+            if (e.message && e.message.includes('full')) {
+                showSaveError(btn, 'Saved list full — maximum 50 players');
+            } else {
+                console.error('Save toggle error:', e);
+            }
+        }
+    }
+
+    function showSaveError(btn, message) {
+        const existing = btn.parentElement.querySelector('.ra-save-error');
+        if (existing) existing.remove();
+        const errorEl = document.createElement('div');
+        errorEl.className = 'ra-save-error';
+        errorEl.textContent = message;
+        btn.parentElement.appendChild(errorEl);
+        setTimeout(() => errorEl.remove(), 3000);
+    }
+
+    async function batchCheckSavedPlayers(container) {
+        const buttons = container.querySelectorAll('.ra-btn-save-player[data-player-id]');
+        const playerIds = [...buttons].map(b => b.dataset.playerId).filter(id => id);
+        if (playerIds.length === 0) return;
+
+        try {
+            const data = await API.ai.checkSavedPlayers(playerIds);
+            const savedSet = new Set(data.savedIds || []);
+            buttons.forEach(btn => {
+                if (savedSet.has(btn.dataset.playerId)) {
+                    setSaveState(btn, true);
+                }
+            });
+        } catch (e) {
+            console.error('Batch check saved players error:', e);
+        }
+    }
+
+    function updateSavedCount(count) {
+        const countEl = document.getElementById('raSavesCount');
+        if (countEl) countEl.textContent = `${count}/50`;
+    }
+
+    // ========================
+    // SAVED PLAYERS MODAL
+    // ========================
+
+    function initSavedPlayersModal() {
+        const openBtn = document.getElementById('openSavesBtn');
+        if (!openBtn) return;
+
+        // Create modal overlay
+        const overlay = document.createElement('div');
+        overlay.className = 'ra-saved-overlay';
+        overlay.id = 'raSavedOverlay';
+        overlay.style.display = 'none';
+        overlay.innerHTML = `
+            <div class="ra-saved-modal">
+                <div class="ra-saved-header">
+                    <div class="ra-saved-header-left">
+                        <h3>Saved Players</h3>
+                        <span class="ra-saved-header-count" id="raSavedHeaderCount">0/50</span>
+                    </div>
+                    <button class="ra-saved-close" id="raSavedCloseBtn">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
+                </div>
+                <div class="ra-saved-body" id="raSavedBody">
+                    <div class="ra-saved-empty">No saved players yet</div>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(overlay);
+
+        openBtn.addEventListener('click', () => openSavedModal());
+        document.getElementById('raSavedCloseBtn').addEventListener('click', () => closeSavedModal());
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) closeSavedModal();
+        });
+
+        // Load initial count
+        loadSavedCount();
+
+        // Auto-reopen modal if returning from profile view
+        const shouldReopen = sessionStorage.getItem('raSavedModalOpen');
+        if (shouldReopen) {
+            sessionStorage.removeItem('raSavedModalOpen');
+            setTimeout(() => openSavedModal(), 300);
+        }
+    }
+
+    async function loadSavedCount() {
+        try {
+            const data = await API.ai.getSavedPlayers();
+            updateSavedCount(data.count);
+        } catch (e) {
+            // Silently fail
+        }
+    }
+
+    async function openSavedModal() {
+        const overlay = document.getElementById('raSavedOverlay');
+        const body = document.getElementById('raSavedBody');
+        overlay.style.display = 'flex';
+
+        body.innerHTML = '<div class="ra-saved-loading">Loading...</div>';
+
+        try {
+            const data = await API.ai.getSavedPlayers();
+            document.getElementById('raSavedHeaderCount').textContent = `${data.count}/50`;
+            updateSavedCount(data.count);
+
+            if (!data.players || data.players.length === 0) {
+                body.innerHTML = '<div class="ra-saved-empty">No saved players yet</div>';
+                return;
+            }
+
+            body.innerHTML = '';
+            data.players.forEach(player => {
+                const item = document.createElement('div');
+                item.className = 'ra-saved-item';
+                item.dataset.userId = player.user_id;
+
+                const displayName = `${player.first_name || ''} ${player.last_name || ''}`.trim() || 'Unknown';
+                const position = player.position || '—';
+                const heightDisplay = player.height ? `${Math.floor(player.height / 12)}'${player.height % 12}"` : null;
+                const weightDisplay = player.weight ? `${player.weight} lbs` : null;
+
+                // Role-specific subheader (lesson 7)
+                let subheader, subColor;
+                if (player.transfer === 'y') {
+                    const elig = player.eligibility ? `YOE: ${player.eligibility} year${player.eligibility > 1 ? 's' : ''}` : '';
+                    subheader = [position, heightDisplay, weightDisplay, elig].filter(Boolean).join(' \u2022 ');
+                    subColor = '#b91c1c';
+                } else {
+                    const gradYear = player.graduation_year ? `Class of ${player.graduation_year}` : '';
+                    subheader = [position, heightDisplay, weightDisplay, gradYear].filter(Boolean).join(' \u2022 ');
+                    subColor = '#1282a2';
+                }
+
+                const school = player.team_name || '';
+                const state = player.state || '';
+                const profileImg = player.profile_image_url
+                    ? `<img src="${player.profile_image_url}" alt="${displayName}" class="ra-saved-item-img">`
+                    : `<div class="ra-saved-item-img-placeholder"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></div>`;
+
+                item.innerHTML = `
+                    <div class="ra-saved-item-avatar">${profileImg}</div>
+                    <div class="ra-saved-item-info">
+                        <div class="ra-saved-item-name">${escapeHtml(displayName)}</div>
+                        <div class="ra-saved-item-detail" style="color: ${subColor}">${escapeHtml(subheader)}</div>
+                        <div class="ra-saved-item-school">${escapeHtml(school)}${state ? ', ' + escapeHtml(state) : ''}</div>
+                    </div>
+                    <button class="ra-saved-item-remove" data-remove-id="${player.user_id}" title="Remove">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    </button>
+                `;
+
+                // Click item to view profile
+                item.addEventListener('click', (e) => {
+                    if (e.target.closest('.ra-saved-item-remove')) return;
+                    if (player.username) {
+                        sessionStorage.setItem('raSavedModalOpen', 'true');
+                        window.location.href = `../../shared/view-profile.html?username=${player.username}`;
+                    }
+                });
+
+                // Remove button
+                item.querySelector('.ra-saved-item-remove').addEventListener('click', async (e) => {
+                    e.stopPropagation();
+                    try {
+                        const result = await API.ai.unsavePlayer(player.user_id);
+                        item.remove();
+                        updateSavedCount(result.count);
+                        document.getElementById('raSavedHeaderCount').textContent = `${result.count}/50`;
+                        // Update card button if visible
+                        const cardBtn = document.querySelector(`.ra-btn-save-player[data-player-id="${player.user_id}"]`);
+                        if (cardBtn) setSaveState(cardBtn, false);
+                        // Show empty message if no more players
+                        if (body.children.length === 0) {
+                            body.innerHTML = '<div class="ra-saved-empty">No saved players yet</div>';
+                        }
+                    } catch (err) {
+                        console.error('Remove saved player error:', err);
+                    }
+                });
+
+                body.appendChild(item);
+            });
+        } catch (e) {
+            body.innerHTML = '<div class="ra-saved-empty">Failed to load saved players</div>';
+            console.error('Load saved players error:', e);
+        }
+    }
+
+    function closeSavedModal() {
+        const overlay = document.getElementById('raSavedOverlay');
+        if (overlay) overlay.style.display = 'none';
+    }
+
     init();
+    initSavedPlayersModal();
 });

@@ -46,7 +46,8 @@ const MIGRATIONS = [
   'add-ai-chat-history.sql',
   'add-coach-profile-views.sql',
   'add-portal-watchlist.sql',
-  'add-ai-analytics.sql'
+  'add-ai-analytics.sql',
+  'add-ra-saved-players.sql'
 ];
 
 async function applyManualFixes() {

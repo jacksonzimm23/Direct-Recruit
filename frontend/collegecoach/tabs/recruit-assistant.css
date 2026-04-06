@@ -1079,6 +1079,247 @@
     background: #b91c1c;
 }
 
+/* ========================
+   CARD ACTIONS (Save + View Profile)
+   ======================== */
+.ra-card-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: auto;
+}
+
+.ra-btn-save-player {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: rgba(255, 255, 255, 0.7);
+    padding: 0.7rem 0.75rem;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: 'Inter', sans-serif;
+    white-space: nowrap;
+}
+
+.ra-btn-save-player svg {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+}
+
+.ra-btn-save-player:hover {
+    background: rgba(255, 107, 53, 0.15);
+    border-color: #ff6b35;
+    color: #ff6b35;
+}
+
+.ra-btn-save-player.saved {
+    background: rgba(255, 107, 53, 0.15);
+    border-color: #ff6b35;
+    color: #ff6b35;
+}
+
+.ra-btn-save-player.saved:hover {
+    background: rgba(255, 107, 53, 0.08);
+    color: rgba(255, 255, 255, 0.7);
+    border-color: rgba(255, 255, 255, 0.15);
+}
+
+.ra-card-actions .ra-btn-view-profile {
+    flex: 1;
+    margin-top: 0;
+}
+
+.ra-save-error {
+    font-size: 0.75rem;
+    color: #f87171;
+    margin-top: 0.3rem;
+    text-align: center;
+}
+
+/* ========================
+   SAVED PLAYERS MODAL
+   ======================== */
+.ra-saved-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(10, 17, 40, 0.7);
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(4px);
+}
+
+.ra-saved-modal {
+    background: #111827;
+    border: 1px solid rgba(18, 130, 162, 0.25);
+    border-radius: 16px;
+    width: 90%;
+    max-width: 520px;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+.ra-saved-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid rgba(18, 130, 162, 0.15);
+}
+
+.ra-saved-header h3 {
+    margin: 0;
+    font-size: 1.05rem;
+    color: #fff;
+}
+
+.ra-saved-header-left {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+.ra-saved-header-count {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #ff6b35;
+    background: rgba(255, 107, 53, 0.15);
+    padding: 3px 10px;
+    border-radius: 10px;
+}
+
+.ra-saved-close {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: rgba(255, 255, 255, 0.5);
+    padding: 0.25rem;
+    border-radius: 6px;
+    transition: all 0.15s;
+}
+
+.ra-saved-close:hover {
+    color: #fff;
+}
+
+.ra-saved-close svg {
+    width: 20px;
+    height: 20px;
+}
+
+.ra-saved-body {
+    overflow-y: auto;
+    padding: 0.75rem;
+    flex: 1;
+}
+
+.ra-saved-empty,
+.ra-saved-loading {
+    text-align: center;
+    padding: 2rem;
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 0.9rem;
+}
+
+.ra-saved-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.ra-saved-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.ra-saved-item-avatar {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    overflow: hidden;
+    flex-shrink: 0;
+    background: rgba(255, 255, 255, 0.08);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.ra-saved-item-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.ra-saved-item-img-placeholder svg {
+    width: 22px;
+    height: 22px;
+    color: rgba(255, 255, 255, 0.3);
+}
+
+.ra-saved-item-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.ra-saved-item-name {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #fff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.ra-saved-item-detail {
+    font-size: 0.78rem;
+    color: rgba(255, 255, 255, 0.55);
+    font-weight: 700;
+    margin-top: 0.15rem;
+}
+
+.ra-saved-item-school {
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.4);
+    margin-top: 0.1rem;
+}
+
+.ra-saved-item-remove {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: rgba(255, 255, 255, 0.3);
+    padding: 0.3rem;
+    border-radius: 6px;
+    transition: all 0.15s;
+    flex-shrink: 0;
+}
+
+.ra-saved-item-remove:hover {
+    color: #f87171;
+    background: rgba(248, 113, 113, 0.1);
+}
+
+.ra-saved-item-remove svg {
+    width: 16px;
+    height: 16px;
+}
+
 /* Error message styling */
 .ra-msg.assistant.error {
     color: #f87171;
