@@ -11,7 +11,7 @@
 /* Hero */
 .pricing-hero {
     background: var(--oxford-blue, #0a1128);
-    padding: 140px 0 60px;
+    padding: 40px 0 24px;
     text-align: center;
 }
 
@@ -162,6 +162,17 @@
     padding: 32px 24px;
     text-align: center;
     position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+.pricing-coach-card .pricing-card-desc {
+    min-height: 42px;
+}
+
+.pricing-coach-card .pricing-feature-list-compact {
+    flex: 1;
+    margin-top: 0;
 }
 
 .pricing-coach-card-popular {
