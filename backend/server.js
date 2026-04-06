@@ -23,6 +23,7 @@ const recruitingBoardRoutes = require('./routes/recruiting-board');
 const settingsRoutes = require('./routes/settings');
 const aiRoutes = require('./routes/ai');
 const adminAnalyticsRoutes = require('./routes/admin-analytics');
+const aiRepRoutes = require('./routes/ai-rep');
 const initializeSocket = require('./socket');
 const { apiLimiter } = require('./middleware/rateLimit');
 const logger = require('./utils/logger');
@@ -100,6 +101,7 @@ app.use('/api/recruiting-board', recruitingBoardRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/admin/analytics', adminAnalyticsRoutes);
+app.use('/api/ai-rep', aiRepRoutes);
 
 // In development, serve frontend files so cookies work on the same origin
 if (process.env.NODE_ENV !== 'production') {

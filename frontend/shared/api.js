@@ -673,6 +673,14 @@ const aiAPI = {
         apiRequest('/ai/saved', { method: 'DELETE' }),
 };
 
+// AI Rep API (player-facing AI analytics)
+const aiRepAPI = {
+    getMatches: async (period = '7d', offset = 0, limit = 5) =>
+        apiRequest(`/ai-rep/matches?period=${period}&offset=${offset}&limit=${limit}`),
+    getProfileCompletion: async () =>
+        apiRequest('/ai-rep/profile-completion')
+};
+
 // Unified API object for convenience
 const API = {
     // Direct access to apiRequest for custom endpoints
@@ -698,6 +706,7 @@ const API = {
     upload: uploadAPI,
     notifications: notificationsAPI,
     ai: aiAPI,
+    aiRep: aiRepAPI,
 
     // Auth helpers
     getUser,
