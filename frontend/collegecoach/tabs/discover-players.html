@@ -377,6 +377,13 @@
                                 </svg>
                                 <span>Edit Baseline Metrics</span>
                             </button>
+                            <button class="ra-usage-btn" id="raOpenUsageBtn">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
+                                </svg>
+                                <span>View Usage</span>
+                                <span class="ra-usage-summary" id="raUsageSummary">—</span>
+                            </button>
                         </div>
                     </div>
 
@@ -436,6 +443,65 @@
                     </div>
                 </div>
             </div><!-- /recruitAssistantTab -->
+
+            <!-- View Usage Modal -->
+            <div class="ra-usage-overlay" id="raUsageOverlay">
+                <div class="ra-usage-modal">
+                    <div class="ra-usage-header">
+                        <h2>AI Usage</h2>
+                        <button class="ra-usage-close" id="raCloseUsageBtn" aria-label="Close">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="18" y1="6" x2="6" y2="18"></line>
+                                <line x1="6" y1="6" x2="18" y2="18"></line>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="ra-usage-body">
+                        <div class="ra-usage-plan-row">
+                            <span class="ra-usage-plan-label">Current Plan</span>
+                            <span class="ra-usage-plan-name" id="raUsagePlanName">—</span>
+                        </div>
+                        <div class="ra-usage-plan-row">
+                            <span class="ra-usage-plan-label">Billing Period</span>
+                            <span class="ra-usage-plan-value" id="raUsagePeriod">—</span>
+                        </div>
+
+                        <div class="ra-usage-bar-section">
+                            <div class="ra-usage-bar-header">
+                                <span class="ra-usage-bar-label">Token Usage</span>
+                                <span class="ra-usage-bar-numbers" id="raUsageNumbers">— / —</span>
+                            </div>
+                            <div class="ra-usage-bar-track">
+                                <div class="ra-usage-bar-fill" id="raUsageBarFill" style="width: 0%"></div>
+                            </div>
+                            <div class="ra-usage-bar-footer">
+                                <span class="ra-usage-bar-percent" id="raUsagePercent">0% used</span>
+                                <span class="ra-usage-bar-remaining" id="raUsageRemaining">— tokens remaining</span>
+                            </div>
+                        </div>
+
+                        <div class="ra-usage-breakdown">
+                            <div class="ra-usage-breakdown-title">Breakdown</div>
+                            <div class="ra-usage-breakdown-row">
+                                <span>Input tokens</span>
+                                <span id="raUsageInput">—</span>
+                            </div>
+                            <div class="ra-usage-breakdown-row">
+                                <span>Output tokens</span>
+                                <span id="raUsageOutput">—</span>
+                            </div>
+                            <div class="ra-usage-breakdown-row">
+                                <span>Total requests</span>
+                                <span id="raUsageRequests">—</span>
+                            </div>
+                        </div>
+
+                        <div class="ra-usage-info">
+                            Usage resets at the start of each billing period. Both Recruiting Assistant and Portal Intelligence count toward your token cap.
+                        </div>
+                    </div>
+                </div>
+            </div>
 
             <!-- Baseline Metrics Modal -->
             <div class="ra-baselines-overlay" id="raBaselinesOverlay">
