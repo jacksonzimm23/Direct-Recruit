@@ -138,7 +138,7 @@ router.delete('/chats/:chatId', validateUUID('chatId'), async (req, res) => {
 // POST /api/ai/search
 router.post('/search', async (req, res) => {
   try {
-    const { filters } = req.body;
+    const { filters, offset } = req.body;
     if (!filters) {
       return res.status(400).json({ error: 'Filters are required' });
     }
@@ -147,7 +147,7 @@ router.post('/search', async (req, res) => {
       filters,
       req.userId,
       5,
-      0
+      offset || 0
     );
 
     result.players = await addSignedUrlsToProfiles(result.players);
@@ -158,6 +158,39 @@ router.post('/search', async (req, res) => {
     });
   } catch (error) {
     logger.error('AI re-search error:', error);
+    res.status(500).json({ error: 'Failed to search' });
+  }
+});
+
+// POST /api/ai/pi-search — re-search for Portal Intelligence with offset
+router.post('/pi-search', async (req, res) => {
+  try {
+    const { signal_filters, offset } = req.body;
+    if (!signal_filters) {
+      return res.status(400).json({ error: 'Signal filters are required' });
+    }
+
+    const result = await PortalSignal.queryBySignalFilters(
+      signal_filters,
+      req.userId,
+      5,
+      offset || 0
+    );
+
+    // Save S3 keys before signing
+    const playerImageKeys = {};
+    result.players.forEach(p => {
+      if (p.profile_image_url) playerImageKeys[p.user_id] = p.profile_image_url;
+    });
+
+    result.players = await addSignedUrlsToProfiles(result.players);
+
+    return res.json({
+      players: result.players,
+      hasMore: result.hasMore
+    });
+  } catch (error) {
+    logger.error('PI re-search error:', error);
     res.status(500).json({ error: 'Failed to search' });
   }
 });
@@ -326,7 +359,8 @@ router.post('/chats/:chatId/message', validateUUID('chatId'), async (req, res) =
       filters: aiResponse.filters,
       players: playerSummaries,
       playerCount: playerCount,
-      hasMore: result.hasMore
+      hasMore: result.hasMore,
+      offset: 0
     });
 
     // Log analytics (fire-and-forget)
@@ -531,7 +565,8 @@ router.post('/chats/:chatId/pi-message', validateUUID('chatId'), async (req, res
       signal_filters: aiResponse.signal_filters,
       players: playerSummaries,
       playerCount: playerCount,
-      hasMore: result.hasMore
+      hasMore: result.hasMore,
+      offset: 0
     });
 
     // Log analytics (fire-and-forget)
@@ -567,6 +602,118 @@ router.post('/chats/:chatId/pi-message', validateUUID('chatId'), async (req, res
   } catch (error) {
     logger.error('Portal Intelligence message error:', error);
     res.status(500).json({ error: 'Failed to process portal intelligence message' });
+  }
+});
+
+// ============ SHOW MORE ENDPOINT (pagination without Claude) ============
+
+// POST /api/ai/chats/:chatId/show-more
+// Re-queries DB with stored filters at a new offset, saves messages to chat history
+router.post('/chats/:chatId/show-more', validateUUID('chatId'), async (req, res) => {
+  try {
+    const { ai_type, filters, signal_filters, offset } = req.body;
+    const chatId = req.params.chatId;
+
+    if (!offset && offset !== 0) {
+      return res.status(400).json({ error: 'Offset is required' });
+    }
+
+    // Verify chat ownership
+    const chat = await AiChat.getChatWithMessages(chatId, req.userId);
+    if (!chat) {
+      return res.status(404).json({ error: 'Chat not found' });
+    }
+
+    // Save user message
+    await AiChat.addMessage(chatId, req.userId, 'user', 'Show me more');
+
+    let result, responseText, metadata;
+
+    if (ai_type === 'recruit_assistant' && filters) {
+      result = await PlayerProfile.searchByAiFilters(filters, req.userId, 5, offset);
+      result.players = await addSignedUrlsToProfiles(result.players);
+
+      const playerCount = result.players.length;
+      if (playerCount === 0) {
+        responseText = 'No more players matching those criteria.';
+      } else {
+        responseText = `Found ${playerCount}${result.hasMore ? '+' : ''} more player${playerCount !== 1 ? 's' : ''} matching your criteria.`;
+      }
+
+      // Build player summaries for metadata
+      const playerSummaries = await Promise.all(result.players.map(async (p) => {
+        const summary = {
+          first_name: p.first_name, last_name: p.last_name, username: p.username,
+          position: p.position, height: p.height, weight: p.weight, gpa: p.gpa,
+          state: p.state, team_name: p.team_name, college_division: p.college_division,
+          eligibility: p.eligibility, graduation_year: p.graduation_year,
+          transfer: p.transfer, relevance_score: p.relevance_score || null
+        };
+        try {
+          const games = await PlayerGameStats.getByUserId(p.user_id);
+          if (games && games.length > 0) {
+            summary.stats = games.map(g => ({
+              season_year: g.season_year, opponent: g.opponent,
+              result: g.result, position_stats: g.position_stats
+            }));
+          }
+        } catch (e) { /* stats fetch failed */ }
+        return summary;
+      }));
+
+      metadata = {
+        filters, players: playerSummaries,
+        playerCount, hasMore: result.hasMore, offset
+      };
+
+    } else if (ai_type === 'portal_intelligence' && signal_filters) {
+      result = await PortalSignal.queryBySignalFilters(signal_filters, req.userId, 5, offset);
+
+      // Save S3 keys before signing
+      const playerImageKeys = {};
+      result.players.forEach(p => {
+        if (p.profile_image_url) playerImageKeys[p.user_id] = p.profile_image_url;
+      });
+      result.players = await addSignedUrlsToProfiles(result.players);
+
+      const playerCount = result.players.length;
+      if (playerCount === 0) {
+        responseText = 'No more players showing portal signals matching those criteria.';
+      } else {
+        responseText = `Found ${playerCount}${result.hasMore ? '+' : ''} more college player${playerCount !== 1 ? 's' : ''} showing portal activity signals.`;
+      }
+
+      const playerSummaries = result.players.map(p => ({
+        user_id: p.user_id, first_name: p.first_name, last_name: p.last_name,
+        username: p.username, position: p.position, height: p.height,
+        weight: p.weight, gpa: p.gpa, team_name: p.team_name,
+        college_division: p.college_division, signal_types: p.signal_types,
+        signal_details: p.signal_details,
+        profile_image_key: playerImageKeys[p.user_id] || null
+      }));
+
+      metadata = {
+        signal_filters, players: playerSummaries,
+        playerCount, hasMore: result.hasMore, offset
+      };
+
+    } else {
+      return res.status(400).json({ error: 'Invalid ai_type or missing filters' });
+    }
+
+    // Save assistant response
+    await AiChat.addMessage(chatId, req.userId, 'assistant', responseText, metadata);
+
+    return res.json({
+      response: responseText,
+      players: result.players,
+      hasMore: result.hasMore,
+      offset
+    });
+
+  } catch (error) {
+    logger.error('Show more error:', error);
+    res.status(500).json({ error: 'Failed to load more results' });
   }
 });
 

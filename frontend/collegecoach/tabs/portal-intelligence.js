@@ -57,6 +57,10 @@ document.addEventListener('DOMContentLoaded', function() {
     let activeChatId = null;
     let isSending = false;
     let watchlistCount = 0;
+    let lastSignalFilters = null;
+    let currentSearchOffset = 0;
+
+    const SHOW_MORE_PATTERN = /^(show\s*(me\s*)?more|more\s*players?|next\s*(5|players?|results?|batch)?|load\s*more|keep\s*going|any\s*more|see\s*more)/i;
 
     // Watchlist DOM elements
     const watchlistBtn = document.getElementById('piWatchlistBtn');
@@ -121,6 +125,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     async function selectChat(chatId) {
         activeChatId = chatId;
+        lastSignalFilters = null;
+        currentSearchOffset = 0;
         renderHistory();
 
         try {
@@ -144,6 +150,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 // Render player cards from metadata if present
                 if (msg.role === 'assistant' && msg.metadata && msg.metadata.players && msg.metadata.players.length > 0) {
+                    // Track filters and offset for "show more" continuity
+                    if (msg.metadata.signal_filters) {
+                        lastSignalFilters = msg.metadata.signal_filters;
+                        currentSearchOffset = msg.metadata.offset || 0;
+                    }
+
                     const cardsContainer = document.createElement('div');
                     cardsContainer.className = 'pi-player-cards';
                     msg.metadata.players.forEach(player => {
@@ -273,7 +285,22 @@ document.addEventListener('DOMContentLoaded', function() {
         showTyping();
 
         try {
-            const data = await API.ai.sendPiMessage(activeChatId, text);
+            // Check for "show more" pattern — skip Claude, query DB directly
+            const isShowMore = SHOW_MORE_PATTERN.test(text) && lastSignalFilters && activeChatId;
+
+            let data;
+            if (isShowMore) {
+                currentSearchOffset += 5;
+                data = await API.ai.showMore(activeChatId, 'portal_intelligence', null, lastSignalFilters, currentSearchOffset);
+            } else {
+                data = await API.ai.sendPiMessage(activeChatId, text);
+
+                // Track filters for "show more" follow-ups
+                if (data.signal_filters) {
+                    lastSignalFilters = data.signal_filters;
+                    currentSearchOffset = 0;
+                }
+            }
 
             removeTyping();
 

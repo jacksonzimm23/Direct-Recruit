@@ -60,6 +60,10 @@ document.addEventListener('DOMContentLoaded', function() {
     let chats = [];
     let activeChatId = null;
     let isSending = false;
+    let lastSearchFilters = null;
+    let currentSearchOffset = 0;
+
+    const SHOW_MORE_PATTERN = /^(show\s*(me\s*)?more|more\s*players?|next\s*(5|players?|results?|batch)?|load\s*more|keep\s*going|any\s*more|see\s*more)/i;
 
     // ========================
     // API-BACKED CHAT STORAGE
@@ -115,6 +119,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     async function selectChat(chatId) {
         activeChatId = chatId;
+        lastSearchFilters = null;
+        currentSearchOffset = 0;
         sessionStorage.setItem('raActiveChatId', chatId);
         try {
             const data = await API.ai.getChat(chatId);
@@ -137,9 +143,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
                     // If this assistant message had player results, re-run the search to show cards
                     if (msg.role === 'assistant' && msg.metadata && msg.metadata.filters && msg.metadata.playerCount > 0) {
+                        // Track filters and offset for "show more" continuity
+                        lastSearchFilters = msg.metadata.filters;
+                        currentSearchOffset = msg.metadata.offset || 0;
+
                         try {
-                            const baselines = getCurrentBaselines();
-                            const searchData = await API.ai.reSearch(msg.metadata.filters, baselines);
+                            const searchData = await API.ai.reSearch(msg.metadata.filters, msg.metadata.offset || 0);
                             if (searchData.players && searchData.players.length > 0) {
                                 const cardsContainer = document.createElement('div');
                                 cardsContainer.className = 'ra-player-cards';
@@ -274,11 +283,26 @@ document.addEventListener('DOMContentLoaded', function() {
         showTyping();
 
         try {
-            // Get current baselines from the modal
-            const baselines = getCurrentBaselines();
+            // Check for "show more" pattern — skip Claude, query DB directly
+            const isShowMore = SHOW_MORE_PATTERN.test(text) && lastSearchFilters && activeChatId;
 
-            // Call the real API
-            const data = await API.ai.sendMessage(activeChatId, text, baselines);
+            let data;
+            if (isShowMore) {
+                currentSearchOffset += 5;
+                data = await API.ai.showMore(activeChatId, 'recruit_assistant', lastSearchFilters, null, currentSearchOffset);
+            } else {
+                // Get current baselines from the modal
+                const baselines = getCurrentBaselines();
+
+                // Call the real API (triggers Claude)
+                data = await API.ai.sendMessage(activeChatId, text, baselines);
+
+                // Track filters for "show more" follow-ups
+                if (data.filters) {
+                    lastSearchFilters = data.filters;
+                    currentSearchOffset = 0;
+                }
+            }
 
             removeTyping();
 
