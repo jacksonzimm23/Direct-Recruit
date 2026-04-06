@@ -13,20 +13,28 @@ class AiEngagement {
    */
   static async trackIfAiDriven(coachUserId, playerUserId, eventType) {
     try {
-      // Find the most recent AI search (within 30 min) that included this player
+      // Find the most recent AI search that EVER included this player (no time limit)
       const result = await pool.query(
         `SELECT id, ai_type, coach_division, result_players
          FROM ai_analytics
-         WHERE created_at > NOW() - INTERVAL '30 minutes'
-           AND result_players @> $1::jsonb
+         WHERE result_players @> $1::jsonb
          ORDER BY created_at DESC
          LIMIT 1`,
         [JSON.stringify([{ player_id: playerUserId }])]
       );
 
-      if (result.rows.length === 0) return; // Not AI-driven
+      if (result.rows.length === 0) return; // Player was never in an AI search result
 
       const analytics = result.rows[0];
+
+      // Deduplicate: skip if this exact event already exists for this search session + player
+      const exists = await pool.query(
+        `SELECT 1 FROM ai_engagement_events
+         WHERE analytics_id = $1 AND event_type = $2 AND player_user_id = $3
+         LIMIT 1`,
+        [analytics.id, eventType, playerUserId]
+      );
+      if (exists.rows.length > 0) return; // Already logged this action
 
       // Find player details from the result_players array
       let playerPosition = null;
