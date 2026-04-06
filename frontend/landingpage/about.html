@@ -10,553 +10,240 @@
     <link rel="apple-touch-icon" href="../icons/ios/180.png">
     <link rel="manifest" href="../manifest.json">
     <link rel="icon" type="image/png" href="https://res.cloudinary.com/dzmsj6nwv/image/upload/v1770078659/LOGO.PNG_i0uvv4.png">
-    <title>About Direct Recruit - The Social Network for College Sports Recruiting</title>
+    <title>About | Direct Recruit</title>
     <link rel="stylesheet" href="styles.css">
-    <link rel="stylesheet" href="about.css">
+    <link rel="stylesheet" href="v2-redesign.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-<script src="../shared/sw-register.js"></script>
+    <script src="../shared/sw-register.js"></script>
 </head>
 <body>
     <!-- Navigation -->
-    <nav class="navbar">
-        <div class="nav-container">
-            <a href="index.html" class="logo">
-                <img src="https://res.cloudinary.com/dzmsj6nwv/image/upload/v1770078659/LOGO.PNG_i0uvv4.png" alt="Direct Recruit Logo" class="logo-icon">
-                <div class="logo-text">
-                    <span class="logo-title">Direct Recruit</span>
-                    <span class="logo-subtitle">GET RECRUITED &middot; THE RIGHT WAY</span>
-                </div>
-            </a>
+    <nav class="navbar v2-nav-minimal">
+        <div class="nav-container v2-nav-left">
             <div class="nav-links">
-                <a href="index.html#features">Features</a>
-                <a href="index.html#how-it-works">How It Works</a>
-                <a href="about.html" class="active">About</a>
-            </div>
-            <div class="nav-buttons">
-                <a href="signin.html"><button class="btn-secondary">Sign In</button></a>
-                <a href="get-started.html"><button class="btn-primary">Get Started</button></a>
+                <a href="features.html">Features</a>
+                <a href="pricing.html">Pricing</a>
+                <a href="support.html">Support</a>
             </div>
         </div>
     </nav>
 
-    <!-- Hero Section -->
-    <section class="about-hero">
-        <video class="about-hero-video" autoplay muted loop playsinline>
-            <source src="https://res.cloudinary.com/dzmsj6nwv/video/upload/v1763059842/f08db161ee334c639cd01888f8ba0a61_gut89c.mov" type="video/mp4">
-        </video>
-        <div class="about-hero-overlay"></div>
-        <div class="about-hero-content">
-            <h1 class="about-hero-title">Recruiting Deserves Its Own Network</h1>
-            <p class="about-hero-subtitle">Direct Recruit connects athletes with college coaches through a social platform built specifically for recruiting &mdash; not bolted onto one.</p>
+    <!-- Hero -->
+    <section class="v2-hero" style="min-height:60vh;padding:120px 0 60px;">
+        <div class="v2-hero-bg"></div>
+        <div class="v2-hero-inner v2-hero-centered">
+            <div class="v2-hero-text v2-hero-text-centered">
+                <h1 class="v2-hero-title">Recruiting Deserves<br>Its Own Platform.</h1>
+                <p class="v2-hero-sub">Direct Recruit connects athletes with college coaches through a platform built specifically for recruiting. Not bolted onto a social network. Built from scratch.</p>
+            </div>
         </div>
     </section>
 
-    <!-- The Problem Section -->
-    <section class="problem-section">
-        <div class="container">
-            <div class="section-header">
-                <h2>The Problem We're Solving</h2>
-                <p>College sports recruiting has become unnecessarily complicated and inefficient</p>
-            </div>
-
-            <div class="problem-grid">
-                <div class="problem-card">
-                    <div class="problem-icon">🔍</div>
-                    <h3>Lost in the Noise</h3>
-                    <p>Social media platforms are cluttered with unrelated content, making it nearly impossible for coaches to find talent and for players to get noticed.</p>
+    <!-- The Problem -->
+    <section class="v2-about-section">
+        <div class="v2-container">
+            <h2 class="v2-section-title">Why We Built This</h2>
+            <p class="v2-section-sub">College recruiting is broken in ways everyone knows but nobody has fixed.</p>
+            <div class="v2-about-grid v2-about-grid-2">
+                <div class="v2-about-card">
+                    <h4>Talent gets buried</h4>
+                    <p>Social media is cluttered with unrelated content. Coaches can't find players, and players can't get noticed no matter how good they are.</p>
                 </div>
-
-                <div class="problem-card">
-                    <div class="problem-icon">🎲</div>
-                    <h3>Luck-Based Discovery</h3>
-                    <p>Finding the right recruit or the right coach shouldn't depend on a lucky scroll or random message. The current system leaves too much to chance.</p>
+                <div class="v2-about-card">
+                    <h4>Discovery depends on luck</h4>
+                    <p>Finding the right recruit or the right program shouldn't depend on a lucky scroll or knowing the right person. The system leaves too much to chance.</p>
                 </div>
-
-                <div class="problem-card">
-                    <div class="problem-icon">⏰</div>
-                    <h3>Time-Consuming Process</h3>
-                    <p>Coaches waste countless hours sifting through irrelevant content, while talented players go unnoticed despite their potential.</p>
+                <div class="v2-about-card">
+                    <h4>Communication is scattered</h4>
+                    <p>Recruiting conversations happen across Instagram DMs, Twitter, email, and text. Messages get lost. Opportunities get missed.</p>
                 </div>
-
-                <div class="problem-card">
-                    <div class="problem-icon">📱</div>
-                    <h3>Fragmented Communication</h3>
-                    <p>Recruiting conversations are scattered across multiple platforms, making it difficult to maintain organized and professional communication.</p>
+                <div class="v2-about-card">
+                    <h4>No tools built for this</h4>
+                    <p>Coaches need to search, filter, and organize recruits. Players need to know who's watching. None of the existing platforms were built for that.</p>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Recruiting Made Simple Section -->
-    <section class="highschool-section">
-        <div class="container">
-            <div class="section-header">
-                <h2>Recruiting Made Simple</h2>
-                <p>Connect athletes with college programs seamlessly</p>
-            </div>
-
-            <div class="highschool-content">
-                <div class="highschool-visual">
-                    <div class="mockup-container mockup-container-about">
-                        <!-- Player Card matching discover page structure exactly -->
-                        <div class="mockup-real-card">
-                            <div class="mockup-real-card-header">
-                                <div class="mockup-real-avatar">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
-                                </div>
-                            </div>
-                            <h3 class="mockup-real-name">Marcus Johnson</h3>
-                            <div class="mockup-real-positions"><span class="mockup-real-pos-badge">Quarterback (QB)</span></div>
-                            <div class="mockup-real-stats">
-                                <div class="mockup-real-stat-item"><div class="mockup-real-stat-label">Height</div><div class="mockup-real-stat-value">6'2"</div></div>
-                                <div class="mockup-real-stat-item"><div class="mockup-real-stat-label">Weight</div><div class="mockup-real-stat-value">200 lbs</div></div>
-                                <div class="mockup-real-stat-item"><div class="mockup-real-stat-label">GPA</div><div class="mockup-real-stat-value">3.8</div></div>
-                            </div>
-                            <div class="mockup-real-details">
-                                <div class="mockup-real-detail"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><path d="M9 22V12h6v10"></path></svg> Lincoln HS, NE</div>
-                                <div class="mockup-real-detail"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg> Class of 2027</div>
-                                <div class="mockup-real-detail mockup-real-offers"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg> Offers: 5</div>
-                            </div>
-                            <div class="mockup-real-btn">View Profile</div>
-                        </div>
+    <!-- For Players -->
+    <section class="v2-about-section v2-about-section-alt">
+        <div class="v2-container">
+            <h2 class="v2-section-title">What Players Get</h2>
+            <p class="v2-section-sub">Everything you need to get discovered and build real connections with coaches.</p>
+            <div class="v2-about-grid v2-about-grid-3">
+                <div class="v2-about-feature">
+                    <div class="v2-about-feature-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="var(--cerulean)" stroke-width="1.5" width="28" height="28"><path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" stroke-linecap="round" stroke-linejoin="round"/></svg>
                     </div>
+                    <h4>Recruiting Profile</h4>
+                    <p>Stats, highlights, film, academics, and offers. Everything a coach needs to evaluate you, in one place.</p>
                 </div>
-                <div class="highschool-info">
-                    <h3>For Players</h3>
-                    <p>Create your profile, showcase your talent, and get discovered by college coaches from programs across the country.</p>
-
-                    <div class="info-cards">
-                        <div class="info-card">
-                            <div class="card-number">01</div>
-                            <h4>Build Your Profile</h4>
-                            <p>Add your stats, highlights, and academic information to stand out</p>
-                        </div>
-                        <div class="info-card">
-                            <div class="card-number">02</div>
-                            <h4>Get Discovered</h4>
-                            <p>Coaches search for players matching their needs and find you</p>
-                        </div>
-                        <div class="info-card">
-                            <div class="card-number">03</div>
-                            <h4>Connect Directly</h4>
-                            <p>Message coaches, build relationships, and find your program</p>
-                        </div>
+                <div class="v2-about-feature">
+                    <div class="v2-about-feature-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="var(--cerulean)" stroke-width="1.5" width="28" height="28"><path d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" stroke-linecap="round" stroke-linejoin="round"/></svg>
                     </div>
+                    <h4>AI Rep</h4>
+                    <p>See which coaches viewed your profile, what they searched for, and get personalized tips to increase your exposure.</p>
+                </div>
+                <div class="v2-about-feature">
+                    <div class="v2-about-feature-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="var(--cerulean)" stroke-width="1.5" width="28" height="28"><path d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </div>
+                    <h4>Highlight Film</h4>
+                    <p>Upload unlimited highlight videos. Coaches can watch your film directly from your profile without leaving the platform.</p>
+                </div>
+                <div class="v2-about-feature">
+                    <div class="v2-about-feature-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="var(--cerulean)" stroke-width="1.5" width="28" height="28"><path d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </div>
+                    <h4>Direct Messaging</h4>
+                    <p>Message college coaches directly. No more DMs lost in spam. A dedicated inbox coaches actually check.</p>
+                </div>
+                <div class="v2-about-feature">
+                    <div class="v2-about-feature-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="var(--cerulean)" stroke-width="1.5" width="28" height="28"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </div>
+                    <h4>Discover Coaches</h4>
+                    <p>Find programs across D1, D2, D3, NAIA, and JUCO. Filter by state, division, and position need.</p>
+                </div>
+                <div class="v2-about-feature">
+                    <div class="v2-about-feature-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="var(--cerulean)" stroke-width="1.5" width="28" height="28"><path d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </div>
+                    <h4>Social Feed</h4>
+                    <p>Post updates, share highlights, and engage with the recruiting community. Every interaction is about recruiting.</p>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Transfer Portal Section -->
-    <section class="transfer-portal-section">
-        <div class="container">
-            <div class="transfer-portal-header">
-                <div class="portal-logo">
-                    <svg viewBox="0 0 100 100" class="portal-icon">
-                        <circle cx="50" cy="50" r="45" fill="none" stroke="currentColor" stroke-width="3"/>
-                        <circle cx="50" cy="50" r="35" fill="none" stroke="currentColor" stroke-width="2" opacity="0.6"/>
-                        <circle cx="50" cy="50" r="25" fill="none" stroke="currentColor" stroke-width="2" opacity="0.4"/>
-                        <path d="M 50 10 L 50 30 M 50 70 L 50 90 M 10 50 L 30 50 M 70 50 L 90 50" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
-                        <circle cx="50" cy="50" r="8" fill="currentColor"/>
-                        <path d="M 35 35 L 42 42 M 65 35 L 58 42 M 35 65 L 42 58 M 65 65 L 58 58" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity="0.7"/>
-                    </svg>
-                    <h2>Transfer Portal Integration</h2>
-                </div>
-                <p class="portal-subtitle">College players looking to transfer can opt-in to be discovered by new programs</p>
-            </div>
-
-            <div class="portal-content portal-content-split">
-                <div class="portal-info">
-                    <h3>How the Transfer Portal Works</h3>
-                    <p>College athletes can opt-in to the transfer portal, making their profile visible to coaches from other programs who are actively recruiting transfers.</p>
-
-                    <div class="portal-benefits">
-                        <h4>Why Use Our Transfer Portal?</h4>
-                        <ul>
-                            <li><strong>Privacy control</strong> - You decide when you're visible to coaches</li>
-                            <li><strong>Targeted exposure</strong> - Only serious coaches actively recruiting transfers</li>
-                            <li><strong>Organized process</strong> - Keep all transfer communications in one place</li>
-                            <li><strong>Updated profiles</strong> - Showcase your college stats and experience</li>
-                            <li><strong>Multiple opportunities</strong> - Connect with programs across all divisions</li>
-                        </ul>
+    <!-- For Coaches -->
+    <section class="v2-about-section">
+        <div class="v2-container">
+            <h2 class="v2-section-title">What Coaches Get</h2>
+            <p class="v2-section-sub">AI powered tools built to save time and find the right players for your program.</p>
+            <div class="v2-about-grid v2-about-grid-3">
+                <div class="v2-about-feature v2-about-feature-coach">
+                    <div class="v2-about-feature-icon v2-about-icon-orange">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent-orange)" stroke-width="1.5" width="28" height="28"><path d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" stroke-linecap="round" stroke-linejoin="round"/></svg>
                     </div>
+                    <h4>AI Recruiting Assistant</h4>
+                    <p>Search for players in plain English. "Find me a 6'2+ QB from Texas with a 3.5+ GPA" and get instant, ranked results.</p>
                 </div>
-                <div class="portal-visual">
-                    <div class="mockup-container mockup-container-about">
-                        <div class="mockup-real-card mockup-real-card-transfer">
-                            <div class="mockup-real-card-header">
-                                <div class="mockup-real-avatar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg></div>
-                                <span class="mockup-real-portal-badge">PORTAL</span>
-                            </div>
-                            <h3 class="mockup-real-name">Jaylen Carter <svg class="mockup-real-portal-icon" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6" fill="var(--oxford-blue)"/><circle cx="12" cy="12" r="2"/></svg></h3>
-                            <div class="mockup-real-positions"><span class="mockup-real-pos-badge mockup-real-pos-transfer">Wide Receiver (WR)</span></div>
-                            <div class="mockup-real-stats-box">
-                                <div class="mockup-real-stats">
-                                    <div class="mockup-real-stat-item"><div class="mockup-real-stat-label">Height</div><div class="mockup-real-stat-value">6'1"</div></div>
-                                    <div class="mockup-real-stat-item"><div class="mockup-real-stat-label">Weight</div><div class="mockup-real-stat-value">185 lbs</div></div>
-                                    <div class="mockup-real-stat-item"><div class="mockup-real-stat-label">Eligibility</div><div class="mockup-real-stat-value">3 Years</div></div>
-                                </div>
-                                <div class="mockup-real-gpa-row"><span class="mockup-real-gpa-label">GPA:</span><span class="mockup-real-gpa-value">3.45</span></div>
-                            </div>
-                            <div class="mockup-real-details">
-                                <div class="mockup-real-detail mockup-real-portal-prev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg> Previously: Ohio State (D1 FBS)</div>
-                            </div>
-                            <div class="mockup-real-stats-section"><div class="mockup-real-stats-title">Last Season Stats</div><div class="mockup-real-highlights"><span>Rec: 67</span><span>Rec Yds: 1,045</span><span>TDs: 9</span></div></div>
-                            <div class="mockup-real-stats-section"><div class="mockup-real-stats-title">Career Stats</div><div class="mockup-real-highlights"><span>Rec: 178</span><span>Rec Yds: 2,890</span><span>TDs: 22</span></div></div>
-                            <div class="mockup-real-btn mockup-real-btn-transfer">View Profile</div>
-                        </div>
+                <div class="v2-about-feature v2-about-feature-coach">
+                    <div class="v2-about-feature-icon v2-about-icon-orange">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent-orange)" stroke-width="1.5" width="28" height="28"><path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" stroke-linecap="round" stroke-linejoin="round"/></svg>
                     </div>
+                    <h4>Portal Intelligence</h4>
+                    <p>Detect transfer portal signals before players announce. Track bio changes, film uploads, and coach browsing behavior.</p>
+                </div>
+                <div class="v2-about-feature v2-about-feature-coach">
+                    <div class="v2-about-feature-icon v2-about-icon-orange">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent-orange)" stroke-width="1.5" width="28" height="28"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </div>
+                    <h4>Recruiting Board</h4>
+                    <p>Organize recruits by position and class year in a kanban style board. Share boards with your coaching staff.</p>
+                </div>
+                <div class="v2-about-feature v2-about-feature-coach">
+                    <div class="v2-about-feature-icon v2-about-icon-orange">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent-orange)" stroke-width="1.5" width="28" height="28"><path d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </div>
+                    <h4>Advanced Search</h4>
+                    <p>Filter players by position, size, academics, location, stats, film, offers, and eligibility. Find exactly who you need.</p>
+                </div>
+                <div class="v2-about-feature v2-about-feature-coach">
+                    <div class="v2-about-feature-icon v2-about-icon-orange">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent-orange)" stroke-width="1.5" width="28" height="28"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </div>
+                    <h4>Saved Players &amp; Watchlists</h4>
+                    <p>Save players from search results for later review. Build a portal watchlist to monitor players who may transfer.</p>
+                </div>
+                <div class="v2-about-feature v2-about-feature-coach">
+                    <div class="v2-about-feature-icon v2-about-icon-orange">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent-orange)" stroke-width="1.5" width="28" height="28"><path d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </div>
+                    <h4>Direct Messaging</h4>
+                    <p>Reach out to recruits directly. Real time conversations built for recruiting, not buried in social media DMs.</p>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- The Solution Section -->
-    <section class="solution-section">
-        <div class="container">
-            <div class="section-header">
-                <h2>The Direct Recruit Solution</h2>
-                <p>A recruiting platform built like a social network &mdash; purpose-built for college sports</p>
-            </div>
-
-            <div class="solution-content">
-                <div class="solution-feature">
-                    <div class="mockup-container mockup-container-about">
-                        <div class="mockup-discover-page">
-                            <!-- Filters Container -->
-                            <div class="mockup-discover-filters">
-                                <div class="mockup-discover-filter-row">
-                                    <div class="mockup-discover-select">
-                                        <span class="mockup-discover-select-label">Position</span>
-                                        <span class="mockup-discover-select-val">All Positions</span>
-                                        <span class="mockup-filter-arrow">&#9662;</span>
-                                    </div>
-                                    <div class="mockup-discover-select">
-                                        <span class="mockup-discover-select-label">Grad Year</span>
-                                        <span class="mockup-discover-select-val">2027</span>
-                                        <span class="mockup-filter-arrow">&#9662;</span>
-                                    </div>
-                                    <div class="mockup-discover-select">
-                                        <span class="mockup-discover-select-label">State</span>
-                                        <span class="mockup-discover-select-val">All States</span>
-                                        <span class="mockup-filter-arrow">&#9662;</span>
-                                    </div>
-                                </div>
-                                <div class="mockup-discover-slider-row">
-                                    <div class="mockup-discover-slider">
-                                        <span class="mockup-discover-slider-label">Min Height: 5'10"</span>
-                                        <div class="mockup-discover-slider-track"><div class="mockup-discover-slider-fill" style="width:42%"></div><div class="mockup-discover-slider-thumb" style="left:42%"></div></div>
-                                    </div>
-                                    <div class="mockup-discover-slider">
-                                        <span class="mockup-discover-slider-label">Min Weight: 180 lbs</span>
-                                        <div class="mockup-discover-slider-track"><div class="mockup-discover-slider-fill" style="width:15%"></div><div class="mockup-discover-slider-thumb" style="left:15%"></div></div>
-                                    </div>
-                                    <div class="mockup-discover-slider">
-                                        <span class="mockup-discover-slider-label">Min GPA: 3.0</span>
-                                        <div class="mockup-discover-slider-track"><div class="mockup-discover-slider-fill" style="width:75%"></div><div class="mockup-discover-slider-thumb" style="left:75%"></div></div>
-                                    </div>
-                                </div>
-                                <div class="mockup-discover-btn-row">
-                                    <div class="mockup-discover-apply">Apply Filters</div>
-                                    <div class="mockup-discover-reset">Reset All</div>
-                                    <span class="mockup-discover-results">Showing 2 players</span>
-                                </div>
-                            </div>
-                            <!-- Player Cards Grid -->
-                            <div class="mockup-real-grid mockup-real-grid-2col">
-                                <div class="mockup-real-card mockup-real-card-mini">
-                                    <div class="mockup-real-card-header"><div class="mockup-real-avatar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg></div></div>
-                                    <h3 class="mockup-real-name">Marcus Johnson</h3>
-                                    <div class="mockup-real-positions"><span class="mockup-real-pos-badge">Quarterback (QB)</span></div>
-                                    <div class="mockup-real-stats">
-                                        <div class="mockup-real-stat-item"><div class="mockup-real-stat-label">Height</div><div class="mockup-real-stat-value">6'2"</div></div>
-                                        <div class="mockup-real-stat-item"><div class="mockup-real-stat-label">Weight</div><div class="mockup-real-stat-value">200 lbs</div></div>
-                                        <div class="mockup-real-stat-item"><div class="mockup-real-stat-label">GPA</div><div class="mockup-real-stat-value">3.8</div></div>
-                                    </div>
-                                    <div class="mockup-real-details">
-                                        <div class="mockup-real-detail"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><path d="M9 22V12h6v10"></path></svg> Lincoln HS, NE</div>
-                                        <div class="mockup-real-detail"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg> Class of 2027</div>
-                                        <div class="mockup-real-detail mockup-real-offers"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg> Offers: 5</div>
-                                    </div>
-                                    <div class="mockup-real-btn">View Profile</div>
-                                </div>
-                                <div class="mockup-real-card mockup-real-card-mini">
-                                    <div class="mockup-real-card-header"><div class="mockup-real-avatar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg></div></div>
-                                    <h3 class="mockup-real-name">Tyler Brooks</h3>
-                                    <div class="mockup-real-positions"><span class="mockup-real-pos-badge">Wide Receiver (WR)</span></div>
-                                    <div class="mockup-real-stats">
-                                        <div class="mockup-real-stat-item"><div class="mockup-real-stat-label">Height</div><div class="mockup-real-stat-value">6'0"</div></div>
-                                        <div class="mockup-real-stat-item"><div class="mockup-real-stat-label">Weight</div><div class="mockup-real-stat-value">185 lbs</div></div>
-                                        <div class="mockup-real-stat-item"><div class="mockup-real-stat-label">GPA</div><div class="mockup-real-stat-value">3.5</div></div>
-                                    </div>
-                                    <div class="mockup-real-details">
-                                        <div class="mockup-real-detail"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="14" height="14"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><path d="M9 22V12h6v10"></path></svg> Westside HS, CA</div>
-                                        <div class="mockup-real-detail"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg> Class of 2027</div>
-                                        <div class="mockup-real-detail mockup-real-offers"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg> Offers: 3</div>
-                                    </div>
-                                    <div class="mockup-real-btn">View Profile</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="feature-text">
-                        <h3>Smart Filtering System</h3>
-                        <p>Coaches can easily search and filter players by the criteria that matter most: position, height, weight, graduation year, GPA, location, and more. No more endless scrolling through unrelated content.</p>
-                        <ul class="feature-list">
-                            <li><strong>Position-specific searches</strong> - Find exactly the positions you need</li>
-                            <li><strong>Physical attributes filtering</strong> - Height, weight, speed metrics</li>
-                            <li><strong>Academic qualifications</strong> - GPA, test scores, graduation year</li>
-                            <li><strong>Geographic preferences</strong> - Search by state or region</li>
-                            <li><strong>Video highlight integration</strong> - Hudl profile links included</li>
-                        </ul>
-                    </div>
+    <!-- Transfer Portal -->
+    <section class="v2-about-section v2-about-section-alt">
+        <div class="v2-container">
+            <h2 class="v2-section-title">Transfer Portal Integration</h2>
+            <p class="v2-section-sub">College players can enter the portal and control their visibility. Coaches can search and filter transfer players by position, eligibility, and division.</p>
+            <div class="v2-about-grid v2-about-grid-2">
+                <div class="v2-about-card">
+                    <h4>For players entering the portal</h4>
+                    <p>Control when you're visible to coaches. Showcase your college stats and experience. Connect with programs across all divisions on your terms.</p>
                 </div>
-
-                <!-- Find College Coaches Section -->
-                <div class="solution-feature reverse">
-                    <div class="mockup-container mockup-container-about">
-                        <div class="mockup-discover-page">
-                            <div class="mockup-discover-filters">
-                                <div class="mockup-discover-filter-row">
-                                    <div class="mockup-discover-select">
-                                        <span class="mockup-discover-select-label">Division</span>
-                                        <span class="mockup-discover-select-val">D2</span>
-                                        <span class="mockup-filter-arrow">&#9662;</span>
-                                    </div>
-                                    <div class="mockup-discover-select">
-                                        <span class="mockup-discover-select-label">State</span>
-                                        <span class="mockup-discover-select-val">Colorado</span>
-                                        <span class="mockup-filter-arrow">&#9662;</span>
-                                    </div>
-                                </div>
-                                <div class="mockup-discover-btn-row">
-                                    <div class="mockup-discover-apply">Apply Filters</div>
-                                    <div class="mockup-discover-reset">Reset All</div>
-                                    <span class="mockup-discover-results">Showing 2 coaches</span>
-                                </div>
-                            </div>
-                            <!-- Coach Cards Grid - 2 cards -->
-                            <div class="mockup-real-grid mockup-real-grid-2col">
-                                <div class="mockup-real-coach-card mockup-real-coach-card-mini">
-                                    <div class="mockup-real-coach-header">
-                                        <div class="mockup-real-coach-avatar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg></div>
-                                        <span class="mockup-real-coach-badge">D2</span>
-                                    </div>
-                                    <h3 class="mockup-real-coach-name">Coach Martinez <svg class="mockup-real-verified" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg></h3>
-                                    <div class="mockup-real-coach-position">Head Coach</div>
-                                    <div class="mockup-real-coach-school"><div class="mockup-real-school-name">Colorado Mines, CO</div><div class="mockup-real-school-div">Division II</div></div>
-                                    <div class="mockup-real-coach-recruiting"><div class="mockup-real-recruiting-label">Recruiting:</div><div class="mockup-real-pos-tags"><span class="mockup-real-pos-tag">QB</span><span class="mockup-real-pos-tag">WR</span><span class="mockup-real-pos-tag">DB</span></div></div>
-                                    <div class="mockup-real-btn mockup-real-btn-coach">View Profile</div>
-                                </div>
-                                <div class="mockup-real-coach-card mockup-real-coach-card-mini">
-                                    <div class="mockup-real-coach-header">
-                                        <div class="mockup-real-coach-avatar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg></div>
-                                        <span class="mockup-real-coach-badge">D2</span>
-                                    </div>
-                                    <h3 class="mockup-real-coach-name">Coach Thompson <svg class="mockup-real-verified" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg></h3>
-                                    <div class="mockup-real-coach-position">Offensive Coordinator</div>
-                                    <div class="mockup-real-coach-school"><div class="mockup-real-school-name">CSU Pueblo, CO</div><div class="mockup-real-school-div">Division II</div></div>
-                                    <div class="mockup-real-coach-recruiting"><div class="mockup-real-recruiting-label">Recruiting:</div><div class="mockup-real-pos-tags"><span class="mockup-real-pos-tag">OT</span><span class="mockup-real-pos-tag">OG</span><span class="mockup-real-pos-tag">C</span></div></div>
-                                    <div class="mockup-real-btn mockup-real-btn-coach">View Profile</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="feature-text">
-                        <h3>Discover College Coaches</h3>
-                        <p>Most players only know about D1 programs they see on TV. There are hundreds of college programs across D2, D3, NAIA, and JUCO that could be the perfect fit. Direct Recruit helps players discover coaches at every level.</p>
-                        <ul class="feature-list">
-                            <li><strong>Filter by division</strong> - Browse D1, D2, D3, NAIA, and JUCO programs</li>
-                            <li><strong>Search by state</strong> - Find programs near home or in your preferred region</li>
-                            <li><strong>See who's recruiting</strong> - Know which positions each coach needs</li>
-                            <li><strong>Message directly</strong> - Reach out to coaches without guessing their contact info</li>
-                            <li><strong>Hidden opportunities</strong> - Find programs you never knew existed</li>
-                        </ul>
-                    </div>
-                </div>
-
-                <div class="solution-feature">
-                    <div class="mockup-container mockup-container-about">
-                        <div class="mockup-messages mockup-messages-compact">
-                            <div class="mockup-msg-thread mockup-msg-thread-full">
-                                <div class="mockup-bubble mockup-bubble-received">Hey! I saw your highlights. Really impressed with your court vision.</div>
-                                <div class="mockup-bubble mockup-bubble-sent">Thank you Coach! I've been working hard this offseason.</div>
-                                <div class="mockup-bubble mockup-bubble-received">We'd love to have you visit campus. Are you available next month?</div>
-                                <div class="mockup-bubble mockup-bubble-sent">Absolutely, I'll check with my family and get back to you!</div>
-                                <div class="mockup-msg-input-bar">
-                                    <div class="mockup-msg-input">Type a message...</div>
-                                    <div class="mockup-msg-send"><svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="feature-text">
-                        <h3>Direct Communication</h3>
-                        <p>Built-in messaging allows coaches and players to communicate directly within the platform. No more lost DMs or missed opportunities across multiple apps.</p>
-                        <ul class="feature-list">
-                            <li><strong>Organized inbox</strong> - All recruiting conversations in one place</li>
-                            <li><strong>Professional environment</strong> - Recruiting-focused platform</li>
-                            <li><strong>Instant notifications</strong> - Never miss an important message</li>
-                            <li><strong>Archive system</strong> - Keep track of all communications</li>
-                        </ul>
-                    </div>
+                <div class="v2-about-card">
+                    <h4>For coaches searching the portal</h4>
+                    <p>Search transfer players by position, eligibility, previous division, and stats. Use Portal Intelligence to detect signals before players even announce.</p>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Stats Section - COMMENTED OUT UNTIL SITE HAS ACTIVITY -->
-    <!--
-    <section class="stats-section">
-        <div class="container">
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-number">1000+</div>
-                    <div class="stat-label">Players Registered</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-number">200+</div>
-                    <div class="stat-label">College Programs</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-number">50+</div>
-                    <div class="stat-label">Successful Placements</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-number">95%</div>
-                    <div class="stat-label">Coach Satisfaction</div>
-                </div>
-            </div>
-        </div>
-    </section>
-    -->
-
-    <!-- For Coaches Section -->
-    <section class="coaches-section">
-        <div class="container">
-            <div class="section-header">
-                <h2>Built for Coaches</h2>
-                <p>Powerful tools to find and recruit the right talent for your program</p>
-            </div>
-
-            <div class="coaches-grid">
-                <div class="coach-feature-card">
-                    <div class="card-icon">🎯</div>
-                    <h3>Precision Recruiting</h3>
-                    <p>Filter by position, size, speed, academics, and location to find exactly who you need</p>
-                </div>
-
-                <div class="coach-feature-card">
-                    <div class="card-icon">📊</div>
-                    <h3>Comprehensive Profiles</h3>
-                    <p>View complete player information including stats, highlights, and academic records</p>
-                </div>
-
-                <div class="coach-feature-card">
-                    <div class="card-icon">⚡</div>
-                    <h3>Save Time</h3>
-                    <p>No more scrolling through irrelevant content. Every profile is a potential recruit</p>
-                </div>
-
-                <div class="coach-feature-card">
-                    <div class="card-icon">🔔</div>
-                    <h3>Real-Time Updates</h3>
-                    <p>Get notified when new players matching your criteria join the platform</p>
-                </div>
-
-                <div class="coach-feature-card">
-                    <div class="card-icon">💼</div>
-                    <h3>Professional Platform</h3>
-                    <p>Recruit in a dedicated, sports-focused environment free from distractions</p>
-                </div>
-
-                <div class="coach-feature-card">
-                    <div class="card-icon">🔄</div>
-                    <h3>Transfer Portal Access</h3>
-                    <p>Easily identify and recruit college players in the transfer portal</p>
-                </div>
+    <!-- Mission -->
+    <section class="v2-about-section">
+        <div class="v2-container">
+            <div class="v2-about-mission">
+                <h2 class="v2-section-title">Our Mission</h2>
+                <p class="v2-about-mission-text">Direct Recruit exists to democratize college sports recruiting. Every talented athlete deserves to be seen by coaches, and every coach deserves efficient tools to find the right players for their program. We're removing the noise and luck from the process and replacing it with real connections.</p>
             </div>
         </div>
     </section>
 
-    <!-- Mission Section -->
-    <section class="mission-section">
-        <div class="container">
-            <div class="mission-content">
-                <h2>Our Mission</h2>
-                <p class="mission-text">Direct Recruit exists to democratize college sports recruiting. We believe every talented athlete deserves to be seen by coaches, and every coach deserves efficient tools to find the right players for their program. By removing the noise and luck from the recruiting process, we're creating more opportunities for athletes and better outcomes for programs.</p>
-
-                <div class="mission-values">
-                    <div class="value-card">
-                        <h4>Transparency</h4>
-                        <p>Clear, honest communication between players and coaches</p>
-                    </div>
-                    <div class="value-card">
-                        <h4>Efficiency</h4>
-                        <p>Streamlined processes that respect everyone's time</p>
-                    </div>
-                    <div class="value-card">
-                        <h4>Opportunity</h4>
-                        <p>Every athlete gets a fair shot to showcase their talent</p>
-                    </div>
-                    <div class="value-card">
-                        <h4>Excellence</h4>
-                        <p>Helping programs find the right fit for their team</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- CTA Section -->
-    <section class="cta-section">
-        <div class="container">
-            <div class="cta-content">
-                <h2>Ready to Change the Game?</h2>
-                <p>Join the recruiting network built for players, coaches, and the college sports community</p>
-                <div class="cta-buttons">
-                    <a href="get-started.html"><button class="btn-primary-large">Get Started Today</button></a>
-                    <a href="index.html#how-it-works"><button class="btn-secondary-large">See How It Works</button></a>
-                </div>
-            </div>
+    <!-- CTA -->
+    <section class="v2-final-cta">
+        <div class="v2-final-cta-bg"></div>
+        <div class="v2-container v2-final-cta-inner">
+            <h2>Ready to get started?</h2>
+            <p>Create your account in under a minute. Free accounts available for everyone.</p>
+            <a href="get-started.html" class="v2-btn-primary v2-btn-lg">
+                Get Started
+                <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18"><path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+            </a>
         </div>
     </section>
 
     <!-- Footer -->
-    <footer class="footer">
-        <div class="container">
-            <div class="footer-content">
-                <div class="footer-brand">
-                    <img src="https://res.cloudinary.com/dzmsj6nwv/image/upload/v1770078659/LOGO.PNG_i0uvv4.png" alt="Direct Recruit Logo" class="footer-logo">
-                    <p>The social network for college sports recruiting</p>
+    <footer class="v2-footer">
+        <div class="v2-container">
+            <div class="v2-footer-content">
+                <div class="v2-footer-brand">
+                    <img src="https://res.cloudinary.com/dzmsj6nwv/image/upload/v1770078659/LOGO.PNG_i0uvv4.png" alt="Direct Recruit Logo" class="v2-footer-logo">
+                    <p>The recruiting platform built for players, coaches, and the college sports community.</p>
                 </div>
-                <div class="footer-links">
-                    <div class="footer-column">
+                <div class="v2-footer-links">
+                    <div class="v2-footer-col">
                         <h4>Platform</h4>
-                        <a href="index.html#features">Features</a>
-                        <a href="index.html#how-it-works">How It Works</a>
-                        <a href="about.html">About</a>
+                        <a href="features.html">Features</a>
+                        <a href="pricing.html">Pricing</a>
                     </div>
-                    <div class="footer-column">
+                    <div class="v2-footer-col">
                         <h4>Get Started</h4>
                         <a href="get-started.html">Sign Up</a>
                         <a href="signin.html">Sign In</a>
                     </div>
-                    <div class="footer-column">
+                    <div class="v2-footer-col">
                         <h4>Support</h4>
                         <a href="support.html">Contact Us</a>
                         <a href="privacy-policy.html">Privacy Policy</a>
                     </div>
                 </div>
             </div>
-            <div class="footer-bottom">
+            <div class="v2-footer-bottom">
                 <p>&copy; 2026 Direct Recruit. All rights reserved.</p>
             </div>
         </div>
     </footer>
 
-    <script src="about.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
