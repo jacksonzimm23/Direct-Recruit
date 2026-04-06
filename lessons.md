@@ -169,6 +169,68 @@
 
 
 
-TODO: Setup AI Rep page
+26. **AI Rep page is live for hsplayer and transferplayer.** The AI Rep shows players how they appear in college coach AI Recruiting Assistant searches. It pulls from the existing `ai_analytics` table — every time a coach's search outputs a player, that player sees it as a match on their AI Rep.
+
+    **What it shows:**
+    - **Match Feed** (hidden if no matches — never shows "0 matches" to avoid discouraging players): Each match card shows the coach's division badge (e.g., "D2"), "Matched on" tags derived from `active_filters` (Position, State, Height, Weight, GPA, Grad Year, Highlights/Film, Offers, Stats, College Division, Eligibility — excludes searchTerm and recruiting terms), and the date. Period dropdown filters by last 7 days, 30 days, or all time. Paginated 5 at a time with Show More.
+    - **Division Distribution:** Bar chart counting matches per division (D1 FBS, D1 FCS, D2, D3, NAIA, NJCAA) within the selected period.
+    - **Top Attributes Driving Exposure:** Ranked tags showing which filters appear most across the player's matches (e.g., "Position (83%)", "Height (58%)").
+    - **Profile Optimization:** Checks the player's profile against all AI RA searchable fields. HS players have 11 fields, transfer players have 13 (adds College Division + Eligibility). Incomplete fields show as prioritized recommendations (HIGH/MED/LOW). Displays "Completing your profile helps get more coaching matches" message.
+    - **Search Trends:** Coming Soon overlay — no data yet.
+
+    **Backend:** `backend/routes/ai-rep.js` mounted at `/api/ai-rep` with `requireRole('player')`. Two endpoints: `GET /matches` (queries `ai_analytics` via JSONB containment `result_players @> '[{"player_id":"..."}]'`) and `GET /profile-completion`. Frontend API: `API.aiRep.getMatches()` and `API.aiRep.getProfileCompletion()`.
+
+    **Local dev note:** The AI RA mock (`backend/utils/local/ai-local.js`) returns hardcoded filters for every query, so "matched on" tags won't reflect the actual coach request locally. In production with real Claude, the filters are accurate. To clear all AI Rep test data locally:
+    ```
+    docker exec dr-postgres psql -U postgres -d direct_recruit -c "DELETE FROM ai_engagement_events; DELETE FROM ai_analytics;"
+    ```
+
+
+## College Coach AI Subscription Tiers — Token Budgets & Cost Analysis
+
+29. **AI token caps were calculated from worst-case API cost analysis.** Both the Recruiting Assistant (RA) and Portal Intelligence (PI) use `claude-haiku-4-5-20251001` with `max_tokens: 1024` (output hard-capped in code). Haiku 4.5 pricing: $1.00/MTok input, $5.00/MTok output.
+
+    **Worst-case per request breakdown:**
+    - The system prompt (instructions + glossary + coach baselines) is ~8,000 input tokens for RA, ~5,000 for PI
+    - Chat history is sent in full with NO cap — every previous message in the conversation is included
+    - A 50+ message marathon conversation can push input to ~58,000 tokens per request
+    - Output is hard-capped at 1,024 tokens (just a JSON filter object)
+    - Worst-case total: ~59,024 tokens/request (98.3% input, 1.7% output)
+    - Worst-case cost: ~$0.063/request
+
+    **Tier token caps (targeting ~79% margin at worst case):**
+
+    | Plan    | Price    | Token Cap | Multiplier | Worst-Case Requests | Input Cost | Output Cost | API Cost | Margin |
+    |---------|----------|-----------|------------|---------------------|------------|-------------|----------|--------|
+    | Starter | $20/mo   | 4M        | 1x         | ~67                 | $3.93      | $0.34       | $4.27    | 78.7%  |
+    | Pro     | $50/mo   | 10M       | 2.5x       | ~169                | $9.83      | $0.85       | $10.68   | 78.6%  |
+    | Elite   | $100/mo  | 20M       | 5x         | ~338                | $19.66     | $1.70       | $21.36   | 78.6%  |
+
+    **Simplified tier overview:**
+
+    | Plan    | Price    | Token Cap | API Cost | Margin |
+    |---------|----------|-----------|----------|--------|
+    | Starter | $20/mo   | 4M        | $4.27    | 78.7%  |
+    | Pro     | $50/mo   | 10M       | $10.68   | 78.6%  |
+    | Elite   | $100/mo  | 20M       | $21.36   | 78.6%  |
+
+    **Why worst-case margins are conservative (actual margins will be higher):**
+    - Most coaches send short searches early in a conversation where input is mostly just the system prompt (~8K-10K tokens, not 58K)
+    - A typical request costs ~$0.01-0.02, not $0.063 — meaning real-world margins are closer to 90-95%
+    - "Show more" pagination skips Claude entirely (re-queries DB with same filters at new offset, zero token cost)
+    - Conversational messages (greetings, clarifications about shown players) produce small outputs
+    - The 1,024 max_tokens output cap in code prevents any single response from being expensive on the output side
+
+    **Token tracking:** Input and output tokens are already logged per request in the `ai_analytics` table (`input_tokens`, `output_tokens` columns). Enforcement should sum both into one pool per coach per billing period — combined is simpler for the coach to understand even though input/output have different per-token costs. The worst-case ratio (98.3% input) means the blended cost is dominated by the cheap input tokens anyway.
+
+    **The unbounded chat history is the biggest cost driver.** If cost becomes an issue, the highest-impact optimization would be adding a message history window (e.g., only send the last 10-20 messages to Claude instead of all of them). This would bring worst-case input from ~58K tokens down to ~15-20K tokens per request.
+
+---
+
+## TODOs
+
+TODO: Best way to switch between profile types since some are paid and some are free (with different features of course)
 26. **TODO: Adding token usage percentage bar based on tiers for the college coach APIs
+Show a view usage modal with the usage like claude does 
 27. **TODO: Adding subscription tiers and stripe 
+28. **TODO: Fix sign up college inputs with their logos, show logo icon badge

@@ -1704,6 +1704,9 @@
 .pi-history-footer {
     padding: 0.75rem 1rem;
     border-top: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
 }
 
 .pi-watchlist-btn {
@@ -1744,6 +1747,267 @@
     background: rgba(220, 38, 38, 0.1);
     padding: 2px 8px;
     border-radius: 10px;
+}
+
+/* ==============================
+   PI — VIEW USAGE BUTTON
+   ============================== */
+.pi-usage-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    width: 100%;
+    padding: 0.65rem 0.75rem;
+    background: rgba(220, 38, 38, 0.08);
+    border: 1px solid rgba(220, 38, 38, 0.2);
+    border-radius: 10px;
+    color: rgba(254, 252, 251, 0.75);
+    font-size: 0.85rem;
+    font-family: 'Inter', sans-serif;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.pi-usage-btn:hover {
+    background: rgba(220, 38, 38, 0.15);
+    border-color: #dc2626;
+    color: var(--white);
+}
+
+.pi-usage-btn svg {
+    width: 18px;
+    height: 18px;
+    color: #dc2626;
+    flex-shrink: 0;
+}
+
+.pi-usage-summary {
+    margin-left: auto;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: rgba(220, 38, 38, 0.7);
+    background: rgba(220, 38, 38, 0.1);
+    padding: 2px 8px;
+    border-radius: 10px;
+}
+
+/* ==============================
+   PI — VIEW USAGE MODAL
+   ============================== */
+.pi-usage-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    z-index: 2000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+}
+
+.pi-usage-overlay.active {
+    display: flex;
+}
+
+.pi-usage-modal {
+    background: #0f1a35;
+    border: 1px solid rgba(220, 38, 38, 0.2);
+    border-radius: 16px;
+    width: 100%;
+    max-width: 440px;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    animation: piUsageSlideIn 0.25s ease;
+}
+
+@keyframes piUsageSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.pi-usage-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid rgba(220, 38, 38, 0.15);
+}
+
+.pi-usage-header h2 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--white);
+    margin: 0;
+}
+
+.pi-usage-close {
+    background: none;
+    border: none;
+    color: rgba(254, 252, 251, 0.5);
+    cursor: pointer;
+    padding: 4px;
+    display: flex;
+    transition: color 0.2s;
+}
+
+.pi-usage-close:hover {
+    color: var(--white);
+}
+
+.pi-usage-close svg {
+    width: 20px;
+    height: 20px;
+}
+
+.pi-usage-body {
+    padding: 1.25rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.pi-usage-plan-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.pi-usage-plan-label {
+    font-size: 0.85rem;
+    color: rgba(254, 252, 251, 0.5);
+}
+
+.pi-usage-plan-name {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #dc2626;
+}
+
+.pi-usage-plan-value {
+    font-size: 0.85rem;
+    color: rgba(254, 252, 251, 0.8);
+}
+
+.pi-usage-bar-section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.pi-usage-bar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.pi-usage-bar-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: rgba(254, 252, 251, 0.9);
+}
+
+.pi-usage-bar-numbers {
+    font-size: 0.8rem;
+    color: rgba(254, 252, 251, 0.6);
+    font-variant-numeric: tabular-nums;
+}
+
+.pi-usage-bar-track {
+    width: 100%;
+    height: 10px;
+    background: rgba(220, 38, 38, 0.1);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.pi-usage-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #dc2626, #ef4444);
+    border-radius: 10px;
+    transition: width 0.6s ease;
+    min-width: 0;
+}
+
+.pi-usage-bar-fill.warning {
+    background: linear-gradient(90deg, #f59e0b, #fbbf24);
+}
+
+.pi-usage-bar-fill.critical {
+    background: linear-gradient(90deg, #dc2626, #ef4444);
+}
+
+.pi-usage-bar-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.pi-usage-bar-percent {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #dc2626;
+}
+
+.pi-usage-bar-remaining {
+    font-size: 0.75rem;
+    color: rgba(254, 252, 251, 0.4);
+}
+
+.pi-usage-breakdown {
+    border-top: 1px solid rgba(220, 38, 38, 0.1);
+    padding-top: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+}
+
+.pi-usage-breakdown-title {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: rgba(254, 252, 251, 0.5);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.pi-usage-breakdown-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.85rem;
+}
+
+.pi-usage-breakdown-row span:first-child {
+    color: rgba(254, 252, 251, 0.6);
+}
+
+.pi-usage-breakdown-row span:last-child {
+    color: rgba(254, 252, 251, 0.9);
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+}
+
+.pi-usage-info {
+    font-size: 0.75rem;
+    color: rgba(254, 252, 251, 0.35);
+    line-height: 1.5;
+    border-top: 1px solid rgba(220, 38, 38, 0.08);
+    padding-top: 1rem;
+}
+
+@media (max-width: 768px) {
+    .pi-usage-modal {
+        max-width: 100%;
+        border-radius: 12px;
+    }
 }
 
 /* ==============================

@@ -314,6 +314,13 @@
                                 <span>Portal Watchlist</span>
                                 <span class="pi-watchlist-count" id="piWatchlistCount">0/50</span>
                             </button>
+                            <button class="pi-usage-btn" id="piOpenUsageBtn">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
+                                </svg>
+                                <span>View Usage</span>
+                                <span class="pi-usage-summary" id="piUsageSummary">—</span>
+                            </button>
                         </div>
                     </div>
 
@@ -376,6 +383,65 @@
                     </div>
                 </div>
             </div><!-- /portalIntelligenceTab -->
+
+            <!-- View Usage Modal -->
+            <div class="pi-usage-overlay" id="piUsageOverlay">
+                <div class="pi-usage-modal">
+                    <div class="pi-usage-header">
+                        <h2>AI Usage</h2>
+                        <button class="pi-usage-close" id="piCloseUsageBtn" aria-label="Close">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="18" y1="6" x2="6" y2="18"></line>
+                                <line x1="6" y1="6" x2="18" y2="18"></line>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="pi-usage-body">
+                        <div class="pi-usage-plan-row">
+                            <span class="pi-usage-plan-label">Current Plan</span>
+                            <span class="pi-usage-plan-name" id="piUsagePlanName">—</span>
+                        </div>
+                        <div class="pi-usage-plan-row">
+                            <span class="pi-usage-plan-label">Billing Period</span>
+                            <span class="pi-usage-plan-value" id="piUsagePeriod">—</span>
+                        </div>
+
+                        <div class="pi-usage-bar-section">
+                            <div class="pi-usage-bar-header">
+                                <span class="pi-usage-bar-label">Token Usage</span>
+                                <span class="pi-usage-bar-numbers" id="piUsageNumbers">— / —</span>
+                            </div>
+                            <div class="pi-usage-bar-track">
+                                <div class="pi-usage-bar-fill" id="piUsageBarFill" style="width: 0%"></div>
+                            </div>
+                            <div class="pi-usage-bar-footer">
+                                <span class="pi-usage-bar-percent" id="piUsagePercent">0% used</span>
+                                <span class="pi-usage-bar-remaining" id="piUsageRemaining">— tokens remaining</span>
+                            </div>
+                        </div>
+
+                        <div class="pi-usage-breakdown">
+                            <div class="pi-usage-breakdown-title">Breakdown</div>
+                            <div class="pi-usage-breakdown-row">
+                                <span>Input tokens</span>
+                                <span id="piUsageInput">—</span>
+                            </div>
+                            <div class="pi-usage-breakdown-row">
+                                <span>Output tokens</span>
+                                <span id="piUsageOutput">—</span>
+                            </div>
+                            <div class="pi-usage-breakdown-row">
+                                <span>Total requests</span>
+                                <span id="piUsageRequests">—</span>
+                            </div>
+                        </div>
+
+                        <div class="pi-usage-info">
+                            Usage resets at the start of each billing period. Both Recruiting Assistant and Portal Intelligence count toward your token cap.
+                        </div>
+                    </div>
+                </div>
+            </div>
 
             <!-- Portal Watchlist Modal -->
             <div class="pi-watchlist-overlay" id="piWatchlistOverlay">
