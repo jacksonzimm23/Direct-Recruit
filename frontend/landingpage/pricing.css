@@ -1,0 +1,379 @@
+/* ============================================
+   PRICING PAGE STYLES
+   ============================================ */
+
+.pricing-container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 40px;
+}
+
+/* Hero */
+.pricing-hero {
+    background: var(--oxford-blue, #0a1128);
+    padding: 140px 0 60px;
+    text-align: center;
+}
+
+.pricing-hero h1 {
+    color: #fff;
+    font-size: clamp(2rem, 4vw, 3rem);
+    font-weight: 800;
+    margin: 0 0 12px 0;
+    letter-spacing: -0.02em;
+}
+
+.pricing-hero-sub {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 18px;
+    margin: 0;
+}
+
+/* Sections */
+.pricing-section {
+    background: var(--oxford-blue, #0a1128);
+    padding: 60px 0;
+}
+
+.pricing-section-alt {
+    background: #060d1e;
+}
+
+.pricing-section-header {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+.pricing-section-header h2 {
+    color: #fff;
+    font-size: 24px;
+    font-weight: 700;
+    margin: 0 0 8px 0;
+}
+
+.pricing-section-header p {
+    color: rgba(255, 255, 255, 0.45);
+    font-size: 15px;
+    margin: 0;
+}
+
+/* Player Card */
+.pricing-player-card {
+    display: grid;
+    grid-template-columns: 1fr 1.5fr;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(18, 130, 162, 0.2);
+    border-radius: 16px;
+    overflow: hidden;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.pricing-card-left {
+    padding: 40px;
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.pricing-card-left h3 {
+    color: #fff;
+    font-size: 20px;
+    font-weight: 700;
+    margin: 0 0 12px 0;
+}
+
+.pricing-amount {
+    margin-bottom: 12px;
+}
+
+.pricing-dollar {
+    font-size: 42px;
+    font-weight: 800;
+    color: #fff;
+}
+
+.pricing-dollar-sm {
+    font-size: 32px;
+}
+
+.pricing-period {
+    font-size: 16px;
+    color: rgba(255, 255, 255, 0.4);
+}
+
+.pricing-card-desc {
+    color: rgba(255, 255, 255, 0.45);
+    font-size: 14px;
+    line-height: 1.5;
+    margin: 0 0 auto 0;
+    padding-bottom: 20px;
+}
+
+.pricing-card-right {
+    padding: 40px;
+}
+
+/* Feature Lists */
+.pricing-feature-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.pricing-feature-list li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 14px;
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.pricing-feature-list li:last-child {
+    border-bottom: none;
+}
+
+.pricing-feature-list li svg {
+    flex-shrink: 0;
+}
+
+.pricing-feature-list-compact {
+    margin-top: 24px;
+}
+
+.pricing-feature-list-compact li {
+    font-size: 13px;
+    padding: 8px 0;
+}
+
+/* Coach Cards Grid */
+.pricing-coach-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+}
+
+.pricing-coach-card {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    padding: 32px 24px;
+    text-align: center;
+    position: relative;
+}
+
+.pricing-coach-card-popular {
+    border-color: var(--accent-orange, #ff6b35);
+    background: rgba(255, 107, 53, 0.04);
+}
+
+.pricing-popular-badge {
+    position: absolute;
+    top: -12px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--accent-orange, #ff6b35);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 16px;
+    border-radius: 20px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+}
+
+.pricing-coach-card h3 {
+    color: #fff;
+    font-size: 20px;
+    font-weight: 700;
+    margin: 0 0 12px 0;
+}
+
+.pricing-coach-card .pricing-card-desc {
+    min-height: 42px;
+}
+
+/* Buttons */
+.pricing-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    border: none;
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+}
+
+.pricing-btn-primary {
+    background: var(--cerulean, #1282a2);
+    color: #fff;
+}
+
+.pricing-btn-primary:hover {
+    background: #0f6f8c;
+    transform: translateY(-1px);
+}
+
+.pricing-btn-orange {
+    background: var(--accent-orange, #ff6b35);
+    color: #fff;
+    width: 100%;
+}
+
+.pricing-btn-orange:hover {
+    background: #e55a2b;
+    transform: translateY(-1px);
+}
+
+.pricing-btn-outline {
+    background: transparent;
+    color: rgba(255, 255, 255, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    width: 100%;
+}
+
+.pricing-btn-outline:hover {
+    border-color: rgba(255, 255, 255, 0.35);
+    color: #fff;
+}
+
+.pricing-btn-lg {
+    padding: 16px 36px;
+    font-size: 16px;
+}
+
+/* Free Banner */
+.pricing-free-banner {
+    background: rgba(18, 130, 162, 0.06);
+    border: 1px solid rgba(18, 130, 162, 0.15);
+    border-radius: 16px;
+    padding: 48px;
+    text-align: center;
+}
+
+.pricing-free-banner h3 {
+    color: #fff;
+    font-size: 22px;
+    font-weight: 700;
+    margin: 0 0 12px 0;
+}
+
+.pricing-free-banner p {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 15px;
+    line-height: 1.6;
+    margin: 0 0 24px 0;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* FAQ */
+.pricing-faq-title {
+    color: #fff;
+    font-size: 24px;
+    font-weight: 700;
+    text-align: center;
+    margin: 0 0 40px 0;
+}
+
+.pricing-faq-list {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.pricing-faq-item {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 12px;
+    padding: 24px;
+}
+
+.pricing-faq-item h4 {
+    color: #fff;
+    font-size: 15px;
+    font-weight: 600;
+    margin: 0 0 8px 0;
+}
+
+.pricing-faq-item p {
+    color: rgba(255, 255, 255, 0.45);
+    font-size: 14px;
+    line-height: 1.6;
+    margin: 0;
+}
+
+/* Final CTA */
+.pricing-cta {
+    background: var(--oxford-blue, #0a1128);
+    padding: 80px 0;
+    text-align: center;
+}
+
+.pricing-cta h2 {
+    color: #fff;
+    font-size: clamp(1.6rem, 3vw, 2.2rem);
+    font-weight: 800;
+    margin: 0 0 12px 0;
+}
+
+.pricing-cta p {
+    color: rgba(255, 255, 255, 0.45);
+    font-size: 16px;
+    margin: 0 0 28px 0;
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+@media (max-width: 768px) {
+    .pricing-container {
+        padding: 0 20px;
+    }
+
+    .pricing-player-card {
+        grid-template-columns: 1fr;
+    }
+
+    .pricing-card-left {
+        border-right: none;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .pricing-coach-grid {
+        grid-template-columns: 1fr;
+        gap: 24px;
+    }
+
+    .pricing-faq-list {
+        grid-template-columns: 1fr;
+    }
+
+    .pricing-free-banner {
+        padding: 32px 24px;
+    }
+}
+
+@media (max-width: 480px) {
+    .pricing-card-left,
+    .pricing-card-right {
+        padding: 24px;
+    }
+
+    .pricing-coach-card {
+        padding: 24px 20px;
+    }
+}
