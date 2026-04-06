@@ -125,7 +125,7 @@ router.get('/funnel', async (req, res) => {
   try {
     const days = parseInt(req.query.days) || 30;
 
-    const [funnelTotal, byDivision, byAiType] = await Promise.all([
+    const [funnelTotal, byDivision, searchesByDivision, byAiType] = await Promise.all([
       // Overall funnel
       pool.query(`
         SELECT
@@ -138,7 +138,7 @@ router.get('/funnel', async (req, res) => {
         WHERE created_at > NOW() - INTERVAL '1 day' * $1
       `, [days]),
 
-      // Funnel by coach division
+      // Engagements by coach division
       pool.query(`
         SELECT
           COALESCE(coach_division, 'Unknown') as division,
@@ -150,6 +150,14 @@ router.get('/funnel', async (req, res) => {
         WHERE created_at > NOW() - INTERVAL '1 day' * $1
         GROUP BY coach_division
         ORDER BY COUNT(*) DESC
+      `, [days]),
+
+      // Searches by coach division (for the table)
+      pool.query(`
+        SELECT COALESCE(coach_division, 'Unknown') as division, COUNT(*) as searches
+        FROM ai_analytics
+        WHERE created_at > NOW() - INTERVAL '1 day' * $1
+        GROUP BY coach_division
       `, [days]),
 
       // Funnel by AI type
@@ -166,9 +174,17 @@ router.get('/funnel', async (req, res) => {
       `, [days])
     ]);
 
+    // Merge searches count into byDivision rows
+    const searchesMap = {};
+    searchesByDivision.rows.forEach(r => { searchesMap[r.division] = parseInt(r.searches); });
+    const byDivisionWithSearches = byDivision.rows.map(r => ({
+      ...r,
+      searches: searchesMap[r.division] || 0
+    }));
+
     res.json({
       funnel: funnelTotal.rows[0],
-      byDivision: byDivision.rows,
+      byDivision: byDivisionWithSearches,
       byAiType: byAiType.rows
     });
   } catch (error) {
