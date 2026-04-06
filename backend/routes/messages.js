@@ -11,6 +11,7 @@ const { body, validationResult } = require('express-validator');
 const { messageLimiter } = require('../middleware/rateLimit');
 const { sanitizeBody } = require('../middleware/validation');
 const { getSignedS3Url } = require('../utils/s3');
+const AiEngagement = require('../models/AiEngagement');
 const logger = require('../utils/logger');
 
 // Helper function to add signed URLs to conversations/messages with profile images
@@ -178,6 +179,12 @@ router.post('/conversations/:conversationId/messages', authMiddleware, validateU
           req.body.content,
           conversationId
         );
+      }
+
+      // Track AI engagement for each recipient (fire-and-forget)
+      for (const row of participantsResult.rows) {
+        AiEngagement.trackIfAiDriven(req.userId, row.user_id, 'message')
+          .catch(err => logger.error('Engagement track error:', err.message));
       }
     } catch (notifError) {
       logger.error('Failed to create message notification:', notifError);

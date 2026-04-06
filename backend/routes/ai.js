@@ -12,6 +12,7 @@ const { getSignedS3Url } = require('../utils/s3');
 const PlayerGameStats = require('../models/PlayerGameStats');
 const AiAnalytics = require('../models/AiAnalytics');
 const RaSavedPlayers = require('../models/RaSavedPlayers');
+const AiEngagement = require('../models/AiEngagement');
 const logger = require('../utils/logger');
 
 // Helper: extract active filter names from a filters object for analytics
@@ -827,6 +828,9 @@ router.post('/saved/:playerUserId', async (req, res) => {
     if (!result.success) {
       return res.status(400).json({ error: result.error, count: result.count });
     }
+    // Track engagement (fire-and-forget)
+    AiEngagement.trackIfAiDriven(req.userId, playerUserId, 'save')
+      .catch(err => logger.error('Engagement track error:', err.message));
     res.json({ success: true, count: result.count });
   } catch (error) {
     logger.error('Save player error:', error);
