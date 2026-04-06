@@ -887,7 +887,83 @@ document.addEventListener('DOMContentLoaded', function() {
         if (e.key === 'Escape' && watchlistOverlay && watchlistOverlay.classList.contains('active')) {
             closeWatchlistModal();
         }
+        if (e.key === 'Escape' && piUsageOverlay && piUsageOverlay.classList.contains('active')) {
+            closePiUsageModal();
+        }
     });
+
+    // ========================
+    // VIEW USAGE MODAL
+    // ========================
+
+    const piUsageOverlay = document.getElementById('piUsageOverlay');
+    const piOpenUsageBtn = document.getElementById('piOpenUsageBtn');
+    const piCloseUsageBtn = document.getElementById('piCloseUsageBtn');
+
+    function piFormatTokenCount(n) {
+        if (n == null) return '—';
+        if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + 'M';
+        if (n >= 1_000) return (n / 1_000).toFixed(1) + 'K';
+        return n.toLocaleString();
+    }
+
+    function openPiUsageModal() {
+        if (!piUsageOverlay) return;
+        // Mock data for now — will be replaced with API call
+        const usage = {
+            plan: 'Pro',
+            periodStart: '2026-04-01',
+            periodEnd: '2026-04-30',
+            tokenCap: 10_000_000,
+            inputTokens: 1_842_300,
+            outputTokens: 31_200,
+            totalRequests: 147
+        };
+        const totalUsed = usage.inputTokens + usage.outputTokens;
+        const percent = Math.min((totalUsed / usage.tokenCap) * 100, 100);
+        const remaining = Math.max(usage.tokenCap - totalUsed, 0);
+
+        document.getElementById('piUsagePlanName').textContent = usage.plan;
+        document.getElementById('piUsagePeriod').textContent =
+            new Date(usage.periodStart).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) +
+            ' – ' +
+            new Date(usage.periodEnd).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        document.getElementById('piUsageNumbers').textContent = piFormatTokenCount(totalUsed) + ' / ' + piFormatTokenCount(usage.tokenCap);
+        document.getElementById('piUsagePercent').textContent = percent.toFixed(1) + '% used';
+        document.getElementById('piUsageRemaining').textContent = piFormatTokenCount(remaining) + ' tokens remaining';
+        document.getElementById('piUsageInput').textContent = totalUsed === 0 ? '—' : usage.inputTokens.toLocaleString();
+        document.getElementById('piUsageOutput').textContent = totalUsed === 0 ? '—' : usage.outputTokens.toLocaleString();
+        document.getElementById('piUsageRequests').textContent = usage.totalRequests.toLocaleString();
+
+        const barFill = document.getElementById('piUsageBarFill');
+        barFill.style.width = percent + '%';
+        barFill.classList.remove('warning', 'critical');
+        if (percent >= 90) barFill.classList.add('critical');
+        else if (percent >= 75) barFill.classList.add('warning');
+
+        const summary = document.getElementById('piUsageSummary');
+        if (summary) summary.textContent = Math.round(percent) + '%';
+
+        piUsageOverlay.classList.add('active');
+    }
+
+    function closePiUsageModal() {
+        if (piUsageOverlay) piUsageOverlay.classList.remove('active');
+    }
+
+    if (piOpenUsageBtn) {
+        piOpenUsageBtn.addEventListener('click', openPiUsageModal);
+    }
+
+    if (piCloseUsageBtn) {
+        piCloseUsageBtn.addEventListener('click', closePiUsageModal);
+    }
+
+    if (piUsageOverlay) {
+        piUsageOverlay.addEventListener('click', (e) => {
+            if (e.target === piUsageOverlay) closePiUsageModal();
+        });
+    }
 
     // ========================
     // INIT

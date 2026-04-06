@@ -911,7 +911,84 @@ document.addEventListener('DOMContentLoaded', function() {
         if (e.key === 'Escape' && baselinesOverlay && baselinesOverlay.classList.contains('active')) {
             closeBaselines();
         }
+        if (e.key === 'Escape' && usageOverlay && usageOverlay.classList.contains('active')) {
+            closeUsageModal();
+        }
     });
+
+    // ========================
+    // VIEW USAGE MODAL
+    // ========================
+
+    const usageOverlay = document.getElementById('raUsageOverlay');
+    const openUsageBtn = document.getElementById('raOpenUsageBtn');
+    const closeUsageBtn = document.getElementById('raCloseUsageBtn');
+
+    function formatTokenCount(n) {
+        if (n == null) return '—';
+        if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + 'M';
+        if (n >= 1_000) return (n / 1_000).toFixed(1) + 'K';
+        return n.toLocaleString();
+    }
+
+    function openUsageModal() {
+        if (!usageOverlay) return;
+        // Mock data for now — will be replaced with API call
+        const usage = {
+            plan: 'Pro',
+            periodStart: '2026-04-01',
+            periodEnd: '2026-04-30',
+            tokenCap: 10_000_000,
+            inputTokens: 1_842_300,
+            outputTokens: 31_200,
+            totalRequests: 147
+        };
+        const totalUsed = usage.inputTokens + usage.outputTokens;
+        const percent = Math.min((totalUsed / usage.tokenCap) * 100, 100);
+        const remaining = Math.max(usage.tokenCap - totalUsed, 0);
+
+        document.getElementById('raUsagePlanName').textContent = usage.plan;
+        document.getElementById('raUsagePeriod').textContent =
+            new Date(usage.periodStart).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) +
+            ' – ' +
+            new Date(usage.periodEnd).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        document.getElementById('raUsageNumbers').textContent = formatTokenCount(totalUsed) + ' / ' + formatTokenCount(usage.tokenCap);
+        document.getElementById('raUsagePercent').textContent = percent.toFixed(1) + '% used';
+        document.getElementById('raUsageRemaining').textContent = formatTokenCount(remaining) + ' tokens remaining';
+        document.getElementById('raUsageInput').textContent = totalUsed === 0 ? '—' : usage.inputTokens.toLocaleString();
+        document.getElementById('raUsageOutput').textContent = totalUsed === 0 ? '—' : usage.outputTokens.toLocaleString();
+        document.getElementById('raUsageRequests').textContent = usage.totalRequests.toLocaleString();
+
+        const barFill = document.getElementById('raUsageBarFill');
+        barFill.style.width = percent + '%';
+        barFill.classList.remove('warning', 'critical');
+        if (percent >= 90) barFill.classList.add('critical');
+        else if (percent >= 75) barFill.classList.add('warning');
+
+        // Update sidebar badge
+        const summary = document.getElementById('raUsageSummary');
+        if (summary) summary.textContent = Math.round(percent) + '%';
+
+        usageOverlay.classList.add('active');
+    }
+
+    function closeUsageModal() {
+        if (usageOverlay) usageOverlay.classList.remove('active');
+    }
+
+    if (openUsageBtn) {
+        openUsageBtn.addEventListener('click', openUsageModal);
+    }
+
+    if (closeUsageBtn) {
+        closeUsageBtn.addEventListener('click', closeUsageModal);
+    }
+
+    if (usageOverlay) {
+        usageOverlay.addEventListener('click', (e) => {
+            if (e.target === usageOverlay) closeUsageModal();
+        });
+    }
 
     // ========================
     // INIT
