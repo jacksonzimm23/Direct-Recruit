@@ -169,7 +169,6 @@
 
 
 
-TODO: View Profile hsplayer AI REP leftsidebar disappears 
 TODO: Setup AI Rep page
 26. **TODO: Adding token usage percentage bar based on tiers for the college coach APIs
 27. **TODO: Adding subscription tiers and stripe 
