@@ -624,10 +624,25 @@ const aiAPI = {
             method: 'POST',
             body: JSON.stringify({ message, baselines })
         }),
-    reSearch: async (filters) =>
+    reSearch: async (filters, offset = 0) =>
         apiRequest('/ai/search', {
             method: 'POST',
-            body: JSON.stringify({ filters })
+            body: JSON.stringify({ filters, offset })
+        }),
+    piReSearch: async (signalFilters, offset = 0) =>
+        apiRequest('/ai/pi-search', {
+            method: 'POST',
+            body: JSON.stringify({ signal_filters: signalFilters, offset })
+        }),
+    showMore: async (chatId, aiType, filters, signalFilters, offset) =>
+        apiRequest(`/ai/chats/${chatId}/show-more`, {
+            method: 'POST',
+            body: JSON.stringify({
+                ai_type: aiType,
+                filters: filters || null,
+                signal_filters: signalFilters || null,
+                offset
+            })
         }),
     sendPiMessage: async (chatId, message) =>
         apiRequest(`/ai/chats/${chatId}/pi-message`, {
