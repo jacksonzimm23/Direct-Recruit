@@ -686,6 +686,15 @@ const aiRepAPI = {
 };
 
 // Unified API object for convenience
+const settingsAPI = {
+    getSwitchProfileInfo: async () => apiRequest('/settings/switch-profile/info'),
+    switchProfile: async (targetType, profileData, confirm = true) =>
+        apiRequest('/settings/switch-profile', {
+            method: 'POST',
+            body: JSON.stringify({ target_type: targetType, profile_data: profileData, confirm })
+        })
+};
+
 const API = {
     // Direct access to apiRequest for custom endpoints
     get: async (endpoint) => await apiRequest(endpoint),
@@ -711,6 +720,7 @@ const API = {
     notifications: notificationsAPI,
     ai: aiAPI,
     aiRep: aiRepAPI,
+    settings: settingsAPI,
 
     // Auth helpers
     getUser,

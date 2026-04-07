@@ -16,6 +16,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Load user data
     loadUserSettings();
+
+    // Initialize profile type switching
+    initializeProfileTypeSwitching();
 });
 
 // Load user settings from API or localStorage
@@ -2054,3 +2057,586 @@ async function handleVerifyCognitoCode() {
 document.addEventListener('DOMContentLoaded', function() {
     initializeForgotPassword();
 });
+
+// ==================== PROFILE TYPE SWITCHING ====================
+
+let switchProfileInfo = null;
+let selectedTargetType = null;
+
+const POSITION_OPTIONS = [
+    'QB', 'RB', 'WR', 'TE', 'OT', 'OG', 'C', 'DE', 'DT', 'NT',
+    'ILB', 'OLB', 'CB', 'S', 'K', 'P', 'LS'
+];
+
+const DIVISION_OPTIONS = ['D1 FBS', 'D1 FCS', 'D2', 'D3', 'NAIA', 'NJCAA'];
+
+const COACH_POSITIONS = [
+    'Head Coach', 'Offensive Coordinator', 'Defensive Coordinator',
+    'Special Teams Coordinator', 'Quarterbacks Coach', 'Running Backs Coach',
+    'Wide Receivers Coach', 'Tight Ends Coach', 'Offensive Line Coach',
+    'Defensive Line Coach', 'Linebackers Coach', 'Defensive Backs Coach',
+    'Strength & Conditioning', 'Director of Player Personnel',
+    'Recruiting Coordinator', 'Director of Operations', 'Graduate Assistant',
+    'Quality Control', 'Other Staff'
+];
+
+const US_STATES = [
+    'Alabama','Alaska','Arizona','Arkansas','California','Colorado','Connecticut',
+    'Delaware','Florida','Georgia','Hawaii','Idaho','Illinois','Indiana','Iowa',
+    'Kansas','Kentucky','Louisiana','Maine','Maryland','Massachusetts','Michigan',
+    'Minnesota','Mississippi','Missouri','Montana','Nebraska','Nevada',
+    'New Hampshire','New Jersey','New Mexico','New York','North Carolina',
+    'North Dakota','Ohio','Oklahoma','Oregon','Pennsylvania','Rhode Island',
+    'South Carolina','South Dakota','Tennessee','Texas','Utah','Vermont',
+    'Virginia','Washington','West Virginia','Wisconsin','Wyoming'
+];
+
+const TYPE_ICONS = {
+    hsplayer: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>',
+    collegeplayer: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"></path><path d="M6 12v5c3 3 9 3 12 0v-5"></path></svg>',
+    transferplayer: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg>',
+    hscoach: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>',
+    collegecoach: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>',
+    other: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M8 14s1.5 2 4 2 4-2 4-2"></path><line x1="9" y1="9" x2="9.01" y2="9"></line><line x1="15" y1="9" x2="15.01" y2="9"></line></svg>'
+};
+
+async function initializeProfileTypeSwitching() {
+    const switchBtn = document.getElementById('switchProfileBtn');
+    if (!switchBtn) return;
+
+    try {
+        const data = await API.settings.getSwitchProfileInfo();
+        switchProfileInfo = data;
+
+        // Update current type display
+        const valueEl = document.getElementById('currentProfileTypeValue');
+        if (valueEl) valueEl.textContent = data.current_label;
+
+        const badgeEl = document.getElementById('currentProfilePaidBadge');
+        if (badgeEl) {
+            if (data.is_current_paid) {
+                badgeEl.textContent = 'PAID';
+                badgeEl.classList.add('badge-paid');
+                badgeEl.style.display = '';
+            } else {
+                badgeEl.textContent = 'FREE';
+                badgeEl.classList.add('badge-free');
+                badgeEl.style.display = '';
+            }
+        }
+
+        // Handle cooldown
+        if (!data.can_switch) {
+            switchBtn.disabled = true;
+            switchBtn.textContent = `Switch available in ${data.cooldown_remaining_hours}h`;
+            const cooldownMsg = document.getElementById('switchCooldownMessage');
+            if (cooldownMsg) {
+                cooldownMsg.textContent = `You recently switched profiles. You can switch again in ${data.cooldown_remaining_hours} hours.`;
+                cooldownMsg.style.display = '';
+            }
+        }
+
+        switchBtn.addEventListener('click', openSwitchProfileModal);
+    } catch (error) {
+        console.error('Failed to load profile type info:', error);
+    }
+}
+
+function openSwitchProfileModal() {
+    if (!switchProfileInfo || !switchProfileInfo.can_switch) return;
+
+    selectedTargetType = null;
+
+    // Create modal overlay
+    const modal = document.createElement('div');
+    modal.className = 'switch-profile-modal-overlay';
+    modal.id = 'switchProfileModal';
+    modal.innerHTML = `
+        <div class="switch-profile-modal">
+            <div class="switch-modal-header">
+                <h2>Switch Profile Type</h2>
+                <button class="switch-modal-close" id="switchModalClose">&times;</button>
+            </div>
+            <div class="switch-modal-steps">
+                <div class="switch-step-indicator">
+                    <span class="step-dot active" data-step="1">1</span>
+                    <span class="step-line"></span>
+                    <span class="step-dot" data-step="2">2</span>
+                    <span class="step-line"></span>
+                    <span class="step-dot" data-step="3">3</span>
+                </div>
+            </div>
+            <div class="switch-modal-body">
+                ${renderStep1()}
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+    document.body.style.overflow = 'hidden';
+
+    // Event listeners
+    document.getElementById('switchModalClose').addEventListener('click', closeSwitchProfileModal);
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeSwitchProfileModal();
+    });
+
+    attachStep1Listeners();
+}
+
+function renderStep1() {
+    const cards = switchProfileInfo.targets.map(t => `
+        <div class="switch-type-card" data-type="${t.type}">
+            <div class="switch-type-icon">${TYPE_ICONS[t.type]}</div>
+            <div class="switch-type-info">
+                <span class="switch-type-name">${t.label}</span>
+                <span class="switch-type-badge ${t.is_paid ? 'badge-paid' : 'badge-free'}">${t.is_paid ? 'PAID' : 'FREE'}</span>
+            </div>
+        </div>
+    `).join('');
+
+    return `
+        <div class="switch-step" id="switchStep1">
+            <h3>Choose your new profile type</h3>
+            <p class="switch-step-subtitle">Currently: <strong>${switchProfileInfo.current_label}</strong></p>
+            <div class="switch-type-grid">${cards}</div>
+            <div class="switch-step-actions">
+                <button class="btn-secondary" id="switchCancelBtn">Cancel</button>
+                <button class="btn-primary" id="switchNextBtn1" disabled>Next</button>
+            </div>
+        </div>
+    `;
+}
+
+function attachStep1Listeners() {
+    document.querySelectorAll('.switch-type-card').forEach(card => {
+        card.addEventListener('click', () => {
+            document.querySelectorAll('.switch-type-card').forEach(c => c.classList.remove('selected'));
+            card.classList.add('selected');
+            selectedTargetType = card.dataset.type;
+            document.getElementById('switchNextBtn1').disabled = false;
+        });
+    });
+
+    document.getElementById('switchCancelBtn').addEventListener('click', closeSwitchProfileModal);
+    document.getElementById('switchNextBtn1').addEventListener('click', goToStep2);
+}
+
+function goToStep2() {
+    const body = document.querySelector('.switch-modal-body');
+    body.innerHTML = renderStep2();
+    updateStepIndicator(2);
+    attachStep2Listeners();
+}
+
+function renderStep2() {
+    const target = switchProfileInfo.targets.find(t => t.type === selectedTargetType);
+    const shared = switchProfileInfo.shared_fields;
+    const targetRole = getBaseRoleFromType(selectedTargetType);
+
+    let fieldsHTML = `
+        <div class="switch-form-group">
+            <label>First Name</label>
+            <input type="text" id="switchFirstName" value="${escapeHTML(shared.first_name)}" class="form-input">
+        </div>
+        <div class="switch-form-group">
+            <label>Last Name</label>
+            <input type="text" id="switchLastName" value="${escapeHTML(shared.last_name)}" class="form-input">
+        </div>
+        <div class="switch-form-group">
+            <label>Email</label>
+            <input type="email" id="switchEmail" value="${escapeHTML(shared.email)}" class="form-input" disabled>
+            <small class="form-hint">Email cannot be changed during a profile switch</small>
+        </div>
+        <div class="switch-form-group">
+            <label>Username <span class="required">*</span></label>
+            <input type="text" id="switchUsername" placeholder="Choose a username" class="form-input" maxlength="15">
+            <small class="form-hint">1-15 characters, lowercase letters, numbers, underscores only</small>
+        </div>
+    `;
+
+    if (targetRole === 'player') {
+        const needsCollege = ['collegeplayer', 'transferplayer'].includes(selectedTargetType);
+        fieldsHTML += `
+            <div class="switch-form-group">
+                <label>${needsCollege ? 'College/University' : 'High School'} Name <span class="required">*</span></label>
+                <input type="text" id="switchTeamName" placeholder="Enter school name" class="form-input">
+            </div>
+            <div class="switch-form-row">
+                <div class="switch-form-group">
+                    <label>State <span class="required">*</span></label>
+                    <select id="switchState" class="form-input">
+                        <option value="">Select State</option>
+                        ${US_STATES.map(s => `<option value="${s}">${s}</option>`).join('')}
+                    </select>
+                </div>
+                <div class="switch-form-group">
+                    <label>Graduation Year <span class="required">*</span></label>
+                    <input type="number" id="switchGradYear" placeholder="e.g. 2026" class="form-input" min="2020" max="2035">
+                </div>
+            </div>
+            <div class="switch-form-group">
+                <label>Position <span class="required">*</span></label>
+                <select id="switchPosition" class="form-input">
+                    <option value="">Select Position</option>
+                    ${POSITION_OPTIONS.map(p => `<option value="${p}">${p}</option>`).join('')}
+                </select>
+            </div>
+            <div class="switch-form-row">
+                <div class="switch-form-group">
+                    <label>Height (inches) <span class="required">*</span></label>
+                    <input type="number" id="switchHeight" placeholder="e.g. 72" class="form-input" min="48" max="96">
+                </div>
+                <div class="switch-form-group">
+                    <label>Weight (lbs) <span class="required">*</span></label>
+                    <input type="number" id="switchWeight" placeholder="e.g. 200" class="form-input" min="80" max="500">
+                </div>
+            </div>
+            <div class="switch-form-group">
+                <label>GPA</label>
+                <input type="number" id="switchGPA" placeholder="e.g. 3.5" class="form-input" min="0" max="4" step="0.01">
+            </div>
+        `;
+
+        if (needsCollege) {
+            fieldsHTML += `
+                <div class="switch-form-row">
+                    <div class="switch-form-group">
+                        <label>Division <span class="required">*</span></label>
+                        <select id="switchDivision" class="form-input">
+                            <option value="">Select Division</option>
+                            ${DIVISION_OPTIONS.map(d => `<option value="${d}">${d}</option>`).join('')}
+                        </select>
+                    </div>
+                    <div class="switch-form-group">
+                        <label>Conference</label>
+                        <input type="text" id="switchConference" placeholder="e.g. SEC" class="form-input">
+                    </div>
+                </div>
+            `;
+        }
+
+        if (selectedTargetType === 'transferplayer') {
+            fieldsHTML += `
+                <div class="switch-form-group">
+                    <label>Eligibility (years remaining)</label>
+                    <select id="switchEligibility" class="form-input">
+                        <option value="">Select</option>
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                    </select>
+                </div>
+            `;
+        }
+    } else if (targetRole === 'coach') {
+        const isCollege = selectedTargetType === 'collegecoach';
+        fieldsHTML += `
+            <div class="switch-form-group">
+                <label>${isCollege ? 'College/University' : 'High School'} Name <span class="required">*</span></label>
+                <input type="text" id="switchTeamName" placeholder="Enter school name" class="form-input">
+            </div>
+            <div class="switch-form-group">
+                <label>State <span class="required">*</span></label>
+                <select id="switchState" class="form-input">
+                    <option value="">Select State</option>
+                    ${US_STATES.map(s => `<option value="${s}">${s}</option>`).join('')}
+                </select>
+            </div>
+            <div class="switch-form-group">
+                <label>Coaching Position <span class="required">*</span></label>
+                <select id="switchPositionTitle" class="form-input">
+                    <option value="">Select Position</option>
+                    ${COACH_POSITIONS.map(p => `<option value="${p}">${p}</option>`).join('')}
+                </select>
+            </div>
+        `;
+
+        if (isCollege) {
+            fieldsHTML += `
+                <div class="switch-form-row">
+                    <div class="switch-form-group">
+                        <label>Division <span class="required">*</span></label>
+                        <select id="switchDivision" class="form-input">
+                            <option value="">Select Division</option>
+                            ${DIVISION_OPTIONS.map(d => `<option value="${d}">${d}</option>`).join('')}
+                        </select>
+                    </div>
+                    <div class="switch-form-group">
+                        <label>Conference</label>
+                        <input type="text" id="switchConference" placeholder="e.g. Big 12" class="form-input">
+                    </div>
+                </div>
+            `;
+        }
+    } else {
+        // 'other' type — minimal fields
+        fieldsHTML += `
+            <div class="switch-form-group">
+                <label>Subheader</label>
+                <input type="text" id="switchSubheader" placeholder="e.g. Sports Reporter, Parent" class="form-input" maxlength="100">
+            </div>
+            <div class="switch-form-group">
+                <label>Bio</label>
+                <textarea id="switchBio" placeholder="Tell us about yourself" class="form-input" rows="3" maxlength="1000"></textarea>
+            </div>
+        `;
+    }
+
+    return `
+        <div class="switch-step" id="switchStep2">
+            <h3>Set up your ${target.label} profile</h3>
+            <p class="switch-step-subtitle">Fill in the required information for your new profile.</p>
+            <div class="switch-form">${fieldsHTML}</div>
+            <div class="switch-form-error" id="switchFormError" style="display:none;"></div>
+            <div class="switch-step-actions">
+                <button class="btn-secondary" id="switchBackBtn2">Back</button>
+                <button class="btn-primary" id="switchNextBtn2">Next</button>
+            </div>
+        </div>
+    `;
+}
+
+function attachStep2Listeners() {
+    document.getElementById('switchBackBtn2').addEventListener('click', () => {
+        const body = document.querySelector('.switch-modal-body');
+        body.innerHTML = renderStep1();
+        updateStepIndicator(1);
+        attachStep1Listeners();
+        // Re-select the previously selected type
+        if (selectedTargetType) {
+            const card = document.querySelector(`.switch-type-card[data-type="${selectedTargetType}"]`);
+            if (card) {
+                card.classList.add('selected');
+                document.getElementById('switchNextBtn1').disabled = false;
+            }
+        }
+    });
+
+    document.getElementById('switchNextBtn2').addEventListener('click', () => {
+        const error = validateStep2();
+        if (error) {
+            const errorEl = document.getElementById('switchFormError');
+            errorEl.textContent = error;
+            errorEl.style.display = '';
+            return;
+        }
+        goToStep3();
+    });
+}
+
+function validateStep2() {
+    const username = document.getElementById('switchUsername')?.value?.trim();
+    if (!username) return 'Username is required';
+    if (!/^[a-z0-9_]{1,15}$/.test(username)) return 'Username must be 1-15 characters, lowercase letters, numbers, and underscores only';
+
+    const targetRole = getBaseRoleFromType(selectedTargetType);
+
+    if (targetRole === 'player') {
+        if (!document.getElementById('switchTeamName')?.value?.trim()) return 'School name is required';
+        if (!document.getElementById('switchState')?.value) return 'State is required';
+        if (!document.getElementById('switchGradYear')?.value) return 'Graduation year is required';
+        if (!document.getElementById('switchPosition')?.value) return 'Position is required';
+        if (!document.getElementById('switchHeight')?.value) return 'Height is required';
+        if (!document.getElementById('switchWeight')?.value) return 'Weight is required';
+        if (['collegeplayer', 'transferplayer'].includes(selectedTargetType)) {
+            if (!document.getElementById('switchDivision')?.value) return 'Division is required';
+        }
+    } else if (targetRole === 'coach') {
+        if (!document.getElementById('switchTeamName')?.value?.trim()) return 'School name is required';
+        if (!document.getElementById('switchState')?.value) return 'State is required';
+        if (!document.getElementById('switchPositionTitle')?.value) return 'Coaching position is required';
+        if (selectedTargetType === 'collegecoach') {
+            if (!document.getElementById('switchDivision')?.value) return 'Division is required';
+        }
+    }
+
+    return null;
+}
+
+function collectStep2Data() {
+    const data = {
+        first_name: document.getElementById('switchFirstName')?.value?.trim(),
+        last_name: document.getElementById('switchLastName')?.value?.trim(),
+        username: document.getElementById('switchUsername')?.value?.trim()
+    };
+
+    const targetRole = getBaseRoleFromType(selectedTargetType);
+
+    if (targetRole === 'player') {
+        data.team_name = document.getElementById('switchTeamName')?.value?.trim();
+        data.state = document.getElementById('switchState')?.value;
+        data.graduation_year = parseInt(document.getElementById('switchGradYear')?.value) || null;
+        data.position = document.getElementById('switchPosition')?.value;
+        data.height = parseInt(document.getElementById('switchHeight')?.value) || null;
+        data.weight = parseInt(document.getElementById('switchWeight')?.value) || null;
+        data.gpa = parseFloat(document.getElementById('switchGPA')?.value) || null;
+
+        if (['collegeplayer', 'transferplayer'].includes(selectedTargetType)) {
+            data.college_division = document.getElementById('switchDivision')?.value;
+            data.conference = document.getElementById('switchConference')?.value?.trim() || null;
+        }
+        if (selectedTargetType === 'transferplayer') {
+            data.eligibility = parseInt(document.getElementById('switchEligibility')?.value) || null;
+        }
+    } else if (targetRole === 'coach') {
+        data.team_name = document.getElementById('switchTeamName')?.value?.trim();
+        data.state = document.getElementById('switchState')?.value;
+        data.position_title = document.getElementById('switchPositionTitle')?.value;
+
+        if (selectedTargetType === 'collegecoach') {
+            data.college_division = document.getElementById('switchDivision')?.value;
+            data.conference = document.getElementById('switchConference')?.value?.trim() || null;
+        }
+    } else {
+        data.subheader = document.getElementById('switchSubheader')?.value?.trim() || null;
+        data.bio = document.getElementById('switchBio')?.value?.trim() || null;
+    }
+
+    return data;
+}
+
+function goToStep3() {
+    const body = document.querySelector('.switch-modal-body');
+    const target = switchProfileInfo.targets.find(t => t.type === selectedTargetType);
+    const profileData = collectStep2Data();
+
+    let warnings = `
+        <div class="switch-warning">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="warning-icon">
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                <line x1="12" y1="9" x2="12" y2="13"></line>
+                <line x1="12" y1="17" x2="12.01" y2="17"></line>
+            </svg>
+            <div>
+                <strong>This action is permanent.</strong>
+                <p>Your current profile data (stats, position, team info, etc.) will be permanently deleted. Your posts, followers, and messages will be preserved.</p>
+            </div>
+        </div>
+    `;
+
+    if (target.is_paid) {
+        warnings += `
+            <div class="switch-info-banner">
+                <strong>${target.label}</strong> is a paid profile type. A subscription will be required for full access to premium features.
+            </div>
+        `;
+    }
+
+    body.innerHTML = `
+        <div class="switch-step" id="switchStep3">
+            <h3>Confirm profile switch</h3>
+            <div class="switch-confirm-summary">
+                <div class="switch-confirm-from">
+                    <span class="switch-confirm-label">From</span>
+                    <span class="switch-confirm-value">${switchProfileInfo.current_label}</span>
+                </div>
+                <div class="switch-confirm-arrow">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                        <polyline points="12 5 19 12 12 19"></polyline>
+                    </svg>
+                </div>
+                <div class="switch-confirm-to">
+                    <span class="switch-confirm-label">To</span>
+                    <span class="switch-confirm-value">${target.label}</span>
+                    <span class="switch-type-badge ${target.is_paid ? 'badge-paid' : 'badge-free'}">${target.is_paid ? 'PAID' : 'FREE'}</span>
+                </div>
+            </div>
+            ${warnings}
+            <div class="switch-confirm-check">
+                <label>
+                    <input type="checkbox" id="switchConfirmCheckbox">
+                    I understand this is permanent and want to switch my profile type
+                </label>
+            </div>
+            <div class="switch-form-error" id="switchConfirmError" style="display:none;"></div>
+            <div class="switch-step-actions">
+                <button class="btn-secondary" id="switchBackBtn3">Back</button>
+                <button class="btn-primary btn-danger" id="switchConfirmBtn" disabled>Switch Profile</button>
+            </div>
+        </div>
+    `;
+
+    updateStepIndicator(3);
+
+    document.getElementById('switchConfirmCheckbox').addEventListener('change', (e) => {
+        document.getElementById('switchConfirmBtn').disabled = !e.target.checked;
+    });
+
+    document.getElementById('switchBackBtn3').addEventListener('click', () => {
+        goToStep2();
+    });
+
+    document.getElementById('switchConfirmBtn').addEventListener('click', () => {
+        executeSwitchProfile(profileData);
+    });
+}
+
+async function executeSwitchProfile(profileData) {
+    const btn = document.getElementById('switchConfirmBtn');
+    const errorEl = document.getElementById('switchConfirmError');
+    const originalText = btn.textContent;
+
+    btn.disabled = true;
+    btn.textContent = 'Switching...';
+    errorEl.style.display = 'none';
+
+    try {
+        const result = await API.settings.switchProfile(selectedTargetType, profileData);
+
+        if (result.success) {
+            // Show success briefly then redirect
+            btn.textContent = 'Success! Redirecting...';
+            btn.classList.remove('btn-danger');
+            btn.classList.add('btn-success');
+
+            setTimeout(() => {
+                const folder = result.redirect_folder;
+                const mainpage = folder.includes('coach')
+                    ? `mainpage-${folder}.html`
+                    : (folder === 'other' ? 'mainpage-other.html' : `mainpage-${folder}.html`);
+                window.location.href = `../../${folder}/${mainpage}`;
+            }, 1000);
+        } else {
+            errorEl.textContent = result.error || 'Failed to switch profile';
+            errorEl.style.display = '';
+            btn.textContent = originalText;
+            btn.disabled = false;
+        }
+    } catch (error) {
+        errorEl.textContent = error.message || 'Failed to switch profile. Please try again.';
+        errorEl.style.display = '';
+        btn.textContent = originalText;
+        btn.disabled = false;
+    }
+}
+
+function closeSwitchProfileModal() {
+    const modal = document.getElementById('switchProfileModal');
+    if (modal) {
+        modal.remove();
+        document.body.style.overflow = '';
+    }
+}
+
+function updateStepIndicator(step) {
+    document.querySelectorAll('.step-dot').forEach(dot => {
+        const dotStep = parseInt(dot.dataset.step);
+        dot.classList.toggle('active', dotStep === step);
+        dot.classList.toggle('completed', dotStep < step);
+    });
+}
+
+function getBaseRoleFromType(type) {
+    if (['hsplayer', 'collegeplayer', 'transferplayer'].includes(type)) return 'player';
+    if (['hscoach', 'collegecoach'].includes(type)) return 'coach';
+    return 'other';
+}
+
+function escapeHTML(str) {
+    if (!str) return '';
+    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}

@@ -83,7 +83,19 @@
       "Bash(/tmp/ai_files_summary.txt:*)",
       "Read(//tmp/**)",
       "Bash(sed -n '1160,1579p' \"c:/Users/jacks/OneDrive - Colorado School of Mines/Desktop/direct-recruit/frontend/collegecoach/tabs/messages.css\")",
-      "Bash(sed -n '1040,1077p' \"c:/Users/jacks/OneDrive - Colorado School of Mines/Desktop/direct-recruit/frontend/collegecoach/tabs/messages.js\")"
+      "Bash(sed -n '1040,1077p' \"c:/Users/jacks/OneDrive - Colorado School of Mines/Desktop/direct-recruit/frontend/collegecoach/tabs/messages.js\")",
+      "Bash(docker-compose up:*)",
+      "Bash(curl -s -c cookies.txt -X POST http://localhost:5000/api/auth/login -H \"Content-Type: application/json\" -d '{\"email\":\"collegecoach@test.com\",\"password\":\"Test123!@#\"}')",
+      "Bash(taskkill //F //IM node.exe)",
+      "Bash(node server.js)",
+      "Bash(curl -s -b cookies.txt -X POST http://localhost:5000/api/ai/search -H \"Content-Type: application/json\" -d '{\"filters\":{\"player_type\":\"all\",\"position\":null,\"state\":null,\"graduation_year\":null,\"min_height\":null,\"max_height\":null,\"min_weight\":null,\"max_weight\":null,\"min_gpa\":null,\"college_division\":null,\"eligibility\":null,\"searchTerm\":null,\"has_highlights\":null,\"offer_filters\":null,\"stat_filters\":[]}}')",
+      "Bash(node -p \"const j=JSON.parse\\(require\\('fs'\\).readFileSync\\(0,'utf8'\\)\\);j.players.map\\(p=>p.first_name+' '+p.last_name+' | offers: '+\\(p.offers||'none'\\)+' | score: '+p.relevance_score\\).join\\('\\\\n'\\)\")",
+      "Bash(curl -s -b cookies.txt -X POST http://localhost:5000/api/ai/search -H \"Content-Type: application/json\" -d '{\"filters\":{\"player_type\":\"all\",\"offer_filters\":{\"min_count\":2,\"division\":null},\"stat_filters\":[]}}')",
+      "Bash(node -p \"JSON.parse\\(require\\('fs'\\).readFileSync\\(0,'utf8'\\)\\).players.length+' players'\")",
+      "Bash(curl -s -b cookies.txt -X POST http://localhost:5000/api/ai/search -H \"Content-Type: application/json\" -d '{\"filters\":{\"player_type\":\"all\",\"offer_filters\":{\"division\":\"D1 FBS\"},\"stat_filters\":[]}}')",
+      "Bash(curl -s -b cookies.txt -X POST http://localhost:5000/api/ai/search -H \"Content-Type: application/json\" -d '{\"filters\":{\"player_type\":\"all\",\"offer_filters\":{\"min_count\":3,\"division\":\"D1 FBS\"},\"stat_filters\":[]}}')",
+      "Bash(curl -s -b cookies.txt -X POST http://localhost:5000/api/ai/search -H \"Content-Type: application/json\" -d '{\"filters\":{\"player_type\":\"all\",\"offer_filters\":{\"division\":\"D2\"},\"stat_filters\":[]}}')",
+      "Bash(npm run:*)"
     ],
     "deny": [],
     "ask": []

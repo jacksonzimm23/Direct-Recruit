@@ -16,7 +16,7 @@ class User {
   }
 
   static async findById(id) {
-    const result = await pool.query('SELECT id, email, username, role, created_at, email_verified, profile_completed, is_active FROM users WHERE id = $1', [id]);
+    const result = await pool.query('SELECT id, email, username, role, created_at, email_verified, profile_completed, is_active, last_profile_switch_at FROM users WHERE id = $1', [id]);
     return result.rows[0];
   }
 
@@ -60,6 +60,28 @@ class User {
       [newEmail, userId]
     );
     return result.rows[0];
+  }
+
+  static COLLEGE_DIVISIONS = ['D1 FBS', 'D1 FCS', 'D2', 'D3', 'NAIA', 'NJCAA', 'FBS', 'FCS', '3C2A'];
+
+  static PAID_TYPES = ['collegecoach', 'hsplayer', 'transferplayer'];
+
+  static getSubtypeFromProfile(role, profile) {
+    if (role === 'coach') {
+      return (profile.college_division && User.COLLEGE_DIVISIONS.includes(profile.college_division)) ? 'collegecoach' : 'hscoach';
+    } else if (role === 'other') {
+      return 'other';
+    } else {
+      if (profile.transfer === 'y' || profile.is_transfer_player) return 'transferplayer';
+      if (profile.college_division && User.COLLEGE_DIVISIONS.includes(profile.college_division)) return 'collegeplayer';
+      return 'hsplayer';
+    }
+  }
+
+  static getBaseRole(subtype) {
+    if (['hsplayer', 'collegeplayer', 'transferplayer'].includes(subtype)) return 'player';
+    if (['hscoach', 'collegecoach'].includes(subtype)) return 'coach';
+    return 'other';
   }
 
   // Delete user and all associated data
