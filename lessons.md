@@ -314,6 +314,74 @@
 
 ---
 
+## Sidebar Footer — Avatar, Name, Subheader, and Colored Ring
+
+38. **The sidebar footer (avatar + name + subheader) is populated in 4 separate places per role, and all 4 must stay in sync.** When modifying how the sidebar footer looks (avatar border, subheader text, subheader color, name display), you must update ALL of these locations for ALL 6 role folders. Missing one causes the sidebar to flash the wrong info or lose its colored ring on certain pages.
+
+    **The 4 population points (per role folder):**
+
+    | # | File | When it runs | What page |
+    |---|---|---|---|
+    | 1 | `{role}/sidebar-footer.js` | On DOMContentLoaded via `populateSidebarFooter()` | Mainpage (feed) — runs first, sets initial sidebar |
+    | 2 | `{role}/mainpage-{type}.js` | In `updateSidebarFooter()` called after feed loads | Mainpage (feed) — overwrites #1 with same data from `/auth/me` |
+    | 3 | `{role}/tabs/my-profile.js` | In `updateNavbarForLoggedInUser(user, profile)` called on page load | My Profile page + when viewing other profiles |
+    | 4 | `{role}/tabs/messages.js` | In `loadCurrentUser()` called on page load | Messages page |
+
+    All 4 call `GET /api/auth/me` to get the **logged-in user's** data (not the viewed user's). This means the sidebar always shows YOUR info, even when viewing someone else's profile.
+
+    **What each population point sets:**
+    - **Name:** `profile.first_name + profile.last_name` → `.sidebar-footer .user-name`
+    - **Subheader text:** Role-specific format → `.sidebar-footer .user-role`
+    - **Subheader color:** Inline `style.color` on `.user-role`
+    - **Avatar image:** `profile.profile_image_url` (or `profile_picture_url` for other) → `.sidebar-footer .user-avatar-circle` innerHTML
+    - **Avatar border ring:** Inline `style.border` using `getRoleBorderColor()` on `.user-avatar-circle`
+
+    **Subheader format and color by profile type (must match across all 4 files):**
+
+    | Profile Type | Subheader Format | Color | Separator |
+    |---|---|---|---|
+    | HS Player | `Position • Height • Weight • GradYear` | `#1282a2` (cerulean) | bullet `•` |
+    | College Player | `Position • Team • Division` | `#1282a2` (cerulean) | bullet `•` |
+    | Transfer Player | `Position • Height • Weight • YOE: N year(s)` | `#b91c1c` (red) | bullet `•` |
+    | HS Coach | `Team, State` | `#ff6b35` (orange) | comma `,` |
+    | College Coach | `Team, State • Division` | `#ff6b35` (orange) | mixed |
+    | Other | `subheader` field (plain text) | `#d4a017` (gold) | N/A |
+
+    **Avatar border ring colors (set by `getRoleBorderColor()` in `shared/api.js`):**
+
+    | Profile Type | Border Color |
+    |---|---|
+    | HS Player / College Player | `#1282a2` (cerulean) |
+    | Transfer Player | `#ef4444` (red) |
+    | Coach (HS or College) | `#ff6b35` (orange) |
+    | Other | `#d4a017` (gold) |
+
+    **Height formatting logic (duplicated in all sidebar footer code):**
+    - If `profile.height` is a string containing `'` or `"` → use as-is (already formatted like `6'2"`)
+    - If `profile.height` is a number (inches) → convert: `Math.floor(inches / 12)` feet, `inches % 12` remaining → format as `6'2"`
+
+    **How `getProfileFolder()` determines which format to use:**
+    The sidebar footer code calls `getProfileFolder({ role, is_transfer_player, transfer, college_division })` (from `shared/api.js`) to determine `userFolder`, then uses a series of `if/else if` blocks to apply the correct subheader format. This is the same function used for cross-folder profile navigation (Pattern 1 in CLAUDE.md).
+
+    **Common mistakes when modifying the sidebar footer:**
+    1. Forgetting one of the 4 population points — the sidebar will show the wrong format on that page
+    2. Using `#1282a2` for the "other" profile color instead of `#d4a017` — the "other" color is gold, NOT cerulean
+    3. Not setting the avatar `style.border` after setting `innerHTML` — the border ring disappears
+    4. Using `profile.profile_image_url` without also checking `profile.profile_picture_url` — the "other" profile table uses a different column name
+    5. Forgetting to handle the height number→string conversion — raw integer heights display as `"74"` instead of `6'2"`
+    6. Setting sidebar data from the *viewed* profile instead of the *logged-in* user — sidebar must always show YOUR info
+
+    **Key files (24 total — 4 per role x 6 roles):**
+    - `frontend/{role}/sidebar-footer.js` (6 files)
+    - `frontend/{role}/mainpage-{type}.js` (6 files: mainpage-player.js x3, mainpage-coach.js x2, mainpage-other.js x1)
+    - `frontend/{role}/tabs/my-profile.js` (6 files)
+    - `frontend/{role}/tabs/messages.js` (6 files)
+
+    **Additional sidebar avatar locations (profile post avatars on my-profile pages):**
+    The `.profile-post-avatar` divs in the Posts/Replies/Likes tabs of my-profile.js also need `getRoleBorderColor()` borders. These use `post.author_role`, `post.author_transfer`, `post.author_division` for regular posts, and `post.original_author_role` etc. for reposts. There are ~5 per file (30 total across 6 roles).
+
+---
+
 ## TODOs
 
 **TODO: Adding subscription tiers and stripe (Stripe integration for paid profile types: collegecoach, hsplayer, transferplayer)
