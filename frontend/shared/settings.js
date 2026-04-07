@@ -2667,9 +2667,15 @@ async function executeSwitchProfile(profileData) {
 
             setTimeout(() => {
                 const folder = result.redirect_folder;
-                const mainpage = folder.includes('coach')
-                    ? `mainpage-${folder}.html`
-                    : (folder === 'other' ? 'mainpage-other.html' : `mainpage-${folder}.html`);
+                const mainpageMap = {
+                    hsplayer: 'mainpage-player.html',
+                    collegeplayer: 'mainpage-player.html',
+                    transferplayer: 'mainpage-player.html',
+                    hscoach: 'mainpage-coach.html',
+                    collegecoach: 'mainpage-coach.html',
+                    other: 'mainpage-other.html'
+                };
+                const mainpage = mainpageMap[folder] || 'mainpage-player.html';
                 window.location.href = `../../${folder}/${mainpage}`;
             }, 1000);
         } else {
