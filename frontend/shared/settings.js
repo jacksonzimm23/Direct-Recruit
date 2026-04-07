@@ -2249,9 +2249,9 @@ function renderStep2() {
             <small class="form-hint">Email cannot be changed during a profile switch</small>
         </div>
         <div class="switch-form-group">
-            <label>Username <span class="required">*</span></label>
-            <input type="text" id="switchUsername" placeholder="Choose a username" class="form-input" maxlength="15">
-            <small class="form-hint">1-15 characters, lowercase letters, numbers, underscores only</small>
+            <label>Username</label>
+            <input type="text" id="switchUsername" value="${escapeHTML(shared.username || '')}" class="form-input" disabled>
+            <small class="form-hint">Username is preserved from your current profile</small>
         </div>
     `;
 
@@ -2276,11 +2276,53 @@ function renderStep2() {
                 </div>
             </div>
             <div class="switch-form-group">
-                <label>Position <span class="required">*</span></label>
-                <select id="switchPosition" class="form-input">
-                    <option value="">Select Position</option>
-                    ${POSITION_OPTIONS.map(p => `<option value="${p}">${p}</option>`).join('')}
-                </select>
+                <label>Position(s) <span class="required">*</span></label>
+                <p class="form-hint" style="margin-bottom: 0.5rem;">Select all positions you play</p>
+                <div class="switch-position-grid">
+                    <div class="switch-pos-group">
+                        <h4 class="switch-pos-group-label">Offense - Skill</h4>
+                        ${['QB|Quarterback', 'RB|Running Back', 'FB|Fullback', 'WR|Wide Receiver', 'TE|Tight End'].map(p => {
+                            const [code, name] = p.split('|');
+                            return `<label class="switch-pos-checkbox"><input type="checkbox" name="switchPosition" value="${code}"><span>${name} (${code})</span></label>`;
+                        }).join('')}
+                    </div>
+                    <div class="switch-pos-group">
+                        <h4 class="switch-pos-group-label">Offense - Line</h4>
+                        ${['OT|Offensive Tackle', 'OG|Offensive Guard', 'C|Center'].map(p => {
+                            const [code, name] = p.split('|');
+                            return `<label class="switch-pos-checkbox"><input type="checkbox" name="switchPosition" value="${code}"><span>${name} (${code})</span></label>`;
+                        }).join('')}
+                    </div>
+                    <div class="switch-pos-group">
+                        <h4 class="switch-pos-group-label">Defense - Line</h4>
+                        ${['DE|Defensive End', 'DT|Defensive Tackle', 'NT|Nose Tackle'].map(p => {
+                            const [code, name] = p.split('|');
+                            return `<label class="switch-pos-checkbox"><input type="checkbox" name="switchPosition" value="${code}"><span>${name} (${code})</span></label>`;
+                        }).join('')}
+                    </div>
+                    <div class="switch-pos-group">
+                        <h4 class="switch-pos-group-label">Defense - LBs</h4>
+                        ${['ILB|Inside Linebacker', 'OLB|Outside Linebacker'].map(p => {
+                            const [code, name] = p.split('|');
+                            return `<label class="switch-pos-checkbox"><input type="checkbox" name="switchPosition" value="${code}"><span>${name} (${code})</span></label>`;
+                        }).join('')}
+                    </div>
+                    <div class="switch-pos-group">
+                        <h4 class="switch-pos-group-label">Defense - Secondary</h4>
+                        ${['CB|Cornerback', 'S|Safety'].map(p => {
+                            const [code, name] = p.split('|');
+                            return `<label class="switch-pos-checkbox"><input type="checkbox" name="switchPosition" value="${code}"><span>${name} (${code})</span></label>`;
+                        }).join('')}
+                    </div>
+                    <div class="switch-pos-group">
+                        <h4 class="switch-pos-group-label">Special Teams</h4>
+                        ${['K|Kicker', 'P|Punter', 'LS|Long Snapper'].map(p => {
+                            const [code, name] = p.split('|');
+                            return `<label class="switch-pos-checkbox"><input type="checkbox" name="switchPosition" value="${code}"><span>${name} (${code})</span></label>`;
+                        }).join('')}
+                    </div>
+                </div>
+                <div class="switch-selected-positions" id="switchSelectedPositions"></div>
             </div>
             <div class="switch-form-row">
                 <div class="switch-form-group">
@@ -2346,11 +2388,35 @@ function renderStep2() {
                 </select>
             </div>
             <div class="switch-form-group">
-                <label>Coaching Position <span class="required">*</span></label>
-                <select id="switchPositionTitle" class="form-input">
-                    <option value="">Select Position</option>
-                    ${COACH_POSITIONS.map(p => `<option value="${p}">${p}</option>`).join('')}
-                </select>
+                <label>Coaching Position(s) <span class="required">*</span></label>
+                <p class="form-hint" style="margin-bottom: 0.5rem;">Select all positions you coach</p>
+                <div class="switch-position-grid">
+                    <div class="switch-pos-group">
+                        <h4 class="switch-pos-group-label">Head Coach</h4>
+                        ${['Head Coach'].map(p => `<label class="switch-pos-checkbox"><input type="checkbox" name="switchCoachPosition" value="${p}"><span>${p}</span></label>`).join('')}
+                    </div>
+                    <div class="switch-pos-group">
+                        <h4 class="switch-pos-group-label">Coordinators</h4>
+                        ${['Offensive Coordinator', 'Defensive Coordinator', 'Special Teams Coordinator'].map(p => `<label class="switch-pos-checkbox"><input type="checkbox" name="switchCoachPosition" value="${p}"><span>${p}</span></label>`).join('')}
+                    </div>
+                    <div class="switch-pos-group">
+                        <h4 class="switch-pos-group-label">Offense Coaches</h4>
+                        ${['Quarterbacks Coach', 'Running Backs Coach', 'Wide Receivers Coach', 'Tight Ends Coach', 'Offensive Line Coach'].map(p => `<label class="switch-pos-checkbox"><input type="checkbox" name="switchCoachPosition" value="${p}"><span>${p}</span></label>`).join('')}
+                    </div>
+                    <div class="switch-pos-group">
+                        <h4 class="switch-pos-group-label">Defense Coaches</h4>
+                        ${['Defensive Line Coach', 'Linebackers Coach', 'Defensive Backs Coach', 'Safeties Coach', 'Cornerbacks Coach'].map(p => `<label class="switch-pos-checkbox"><input type="checkbox" name="switchCoachPosition" value="${p}"><span>${p}</span></label>`).join('')}
+                    </div>
+                    <div class="switch-pos-group">
+                        <h4 class="switch-pos-group-label">Special Teams</h4>
+                        ${['Special Teams Coach'].map(p => `<label class="switch-pos-checkbox"><input type="checkbox" name="switchCoachPosition" value="${p}"><span>${p}</span></label>`).join('')}
+                    </div>
+                    <div class="switch-pos-group">
+                        <h4 class="switch-pos-group-label">Other Staff</h4>
+                        ${['Recruiting Coordinator', 'Assistant Coach', 'Graduate Assistant'].map(p => `<label class="switch-pos-checkbox"><input type="checkbox" name="switchCoachPosition" value="${p}"><span>${p}</span></label>`).join('')}
+                    </div>
+                </div>
+                <div class="switch-selected-positions" id="switchSelectedCoachPositions"></div>
             </div>
         `;
 
@@ -2415,6 +2481,16 @@ function attachStep2Listeners() {
         }
     });
 
+    // Position checkbox listeners (player)
+    document.querySelectorAll('input[name="switchPosition"]').forEach(cb => {
+        cb.addEventListener('change', updateSelectedPositionsDisplay);
+    });
+
+    // Position checkbox listeners (coach)
+    document.querySelectorAll('input[name="switchCoachPosition"]').forEach(cb => {
+        cb.addEventListener('change', updateSelectedCoachPositionsDisplay);
+    });
+
     document.getElementById('switchNextBtn2').addEventListener('click', () => {
         const error = validateStep2();
         if (error) {
@@ -2438,7 +2514,7 @@ function validateStep2() {
         if (!document.getElementById('switchTeamName')?.value?.trim()) return 'School name is required';
         if (!document.getElementById('switchState')?.value) return 'State is required';
         if (!document.getElementById('switchGradYear')?.value) return 'Graduation year is required';
-        if (!document.getElementById('switchPosition')?.value) return 'Position is required';
+        if (getSelectedPositions().length === 0) return 'At least one position is required';
         if (!document.getElementById('switchHeight')?.value) return 'Height is required';
         if (!document.getElementById('switchWeight')?.value) return 'Weight is required';
         if (['collegeplayer', 'transferplayer'].includes(selectedTargetType)) {
@@ -2447,7 +2523,7 @@ function validateStep2() {
     } else if (targetRole === 'coach') {
         if (!document.getElementById('switchTeamName')?.value?.trim()) return 'School name is required';
         if (!document.getElementById('switchState')?.value) return 'State is required';
-        if (!document.getElementById('switchPositionTitle')?.value) return 'Coaching position is required';
+        if (getSelectedCoachPositions().length === 0) return 'At least one coaching position is required';
         if (selectedTargetType === 'collegecoach') {
             if (!document.getElementById('switchDivision')?.value) return 'Division is required';
         }
@@ -2469,7 +2545,7 @@ function collectStep2Data() {
         data.team_name = document.getElementById('switchTeamName')?.value?.trim();
         data.state = document.getElementById('switchState')?.value;
         data.graduation_year = parseInt(document.getElementById('switchGradYear')?.value) || null;
-        data.position = document.getElementById('switchPosition')?.value;
+        data.position = getSelectedPositions().join('/');
         data.height = parseInt(document.getElementById('switchHeight')?.value) || null;
         data.weight = parseInt(document.getElementById('switchWeight')?.value) || null;
         data.gpa = parseFloat(document.getElementById('switchGPA')?.value) || null;
@@ -2484,7 +2560,7 @@ function collectStep2Data() {
     } else if (targetRole === 'coach') {
         data.team_name = document.getElementById('switchTeamName')?.value?.trim();
         data.state = document.getElementById('switchState')?.value;
-        data.position_title = document.getElementById('switchPositionTitle')?.value;
+        data.position_title = getSelectedCoachPositions().join('/');
 
         if (selectedTargetType === 'collegecoach') {
             data.college_division = document.getElementById('switchDivision')?.value;
@@ -2634,6 +2710,54 @@ function getBaseRoleFromType(type) {
     if (['hsplayer', 'collegeplayer', 'transferplayer'].includes(type)) return 'player';
     if (['hscoach', 'collegecoach'].includes(type)) return 'coach';
     return 'other';
+}
+
+function getSelectedPositions() {
+    return Array.from(document.querySelectorAll('input[name="switchPosition"]:checked')).map(cb => cb.value);
+}
+
+function updateSelectedPositionsDisplay() {
+    const container = document.getElementById('switchSelectedPositions');
+    if (!container) return;
+    const positions = getSelectedPositions();
+    if (positions.length === 0) {
+        container.innerHTML = '';
+        return;
+    }
+    container.innerHTML = positions.map(pos =>
+        `<span class="switch-pos-pill">${pos}<button type="button" data-pos="${pos}">&times;</button></span>`
+    ).join('');
+    container.querySelectorAll('button[data-pos]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const cb = document.querySelector(`input[name="switchPosition"][value="${btn.dataset.pos}"]`);
+            if (cb) cb.checked = false;
+            updateSelectedPositionsDisplay();
+        });
+    });
+}
+
+function getSelectedCoachPositions() {
+    return Array.from(document.querySelectorAll('input[name="switchCoachPosition"]:checked')).map(cb => cb.value);
+}
+
+function updateSelectedCoachPositionsDisplay() {
+    const container = document.getElementById('switchSelectedCoachPositions');
+    if (!container) return;
+    const positions = getSelectedCoachPositions();
+    if (positions.length === 0) {
+        container.innerHTML = '';
+        return;
+    }
+    container.innerHTML = positions.map(pos =>
+        `<span class="switch-pos-pill">${pos}<button type="button" data-pos="${pos}">&times;</button></span>`
+    ).join('');
+    container.querySelectorAll('button[data-pos]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const cb = document.querySelector(`input[name="switchCoachPosition"][value="${btn.dataset.pos}"]`);
+            if (cb) cb.checked = false;
+            updateSelectedCoachPositionsDisplay();
+        });
+    });
 }
 
 function escapeHTML(str) {
