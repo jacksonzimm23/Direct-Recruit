@@ -2,7 +2,7 @@
 
 .profile-form-section {
     min-height: 100vh;
-    padding: 8rem 2rem 4rem;
+    padding: 2rem 2rem 4rem;
     background: linear-gradient(135deg, var(--oxford-blue) 0%, var(--penn-blue) 50%, var(--indigo-dye) 100%);
     display: flex;
     justify-content: center;
@@ -511,7 +511,7 @@ input.input-success {
 /* Responsive Design */
 @media (max-width: 1024px) {
     .profile-form-section {
-        padding: 7rem 2rem 3rem;
+        padding: 2rem 2rem 3rem;
     }
 
     .form-container {
@@ -521,7 +521,7 @@ input.input-success {
 
 @media (max-width: 768px) {
     .profile-form-section {
-        padding: 6rem 1.5rem 3rem;
+        padding: 1.5rem 1.5rem 3rem;
     }
 
     .form-container {
