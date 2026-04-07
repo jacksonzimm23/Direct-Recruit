@@ -11,8 +11,30 @@ const { authLimiter } = require('../middleware/rateLimit');
 const cognito = require('../utils/cognito');
 const email = require('../utils/email');
 const { deleteFromS3 } = require('../utils/s3');
+const { generateToken } = require('../utils/jwt');
 const pool = require('../config/database');
 const logger = require('../utils/logger');
+
+// Cookie configuration (mirrored from auth.js)
+const COOKIE_OPTIONS = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === 'production',
+  sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
+  maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+};
+
+const SWITCH_COOLDOWN_HOURS = 72;
+
+const PROFILE_TYPE_LABELS = {
+  hsplayer: 'High School Player',
+  collegeplayer: 'College Player',
+  transferplayer: 'Transfer Player',
+  hscoach: 'High School Coach',
+  collegecoach: 'College Coach',
+  other: 'Other'
+};
+
+const VALID_SUBTYPES = Object.keys(PROFILE_TYPE_LABELS);
 
 // Get current account settings (email from database)
 router.get('/account', authMiddleware, async (req, res) => {
@@ -753,5 +775,356 @@ router.delete('/account/delete', authMiddleware, async (req, res) => {
     res.status(500).json({ error: 'Failed to delete account' });
   }
 });
+
+// ==================== PROFILE TYPE SWITCHING ====================
+
+// Get current profile type info and available switch targets
+router.get('/switch-profile/info', authMiddleware, async (req, res) => {
+  try {
+    const user = await User.findById(req.userId);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Get current profile
+    let profile = null;
+    if (user.role === 'player') {
+      profile = await PlayerProfile.findByUserId(req.userId);
+    } else if (user.role === 'coach') {
+      profile = await CoachProfile.findByUserId(req.userId);
+    } else if (user.role === 'other') {
+      profile = await OtherProfile.findByUserId(req.userId);
+    }
+
+    if (!profile) {
+      return res.status(404).json({ error: 'Profile not found' });
+    }
+
+    const currentSubtype = User.getSubtypeFromProfile(user.role, profile);
+
+    // Check cooldown
+    let canSwitch = true;
+    let cooldownRemainingHours = 0;
+    if (user.last_profile_switch_at) {
+      const lastSwitch = new Date(user.last_profile_switch_at);
+      const hoursSince = (Date.now() - lastSwitch.getTime()) / (1000 * 60 * 60);
+      if (hoursSince < SWITCH_COOLDOWN_HOURS) {
+        canSwitch = false;
+        cooldownRemainingHours = Math.ceil(SWITCH_COOLDOWN_HOURS - hoursSince);
+      }
+    }
+
+    // Build targets (exclude current)
+    const targets = VALID_SUBTYPES
+      .filter(t => t !== currentSubtype)
+      .map(t => ({
+        type: t,
+        label: PROFILE_TYPE_LABELS[t],
+        is_paid: User.PAID_TYPES.includes(t)
+      }));
+
+    // Shared fields for pre-fill
+    const sharedFields = {
+      first_name: profile.first_name,
+      last_name: profile.last_name,
+      email: user.email
+    };
+
+    res.json({
+      current_type: currentSubtype,
+      current_label: PROFILE_TYPE_LABELS[currentSubtype],
+      is_current_paid: User.PAID_TYPES.includes(currentSubtype),
+      can_switch: canSwitch,
+      cooldown_remaining_hours: cooldownRemainingHours,
+      targets,
+      shared_fields: sharedFields
+    });
+  } catch (error) {
+    logger.error('Get switch profile info error:', error);
+    res.status(500).json({ error: 'Failed to fetch profile type info' });
+  }
+});
+
+// Switch profile type
+router.post('/switch-profile', authMiddleware, async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const { target_type, profile_data, confirm } = req.body;
+
+    // Validate request
+    if (!confirm) {
+      return res.status(400).json({ error: 'Confirmation required' });
+    }
+    if (!target_type || !VALID_SUBTYPES.includes(target_type)) {
+      return res.status(400).json({ error: 'Invalid target profile type' });
+    }
+    if (!profile_data || typeof profile_data !== 'object') {
+      return res.status(400).json({ error: 'Profile data is required' });
+    }
+
+    await client.query('BEGIN');
+
+    // Lock the user row to prevent concurrent switches
+    const userResult = await client.query(
+      'SELECT * FROM users WHERE id = $1 FOR UPDATE',
+      [req.userId]
+    );
+    const user = userResult.rows[0];
+    if (!user) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Get current profile
+    let oldProfile = null;
+    if (user.role === 'player') {
+      const r = await client.query('SELECT * FROM player_profiles WHERE user_id = $1', [req.userId]);
+      oldProfile = r.rows[0];
+    } else if (user.role === 'coach') {
+      const r = await client.query('SELECT * FROM coach_profiles WHERE user_id = $1', [req.userId]);
+      oldProfile = r.rows[0];
+    } else if (user.role === 'other') {
+      const r = await client.query('SELECT * FROM other_profiles WHERE user_id = $1', [req.userId]);
+      oldProfile = r.rows[0];
+    }
+
+    if (!oldProfile) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ error: 'Current profile not found' });
+    }
+
+    const currentSubtype = User.getSubtypeFromProfile(user.role, oldProfile);
+    if (currentSubtype === target_type) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ error: 'Already on this profile type' });
+    }
+
+    // Check cooldown
+    if (user.last_profile_switch_at) {
+      const hoursSince = (Date.now() - new Date(user.last_profile_switch_at).getTime()) / (1000 * 60 * 60);
+      if (hoursSince < SWITCH_COOLDOWN_HOURS) {
+        await client.query('ROLLBACK');
+        return res.status(429).json({ error: `Profile switch cooldown active. Try again in ${Math.ceil(SWITCH_COOLDOWN_HOURS - hoursSince)} hours.` });
+      }
+    }
+
+    const targetRole = User.getBaseRole(target_type);
+
+    // Validate required fields for target type
+    const validationError = validateProfileDataForType(target_type, profile_data);
+    if (validationError) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ error: validationError });
+    }
+
+    // Preserve data that carries over
+    const preservedData = {
+      first_name: profile_data.first_name || oldProfile.first_name,
+      last_name: profile_data.last_name || oldProfile.last_name,
+      profile_image_url: oldProfile.profile_image_url || oldProfile.profile_picture_url || null,
+      followers_count: oldProfile.followers_count || 0,
+      following_count: oldProfile.following_count || 0,
+      profile_visibility: oldProfile.profile_visibility || 'everyone',
+      message_permissions: oldProfile.message_permissions || 'everyone'
+    };
+
+    // Delete old profile row (CASCADE handles player_games/player_game_stats)
+    if (user.role === 'player') {
+      await client.query('DELETE FROM player_profiles WHERE user_id = $1', [req.userId]);
+    } else if (user.role === 'coach') {
+      await client.query('DELETE FROM coach_profiles WHERE user_id = $1', [req.userId]);
+    } else if (user.role === 'other') {
+      await client.query('DELETE FROM other_profiles WHERE user_id = $1', [req.userId]);
+    }
+
+    // Update users.role and cooldown timestamp
+    await client.query(
+      'UPDATE users SET role = $1, last_profile_switch_at = CURRENT_TIMESTAMP WHERE id = $2',
+      [targetRole, req.userId]
+    );
+
+    // Update users.username if provided in profile_data
+    if (profile_data.username) {
+      // Check username uniqueness
+      const usernameCheck = await client.query(
+        'SELECT id FROM users WHERE username = $1 AND id != $2',
+        [profile_data.username, req.userId]
+      );
+      if (usernameCheck.rows.length > 0) {
+        await client.query('ROLLBACK');
+        return res.status(400).json({ error: 'Username already taken' });
+      }
+      await client.query('UPDATE users SET username = $1 WHERE id = $2', [profile_data.username, req.userId]);
+    }
+
+    // Create new profile row
+    if (targetRole === 'player') {
+      const collegeDivision = ['collegeplayer', 'transferplayer'].includes(target_type)
+        ? (profile_data.college_division || null) : null;
+      const transfer = target_type === 'transferplayer' ? 'y' : null;
+
+      await client.query(
+        `INSERT INTO player_profiles
+        (user_id, first_name, last_name, username, team_name, state, graduation_year,
+         position, height, weight, gpa, college_division, conference, number, eligibility,
+         transfer, bio, profile_image_url, followers_count, following_count,
+         profile_visibility, message_permissions)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)`,
+        [
+          req.userId,
+          preservedData.first_name,
+          preservedData.last_name,
+          profile_data.username,
+          profile_data.team_name,
+          profile_data.state,
+          profile_data.graduation_year || null,
+          profile_data.position,
+          profile_data.height || null,
+          profile_data.weight || null,
+          profile_data.gpa || null,
+          collegeDivision,
+          profile_data.conference || null,
+          profile_data.number || null,
+          profile_data.eligibility || null,
+          transfer,
+          profile_data.bio || null,
+          preservedData.profile_image_url,
+          preservedData.followers_count,
+          preservedData.following_count,
+          preservedData.profile_visibility,
+          preservedData.message_permissions
+        ]
+      );
+    } else if (targetRole === 'coach') {
+      const collegeDivision = target_type === 'collegecoach'
+        ? (profile_data.college_division || null) : null;
+
+      await client.query(
+        `INSERT INTO coach_profiles
+        (user_id, first_name, last_name, username, team_name, college_division,
+         position_title, state, phone, bio, conference, profile_image_url,
+         followers_count, following_count, profile_visibility, message_permissions)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)`,
+        [
+          req.userId,
+          preservedData.first_name,
+          preservedData.last_name,
+          profile_data.username,
+          profile_data.team_name,
+          collegeDivision,
+          profile_data.position_title,
+          profile_data.state,
+          profile_data.phone || null,
+          profile_data.bio || null,
+          profile_data.conference || null,
+          preservedData.profile_image_url,
+          preservedData.followers_count,
+          preservedData.following_count,
+          preservedData.profile_visibility,
+          preservedData.message_permissions
+        ]
+      );
+    } else if (targetRole === 'other') {
+      await client.query(
+        `INSERT INTO other_profiles
+        (user_id, first_name, last_name, username, bio, profile_image_url,
+         followers_count, following_count, profile_visibility, message_permissions)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+        [
+          req.userId,
+          preservedData.first_name,
+          preservedData.last_name,
+          profile_data.username,
+          profile_data.bio || null,
+          preservedData.profile_image_url,
+          preservedData.followers_count,
+          preservedData.following_count,
+          preservedData.profile_visibility,
+          preservedData.message_permissions
+        ]
+      );
+    }
+
+    // Log the switch in history
+    await client.query(
+      `INSERT INTO profile_switch_history (user_id, from_role, from_subtype, to_role, to_subtype)
+       VALUES ($1, $2, $3, $4, $5)`,
+      [req.userId, user.role, currentSubtype, targetRole, target_type]
+    );
+
+    await client.query('COMMIT');
+
+    // Issue new JWT with updated role
+    const newToken = generateToken(req.userId, targetRole);
+    res.cookie('token', newToken, COOKIE_OPTIONS);
+
+    // Determine redirect URL
+    const folderMap = {
+      hsplayer: 'hsplayer', collegeplayer: 'collegeplayer', transferplayer: 'transferplayer',
+      hscoach: 'hscoach', collegecoach: 'collegecoach', other: 'other'
+    };
+    const folder = folderMap[target_type];
+    const mainpage = target_type.includes('coach')
+      ? `mainpage-${target_type.replace('hs', 'hs').replace('college', 'college')}.html`
+      : `mainpage-${target_type === 'other' ? 'other' : target_type.replace('player', 'player')}.html`;
+
+    const isPaid = User.PAID_TYPES.includes(target_type);
+    // TODO: Cancel Stripe subscription when billing is implemented (if switching FROM paid to free)
+    // TODO: Check/create Stripe subscription when switching TO paid type
+
+    res.json({
+      success: true,
+      new_type: target_type,
+      new_role: targetRole,
+      is_paid: isPaid,
+      redirect_folder: folder,
+      message: isPaid
+        ? `Profile switched to ${PROFILE_TYPE_LABELS[target_type]}. This profile type requires a paid subscription for full access.`
+        : `Profile switched to ${PROFILE_TYPE_LABELS[target_type]} successfully.`
+    });
+  } catch (error) {
+    await client.query('ROLLBACK');
+    logger.error('Switch profile error:', error);
+    res.status(500).json({ error: 'Failed to switch profile type' });
+  } finally {
+    client.release();
+  }
+});
+
+// Validate required fields for a target profile type
+function validateProfileDataForType(targetType, data) {
+  const targetRole = User.getBaseRole(targetType);
+
+  if (!data.username || data.username.trim().length === 0) {
+    return 'Username is required';
+  }
+  if (!/^[a-z0-9_]{1,15}$/.test(data.username)) {
+    return 'Username must be 1-15 characters, lowercase letters, numbers, and underscores only';
+  }
+
+  if (targetRole === 'player') {
+    if (!data.team_name) return 'Team/school name is required';
+    if (!data.state) return 'State is required';
+    if (!data.position) return 'Position is required';
+    if (!data.height) return 'Height is required';
+    if (!data.weight) return 'Weight is required';
+    if (!data.graduation_year) return 'Graduation year is required';
+
+    if (['collegeplayer', 'transferplayer'].includes(targetType)) {
+      if (!data.college_division) return 'College division is required';
+    }
+  } else if (targetRole === 'coach') {
+    if (!data.team_name) return 'Team/school name is required';
+    if (!data.state) return 'State is required';
+    if (!data.position_title) return 'Coaching position is required';
+
+    if (targetType === 'collegecoach') {
+      if (!data.college_division) return 'College division is required';
+    }
+  }
+  // 'other' has no required fields beyond username
+
+  return null;
+}
 
 module.exports = router;

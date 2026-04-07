@@ -271,10 +271,53 @@
 
 ---
 
+## Profile Type Switching
+
+36. **Profile type switching is now live in Settings > Profile Type.** Users can switch between any of the 6 profile types (hsplayer, collegeplayer, transferplayer, hscoach, collegecoach, other) from their Settings page. The feature uses a 3-step modal flow: (1) choose target type, (2) fill in the full profile form for that type, (3) confirm with a permanent-action warning.
+
+    **How switching works (database transaction):**
+    - Profile type is determined by 3 fields: `users.role` (player/coach/other), `player_profiles.college_division` (null = HS, has value = college), and `player_profiles.transfer` ('y' = transfer)
+    - On switch: the old profile row is **deleted** from its table (`player_profiles`, `coach_profiles`, or `other_profiles`), `users.role` is updated, and a new profile row is created in the target table — all in a single Postgres transaction
+    - Only `first_name`, `last_name`, and `email` carry over (email is read-only). All other profile data is new input from the switch form
+    - Social data (posts, follows, messages, notifications, conversations) is **preserved** — these all reference `users.id`, which never changes
+    - `ai_analytics` is **safe** — `coach_user_id` references `users(id) ON DELETE SET NULL`, and we never delete the users row
+    - Player game stats (`player_games`, `player_game_stats`) are the only CASCADE loss — they reference `player_profiles.id` directly
+    - A new JWT is issued with the updated role, set as an HTTPOnly cookie
+    - 72-hour cooldown between switches, enforced via `users.last_profile_switch_at`
+    - Switch history logged in `profile_switch_history` table (from_role, from_subtype, to_role, to_subtype)
+
+    **Key files:**
+    - Migration: `backend/scripts/add-profile-switching.sql` + `backend/migrations/005_add_profile_switching.sql`
+    - Backend endpoints: `backend/routes/settings.js` — `GET /api/settings/switch-profile/info` and `POST /api/settings/switch-profile`
+    - User model helpers: `backend/models/User.js` — `getSubtypeFromProfile()`, `getBaseRole()`, `PAID_TYPES`, `COLLEGE_DIVISIONS`
+    - Frontend API: `frontend/shared/api.js` — `API.settings.getSwitchProfileInfo()` and `API.settings.switchProfile()`
+    - Frontend modal: `frontend/shared/settings.js` — `initializeProfileTypeSwitching()`, `openSwitchProfileModal()`, 3-step flow
+    - Frontend CSS: `frontend/shared/settings.css` — all `.switch-*` classes
+    - HTML (all 6 roles): `tabs/settings.html` — "Profile Type" nav button + section
+
+37. **Profile type switching is pre-wired for Stripe subscription handling.** Three profile types are paid (`collegecoach`, `hsplayer`, `transferplayer`) and three are free (`collegeplayer`, `hscoach`, `other`). The paid/free distinction is defined in `User.PAID_TYPES` array in `backend/models/User.js`.
+
+    **How it works on the frontend:**
+    - The `GET /api/settings/switch-profile/info` endpoint returns `is_paid` for each target type and `is_current_paid` for the current type
+    - Step 1 (type selection) shows a "PAID" or "FREE" badge on each type card
+    - Step 3 (confirmation) shows an info banner for paid types: "This profile type requires a paid subscription for full access"
+    - The `POST /api/settings/switch-profile` response includes `is_paid: true/false` so the frontend can show appropriate messaging after switching
+
+    **How Stripe should be integrated when ready:**
+    - The `POST /api/settings/switch-profile` endpoint has `// TODO` comments marking where to add Stripe calls
+    - **Switching TO paid:** Add a subscription check/creation step between confirmation (Step 3) and the actual switch. Options: (a) redirect to Stripe Checkout before executing the switch, then execute on webhook callback; or (b) allow the switch and gate paid features (AI RA, PI) at usage time by checking subscription status
+    - **Switching FROM paid to free:** Call `stripe.subscriptions.cancel()` inside the transaction, before deleting the old profile row. The coach's subscription ID would come from a future `subscriptions` table
+    - **The `profile_switch_history` table** logs every switch with from/to types — useful for billing audits and detecting abuse (e.g., switching to free right before billing cycle)
+    - **Cooldown (72h)** also helps prevent subscription gaming — users can't rapidly cycle between paid and free to avoid charges
+
+    **Current behavior (no Stripe yet):** All switches are allowed freely regardless of paid/free. The UI shows paid badges and info banners as informational only. When Stripe is built, the enforcement point is a single check at the top of the POST endpoint.
+
+---
+
 ## TODOs
 
-TODO: Best way to switch between profile types since some are paid and some are free (with different features of course)
-~~26. **TODO: Adding token usage percentage bar based on tiers for the college coach APIs~~ DONE (lesson 32)
-~~Show a view usage modal with the usage like claude does~~ DONE (lesson 32)
-27. **TODO: Adding subscription tiers and stripe 
-28. **TODO: Fix sign up college inputs with their logos, show logo icon badge
+**TODO: Adding subscription tiers and stripe (Stripe integration for paid profile types: collegecoach, hsplayer, transferplayer)
+
+**TODO: Fix sign up college inputs with their logos, show logo icon badge
+
+**TODO: Save button on posts

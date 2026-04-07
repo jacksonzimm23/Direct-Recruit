@@ -1891,3 +1891,511 @@
         gap: 0.4rem;
     }
 }
+
+/* ==================== PROFILE TYPE SWITCHING ==================== */
+
+/* Current profile type display in settings section */
+.current-profile-type-display {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 0;
+    margin-bottom: 0.75rem;
+}
+
+.profile-type-current-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.profile-type-label {
+    font-size: 0.8rem;
+    color: #8892b0;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.profile-type-value {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #ccd6f6;
+}
+
+.profile-type-paid-badge,
+.switch-type-badge {
+    display: inline-block;
+    padding: 0.15rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+.badge-paid {
+    background: rgba(255, 107, 53, 0.15);
+    color: #ff6b35;
+    border: 1px solid rgba(255, 107, 53, 0.3);
+}
+
+.badge-free {
+    background: rgba(18, 130, 162, 0.15);
+    color: #1282a2;
+    border: 1px solid rgba(18, 130, 162, 0.3);
+}
+
+.settings-card-description {
+    color: #8892b0;
+    font-size: 0.85rem;
+    margin-bottom: 1rem;
+    line-height: 1.4;
+}
+
+.switch-cooldown-message {
+    color: #ff6b35;
+    font-size: 0.85rem;
+    margin-bottom: 0.75rem;
+    padding: 0.5rem 0.75rem;
+    background: rgba(255, 107, 53, 0.1);
+    border-radius: 6px;
+    border: 1px solid rgba(255, 107, 53, 0.2);
+}
+
+/* Switch modal overlay */
+.switch-profile-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(10, 17, 40, 0.85);
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(4px);
+}
+
+.switch-profile-modal {
+    background: #112240;
+    border-radius: 12px;
+    width: 95%;
+    max-width: 580px;
+    max-height: 90vh;
+    overflow-y: auto;
+    border: 1px solid rgba(100, 116, 152, 0.2);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+.switch-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid rgba(100, 116, 152, 0.15);
+}
+
+.switch-modal-header h2 {
+    margin: 0;
+    font-size: 1.15rem;
+    color: #ccd6f6;
+}
+
+.switch-modal-close {
+    background: none;
+    border: none;
+    color: #8892b0;
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+    transition: color 0.2s;
+}
+
+.switch-modal-close:hover {
+    color: #ccd6f6;
+}
+
+/* Step indicator */
+.switch-modal-steps {
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid rgba(100, 116, 152, 0.1);
+}
+
+.switch-step-indicator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+}
+
+.step-dot {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: rgba(100, 116, 152, 0.2);
+    color: #8892b0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 600;
+    transition: all 0.3s;
+}
+
+.step-dot.active {
+    background: #1282a2;
+    color: #fff;
+}
+
+.step-dot.completed {
+    background: rgba(18, 130, 162, 0.3);
+    color: #1282a2;
+}
+
+.step-line {
+    width: 40px;
+    height: 2px;
+    background: rgba(100, 116, 152, 0.2);
+    margin: 0 0.25rem;
+}
+
+/* Modal body */
+.switch-modal-body {
+    padding: 1.5rem;
+}
+
+.switch-step h3 {
+    margin: 0 0 0.25rem;
+    font-size: 1rem;
+    color: #ccd6f6;
+}
+
+.switch-step-subtitle {
+    color: #8892b0;
+    font-size: 0.85rem;
+    margin: 0 0 1.25rem;
+}
+
+/* Type selection grid (Step 1) */
+.switch-type-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.switch-type-card {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.85rem 1rem;
+    background: rgba(100, 116, 152, 0.08);
+    border: 1px solid rgba(100, 116, 152, 0.15);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.switch-type-card:hover {
+    background: rgba(100, 116, 152, 0.15);
+    border-color: rgba(100, 116, 152, 0.3);
+}
+
+.switch-type-card.selected {
+    background: rgba(18, 130, 162, 0.12);
+    border-color: #1282a2;
+}
+
+.switch-type-icon {
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
+    color: #8892b0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.switch-type-card.selected .switch-type-icon {
+    color: #1282a2;
+}
+
+.switch-type-icon svg {
+    width: 22px;
+    height: 22px;
+}
+
+.switch-type-info {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex: 1;
+}
+
+.switch-type-name {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #ccd6f6;
+}
+
+/* Form fields (Step 2) */
+.switch-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+    margin-bottom: 1rem;
+    max-height: 50vh;
+    overflow-y: auto;
+    padding-right: 0.25rem;
+}
+
+.switch-form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+
+.switch-form-group label {
+    font-size: 0.8rem;
+    color: #8892b0;
+    font-weight: 500;
+}
+
+.switch-form-group label .required {
+    color: #ff6b35;
+}
+
+.switch-form-group .form-input {
+    background: rgba(10, 17, 40, 0.6);
+    border: 1px solid rgba(100, 116, 152, 0.25);
+    border-radius: 6px;
+    padding: 0.6rem 0.75rem;
+    color: #ccd6f6;
+    font-size: 0.85rem;
+    width: 100%;
+    box-sizing: border-box;
+    transition: border-color 0.2s;
+}
+
+.switch-form-group .form-input:focus {
+    outline: none;
+    border-color: #1282a2;
+}
+
+.switch-form-group .form-input:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.switch-form-group .form-hint {
+    font-size: 0.75rem;
+    color: #5a6a8a;
+}
+
+.switch-form-group select.form-input {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%238892b0' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    padding-right: 2rem;
+}
+
+.switch-form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+}
+
+.switch-form-error {
+    color: #e74c3c;
+    font-size: 0.85rem;
+    padding: 0.5rem 0.75rem;
+    background: rgba(231, 76, 60, 0.1);
+    border-radius: 6px;
+    border: 1px solid rgba(231, 76, 60, 0.2);
+    margin-bottom: 0.5rem;
+}
+
+/* Confirmation (Step 3) */
+.switch-confirm-summary {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    padding: 1.25rem;
+    background: rgba(100, 116, 152, 0.08);
+    border-radius: 8px;
+    margin-bottom: 1rem;
+}
+
+.switch-confirm-from,
+.switch-confirm-to {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.switch-confirm-label {
+    font-size: 0.7rem;
+    color: #5a6a8a;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.switch-confirm-value {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #ccd6f6;
+}
+
+.switch-confirm-arrow {
+    color: #8892b0;
+}
+
+.switch-confirm-arrow svg {
+    width: 24px;
+    height: 24px;
+}
+
+.switch-warning {
+    display: flex;
+    gap: 0.75rem;
+    padding: 1rem;
+    background: rgba(231, 76, 60, 0.08);
+    border: 1px solid rgba(231, 76, 60, 0.2);
+    border-radius: 8px;
+    margin-bottom: 0.75rem;
+}
+
+.switch-warning .warning-icon {
+    width: 24px;
+    height: 24px;
+    flex-shrink: 0;
+    color: #e74c3c;
+}
+
+.switch-warning strong {
+    color: #e74c3c;
+    font-size: 0.9rem;
+}
+
+.switch-warning p {
+    color: #8892b0;
+    font-size: 0.8rem;
+    margin: 0.25rem 0 0;
+    line-height: 1.4;
+}
+
+.switch-info-banner {
+    padding: 0.75rem 1rem;
+    background: rgba(255, 107, 53, 0.08);
+    border: 1px solid rgba(255, 107, 53, 0.2);
+    border-radius: 8px;
+    color: #ff6b35;
+    font-size: 0.85rem;
+    margin-bottom: 0.75rem;
+}
+
+.switch-confirm-check {
+    padding: 0.75rem 0;
+    margin-bottom: 0.5rem;
+}
+
+.switch-confirm-check label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #8892b0;
+    font-size: 0.85rem;
+    cursor: pointer;
+}
+
+.switch-confirm-check input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: #1282a2;
+}
+
+/* Step actions */
+.switch-step-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid rgba(100, 116, 152, 0.1);
+}
+
+.switch-step-actions .btn-primary,
+.switch-step-actions .btn-secondary {
+    padding: 0.55rem 1.25rem;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s;
+}
+
+.switch-step-actions .btn-primary {
+    background: #1282a2;
+    color: #fff;
+}
+
+.switch-step-actions .btn-primary:hover:not(:disabled) {
+    background: #0e6d8a;
+}
+
+.switch-step-actions .btn-primary:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.switch-step-actions .btn-primary.btn-danger {
+    background: #e74c3c;
+}
+
+.switch-step-actions .btn-primary.btn-danger:hover:not(:disabled) {
+    background: #c0392b;
+}
+
+.switch-step-actions .btn-primary.btn-success {
+    background: #27ae60;
+}
+
+.switch-step-actions .btn-secondary {
+    background: rgba(100, 116, 152, 0.15);
+    color: #8892b0;
+    border: 1px solid rgba(100, 116, 152, 0.2);
+}
+
+.switch-step-actions .btn-secondary:hover {
+    background: rgba(100, 116, 152, 0.25);
+    color: #ccd6f6;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+    .switch-profile-modal {
+        width: 100%;
+        max-width: 100%;
+        height: 100%;
+        max-height: 100%;
+        border-radius: 0;
+    }
+
+    .switch-form-row {
+        grid-template-columns: 1fr;
+    }
+
+    .switch-confirm-summary {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .switch-confirm-arrow {
+        transform: rotate(90deg);
+    }
+}

@@ -142,6 +142,14 @@
                     </svg>
                     Privacy
                 </button>
+                <button class="settings-nav-btn" data-section="profileType">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="8.5" cy="7" r="4"></circle>
+                        <polyline points="17 11 19 13 23 9"></polyline>
+                    </svg>
+                    Profile Type
+                </button>
                 <button class="settings-nav-btn" data-section="notifications">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
@@ -426,6 +434,24 @@
                                 </label>
                             </div>
                         </div>
+                    </div>
+                </section>
+
+                <!-- Profile Type Section -->
+                <section class="settings-section" id="profileType">
+                    <h2 class="section-heading">Profile Type</h2>
+
+                    <div class="settings-card">
+                        <div class="current-profile-type-display" id="currentProfileTypeDisplay">
+                            <div class="profile-type-current-info">
+                                <span class="profile-type-label">Current Profile Type</span>
+                                <span class="profile-type-value" id="currentProfileTypeValue">Loading...</span>
+                            </div>
+                            <div class="profile-type-paid-badge" id="currentProfilePaidBadge" style="display:none;"></div>
+                        </div>
+                        <p class="settings-card-description">Switch your profile type to change how you use Direct Recruit. Your posts, followers, and messages will be preserved.</p>
+                        <div id="switchCooldownMessage" style="display:none;" class="switch-cooldown-message"></div>
+                        <button class="btn-primary" id="switchProfileBtn">Switch Profile Type</button>
                     </div>
                 </section>
 
