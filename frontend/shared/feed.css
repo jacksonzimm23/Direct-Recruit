@@ -664,7 +664,7 @@
 .quoted-post-avatar svg {
     width: 14px;
     height: 14px;
-    color: var(--cerulean);
+    color: inherit;
 }
 
 .quoted-post-info {
@@ -878,7 +878,7 @@
 .quote-post-preview-avatar svg {
     width: 16px;
     height: 16px;
-    color: rgba(255, 255, 255, 0.5);
+    color: inherit;
 }
 
 .quote-post-preview-body {
@@ -944,7 +944,7 @@
 .comment-avatar svg {
     width: 16px;
     height: 16px;
-    color: var(--cerulean);
+    color: inherit;
 }
 
 .comment-body {
@@ -1832,7 +1832,7 @@
 .share-item-avatar svg {
     width: 20px;
     height: 20px;
-    color: var(--cerulean);
+    color: inherit;
 }
 
 .share-item-info {

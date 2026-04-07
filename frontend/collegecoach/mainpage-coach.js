@@ -479,6 +479,8 @@ function populateSidebarFooter(profile, user) {
         }
         if (user) {
             avatarElement.style.border = `2px solid ${getRoleBorderColor(user.role, user.is_transfer_player, profile.college_division)}`;
+            avatarElement.style.color = getRoleBorderColor(user.role, user.is_transfer_player, profile.college_division);
+            avatarElement.style.backgroundColor = getRoleAvatarBg(user.role, user.is_transfer_player, profile.college_division);
         }
         avatarElement.style.visibility = 'visible';
     }

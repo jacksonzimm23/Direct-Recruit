@@ -58,12 +58,14 @@ class FeedManager {
             };
 
             // Update create post avatar using the already-fetched response
-            if (response.profile?.profile_image_url) {
-                const avatar = document.querySelector('.create-post-box .post-avatar-circle');
-                if (avatar) {
+            const avatar = document.querySelector('.create-post-box .post-avatar-circle');
+            if (avatar) {
+                if (response.profile?.profile_image_url) {
                     avatar.innerHTML = `<img src="${response.profile.profile_image_url}" alt="Your avatar" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
-                    avatar.style.border = `2px solid ${getRoleBorderColor(response.user.role, response.user.is_transfer_player, response.profile.college_division)}`;
                 }
+                avatar.style.border = `2px solid ${getRoleBorderColor(response.user.role, response.user.is_transfer_player, response.profile.college_division)}`;
+                avatar.style.color = getRoleBorderColor(response.user.role, response.user.is_transfer_player, response.profile.college_division);
+                avatar.style.backgroundColor = getRoleAvatarBg(response.user.role, response.user.is_transfer_player, response.profile.college_division);
             }
         } catch (error) {
             // If API call fails (unauthorized), redirect to signin
@@ -74,12 +76,14 @@ class FeedManager {
     async updateCreatePostAvatar() {
         try {
             const response = await API.get('/auth/me');
-            if (response.profile?.profile_image_url) {
-                const avatar = document.querySelector('.create-post-box .post-avatar-circle');
-                if (avatar) {
+            const avatar = document.querySelector('.create-post-box .post-avatar-circle');
+            if (avatar) {
+                if (response.profile?.profile_image_url) {
                     avatar.innerHTML = `<img src="${response.profile.profile_image_url}" alt="Your avatar" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
-                    avatar.style.border = `2px solid ${getRoleBorderColor(response.user.role, response.user.is_transfer_player, response.profile.college_division)}`;
                 }
+                avatar.style.border = `2px solid ${getRoleBorderColor(response.user.role, response.user.is_transfer_player, response.profile.college_division)}`;
+                avatar.style.color = getRoleBorderColor(response.user.role, response.user.is_transfer_player, response.profile.college_division);
+                avatar.style.backgroundColor = getRoleAvatarBg(response.user.role, response.user.is_transfer_player, response.profile.college_division);
             }
         } catch (error) {
             console.error('Error loading post creator avatar:', error);
@@ -758,7 +762,7 @@ class FeedManager {
             ${repostIndicator}
             <div class="post-header">
                 <a href="#" class="post-avatar-link" onclick="feedManager.goToProfile('${post.author_username || post.user_id}', '${post.author_role}', '${post.author_division || ''}', '${post.user_id}', ${post.author_transfer === 'y'}); return false;">
-                    <div class="post-avatar-circle" style="border: 2px solid ${getRoleBorderColor(post.author_role, post.author_transfer === 'y', post.author_division)}">
+                    <div class="post-avatar-circle" style="border: 2px solid ${getRoleBorderColor(post.author_role, post.author_transfer === 'y', post.author_division)}; color: ${getRoleBorderColor(post.author_role, post.author_transfer === 'y', post.author_division)}; background: ${getRoleAvatarBg(post.author_role, post.author_transfer === 'y', post.author_division)}">
                         ${post.author_image ?
                             `<img src="${post.author_image}" alt="${authorName}">` :
                             `<svg viewBox="0 0 24 24" fill="currentColor">
@@ -890,7 +894,7 @@ class FeedManager {
             </div>
             <div class="post-header">
                 <a href="#" class="post-avatar-link" onclick="feedManager.goToProfile('${post.author_username || post.user_id}', '${post.author_role}', '${post.author_division || ''}', '${post.user_id}', ${post.author_transfer === 'y'}); return false;">
-                    <div class="post-avatar-circle" style="border: 2px solid ${getRoleBorderColor(post.author_role, post.author_transfer === 'y', post.author_division)}">
+                    <div class="post-avatar-circle" style="border: 2px solid ${getRoleBorderColor(post.author_role, post.author_transfer === 'y', post.author_division)}; color: ${getRoleBorderColor(post.author_role, post.author_transfer === 'y', post.author_division)}; background: ${getRoleAvatarBg(post.author_role, post.author_transfer === 'y', post.author_division)}">
                         ${post.author_image ?
                             `<img src="${post.author_image}" alt="${authorName}">` :
                             `<svg viewBox="0 0 24 24" fill="currentColor">
@@ -1012,7 +1016,7 @@ class FeedManager {
         article.innerHTML = `
             <div class="post-header">
                 <a href="#" class="post-avatar-link" onclick="feedManager.goToProfile('${post.reposter_username || post.reposter_user_id}', '${post.reposter_role}', '${post.reposter_division || ''}', '${post.reposter_user_id}', ${post.reposter_transfer === 'y'}); return false;">
-                    <div class="post-avatar-circle" style="border: 2px solid ${getRoleBorderColor(post.reposter_role, post.reposter_transfer === 'y', post.reposter_division)}">
+                    <div class="post-avatar-circle" style="border: 2px solid ${getRoleBorderColor(post.reposter_role, post.reposter_transfer === 'y', post.reposter_division)}; color: ${getRoleBorderColor(post.reposter_role, post.reposter_transfer === 'y', post.reposter_division)}; background: ${getRoleAvatarBg(post.reposter_role, post.reposter_transfer === 'y', post.reposter_division)}">
                         ${post.reposter_image ?
                             `<img src="${post.reposter_image}" alt="${reposterName}">` :
                             `<svg viewBox="0 0 24 24" fill="currentColor">
@@ -1054,7 +1058,7 @@ class FeedManager {
             <div onclick="event.stopPropagation();">${quoteMediaHtml}</div>
             <div class="quoted-post-embed" onclick="event.stopPropagation(); feedManager.navigateToPostView('${postId}', event)" style="cursor: pointer;">
                 <div class="quoted-post-header">
-                    <div class="quoted-post-avatar" style="border: 2px solid ${getRoleBorderColor(post.author_role, post.author_transfer === 'y', post.author_division)}">
+                    <div class="quoted-post-avatar" style="border: 2px solid ${getRoleBorderColor(post.author_role, post.author_transfer === 'y', post.author_division)}; color: ${getRoleBorderColor(post.author_role, post.author_transfer === 'y', post.author_division)}; background: ${getRoleAvatarBg(post.author_role, post.author_transfer === 'y', post.author_division)}">
                         ${post.author_image ?
                             `<img src="${post.author_image}" alt="${originalAuthorName}">` :
                             `<svg viewBox="0 0 24 24" fill="currentColor">
@@ -1153,7 +1157,7 @@ class FeedManager {
         article.innerHTML = `
             <div class="post-header">
                 <a href="#" class="post-avatar-link" onclick="feedManager.goToProfile('${share.quoter_username || share.quoter_user_id}', '${share.quoter_role}', '${share.quoter_division || ''}', '${share.quoter_user_id}', ${share.quoter_transfer === 'y'}); return false;">
-                    <div class="post-avatar-circle" style="border: 2px solid ${getRoleBorderColor(share.quoter_role, share.quoter_transfer === 'y', share.quoter_division)}">
+                    <div class="post-avatar-circle" style="border: 2px solid ${getRoleBorderColor(share.quoter_role, share.quoter_transfer === 'y', share.quoter_division)}; color: ${getRoleBorderColor(share.quoter_role, share.quoter_transfer === 'y', share.quoter_division)}; background: ${getRoleAvatarBg(share.quoter_role, share.quoter_transfer === 'y', share.quoter_division)}">
                         ${share.quoter_image ?
                             `<img src="${share.quoter_image}" alt="${quoterName}">` :
                             `<svg viewBox="0 0 24 24" fill="currentColor">
@@ -1191,7 +1195,7 @@ class FeedManager {
             <div class="quoted-post-embed" onclick="feedManager.navigateToPostView('${postId}', event)" style="cursor: pointer;">
                 <div class="quoted-post-header">
                     <a href="#" onclick="feedManager.goToProfile('${share.author_username || share.author_user_id}', '${share.author_role}', '${share.author_division || ''}', '${share.author_user_id}', ${share.author_transfer === 'y'}); event.stopPropagation(); return false;">
-                        <div class="quoted-post-avatar" style="border: 2px solid ${getRoleBorderColor(share.author_role, share.author_transfer === 'y', share.author_division)}">
+                        <div class="quoted-post-avatar" style="border: 2px solid ${getRoleBorderColor(share.author_role, share.author_transfer === 'y', share.author_division)}; color: ${getRoleBorderColor(share.author_role, share.author_transfer === 'y', share.author_division)}; background: ${getRoleAvatarBg(share.author_role, share.author_transfer === 'y', share.author_division)}">
                             ${share.author_image ?
                                 `<img src="${share.author_image}" alt="${originalAuthorName}">` :
                                 `<svg viewBox="0 0 24 24" fill="currentColor">
@@ -1621,7 +1625,7 @@ class FeedManager {
         article.innerHTML = `
             <div class="post-header">
                 <a href="#" class="post-avatar-link" onclick="event.stopPropagation(); feedManager.goToProfile('${post.quoter_username || post.quoter_user_id}', '${post.quoter_role || 'player'}', '${post.quoter_division || ''}', '${post.quoter_user_id}', ${post.quoter_transfer === 'y'}); return false;">
-                    <div class="post-avatar-circle" style="border: 2px solid ${getRoleBorderColor(post.quoter_role || 'player', post.quoter_transfer === 'y', post.quoter_division)}">
+                    <div class="post-avatar-circle" style="border: 2px solid ${getRoleBorderColor(post.quoter_role || 'player', post.quoter_transfer === 'y', post.quoter_division)}; color: ${getRoleBorderColor(post.quoter_role || 'player', post.quoter_transfer === 'y', post.quoter_division)}; background: ${getRoleAvatarBg(post.quoter_role || 'player', post.quoter_transfer === 'y', post.quoter_division)}">
                         ${post.quoter_image ?
                             `<img src="${post.quoter_image}" alt="${quoterName}">` :
                             `<svg viewBox="0 0 24 24" fill="currentColor">
@@ -1662,7 +1666,7 @@ class FeedManager {
             <div class="quoted-post-embed" onclick="event.stopPropagation(); feedManager.navigateToPostView('${post.original_post_id}', event)" style="cursor: pointer;">
                 <div class="quoted-post-header">
                     <a href="#" onclick="feedManager.goToProfile('${post.author_username || post.author_user_id}', '${post.author_role || 'player'}', '${post.author_division || ''}', '${post.author_user_id}', ${post.author_transfer === 'y'}); event.stopPropagation(); return false;">
-                        <div class="quoted-post-avatar" style="border: 2px solid ${getRoleBorderColor(post.author_role || 'player', post.author_transfer === 'y', post.author_division)}">
+                        <div class="quoted-post-avatar" style="border: 2px solid ${getRoleBorderColor(post.author_role || 'player', post.author_transfer === 'y', post.author_division)}; color: ${getRoleBorderColor(post.author_role || 'player', post.author_transfer === 'y', post.author_division)}; background: ${getRoleAvatarBg(post.author_role || 'player', post.author_transfer === 'y', post.author_division)}">
                             ${post.author_image ?
                                 `<img src="${post.author_image}" alt="${originalAuthorName}">` :
                                 `<svg viewBox="0 0 24 24" fill="currentColor">
@@ -2403,7 +2407,7 @@ class FeedManager {
                     }
                     return `
                     <div class="comment" data-comment-id="${comment.id}">
-                        <div class="comment-avatar clickable-profile" onclick="feedManager.goToProfile('${comment.author_username || comment.user_id}', '${comment.author_role || 'player'}', '${comment.author_division || ''}', '${comment.user_id}', ${comment.author_transfer === 'y'})" style="border: 2px solid ${getRoleBorderColor(comment.author_role || 'player', comment.author_transfer === 'y', comment.author_division)}">
+                        <div class="comment-avatar clickable-profile" onclick="feedManager.goToProfile('${comment.author_username || comment.user_id}', '${comment.author_role || 'player'}', '${comment.author_division || ''}', '${comment.user_id}', ${comment.author_transfer === 'y'})" style="border: 2px solid ${getRoleBorderColor(comment.author_role || 'player', comment.author_transfer === 'y', comment.author_division)}; color: ${getRoleBorderColor(comment.author_role || 'player', comment.author_transfer === 'y', comment.author_division)}; background: ${getRoleAvatarBg(comment.author_role || 'player', comment.author_transfer === 'y', comment.author_division)}">
                             ${comment.author_image ?
                                 `<img src="${comment.author_image}" alt="">` :
                                 `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>`
@@ -2644,7 +2648,7 @@ class FeedManager {
                     }
                     return `
                     <div class="comment" data-comment-id="${comment.id}">
-                        <div class="comment-avatar clickable-profile" onclick="feedManager.goToProfile('${comment.username || comment.user_id}', '${comment.role || 'player'}', '${comment.division || ''}', '${comment.user_id}', ${comment.transfer === 'y'})" style="border: 2px solid ${getRoleBorderColor(comment.role || 'player', comment.transfer === 'y', comment.division)}">
+                        <div class="comment-avatar clickable-profile" onclick="feedManager.goToProfile('${comment.username || comment.user_id}', '${comment.role || 'player'}', '${comment.division || ''}', '${comment.user_id}', ${comment.transfer === 'y'})" style="border: 2px solid ${getRoleBorderColor(comment.role || 'player', comment.transfer === 'y', comment.division)}; color: ${getRoleBorderColor(comment.role || 'player', comment.transfer === 'y', comment.division)}; background: ${getRoleAvatarBg(comment.role || 'player', comment.transfer === 'y', comment.division)}">
                             ${comment.profile_image ?
                                 `<img src="${comment.profile_image}" alt="">` :
                                 `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>`
@@ -2809,7 +2813,7 @@ class FeedManager {
                         const imgUrl = like.profile_image_url || like.profile_image;
                         return `
                         <div class="share-item" onclick="feedManager.goToProfile('${like.username || like.user_id}', '${like.role}', '${like.division || ''}', '${like.user_id}', ${like.transfer === 'y'}); feedManager.closeModal('likes-modal');">
-                            <div class="share-item-avatar" style="border: 2px solid ${getRoleBorderColor(like.role, like.transfer === 'y', like.division)}">
+                            <div class="share-item-avatar" style="border: 2px solid ${getRoleBorderColor(like.role, like.transfer === 'y', like.division)}; color: ${getRoleBorderColor(like.role, like.transfer === 'y', like.division)}; background: ${getRoleAvatarBg(like.role, like.transfer === 'y', like.division)}">
                                 ${imgUrl ?
                                     `<img src="${imgUrl}" alt="${like.first_name}">` :
                                     `<svg viewBox="0 0 24 24" fill="currentColor">
@@ -3988,7 +3992,7 @@ class FeedManager {
             const shareTypeLabel = share.share_type === 'quote' ? 'Quote' : 'Repost';
             return `
             <div class="share-item" onclick="feedManager.goToProfile('${share.username || share.user_id}', '${share.role}', '${share.division || ''}', '${share.user_id}', ${share.transfer === 'y'}); feedManager.closeModal('shares-modal');">
-                <div class="share-item-avatar" style="border: 2px solid ${getRoleBorderColor(share.role, share.transfer === 'y', share.division)}">
+                <div class="share-item-avatar" style="border: 2px solid ${getRoleBorderColor(share.role, share.transfer === 'y', share.division)}; color: ${getRoleBorderColor(share.role, share.transfer === 'y', share.division)}; background: ${getRoleAvatarBg(share.role, share.transfer === 'y', share.division)}">
                     ${share.profile_image_url ?
                         `<img src="${share.profile_image_url}" alt="${share.first_name}">` :
                         `<svg viewBox="0 0 24 24" fill="currentColor">
@@ -4069,7 +4073,7 @@ class FeedManager {
                         });
                         return `
                         <div class="share-item" onclick="feedManager.goToProfile('${like.username || like.id}', '${like.role}', '${like.division || ''}', '${like.id}', ${like.transfer === 'y'}); feedManager.closeModal('likes-modal');">
-                            <div class="share-item-avatar" style="border: 2px solid ${getRoleBorderColor(like.role, like.transfer === 'y', like.division)}">
+                            <div class="share-item-avatar" style="border: 2px solid ${getRoleBorderColor(like.role, like.transfer === 'y', like.division)}; color: ${getRoleBorderColor(like.role, like.transfer === 'y', like.division)}; background: ${getRoleAvatarBg(like.role, like.transfer === 'y', like.division)}">
                                 ${like.profile_image_url ?
                                     `<img src="${like.profile_image_url}" alt="${like.first_name}">` :
                                     `<svg viewBox="0 0 24 24" fill="currentColor">

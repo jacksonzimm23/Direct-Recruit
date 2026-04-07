@@ -341,7 +341,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const offersHtml = ` • <span class="discover-row-offers">Offers: ${offerCount}</span>`;
         return `
             <div class="discover-row" data-username="${player.username || ''}" data-user-type="hsplayer">
-                <div class="discover-row-avatar player-border">
+                <div class="discover-row-avatar player-border" style="color: ${getRoleBorderColor('player', false, null)}; background: ${getRoleAvatarBg('player', false, null)}; border: 2px solid ${getRoleBorderColor('player', false, null)}">
                     ${profileImage ? `<img src="${profileImage}" alt="${displayName}">` : `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>`}
                 </div>
                 <div class="discover-row-info">
@@ -363,7 +363,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const line2Parts = [position, school + (state ? `, ${state}` : ''), shortDiv].filter(p => p);
         return `
             <div class="discover-row" data-username="${player.username || ''}" data-user-type="collegeplayer">
-                <div class="discover-row-avatar player-border">
+                <div class="discover-row-avatar player-border" style="color: ${getRoleBorderColor('player', false, player.college_division)}; background: ${getRoleAvatarBg('player', false, player.college_division)}; border: 2px solid ${getRoleBorderColor('player', false, player.college_division)}">
                     ${profileImage ? `<img src="${profileImage}" alt="${displayName}">` : `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>`}
                 </div>
                 <div class="discover-row-info">
@@ -383,7 +383,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const line2Parts = [position, height, weight, eligibility].filter(p => p);
         return `
             <div class="discover-row" data-username="${player.username || ''}" data-user-type="transferplayer">
-                <div class="discover-row-avatar transfer-border">
+                <div class="discover-row-avatar transfer-border" style="color: ${getRoleBorderColor('player', true, player.college_division)}; background: ${getRoleAvatarBg('player', true, player.college_division)}; border: 2px solid ${getRoleBorderColor('player', true, player.college_division)}">
                     ${profileImage ? `<img src="${profileImage}" alt="${displayName}">` : `<svg viewBox="0 0 24 24" fill="currentColor" style="color:#dc3545;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>`}
                 </div>
                 <div class="discover-row-info">
@@ -402,7 +402,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const line2Parts = [positionAcronym, school + (state ? `, ${state}` : '')].filter(p => p);
         return `
             <div class="discover-row" data-username="${coach.username || ''}" data-user-type="hscoach">
-                <div class="discover-row-avatar coach-border">
+                <div class="discover-row-avatar coach-border" style="color: ${getRoleBorderColor('coach', false, null)}; background: ${getRoleAvatarBg('coach', false, null)}; border: 2px solid ${getRoleBorderColor('coach', false, null)}">
                     ${profileImage ? `<img src="${profileImage}" alt="${displayName}">` : `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>`}
                 </div>
                 <div class="discover-row-info">
@@ -427,7 +427,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const line2Parts = [positionAcronym, school + (state ? `, ${state}` : ''), shortDiv, recruiting ? `Recruiting: ${recruiting}` : ''].filter(p => p);
         return `
             <div class="discover-row" data-username="${coach.username || ''}" data-user-type="collegecoach">
-                <div class="discover-row-avatar coach-border">
+                <div class="discover-row-avatar coach-border" style="color: ${getRoleBorderColor('coach', false, coach.college_division)}; background: ${getRoleAvatarBg('coach', false, coach.college_division)}; border: 2px solid ${getRoleBorderColor('coach', false, coach.college_division)}">
                     ${profileImage ? `<img src="${profileImage}" alt="${displayName}">` : `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>`}
                 </div>
                 <div class="discover-row-info">
@@ -443,7 +443,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const profileImage = profile.profile_picture_url || profile.profile_image_url;
         return `
             <div class="discover-row" data-username="${profile.username || ''}" data-user-type="other">
-                <div class="discover-row-avatar other-border">
+                <div class="discover-row-avatar other-border" style="color: ${getRoleBorderColor('other', false, null)}; background: ${getRoleAvatarBg('other', false, null)}; border: 2px solid ${getRoleBorderColor('other', false, null)}">
                     ${profileImage ? `<img src="${profileImage}" alt="${displayName}">` : `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>`}
                 </div>
                 <div class="discover-row-info">
@@ -472,7 +472,7 @@ document.addEventListener('DOMContentLoaded', function() {
         return `
             <div class="player-card" data-username="${player.username || ''}" data-user-type="hsplayer">
                 <div class="player-card-header">
-                    <div class="player-avatar-large">
+                    <div class="player-avatar-large" style="color: ${getRoleBorderColor('player', false, null)}; background: ${getRoleAvatarBg('player', false, null)}; border: 2px solid ${getRoleBorderColor('player', false, null)}">
                         ${profileImage
                             ? `<img src="${profileImage}" alt="${displayName}" class="avatar-image">`
                             : `<svg viewBox="0 0 24 24" fill="currentColor">
@@ -544,7 +544,7 @@ document.addEventListener('DOMContentLoaded', function() {
         return `
             <div class="player-card" data-username="${player.username || ''}" data-user-type="collegeplayer">
                 <div class="player-card-header">
-                    <div class="player-avatar-large">
+                    <div class="player-avatar-large" style="color: ${getRoleBorderColor('player', false, player.college_division)}; background: ${getRoleAvatarBg('player', false, player.college_division)}; border: 2px solid ${getRoleBorderColor('player', false, player.college_division)}">
                         ${profileImage
                             ? `<img src="${profileImage}" alt="${displayName}" class="avatar-image">`
                             : `<svg viewBox="0 0 24 24" fill="currentColor">
@@ -580,7 +580,7 @@ document.addEventListener('DOMContentLoaded', function() {
         return `
             <div class="player-card transfer-card" data-username="${player.username || ''}" data-user-type="transferplayer" style="border-color: rgba(220, 53, 69, 0.3);">
                 <div class="player-card-header">
-                    <div class="player-avatar-large" style="background: rgba(220, 53, 69, 0.2); border-color: rgba(220, 53, 69, 0.4);">
+                    <div class="player-avatar-large" style="color: ${getRoleBorderColor('player', true, null)}; background: ${getRoleAvatarBg('player', true, null)}; border: 2px solid ${getRoleBorderColor('player', true, null)}">
                         ${profileImage
                             ? `<img src="${profileImage}" alt="${displayName}" class="avatar-image">`
                             : `<svg viewBox="0 0 24 24" fill="currentColor" style="color: #dc3545;">
@@ -626,7 +626,7 @@ document.addEventListener('DOMContentLoaded', function() {
         return `
             <div class="coach-card" data-username="${coach.username || ''}" data-user-type="hscoach">
                 <div class="coach-card-header">
-                    <div class="coach-avatar-large">
+                    <div class="coach-avatar-large" style="color: ${getRoleBorderColor('coach', false, null)}; background: ${getRoleAvatarBg('coach', false, null)}; border: 2px solid ${getRoleBorderColor('coach', false, null)}">
                         ${profileImage
                             ? `<img src="${profileImage}" alt="${displayName}" class="avatar-image">`
                             : `<svg viewBox="0 0 24 24" fill="currentColor">
@@ -673,7 +673,7 @@ document.addEventListener('DOMContentLoaded', function() {
         return `
             <div class="coach-card" data-username="${coach.username || ''}" data-user-type="collegecoach">
                 <div class="coach-card-header">
-                    <div class="coach-avatar-large">
+                    <div class="coach-avatar-large" style="color: ${getRoleBorderColor('coach', false, coach.college_division)}; background: ${getRoleAvatarBg('coach', false, coach.college_division)}; border: 2px solid ${getRoleBorderColor('coach', false, coach.college_division)}">
                         ${profileImage
                             ? `<img src="${profileImage}" alt="${displayName}" class="avatar-image">`
                             : `<svg viewBox="0 0 24 24" fill="currentColor">
@@ -717,7 +717,7 @@ document.addEventListener('DOMContentLoaded', function() {
         return `
             <div class="other-card" data-username="${profile.username || ''}" data-user-type="other">
                 <div class="other-card-header">
-                    <div class="other-avatar-large">
+                    <div class="other-avatar-large" style="color: ${getRoleBorderColor('other', false, null)}; background: ${getRoleAvatarBg('other', false, null)}; border: 2px solid ${getRoleBorderColor('other', false, null)}">
                         ${profileImage
                             ? `<img src="${profileImage}" alt="${displayName}" class="avatar-image">`
                             : `<svg viewBox="0 0 24 24" fill="currentColor">

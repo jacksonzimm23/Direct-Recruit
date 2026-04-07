@@ -161,7 +161,7 @@
 .avatar-circle svg {
     width: 26px;
     height: 26px;
-    color: var(--cerulean);
+    color: inherit;
 }
 
 .online-indicator {
@@ -289,7 +289,7 @@
 .thread-avatar-circle svg {
     width: 24px;
     height: 24px;
-    color: var(--cerulean);
+    color: inherit;
 }
 
 .thread-user-info {
@@ -438,7 +438,7 @@
 .message-avatar-circle svg {
     width: 18px;
     height: 18px;
-    color: var(--cerulean);
+    color: inherit;
 }
 
 .message-content {
@@ -698,7 +698,7 @@
 .profile-avatar-medium svg {
     width: 40px;
     height: 40px;
-    color: var(--cerulean);
+    color: inherit;
 }
 
 .profile-name-large {

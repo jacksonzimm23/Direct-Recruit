@@ -96,13 +96,78 @@ class SuggestedConnectionsWidget {
         this.attachProfileClickHandlers(this.widgetContainer, '.follow-item');
     }
 
+    getRoleColor(connection) {
+        const role = connection.role;
+        const isTransfer = connection.transfer === 'y';
+        const collegeDivision = connection.college_division;
+        return getRoleBorderColor(role, isTransfer, collegeDivision);
+    }
+
+    getRoleBg(connection) {
+        const role = connection.role;
+        const isTransfer = connection.transfer === 'y';
+        const collegeDivision = connection.college_division;
+        return getRoleAvatarBg(role, isTransfer, collegeDivision);
+    }
+
+    buildSubheader(connection) {
+        const parts = [];
+        const profileType = connection.profile_type || 'unknown';
+
+        if (profileType === 'transfer') {
+            if (connection.player_position) parts.push(connection.player_position);
+            if (connection.player_height) {
+                const h = parseInt(connection.player_height);
+                parts.push(`${Math.floor(h / 12)}'${h % 12}"`);
+            }
+            if (connection.player_weight) parts.push(`${connection.player_weight} lbs`);
+            if (connection.eligibility) {
+                const yt = connection.eligibility === 1 ? 'year' : 'years';
+                parts.push(`YOE: ${connection.eligibility} ${yt}`);
+            }
+            return { text: parts.join(' \u2022 ') || 'Transfer Player', color: '#b91c1c' };
+        } else if (profileType === 'hs' && connection.role === 'player') {
+            if (connection.player_position) parts.push(connection.player_position);
+            if (connection.player_height) {
+                const h = parseInt(connection.player_height);
+                parts.push(`${Math.floor(h / 12)}'${h % 12}"`);
+            }
+            if (connection.player_weight) parts.push(`${connection.player_weight} lbs`);
+            if (connection.graduation_year) parts.push(connection.graduation_year);
+            return { text: parts.join(' \u2022 ') || 'Player', color: '#1282a2' };
+        } else if (profileType === 'college' && connection.role === 'player') {
+            if (connection.player_position) parts.push(connection.player_position);
+            if (connection.team_name) parts.push(connection.team_name);
+            if (connection.college_division) parts.push(connection.college_division);
+            return { text: parts.join(' \u2022 ') || 'Player', color: '#1282a2' };
+        } else if (profileType === 'hs' && connection.role === 'coach') {
+            if (connection.team_name) parts.push(connection.team_name);
+            if (connection.state) parts.push(connection.state);
+            return { text: parts.join(', ') || 'HS Coach', color: '#ff6b35' };
+        } else if (profileType === 'college' && connection.role === 'coach') {
+            if (connection.team_name && connection.state) {
+                parts.push(`${connection.team_name}, ${connection.state}`);
+            } else if (connection.team_name) {
+                parts.push(connection.team_name);
+            }
+            if (connection.college_division) parts.push(connection.college_division);
+            return { text: parts.join(' \u2022 ') || 'College Coach', color: '#ff6b35' };
+        } else if (connection.role === 'other') {
+            return { text: connection.other_subheader || '', color: '#d4a017' };
+        }
+        return { text: '', color: '#1282a2' };
+    }
+
     createWidgetItemHTML(connection) {
         const fullName = `${connection.first_name} ${connection.last_name}`.trim() || 'Unknown User';
         const profileType = connection.profile_type || 'unknown';
+        const roleColor = this.getRoleColor(connection);
+        const roleBg = this.getRoleBg(connection);
+        const sub = this.buildSubheader(connection);
 
         const avatarHTML = connection.profile_image_url
-            ? `<img src="${connection.profile_image_url}" alt="${fullName}" class="follow-avatar-img">`
-            : `<div class="follow-avatar-circle">
+            ? `<img src="${connection.profile_image_url}" alt="${fullName}" class="follow-avatar-img" style="border: 2px solid ${roleColor}; border-radius: 50%;">`
+            : `<div class="follow-avatar-circle" style="border: 2px solid ${roleColor}; color: ${roleColor}; background: ${roleBg};">
                 <svg viewBox="0 0 24 24" fill="currentColor">
                     <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
                     <circle cx="12" cy="7" r="4"></circle>
@@ -114,6 +179,7 @@ class SuggestedConnectionsWidget {
                 ${avatarHTML}
                 <div class="follow-info">
                     <div class="follow-name">${this.escapeHTML(fullName)}</div>
+                    ${sub.text ? `<div class="follow-subheader" style="color: ${sub.color};">${this.escapeHTML(sub.text)}</div>` : ''}
                 </div>
             </div>
         `;
@@ -169,21 +235,13 @@ class SuggestedConnectionsWidget {
     createModalItemHTML(connection) {
         const fullName = `${connection.first_name} ${connection.last_name}`.trim() || 'Unknown User';
         const profileType = connection.profile_type || 'unknown';
-
-        // Build subheader
-        let subheader = '';
-        if (connection.subheader_line1) {
-            subheader = connection.subheader_line1;
-            if (connection.subheader_line2) {
-                subheader += ` • ${connection.subheader_line2}`;
-            }
-        } else if (connection.subheader_line2) {
-            subheader = connection.subheader_line2;
-        }
+        const roleColor = this.getRoleColor(connection);
+        const roleBg = this.getRoleBg(connection);
+        const sub = this.buildSubheader(connection);
 
         const avatarHTML = connection.profile_image_url
-            ? `<img src="${connection.profile_image_url}" alt="${fullName}" class="connection-modal-avatar">`
-            : `<div class="connection-modal-avatar-circle">
+            ? `<img src="${connection.profile_image_url}" alt="${fullName}" class="connection-modal-avatar" style="border: 2px solid ${roleColor}; border-radius: 50%;">`
+            : `<div class="connection-modal-avatar-circle" style="border: 2px solid ${roleColor}; color: ${roleColor}; background: ${roleBg};">
                 <svg viewBox="0 0 24 24" fill="currentColor">
                     <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
                     <circle cx="12" cy="7" r="4"></circle>
@@ -195,7 +253,7 @@ class SuggestedConnectionsWidget {
                 ${avatarHTML}
                 <div class="connection-modal-info">
                     <div class="connection-modal-name">${this.escapeHTML(fullName)}</div>
-                    ${subheader ? `<div class="connection-modal-subheader">${this.escapeHTML(subheader)}</div>` : ''}
+                    ${sub.text ? `<div class="connection-modal-subheader" style="color: ${sub.color};">${this.escapeHTML(sub.text)}</div>` : ''}
                 </div>
                 <button class="connection-modal-btn-follow" data-user-id="${connection.user_id}">Follow</button>
             </div>

@@ -1332,7 +1332,7 @@
 .pi-card-avatar svg {
     width: 24px;
     height: 24px;
-    color: var(--cerulean);
+    color: inherit;
 }
 
 .pi-avatar-image {
@@ -2205,7 +2205,7 @@
 .pi-watchlist-item-avatar svg {
     width: 20px;
     height: 20px;
-    color: var(--cerulean);
+    color: inherit;
 }
 
 .pi-watchlist-item-info {

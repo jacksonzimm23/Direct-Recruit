@@ -402,14 +402,21 @@ async function updateSidebarFooter() {
                     avatarElement.innerHTML = `<img src="${avatarUrl}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
                 }
                 avatarElement.style.border = `2px solid ${getRoleBorderColor(user.role, user.is_transfer_player, profile.college_division)}`;
+                avatarElement.style.color = getRoleBorderColor(user.role, user.is_transfer_player, profile.college_division);
+                avatarElement.style.backgroundColor = getRoleAvatarBg(user.role, user.is_transfer_player, profile.college_division);
                 avatarElement.style.visibility = 'visible';
             }
 
             // Update post creation box avatar
             const postAvatarElement = document.querySelector('.create-post-box .post-avatar-circle');
-            if (postAvatarElement && (profile.profile_picture_url || profile.profile_image_url)) {
+            if (postAvatarElement) {
                 const postAvatarUrl = profile.profile_picture_url || profile.profile_image_url;
-                postAvatarElement.innerHTML = `<img src="${postAvatarUrl}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
+                if (postAvatarUrl) {
+                    postAvatarElement.innerHTML = `<img src="${postAvatarUrl}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
+                }
+                postAvatarElement.style.border = `2px solid ${getRoleBorderColor(user.role, user.is_transfer_player, profile.college_division)}`;
+                postAvatarElement.style.color = getRoleBorderColor(user.role, user.is_transfer_player, profile.college_division);
+                postAvatarElement.style.backgroundColor = getRoleAvatarBg(user.role, user.is_transfer_player, profile.college_division);
             }
 
             // Mobile header/sidebar user info is handled by mobile-header.js

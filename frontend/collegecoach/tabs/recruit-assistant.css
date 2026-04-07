@@ -899,11 +899,11 @@
 .ra-card-avatar svg {
     width: 32px !important;
     height: 32px !important;
-    color: var(--cerulean);
+    color: inherit;
 }
 
 .ra-transfer .ra-card-avatar svg {
-    color: #dc2626;
+    color: inherit;
 }
 
 .ra-avatar-image {

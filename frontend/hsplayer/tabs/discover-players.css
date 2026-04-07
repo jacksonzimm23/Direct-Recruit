@@ -169,7 +169,7 @@
 .coach-avatar-large svg {
     width: 40px;
     height: 40px;
-    color: var(--accent-orange);
+    color: inherit;
 }
 
 .coach-avatar-large .avatar-image {
@@ -346,7 +346,7 @@
 .player-avatar-large svg {
     width: 40px;
     height: 40px;
-    color: var(--cerulean);
+    color: inherit;
 }
 
 .player-rating {

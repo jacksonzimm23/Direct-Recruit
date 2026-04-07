@@ -239,7 +239,7 @@ class SearchComponent {
 
         return `
             <div class="search-result-item" data-username="${result.username || ''}" data-role="${role}" data-is-college="${isCollege}" data-is-transfer="${isTransfer}" data-college-division="${result.college_division || ''}">
-                <img src="${imageUrl}" alt="${result.first_name} ${result.last_name}" class="result-avatar" style="border: 2px solid ${getRoleBorderColor(role, isTransfer, result.college_division)}" onerror="this.src='${this.getDefaultAvatar(result.first_name)}'">
+                <img src="${imageUrl}" alt="${result.first_name} ${result.last_name}" class="result-avatar" style="border: 2px solid ${getRoleBorderColor(role, isTransfer, result.college_division)}; color: ${getRoleBorderColor(role, isTransfer, result.college_division)}; background: ${getRoleAvatarBg(role, isTransfer, result.college_division)}" onerror="this.src='${this.getDefaultAvatar(result.first_name)}'">
                 <div class="result-info">
                     <div class="result-name-row">
                         <span class="result-name">${result.first_name} ${result.last_name}</span>
