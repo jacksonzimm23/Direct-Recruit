@@ -622,7 +622,7 @@
 
 .v2-features {
     background: var(--oxford-blue, #0a1128);
-    padding: 100px 0;
+    padding: 60px 0 100px;
 }
 
 .v2-feature-tabs {
@@ -1435,7 +1435,7 @@
 
 .v2-schools {
     background: linear-gradient(180deg, #060d1e 0%, var(--oxford-blue, #0a1128) 100%);
-    padding: 80px 0;
+    padding: 40px 0 40px;
     overflow: hidden;
 }
 
@@ -1457,7 +1457,7 @@
 }
 
 .v2-schools-slider:hover {
-    animation-play-state: paused;
+    animation-play-state: running;
 }
 
 @keyframes v2-scroll {
