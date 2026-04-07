@@ -321,3 +321,4 @@
 **TODO: Fix sign up college inputs with their logos, show logo icon badge
 
 **TODO: Save button on posts
+**TODO: Copy twitter algorithm on how they show certain posts on feed, as well as the suggested connections on the feed right sidebar

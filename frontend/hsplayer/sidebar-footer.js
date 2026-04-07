@@ -126,6 +126,7 @@ async function populateSidebarFooter() {
             if (avatarUrl) {
                 avatarElement.innerHTML = `<img src="${avatarUrl}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
             }
+            avatarElement.style.border = `2px solid ${getRoleBorderColor(user.role, user.is_transfer_player, profile.college_division)}`;
             avatarElement.style.visibility = 'visible';
         }
 

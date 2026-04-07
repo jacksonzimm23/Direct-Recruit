@@ -149,6 +149,7 @@ async function updateSidebarFooterFromAPI() {
                     const avatarElement = document.querySelector('.sidebar-footer .user-avatar-circle');
                     if (avatarElement) {
                         avatarElement.innerHTML = `<img src="${profile.profile_image_url}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
+                        avatarElement.style.border = `2px solid ${getRoleBorderColor(user.role, user.is_transfer_player, profile.college_division)}`;
                     }
                 }
             }
@@ -627,7 +628,7 @@ function updateNavbarForLoggedInUser(user, profile) {
                 userRole.style.color = '#ff6b35';
             } else if (userFolder === 'other') {
                 userRole.textContent = profile.subheader || '';
-                userRole.style.color = '#1282a2';
+                userRole.style.color = '#d4a017';
             }
         }
 
@@ -637,6 +638,7 @@ function updateNavbarForLoggedInUser(user, profile) {
             const avatarElement = document.querySelector('.sidebar-footer .user-avatar-circle');
             if (avatarElement) {
                 avatarElement.innerHTML = `<img src="${avatarUrl}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
+                avatarElement.style.border = `2px solid ${getRoleBorderColor(user.role, user.is_transfer_player, profile.college_division)}`;
             }
         }
 
@@ -3101,7 +3103,7 @@ function createProfilePostElement(post) {
         ${pinnedBadge}
         <article class="profile-post-card${isPinned ? ' pinned' : ''}" data-post-id="${post.id}" onclick="navigateToPost('${post.id}')">
             <div class="profile-post-header">
-                <div class="profile-post-avatar">
+                <div class="profile-post-avatar" style="border: 2px solid ${getRoleBorderColor(post.author_role, post.author_transfer === 'y', post.author_division)}">
                     ${post.author_image
                         ? `<img src="${post.author_image}" alt="${authorName}">`
                         : `<svg viewBox="0 0 24 24" fill="currentColor">
@@ -3205,7 +3207,7 @@ function createProfileRepostElement(post) {
                 <span class="repost-time">${timeAgo}</span>
             </div>
             <div class="profile-post-header">
-                <div class="profile-post-avatar">${post.original_author_image ? `<img src="${post.original_author_image}" alt="${originalAuthorName}">` : `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>`}</div>
+                <div class="profile-post-avatar" style="border: 2px solid ${getRoleBorderColor(post.original_author_role, post.original_author_transfer === 'y', post.original_author_division)}">${post.original_author_image ? `<img src="${post.original_author_image}" alt="${originalAuthorName}">` : `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>`}</div>
                 <div class="profile-post-info">
                     <div class="profile-post-author">${originalAuthorName}${post.original_author_verified ? `<svg class="verified-badge" viewBox="0 0 24 24" fill="#1DA1F2" width="16" height="16"><path d="M22.5 12.5c0-1.58-.875-2.95-2.148-3.6.154-.435.238-.905.238-1.4 0-2.21-1.71-3.998-3.818-3.998-.47 0-.92.084-1.336.25C14.818 2.415 13.51 1.5 12 1.5s-2.816.917-3.437 2.25c-.415-.165-.866-.25-1.336-.25-2.11 0-3.818 1.79-3.818 4 0 .494.083.964.237 1.4-1.272.65-2.147 2.018-2.147 3.6 0 1.495.782 2.798 1.942 3.486-.02.17-.032.34-.032.514 0 2.21 1.708 4 3.818 4 .47 0 .92-.086 1.335-.25.62 1.334 1.926 2.25 3.437 2.25 1.512 0 2.818-.916 3.437-2.25.415.163.865.248 1.336.248 2.11 0 3.818-1.79 3.818-4 0-.174-.012-.344-.033-.513 1.158-.687 1.943-1.99 1.943-3.484zm-6.616-3.334l-4.334 6.5c-.145.217-.382.334-.625.334-.143 0-.288-.04-.416-.126l-.115-.094-2.415-2.415c-.293-.293-.293-.768 0-1.06s.768-.294 1.06 0l1.77 1.767 3.825-5.74c.23-.345.696-.436 1.04-.207.346.23.44.696.21 1.04z"/></svg>` : ''}</div>
                     <div class="profile-post-meta ${post.original_author_role === 'coach' ? 'coach-meta' : (post.original_author_role === 'other' ? 'other-meta' : (post.original_author_transfer === 'y' ? 'transfer-player-meta' : 'player-meta'))}">${originalMetaInfo}</div>
@@ -3318,7 +3320,7 @@ function createProfileQuotePostElement(post) {
     return `
         <article class="profile-post-card profile-quote-card" data-post-id="${originalPostId}" data-share-id="${post.share_id}" onclick="navigateToQuotePost('${post.share_id}')" style="cursor: pointer;">
             <div class="profile-post-header">
-                <div class="profile-post-avatar" onclick="event.stopPropagation(); goToProfile('${post.author_username || quoterId}', '${post.author_role || 'player'}', '${post.author_division || ''}', '${quoterId}', ${post.author_transfer === 'y'})" style="cursor: pointer;">
+                <div class="profile-post-avatar" onclick="event.stopPropagation(); goToProfile('${post.author_username || quoterId}', '${post.author_role || 'player'}', '${post.author_division || ''}', '${quoterId}', ${post.author_transfer === 'y'})" style="cursor: pointer; border: 2px solid ${getRoleBorderColor(post.author_role || 'player', post.author_transfer === 'y', post.author_division)}">
                     ${post.author_image
                         ? `<img src="${post.author_image}" alt="${quoterName}">`
                         : `<svg viewBox="0 0 24 24" fill="currentColor">
@@ -5531,7 +5533,7 @@ function createProfileLikedPostElement(post) {
     return `
         <article class="profile-post-card" data-post-id="${post.id}" onclick="navigateToPost('${post.id}')">
             <div class="profile-post-header">
-                <div class="profile-post-avatar">
+                <div class="profile-post-avatar" style="border: 2px solid ${getRoleBorderColor(post.author_role, post.author_transfer === 'y', post.author_division)}">
                     ${post.author_image
                         ? `<img src="${post.author_image}" alt="${authorName}">`
                         : `<svg viewBox="0 0 24 24" fill="currentColor">
@@ -5656,7 +5658,7 @@ function createProfileLikedQuotePostElement(post) {
     return `
         <article class="profile-post-card profile-quote-card" data-post-id="${originalPostId}" data-share-id="${post.share_id}" onclick="navigateToQuotePost('${post.share_id}')" style="cursor: pointer;">
             <div class="profile-post-header">
-                <div class="profile-post-avatar" onclick="event.stopPropagation(); goToProfile('${post.author_username || quoterId}', '${post.author_role || 'player'}', '${post.author_division || ''}', '${quoterId}', ${post.author_transfer === 'y'})" style="cursor: pointer;">
+                <div class="profile-post-avatar" onclick="event.stopPropagation(); goToProfile('${post.author_username || quoterId}', '${post.author_role || 'player'}', '${post.author_division || ''}', '${quoterId}', ${post.author_transfer === 'y'})" style="cursor: pointer; border: 2px solid ${getRoleBorderColor(post.author_role || 'player', post.author_transfer === 'y', post.author_division)}">
                     ${post.author_image
                         ? `<img src="${post.author_image}" alt="${quoterName}">`
                         : `<svg viewBox="0 0 24 24" fill="currentColor">
