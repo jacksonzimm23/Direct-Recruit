@@ -969,8 +969,8 @@ router.post('/switch-profile', authMiddleware, async (req, res) => {
         (user_id, first_name, last_name, username, team_name, state, graduation_year,
          position, height, weight, gpa, college_division, conference, number, eligibility,
          transfer, bio, profile_image_url, followers_count, following_count,
-         profile_visibility, message_permissions)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)`,
+         message_permissions)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)`,
         [
           req.userId,
           preservedData.first_name,
@@ -992,7 +992,6 @@ router.post('/switch-profile', authMiddleware, async (req, res) => {
           preservedData.profile_image_url,
           preservedData.followers_count,
           preservedData.following_count,
-          preservedData.profile_visibility,
           preservedData.message_permissions
         ]
       );
@@ -1004,8 +1003,8 @@ router.post('/switch-profile', authMiddleware, async (req, res) => {
         `INSERT INTO coach_profiles
         (user_id, first_name, last_name, username, team_name, college_division,
          position_title, state, phone, bio, conference, profile_image_url,
-         followers_count, following_count, profile_visibility, message_permissions)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)`,
+         followers_count, following_count, message_permissions)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)`,
         [
           req.userId,
           preservedData.first_name,
@@ -1021,7 +1020,6 @@ router.post('/switch-profile', authMiddleware, async (req, res) => {
           preservedData.profile_image_url,
           preservedData.followers_count,
           preservedData.following_count,
-          preservedData.profile_visibility,
           preservedData.message_permissions
         ]
       );
