@@ -2581,11 +2581,6 @@ function goToStep3() {
 
     let warnings = `
         <div class="switch-warning">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="warning-icon">
-                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
-                <line x1="12" y1="9" x2="12" y2="13"></line>
-                <line x1="12" y1="17" x2="12.01" y2="17"></line>
-            </svg>
             <div>
                 <strong>This action is permanent.</strong>
                 <p>Your current profile data (stats, position, team info, etc.) will be permanently deleted. All of your social data will be preserved, including your posts, comments, likes, followers, following, messages, conversations, and notifications.</p>
@@ -2608,6 +2603,7 @@ function goToStep3() {
                 <div class="switch-confirm-from">
                     <span class="switch-confirm-label">From</span>
                     <span class="switch-confirm-value">${switchProfileInfo.current_label}</span>
+                    <span class="switch-type-badge ${switchProfileInfo.is_current_paid ? 'badge-paid' : 'badge-free'}">${switchProfileInfo.is_current_paid ? 'PAID' : 'FREE'}</span>
                 </div>
                 <div class="switch-confirm-arrow">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
