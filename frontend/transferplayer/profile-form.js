@@ -317,13 +317,17 @@ document.addEventListener('DOMContentLoaded', async function() {
                 hudl_profile: document.getElementById('hudlProfile')?.value || null,
             };
 
-            // High school specific fields
-            profileData.team_name = document.getElementById('highSchoolName').value;
-            profileData.state = document.getElementById('hsState').value;
-            profileData.graduation_year = parseInt(document.getElementById('hsGradYear').value) || null;
+            // Transfer player specific fields
+            profileData.team_name = document.getElementById('previousCollegeName').value;
+            profileData.state = document.getElementById('previousState').value;
+            profileData.graduation_year = parseInt(document.getElementById('gradYear').value) || null;
             profileData.gpa = parseFloat(document.getElementById('gpa').value) || null;
-            // HS players have no division
-            profileData.college_division = null;
+            profileData.college_division = document.getElementById('previousDivision').value;
+            profileData.conference = document.getElementById('previousConference').value || null;
+            profileData.number = document.getElementById('jerseyNumber').value ? parseInt(document.getElementById('jerseyNumber').value) : null;
+            profileData.eligibility = document.getElementById('eligibility').value ? parseInt(document.getElementById('eligibility').value) : null;
+            // Mark as transfer player — this is what makes the system classify them as transferplayer
+            profileData.transfer = 'y';
 
             // Step 3: Create or Update profile
             await profileAPI.createPlayerProfile(profileData);
@@ -396,15 +400,27 @@ async function loadExistingProfile() {
                     }
                 }
 
-                // Fill in high school data
+                // Fill in transfer player data
                 if (profile.team_name) {
-                    document.getElementById('highSchoolName').value = profile.team_name;
+                    document.getElementById('previousCollegeName').value = profile.team_name;
                 }
                 if (profile.state) {
-                    document.getElementById('hsState').value = profile.state;
+                    document.getElementById('previousState').value = profile.state;
+                }
+                if (profile.college_division) {
+                    document.getElementById('previousDivision').value = profile.college_division;
+                }
+                if (profile.conference) {
+                    document.getElementById('previousConference').value = profile.conference;
+                }
+                if (profile.number) {
+                    document.getElementById('jerseyNumber').value = profile.number;
+                }
+                if (profile.eligibility) {
+                    document.getElementById('eligibility').value = profile.eligibility;
                 }
                 if (profile.graduation_year) {
-                    document.getElementById('hsGradYear').value = profile.graduation_year;
+                    document.getElementById('gradYear').value = profile.graduation_year;
                 }
                 if (profile.gpa) {
                     document.getElementById('gpa').value = profile.gpa;
