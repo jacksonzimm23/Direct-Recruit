@@ -2512,7 +2512,7 @@ function goToStep3() {
             </svg>
             <div>
                 <strong>This action is permanent.</strong>
-                <p>Your current profile data (stats, position, team info, etc.) will be permanently deleted. Your posts, followers, and messages will be preserved.</p>
+                <p>Your current profile data (stats, position, team info, etc.) will be permanently deleted. All of your social data will be preserved, including your posts, comments, likes, followers, following, messages, conversations, and notifications.</p>
             </div>
         </div>
     `;
