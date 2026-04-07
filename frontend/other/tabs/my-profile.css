@@ -234,7 +234,7 @@
 .profile-avatar-large svg {
     width: 60px;
     height: 60px;
-    color: var(--cerulean);
+    color: inherit;
 }
 
 .profile-avatar-large img {
@@ -465,7 +465,7 @@
 .follow-list-avatar svg {
     width: 24px;
     height: 24px;
-    color: var(--cerulean);
+    color: inherit;
 }
 
 .follow-list-info {
@@ -5616,7 +5616,7 @@ input[type="file"]::file-selector-button:hover {
 .profile-post-avatar svg {
     width: 24px;
     height: 24px;
-    color: var(--cerulean);
+    color: inherit;
 }
 
 .profile-post-info {
@@ -5900,7 +5900,7 @@ input[type="file"]::file-selector-button:hover {
 .quote-embedded-avatar svg {
     width: 14px;
     height: 14px;
-    color: rgba(254, 252, 251, 0.5);
+    color: inherit;
 }
 
 .quote-embedded-info {
@@ -6134,7 +6134,7 @@ input[type="file"]::file-selector-button:hover {
 .profile-reply-avatar svg {
     width: 20px;
     height: 20px;
-    color: var(--cerulean);
+    color: inherit;
 }
 
 .profile-reply-info {
@@ -7552,7 +7552,7 @@ input[type="file"]::file-selector-button:hover {
 .profile-comments-section .comment-avatar svg {
     width: 16px;
     height: 16px;
-    color: var(--cerulean);
+    color: inherit;
 }
 
 .profile-comments-section .comment-content {
@@ -7791,7 +7791,7 @@ input[type="file"]::file-selector-button:hover {
 .likes-modal-avatar svg {
     width: 20px;
     height: 20px;
-    color: var(--cerulean);
+    color: inherit;
 }
 
 .likes-modal-info {

@@ -786,26 +786,17 @@ router.get('/suggested-connections', authMiddleware, async (req, res) => {
         COALESCE(pp.last_name, cp.last_name, op.last_name, '') as last_name,
         COALESCE(pp.username, cp.username, op.username, '') as username,
         COALESCE(pp.profile_image_url, cp.profile_image_url, op.profile_picture_url) as profile_image_url,
-        CASE
-          WHEN u.role = 'player' THEN
-            CASE
-              WHEN pp.college_division IS NOT NULL AND pp.college_division != '' THEN
-                CASE
-                  WHEN pp.transfer = 'y' THEN COALESCE(pp.position, '')
-                  ELSE COALESCE(pp.position, '')
-                END
-              ELSE COALESCE(pp.position, '')
-            END
-          WHEN u.role = 'coach' THEN COALESCE(cp.position_title, '')
-          WHEN u.role = 'other' THEN COALESCE(op.subheader, '')
-          ELSE ''
-        END as subheader_line1,
-        CASE
-          WHEN u.role = 'player' THEN COALESCE(pp.team_name, '')
-          WHEN u.role = 'coach' THEN COALESCE(cp.team_name, '')
-          WHEN u.role = 'other' THEN ''
-          ELSE ''
-        END as subheader_line2,
+        COALESCE(pp.position, '') as player_position,
+        COALESCE(pp.team_name, cp.team_name, '') as team_name,
+        COALESCE(pp.state, cp.state, '') as state,
+        pp.height as player_height,
+        pp.weight as player_weight,
+        pp.graduation_year as graduation_year,
+        COALESCE(pp.college_division, cp.college_division, '') as college_division,
+        pp.eligibility as eligibility,
+        COALESCE(pp.transfer, '') as transfer,
+        COALESCE(cp.position_title, '') as coach_position_title,
+        COALESCE(op.subheader, '') as other_subheader,
         CASE
           WHEN u.role = 'player' THEN
             CASE

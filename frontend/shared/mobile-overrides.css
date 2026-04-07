@@ -182,7 +182,7 @@ html {
 #mobileProfileViewersModal .follow-list-avatar svg {
     width: 24px;
     height: 24px;
-    color: #1282A2;
+    color: inherit;
 }
 
 #mobileProfileViewersModal .follow-list-info {
@@ -287,7 +287,7 @@ html {
     .mobile-avatar-circle svg {
         width: 20px;
         height: 20px;
-        color: var(--cerulean, #1282A2);
+        color: inherit;
     }
 
     .mobile-header-logo {
@@ -421,7 +421,7 @@ html {
     .mobile-sidebar-avatar-circle svg {
         width: 28px;
         height: 28px;
-        color: var(--cerulean, #1282A2);
+        color: inherit;
     }
 
     .mobile-sidebar-user-info {
@@ -960,7 +960,7 @@ html {
     .mobile-post-modal-avatar svg {
         width: 20px;
         height: 20px;
-        color: var(--cerulean, #1282A2);
+        color: inherit;
     }
 
     .mobile-post-modal-username {

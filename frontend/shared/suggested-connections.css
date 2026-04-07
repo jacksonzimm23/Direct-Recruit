@@ -2,6 +2,17 @@
    SUGGESTED CONNECTIONS WIDGET & MODAL
    ============================================ */
 
+/* Widget Subheader */
+.follow-subheader {
+    font-size: 0.7rem;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 150px;
+    line-height: 1.3;
+}
+
 /* Modal Overlay */
 .connections-modal-overlay {
     position: fixed;
@@ -150,7 +161,7 @@
 .connection-modal-avatar-circle svg {
     width: 24px;
     height: 24px;
-    color: var(--cerulean, #1282A2);
+    color: inherit;
 }
 
 /* Profile type border colors for modal avatars */
@@ -160,7 +171,7 @@
 }
 
 .connection-modal-item[data-profile-type="coach"] .connection-modal-avatar-circle svg {
-    color: var(--accent-orange, #FF6B35);
+    color: inherit;
 }
 
 .connection-modal-item[data-profile-type="transfer"] .connection-modal-avatar,
@@ -169,7 +180,7 @@
 }
 
 .connection-modal-item[data-profile-type="transfer"] .connection-modal-avatar-circle svg {
-    color: #e63946;
+    color: inherit;
 }
 
 .connection-modal-item[data-profile-type="other"] .connection-modal-avatar,
@@ -178,7 +189,7 @@
 }
 
 .connection-modal-item[data-profile-type="other"] .connection-modal-avatar-circle svg {
-    color: #d4a017;
+    color: inherit;
 }
 
 /* Modal Info */
@@ -256,7 +267,7 @@
 }
 
 .follow-item[data-profile-type="coach"] .follow-avatar-circle svg {
-    color: var(--accent-orange, #FF6B35);
+    color: inherit;
 }
 
 .follow-item[data-profile-type="transfer"] .follow-avatar-circle {
@@ -264,7 +275,7 @@
 }
 
 .follow-item[data-profile-type="transfer"] .follow-avatar-circle svg {
-    color: #e63946;
+    color: inherit;
 }
 
 .follow-item[data-profile-type="other"] .follow-avatar-circle {
@@ -272,7 +283,7 @@
 }
 
 .follow-item[data-profile-type="other"] .follow-avatar-circle svg {
-    color: #d4a017;
+    color: inherit;
 }
 
 /* Follow avatar with image */

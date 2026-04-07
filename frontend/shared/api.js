@@ -518,6 +518,17 @@ function getRoleBorderColor(role, isTransfer, collegeDivision) {
 }
 window.getRoleBorderColor = getRoleBorderColor;
 
+function getRoleAvatarBg(role, isTransfer, collegeDivision) {
+    if (role === 'player') {
+        if (isTransfer === true || isTransfer === 'y') return 'rgba(239, 68, 68, 0.2)';
+        return 'rgba(18, 130, 162, 0.2)';
+    }
+    if (role === 'coach') return 'rgba(255, 107, 53, 0.2)';
+    if (role === 'other') return 'rgba(212, 160, 23, 0.2)';
+    return 'rgba(18, 130, 162, 0.2)';
+}
+window.getRoleAvatarBg = getRoleAvatarBg;
+
 function buildCommentSubheader(role, data) {
     const parts = [];
     if (role === 'player') {

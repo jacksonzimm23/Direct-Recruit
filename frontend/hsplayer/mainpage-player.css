@@ -311,7 +311,7 @@
 .follow-avatar-circle svg {
     width: 24px;
     height: 24px;
-    color: var(--cerulean);
+    color: inherit;
 }
 
 .user-avatar-circle svg {
@@ -1002,7 +1002,7 @@
 .follow-avatar-circle svg {
     width: 20px;
     height: 20px;
-    color: var(--cerulean);
+    color: inherit;
 }
 
 .follow-info {
@@ -1316,7 +1316,7 @@
 .connection-modal-avatar-circle svg {
     width: 24px;
     height: 24px;
-    color: var(--cerulean, #1282A2);
+    color: inherit;
 }
 
 /* Profile type border colors for avatars */
@@ -1326,7 +1326,7 @@
 }
 
 .connection-modal-item[data-profile-type="coach"] .connection-modal-avatar-circle svg {
-    color: var(--accent-orange, #FF6B35);
+    color: inherit;
 }
 
 .connection-modal-item[data-profile-type="transfer"] .connection-modal-avatar,
@@ -1335,7 +1335,7 @@
 }
 
 .connection-modal-item[data-profile-type="transfer"] .connection-modal-avatar-circle svg {
-    color: #e63946;
+    color: inherit;
 }
 
 .connection-modal-item[data-profile-type="other"] .connection-modal-avatar,
@@ -1344,7 +1344,7 @@
 }
 
 .connection-modal-item[data-profile-type="other"] .connection-modal-avatar-circle svg {
-    color: #d4a017;
+    color: inherit;
 }
 
 .connection-modal-info {
@@ -1421,7 +1421,7 @@
 }
 
 .follow-item[data-profile-type="coach"] .follow-avatar-circle svg {
-    color: var(--accent-orange, #FF6B35);
+    color: inherit;
 }
 
 .follow-item[data-profile-type="transfer"] .follow-avatar-circle {
@@ -1429,7 +1429,7 @@
 }
 
 .follow-item[data-profile-type="transfer"] .follow-avatar-circle svg {
-    color: #e63946;
+    color: inherit;
 }
 
 .follow-item[data-profile-type="other"] .follow-avatar-circle {
@@ -1437,7 +1437,7 @@
 }
 
 .follow-item[data-profile-type="other"] .follow-avatar-circle svg {
-    color: #d4a017;
+    color: inherit;
 }
 
 /* Follow avatar with image */

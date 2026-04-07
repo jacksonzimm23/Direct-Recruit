@@ -372,6 +372,8 @@ async function updateSidebarFooter() {
                     avatarElement.innerHTML = `<img src="${avatarUrl}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
                 }
                 avatarElement.style.border = `2px solid ${getRoleBorderColor(user.role, user.is_transfer_player, profile.college_division)}`;
+                avatarElement.style.color = getRoleBorderColor(user.role, user.is_transfer_player, profile.college_division);
+                avatarElement.style.backgroundColor = getRoleAvatarBg(user.role, user.is_transfer_player, profile.college_division);
                 avatarElement.style.visibility = 'visible';
             }
 
@@ -809,7 +811,7 @@ async function openMobileProfileViewersModal() {
             const roleInfo = getMobileRoleInfo(viewer);
             return `
             <div class="follow-list-item" data-user-id="${viewer.id}" data-role="${viewer.role}">
-                <div class="follow-list-avatar">
+                <div class="follow-list-avatar" style="border: 2px solid ${getRoleBorderColor(viewer.role, viewer.is_transfer === 'y' || viewer.is_transfer === true, viewer.player_college_division || viewer.coach_college_division)}; color: ${getRoleBorderColor(viewer.role, viewer.is_transfer === 'y' || viewer.is_transfer === true, viewer.player_college_division || viewer.coach_college_division)}; background: ${getRoleAvatarBg(viewer.role, viewer.is_transfer === 'y' || viewer.is_transfer === true, viewer.player_college_division || viewer.coach_college_division)}">
                     ${viewer.profile_image_url
                         ? `<img src="${viewer.profile_image_url}" alt="${viewer.first_name}">`
                         : `<svg viewBox="0 0 24 24" fill="currentColor">

@@ -513,7 +513,7 @@
 .recruit-avatar svg {
     width: 20px;
     height: 20px;
-    color: var(--cerulean);
+    color: inherit;
 }
 
 .recruit-card.transfer-player .recruit-avatar {
@@ -521,7 +521,7 @@
 }
 
 .recruit-card.transfer-player .recruit-avatar svg {
-    color: #b91c1c;
+    color: inherit;
 }
 
 /* Remove Player Button */
@@ -1439,7 +1439,7 @@
 .collab-result-avatar svg {
     width: 20px;
     height: 20px;
-    color: var(--cerulean);
+    color: inherit;
 }
 
 .collab-result-details {
@@ -1556,7 +1556,7 @@
 .collaborator-avatar svg {
     width: 18px;
     height: 18px;
-    color: var(--cerulean);
+    color: inherit;
 }
 
 .collaborator-name {

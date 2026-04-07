@@ -149,7 +149,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         const offersHtml = ` • <span class="discover-row-offers">Offers: ${offerCount}</span>`;
         return `
             <div class="discover-row" data-username="${player.username || ''}">
-                <div class="discover-row-avatar player-border">
+                <div class="discover-row-avatar player-border" style="color: ${getRoleBorderColor('player', false, null)}; background: ${getRoleAvatarBg('player', false, null)}; border: 2px solid ${getRoleBorderColor('player', false, null)}">
                     ${profileImage ? `<img src="${profileImage}" alt="${displayName}">` : `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>`}
                 </div>
                 <div class="discover-row-info">
@@ -175,7 +175,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         const line2Parts = [positionAcronym, school + (state ? `, ${state}` : ''), shortDiv, recruiting ? `Recruiting: ${recruiting}` : ''].filter(p => p);
         return `
             <div class="discover-row" data-username="${coach.username || ''}">
-                <div class="discover-row-avatar coach-border">
+                <div class="discover-row-avatar coach-border" style="color: ${getRoleBorderColor('coach', false, coach.college_division)}; background: ${getRoleAvatarBg('coach', false, coach.college_division)}; border: 2px solid ${getRoleBorderColor('coach', false, coach.college_division)}">
                     ${profileImage ? `<img src="${profileImage}" alt="${displayName}">` : `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>`}
                 </div>
                 <div class="discover-row-info">
@@ -203,7 +203,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         return `
             <div class="player-card" data-username="${player.username || ''}">
                 <div class="player-card-header">
-                    <div class="player-avatar-large">
+                    <div class="player-avatar-large" style="color: ${getRoleBorderColor('player', false, null)}; background: ${getRoleAvatarBg('player', false, null)}; border: 2px solid ${getRoleBorderColor('player', false, null)}">
                         ${profileImage
                             ? `<img src="${profileImage}" alt="${displayName}" class="avatar-image">`
                             : `<svg viewBox="0 0 24 24" fill="currentColor">
@@ -671,7 +671,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         return `
             <div class="coach-card" data-username="${coach.username || ''}">
                 <div class="coach-card-header">
-                    <div class="coach-avatar-large">
+                    <div class="coach-avatar-large" style="color: ${getRoleBorderColor('coach', false, coach.college_division)}; background: ${getRoleAvatarBg('coach', false, coach.college_division)}; border: 2px solid ${getRoleBorderColor('coach', false, coach.college_division)}">
                         ${profileImage
                             ? `<img src="${profileImage}" alt="${coach.first_name}" class="avatar-image">`
                             : `<svg viewBox="0 0 24 24" fill="currentColor">

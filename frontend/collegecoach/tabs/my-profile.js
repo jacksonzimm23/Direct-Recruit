@@ -119,6 +119,8 @@ async function updateSidebarFooterFromAPI() {
                     if (avatarElement) {
                         avatarElement.innerHTML = `<img src="${profile.profile_image_url}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
                         avatarElement.style.border = `2px solid ${getRoleBorderColor(user.role, user.is_transfer_player, profile.college_division)}`;
+                        avatarElement.style.color = getRoleBorderColor(user.role, user.is_transfer_player, profile.college_division);
+                        avatarElement.style.backgroundColor = getRoleAvatarBg(user.role, user.is_transfer_player, profile.college_division);
                     }
                 }
             }
@@ -604,6 +606,8 @@ function updateNavbarForLoggedInUser(user, profile) {
             if (avatarElement) {
                 avatarElement.innerHTML = `<img src="${avatarUrl}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
                 avatarElement.style.border = `2px solid ${getRoleBorderColor(user.role, user.is_transfer_player, profile.college_division)}`;
+                avatarElement.style.color = getRoleBorderColor(user.role, user.is_transfer_player, profile.college_division);
+                avatarElement.style.backgroundColor = getRoleAvatarBg(user.role, user.is_transfer_player, profile.college_division);
             }
         }
 
@@ -917,12 +921,16 @@ async function displayProfile(profile, type, accessLevel = 'full', hasPendingReq
     // Update contact info in the new location (between header and tabs)
     updateContactInfoSection(profile);
 
-    // Update profile image if available
-    if (profile.profile_image_url) {
-        const avatarElement = document.querySelector('.profile-avatar-large');
-        if (avatarElement) {
+    // Update profile image and role-colored border/background
+    const avatarElement = document.querySelector('.profile-avatar-large');
+    if (avatarElement) {
+        if (profile.profile_image_url) {
             avatarElement.innerHTML = `<img src="${profile.profile_image_url}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
         }
+        const isTransfer = profile.transfer === 'y' || profile.is_transfer_player;
+        avatarElement.style.border = `3px solid ${getRoleBorderColor(type, isTransfer, profile.college_division)}`;
+        avatarElement.style.color = getRoleBorderColor(type, isTransfer, profile.college_division);
+        avatarElement.style.backgroundColor = getRoleAvatarBg(type, isTransfer, profile.college_division);
     }
 
     // Show profile content now that data is loaded
@@ -2758,7 +2766,7 @@ async function openFollowListModal(type) {
             const roleInfo = getFollowListRoleInfo(user);
             return `
             <div class="follow-list-item" data-user-id="${user.id}" data-role="${user.role}">
-                <div class="follow-list-avatar">
+                <div class="follow-list-avatar" style="border: 2px solid ${getRoleBorderColor(user.role, user.is_transfer === 'y' || user.is_transfer === true, user.player_college_division || user.coach_college_division)}; color: ${getRoleBorderColor(user.role, user.is_transfer === 'y' || user.is_transfer === true, user.player_college_division || user.coach_college_division)}; background: ${getRoleAvatarBg(user.role, user.is_transfer === 'y' || user.is_transfer === true, user.player_college_division || user.coach_college_division)}">
                     ${user.profile_image_url
                         ? `<img src="${user.profile_image_url}" alt="${user.first_name}">`
                         : `<svg viewBox="0 0 24 24" fill="currentColor">
@@ -3210,7 +3218,7 @@ function createProfilePostElement(post) {
         ${pinnedBadge}
         <article class="profile-post-card${isPinned ? ' pinned' : ''}" data-post-id="${post.id}" onclick="navigateToPost('${post.id}')">
             <div class="profile-post-header">
-                <div class="profile-post-avatar" style="border: 2px solid ${getRoleBorderColor(post.author_role, post.author_transfer === 'y', post.author_division)}">
+                <div class="profile-post-avatar" style="border: 2px solid ${getRoleBorderColor(post.author_role, post.author_transfer === 'y', post.author_division)}; color: ${getRoleBorderColor(post.author_role, post.author_transfer === 'y', post.author_division)}; background: ${getRoleAvatarBg(post.author_role, post.author_transfer === 'y', post.author_division)}">
                     ${post.author_image
                         ? `<img src="${post.author_image}" alt="${authorName}">`
                         : `<svg viewBox="0 0 24 24" fill="currentColor">
@@ -3339,7 +3347,7 @@ function createProfileRepostElement(post) {
                 <span class="repost-time">${timeAgo}</span>
             </div>
             <div class="profile-post-header">
-                <div class="profile-post-avatar" style="border: 2px solid ${getRoleBorderColor(post.original_author_role, post.original_author_transfer === 'y', post.original_author_division)}">
+                <div class="profile-post-avatar" style="border: 2px solid ${getRoleBorderColor(post.original_author_role, post.original_author_transfer === 'y', post.original_author_division)}; color: ${getRoleBorderColor(post.original_author_role, post.original_author_transfer === 'y', post.original_author_division)}; background: ${getRoleAvatarBg(post.original_author_role, post.original_author_transfer === 'y', post.original_author_division)}">
                     ${post.original_author_image
                         ? `<img src="${post.original_author_image}" alt="${originalAuthorName}">`
                         : `<svg viewBox="0 0 24 24" fill="currentColor">
@@ -3477,7 +3485,7 @@ function createProfileQuotePostElement(post) {
     return `
         <article class="profile-post-card profile-quote-card" data-post-id="${originalPostId}" data-share-id="${post.share_id}" onclick="navigateToQuotePost('${post.share_id}')" style="cursor: pointer;">
             <div class="profile-post-header">
-                <div class="profile-post-avatar" onclick="event.stopPropagation(); goToProfile('${post.author_username || quoterId}', '${post.author_role || 'player'}', '${post.author_division || ''}', '${quoterId}', ${post.author_transfer === 'y'})" style="cursor: pointer; border: 2px solid ${getRoleBorderColor(post.author_role || 'player', post.author_transfer === 'y', post.author_division)}">
+                <div class="profile-post-avatar" onclick="event.stopPropagation(); goToProfile('${post.author_username || quoterId}', '${post.author_role || 'player'}', '${post.author_division || ''}', '${quoterId}', ${post.author_transfer === 'y'})" style="cursor: pointer; border: 2px solid ${getRoleBorderColor(post.author_role || 'player', post.author_transfer === 'y', post.author_division)}; color: ${getRoleBorderColor(post.author_role || 'player', post.author_transfer === 'y', post.author_division)}; background: ${getRoleAvatarBg(post.author_role || 'player', post.author_transfer === 'y', post.author_division)}">
                     ${post.author_image
                         ? `<img src="${post.author_image}" alt="${quoterName}">`
                         : `<svg viewBox="0 0 24 24" fill="currentColor">
@@ -4358,7 +4366,7 @@ async function loadPostComments(postId) {
             });
             return `
                 <div class="comment" data-comment-id="${comment.id}">
-                    <div class="comment-avatar" onclick="event.stopPropagation(); goToProfile('${comment.author_username || comment.user_id}', '${comment.author_role || 'player'}', '${comment.author_division || ''}', '${comment.user_id}', ${comment.author_transfer === 'y'})" style="cursor: pointer; border: 2px solid ${getRoleBorderColor(comment.author_role || 'player', comment.author_transfer === 'y', comment.author_division)}">
+                    <div class="comment-avatar" onclick="event.stopPropagation(); goToProfile('${comment.author_username || comment.user_id}', '${comment.author_role || 'player'}', '${comment.author_division || ''}', '${comment.user_id}', ${comment.author_transfer === 'y'})" style="cursor: pointer; border: 2px solid ${getRoleBorderColor(comment.author_role || 'player', comment.author_transfer === 'y', comment.author_division)}; color: ${getRoleBorderColor(comment.author_role || 'player', comment.author_transfer === 'y', comment.author_division)}; background: ${getRoleAvatarBg(comment.author_role || 'player', comment.author_transfer === 'y', comment.author_division)}">
                         ${comment.author_image
                             ? `<img src="${comment.author_image}" alt="${commentAuthorName}">`
                             : `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>`
@@ -4690,7 +4698,7 @@ async function loadShareComments(shareId) {
                 }
                 return `
                 <div class="comment" data-comment-id="${comment.id}">
-                    <div class="comment-avatar" onclick="goToProfile('${comment.username || comment.user_id}', '${comment.role || 'player'}', '${comment.division || ''}', '${comment.user_id}', ${comment.transfer === 'y'})" style="cursor: pointer; border: 2px solid ${getRoleBorderColor(comment.role || 'player', comment.transfer === 'y', comment.division)}">
+                    <div class="comment-avatar" onclick="goToProfile('${comment.username || comment.user_id}', '${comment.role || 'player'}', '${comment.division || ''}', '${comment.user_id}', ${comment.transfer === 'y'})" style="cursor: pointer; border: 2px solid ${getRoleBorderColor(comment.role || 'player', comment.transfer === 'y', comment.division)}; color: ${getRoleBorderColor(comment.role || 'player', comment.transfer === 'y', comment.division)}; background: ${getRoleAvatarBg(comment.role || 'player', comment.transfer === 'y', comment.division)}">
                         ${comment.profile_image ?
                             `<img src="${comment.profile_image}" alt="">` :
                             `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>`
@@ -4895,7 +4903,7 @@ function renderSharesList(shares) {
         const shareTypeLabel = share.share_type === 'quote' ? 'Quote' : 'Repost';
         return `
         <div class="likes-modal-item" onclick="goToProfile('${share.username || share.user_id}', '${share.role}', '${share.division || ''}', '${share.user_id}', ${share.transfer === 'y'}); this.closest('.shares-modal-overlay').remove();" style="cursor: pointer;">
-            <div class="likes-modal-avatar" style="border: 2px solid ${getRoleBorderColor(share.role, share.transfer === 'y', share.division)}">
+            <div class="likes-modal-avatar" style="border: 2px solid ${getRoleBorderColor(share.role, share.transfer === 'y', share.division)}; color: ${getRoleBorderColor(share.role, share.transfer === 'y', share.division)}; background: ${getRoleAvatarBg(share.role, share.transfer === 'y', share.division)}">
                 ${imgUrl ? `<img src="${imgUrl}" alt="${share.first_name}">` : `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>`}
             </div>
             <div class="likes-modal-info">
@@ -4936,7 +4944,7 @@ function showLikesModal(likes, title) {
                     const imgUrl = like.profile_image_url || like.profile_image;
                     return `
                     <div class="likes-modal-item" onclick="goToProfile('${like.username || like.user_id}', '${like.role || 'player'}', '${like.division || ''}', '${like.user_id}', ${like.transfer === 'y'})" style="cursor: pointer;">
-                        <div class="likes-modal-avatar" style="border: 2px solid ${getRoleBorderColor(like.role, like.transfer === 'y', like.division)}">
+                        <div class="likes-modal-avatar" style="border: 2px solid ${getRoleBorderColor(like.role, like.transfer === 'y', like.division)}; color: ${getRoleBorderColor(like.role, like.transfer === 'y', like.division)}; background: ${getRoleAvatarBg(like.role, like.transfer === 'y', like.division)}">
                             ${imgUrl ?
                                 `<img src="${imgUrl}" alt="">` :
                                 `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>`
@@ -5581,7 +5589,7 @@ function createProfileLikedPostElement(post) {
     return `
         <article class="profile-post-card" data-post-id="${post.id}" onclick="navigateToPost('${post.id}')">
             <div class="profile-post-header">
-                <div class="profile-post-avatar" style="border: 2px solid ${getRoleBorderColor(post.author_role, post.author_transfer === 'y', post.author_division)}">
+                <div class="profile-post-avatar" style="border: 2px solid ${getRoleBorderColor(post.author_role, post.author_transfer === 'y', post.author_division)}; color: ${getRoleBorderColor(post.author_role, post.author_transfer === 'y', post.author_division)}; background: ${getRoleAvatarBg(post.author_role, post.author_transfer === 'y', post.author_division)}">
                     ${post.author_image
                         ? `<img src="${post.author_image}" alt="${authorName}">`
                         : `<svg viewBox="0 0 24 24" fill="currentColor">
@@ -5706,7 +5714,7 @@ function createProfileLikedQuotePostElement(post) {
     return `
         <article class="profile-post-card profile-quote-card" data-post-id="${originalPostId}" data-share-id="${post.share_id}" onclick="navigateToQuotePost('${post.share_id}')" style="cursor: pointer;">
             <div class="profile-post-header">
-                <div class="profile-post-avatar" onclick="event.stopPropagation(); goToProfile('${post.author_username || quoterId}', '${post.author_role || 'player'}', '${post.author_division || ''}', '${quoterId}', ${post.author_transfer === 'y'})" style="cursor: pointer; border: 2px solid ${getRoleBorderColor(post.author_role || 'player', post.author_transfer === 'y', post.author_division)}">
+                <div class="profile-post-avatar" onclick="event.stopPropagation(); goToProfile('${post.author_username || quoterId}', '${post.author_role || 'player'}', '${post.author_division || ''}', '${quoterId}', ${post.author_transfer === 'y'})" style="cursor: pointer; border: 2px solid ${getRoleBorderColor(post.author_role || 'player', post.author_transfer === 'y', post.author_division)}; color: ${getRoleBorderColor(post.author_role || 'player', post.author_transfer === 'y', post.author_division)}; background: ${getRoleAvatarBg(post.author_role || 'player', post.author_transfer === 'y', post.author_division)}">
                     ${post.author_image
                         ? `<img src="${post.author_image}" alt="${quoterName}">`
                         : `<svg viewBox="0 0 24 24" fill="currentColor">
