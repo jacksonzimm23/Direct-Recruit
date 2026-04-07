@@ -51,6 +51,19 @@ async function addSignedUrlsToProfiles(players) {
 // All routes require authenticated coach
 router.use(authMiddleware, requireRole('coach'));
 
+// ============ USAGE ENDPOINT ============
+
+// GET /api/ai/usage — get current coach's token usage for billing period
+router.get('/usage', async (req, res) => {
+  try {
+    const usage = await AiAnalytics.getUsageByCoach(req.userId);
+    res.json(usage);
+  } catch (error) {
+    logger.error('Failed to get AI usage:', error);
+    res.status(500).json({ error: 'Failed to get usage data' });
+  }
+});
+
 // ============ CHAT HISTORY ENDPOINTS ============
 
 // GET /api/ai/chats?type=recruit_assistant
@@ -370,6 +383,7 @@ router.post('/chats/:chatId/message', validateUUID('chatId'), async (req, res) =
       : null;
     AiAnalytics.log({
       aiType: 'recruit_assistant',
+      coachUserId: req.userId,
       coachDivision: coachDivision,
       coachState: coachState,
       rawQuery: message.trim(),
@@ -573,6 +587,7 @@ router.post('/chats/:chatId/pi-message', validateUUID('chatId'), async (req, res
     // Log analytics (fire-and-forget)
     AiAnalytics.log({
       aiType: 'portal_intelligence',
+      coachUserId: req.userId,
       coachDivision: coachDivision,
       coachState: coachState,
       rawQuery: message.trim(),

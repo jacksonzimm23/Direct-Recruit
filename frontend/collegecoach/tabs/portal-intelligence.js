@@ -907,18 +907,10 @@ document.addEventListener('DOMContentLoaded', function() {
         return n.toLocaleString();
     }
 
-    function openPiUsageModal() {
+    async function openPiUsageModal() {
         if (!piUsageOverlay) return;
-        // Mock data for now — will be replaced with API call
-        const usage = {
-            plan: 'Pro',
-            periodStart: '2026-04-01',
-            periodEnd: '2026-04-30',
-            tokenCap: 10_000_000,
-            inputTokens: 1_842_300,
-            outputTokens: 31_200,
-            totalRequests: 147
-        };
+        try {
+        const usage = await API.ai.getUsage();
         const totalUsed = usage.inputTokens + usage.outputTokens;
         const percent = Math.min((totalUsed / usage.tokenCap) * 100, 100);
         const remaining = Math.max(usage.tokenCap - totalUsed, 0);
@@ -945,6 +937,9 @@ document.addEventListener('DOMContentLoaded', function() {
         if (summary) summary.textContent = Math.round(percent) + '%';
 
         piUsageOverlay.classList.add('active');
+        } catch (err) {
+            console.error('Failed to load usage:', err);
+        }
     }
 
     function closePiUsageModal() {
@@ -984,4 +979,12 @@ document.addEventListener('DOMContentLoaded', function() {
             selectChat(activeChatId);
         }
     });
+
+    // Update usage badge on page load
+    API.ai.getUsage().then(usage => {
+        const totalUsed = usage.inputTokens + usage.outputTokens;
+        const percent = Math.min((totalUsed / usage.tokenCap) * 100, 100);
+        const summary = document.getElementById('piUsageSummary');
+        if (summary) summary.textContent = Math.round(percent) + '%';
+    }).catch(() => { /* silent */ });
 });
