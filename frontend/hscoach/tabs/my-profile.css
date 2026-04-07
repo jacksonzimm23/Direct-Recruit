@@ -648,7 +648,7 @@
 .profile-tabs {
     display: flex;
     gap: 0.5rem;
-    padding: 0 2rem;
+    padding: 0 1rem;
     border-bottom: 2px solid rgba(18, 130, 162, 0.2);
 }
 
@@ -656,7 +656,7 @@
     background: transparent;
     border: none;
     color: rgba(254, 252, 251, 0.6);
-    padding: 1rem 1.5rem;
+    padding: 1rem 1.1rem;
     font-size: 0.95rem;
     font-weight: 700;
     cursor: pointer;
@@ -664,16 +664,17 @@
     font-family: 'Inter', sans-serif;
     border-bottom: 3px solid transparent;
     margin-bottom: -2px;
+    white-space: nowrap;
 }
 
 .profile-tab:hover {
-    color: var(--cerulean);
-    background: rgba(18, 130, 162, 0.05);
+    color: #ff6b35;
+    background: rgba(255, 107, 53, 0.05);
 }
 
 .profile-tab.active {
-    color: var(--cerulean);
-    border-bottom-color: var(--cerulean);
+    color: #ff6b35;
+    border-bottom-color: #ff6b35;
 }
 
 /* Tab Content */
