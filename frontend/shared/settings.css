@@ -1981,7 +1981,7 @@
     background: #112240;
     border-radius: 12px;
     width: 95%;
-    max-width: 580px;
+    max-width: 720px;
     max-height: 90vh;
     overflow-y: auto;
     border: 1px solid rgba(100, 116, 152, 0.2);
@@ -2376,6 +2376,98 @@
     color: #ccd6f6;
 }
 
+/* Position multi-select grid */
+.switch-position-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+    background: rgba(10, 17, 40, 0.4);
+    border: 1px solid rgba(100, 116, 152, 0.2);
+    border-radius: 8px;
+    padding: 0.75rem;
+    max-height: 280px;
+    overflow-y: auto;
+}
+
+.switch-pos-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+
+.switch-pos-group-label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: #1282a2;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin: 0 0 0.15rem;
+}
+
+.switch-pos-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.25rem 0.4rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    color: #8892b0;
+    transition: background 0.15s, color 0.15s;
+}
+
+.switch-pos-checkbox:hover {
+    background: rgba(100, 116, 152, 0.12);
+    color: #ccd6f6;
+}
+
+.switch-pos-checkbox input[type="checkbox"] {
+    width: 14px;
+    height: 14px;
+    accent-color: #1282a2;
+    cursor: pointer;
+}
+
+.switch-pos-checkbox input[type="checkbox"]:checked + span {
+    color: #ccd6f6;
+    font-weight: 500;
+}
+
+.switch-selected-positions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin-top: 0.5rem;
+}
+
+.switch-pos-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.2rem 0.5rem;
+    background: rgba(18, 130, 162, 0.15);
+    border: 1px solid rgba(18, 130, 162, 0.3);
+    border-radius: 12px;
+    color: #1282a2;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.switch-pos-pill button {
+    background: none;
+    border: none;
+    color: #1282a2;
+    font-size: 0.85rem;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+    opacity: 0.7;
+}
+
+.switch-pos-pill button:hover {
+    opacity: 1;
+}
+
 /* Mobile responsive */
 @media (max-width: 768px) {
     .switch-profile-modal {
@@ -2397,5 +2489,9 @@
 
     .switch-confirm-arrow {
         transform: rotate(90deg);
+    }
+
+    .switch-position-grid {
+        grid-template-columns: 1fr;
     }
 }

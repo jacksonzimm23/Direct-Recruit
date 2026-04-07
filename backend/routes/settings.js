@@ -827,7 +827,8 @@ router.get('/switch-profile/info', authMiddleware, async (req, res) => {
     const sharedFields = {
       first_name: profile.first_name,
       last_name: profile.last_name,
-      email: user.email
+      email: user.email,
+      username: profile.username || user.username
     };
 
     res.json({
