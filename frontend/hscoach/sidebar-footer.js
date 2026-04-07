@@ -113,7 +113,7 @@ async function populateSidebarFooter() {
                 color = '#ff6b35';
             } else if (userFolder === 'other') {
                 userRole.textContent = profile.subheader || '';
-                color = '#1282a2';
+                color = '#d4a017';
             }
 
             userRole.style.color = color;
