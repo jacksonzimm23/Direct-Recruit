@@ -671,6 +671,10 @@ const aiAPI = {
         apiRequest(`/ai/saved/${playerUserId}`, { method: 'DELETE' }),
     clearSavedPlayers: async () =>
         apiRequest('/ai/saved', { method: 'DELETE' }),
+
+    // Usage tracking
+    getUsage: async () =>
+        apiRequest('/ai/usage'),
 };
 
 // AI Rep API (player-facing AI analytics)

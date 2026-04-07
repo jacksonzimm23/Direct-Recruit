@@ -931,18 +931,10 @@ document.addEventListener('DOMContentLoaded', function() {
         return n.toLocaleString();
     }
 
-    function openUsageModal() {
+    async function openUsageModal() {
         if (!usageOverlay) return;
-        // Mock data for now — will be replaced with API call
-        const usage = {
-            plan: 'Pro',
-            periodStart: '2026-04-01',
-            periodEnd: '2026-04-30',
-            tokenCap: 10_000_000,
-            inputTokens: 1_842_300,
-            outputTokens: 31_200,
-            totalRequests: 147
-        };
+        try {
+        const usage = await API.ai.getUsage();
         const totalUsed = usage.inputTokens + usage.outputTokens;
         const percent = Math.min((totalUsed / usage.tokenCap) * 100, 100);
         const remaining = Math.max(usage.tokenCap - totalUsed, 0);
@@ -970,6 +962,9 @@ document.addEventListener('DOMContentLoaded', function() {
         if (summary) summary.textContent = Math.round(percent) + '%';
 
         usageOverlay.classList.add('active');
+        } catch (err) {
+            console.error('Failed to load usage:', err);
+        }
     }
 
     function closeUsageModal() {
@@ -1005,6 +1000,15 @@ document.addEventListener('DOMContentLoaded', function() {
             await selectChat(chats[0].id);
         }
         fetchCoachDivision();
+
+        // Update usage badge on page load
+        try {
+            const usage = await API.ai.getUsage();
+            const totalUsed = usage.inputTokens + usage.outputTokens;
+            const percent = Math.min((totalUsed / usage.tokenCap) * 100, 100);
+            const summary = document.getElementById('raUsageSummary');
+            if (summary) summary.textContent = Math.round(percent) + '%';
+        } catch (e) { /* silent — badge stays as dash */ }
     }
 
     // ========================

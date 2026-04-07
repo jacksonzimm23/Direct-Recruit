@@ -227,10 +227,54 @@
 
 ---
 
+## Per-Coach AI Usage Tracking & View Usage Modal
+
+30. **Per-coach token usage tracking requires `coach_user_id` in `ai_analytics`.** The original `ai_analytics` table only stored `coach_division` and `coach_state` — there was no way to tie usage to a specific coach. We added a `coach_user_id UUID` column (with index) via migration `004_add_coach_user_id_to_ai_analytics.sql`. Both the RA and PI log calls in `backend/routes/ai.js` now pass `req.userId` as `coachUserId` to `AiAnalytics.log()`. Historical rows before this migration have `coach_user_id = NULL` — that's fine, they predate per-coach tracking.
+
+31. **Both RA and PI share a single token pool per coach.** The `GET /api/ai/usage` endpoint (in `backend/routes/ai.js`) calls `AiAnalytics.getUsageByCoach()` which sums `input_tokens + output_tokens` across ALL `ai_type` values (`recruit_assistant` and `portal_intelligence`) for the given coach within the current calendar month. Both the RA modal and PI modal call this same endpoint, so they always show the same usage numbers. When a coach uses RA, the PI modal reflects that usage too, and vice versa.
+
+32. **View Usage modal is on both AI pages.** The "View Usage" button lives in the sidebar footer of both the RA (discover-players.html) and PI (transfer-portal.html) pages. It shows:
+    - Current plan name and billing period (calendar month)
+    - Token usage progress bar with color states: orange (normal), yellow (75%+ warning), red (90%+ critical)
+    - Breakdown: input tokens, output tokens, total requests
+    - Info footer explaining both AIs count toward the same cap
+    - The sidebar button badge shows the usage percentage on page load
+
+    **Key files:**
+    - Backend model: `backend/models/AiAnalytics.js` — `getUsageByCoach()` method
+    - Backend route: `backend/routes/ai.js` — `GET /api/ai/usage`
+    - Frontend API: `frontend/shared/api.js` — `API.ai.getUsage()`
+    - RA modal JS: `frontend/collegecoach/tabs/discover-recruit-assistant.js` — `openUsageModal()`
+    - PI modal JS: `frontend/collegecoach/tabs/portal-intelligence.js` — `openPiUsageModal()`
+    - RA modal HTML/CSS: `discover-players.html` + `discover-players.css` + `recruit-assistant.css` (orange theme)
+    - PI modal HTML/CSS: `transfer-portal.html` + `transfer-portal.css` (red theme)
+
+33. **Subscription tiers are hardcoded for now.** `getUsageByCoach()` returns `plan: 'Pro'` and `tokenCap: 10_000_000` as defaults. When Stripe subscriptions are built, this method should look up the coach's tier from a subscriptions table and return the real cap. The tier caps are:
+
+    | Plan    | Price    | Token Cap |
+    |---------|----------|-----------|
+    | Starter | $20/mo   | 4M        |
+    | Pro     | $50/mo   | 10M       |
+    | Elite   | $100/mo  | 20M       |
+
+34. **The standalone `recruit-assistant.html` and `recruit-assistant.js` were deleted.** They were dead files — nothing linked to them. The actual RA lives as a subtab inside `discover-players.html` using `discover-recruit-assistant.js`. The `recruit-assistant.css` file was kept because `discover-players.html` imports it.
+
+35. **Testing token usage locally without the Claude API.** Local dev mocks return `input_tokens: 0, output_tokens: 0`, so the modal shows 0% usage. To test visually, insert fake rows directly:
+    ```sql
+    docker exec dr-postgres psql -U postgres -d direct_recruit -c "
+    INSERT INTO ai_analytics (ai_type, coach_user_id, raw_query, input_tokens, output_tokens, created_at)
+    SELECT 'recruit_assistant', u.id, 'test query', 50000, 2000, NOW()
+    FROM users u WHERE u.email = 'collegecoach@test.com';
+    "
+    ```
+    Then open the RA or PI page and click View Usage. Clean up after: `DELETE FROM ai_analytics WHERE raw_query = 'test query';`
+
+---
+
 ## TODOs
 
 TODO: Best way to switch between profile types since some are paid and some are free (with different features of course)
-26. **TODO: Adding token usage percentage bar based on tiers for the college coach APIs
-Show a view usage modal with the usage like claude does 
+~~26. **TODO: Adding token usage percentage bar based on tiers for the college coach APIs~~ DONE (lesson 32)
+~~Show a view usage modal with the usage like claude does~~ DONE (lesson 32)
 27. **TODO: Adding subscription tiers and stripe 
 28. **TODO: Fix sign up college inputs with their logos, show logo icon badge
