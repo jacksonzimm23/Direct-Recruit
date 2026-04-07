@@ -2,7 +2,7 @@
 
 .profile-form-section {
     min-height: 100vh;
-    padding: 8rem 2rem 4rem;
+    padding: 2rem 2rem 4rem;
     background: linear-gradient(135deg, var(--oxford-blue) 0%, var(--penn-blue) 50%, var(--indigo-dye) 100%);
     display: flex;
     justify-content: center;
@@ -333,7 +333,7 @@ input[style*="border-color: #4caf50"] {
 /* Mobile Optimizations */
 @media (max-width: 768px) {
     .profile-form-section {
-        padding: 6rem 1rem 2rem;
+        padding: 1.5rem 1rem 2rem;
     }
 
     .form-container {
