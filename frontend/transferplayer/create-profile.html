@@ -10,7 +10,7 @@
     <link rel="apple-touch-icon" href="../icons/ios/180.png">
     <link rel="manifest" href="../manifest.json">
     <link rel="icon" type="image/png" href="https://res.cloudinary.com/dzmsj6nwv/image/upload/v1770078659/LOGO.PNG_i0uvv4.png">
-    <title>Create Player Profile - Direct Recruit</title>
+    <title>Create Transfer Player Profile - Direct Recruit</title>
     <link rel="stylesheet" href="../landingpage/styles.css">
     <link rel="stylesheet" href="profile-form.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -31,8 +31,8 @@
             </a>
 
             <div class="form-header">
-                <h1>Create Your Player Profile</h1>
-                <p>Showcase your talent and connect directly with college coaches.</p>
+                <h1>Create Your Transfer Player Profile</h1>
+                <p>Enter the transfer portal and connect with new programs.</p>
             </div>
 
             <form id="playerProfileForm" class="profile-form" autocomplete="off">
@@ -150,24 +150,24 @@
 
                 <!-- School Information -->
                 <div class="form-section">
-                    <h2 class="section-title">High School Information</h2>
-                    <input type="hidden" id="schoolType" name="schoolType" value="highschool">
+                    <h2 class="section-title">Previous College Information</h2>
+                    <input type="hidden" id="schoolType" name="schoolType" value="transfer">
 
                     <div class="form-row">
                         <div class="form-group">
-                            <label for="highSchoolName">High School Name <span class="required">*</span></label>
+                            <label for="previousCollegeName">Previous College/University Name <span class="required">*</span></label>
                             <input
                                 type="text"
-                                id="highSchoolName"
-                                name="highSchoolName"
+                                id="previousCollegeName"
+                                name="previousCollegeName"
                                 required
-                                placeholder="Lincoln High School"
+                                placeholder="University of Colorado"
                             >
                         </div>
 
                         <div class="form-group">
-                            <label for="hsState">State <span class="required">*</span></label>
-                            <select id="hsState" name="hsState" required>
+                            <label for="previousState">Previous State <span class="required">*</span></label>
+                            <select id="previousState" name="previousState" required>
                                 <option value="">Select State</option>
                                 <option value="AL">Alabama</option>
                                 <option value="AK">Alaska</option>
@@ -223,31 +223,84 @@
                         </div>
                     </div>
 
-                    <div class="form-group">
-                        <label for="hsGradYear">Graduation Year <span class="required">*</span></label>
-                        <select id="hsGradYear" name="hsGradYear" required>
-                            <option value="">Select Year</option>
-                            <option value="2025">2025</option>
-                            <option value="2026">2026</option>
-                            <option value="2027">2027</option>
-                            <option value="2028">2028</option>
-                            <option value="2029">2029</option>
-                            <option value="2030">2030</option>
-                        </select>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="previousDivision">Previous Division <span class="required">*</span></label>
+                            <select id="previousDivision" name="previousDivision" required>
+                                <option value="">Select Division</option>
+                                <option value="D1 FBS">D1 FBS (Football Bowl Subdivision)</option>
+                                <option value="D1 FCS">D1 FCS (Football Championship Subdivision)</option>
+                                <option value="D2">Division II</option>
+                                <option value="D3">Division III</option>
+                                <option value="NAIA">NAIA</option>
+                                <option value="NJCAA">NJCAA (Junior College)</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="previousConference">Previous Conference <span class="optional">(Optional)</span></label>
+                            <input
+                                type="text"
+                                id="previousConference"
+                                name="previousConference"
+                                placeholder="e.g., Big 12, SEC, ACC"
+                            >
+                        </div>
                     </div>
 
-                    <div class="form-group">
-                        <label for="gpa">GPA <span class="optional">(Optional)</span></label>
-                        <input
-                            type="number"
-                            id="gpa"
-                            name="gpa"
-                            min="0"
-                            max="4.0"
-                            step="0.01"
-                            placeholder="e.g., 3.75"
-                        >
-                        <small class="form-hint">Enter your current GPA on a 4.0 scale</small>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="jerseyNumber">Jersey Number <span class="optional">(Optional)</span></label>
+                            <input
+                                type="number"
+                                id="jerseyNumber"
+                                name="jerseyNumber"
+                                min="0"
+                                max="99"
+                                placeholder="e.g., 12"
+                            >
+                        </div>
+
+                        <div class="form-group">
+                            <label for="eligibility">Years of Eligibility Remaining <span class="required">*</span></label>
+                            <select id="eligibility" name="eligibility" required>
+                                <option value="">Select Years</option>
+                                <option value="1">1 year</option>
+                                <option value="2">2 years</option>
+                                <option value="3">3 years</option>
+                                <option value="4">4 years</option>
+                                <option value="5">5 years</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="gradYear">Graduation Year <span class="required">*</span></label>
+                            <select id="gradYear" name="gradYear" required>
+                                <option value="">Select Year</option>
+                                <option value="2025">2025</option>
+                                <option value="2026">2026</option>
+                                <option value="2027">2027</option>
+                                <option value="2028">2028</option>
+                                <option value="2029">2029</option>
+                                <option value="2030">2030</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="gpa">GPA <span class="optional">(Optional)</span></label>
+                            <input
+                                type="number"
+                                id="gpa"
+                                name="gpa"
+                                min="0"
+                                max="4.0"
+                                step="0.01"
+                                placeholder="e.g., 3.75"
+                            >
+                            <small class="form-hint">Enter your current GPA on a 4.0 scale</small>
+                        </div>
                     </div>
                 </div>
 

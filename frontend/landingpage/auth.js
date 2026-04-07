@@ -67,6 +67,8 @@ function selectRole(role) {
         window.location.href = '../hsplayer/create-profile.html';
     } else if (role === 'collegeplayer') {
         window.location.href = '../collegeplayer/create-profile.html';
+    } else if (role === 'transferplayer') {
+        window.location.href = '../transferplayer/create-profile.html';
     } else if (role === 'other') {
         window.location.href = '../other/create-profile.html';
     }
@@ -332,6 +334,16 @@ function showPlayerTypeModal() {
                     </svg>
                     <span class="player-type-title">College Player</span>
                     <span class="player-type-desc">Connect with other athletes or enter the transfer portal database</span>
+                </button>
+                <button class="player-type-btn" onclick="selectRole('transferplayer')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="17 1 21 5 17 9"></polyline>
+                        <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
+                        <polyline points="7 23 3 19 7 15"></polyline>
+                        <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
+                    </svg>
+                    <span class="player-type-title">Transfer Player</span>
+                    <span class="player-type-desc">Enter the transfer portal and connect with new programs</span>
                 </button>
             </div>
         </div>
