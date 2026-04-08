@@ -382,11 +382,80 @@
 
 ---
 
+## Stripe Subscription Integration
+
+39. **Stripe subscriptions follow the same local-dev mock pattern as Cognito/S3/SES.** The environment switcher is `backend/utils/stripe.js` — line 1 checks `NODE_ENV` and loads `backend/utils/local/stripe-local.js` in development. The mock auto-approves all payments, returns fake customer/subscription IDs, and never calls the Stripe API. Zero cost in local dev.
+
+    **Paid profile types and pricing:**
+
+    | Profile Type | Price | Tier Value in DB |
+    |---|---|---|
+    | HS Player | $10/mo | `player` |
+    | Transfer Player | $10/mo | `player` |
+    | College Coach Starter | $20/mo | `starter` |
+    | College Coach Pro | $50/mo | `pro` |
+    | College Coach Elite | $100/mo | `elite` |
+
+    HS Player and Transfer Player share the same Stripe Price ID (same $10/mo plan). College coaches select a tier at checkout.
+
+    **Database columns added to `users` table (migration `006_add_stripe_subscriptions.sql`):**
+    - `stripe_customer_id` — Stripe customer ID, created on first checkout
+    - `stripe_subscription_id` — active subscription ID from Stripe
+    - `subscription_status` — `none` (default), `active`, `past_due`, `cancelled`
+    - `subscription_tier` — `null`, `player`, `starter`, `pro`, `elite`
+
+    **Key files:**
+    - Environment switcher: `backend/utils/stripe.js`
+    - Local mock: `backend/utils/local/stripe-local.js`
+    - Routes: `backend/routes/payments.js` — 4 endpoints: `POST /create-checkout-session`, `POST /webhook`, `GET /subscription-status`, `POST /cancel`
+    - User model methods: `User.getStripeCustomerId()`, `User.updateStripeCustomerId()`, `User.updateSubscription()`, `User.getSubscriptionInfo()`
+    - Price ID mapping: `PRICE_MAP` and `TIER_MAP` objects in `payments.js` map profile types to Stripe Price IDs from env vars
+
+    **Webhook mounting is special.** The Stripe webhook needs the raw request body (not JSON-parsed) for signature verification. In `server.js`, the webhook is mounted BEFORE `express.json()` with `express.raw({ type: 'application/json' })`. The webhook handler is exported separately from the router: `paymentsRoutes.webhookHandler`.
+
+    **Webhook events handled:**
+    - `checkout.session.completed` — activates subscription, sets tier
+    - `customer.subscription.updated` — syncs status changes
+    - `customer.subscription.deleted` — marks subscription as cancelled, clears tier
+    - `invoice.payment_failed` — sets status to `past_due`
+
+    **Cancellation behavior:** `POST /cancel` sets `cancel_at_period_end: true` on the Stripe subscription — the user keeps access until the end of their billing period. When the period ends, Stripe fires `customer.subscription.deleted` and we set status to `cancelled`.
+
+    **Env vars required (in `.env`, all gitignored):**
+    - `STRIPE_SECRET_KEY`, `STRIPE_PUBLISHABLE_KEY`, `STRIPE_WEBHOOK_SECRET`
+    - `STRIPE_PLAYER_PRICE_ID`, `STRIPE_COACH_STARTER_PRICE_ID`, `STRIPE_COACH_PRO_PRICE_ID`, `STRIPE_COACH_ELITE_PRICE_ID`
+
+    **Testing real Stripe in local dev:** The `stripe.js` switcher checks for a real `sk_` key prefix instead of `NODE_ENV`. To test real Stripe checkout locally: add real test-mode keys to `.env` (keep `NODE_ENV=development`), restart the server. Stripe checkout appears while Cognito/S3/CORS stay mocked. Swap keys back to `PLACEHOLDER` when done.
+
+40. **Paid profile signup flow: register → pay → create profile (Option A1).** For all 3 paid types (hsplayer, transferplayer, collegecoach), the signup flow is:
+
+    1. User fills out the create-profile form and submits
+    2. `authAPI.register()` creates a bare `users` row (email + role only, no profile data)
+    3. Profile form data is stored in `localStorage` key `pendingProfileData`
+    4. For players: redirect straight to Stripe Checkout ($10/mo)
+    5. For college coaches: show a tier selection modal (Starter $20 / Pro $50 / Elite $100), then redirect to Stripe
+    6. Stripe redirects to `payment-success.html` after successful payment
+    7. `payment-success.html` reads `pendingProfileData` from localStorage, calls `profileAPI.createPlayerProfile()` or `createCoachProfile()`, clears localStorage, then redirects to `verify-email.html`
+
+    **If user backs out at Stripe Checkout:** They have a bare `users` row with no profile and `subscription_status = 'none'`. If they try to register again with the same email, they get "email already in use." They can sign in instead, and Phase 6's paywall catches them — offers options to pay or switch to a free profile type.
+
+    **Profile updates skip Stripe entirely.** The `isUpdating` flag in all 3 profile-form files detects whether the user is editing an existing profile. Updates call `createProfile()` directly and redirect to the mainpage — no payment step.
+
+    **Key files:**
+    - Player forms: `frontend/hsplayer/profile-form.js`, `frontend/transferplayer/profile-form.js`
+    - Coach form: `frontend/collegecoach/coach-profile-form.js` (includes `showTierSelectionModal()` function)
+    - Payment success pages: `frontend/{hsplayer,transferplayer,collegecoach}/payment-success.html`
+    - Frontend API: `frontend/shared/api.js` — `API.payments.createCheckoutSession()`, `getSubscriptionStatus()`, `cancelSubscription()`
+
+    **Tier selection modal (college coach only):** Built dynamically in `showTierSelectionModal()` at the bottom of `coach-profile-form.js`. Creates a full-screen overlay with 3 cards (Starter/Pro/Elite), Pro highlighted as "Most Popular" with orange border. Each card's "Select" button calls `API.payments.createCheckoutSession('collegecoach', tier, ...)`. Styled inline with orange accent (`#ff6b35`) matching the coach theme.
+
+---
+
 ## TODOs
 
 **TODO: Adding subscription tiers and stripe (Stripe integration for paid profile types: collegecoach, hsplayer, transferplayer)
 
 **TODO: Fix sign up college inputs with their logos, show logo icon badge
-
+**TODO: Discover page player cards need to be same height, fix frontend
 **TODO: Save button on posts
 **TODO: Copy twitter algorithm on how they show certain posts on feed, as well as the suggested connections on the feed right sidebar
