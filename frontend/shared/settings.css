@@ -2170,20 +2170,23 @@
 }
 
 .switch-form-group .form-input {
-    background: rgba(10, 17, 40, 0.6);
-    border: 1px solid rgba(100, 116, 152, 0.25);
-    border-radius: 6px;
-    padding: 0.6rem 0.75rem;
-    color: #ccd6f6;
-    font-size: 0.85rem;
+    background: rgba(254, 252, 251, 0.05);
+    border: 2px solid rgba(18, 130, 162, 0.3);
+    border-radius: 8px;
+    padding: 0.875rem 1rem;
+    color: #fff;
+    font-size: 0.95rem;
+    font-family: 'Inter', sans-serif;
     width: 100%;
     box-sizing: border-box;
-    transition: border-color 0.2s;
+    transition: all 0.3s ease;
 }
 
 .switch-form-group .form-input:focus {
     outline: none;
     border-color: #1282a2;
+    background: rgba(254, 252, 251, 0.08);
+    box-shadow: 0 0 0 3px rgba(18, 130, 162, 0.1);
 }
 
 .switch-form-group .form-input:disabled {
@@ -2197,11 +2200,20 @@
 }
 
 .switch-form-group select.form-input {
+    -webkit-appearance: none;
+    -moz-appearance: none;
     appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%238892b0' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+    cursor: pointer;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%231282a2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
     background-repeat: no-repeat;
     background-position: right 0.75rem center;
-    padding-right: 2rem;
+    background-size: 1.25rem;
+    padding-right: 2.5rem;
+}
+
+.switch-form-group select.form-input option {
+    background: #0a1128;
+    color: #fff;
 }
 
 .switch-form-row {
