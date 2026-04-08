@@ -1,5 +1,8 @@
-// In development, use local mock instead of Stripe
-if (process.env.NODE_ENV !== 'production') { module.exports = require('./local/stripe-local'); return; }
+// Use local mock unless a real Stripe key is present.
+// This lets you test real Stripe checkout in development without switching NODE_ENV
+// (which would break CORS, Redis, Cognito, etc.).
+const hasRealStripeKey = process.env.STRIPE_SECRET_KEY && process.env.STRIPE_SECRET_KEY.startsWith('sk_');
+if (!hasRealStripeKey) { module.exports = require('./local/stripe-local'); return; }
 
 const logger = require('./logger');
 const Stripe = require('stripe');
