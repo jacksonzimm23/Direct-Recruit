@@ -50,7 +50,8 @@ const MIGRATIONS = [
   'add-ra-saved-players.sql',
   'add-ai-engagement-events.sql',
   'add-coach-user-id-to-ai-analytics.sql',
-  'add-profile-switching.sql'
+  'add-profile-switching.sql',
+  'add-stripe-subscriptions.sql'
 ];
 
 async function applyManualFixes() {

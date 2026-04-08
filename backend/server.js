@@ -24,6 +24,7 @@ const settingsRoutes = require('./routes/settings');
 const aiRoutes = require('./routes/ai');
 const adminAnalyticsRoutes = require('./routes/admin-analytics');
 const aiRepRoutes = require('./routes/ai-rep');
+const paymentsRoutes = require('./routes/payments');
 const initializeSocket = require('./socket');
 const { apiLimiter } = require('./middleware/rateLimit');
 const logger = require('./utils/logger');
@@ -45,6 +46,8 @@ app.use(cors({
   credentials: true
 }));
 app.use(cookieParser());
+// Stripe webhook needs raw body for signature verification — must be before express.json()
+app.post('/api/payments/webhook', express.raw({ type: 'application/json' }), paymentsRoutes.webhookHandler);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -102,6 +105,7 @@ app.use('/api/settings', settingsRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/admin/analytics', adminAnalyticsRoutes);
 app.use('/api/ai-rep', aiRepRoutes);
+app.use('/api/payments', paymentsRoutes);
 
 // In development, serve frontend files so cookies work on the same origin
 if (process.env.NODE_ENV !== 'production') {
