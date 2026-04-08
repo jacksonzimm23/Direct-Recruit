@@ -34,6 +34,7 @@
     "rate-limit-redis": "^4.2.0",
     "redis": "^4.6.11",
     "socket.io": "^4.6.2",
+    "stripe": "^22.0.0",
     "uuid": "^13.0.0",
     "winston": "^3.19.0",
     "winston-daily-rotate-file": "^5.0.0"

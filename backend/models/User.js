@@ -84,6 +84,52 @@ class User {
     return 'other';
   }
 
+  // ─── Stripe Subscription Methods ──────────────────────────────────────────
+
+  static async getStripeCustomerId(userId) {
+    const result = await pool.query('SELECT stripe_customer_id FROM users WHERE id = $1', [userId]);
+    return result.rows[0]?.stripe_customer_id || null;
+  }
+
+  static async updateStripeCustomerId(userId, customerId) {
+    await pool.query('UPDATE users SET stripe_customer_id = $1 WHERE id = $2', [customerId, userId]);
+  }
+
+  static async updateSubscription(userId, { subscriptionId, status, tier }) {
+    const fields = [];
+    const values = [];
+    let idx = 1;
+
+    if (subscriptionId !== undefined) {
+      fields.push(`stripe_subscription_id = $${idx++}`);
+      values.push(subscriptionId);
+    }
+    if (status !== undefined) {
+      fields.push(`subscription_status = $${idx++}`);
+      values.push(status);
+    }
+    if (tier !== undefined) {
+      fields.push(`subscription_tier = $${idx++}`);
+      values.push(tier);
+    }
+
+    if (fields.length === 0) return;
+
+    values.push(userId);
+    await pool.query(
+      `UPDATE users SET ${fields.join(', ')} WHERE id = $${idx}`,
+      values
+    );
+  }
+
+  static async getSubscriptionInfo(userId) {
+    const result = await pool.query(
+      'SELECT stripe_customer_id, stripe_subscription_id, subscription_status, subscription_tier FROM users WHERE id = $1',
+      [userId]
+    );
+    return result.rows[0] || null;
+  }
+
   // Delete user and all associated data
   // PostgreSQL CASCADE constraints handle most related data automatically
   static async delete(userId) {
