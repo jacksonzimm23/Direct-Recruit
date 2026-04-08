@@ -2660,24 +2660,55 @@ async function executeSwitchProfile(profileData) {
         const result = await API.settings.switchProfile(selectedTargetType, profileData);
 
         if (result.success) {
-            // Show success briefly then redirect
-            btn.textContent = 'Success! Redirecting...';
-            btn.classList.remove('btn-danger');
-            btn.classList.add('btn-success');
+            const folder = result.redirect_folder;
+            const mainpageMap = {
+                hsplayer: 'mainpage-player.html',
+                collegeplayer: 'mainpage-player.html',
+                transferplayer: 'mainpage-player.html',
+                hscoach: 'mainpage-coach.html',
+                collegecoach: 'mainpage-coach.html',
+                other: 'mainpage-other.html'
+            };
+            const mainpage = mainpageMap[folder] || 'mainpage-player.html';
+            const redirectUrl = `../../${folder}/${mainpage}`;
 
-            setTimeout(() => {
-                const folder = result.redirect_folder;
-                const mainpageMap = {
-                    hsplayer: 'mainpage-player.html',
-                    collegeplayer: 'mainpage-player.html',
-                    transferplayer: 'mainpage-player.html',
-                    hscoach: 'mainpage-coach.html',
-                    collegecoach: 'mainpage-coach.html',
-                    other: 'mainpage-other.html'
-                };
-                const mainpage = mainpageMap[folder] || 'mainpage-player.html';
-                window.location.href = `../../${folder}/${mainpage}`;
-            }, 1000);
+            if (result.requires_payment) {
+                // Close the switch modal
+                closeSwitchProfileModal();
+
+                // Store redirect URL for after payment
+                localStorage.setItem('switchRedirectUrl', redirectUrl);
+
+                if (result.payment_profile_type === 'collegecoach') {
+                    // Coach needs tier selection first
+                    showSwitchTierModal();
+                } else {
+                    // Player: redirect straight to Stripe Checkout
+                    btn.textContent = 'Redirecting to payment...';
+                    try {
+                        const { url } = await API.payments.createCheckoutSession(
+                            result.payment_profile_type,
+                            null,
+                            'switch',
+                            window.location.origin + '/frontend/shared/payment-success-switch.html',
+                            window.location.href
+                        );
+                        window.location.href = url;
+                    } catch (payError) {
+                        console.error('Checkout error:', payError);
+                        alert('Profile switched but payment setup failed. You can complete payment from your dashboard.');
+                        window.location.href = redirectUrl;
+                    }
+                }
+            } else {
+                // No payment needed — show success and redirect
+                btn.textContent = 'Success! Redirecting...';
+                btn.classList.remove('btn-danger');
+                btn.classList.add('btn-success');
+                setTimeout(() => {
+                    window.location.href = redirectUrl;
+                }, 1000);
+            }
         } else {
             errorEl.textContent = result.error || 'Failed to switch profile';
             errorEl.style.display = '';
@@ -2765,4 +2796,86 @@ function updateSelectedCoachPositionsDisplay() {
 function escapeHTML(str) {
     if (!str) return '';
     return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+// ─── Tier Selection Modal for Profile Switch to College Coach ────────────────
+function showSwitchTierModal() {
+    const overlay = document.createElement('div');
+    overlay.id = 'switchTierModal';
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:10000;display:flex;align-items:center;justify-content:center;padding:20px;';
+
+    overlay.innerHTML = `
+        <div style="background:#0a1128;border-radius:16px;max-width:900px;width:100%;padding:40px 32px;position:relative;max-height:90vh;overflow-y:auto;">
+            <button id="switchTierClose" style="position:absolute;top:16px;right:16px;background:none;border:none;color:rgba(255,255,255,0.5);font-size:24px;cursor:pointer;">&times;</button>
+            <h2 style="color:#fff;text-align:center;font-size:24px;font-weight:700;margin:0 0 8px;">Choose Your Plan</h2>
+            <p style="color:rgba(255,255,255,0.45);text-align:center;font-size:14px;margin:0 0 32px;">Select a subscription tier for your coaching account.</p>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;">
+                ${switchTierCard('Starter', '20', ['AI Recruiting Assistant','Portal Intelligence','Recruiting Board','4M AI tokens/month','Direct messaging'], false)}
+                ${switchTierCard('Pro', '50', ['Everything in Starter','10M AI tokens/month (2.5x)','Saved players & portal watchlist','Custom baseline metrics','Priority support'], true)}
+                ${switchTierCard('Elite', '100', ['Everything in Pro','20M AI tokens/month (5x)','Team collaboration tools','Unlimited saved players','Dedicated support'], false)}
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    document.getElementById('switchTierClose').addEventListener('click', () => {
+        overlay.remove();
+        // Redirect to new mainpage without payment — profile was already switched
+        const redirectUrl = localStorage.getItem('switchRedirectUrl');
+        if (redirectUrl) {
+            localStorage.removeItem('switchRedirectUrl');
+            window.location.href = redirectUrl;
+        }
+    });
+
+    overlay.querySelectorAll('[data-switch-tier]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const tier = btn.dataset.switchTier;
+            btn.textContent = 'Redirecting...';
+            btn.disabled = true;
+
+            try {
+                const { url } = await API.payments.createCheckoutSession(
+                    'collegecoach',
+                    tier,
+                    'switch',
+                    window.location.origin + '/frontend/shared/payment-success-switch.html',
+                    window.location.href
+                );
+                window.location.href = url;
+            } catch (error) {
+                console.error('Checkout error:', error);
+                alert('Failed to start checkout: ' + error.message);
+                btn.textContent = 'Select';
+                btn.disabled = false;
+            }
+        });
+    });
+}
+
+function switchTierCard(name, price, features, isPopular) {
+    const borderColor = isPopular ? '#ff6b35' : 'rgba(255,255,255,0.08)';
+    const bgColor = isPopular ? 'rgba(255,107,53,0.04)' : 'rgba(255,255,255,0.03)';
+    const badge = isPopular ? '<div style="position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:#ff6b35;color:#fff;font-size:11px;font-weight:700;padding:4px 16px;border-radius:20px;text-transform:uppercase;letter-spacing:0.5px;white-space:nowrap;">Most Popular</div>' : '';
+
+    const featureList = features.map(f =>
+        `<li style="display:flex;align-items:center;gap:8px;color:rgba(255,255,255,0.7);font-size:13px;padding:6px 0;">
+            <svg viewBox="0 0 20 20" fill="#ff6b35" width="16" height="16" style="flex-shrink:0;"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+            ${f}
+        </li>`
+    ).join('');
+
+    return `
+        <div style="background:${bgColor};border:1px solid ${borderColor};border-radius:16px;padding:28px 20px;text-align:center;position:relative;display:flex;flex-direction:column;">
+            ${badge}
+            <h3 style="color:#fff;font-size:20px;font-weight:700;margin:0 0 12px;">${name}</h3>
+            <div style="margin-bottom:12px;">
+                <span style="font-size:32px;font-weight:800;color:#fff;">$${price}</span>
+                <span style="font-size:14px;color:rgba(255,255,255,0.4);">/month</span>
+            </div>
+            <ul style="list-style:none;padding:0;margin:0 0 20px;text-align:left;flex:1;">${featureList}</ul>
+            <button data-switch-tier="${name.toLowerCase()}" style="background:#ff6b35;color:#fff;border:none;border-radius:8px;padding:12px;font-size:14px;font-weight:600;cursor:pointer;width:100%;font-family:'Inter',sans-serif;">Select</button>
+        </div>
+    `;
 }

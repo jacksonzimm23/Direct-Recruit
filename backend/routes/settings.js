@@ -14,6 +14,7 @@ const { deleteFromS3 } = require('../utils/s3');
 const { generateToken } = require('../utils/jwt');
 const pool = require('../config/database');
 const logger = require('../utils/logger');
+const stripe = require('../utils/stripe');
 
 // Cookie configuration (mirrored from auth.js)
 const COOKIE_OPTIONS = {
@@ -1069,18 +1070,59 @@ router.post('/switch-profile', authMiddleware, async (req, res) => {
       ? `mainpage-${target_type.replace('hs', 'hs').replace('college', 'college')}.html`
       : `mainpage-${target_type === 'other' ? 'other' : target_type.replace('player', 'player')}.html`;
 
-    const isPaid = User.PAID_TYPES.includes(target_type);
-    // TODO: Cancel Stripe subscription when billing is implemented (if switching FROM paid to free)
-    // TODO: Check/create Stripe subscription when switching TO paid type
+    const isCurrentPaid = User.PAID_TYPES.includes(currentSubtype);
+    const isTargetPaid = User.PAID_TYPES.includes(target_type);
+
+    // Determine if payment is needed and handle subscription changes
+    let requiresPayment = false;
+    const isSamePricePair = ['hsplayer', 'transferplayer'].includes(currentSubtype) &&
+                            ['hsplayer', 'transferplayer'].includes(target_type);
+
+    if (isCurrentPaid && !isTargetPaid) {
+      // Paid → Free: cancel the subscription
+      if (user.stripe_subscription_id) {
+        try {
+          await stripe.cancelSubscription(user.stripe_subscription_id);
+        } catch (err) {
+          logger.warn(`Failed to cancel Stripe subscription during switch: ${err.message}`);
+        }
+      }
+      await User.updateSubscription(req.userId, {
+        subscriptionId: null,
+        status: 'cancelled',
+        tier: null
+      });
+    } else if (isTargetPaid && isSamePricePair) {
+      // hsplayer ↔ transferplayer: keep subscription, no payment needed
+      requiresPayment = false;
+    } else if (isTargetPaid) {
+      // Free → Paid OR Paid → different Paid: need new subscription
+      if (isCurrentPaid && user.stripe_subscription_id) {
+        // Cancel old subscription first
+        try {
+          await stripe.cancelSubscription(user.stripe_subscription_id);
+        } catch (err) {
+          logger.warn(`Failed to cancel old Stripe subscription during switch: ${err.message}`);
+        }
+        await User.updateSubscription(req.userId, {
+          subscriptionId: null,
+          status: 'none',
+          tier: null
+        });
+      }
+      requiresPayment = true;
+    }
 
     res.json({
       success: true,
       new_type: target_type,
       new_role: targetRole,
-      is_paid: isPaid,
+      is_paid: isTargetPaid,
+      requires_payment: requiresPayment,
+      payment_profile_type: requiresPayment ? target_type : null,
       redirect_folder: folder,
-      message: isPaid
-        ? `Profile switched to ${PROFILE_TYPE_LABELS[target_type]}. This profile type requires a paid subscription for full access.`
+      message: requiresPayment
+        ? `Profile switched to ${PROFILE_TYPE_LABELS[target_type]}. Please complete payment to activate your account.`
         : `Profile switched to ${PROFILE_TYPE_LABELS[target_type]} successfully.`
     });
   } catch (error) {
