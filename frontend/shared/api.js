@@ -696,6 +696,21 @@ const aiRepAPI = {
         apiRequest('/ai-rep/profile-completion')
 };
 
+const paymentsAPI = {
+    createCheckoutSession: async (profileType, tier, context, successUrl, cancelUrl) => {
+        return await apiRequest('/payments/create-checkout-session', {
+            method: 'POST',
+            body: JSON.stringify({ profileType, tier, context, successUrl, cancelUrl })
+        });
+    },
+    getSubscriptionStatus: async () => {
+        return await apiRequest('/payments/subscription-status');
+    },
+    cancelSubscription: async () => {
+        return await apiRequest('/payments/cancel', { method: 'POST' });
+    }
+};
+
 // Unified API object for convenience
 const settingsAPI = {
     getSwitchProfileInfo: async () => apiRequest('/settings/switch-profile/info'),
@@ -732,6 +747,7 @@ const API = {
     ai: aiAPI,
     aiRep: aiRepAPI,
     settings: settingsAPI,
+    payments: paymentsAPI,
 
     // Auth helpers
     getUser,
