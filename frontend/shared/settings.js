@@ -2068,7 +2068,14 @@ const POSITION_OPTIONS = [
     'ILB', 'OLB', 'CB', 'S', 'K', 'P', 'LS'
 ];
 
-const DIVISION_OPTIONS = ['D1 FBS', 'D1 FCS', 'D2', 'D3', 'NAIA', 'NJCAA'];
+const DIVISION_OPTIONS = [
+    ['D1 FBS', 'D1 FBS (Football Bowl Subdivision)'],
+    ['D1 FCS', 'D1 FCS (Football Championship Subdivision)'],
+    ['D2', 'Division II'],
+    ['D3', 'Division III'],
+    ['NAIA', 'NAIA'],
+    ['NJCAA', 'NJCAA (Junior College)']
+];
 
 const COACH_POSITIONS = [
     'Head Coach', 'Offensive Coordinator', 'Defensive Coordinator',
@@ -2081,14 +2088,17 @@ const COACH_POSITIONS = [
 ];
 
 const US_STATES = [
-    'Alabama','Alaska','Arizona','Arkansas','California','Colorado','Connecticut',
-    'Delaware','Florida','Georgia','Hawaii','Idaho','Illinois','Indiana','Iowa',
-    'Kansas','Kentucky','Louisiana','Maine','Maryland','Massachusetts','Michigan',
-    'Minnesota','Mississippi','Missouri','Montana','Nebraska','Nevada',
-    'New Hampshire','New Jersey','New Mexico','New York','North Carolina',
-    'North Dakota','Ohio','Oklahoma','Oregon','Pennsylvania','Rhode Island',
-    'South Carolina','South Dakota','Tennessee','Texas','Utah','Vermont',
-    'Virginia','Washington','West Virginia','Wisconsin','Wyoming'
+    ['AL','Alabama'],['AK','Alaska'],['AZ','Arizona'],['AR','Arkansas'],['CA','California'],
+    ['CO','Colorado'],['CT','Connecticut'],['DE','Delaware'],['FL','Florida'],['GA','Georgia'],
+    ['HI','Hawaii'],['ID','Idaho'],['IL','Illinois'],['IN','Indiana'],['IA','Iowa'],
+    ['KS','Kansas'],['KY','Kentucky'],['LA','Louisiana'],['ME','Maine'],['MD','Maryland'],
+    ['MA','Massachusetts'],['MI','Michigan'],['MN','Minnesota'],['MS','Mississippi'],
+    ['MO','Missouri'],['MT','Montana'],['NE','Nebraska'],['NV','Nevada'],
+    ['NH','New Hampshire'],['NJ','New Jersey'],['NM','New Mexico'],['NY','New York'],
+    ['NC','North Carolina'],['ND','North Dakota'],['OH','Ohio'],['OK','Oklahoma'],
+    ['OR','Oregon'],['PA','Pennsylvania'],['RI','Rhode Island'],['SC','South Carolina'],
+    ['SD','South Dakota'],['TN','Tennessee'],['TX','Texas'],['UT','Utah'],['VT','Vermont'],
+    ['VA','Virginia'],['WA','Washington'],['WV','West Virginia'],['WI','Wisconsin'],['WY','Wyoming']
 ];
 
 const TYPE_ICONS = {
@@ -2267,7 +2277,7 @@ function renderStep2() {
                     <label>State <span class="required">*</span></label>
                     <select id="switchState" class="form-input">
                         <option value="">Select State</option>
-                        ${US_STATES.map(s => `<option value="${s}">${s}</option>`).join('')}
+                        ${US_STATES.map(([abbr, name]) => `<option value="${abbr}">${name}</option>`).join('')}
                     </select>
                 </div>
                 <div class="switch-form-group">
@@ -2352,7 +2362,7 @@ function renderStep2() {
                         <label>Division <span class="required">*</span></label>
                         <select id="switchDivision" class="form-input">
                             <option value="">Select Division</option>
-                            ${DIVISION_OPTIONS.map(d => `<option value="${d}">${d}</option>`).join('')}
+                            ${DIVISION_OPTIONS.map(([val, label]) => `<option value="${val}">${label}</option>`).join('')}
                         </select>
                     </div>
                     <div class="switch-form-group">
@@ -2389,7 +2399,7 @@ function renderStep2() {
                 <label>State <span class="required">*</span></label>
                 <select id="switchState" class="form-input">
                     <option value="">Select State</option>
-                    ${US_STATES.map(s => `<option value="${s}">${s}</option>`).join('')}
+                    ${US_STATES.map(([abbr, name]) => `<option value="${abbr}">${name}</option>`).join('')}
                 </select>
             </div>
             <div class="switch-form-group">
@@ -2432,7 +2442,7 @@ function renderStep2() {
                         <label>Division <span class="required">*</span></label>
                         <select id="switchDivision" class="form-input">
                             <option value="">Select Division</option>
-                            ${DIVISION_OPTIONS.map(d => `<option value="${d}">${d}</option>`).join('')}
+                            ${DIVISION_OPTIONS.map(([val, label]) => `<option value="${val}">${label}</option>`).join('')}
                         </select>
                     </div>
                     <div class="switch-form-group">
@@ -2677,7 +2687,7 @@ async function executeSwitchProfile(profileData) {
                 other: 'mainpage-other.html'
             };
             const mainpage = mainpageMap[folder] || 'mainpage-player.html';
-            const redirectUrl = `../../${folder}/${mainpage}`;
+            const redirectUrl = `/frontend/${folder}/${mainpage}`;
 
             if (result.requires_payment) {
                 // Close the switch modal
