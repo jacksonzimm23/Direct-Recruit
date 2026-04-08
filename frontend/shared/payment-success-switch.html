@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#0a1128">
+    <link rel="icon" type="image/png" href="https://res.cloudinary.com/dzmsj6nwv/image/upload/v1770078659/LOGO.PNG_i0uvv4.png">
+    <title>Payment Successful - Direct Recruit</title>
+    <link rel="stylesheet" href="../landingpage/styles.css">
+    <style>
+        .ps-section { display:flex;align-items:center;justify-content:center;min-height:calc(100vh - 70px);padding:40px 20px; }
+        .ps-container { text-align:center;max-width:500px; }
+        .ps-icon { width:64px;height:64px;margin:0 auto 24px;color:#22c55e; }
+        .ps-title { color:#fff;font-size:24px;font-weight:700;margin:0 0 12px; }
+        .ps-message { color:rgba(255,255,255,0.6);font-size:15px;line-height:1.6;margin:0; }
+        .ps-link { color:#1282a2; }
+    </style>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="../landingpage/index.html" class="logo">
+                <img src="https://res.cloudinary.com/dzmsj6nwv/image/upload/v1770078659/LOGO.PNG_i0uvv4.png" alt="Direct Recruit Logo" class="logo-icon">
+                <div class="logo-text">
+                    <span class="logo-title">Direct Recruit</span>
+                    <span class="logo-subtitle">GET RECRUITED &middot; THE RIGHT WAY</span>
+                </div>
+            </a>
+        </div>
+    </nav>
+
+    <section class="ps-section">
+        <div class="ps-container">
+            <div class="ps-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+            </div>
+            <h1 class="ps-title" id="statusTitle">Payment Successful!</h1>
+            <p class="ps-message" id="statusMessage">Your subscription is active. Redirecting to your dashboard...</p>
+        </div>
+    </section>
+
+    <script>
+    (function() {
+        const redirectUrl = localStorage.getItem('switchRedirectUrl');
+        localStorage.removeItem('switchRedirectUrl');
+
+        if (redirectUrl) {
+            setTimeout(() => {
+                window.location.href = redirectUrl;
+            }, 2000);
+        } else {
+            document.getElementById('statusTitle').textContent = 'Payment Successful!';
+            document.getElementById('statusMessage').innerHTML = 'Redirecting to your dashboard... If not redirected, <a href="../landingpage/signin.html" class="ps-link">sign in here</a>.';
+            setTimeout(() => {
+                window.location.href = '../landingpage/signin.html';
+            }, 3000);
+        }
+    })();
+    </script>
+</body>
+</html>
