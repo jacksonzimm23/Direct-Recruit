@@ -2095,9 +2095,9 @@ const TYPE_ICONS = {
     hsplayer: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>',
     collegeplayer: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"></path><path d="M6 12v5c3 3 9 3 12 0v-5"></path></svg>',
     transferplayer: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg>',
-    hscoach: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>',
-    collegecoach: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>',
-    other: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M8 14s1.5 2 4 2 4-2 4-2"></path><line x1="9" y1="9" x2="9.01" y2="9"></line><line x1="15" y1="9" x2="15.01" y2="9"></line></svg>'
+    hscoach: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect><path d="M9 12h6"></path><path d="M9 16h6"></path></svg>',
+    collegecoach: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect><path d="M9 12h6"></path><path d="M9 16h6"></path></svg>',
+    other: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>'
 };
 
 async function initializeProfileTypeSwitching() {
@@ -2326,8 +2326,13 @@ function renderStep2() {
             </div>
             <div class="switch-form-row">
                 <div class="switch-form-group">
-                    <label>Height (inches) <span class="required">*</span></label>
-                    <input type="number" id="switchHeight" placeholder="e.g. 72" class="form-input" min="48" max="96">
+                    <label>Height <span class="required">*</span></label>
+                    <div style="display:flex;gap:8px;align-items:center;">
+                        <input type="number" id="switchHeightFt" placeholder="Ft" class="form-input" min="4" max="7" style="width:70px;">
+                        <span style="color:rgba(255,255,255,0.5);font-size:13px;">ft</span>
+                        <input type="number" id="switchHeightIn" placeholder="In" class="form-input" min="0" max="11" style="width:70px;">
+                        <span style="color:rgba(255,255,255,0.5);font-size:13px;">in</span>
+                    </div>
                 </div>
                 <div class="switch-form-group">
                     <label>Weight (lbs) <span class="required">*</span></label>
@@ -2515,7 +2520,7 @@ function validateStep2() {
         if (!document.getElementById('switchState')?.value) return 'State is required';
         if (!document.getElementById('switchGradYear')?.value) return 'Graduation year is required';
         if (getSelectedPositions().length === 0) return 'At least one position is required';
-        if (!document.getElementById('switchHeight')?.value) return 'Height is required';
+        if (!document.getElementById('switchHeightFt')?.value) return 'Height is required';
         if (!document.getElementById('switchWeight')?.value) return 'Weight is required';
         if (['collegeplayer', 'transferplayer'].includes(selectedTargetType)) {
             if (!document.getElementById('switchDivision')?.value) return 'Division is required';
@@ -2546,7 +2551,9 @@ function collectStep2Data() {
         data.state = document.getElementById('switchState')?.value;
         data.graduation_year = parseInt(document.getElementById('switchGradYear')?.value) || null;
         data.position = getSelectedPositions().join('/');
-        data.height = parseInt(document.getElementById('switchHeight')?.value) || null;
+        const heightFt = parseInt(document.getElementById('switchHeightFt')?.value) || 0;
+        const heightIn = parseInt(document.getElementById('switchHeightIn')?.value) || 0;
+        data.height = heightFt > 0 ? (heightFt * 12) + heightIn : null;
         data.weight = parseInt(document.getElementById('switchWeight')?.value) || null;
         data.gpa = parseFloat(document.getElementById('switchGPA')?.value) || null;
 

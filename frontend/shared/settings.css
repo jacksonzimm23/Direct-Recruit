@@ -1983,7 +1983,9 @@
     width: 95%;
     max-width: 720px;
     max-height: 90vh;
-    overflow-y: auto;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
     border: 1px solid rgba(100, 116, 152, 0.2);
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
 }
@@ -2064,6 +2066,9 @@
 /* Modal body */
 .switch-modal-body {
     padding: 1.5rem;
+    overflow-y: auto;
+    flex: 1;
+    min-height: 0;
 }
 
 .switch-step h3 {
@@ -2146,9 +2151,6 @@
     flex-direction: column;
     gap: 0.85rem;
     margin-bottom: 1rem;
-    max-height: 50vh;
-    overflow-y: auto;
-    padding-right: 0.25rem;
 }
 
 .switch-form-group {
