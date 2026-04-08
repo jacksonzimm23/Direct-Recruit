@@ -302,17 +302,22 @@ document.addEventListener('DOMContentLoaded', async function() {
             profileData.college_division = document.getElementById('division').value;
             profileData.conference = document.getElementById('conference').value;
 
-            // Step 3: Create or Update profile
-            await profileAPI.createCoachProfile(profileData);
-
-            // Show success message
-            showSuccessMessage(isUpdating);
+            if (isUpdating) {
+                // Updates: create/update profile directly, no payment
+                await profileAPI.createCoachProfile(profileData);
+                showSuccessMessage(isUpdating);
+            } else {
+                // New signups: store profile data and show tier selection
+                localStorage.setItem('pendingProfileData', JSON.stringify(profileData));
+                submitBtn.textContent = 'Choose your plan...';
+                showTierSelectionModal();
+            }
         } catch (error) {
             console.error('Profile error:', error);
 
-            // If user was created but profile creation failed, show helpful error
+            // If user was created but something failed, show helpful error
             if (userCreated) {
-                alert('Account was created but profile setup failed: ' + error.message + '\n\nPlease contact support or try logging in and completing your profile.');
+                alert('Account was created but setup failed: ' + error.message + '\n\nPlease try logging in to complete your profile and payment.');
             } else {
                 alert(`Failed to ${isUpdating ? 'update' : 'create'} profile: ` + error.message);
             }
@@ -536,4 +541,105 @@ async function loadExistingProfile() {
     } catch (error) {
         // silently ignore
     }
+}
+
+// ─── Tier Selection Modal ────────────────────────────────────────────────────
+function showTierSelectionModal() {
+    const overlay = document.createElement('div');
+    overlay.id = 'tierModal';
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:10000;display:flex;align-items:center;justify-content:center;padding:20px;';
+
+    overlay.innerHTML = `
+        <div style="background:#0a1128;border-radius:16px;max-width:900px;width:100%;padding:40px 32px;position:relative;max-height:90vh;overflow-y:auto;">
+            <button id="tierModalClose" style="position:absolute;top:16px;right:16px;background:none;border:none;color:rgba(255,255,255,0.5);font-size:24px;cursor:pointer;">&times;</button>
+            <h2 style="color:#fff;text-align:center;font-size:24px;font-weight:700;margin:0 0 8px;">Choose Your Plan</h2>
+            <p style="color:rgba(255,255,255,0.45);text-align:center;font-size:14px;margin:0 0 32px;">Select a subscription tier to get started.</p>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;">
+                ${tierCard('Starter', '20', [
+                    'AI Recruiting Assistant',
+                    'Portal Intelligence',
+                    'Recruiting Board',
+                    '4M AI tokens/month',
+                    'Direct messaging'
+                ], false)}
+                ${tierCard('Pro', '50', [
+                    'Everything in Starter',
+                    '10M AI tokens/month (2.5x)',
+                    'Saved players & portal watchlist',
+                    'Custom baseline metrics',
+                    'Priority support'
+                ], true)}
+                ${tierCard('Elite', '100', [
+                    'Everything in Pro',
+                    '20M AI tokens/month (5x)',
+                    'Team collaboration tools',
+                    'Unlimited saved players',
+                    'Dedicated support'
+                ], false)}
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    // Close button
+    document.getElementById('tierModalClose').addEventListener('click', () => {
+        overlay.remove();
+        const submitBtn = document.querySelector('.btn-primary[type="submit"]');
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Create Coach Profile';
+        }
+    });
+
+    // Tier select buttons
+    overlay.querySelectorAll('[data-tier]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const tier = btn.dataset.tier;
+            btn.textContent = 'Redirecting...';
+            btn.disabled = true;
+
+            try {
+                const { url } = await API.payments.createCheckoutSession(
+                    'collegecoach',
+                    tier,
+                    'signup',
+                    window.location.origin + '/frontend/collegecoach/payment-success.html',
+                    window.location.origin + '/frontend/collegecoach/create-coach-profile.html'
+                );
+                window.location.href = url;
+            } catch (error) {
+                console.error('Checkout error:', error);
+                alert('Failed to start checkout: ' + error.message);
+                btn.textContent = 'Select';
+                btn.disabled = false;
+            }
+        });
+    });
+}
+
+function tierCard(name, price, features, isPopular) {
+    const borderColor = isPopular ? '#ff6b35' : 'rgba(255,255,255,0.08)';
+    const bgColor = isPopular ? 'rgba(255,107,53,0.04)' : 'rgba(255,255,255,0.03)';
+    const badge = isPopular ? '<div style="position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:#ff6b35;color:#fff;font-size:11px;font-weight:700;padding:4px 16px;border-radius:20px;text-transform:uppercase;letter-spacing:0.5px;white-space:nowrap;">Most Popular</div>' : '';
+
+    const featureList = features.map(f =>
+        `<li style="display:flex;align-items:center;gap:8px;color:rgba(255,255,255,0.7);font-size:13px;padding:6px 0;">
+            <svg viewBox="0 0 20 20" fill="#ff6b35" width="16" height="16" style="flex-shrink:0;"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+            ${f}
+        </li>`
+    ).join('');
+
+    return `
+        <div style="background:${bgColor};border:1px solid ${borderColor};border-radius:16px;padding:28px 20px;text-align:center;position:relative;display:flex;flex-direction:column;">
+            ${badge}
+            <h3 style="color:#fff;font-size:20px;font-weight:700;margin:0 0 12px;">${name}</h3>
+            <div style="margin-bottom:12px;">
+                <span style="font-size:32px;font-weight:800;color:#fff;">$${price}</span>
+                <span style="font-size:14px;color:rgba(255,255,255,0.4);">/month</span>
+            </div>
+            <ul style="list-style:none;padding:0;margin:0 0 20px;text-align:left;flex:1;">${featureList}</ul>
+            <button data-tier="${name.toLowerCase()}" style="background:#ff6b35;color:#fff;border:none;border-radius:8px;padding:12px;font-size:14px;font-weight:600;cursor:pointer;width:100%;font-family:'Inter',sans-serif;">Select</button>
+        </div>
+    `;
 }

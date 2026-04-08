@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#0a1128">
+    <link rel="icon" type="image/png" href="https://res.cloudinary.com/dzmsj6nwv/image/upload/v1770078659/LOGO.PNG_i0uvv4.png">
+    <title>Payment Successful - Direct Recruit</title>
+    <link rel="stylesheet" href="../landingpage/styles.css">
+    <link rel="stylesheet" href="verify-email.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="../landingpage/index.html" class="logo">
+                <img src="https://res.cloudinary.com/dzmsj6nwv/image/upload/v1770078659/LOGO.PNG_i0uvv4.png" alt="Direct Recruit Logo" class="logo-icon">
+                <div class="logo-text">
+                    <span class="logo-title">Direct Recruit</span>
+                    <span class="logo-subtitle">GET RECRUITED &middot; THE RIGHT WAY</span>
+                </div>
+            </a>
+        </div>
+    </nav>
+
+    <section class="verify-section">
+        <div class="verify-container">
+            <div class="verify-icon" id="statusIcon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+            </div>
+
+            <h1 id="statusTitle">Payment Successful!</h1>
+            <p class="verify-subtitle" id="statusMessage">Setting up your profile...</p>
+
+            <div class="help-text" id="redirectInfo">
+                <p>You'll be redirected to email verification shortly.</p>
+            </div>
+        </div>
+    </section>
+
+    <script src="../shared/api.js"></script>
+    <script>
+    (async function() {
+        const statusTitle = document.getElementById('statusTitle');
+        const statusMessage = document.getElementById('statusMessage');
+        const redirectInfo = document.getElementById('redirectInfo');
+
+        // Read pending profile data from localStorage
+        const pendingData = localStorage.getItem('pendingProfileData');
+
+        if (!pendingData) {
+            statusTitle.textContent = 'Something went wrong';
+            statusMessage.textContent = 'No profile data found. Please start the signup process again.';
+            redirectInfo.innerHTML = '<p><a href="create-coach-profile.html" style="color: var(--accent-orange, #ff6b35);">Back to Sign Up</a></p>';
+            return;
+        }
+
+        try {
+            // Create the coach profile
+            const profileData = JSON.parse(pendingData);
+            await API.profile.createCoachProfile(profileData);
+
+            // Clear pending data
+            localStorage.removeItem('pendingProfileData');
+
+            // Show success and redirect to email verification
+            statusTitle.textContent = 'Payment Successful!';
+            statusMessage.textContent = 'Your profile has been created. Redirecting to email verification...';
+
+            setTimeout(() => {
+                window.location.href = 'verify-email.html';
+            }, 2000);
+        } catch (error) {
+            console.error('Profile creation failed:', error);
+            statusTitle.textContent = 'Profile Setup Failed';
+            statusMessage.textContent = 'Payment was successful but profile creation failed: ' + error.message;
+            redirectInfo.innerHTML = '<p>Your payment has been processed. Please <a href="../landingpage/signin.html" style="color: var(--accent-orange, #ff6b35);">sign in</a> to complete your profile setup.</p>';
+        }
+    })();
+    </script>
+</body>
+</html>
