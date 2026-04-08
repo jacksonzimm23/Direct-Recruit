@@ -350,17 +350,30 @@ document.addEventListener('DOMContentLoaded', async function() {
             // HS players have no division
             profileData.college_division = null;
 
-            // Step 3: Create or Update profile
-            await profileAPI.createPlayerProfile(profileData);
+            if (isUpdating) {
+                // Updates: create/update profile directly, no payment
+                await profileAPI.createPlayerProfile(profileData);
+                showSuccessMessage(isUpdating);
+            } else {
+                // New signups: store profile data and redirect to Stripe Checkout
+                localStorage.setItem('pendingProfileData', JSON.stringify(profileData));
+                submitBtn.textContent = 'Redirecting to payment...';
 
-            // Show success message
-            showSuccessMessage(isUpdating);
+                const { url } = await API.payments.createCheckoutSession(
+                    'hsplayer',
+                    null,
+                    'signup',
+                    window.location.origin + '/frontend/hsplayer/payment-success.html',
+                    window.location.origin + '/frontend/hsplayer/create-profile.html'
+                );
+                window.location.href = url;
+            }
         } catch (error) {
             console.error('Profile error:', error);
 
-            // If user was created but profile creation failed, show helpful error
+            // If user was created but something failed, show helpful error
             if (userCreated) {
-                alert('Account was created but profile setup failed: ' + error.message + '\n\nPlease contact support or try logging in and completing your profile.');
+                alert('Account was created but setup failed: ' + error.message + '\n\nPlease try logging in to complete your profile and payment.');
             } else {
                 alert(`Failed to ${isUpdating ? 'update' : 'create'} profile: ` + error.message);
             }
