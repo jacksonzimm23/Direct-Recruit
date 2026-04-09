@@ -16,7 +16,7 @@ class User {
   }
 
   static async findById(id) {
-    const result = await pool.query('SELECT id, email, username, role, created_at, email_verified, profile_completed, is_active, last_profile_switch_at FROM users WHERE id = $1', [id]);
+    const result = await pool.query('SELECT id, email, username, role, created_at, email_verified, profile_completed, is_active, last_profile_switch_at, subscription_status, subscription_tier FROM users WHERE id = $1', [id]);
     return result.rows[0];
   }
 

@@ -75,11 +75,17 @@ class AiAnalytics {
       [coachUserId, periodStart, periodEnd]
     );
 
+    // Look up the coach's actual subscription tier
+    const userSub = await pool.query('SELECT subscription_tier FROM users WHERE id = $1', [coachUserId]);
+    const tier = userSub.rows[0]?.subscription_tier || 'starter';
+    const TIER_CAPS = { starter: 4_000_000, pro: 10_000_000, elite: 20_000_000, player: 0 };
+    const TIER_NAMES = { starter: 'Starter', pro: 'Pro', elite: 'Elite', player: 'Player' };
+
     const row = result.rows[0];
     const formatDate = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
     return {
-      plan: 'Pro',
-      tokenCap: 10_000_000,
+      plan: TIER_NAMES[tier] || 'Starter',
+      tokenCap: TIER_CAPS[tier] || 4_000_000,
       periodStart: formatDate(periodStart),
       periodEnd: formatDate(periodEnd),
       inputTokens: row.input_tokens,
