@@ -801,11 +801,6 @@ class FeedManager {
                             <circle cx="5" cy="12" r="1"></circle>
                         </svg>
                     </button>
-                    <div class="post-view-icon" data-post-id="${postId}">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="9 18 15 12 9 6"></polyline>
-                        </svg>
-                    </div>
                 </div>
             </div>
             <div class="post-content" data-post-id="${postId}" style="cursor: pointer;">
@@ -933,11 +928,6 @@ class FeedManager {
                             <circle cx="5" cy="12" r="1"></circle>
                         </svg>
                     </button>
-                    <div class="post-view-icon" data-post-id="${postId}">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="9 18 15 12 9 6"></polyline>
-                        </svg>
-                    </div>
                 </div>
             </div>
             <div class="post-content" data-post-id="${postId}" style="cursor: pointer;">
@@ -1050,11 +1040,6 @@ class FeedManager {
                             <circle cx="5" cy="12" r="1"></circle>
                         </svg>
                     </button>
-                    <div class="post-view-icon" data-post-id="${postId}" data-share-id="${post.share_id}" onclick="event.stopPropagation(); feedManager.navigateToPostView(null, event, '${post.share_id}')">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="9 18 15 12 9 6"></polyline>
-                        </svg>
-                    </div>
                 </div>
             </div>
             <div class="post-content" data-post-id="${postId}" data-share-id="${post.share_id}" style="cursor: pointer;">
@@ -1681,11 +1666,6 @@ class FeedManager {
                             <circle cx="5" cy="12" r="1"></circle>
                         </svg>
                     </button>
-                    <div class="post-view-icon" data-post-id="${post.original_post_id}" data-share-id="${post.id}" onclick="event.stopPropagation(); feedManager.navigateToPostView(null, event, '${post.id}')">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="9 18 15 12 9 6"></polyline>
-                        </svg>
-                    </div>
                 </div>
             </div>
             <div class="post-content" data-post-id="${post.original_post_id}" data-share-id="${post.id}" style="cursor: pointer;">
@@ -4200,70 +4180,35 @@ window.addEventListener('pageshow', (event) => {
     }
 });
 
-// Event delegation for post content clicks - using capture phase for maximum reliability
-// The capture phase fires before bubbling, ensuring we catch the event first
+// Event delegation for post card clicks — clicking anywhere on a post navigates to single post view
+// Uses capture phase so we intercept before bubbling
 document.addEventListener('click', (event) => {
-    // Handle clicks on the arrow icon first (most specific)
-    const viewIcon = event.target.closest('.post-view-icon');
-    if (viewIcon) {
-        const postId = viewIcon.dataset.postId;
-        const shareId = viewIcon.dataset.shareId; // For quote posts
-        if ((postId || shareId) && feedManager) {
-            event.preventDefault();
-            event.stopPropagation();
-            feedManager.navigateToPostView(postId, event, shareId);
-            return;
-        }
-    }
+    const postCard = event.target.closest('.post-card');
+    if (!postCard || !feedManager) return;
 
-    // Check if click is on post-content or inside it (for text area clicks)
-    const postContent = event.target.closest('.post-content');
-    if (postContent && feedManager) {
-        // Don't navigate if clicking directly on interactive media elements
-        const isVideo = event.target.closest('video');
-        const isLink = event.target.closest('a');
-        const isButton = event.target.closest('button');
-        const isImage = event.target.tagName === 'IMG'; // Only if clicking directly on the image itself
-        const isMediaWrapper = event.target.closest('.media-wrapper'); // Multi-media wrapper with click handler
+    // Don't navigate if already on the single post view page
+    if (window.location.pathname.includes('post-view.html')) return;
 
-        // Allow slideshow to handle direct clicks on images or media wrappers
-        // But clicking on .post-media padding/background should navigate to post view
-        if (isVideo || isLink || isButton || isImage || isMediaWrapper) {
-            return;
-        }
-
-        const postId = postContent.dataset.postId;
-        const shareId = postContent.dataset.shareId; // For quote posts
-        if (postId || shareId) {
-            event.preventDefault();
-            feedManager.navigateToPostView(postId, event, shareId);
-        }
+    // Don't navigate if clicking on interactive elements that have their own behavior
+    if (event.target.closest('a') ||
+        event.target.closest('button') ||
+        event.target.closest('input') ||
+        event.target.closest('textarea') ||
+        event.target.closest('.post-stats') ||
+        event.target.closest('.post-actions-bar') ||
+        event.target.closest('.post-comments-section') ||
+        event.target.closest('.quoted-post-embed') ||
+        event.target.closest('.media-wrapper') ||
+        event.target.closest('.media-grid-cell') ||
+        event.target.closest('video') ||
+        event.target.tagName === 'IMG') {
         return;
     }
 
-    // Handle clicks anywhere on feed quote post cards (for areas outside post-content)
-    const quoteCard = event.target.closest('.feed-quote-card');
-    if (quoteCard && feedManager) {
-        // Don't navigate if clicking on interactive elements
-        const isButton = event.target.closest('button');
-        const isLink = event.target.closest('a');
-        const isInput = event.target.closest('input');
-        const isStats = event.target.closest('.post-stats');
-        const isActions = event.target.closest('.post-actions-bar');
-        const isComments = event.target.closest('.post-comments-section');
-        // Also exclude media elements to allow slideshow to work
-        const isMedia = event.target.closest('.media-grid-cell, .post-media-grid, video, img');
-        const isQuotedPost = event.target.closest('.quoted-post-embed');
-
-        if (isButton || isLink || isInput || isStats || isActions || isComments || isMedia || isQuotedPost) {
-            return;
-        }
-
-        const postId = quoteCard.dataset.postId;
-        const shareId = quoteCard.dataset.shareId;
-        if (shareId) {
-            event.preventDefault();
-            feedManager.navigateToPostView(postId, event, shareId);
-        }
+    const postId = postCard.dataset.postId;
+    const shareId = postCard.dataset.shareId;
+    if (postId || shareId) {
+        event.preventDefault();
+        feedManager.navigateToPostView(postId, event, shareId);
     }
 }, true); // Use capture phase
