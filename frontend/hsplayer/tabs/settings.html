@@ -158,6 +158,13 @@
                     </svg>
                     Profile Type
                 </button>
+                <button class="settings-nav-btn" data-section="subscription">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+                        <line x1="1" y1="10" x2="23" y2="10"></line>
+                    </svg>
+                    Subscription
+                </button>
                 <button class="settings-nav-btn" data-section="notifications">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
@@ -460,6 +467,14 @@
                         <p class="settings-card-description">Switch your profile type to change how you use Direct Recruit. All of your social data will be preserved, including your posts, comments, likes, followers, following, messages, conversations, and notifications. Only your profile-specific information (stats, position, team info, etc.) will be replaced with your new profile data.</p>
                         <div id="switchCooldownMessage" style="display:none;" class="switch-cooldown-message"></div>
                         <button class="btn-primary" id="switchProfileBtn">Switch Profile Type</button>
+                    </div>
+                </section>
+
+                <!-- Subscription Section -->
+                <section class="settings-section" id="subscription">
+                    <h2 class="section-heading">Subscription</h2>
+                    <div class="settings-card" id="subscriptionCard">
+                        <div id="subscriptionContent">Loading...</div>
                     </div>
                 </section>
 

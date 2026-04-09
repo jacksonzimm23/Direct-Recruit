@@ -19,6 +19,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Initialize profile type switching
     initializeProfileTypeSwitching();
+
+    // Initialize subscription section
+    initializeSubscriptionSection();
 });
 
 // Load user settings from API or localStorage
@@ -93,6 +96,13 @@ function initializeSettingsNavigation() {
             // Add active class to clicked button and corresponding section
             this.classList.add('active');
             document.getElementById(targetSection).classList.add('active');
+
+            // Hide save/discard footer on sections that don't use it
+            const footer = document.querySelector('.settings-footer');
+            if (footer) {
+                const noFooterSections = ['profileType', 'subscription', 'security'];
+                footer.style.display = noFooterSections.includes(targetSection) ? 'none' : '';
+            }
 
             // Scroll to top of settings content on mobile
             if (window.innerWidth <= 768) {
@@ -2808,6 +2818,171 @@ function updateSelectedCoachPositionsDisplay() {
             updateSelectedCoachPositionsDisplay();
         });
     });
+}
+
+// ─── Subscription Section ────────────────────────────────────────────────────
+const PAID_PROFILE_TYPES = ['hsplayer', 'transferplayer', 'collegecoach'];
+const PLAN_DISPLAY = {
+    player: { name: 'Player Plan', price: '$10/mo' },
+    starter: { name: 'Coach Starter', price: '$20/mo' },
+    pro: { name: 'Coach Pro', price: '$50/mo' },
+    elite: { name: 'Coach Elite', price: '$100/mo' }
+};
+
+async function initializeSubscriptionSection() {
+    const content = document.getElementById('subscriptionContent');
+    if (!content) return;
+
+    try {
+        const me = await API.auth.getCurrentUser();
+        const profileFolder = getProfileFolder(me.user);
+        const isPaid = PAID_PROFILE_TYPES.includes(profileFolder);
+
+        if (!isPaid) {
+            content.innerHTML = `
+                <div class="sub-free-message">
+                    <p>Your account type is <strong>free</strong> — no subscription needed.</p>
+                    <p style="color:rgba(255,255,255,0.4);font-size:0.85rem;margin-top:8px;">All social features, messaging, and discovery are included at no cost.</p>
+                </div>
+            `;
+            return;
+        }
+
+        const sub = await API.payments.getSubscriptionStatus();
+        renderSubscriptionUI(content, sub, profileFolder);
+    } catch (error) {
+        console.error('Failed to load subscription info:', error);
+        content.innerHTML = '<p style="color:#8892b0;">Unable to load subscription information.</p>';
+    }
+}
+
+function renderSubscriptionUI(container, sub, profileFolder) {
+    const plan = PLAN_DISPLAY[sub.tier] || null;
+    const isActive = sub.status === 'active';
+    const isPastDue = sub.status === 'past_due';
+    const isCancelled = sub.status === 'cancelled';
+    const isNone = !sub.status || sub.status === 'none';
+    const isCoach = profileFolder === 'collegecoach';
+
+    let statusBadge = '';
+    if (isActive && sub.cancelAtPeriodEnd) statusBadge = '<span class="sub-badge sub-badge-warning">Cancelling</span>';
+    else if (isActive) statusBadge = '<span class="sub-badge sub-badge-active">Active</span>';
+    else if (isPastDue) statusBadge = '<span class="sub-badge sub-badge-warning">Past Due</span>';
+    else if (isCancelled) statusBadge = '<span class="sub-badge sub-badge-cancelled">Cancelled</span>';
+    else statusBadge = '<span class="sub-badge sub-badge-none">No Subscription</span>';
+
+    let html = '<div class="sub-details">';
+
+    // Plan name
+    html += `<div class="sub-row"><span class="sub-label">Plan</span><span class="sub-value">${plan ? plan.name + ' (' + plan.price + ')' : 'None'}</span></div>`;
+
+    // Status
+    html += `<div class="sub-row"><span class="sub-label">Status</span><span class="sub-value">${statusBadge}</span></div>`;
+
+    // Billing date
+    if (isActive && sub.currentPeriodEnd) {
+        const endDate = new Date(sub.currentPeriodEnd * 1000).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+        if (sub.cancelAtPeriodEnd) {
+            html += `<div class="sub-row"><span class="sub-label">Access Until</span><span class="sub-value" style="color:#f59e0b;">${endDate}</span></div>`;
+        } else {
+            html += `<div class="sub-row"><span class="sub-label">Next Billing</span><span class="sub-value">${endDate}</span></div>`;
+        }
+    }
+
+    html += '</div>';
+
+    // Buttons
+    html += '<div class="sub-actions">';
+    if (isActive && !sub.cancelAtPeriodEnd) {
+        if (isCoach) {
+            html += '<button class="btn-secondary" id="subChangePlanBtn">Change Plan</button>';
+        }
+        html += '<button class="btn-danger-outline" id="subCancelBtn">Cancel Subscription</button>';
+    } else if (isActive && sub.cancelAtPeriodEnd) {
+        html += '<p class="sub-cancel-note">Your subscription will end at the end of the current billing period. You can resubscribe anytime.</p>';
+    } else {
+        html += `<button class="btn-primary" id="subSubscribeBtn">${isCancelled ? 'Resubscribe' : 'Subscribe'}</button>`;
+    }
+    html += '</div>';
+
+    container.innerHTML = html;
+
+    // Attach event listeners
+    const cancelBtn = document.getElementById('subCancelBtn');
+    if (cancelBtn) cancelBtn.addEventListener('click', () => showCancelSubscriptionModal(sub));
+
+    const subscribeBtn = document.getElementById('subSubscribeBtn');
+    if (subscribeBtn) subscribeBtn.addEventListener('click', () => handleSubscribe(profileFolder));
+
+    const changePlanBtn = document.getElementById('subChangePlanBtn');
+    if (changePlanBtn) changePlanBtn.addEventListener('click', () => handleChangePlan());
+}
+
+function showCancelSubscriptionModal(sub) {
+    const endDate = sub.currentPeriodEnd ? new Date(sub.currentPeriodEnd * 1000).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : 'the end of your billing period';
+
+    const overlay = document.createElement('div');
+    overlay.id = 'cancelSubModal';
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:10000;display:flex;align-items:center;justify-content:center;padding:20px;';
+    overlay.innerHTML = `
+        <div style="background:#112240;border-radius:12px;max-width:460px;width:100%;padding:32px;border:1px solid rgba(100,116,152,0.2);">
+            <h3 style="color:#ccd6f6;margin:0 0 12px;font-size:1.1rem;">Cancel Subscription?</h3>
+            <p style="color:#8892b0;font-size:0.9rem;line-height:1.6;margin:0 0 8px;">You'll keep full access until <strong style="color:#ccd6f6;">${endDate}</strong>.</p>
+            <p style="color:#8892b0;font-size:0.9rem;line-height:1.6;margin:0 0 24px;">After that, your profile and data remain saved — you can resubscribe anytime.</p>
+            <div style="display:flex;gap:12px;justify-content:flex-end;">
+                <button id="cancelSubKeep" style="background:transparent;border:1px solid rgba(100,116,152,0.3);color:#8892b0;padding:10px 20px;border-radius:8px;cursor:pointer;font-family:'Inter',sans-serif;font-size:0.9rem;">Keep Subscription</button>
+                <button id="cancelSubConfirm" style="background:#ef4444;color:#fff;border:none;padding:10px 20px;border-radius:8px;cursor:pointer;font-family:'Inter',sans-serif;font-size:0.9rem;font-weight:600;">Cancel Subscription</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+
+    document.getElementById('cancelSubKeep').addEventListener('click', () => overlay.remove());
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+
+    document.getElementById('cancelSubConfirm').addEventListener('click', async () => {
+        const btn = document.getElementById('cancelSubConfirm');
+        btn.textContent = 'Cancelling...';
+        btn.disabled = true;
+        try {
+            await API.payments.cancelSubscription();
+            overlay.remove();
+            initializeSubscriptionSection();
+        } catch (error) {
+            console.error('Cancel failed:', error);
+            btn.textContent = 'Failed — try again';
+            btn.disabled = false;
+        }
+    });
+}
+
+async function handleSubscribe(profileFolder) {
+    const btn = document.getElementById('subSubscribeBtn');
+    if (btn) { btn.textContent = 'Redirecting...'; btn.disabled = true; }
+
+    try {
+        if (profileFolder === 'collegecoach') {
+            showSwitchTierModal();
+        } else {
+            const profileType = profileFolder === 'hsplayer' ? 'hsplayer' : 'transferplayer';
+            const { url } = await API.payments.createCheckoutSession(
+                profileType, null, 'resubscribe',
+                window.location.origin + '/frontend/shared/payment-success-switch.html',
+                window.location.href
+            );
+            localStorage.setItem('switchRedirectUrl', window.location.href);
+            window.location.href = url;
+        }
+    } catch (error) {
+        console.error('Subscribe failed:', error);
+        if (btn) { btn.textContent = 'Subscribe'; btn.disabled = false; }
+        alert('Failed to start checkout: ' + error.message);
+    }
+}
+
+async function handleChangePlan() {
+    localStorage.setItem('switchRedirectUrl', window.location.href);
+    showSwitchTierModal();
 }
 
 function escapeHTML(str) {
