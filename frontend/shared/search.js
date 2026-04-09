@@ -148,27 +148,13 @@ class SearchComponent {
     }
 
     renderResult(result) {
-        const imageUrl = result.profile_image_url || result.profile_picture_url || this.getDefaultAvatar(result.first_name);
+        const imageUrl = result.profile_image_url || result.profile_picture_url;
         const subtitle = [];
         const role = result.role;
 
         // Determine if this is a college player/coach or transfer
         const isCollege = result.college_division && result.college_division.trim() !== '';
         const isTransfer = result.transfer === 'y';
-
-        // Determine username color based on profile type
-        let usernameColor = '#1282A2'; // Default blue for HS players
-        if (role === 'player') {
-            if (isTransfer) {
-                usernameColor = '#b91c1c'; // Transfer player red
-            } else {
-                usernameColor = '#1282A2'; // Regular player blue
-            }
-        } else if (role === 'coach') {
-            usernameColor = '#ff6b35'; // Coach orange
-        } else if (role === 'other') {
-            usernameColor = '#d4a017'; // Other gold
-        }
 
         // Build subtitle based on profile type (matching sidebar-footer format)
         if (role === 'player') {
@@ -237,15 +223,28 @@ class SearchComponent {
             if (result.subheader) subtitle.push(result.subheader);
         }
 
+        // Role-specific meta class for colored, bold subheader (matches feed post pattern)
+        const metaClass = role === 'coach' ? 'coach-meta' : (role === 'other' ? 'other-meta' : (isTransfer ? 'transfer-player-meta' : 'player-meta'));
+
+        const hasImage = result.profile_image_url || result.profile_picture_url;
+
         return `
             <div class="search-result-item" data-username="${result.username || ''}" data-role="${role}" data-is-college="${isCollege}" data-is-transfer="${isTransfer}" data-college-division="${result.college_division || ''}">
-                <img src="${imageUrl}" alt="${result.first_name} ${result.last_name}" class="result-avatar" style="border: 2px solid ${getRoleBorderColor(role, isTransfer, result.college_division)}; color: ${getRoleBorderColor(role, isTransfer, result.college_division)}; background: ${getRoleAvatarBg(role, isTransfer, result.college_division)}" onerror="this.src='${this.getDefaultAvatar(result.first_name)}'">
+                <div class="result-avatar" style="border: 2px solid ${getRoleBorderColor(role, isTransfer, result.college_division)}; color: ${getRoleBorderColor(role, isTransfer, result.college_division)}; background: ${getRoleAvatarBg(role, isTransfer, result.college_division)}">
+                    ${hasImage ?
+                        `<img src="${imageUrl}" alt="${result.first_name} ${result.last_name}">` :
+                        `<svg viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="12" cy="7" r="4"></circle>
+                        </svg>`
+                    }
+                </div>
                 <div class="result-info">
                     <div class="result-name-row">
                         <span class="result-name">${result.first_name} ${result.last_name}${typeof getSchoolLogoHTML === 'function' && result.college_division ? getSchoolLogoHTML(result.team_name, (window.location.pathname.includes('/tabs/') ? '../../assets' : '../assets'), 16) : ''}</span>
-                        <span class="result-username" style="color: ${usernameColor};">@${result.username || 'no-username'}</span>
+                        <span class="result-username">@${result.username || 'no-username'}</span>
                     </div>
-                    ${subtitle.length > 0 ? `<div class="result-subtitle">${subtitle.join(' • ')}</div>` : ''}
+                    ${subtitle.length > 0 ? `<div class="result-subtitle ${metaClass}">${subtitle.join(' • ')}</div>` : ''}
                 </div>
             </div>
         `;
