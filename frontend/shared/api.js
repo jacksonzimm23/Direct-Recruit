@@ -774,7 +774,8 @@ window.API_BASE_URL = API_BASE_URL;
         path.includes('create-profile') ||
         path.includes('create-coach-profile') ||
         path.includes('verify-email') ||
-        path.includes('get-started')) return;
+        path.includes('get-started') ||
+        path.includes('settings')) return;
 
     // Skip if not authenticated
     if (!isAuthenticated()) return;

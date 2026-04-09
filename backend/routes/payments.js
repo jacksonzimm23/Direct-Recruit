@@ -66,11 +66,13 @@ router.post('/create-checkout-session', authMiddleware, async (req, res) => {
     }
 
     // Create checkout session
+    const resolvedTier = TIER_MAP[profileType === 'collegecoach' ? `collegecoach_${tier}` : profileType];
     const session = await stripe.createCheckoutSession({
       customerId,
       priceId,
       userId: req.userId,
       profileType,
+      tier: resolvedTier,
       context: context || 'signup',
       successUrl: successUrl || `${req.headers.origin}/frontend/shared/payment-success.html?session_id={CHECKOUT_SESSION_ID}`,
       cancelUrl: cancelUrl || `${req.headers.origin}/frontend/landingpage/pricing.html`

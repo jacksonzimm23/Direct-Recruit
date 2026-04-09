@@ -5,10 +5,20 @@
  */
 
 const crypto = require('crypto');
+const User = require('../../models/User');
 
 function mockId(prefix) {
   return `${prefix}_mock_${crypto.randomBytes(8).toString('hex')}`;
 }
+
+// Map profile types to tier values (same as payments.js TIER_MAP)
+const MOCK_TIER_MAP = {
+  hsplayer: 'player',
+  transferplayer: 'player',
+  collegecoach_starter: 'starter',
+  collegecoach_pro: 'pro',
+  collegecoach_elite: 'elite'
+};
 
 /**
  * Create a mock Stripe customer.
@@ -28,15 +38,28 @@ async function createCustomer(email, userId) {
  * In local dev, returns the successUrl directly so the frontend auto-redirects
  * as if payment succeeded.
  */
-async function createCheckoutSession({ customerId, priceId, userId, profileType, context, successUrl, cancelUrl }) {
+async function createCheckoutSession({ customerId, priceId, userId, profileType, tier, context, successUrl, cancelUrl }) {
   const sessionId = mockId('cs');
+  const subId = mockId('sub');
   const session = {
     id: sessionId,
     url: `${successUrl}${successUrl.includes('?') ? '&' : '?'}session_id=${sessionId}`,
     customer: customerId,
-    subscription: mockId('sub'),
+    subscription: subId,
     metadata: { userId, profileType, context }
   };
+
+  // Auto-activate subscription in local dev (simulates webhook checkout.session.completed)
+  if (userId) {
+    const resolvedTier = tier || 'player';
+    try {
+      await User.updateSubscription(userId, { subscriptionId: subId, status: 'active', tier: resolvedTier });
+      console.log(`[Stripe Mock] Auto-activated subscription for user ${userId}: tier=${resolvedTier}`);
+    } catch (e) {
+      console.error(`[Stripe Mock] Failed to auto-activate subscription: ${e.message}`);
+    }
+  }
+
   console.log(`[Stripe Mock] Checkout session created: ${session.id} → redirecting to success URL`);
   return session;
 }
