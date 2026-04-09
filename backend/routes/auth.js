@@ -21,8 +21,13 @@ const COOKIE_OPTIONS = {
 };
 
 // Helper to set auth cookie
-function setAuthCookie(res, token) {
-  res.cookie('token', token, COOKIE_OPTIONS);
+// rememberMe: true = persistent 7-day cookie, false = session cookie (deleted on browser close)
+function setAuthCookie(res, token, rememberMe = true) {
+  const options = { ...COOKIE_OPTIONS };
+  if (!rememberMe) {
+    delete options.maxAge;
+  }
+  res.cookie('token', token, options);
 }
 
 // Helper function to convert S3 key to signed URL in profile
@@ -175,7 +180,7 @@ router.post('/resend-verification', authLimiter, async (req, res) => {
 // Login
 router.post('/login', authLimiter, async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, rememberMe } = req.body;
 
     // First check if user exists in local database
     const user = await User.findByEmail(email);
@@ -202,7 +207,7 @@ router.post('/login', authLimiter, async (req, res) => {
     await User.updateLastLogin(user.id);
     const token = generateToken(user.id, user.role);
 
-    setAuthCookie(res, token);
+    setAuthCookie(res, token, !!rememberMe);
 
     res.json({
       message: 'Login successful',

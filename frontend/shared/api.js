@@ -71,6 +71,7 @@ function setUser(user) {
 // Clear auth data (user data from localStorage, cookie cleared by backend)
 function clearAuth() {
     localStorage.removeItem(USER_KEY);
+    localStorage.removeItem('dr_remember_me');
 }
 
 // Check if user is authenticated (based on cached user data)
@@ -135,13 +136,18 @@ const authAPI = {
         return data;
     },
 
-    login: async (email, password) => {
+    login: async (email, password, rememberMe = false) => {
         const data = await apiRequest('/auth/login', {
             method: 'POST',
-            body: JSON.stringify({ email, password })
+            body: JSON.stringify({ email, password, rememberMe })
         });
 
         setUser(data.user);
+        if (rememberMe) {
+            localStorage.setItem('dr_remember_me', 'true');
+        } else {
+            localStorage.removeItem('dr_remember_me');
+        }
         return data;
     },
 
