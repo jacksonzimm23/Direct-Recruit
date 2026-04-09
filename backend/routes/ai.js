@@ -13,7 +13,18 @@ const PlayerGameStats = require('../models/PlayerGameStats');
 const AiAnalytics = require('../models/AiAnalytics');
 const RaSavedPlayers = require('../models/RaSavedPlayers');
 const AiEngagement = require('../models/AiEngagement');
+const User = require('../models/User');
 const logger = require('../utils/logger');
+
+// Check if coach has active subscription before AI usage
+async function requireActiveSubscription(req, res) {
+    const subInfo = await User.getSubscriptionInfo(req.userId);
+    if (!subInfo || (subInfo.subscription_status !== 'active' && subInfo.subscription_status !== 'past_due')) {
+        res.status(403).json({ error: 'Active subscription required to use AI features' });
+        return false;
+    }
+    return true;
+}
 
 // Helper: extract active filter names from a filters object for analytics
 function extractActiveFilters(filters) {
@@ -179,6 +190,8 @@ router.post('/search', async (req, res) => {
 // POST /api/ai/pi-search — re-search for Portal Intelligence with offset
 router.post('/pi-search', async (req, res) => {
   try {
+    if (!(await requireActiveSubscription(req, res))) return;
+
     const { signal_filters, offset } = req.body;
     if (!signal_filters) {
       return res.status(400).json({ error: 'Signal filters are required' });
@@ -214,6 +227,8 @@ router.post('/pi-search', async (req, res) => {
 // POST /api/ai/chats/:chatId/message
 router.post('/chats/:chatId/message', validateUUID('chatId'), async (req, res) => {
   try {
+    if (!(await requireActiveSubscription(req, res))) return;
+
     const { message, baselines } = req.body;
     const chatId = req.params.chatId;
 
@@ -423,6 +438,8 @@ router.post('/chats/:chatId/message', validateUUID('chatId'), async (req, res) =
 // Send a message and get portal intelligence analysis + flagged players
 router.post('/chats/:chatId/pi-message', validateUUID('chatId'), async (req, res) => {
   try {
+    if (!(await requireActiveSubscription(req, res))) return;
+
     const { message } = req.body;
     const chatId = req.params.chatId;
 
@@ -627,6 +644,8 @@ router.post('/chats/:chatId/pi-message', validateUUID('chatId'), async (req, res
 // Re-queries DB with stored filters at a new offset, saves messages to chat history
 router.post('/chats/:chatId/show-more', validateUUID('chatId'), async (req, res) => {
   try {
+    if (!(await requireActiveSubscription(req, res))) return;
+
     const { ai_type, filters, signal_filters, offset } = req.body;
     const chatId = req.params.chatId;
 

@@ -331,6 +331,12 @@ router.get('/me', authMiddleware, async (req, res) => {
     // Convert S3 key to signed URL for profile image
     profile = await addSignedUrlToProfile(profile);
 
+    // Get subscription info
+    const subInfo = await User.getSubscriptionInfo(req.user.id);
+
+    // Disable browser caching so profile image updates are reflected immediately
+    res.set('Cache-Control', 'no-store');
+
     res.json({
       user: {
         id: req.user.id,
@@ -339,7 +345,9 @@ router.get('/me', authMiddleware, async (req, res) => {
         profile_completed: req.user.profile_completed,
         email_verified: req.user.email_verified,
         is_college_coach: isCollegeCoach,
-        is_transfer_player: isTransferPlayer
+        is_transfer_player: isTransferPlayer,
+        subscription_status: subInfo?.subscription_status || 'none',
+        subscription_tier: subInfo?.subscription_tier || null
       },
       profile
     });

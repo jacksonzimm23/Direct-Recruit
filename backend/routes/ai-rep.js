@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { authMiddleware, requireRole } = require('../middleware/auth');
 const pool = require('../config/database');
+const User = require('../models/User');
 const logger = require('../utils/logger');
 
 // All routes require authenticated player
@@ -64,6 +65,12 @@ function buildDateFilter(period, paramIndex) {
 // ============ GET /api/ai-rep/matches ============
 router.get('/matches', async (req, res) => {
   try {
+    // Require active subscription for AI Rep
+    const subInfo = await User.getSubscriptionInfo(req.userId);
+    if (!subInfo || (subInfo.subscription_status !== 'active' && subInfo.subscription_status !== 'past_due')) {
+      return res.status(403).json({ error: 'Active subscription required' });
+    }
+
     const userId = req.userId;
     const period = ['7d', '30d', 'all'].includes(req.query.period) ? req.query.period : '7d';
     const offset = Math.max(0, parseInt(req.query.offset) || 0);
@@ -158,6 +165,11 @@ router.get('/matches', async (req, res) => {
 // ============ GET /api/ai-rep/profile-completion ============
 router.get('/profile-completion', async (req, res) => {
   try {
+    const subInfo = await User.getSubscriptionInfo(req.userId);
+    if (!subInfo || (subInfo.subscription_status !== 'active' && subInfo.subscription_status !== 'past_due')) {
+      return res.status(403).json({ error: 'Active subscription required' });
+    }
+
     const userId = req.userId;
 
     // Fetch player profile

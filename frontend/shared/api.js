@@ -759,3 +759,42 @@ const API = {
 // Make API available globally
 window.API = API;
 window.API_BASE_URL = API_BASE_URL;
+
+// ─── Subscription Paywall Check ──────────────────────────────────────────────
+// Runs on every protected page. Redirects unpaid users on paid profile types.
+(function() {
+    const PAID_FOLDERS = ['hsplayer', 'transferplayer', 'collegecoach'];
+    const paywallPath = '/frontend/shared/subscription-required.html';
+
+    // Skip if already on paywall, landing pages, or payment pages
+    const path = window.location.pathname;
+    if (path.includes('subscription-required') ||
+        path.includes('landingpage') ||
+        path.includes('payment-success') ||
+        path.includes('create-profile') ||
+        path.includes('create-coach-profile') ||
+        path.includes('verify-email') ||
+        path.includes('get-started')) return;
+
+    // Skip if not authenticated
+    if (!isAuthenticated()) return;
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        try {
+            const me = await apiRequest('/auth/me');
+            if (!me || !me.user) return;
+
+            const folder = getProfileFolder(me.user);
+            if (!PAID_FOLDERS.includes(folder)) return;
+
+            const status = me.user.subscription_status;
+            // Allow active and past_due (Stripe retries payment)
+            if (status === 'active' || status === 'past_due') return;
+
+            // Unpaid user on paid profile — redirect to paywall
+            window.location.href = paywallPath;
+        } catch (e) {
+            // If /me fails, don't block — auth middleware handles unauthorized
+        }
+    });
+})();
