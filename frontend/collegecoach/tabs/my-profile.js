@@ -2693,11 +2693,14 @@ async function openFollowListModal(type) {
             return;
         }
 
+        const _assetsPath = window.location.pathname.includes('/tabs/') ? '../../assets' : '../assets';
+        if (typeof ensureSchoolLogosLoaded === 'function') await ensureSchoolLogosLoaded(_assetsPath);
+
         // Render the list
         modalBody.innerHTML = users.map(user => {
             const roleInfo = getFollowListRoleInfo(user);
             return `
-            <div class="follow-list-item" data-user-id="${user.id}" data-role="${user.role}">
+            <div class="follow-list-item" data-user-id="${user.id}" data-role="${user.role}" data-username="${user.username || ''}" data-is-transfer="${user.is_transfer || ''}" data-division="${user.player_college_division || user.coach_college_division || ''}">
                 <div class="follow-list-avatar" style="border: 2px solid ${getRoleBorderColor(user.role, user.is_transfer === 'y' || user.is_transfer === true, user.player_college_division || user.coach_college_division)}; color: ${getRoleBorderColor(user.role, user.is_transfer === 'y' || user.is_transfer === true, user.player_college_division || user.coach_college_division)}; background: ${getRoleAvatarBg(user.role, user.is_transfer === 'y' || user.is_transfer === true, user.player_college_division || user.coach_college_division)}">
                     ${user.profile_image_url
                         ? `<img src="${user.profile_image_url}" alt="${user.first_name}">`
@@ -2708,7 +2711,7 @@ async function openFollowListModal(type) {
                     }
                 </div>
                 <div class="follow-list-info">
-                    <div class="follow-list-name">${user.first_name} ${user.last_name}</div>
+                    <div class="follow-list-name">${user.first_name} ${user.last_name}${(typeof getSchoolLogoHTML === 'function' && (user.player_college_division || user.coach_college_division)) ? getSchoolLogoHTML(user.player_team_name || user.coach_team_name, _assetsPath, 14) : ''} ${user.username ? `<span style="color: rgba(254,252,251,0.5); font-weight: 400;">@${user.username}</span>` : ''}</div>
                     <div class="follow-list-role ${roleInfo.colorClass}">${roleInfo.text}</div>
                 </div>
             </div>
@@ -2716,31 +2719,17 @@ async function openFollowListModal(type) {
 
         // Add click handlers to navigate to profiles
         modalBody.querySelectorAll('.follow-list-item').forEach(item => {
-            item.addEventListener('click', async () => {
-                const visitorUserId = item.dataset.userId;
+            item.addEventListener('click', () => {
+                const username = item.dataset.username;
                 const role = item.dataset.role;
+                if (!username) return;
 
-                // Fetch the user's username to navigate to their profile
-                try {
-                    let profileResponse;
-                    if (role === 'player') {
-                        profileResponse = await API.get(`/profile/player/${visitorUserId}`);
-                    } else if (role === 'coach') {
-                        profileResponse = await API.get(`/profile/coach/${visitorUserId}`);
-                    } else {
-                        profileResponse = await API.get(`/profile/other/${visitorUserId}`);
-                    }
-
-                    if (profileResponse.profile && profileResponse.profile.username) {
-                        closeFollowListModal();
-                        const profile = profileResponse.profile;
-                        const folder = getProfileFolder({ role, ...profile });
-                        const currentFrom = new URLSearchParams(window.location.search).get('from') || 'profile';
-                        window.location.href = `../../${folder}/tabs/my-profile.html?username=${profile.username}&from=${currentFrom}`;
-                    }
-                } catch (error) {
-                    console.error('Error fetching profile:', error);
-                }
+                const isTransfer = item.dataset.isTransfer === 'y' || item.dataset.isTransfer === 'true';
+                const division = item.dataset.division || '';
+                const folder = getProfileFolder({ role, is_transfer_player: isTransfer, college_division: division });
+                closeFollowListModal();
+                const currentFrom = new URLSearchParams(window.location.search).get('from') || 'profile';
+                window.location.href = `../../${folder}/tabs/my-profile.html?username=${username}&from=${currentFrom}`;
             });
         });
 
