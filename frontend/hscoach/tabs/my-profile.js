@@ -828,7 +828,8 @@ async function displayProfile(profile, type, accessLevel = 'full', hasPendingReq
     // Update profile name
     const nameElement = document.querySelector('.profile-name');
     if (nameElement) {
-        nameElement.textContent = `${profile.first_name} ${profile.last_name}`;
+        const _profLogo = typeof getSchoolLogoHTML === 'function' ? getSchoolLogoHTML(profile.team_name, '../../assets', 20) : '';
+        nameElement.innerHTML = `${profile.first_name} ${profile.last_name}${_profLogo}`;
 
         // Check if this profile follows the current user and add badge
         if (viewingUserId) {

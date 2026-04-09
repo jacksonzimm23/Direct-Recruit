@@ -398,7 +398,9 @@ function populateSidebarFooter(profile, user) {
     // Update name
     const userName = document.querySelector('.sidebar-footer .user-name');
     if (userName) {
-        userName.textContent = `${profile.first_name} ${profile.last_name}`;
+        const _mpAssets = window.location.pathname.includes('/tabs/') ? '../../assets' : '../assets';
+        const _mpLogo = typeof getSchoolLogoHTML === 'function' ? getSchoolLogoHTML(profile.team_name, _mpAssets, 16) : '';
+        userName.innerHTML = `${profile.first_name} ${profile.last_name}${_mpLogo}`;
     }
 
     // Update role/info subtitle based on logged-in user's actual profile type
@@ -508,6 +510,8 @@ function populateSidebarFooterFromCache() {
 // Update sidebar footer with current user info (uses getProfileFolder for correct format)
 async function updateSidebarFooter() {
     try {
+        const _updAssets = window.location.pathname.includes('/tabs/') ? '../../assets' : '../assets';
+        if (typeof ensureSchoolLogosLoaded === 'function') await ensureSchoolLogosLoaded(_updAssets);
         const response = await API.get('/auth/me');
         if (response.user && response.profile) {
             // Cache both profile and user data for next page load

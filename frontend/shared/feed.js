@@ -4,6 +4,11 @@
 // Global feedManager variable - declared at top to ensure it's always accessible
 var feedManager;
 
+// Asset path for school logos (determined by page depth)
+var _feedAssetsPath = window.location.pathname.includes('/tabs/') ? '../../assets' : '../assets';
+// Pre-load school logos data for feed rendering
+if (typeof ensureSchoolLogosLoaded === 'function') ensureSchoolLogosLoaded(_feedAssetsPath);
+
 class FeedManager {
     constructor(skipInit = false) {
         this.feedContainer = document.getElementById('feedPosts');
@@ -775,7 +780,7 @@ class FeedManager {
                 <div class="post-user-info">
                     <div class="post-user-name-row">
                         <a href="#" class="post-user-name" onclick="feedManager.goToProfile('${post.author_username || post.user_id}', '${post.author_role}', '${post.author_division || ''}', '${post.user_id}', ${post.author_transfer === 'y'}); return false;">
-                            ${authorName}
+                            ${authorName}${typeof getSchoolLogoHTML === 'function' ? getSchoolLogoHTML(post.author_school, _feedAssetsPath, 16) : ''}
                             ${post.author_verified ? `
                                 <svg class="verified-badge" viewBox="0 0 24 24" fill="#1DA1F2">
                                     <path d="M22.5 12.5c0-1.58-.875-2.95-2.148-3.6.154-.435.238-.905.238-1.4 0-2.21-1.71-3.998-3.818-3.998-.47 0-.92.084-1.336.25C14.818 2.415 13.51 1.5 12 1.5s-2.816.917-3.437 2.25c-.415-.165-.866-.25-1.336-.25-2.11 0-3.818 1.79-3.818 4 0 .494.083.964.237 1.4-1.272.65-2.147 2.018-2.147 3.6 0 1.495.782 2.798 1.942 3.486-.02.17-.032.34-.032.514 0 2.21 1.708 4 3.818 4 .47 0 .92-.086 1.335-.25.62 1.334 1.926 2.25 3.437 2.25 1.512 0 2.818-.916 3.437-2.25.415.163.865.248 1.336.248 2.11 0 3.818-1.79 3.818-4 0-.174-.012-.344-.033-.513 1.158-.687 1.943-1.99 1.943-3.484zm-6.616-3.334l-4.334 6.5c-.145.217-.382.334-.625.334-.143 0-.288-.04-.416-.126l-.115-.094-2.415-2.415c-.293-.293-.293-.768 0-1.06s.768-.294 1.06 0l1.77 1.767 3.825-5.74c.23-.345.696-.436 1.04-.207.346.23.44.696.21 1.04z"/>
@@ -907,7 +912,7 @@ class FeedManager {
                 <div class="post-user-info">
                     <div class="post-user-name-row">
                         <a href="#" class="post-user-name" onclick="feedManager.goToProfile('${post.author_username || post.user_id}', '${post.author_role}', '${post.author_division || ''}', '${post.user_id}', ${post.author_transfer === 'y'}); return false;">
-                            ${authorName}
+                            ${authorName}${typeof getSchoolLogoHTML === 'function' ? getSchoolLogoHTML(post.author_school, _feedAssetsPath, 16) : ''}
                             ${post.author_verified ? `
                                 <svg class="verified-badge" viewBox="0 0 24 24" fill="#1DA1F2">
                                     <path d="M22.5 12.5c0-1.58-.875-2.95-2.148-3.6.154-.435.238-.905.238-1.4 0-2.21-1.71-3.998-3.818-3.998-.47 0-.92.084-1.336.25C14.818 2.415 13.51 1.5 12 1.5s-2.816.917-3.437 2.25c-.415-.165-.866-.25-1.336-.25-2.11 0-3.818 1.79-3.818 4 0 .494.083.964.237 1.4-1.272.65-2.147 2.018-2.147 3.6 0 1.495.782 2.798 1.942 3.486-.02.17-.032.34-.032.514 0 2.21 1.708 4 3.818 4 .47 0 .92-.086 1.335-.25.62 1.334 1.926 2.25 3.437 2.25 1.512 0 2.818-.916 3.437-2.25.415.163.865.248 1.336.248 2.11 0 3.818-1.79 3.818-4 0-.174-.012-.344-.033-.513 1.158-.687 1.943-1.99 1.943-3.484zm-6.616-3.334l-4.334 6.5c-.145.217-.382.334-.625.334-.143 0-.288-.04-.416-.126l-.115-.094-2.415-2.415c-.293-.293-.293-.768 0-1.06s.768-.294 1.06 0l1.77 1.767 3.825-5.74c.23-.345.696-.436 1.04-.207.346.23.44.696.21 1.04z"/>
@@ -1029,7 +1034,7 @@ class FeedManager {
                 <div class="post-user-info">
                     <div class="post-user-name-row">
                         <a href="#" class="post-user-name" onclick="event.stopPropagation(); feedManager.goToProfile('${post.reposter_username || post.reposter_user_id}', '${post.reposter_role}', '${post.reposter_division || ''}', '${post.reposter_user_id}', ${post.reposter_transfer === 'y'}); return false;">
-                            ${reposterName}
+                            ${reposterName}${typeof getSchoolLogoHTML === 'function' ? getSchoolLogoHTML(post.reposter_school, _feedAssetsPath, 16) : ''}
                         </a>
                         ${post.reposter_username ? `<span class="post-user-handle">@${post.reposter_username}</span>` : ''}
                     </div>
@@ -1170,7 +1175,7 @@ class FeedManager {
                 <div class="post-user-info">
                     <div class="post-user-name-row">
                         <a href="#" class="post-user-name" onclick="feedManager.goToProfile('${share.quoter_username || share.quoter_user_id}', '${share.quoter_role}', '${share.quoter_division || ''}', '${share.quoter_user_id}', ${share.quoter_transfer === 'y'}); return false;">
-                            ${quoterName}
+                            ${quoterName}${typeof getSchoolLogoHTML === 'function' ? getSchoolLogoHTML(share.quoter_school, _feedAssetsPath, 16) : ''}
                         </a>
                         ${share.quoter_username ? `<span class="post-user-handle">@${share.quoter_username}</span>` : ''}
                     </div>
@@ -1662,7 +1667,7 @@ class FeedManager {
                 <div class="post-user-info">
                     <div class="post-user-name-row">
                         <a href="#" class="post-user-name" onclick="event.stopPropagation(); feedManager.goToProfile('${post.quoter_username || post.quoter_user_id}', '${post.quoter_role || 'player'}', '${post.quoter_division || ''}', '${post.quoter_user_id}', ${post.quoter_transfer === 'y'}); return false;">
-                            ${quoterName}
+                            ${quoterName}${typeof getSchoolLogoHTML === 'function' ? getSchoolLogoHTML(post.quoter_school, _feedAssetsPath, 16) : ''}
                         </a>
                         ${post.quoter_username ? `<span class="post-user-handle">@${post.quoter_username}</span>` : ''}
                     </div>
@@ -2439,7 +2444,7 @@ class FeedManager {
                         </div>
                         <div class="comment-body">
                             <div class="comment-header">
-                                <span class="comment-author clickable-profile" onclick="feedManager.goToProfile('${comment.author_username || comment.user_id}', '${comment.author_role || 'player'}', '${comment.author_division || ''}', '${comment.user_id}', ${comment.author_transfer === 'y'})">${comment.author_first_name || ''} ${comment.author_last_name || ''}</span>
+                                <span class="comment-author clickable-profile" onclick="feedManager.goToProfile('${comment.author_username || comment.user_id}', '${comment.author_role || 'player'}', '${comment.author_division || ''}', '${comment.user_id}', ${comment.author_transfer === 'y'})">${comment.author_first_name || ''} ${comment.author_last_name || ''}${typeof getSchoolLogoHTML === 'function' ? getSchoolLogoHTML(comment.author_school, _feedAssetsPath, 14) : ''}</span>
                                 ${comment.author_username ? `<span class="comment-username" style="color: rgba(254,252,251,0.5); font-size: 12px; font-weight: 400;">@${comment.author_username}</span>` : ''}
                             </div>
                             <div class="comment-subheader">${commentMetaLine}</div>
@@ -2680,7 +2685,7 @@ class FeedManager {
                         </div>
                         <div class="comment-content">
                             <div class="comment-header">
-                                <span class="comment-author clickable-profile" onclick="feedManager.goToProfile('${comment.username || comment.user_id}', '${comment.role || 'player'}', '${comment.division || ''}', '${comment.user_id}', ${comment.transfer === 'y'})">${comment.first_name} ${comment.last_name}</span>
+                                <span class="comment-author clickable-profile" onclick="feedManager.goToProfile('${comment.username || comment.user_id}', '${comment.role || 'player'}', '${comment.division || ''}', '${comment.user_id}', ${comment.transfer === 'y'})">${comment.first_name} ${comment.last_name}${typeof getSchoolLogoHTML === 'function' ? getSchoolLogoHTML(comment.team_name, _feedAssetsPath, 14) : ''}</span>
                                 ${comment.username ? `<span class="comment-username" style="color: rgba(254,252,251,0.5); font-size: 12px; font-weight: 400;">@${comment.username}</span>` : ''}
                             </div>
                             <div class="comment-subheader">${shareCommentMetaLine}</div>

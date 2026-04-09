@@ -281,6 +281,8 @@ function showLogoutModal() {
 // Update sidebar footer with current user info (uses getProfileFolder for correct format)
 async function updateSidebarFooter() {
     try {
+        const _updAssets = window.location.pathname.includes('/tabs/') ? '../../assets' : '../assets';
+        if (typeof ensureSchoolLogosLoaded === 'function') await ensureSchoolLogosLoaded(_updAssets);
         const response = await API.get('/auth/me');
         if (response.user && response.profile) {
             const profile = response.profile;
@@ -292,7 +294,8 @@ async function updateSidebarFooter() {
             // Update name
             const userName = document.querySelector('.sidebar-footer .user-name');
             if (userName) {
-                userName.textContent = `${profile.first_name} ${profile.last_name}`;
+                const _mpLogo = typeof getSchoolLogoHTML === 'function' ? getSchoolLogoHTML(profile.team_name, _updAssets, 16) : '';
+                userName.innerHTML = `${profile.first_name} ${profile.last_name}${_mpLogo}`;
             }
 
             // Update role/info subtitle based on logged-in user's actual profile type

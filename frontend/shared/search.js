@@ -242,7 +242,7 @@ class SearchComponent {
                 <img src="${imageUrl}" alt="${result.first_name} ${result.last_name}" class="result-avatar" style="border: 2px solid ${getRoleBorderColor(role, isTransfer, result.college_division)}; color: ${getRoleBorderColor(role, isTransfer, result.college_division)}; background: ${getRoleAvatarBg(role, isTransfer, result.college_division)}" onerror="this.src='${this.getDefaultAvatar(result.first_name)}'">
                 <div class="result-info">
                     <div class="result-name-row">
-                        <span class="result-name">${result.first_name} ${result.last_name}</span>
+                        <span class="result-name">${result.first_name} ${result.last_name}${typeof getSchoolLogoHTML === 'function' && result.college_division ? getSchoolLogoHTML(result.team_name, (window.location.pathname.includes('/tabs/') ? '../../assets' : '../assets'), 16) : ''}</span>
                         <span class="result-username" style="color: ${usernameColor};">@${result.username || 'no-username'}</span>
                     </div>
                     ${subtitle.length > 0 ? `<div class="result-subtitle">${subtitle.join(' • ')}</div>` : ''}
