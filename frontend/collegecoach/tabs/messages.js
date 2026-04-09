@@ -104,10 +104,17 @@ async function loadCurrentUser() {
                     userRole.textContent = parts.join(' • ') || 'Transfer Player';
                     userRole.style.color = '#b91c1c';
                 } else {
-                    // Default format for other user types
-                    if (profile.position) parts.push(profile.position);
-                    if (profile.team_name) parts.push(profile.team_name);
-                    userRole.textContent = parts.join(' • ') || 'Player';
+                    // College Coach: Team, State • Division
+                    if (profile.team_name && profile.state) {
+                        parts.push(`${profile.team_name}, ${profile.state}`);
+                    } else if (profile.team_name) {
+                        parts.push(profile.team_name);
+                    } else if (profile.state) {
+                        parts.push(profile.state);
+                    }
+                    if (profile.college_division) parts.push(formatDivisionDisplay(profile.college_division));
+                    userRole.textContent = parts.join(' • ') || 'College Coach';
+                    userRole.style.color = '#ff6b35';
                 }
             }
 

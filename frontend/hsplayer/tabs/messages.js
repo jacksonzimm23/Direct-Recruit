@@ -102,7 +102,7 @@ async function loadCurrentUser() {
                     userRole.textContent = parts.join(' • ') || 'Transfer Player';
                     userRole.style.color = '#b91c1c';
                 } else {
-                    // HS Player: position • height • weight • graduation_year
+                    // HS Player: Position • Height • Weight • GradYear
                     if (profile.position) parts.push(profile.position);
                     if (profile.height) {
                         if (typeof profile.height === 'string' && (profile.height.includes("'") || profile.height.includes('"'))) {
@@ -117,6 +117,7 @@ async function loadCurrentUser() {
                     if (profile.weight) parts.push(`${profile.weight} lbs`);
                     if (profile.graduation_year) parts.push(profile.graduation_year);
                     userRole.textContent = parts.join(' • ') || 'Player';
+                    userRole.style.color = '#1282a2';
                 }
             }
 
