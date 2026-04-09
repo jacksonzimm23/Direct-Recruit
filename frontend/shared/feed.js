@@ -3933,6 +3933,8 @@ class FeedManager {
                 return;
             }
 
+            if (typeof ensureSchoolLogosLoaded === 'function') await ensureSchoolLogosLoaded(_feedAssetsPath);
+
             // Render tabs and share lists
             modalBody.innerHTML = `
                 <div class="shares-tabs">
@@ -3999,6 +4001,7 @@ class FeedManager {
                 subheader: share.subheader
             });
             const shareTypeLabel = share.share_type === 'quote' ? 'Quote' : 'Repost';
+            const shareLogoHtml = (typeof getSchoolLogoHTML === 'function' && share.division) ? getSchoolLogoHTML(share.school, _feedAssetsPath, 14) : '';
             return `
             <div class="share-item" onclick="feedManager.goToProfile('${share.username || share.user_id}', '${share.role}', '${share.division || ''}', '${share.user_id}', ${share.transfer === 'y'}); feedManager.closeModal('shares-modal');">
                 <div class="share-item-avatar" style="border: 2px solid ${getRoleBorderColor(share.role, share.transfer === 'y', share.division)}; color: ${getRoleBorderColor(share.role, share.transfer === 'y', share.division)}; background: ${getRoleAvatarBg(share.role, share.transfer === 'y', share.division)}">
@@ -4011,7 +4014,7 @@ class FeedManager {
                     }
                 </div>
                 <div class="share-item-info">
-                    <div class="share-item-name">${share.first_name || ''} ${share.last_name || ''} ${share.username ? `<span style="color: rgba(254,252,251,0.5); font-weight: 400;">@${share.username}</span>` : ''}</div>
+                    <div class="share-item-name">${share.first_name || ''} ${share.last_name || ''}${shareLogoHtml} ${share.username ? `<span style="color: rgba(254,252,251,0.5); font-weight: 400;">@${share.username}</span>` : ''}</div>
                     <div class="share-item-meta">${shareSub || ''} <span style="opacity:0.5;">• ${shareTypeLabel}</span></div>
                     ${share.share_type === 'quote' && share.quote_content ? `
                         <div class="share-item-quote">"${this.escapeHtml(share.quote_content.substring(0, 100))}${share.quote_content.length > 100 ? '...' : ''}"</div>
@@ -4071,6 +4074,8 @@ class FeedManager {
                 return;
             }
 
+            if (typeof ensureSchoolLogosLoaded === 'function') await ensureSchoolLogosLoaded(_feedAssetsPath);
+
             modalBody.innerHTML = `
                 <div class="shares-list">
                     ${data.likes.map(like => {
@@ -4080,6 +4085,7 @@ class FeedManager {
                             school: like.school, grad_year: like.grad_year, state: like.state,
                             subheader: like.subheader
                         });
+                        const likeLogoHtml = (typeof getSchoolLogoHTML === 'function' && like.division) ? getSchoolLogoHTML(like.school, _feedAssetsPath, 14) : '';
                         return `
                         <div class="share-item" onclick="feedManager.goToProfile('${like.username || like.id}', '${like.role}', '${like.division || ''}', '${like.id}', ${like.transfer === 'y'}); feedManager.closeModal('likes-modal');">
                             <div class="share-item-avatar" style="border: 2px solid ${getRoleBorderColor(like.role, like.transfer === 'y', like.division)}; color: ${getRoleBorderColor(like.role, like.transfer === 'y', like.division)}; background: ${getRoleAvatarBg(like.role, like.transfer === 'y', like.division)}">
@@ -4092,7 +4098,7 @@ class FeedManager {
                                 }
                             </div>
                             <div class="share-item-info">
-                                <div class="share-item-name">${like.first_name || ''} ${like.last_name || ''} ${like.username ? `<span style="color: rgba(254,252,251,0.5); font-weight: 400;">@${like.username}</span>` : ''}</div>
+                                <div class="share-item-name">${like.first_name || ''} ${like.last_name || ''}${likeLogoHtml} ${like.username ? `<span style="color: rgba(254,252,251,0.5); font-weight: 400;">@${like.username}</span>` : ''}</div>
                                 <div class="share-item-meta">${likeSub || ''}</div>
                             </div>
                         </div>
