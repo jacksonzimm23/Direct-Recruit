@@ -1,5 +1,34 @@
 // Sign In Form Handler
 // Uses API_BASE_URL from shared/api.js
+
+// Auto-login: if user previously chose "Remember me" and cookie is still valid, redirect to dashboard
+(async function checkExistingSession() {
+    if (localStorage.getItem('dr_remember_me') !== 'true') return;
+
+    try {
+        const meResponse = await fetch(`${API_BASE_URL}/auth/me`, { credentials: 'include' });
+        if (!meResponse.ok) throw new Error('No valid session');
+        const meData = await meResponse.json();
+
+        // Valid session — redirect to their dashboard
+        const folder = getProfileFolder({
+            role: meData.user.role,
+            is_transfer_player: meData.user.is_transfer_player,
+            ...meData.profile
+        });
+        let pageName;
+        if (meData.user.role === 'player') pageName = 'mainpage-player.html';
+        else if (meData.user.role === 'coach') pageName = 'mainpage-coach.html';
+        else pageName = 'mainpage-other.html';
+
+        window.location.href = `../${folder}/${pageName}`;
+    } catch (e) {
+        // Session invalid — clear stale preference and show login form
+        localStorage.removeItem('dr_remember_me');
+        localStorage.removeItem('user_data');
+    }
+})();
+
 if (document.getElementById('signinForm')) {
     const form = document.getElementById('signinForm');
 
@@ -8,6 +37,7 @@ if (document.getElementById('signinForm')) {
 
         const email = document.getElementById('email').value;
         const password = document.getElementById('password').value;
+        const rememberMe = document.getElementById('remember')?.checked || false;
         const submitBtn = form.querySelector('button[type="submit"]');
 
         // Disable button and show loading state
@@ -15,7 +45,7 @@ if (document.getElementById('signinForm')) {
         submitBtn.textContent = 'Signing in...';
 
         try {
-            const data = await authAPI.login(email, password);
+            const data = await authAPI.login(email, password, rememberMe);
 
             // Redirect to correct role folder after login
             if (data.user.role === 'player' || data.user.role === 'coach') {
