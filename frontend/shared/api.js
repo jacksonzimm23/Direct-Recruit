@@ -785,7 +785,10 @@ window.API_BASE_URL = API_BASE_URL;
             const me = await apiRequest('/auth/me');
             if (!me || !me.user) return;
 
-            const folder = getProfileFolder(me.user);
+            const folder = getProfileFolder({
+                ...me.user,
+                college_division: me.profile?.college_division
+            });
             if (!PAID_FOLDERS.includes(folder)) return;
 
             const status = me.user.subscription_status;
