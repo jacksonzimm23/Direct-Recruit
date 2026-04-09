@@ -110,6 +110,14 @@ function initializeSettingsNavigation() {
             }
         });
     });
+
+    // Auto-navigate to a section via URL hash (e.g., settings.html#profile-type)
+    if (window.location.hash === '#profile-type') {
+        const profileTypeBtn = document.querySelector('.settings-nav-btn[data-section="profileType"]');
+        if (profileTypeBtn) {
+            profileTypeBtn.click();
+        }
+    }
 }
 
 // Form Handlers
