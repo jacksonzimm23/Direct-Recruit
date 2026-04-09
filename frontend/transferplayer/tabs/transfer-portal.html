@@ -266,63 +266,6 @@
         </main>
     </div>
 
-    <!-- Leave Portal Popup -->
-    <div class="leave-portal-overlay" id="leavePortalOverlay">
-        <div class="leave-portal-popup" id="leavePortalPopup">
-            <button class="leave-portal-close" id="leavePortalClose">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <line x1="18" y1="6" x2="6" y2="18"></line>
-                    <line x1="6" y1="6" x2="18" y2="18"></line>
-                </svg>
-            </button>
-            <div class="leave-portal-content">
-                <h2 class="leave-portal-title">Leave Transfer Portal</h2>
-                <p class="leave-portal-desc">Please enter your new school information before leaving the portal.</p>
-
-                <form id="leavePortalForm" class="leave-portal-form">
-                    <div class="form-group">
-                        <label for="newSchool">New School</label>
-                        <input type="text" id="newSchool" name="high_school" placeholder="Enter your new school name" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="newState">State</label>
-                        <select id="newState" name="state" required>
-                            <option value="">Select State</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="newDivision">Division</label>
-                        <select id="newDivision" name="college_division" required>
-                            <option value="">Select Division</option>
-                            <option value="D1 FBS">D1 FBS</option>
-                            <option value="D1 FCS">D1 FCS</option>
-                            <option value="D2">Division II</option>
-                            <option value="D3">Division III</option>
-                            <option value="NAIA">NAIA</option>
-                            <option value="JUCO">JUCO</option>
-                        </select>
-                    </div>
-
-                    <button type="submit" class="leave-portal-submit-btn">Submit</button>
-                </form>
-            </div>
-        </div>
-    </div>
-
-    <!-- Confirmation Popup -->
-    <div class="confirm-overlay" id="confirmOverlay">
-        <div class="confirm-popup">
-            <h3>Are you sure?</h3>
-            <p>This will remove you from the transfer portal and update your profile with the new school information.</p>
-            <div class="confirm-buttons">
-                <button class="confirm-cancel-btn" id="confirmCancel">Cancel</button>
-                <button class="confirm-yes-btn" id="confirmYes">Yes, Leave Portal</button>
-            </div>
-        </div>
-    </div>
-
     <script src="../../shared/api.js"></script>
     <script src="../../shared/school-search.js"></script>
     <script src="../../shared/mobile-header.js?v=4"></script>

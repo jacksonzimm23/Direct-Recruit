@@ -7,51 +7,102 @@ document.addEventListener('DOMContentLoaded', async function() {
         showWelcomeAnimation();
     }
 
-    // Leave Portal Popup functionality
-    initLeavePortalPopup();
-
-    // Initialize leave portal form
-    initLeavePortalForm();
-
-    // Populate state dropdown and pre-fill with current state
-    await populateStateDropdown();
+    // Initialize leave portal button
+    initLeavePortalButton();
 
     // Load and display the player's portal card preview
     await loadPlayerCardPreview();
 });
 
-function initLeavePortalPopup() {
+function initLeavePortalButton() {
     const leaveBtn = document.getElementById('leavePortalBtn');
-    const overlay = document.getElementById('leavePortalOverlay');
-    const closeBtn = document.getElementById('leavePortalClose');
 
-    if (leaveBtn && overlay) {
-        // Open popup when button is clicked
+    if (leaveBtn) {
         leaveBtn.addEventListener('click', function() {
-            overlay.classList.add('active');
-        });
-
-        // Close popup when close button is clicked
-        if (closeBtn) {
-            closeBtn.addEventListener('click', function() {
-                overlay.classList.remove('active');
-            });
-        }
-
-        // Close popup when clicking outside
-        overlay.addEventListener('click', function(e) {
-            if (e.target === overlay) {
-                overlay.classList.remove('active');
-            }
-        });
-
-        // Close popup on Escape key
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape' && overlay.classList.contains('active')) {
-                overlay.classList.remove('active');
-            }
+            showLeavePortalModal();
         });
     }
+}
+
+function showLeavePortalModal() {
+    // Create modal overlay (matching collegeplayer portal-modal style)
+    const modalOverlay = document.createElement('div');
+    modalOverlay.className = 'portal-modal-overlay';
+    modalOverlay.innerHTML = `
+        <div class="portal-modal">
+            <button class="modal-close-btn" id="modalCloseBtn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+
+            <div class="modal-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <path d="M8 12h8"></path>
+                    <path d="M12 8v8"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+            </div>
+
+            <h2 class="modal-title">Are You Sure?</h2>
+            <p class="modal-message">
+                You will be redirected to Settings to switch your profile type and leave the Transfer Portal.
+            </p>
+
+            <div class="modal-warning">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                    <line x1="12" y1="9" x2="12" y2="13"></line>
+                    <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                </svg>
+                <p><strong>This will change your profile type.</strong> You can switch your profile type in Settings.</p>
+            </div>
+
+            <div class="modal-actions">
+                <button class="btn-modal-cancel" id="modalCancelBtn">Cancel</button>
+                <button class="btn-modal-confirm" id="modalConfirmBtn">Yes, Leave Portal</button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modalOverlay);
+
+    // Close button handler
+    const closeBtn = document.getElementById('modalCloseBtn');
+    closeBtn.addEventListener('click', () => {
+        modalOverlay.remove();
+    });
+
+    // Cancel button handler
+    const cancelBtn = document.getElementById('modalCancelBtn');
+    cancelBtn.addEventListener('click', () => {
+        modalOverlay.remove();
+    });
+
+    // Confirm button handler — redirect to Settings Profile Type section
+    const confirmBtn = document.getElementById('modalConfirmBtn');
+    confirmBtn.addEventListener('click', () => {
+        modalOverlay.remove();
+        window.location.href = 'settings.html#profile-type';
+    });
+
+    // Close on overlay click
+    modalOverlay.addEventListener('click', (e) => {
+        if (e.target === modalOverlay) {
+            modalOverlay.remove();
+        }
+    });
+
+    // Close on Escape key
+    const handleEscape = (e) => {
+        if (e.key === 'Escape') {
+            modalOverlay.remove();
+            document.removeEventListener('keydown', handleEscape);
+        }
+    };
+    document.addEventListener('keydown', handleEscape);
 }
 
 function showWelcomeAnimation() {
@@ -111,169 +162,6 @@ function showWelcomeAnimation() {
         }
     `;
     document.head.appendChild(style);
-}
-
-// Store form data for confirmation
-let pendingFormData = null;
-
-function initLeavePortalForm() {
-    const form = document.getElementById('leavePortalForm');
-    const confirmOverlay = document.getElementById('confirmOverlay');
-    const confirmCancel = document.getElementById('confirmCancel');
-    const confirmYes = document.getElementById('confirmYes');
-
-    if (form) {
-        form.addEventListener('submit', function(e) {
-            e.preventDefault();
-
-            // Store form data
-            pendingFormData = {
-                team_name: document.getElementById('newSchool').value,
-                state: document.getElementById('newState').value,
-                college_division: document.getElementById('newDivision').value
-            };
-
-            // Show confirmation popup
-            if (confirmOverlay) {
-                confirmOverlay.classList.add('active');
-            }
-        });
-    }
-
-    // Cancel button
-    if (confirmCancel) {
-        confirmCancel.addEventListener('click', function() {
-            confirmOverlay.classList.remove('active');
-            pendingFormData = null;
-        });
-    }
-
-    // Confirm button
-    if (confirmYes) {
-        confirmYes.addEventListener('click', async function() {
-            if (pendingFormData) {
-                await submitLeavePortal(pendingFormData);
-            }
-        });
-    }
-
-    // Close confirmation on overlay click
-    if (confirmOverlay) {
-        confirmOverlay.addEventListener('click', function(e) {
-            if (e.target === confirmOverlay) {
-                confirmOverlay.classList.remove('active');
-                pendingFormData = null;
-            }
-        });
-    }
-}
-
-async function submitLeavePortal(data) {
-    const confirmYes = document.getElementById('confirmYes');
-    const originalText = confirmYes.textContent;
-
-    try {
-        confirmYes.textContent = 'Saving...';
-        confirmYes.disabled = true;
-
-        // Update profile with new school info and remove from portal
-        // transfer column uses 'y' for in portal, null/empty to leave
-        const response = await API.put('/profile', {
-            team_name: data.team_name,
-            state: data.state,
-            college_division: data.college_division,
-            transfer: null
-        });
-
-        // Close popups
-        document.getElementById('confirmOverlay').classList.remove('active');
-        document.getElementById('leavePortalOverlay').classList.remove('active');
-
-        // Redirect to collegeplayer mainpage (since they now have a college_division)
-        window.location.href = '../../collegeplayer/mainpage-player.html';
-
-    } catch (error) {
-        console.error('Error leaving portal:', error);
-        alert('Failed to update profile. Please try again.');
-        confirmYes.textContent = originalText;
-        confirmYes.disabled = false;
-    }
-}
-
-async function populateStateDropdown() {
-    const stateSelect = document.getElementById('newState');
-    if (!stateSelect) return;
-
-    // Use abbreviations for values to match database format
-    const states = [
-        { abbr: 'AL', name: 'Alabama' },
-        { abbr: 'AK', name: 'Alaska' },
-        { abbr: 'AZ', name: 'Arizona' },
-        { abbr: 'AR', name: 'Arkansas' },
-        { abbr: 'CA', name: 'California' },
-        { abbr: 'CO', name: 'Colorado' },
-        { abbr: 'CT', name: 'Connecticut' },
-        { abbr: 'DE', name: 'Delaware' },
-        { abbr: 'FL', name: 'Florida' },
-        { abbr: 'GA', name: 'Georgia' },
-        { abbr: 'HI', name: 'Hawaii' },
-        { abbr: 'ID', name: 'Idaho' },
-        { abbr: 'IL', name: 'Illinois' },
-        { abbr: 'IN', name: 'Indiana' },
-        { abbr: 'IA', name: 'Iowa' },
-        { abbr: 'KS', name: 'Kansas' },
-        { abbr: 'KY', name: 'Kentucky' },
-        { abbr: 'LA', name: 'Louisiana' },
-        { abbr: 'ME', name: 'Maine' },
-        { abbr: 'MD', name: 'Maryland' },
-        { abbr: 'MA', name: 'Massachusetts' },
-        { abbr: 'MI', name: 'Michigan' },
-        { abbr: 'MN', name: 'Minnesota' },
-        { abbr: 'MS', name: 'Mississippi' },
-        { abbr: 'MO', name: 'Missouri' },
-        { abbr: 'MT', name: 'Montana' },
-        { abbr: 'NE', name: 'Nebraska' },
-        { abbr: 'NV', name: 'Nevada' },
-        { abbr: 'NH', name: 'New Hampshire' },
-        { abbr: 'NJ', name: 'New Jersey' },
-        { abbr: 'NM', name: 'New Mexico' },
-        { abbr: 'NY', name: 'New York' },
-        { abbr: 'NC', name: 'North Carolina' },
-        { abbr: 'ND', name: 'North Dakota' },
-        { abbr: 'OH', name: 'Ohio' },
-        { abbr: 'OK', name: 'Oklahoma' },
-        { abbr: 'OR', name: 'Oregon' },
-        { abbr: 'PA', name: 'Pennsylvania' },
-        { abbr: 'RI', name: 'Rhode Island' },
-        { abbr: 'SC', name: 'South Carolina' },
-        { abbr: 'SD', name: 'South Dakota' },
-        { abbr: 'TN', name: 'Tennessee' },
-        { abbr: 'TX', name: 'Texas' },
-        { abbr: 'UT', name: 'Utah' },
-        { abbr: 'VT', name: 'Vermont' },
-        { abbr: 'VA', name: 'Virginia' },
-        { abbr: 'WA', name: 'Washington' },
-        { abbr: 'WV', name: 'West Virginia' },
-        { abbr: 'WI', name: 'Wisconsin' },
-        { abbr: 'WY', name: 'Wyoming' }
-    ];
-
-    states.forEach(state => {
-        const option = document.createElement('option');
-        option.value = state.abbr;
-        option.textContent = state.name;
-        stateSelect.appendChild(option);
-    });
-
-    // Pre-fill state from current profile if available
-    try {
-        const response = await API.get('/auth/me');
-        if (response.profile && response.profile.state) {
-            stateSelect.value = response.profile.state;
-        }
-    } catch (error) {
-        console.error('Error fetching profile for state pre-fill:', error);
-    }
 }
 
 // Load and display the player's portal card preview
