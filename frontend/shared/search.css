@@ -99,12 +99,26 @@
 }
 
 .result-avatar {
-    width: 48px;
-    height: 48px;
+    width: 44px;
+    height: 44px;
     border-radius: 50%;
-    object-fit: cover;
     margin-right: 1rem;
-    border: 2px solid var(--cerulean);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.result-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+}
+
+.result-avatar svg {
+    width: 24px;
+    height: 24px;
 }
 
 .result-info {
@@ -126,15 +140,20 @@
 }
 
 .result-username {
-    color: var(--cerulean);
+    color: rgba(255, 255, 255, 0.5);
     font-size: 0.875rem;
-    font-weight: 700;
+    font-weight: 400;
 }
 
 .result-subtitle {
-    color: rgba(255, 255, 255, 0.6);
     font-size: 0.813rem;
+    font-weight: 700;
 }
+
+.result-subtitle.player-meta { color: #1282a2; }
+.result-subtitle.transfer-player-meta { color: #b91c1c; }
+.result-subtitle.coach-meta { color: #ff6b35; }
+.result-subtitle.other-meta { color: #d4a017; }
 
 .result-badge {
     padding: 0.25rem 0.75rem;
@@ -180,8 +199,13 @@
     }
 
     .result-avatar {
-        width: 40px;
-        height: 40px;
+        width: 36px;
+        height: 36px;
+    }
+
+    .result-avatar svg {
+        width: 20px;
+        height: 20px;
     }
 
     .result-name {
