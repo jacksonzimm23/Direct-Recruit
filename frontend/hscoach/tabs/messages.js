@@ -102,10 +102,11 @@ async function loadCurrentUser() {
                     userRole.textContent = parts.join(' • ') || 'Transfer Player';
                     userRole.style.color = '#b91c1c';
                 } else {
-                    // Default format for other user types
-                    if (profile.position) parts.push(profile.position);
+                    // HS Coach: Team, State
                     if (profile.team_name) parts.push(profile.team_name);
-                    userRole.textContent = parts.join(' • ') || 'Player';
+                    if (profile.state) parts.push(profile.state);
+                    userRole.textContent = parts.join(', ') || 'HS Coach';
+                    userRole.style.color = '#ff6b35';
                 }
             }
 

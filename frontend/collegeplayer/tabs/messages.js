@@ -102,13 +102,14 @@ async function loadCurrentUser() {
                     userRole.textContent = parts.join(' • ') || 'Transfer Player';
                     userRole.style.color = '#b91c1c';
                 } else {
-                    // Default format for college players
+                    // College Player: Position • Team • Division
                     if (profile.position) parts.push(profile.position);
                     if (profile.team_name) parts.push(profile.team_name);
                     if (profile.college_division) {
                         parts.push(formatDivisionDisplay(profile.college_division));
                     }
                     userRole.textContent = parts.join(' • ') || 'Player';
+                    userRole.style.color = '#1282a2';
                 }
             }
 

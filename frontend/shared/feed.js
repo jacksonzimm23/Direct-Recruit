@@ -1325,11 +1325,19 @@ class FeedManager {
         } else if (share.quoter_role === 'coach') {
             const parts = [];
             if (share.quoter_division) {
-                if (share.quoter_school) parts.push(share.quoter_school);
+                // College Coach: School, State • Division
+                if (share.quoter_school && share.quoter_state) {
+                    parts.push(`${share.quoter_school}, ${share.quoter_state}`);
+                } else if (share.quoter_school) {
+                    parts.push(share.quoter_school);
+                } else if (share.quoter_state) {
+                    parts.push(share.quoter_state);
+                }
                 if (share.quoter_division) parts.push(formatDivisionDisplay(share.quoter_division));
                 parts.push(timeAgo);
                 metaInfo = parts.join(' • ');
             } else {
+                // HS Coach: School, State
                 if (share.quoter_school) parts.push(share.quoter_school);
                 if (share.quoter_state) parts.push(share.quoter_state);
                 const schoolState = parts.join(', ');
@@ -1403,11 +1411,19 @@ class FeedManager {
         } else if (post.author_role === 'coach') {
             const parts = [];
             if (post.author_division) {
-                if (post.author_school) parts.push(post.author_school);
+                // College Coach: School, State • Division
+                if (post.author_school && post.author_state) {
+                    parts.push(`${post.author_school}, ${post.author_state}`);
+                } else if (post.author_school) {
+                    parts.push(post.author_school);
+                } else if (post.author_state) {
+                    parts.push(post.author_state);
+                }
                 if (post.author_division) parts.push(formatDivisionDisplay(post.author_division));
                 parts.push(timeAgo);
                 metaInfo = parts.join(' • ');
             } else {
+                // HS Coach: School, State
                 if (post.author_school) parts.push(post.author_school);
                 if (post.author_state) parts.push(post.author_state);
                 const schoolState = parts.join(', ');
@@ -1466,11 +1482,19 @@ class FeedManager {
         } else if (role === 'coach') {
             const parts = [];
             if (post.reposter_division) {
-                if (post.reposter_school) parts.push(post.reposter_school);
+                // College Coach: School, State • Division
+                if (post.reposter_school && post.reposter_state) {
+                    parts.push(`${post.reposter_school}, ${post.reposter_state}`);
+                } else if (post.reposter_school) {
+                    parts.push(post.reposter_school);
+                } else if (post.reposter_state) {
+                    parts.push(post.reposter_state);
+                }
                 if (post.reposter_division) parts.push(formatDivisionDisplay(post.reposter_division));
                 parts.push(timeAgo);
                 metaInfo = parts.join(' • ');
             } else {
+                // HS Coach: School, State
                 if (post.reposter_school) parts.push(post.reposter_school);
                 if (post.reposter_state) parts.push(post.reposter_state);
                 const schoolState = parts.join(', ');

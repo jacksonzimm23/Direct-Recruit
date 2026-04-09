@@ -165,7 +165,7 @@ class SearchComponent {
                 usernameColor = '#1282A2'; // Regular player blue
             }
         } else if (role === 'coach') {
-            usernameColor = '#E07C24'; // Coach orange
+            usernameColor = '#ff6b35'; // Coach orange
         } else if (role === 'other') {
             usernameColor = '#d4a017'; // Other gold
         }
