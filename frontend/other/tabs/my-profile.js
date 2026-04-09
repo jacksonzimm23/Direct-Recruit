@@ -2471,7 +2471,8 @@ async function loadPostComments(postId) {
                     </div>
                     <div class="comment-body">
                         <div class="comment-header">
-                            <span class="comment-author" onclick="event.stopPropagation(); goToProfile('${comment.author_username || comment.user_id}', '${comment.author_role || 'player'}', '${comment.author_division || ''}', '${comment.user_id}', ${comment.author_transfer === 'y'})" style="cursor: pointer;">${commentAuthorName}</span>
+                            <span class="comment-author" onclick="event.stopPropagation(); goToProfile('${comment.author_username || comment.user_id}', '${comment.author_role || 'player'}', '${comment.author_division || ''}', '${comment.user_id}', ${comment.author_transfer === 'y'})" style="cursor: pointer;">${commentAuthorName}${typeof getSchoolLogoHTML === 'function' && comment.author_division ? ' ' + getSchoolLogoHTML(comment.author_school, _assetsPath, 14) : ''}</span>
+                            ${comment.author_username ? `<span class="comment-username" style="color: rgba(254,252,251,0.5); font-size: 12px; font-weight: 400;">@${comment.author_username}</span>` : ''}
                             <span class="comment-time">${formatTimeAgo(comment.created_at)}</span>
                         </div>
                         ${subheader ? `<div class="comment-subheader">${subheader}</div>` : ''}
@@ -2617,6 +2618,13 @@ async function profileSharePost(postId, event) {
             </svg>
             <span>Quote</span>
         </div>
+        <div class="share-menu-item" onclick="event.stopPropagation(); profileCopyPostLink('${postId}')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+            </svg>
+            <span>Copy Link</span>
+        </div>
     `;
 
     document.body.appendChild(menu);
@@ -2635,6 +2643,16 @@ async function profileSharePost(postId, event) {
             }
         });
     }, 0);
+}
+
+function profileCopyPostLink(postId) {
+    document.querySelector('.share-menu')?.remove();
+    const url = `${window.location.origin}/frontend/${getProfileFolder({ role: getUser()?.role || 'other' })}/tabs/post-view.html?id=${postId}`;
+    navigator.clipboard.writeText(url).then(() => {
+        showToast('Link copied to clipboard');
+    }).catch(() => {
+        showToast('Failed to copy link', 'error');
+    });
 }
 
 async function profileRepostPost(postId) {
@@ -2803,7 +2821,7 @@ async function loadShareComments(shareId) {
                     </div>
                     <div class="comment-content">
                         <div class="comment-header">
-                            <span class="comment-author" onclick="goToProfile('${comment.username || comment.user_id}', '${comment.role || 'player'}', '${comment.division || ''}', '${comment.user_id}', ${comment.transfer === 'y'})" style="cursor: pointer;">${comment.first_name} ${comment.last_name}</span>
+                            <span class="comment-author" onclick="goToProfile('${comment.username || comment.user_id}', '${comment.role || 'player'}', '${comment.division || ''}', '${comment.user_id}', ${comment.transfer === 'y'})" style="cursor: pointer;">${comment.first_name} ${comment.last_name}${typeof getSchoolLogoHTML === 'function' && comment.division ? ' ' + getSchoolLogoHTML(comment.team_name, _assetsPath, 14) : ''}</span>
                             ${comment.username ? `<span class="comment-username" style="color: rgba(254,252,251,0.5); font-size: 12px; font-weight: 400;">@${comment.username}</span>` : ''}
                         </div>
                         <div class="comment-subheader">${commentMetaLine}</div>
@@ -2880,11 +2898,22 @@ async function deleteShareComment(shareId, commentId) {
 }
 
 async function likeShareComment(commentId, button) {
+    const isLiked = button.classList.contains('liked');
+    const svg = button.querySelector('svg');
+    const countSpan = button.querySelector('span');
+
     try {
-        await API.post(`/posts/share/comments/${commentId}/like`);
-        const match = button.textContent.match(/\((\d+)\)/);
-        const currentCount = match ? parseInt(match[1]) : 0;
-        button.textContent = `Like (${currentCount + 1})`;
+        if (isLiked) {
+            await API.delete(`/posts/share/comments/${commentId}/like`);
+            button.classList.remove('liked');
+            if (svg) { svg.setAttribute('fill', 'none'); svg.setAttribute('stroke', 'currentColor'); }
+            if (countSpan) countSpan.textContent = Math.max(0, parseInt(countSpan.textContent) - 1);
+        } else {
+            await API.post(`/posts/share/comments/${commentId}/like`);
+            button.classList.add('liked');
+            if (svg) { svg.setAttribute('fill', '#e74c3c'); svg.setAttribute('stroke', '#e74c3c'); }
+            if (countSpan) countSpan.textContent = parseInt(countSpan.textContent) + 1;
+        }
     } catch (error) {
         console.error('Error liking share comment:', error);
     }
@@ -3004,7 +3033,8 @@ function renderSharesList(shares) {
                 ${imgUrl ? `<img src="${imgUrl}" alt="${share.first_name}">` : `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>`}
             </div>
             <div class="likes-modal-info">
-                <span class="likes-modal-name">${share.first_name || ''} ${share.last_name || ''}</span>
+                <span class="likes-modal-name">${share.first_name || ''} ${share.last_name || ''}${typeof getSchoolLogoHTML === 'function' && share.division ? ' ' + getSchoolLogoHTML(share.school || share.team_name, _assetsPath, 14) : ''}</span>
+                ${share.username ? `<span class="likes-modal-username" style="color: rgba(254,252,251,0.5); font-size: 12px; font-weight: 400;">@${share.username}</span>` : ''}
                 ${shareSub ? `<span class="comment-subheader">${shareSub}</span>` : ''}
                 <span class="shares-type-label" style="font-size: 0.7rem; opacity: 0.5;">${shareTypeLabel}</span>
             </div>
@@ -3048,8 +3078,9 @@ function showLikesModal(likes, title) {
                             }
                         </div>
                         <div class="likes-modal-info">
-                            <span class="likes-modal-name">${like.first_name} ${like.last_name}</span>
-                            ${likeSub ? `<span class="comment-subheader">${likeSub}</span>` : (like.username ? `<span class="likes-modal-username">@${like.username}</span>` : '')}
+                            <span class="likes-modal-name">${like.first_name} ${like.last_name}${typeof getSchoolLogoHTML === 'function' && like.division ? ' ' + getSchoolLogoHTML(like.school || like.team_name, _assetsPath, 14) : ''}</span>
+                            ${like.username ? `<span class="likes-modal-username" style="color: rgba(254,252,251,0.5); font-size: 12px; font-weight: 400;">@${like.username}</span>` : ''}
+                            ${likeSub ? `<span class="comment-subheader">${likeSub}</span>` : ''}
                         </div>
                     </div>
                 `}).join('')}
@@ -3089,6 +3120,13 @@ async function profileSharePost(postId, event) {
                 <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
             </svg>
             <span>Quote</span>
+        </div>
+        <div class="dropdown-item" onclick="profileCopyPostLink('${postId}')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+            </svg>
+            <span>Copy Link</span>
         </div>
     `;
 
@@ -3837,7 +3875,14 @@ function createProfileRepostElement(post) {
         }
     }
 
-    const optionsButton = isOwnRepost ? `<button class="profile-post-more-btn" onclick="event.stopPropagation(); showRepostMenu('${post.share_id}', '${post.id}', event)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle></svg></button>` : '';
+    const optionsButton = `
+        <button class="profile-post-more-btn" onclick="event.stopPropagation(); showRepostMenu('${post.share_id}', '${post.id}', ${isOwnRepost}, event)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="1"></circle>
+                <circle cx="19" cy="12" r="1"></circle>
+                <circle cx="5" cy="12" r="1"></circle>
+            </svg>
+        </button>`;
 
     return `
         <article class="profile-post-card profile-repost-card" data-post-id="${post.id}" data-share-id="${post.share_id}" onclick="navigateToPost('${post.id}')">
@@ -4118,17 +4163,57 @@ function buildOriginalPostMetaInfo(post) {
     return timeAgo;
 }
 
-function showRepostMenu(shareId, postId, event) {
+function showRepostMenu(shareId, postId, isOwner, event) {
     event.stopPropagation();
+
+    // Remove existing menu
     const existing = document.querySelector('.repost-dropdown-menu');
     if (existing) existing.remove();
+
     const menu = document.createElement('div');
     menu.className = 'repost-dropdown-menu';
-    menu.innerHTML = `<div class="dropdown-item dropdown-item-danger" onclick="deleteRepost('${shareId}', '${postId}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg><span>Undo Repost</span></div>`;
+    menu.innerHTML = isOwner ? `
+        <div class="dropdown-item dropdown-item-danger" onclick="deleteRepost('${shareId}', '${postId}')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+            </svg>
+            <span>Undo Repost</span>
+        </div>
+    ` : `
+        <div class="dropdown-item" onclick="event.stopPropagation(); reportPost('${postId}')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
+                <line x1="4" y1="22" x2="4" y2="15"></line>
+            </svg>
+            <span>Report Post</span>
+        </div>
+    `;
+
+    // Position menu
     const rect = event.target.closest('button').getBoundingClientRect();
-    menu.style.cssText = `position:fixed;top:${rect.bottom+5}px;right:${window.innerWidth-rect.right}px;z-index:1000;background:var(--rich-black);border:1px solid rgba(18,130,162,0.3);border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.3);min-width:150px`;
+    menu.style.position = 'fixed';
+    menu.style.top = `${rect.bottom + 5}px`;
+    menu.style.right = `${window.innerWidth - rect.right}px`;
+    menu.style.zIndex = '1000';
+
     document.body.appendChild(menu);
-    setTimeout(() => document.addEventListener('click', function closeMenu(e) { if (!menu.contains(e.target)) { menu.remove(); document.removeEventListener('click', closeMenu); } }), 0);
+
+    // Close on outside click
+    setTimeout(() => {
+        document.addEventListener('click', function closeMenu(e) {
+            if (!menu.contains(e.target)) {
+                menu.remove();
+                document.removeEventListener('click', closeMenu);
+            }
+        });
+    }, 0);
+}
+
+function reportPost(postId) {
+    const menu = document.querySelector('.repost-dropdown-menu');
+    if (menu) menu.remove();
+    showToast('Post reported. We will review it shortly.', 'info');
 }
 
 // Show quote menu (delete option)
@@ -4191,25 +4276,87 @@ function showQuoteMenu(shareId, postId, isOwner, event) {
 async function deleteRepost(shareId, postId) {
     const menu = document.querySelector('.repost-dropdown-menu');
     if (menu) menu.remove();
-    if (!confirm('Remove this repost from your profile?')) return;
+
+    const modal = document.createElement('div');
+    modal.className = 'profile-post-modal-overlay';
+    modal.id = 'delete-repost-modal';
+    modal.innerHTML = `
+        <div class="profile-post-modal">
+            <div class="delete-modal">
+                <div class="delete-modal-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    </svg>
+                </div>
+                <h3>Undo Repost</h3>
+                <p>Are you sure you want to remove this repost from your profile?</p>
+                <div class="delete-modal-actions">
+                    <button class="delete-modal-btn delete-modal-btn-cancel" onclick="closeProfilePostModal('delete-repost-modal')">Cancel</button>
+                    <button class="delete-modal-btn delete-modal-btn-delete" onclick="confirmDeleteRepost('${shareId}')">Remove</button>
+                </div>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeProfilePostModal('delete-repost-modal');
+    });
+}
+
+async function confirmDeleteRepost(shareId) {
+    const deleteBtn = document.querySelector('#delete-repost-modal .delete-modal-btn-delete');
+    if (deleteBtn) { deleteBtn.disabled = true; deleteBtn.textContent = 'Removing...'; }
     try {
         await API.delete(`/posts/shares/${shareId}`);
         const card = document.querySelector(`[data-share-id="${shareId}"]`);
         if (card) card.remove();
+        closeProfilePostModal('delete-repost-modal');
         showToast('Repost removed');
-    } catch (error) { console.error('Error deleting repost:', error); showToast('Failed to remove repost', 'error'); }
+    } catch (error) { console.error('Error deleting repost:', error); closeProfilePostModal('delete-repost-modal'); showToast('Failed to remove repost', 'error'); }
 }
 
 async function deleteQuote(shareId, postId) {
     const menu = document.querySelector('.quote-dropdown-menu');
     if (menu) menu.remove();
-    if (!confirm('Delete this quote post?')) return;
+
+    const modal = document.createElement('div');
+    modal.className = 'profile-post-modal-overlay';
+    modal.id = 'delete-quote-modal';
+    modal.innerHTML = `
+        <div class="profile-post-modal">
+            <div class="delete-modal">
+                <div class="delete-modal-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    </svg>
+                </div>
+                <h3>Delete Quote Post</h3>
+                <p>Are you sure you want to delete this quote post? This action cannot be undone.</p>
+                <div class="delete-modal-actions">
+                    <button class="delete-modal-btn delete-modal-btn-cancel" onclick="closeProfilePostModal('delete-quote-modal')">Cancel</button>
+                    <button class="delete-modal-btn delete-modal-btn-delete" onclick="confirmDeleteQuote('${shareId}')">Delete</button>
+                </div>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeProfilePostModal('delete-quote-modal');
+    });
+}
+
+async function confirmDeleteQuote(shareId) {
+    const deleteBtn = document.querySelector('#delete-quote-modal .delete-modal-btn-delete');
+    if (deleteBtn) { deleteBtn.disabled = true; deleteBtn.textContent = 'Deleting...'; }
     try {
         await API.delete(`/posts/shares/${shareId}`);
         const card = document.querySelector(`[data-share-id="${shareId}"]`);
         if (card) card.remove();
+        closeProfilePostModal('delete-quote-modal');
         showToast('Quote post deleted');
-    } catch (error) { console.error('Error deleting quote:', error); showToast('Failed to delete quote post', 'error'); }
+    } catch (error) { console.error('Error deleting quote:', error); closeProfilePostModal('delete-quote-modal'); showToast('Failed to delete quote post', 'error'); }
 }
 
 // Load profile replies
