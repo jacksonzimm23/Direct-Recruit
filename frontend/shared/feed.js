@@ -4206,6 +4206,7 @@ document.addEventListener('click', (event) => {
         event.target.closest('.quoted-post-embed') ||
         event.target.closest('.media-wrapper') ||
         event.target.closest('.media-grid-cell') ||
+        event.target.closest('.post-dropdown-menu') ||
         event.target.closest('video') ||
         event.target.tagName === 'IMG') {
         return;
