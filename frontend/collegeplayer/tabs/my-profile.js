@@ -954,13 +954,15 @@ async function displayProfile(profile, type, accessLevel = 'full', hasPendingReq
     // Update profile image and role-colored border/background
     const avatarElement = document.querySelector('.profile-avatar-large');
     if (avatarElement) {
+        const isTransfer = profile.transfer === 'y' || profile.is_transfer_player;
         if (profile.profile_image_url) {
             avatarElement.innerHTML = `<img src="${profile.profile_image_url}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
+            avatarElement.style.backgroundColor = 'transparent';
+        } else {
+            avatarElement.style.backgroundColor = getRoleAvatarBg(type, isTransfer, profile.college_division);
         }
-        const isTransfer = profile.transfer === 'y' || profile.is_transfer_player;
         avatarElement.style.border = `3px solid ${getRoleBorderColor(type, isTransfer, profile.college_division)}`;
         avatarElement.style.color = getRoleBorderColor(type, isTransfer, profile.college_division);
-        avatarElement.style.backgroundColor = getRoleAvatarBg(type, isTransfer, profile.college_division);
     }
 
     // Show profile content now that data is loaded
@@ -1955,7 +1957,7 @@ async function uploadCroppedImage(file) {
             // Update avatar - use the URL directly (signed URLs already have cache-busting via signature)
             // Don't add extra query params as it breaks the S3 signature
             avatarElement.innerHTML = `<img src="${imageUrl}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
-
+            avatarElement.style.backgroundColor = 'transparent';
             // Update avatar in sidebar
             const sidebarAvatar = document.querySelector('.sidebar-footer .user-avatar-circle');
             if (sidebarAvatar) {
@@ -1964,6 +1966,7 @@ async function uploadCroppedImage(file) {
 
             // Show success message
             showSuccessMessage('Profile photo updated successfully!');
+
         } else {
             throw new Error('No image URL returned from server');
         }
@@ -2116,49 +2119,20 @@ function populateEditForm() {
     document.getElementById('editGraduationYear').value = currentProfile.graduation_year || '';
     document.getElementById('editGPA').value = currentProfile.gpa || '';
 
-    // Determine if this is a college or high school player based on college_division
-    const isCollegePlayer = currentProfile.college_division && currentProfile.college_division.trim() !== '';
+    // Populate college player fields (no toggle — use Settings to switch profile type)
+    const collegeName = document.getElementById('editCollegeName');
+    const collegeState = document.getElementById('editCollegeState');
+    const division = document.getElementById('editDivision');
+    const conference = document.getElementById('editConference');
+    const jerseyNumber = document.getElementById('editJerseyNumber');
+    const eligibility = document.getElementById('editEligibility');
 
-    const schoolTypeHS = document.getElementById('editSchoolTypeHS');
-    const schoolTypeCollege = document.getElementById('editSchoolTypeCollege');
-    const highschoolFields = document.getElementById('editHighschoolFields');
-    const collegeFields = document.getElementById('editCollegeFields');
-
-    if (isCollegePlayer) {
-        // Show college fields and set active button
-        if (schoolTypeCollege) schoolTypeCollege.classList.add('active');
-        if (schoolTypeHS) schoolTypeHS.classList.remove('active');
-        if (collegeFields) collegeFields.style.display = 'block';
-        if (highschoolFields) highschoolFields.style.display = 'none';
-
-        // Populate college fields
-        const collegeName = document.getElementById('editCollegeName');
-        const collegeState = document.getElementById('editCollegeState');
-        const division = document.getElementById('editDivision');
-        const conference = document.getElementById('editConference');
-        const jerseyNumber = document.getElementById('editJerseyNumber');
-        const eligibility = document.getElementById('editEligibility');
-
-        if (collegeName) collegeName.value = currentProfile.team_name || ''; // Using team_name field for college name
-        if (collegeState) collegeState.value = currentProfile.state || '';
-        if (division) division.value = currentProfile.college_division || '';
-        if (conference) conference.value = currentProfile.conference || '';
-        if (jerseyNumber) jerseyNumber.value = currentProfile.number || '';
-        if (eligibility) eligibility.value = currentProfile.eligibility || '';
-    } else {
-        // Show high school fields and set active button
-        if (schoolTypeHS) schoolTypeHS.classList.add('active');
-        if (schoolTypeCollege) schoolTypeCollege.classList.remove('active');
-        if (highschoolFields) highschoolFields.style.display = 'block';
-        if (collegeFields) collegeFields.style.display = 'none';
-
-        // Populate high school fields
-        const highSchoolName = document.getElementById('editHighSchool');
-        const hsState = document.getElementById('editHSState');
-
-        if (highSchoolName) highSchoolName.value = currentProfile.team_name || '';
-        if (hsState) hsState.value = currentProfile.state || '';
-    }
+    if (collegeName) collegeName.value = currentProfile.team_name || '';
+    if (collegeState) collegeState.value = currentProfile.state || '';
+    if (division) division.value = currentProfile.college_division || '';
+    if (conference) conference.value = currentProfile.conference || '';
+    if (jerseyNumber) jerseyNumber.value = currentProfile.number || '';
+    if (eligibility) eligibility.value = currentProfile.eligibility || '';
 
     // Populate bio, email, and phone
     const bio = document.getElementById('editBio');
@@ -2332,10 +2306,6 @@ async function saveProfileChanges() {
         const phoneInput = document.getElementById('editPhone').value;
         const phoneDigits = phoneInput.replace(/\D/g, '');
 
-        // Determine which school type is active
-        const schoolTypeCollege = document.getElementById('editSchoolTypeCollege');
-        const isCollegePlayer = schoolTypeCollege && schoolTypeCollege.classList.contains('active');
-
         // Build social media links object
         const hudlLink = document.getElementById('editHudlLink').value.trim();
         const instagramLink = document.getElementById('editInstagramLink').value.trim();
@@ -2361,22 +2331,13 @@ async function saveProfileChanges() {
             socials: socialsJson
         };
 
-        // Add school fields based on type
-        if (isCollegePlayer) {
-            formData.team_name = document.getElementById('editCollegeName').value;
-            formData.state = document.getElementById('editCollegeState').value;
-            formData.college_division = document.getElementById('editDivision').value;
-            formData.conference = document.getElementById('editConference').value || null;
-            formData.number = document.getElementById('editJerseyNumber').value ? parseInt(document.getElementById('editJerseyNumber').value) : null;
-            formData.eligibility = document.getElementById('editEligibility').value ? parseInt(document.getElementById('editEligibility').value) : null;
-        } else {
-            formData.team_name = document.getElementById('editHighSchool').value;
-            formData.state = document.getElementById('editHSState').value;
-            formData.college_division = null; // Clear college division for HS players
-            formData.conference = null;
-            formData.number = null;
-            formData.eligibility = null;
-        }
+        // College player fields (always college)
+        formData.team_name = document.getElementById('editCollegeName').value;
+        formData.state = document.getElementById('editCollegeState').value;
+        formData.college_division = document.getElementById('editDivision').value;
+        formData.conference = document.getElementById('editConference').value || null;
+        formData.number = document.getElementById('editJerseyNumber').value ? parseInt(document.getElementById('editJerseyNumber').value) : null;
+        formData.eligibility = document.getElementById('editEligibility').value ? parseInt(document.getElementById('editEligibility').value) : null;
 
         // Send update request
         const response = await API.put('/profile', formData);
@@ -2401,20 +2362,6 @@ async function saveProfileChanges() {
                 if (!currentProfile.profile_image_url || currentProfile.profile_image_url.startsWith('profiles/')) {
                     currentProfile.profile_image_url = currentSignedImageUrl;
                 }
-            }
-
-            // Check if player type changed (College to HS) - redirect to appropriate folder
-            const collegeDivisions = ['D1 FBS', 'D1 FCS', 'D2', 'D3', 'NAIA', 'NJCAA', 'FBS', 'FCS', '3C2A'];
-            const newCollegeDivision = formData.college_division;
-            const isStillCollegePlayer = newCollegeDivision && collegeDivisions.includes(newCollegeDivision);
-
-            if (!isStillCollegePlayer) {
-                // Player changed from College to HS - redirect to hsplayer folder
-                showSuccessMessage('Profile updated! Redirecting to high school player dashboard...');
-                setTimeout(() => {
-                    window.location.href = '../../hsplayer/mainpage-player.html';
-                }, 1000);
-                return;
             }
 
             // Refresh the profile display
@@ -2514,45 +2461,10 @@ function setupUsernameValidation() {
     }
 }
 
-function setupEditSchoolTypeToggle() {
-    const schoolTypeButtons = document.querySelectorAll('.school-type-btn');
-    const highschoolFields = document.getElementById('editHighschoolFields');
-    const collegeFields = document.getElementById('editCollegeFields');
-
-    schoolTypeButtons.forEach(button => {
-        // Remove any existing listeners by cloning
-        const newButton = button.cloneNode(true);
-        button.parentNode.replaceChild(newButton, button);
-    });
-
-    // Re-query after cloning
-    document.querySelectorAll('.school-type-btn').forEach(button => {
-        button.addEventListener('click', function() {
-            // Remove active class from all buttons
-            document.querySelectorAll('.school-type-btn').forEach(btn => btn.classList.remove('active'));
-
-            // Add active class to clicked button
-            this.classList.add('active');
-
-            // Show/hide appropriate fields
-            if (this.dataset.type === 'highschool') {
-                if (highschoolFields) highschoolFields.style.display = 'block';
-                if (collegeFields) collegeFields.style.display = 'none';
-            } else {
-                if (highschoolFields) highschoolFields.style.display = 'none';
-                if (collegeFields) collegeFields.style.display = 'block';
-            }
-        });
-    });
-}
-
 // Set up modal event listeners
 document.addEventListener('DOMContentLoaded', function() {
     // Setup username validation
     setupUsernameValidation();
-
-    // Setup school type toggle
-    setupEditSchoolTypeToggle();
 
     // Close button
     const closeBtn = document.getElementById('editModalClose');

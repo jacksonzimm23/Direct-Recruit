@@ -902,13 +902,15 @@ async function displayProfile(profile, type, accessLevel = 'full', hasPendingReq
     // Update profile image and role-colored border/background
     const avatarElement = document.querySelector('.profile-avatar-large');
     if (avatarElement) {
+        const isTransfer = profile.transfer === 'y' || profile.is_transfer_player;
         if (profile.profile_image_url) {
             avatarElement.innerHTML = `<img src="${profile.profile_image_url}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
+            avatarElement.style.backgroundColor = 'transparent';
+        } else {
+            avatarElement.style.backgroundColor = getRoleAvatarBg(type, isTransfer, profile.college_division);
         }
-        const isTransfer = profile.transfer === 'y' || profile.is_transfer_player;
         avatarElement.style.border = `3px solid ${getRoleBorderColor(type, isTransfer, profile.college_division)}`;
         avatarElement.style.color = getRoleBorderColor(type, isTransfer, profile.college_division);
-        avatarElement.style.backgroundColor = getRoleAvatarBg(type, isTransfer, profile.college_division);
     }
 
     // Show profile content now that data is loaded
@@ -1858,7 +1860,7 @@ async function uploadCroppedImage(file) {
             // Update avatar - use the URL directly (signed URLs already have cache-busting via signature)
             // Don't add extra query params as it breaks the S3 signature
             avatarElement.innerHTML = `<img src="${imageUrl}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
-
+            avatarElement.style.backgroundColor = 'transparent';
             // Update sidebar footer with new profile image
             if (typeof updateSidebarFooter === 'function') {
                 await updateSidebarFooter();
@@ -1866,6 +1868,7 @@ async function uploadCroppedImage(file) {
 
             // Show success message
             showSuccessMessage('Profile photo updated successfully!');
+
         } else {
             throw new Error('No image URL returned from server');
         }
@@ -2027,43 +2030,11 @@ function populateEditForm() {
         }
     }
 
-    // Determine if this is a college or high school coach based on college_division
-    const isCollegeCoach = currentProfile.college_division && currentProfile.college_division.trim() !== '';
-
-    const schoolTypeHS = document.getElementById('editSchoolTypeHS');
-    const schoolTypeCollege = document.getElementById('editSchoolTypeCollege');
-    const highschoolFields = document.getElementById('editHighschoolFields');
-    const collegeFields = document.getElementById('editCollegeFields');
-
-    if (isCollegeCoach) {
-        // Show college fields and set active button
-        if (schoolTypeCollege) schoolTypeCollege.classList.add('active');
-        if (schoolTypeHS) schoolTypeHS.classList.remove('active');
-        if (collegeFields) collegeFields.style.display = 'block';
-        if (highschoolFields) highschoolFields.style.display = 'none';
-
-        // Populate college fields
-        const collegeName = document.getElementById('editCollegeName');
-        const collegeState = document.getElementById('editCollegeState');
-        const division = document.getElementById('editDivision');
-
-        if (collegeName) collegeName.value = currentProfile.team_name || '';
-        if (collegeState) collegeState.value = currentProfile.state || '';
-        if (division) division.value = currentProfile.college_division || '';
-    } else {
-        // Show high school fields and set active button
-        if (schoolTypeHS) schoolTypeHS.classList.add('active');
-        if (schoolTypeCollege) schoolTypeCollege.classList.remove('active');
-        if (highschoolFields) highschoolFields.style.display = 'block';
-        if (collegeFields) collegeFields.style.display = 'none';
-
-        // Populate high school fields
-        const highSchoolName = document.getElementById('editHighSchoolName');
-        const hsState = document.getElementById('editHSState');
-
-        if (highSchoolName) highSchoolName.value = currentProfile.team_name || '';
-        if (hsState) hsState.value = currentProfile.state || '';
-    }
+    // Populate HS coach fields (no toggle — use Settings to switch profile type)
+    const highSchoolName = document.getElementById('editHighSchoolName');
+    const hsState = document.getElementById('editHSState');
+    if (highSchoolName) highSchoolName.value = currentProfile.team_name || '';
+    if (hsState) hsState.value = currentProfile.state || '';
 
     // Populate bio, email, and phone
     const bio = document.getElementById('editBio');
@@ -2189,10 +2160,6 @@ async function saveProfileChanges() {
         const phoneInput = document.getElementById('editPhone').value;
         const phoneDigits = phoneInput.replace(/\D/g, '');
 
-        // Determine which school type is active
-        const schoolTypeCollege = document.getElementById('editSchoolTypeCollege');
-        const isCollegeCoach = schoolTypeCollege && schoolTypeCollege.classList.contains('active');
-
         const formData = {
             first_name: document.getElementById('editFirstName').value,
             last_name: document.getElementById('editLastName').value,
@@ -2208,16 +2175,10 @@ async function saveProfileChanges() {
             philosophy: document.getElementById('editPhilosophy').value.trim()
         };
 
-        // Add school fields based on type
-        if (isCollegeCoach) {
-            formData.team_name = document.getElementById('editCollegeName').value;
-            formData.state = document.getElementById('editCollegeState').value;
-            formData.college_division = document.getElementById('editDivision').value;
-        } else {
-            formData.team_name = document.getElementById('editHighSchoolName').value;
-            formData.state = document.getElementById('editHSState').value;
-            formData.college_division = null; // Clear college division for HS coaches
-        }
+        // HS coach fields (always HS)
+        formData.team_name = document.getElementById('editHighSchoolName').value;
+        formData.state = document.getElementById('editHSState').value;
+        formData.college_division = null;
 
         // Send update request
         const response = await API.put('/profile', formData);
@@ -2242,20 +2203,6 @@ async function saveProfileChanges() {
                 if (!currentProfile.profile_image_url || currentProfile.profile_image_url.startsWith('profiles/')) {
                     currentProfile.profile_image_url = currentSignedImageUrl;
                 }
-            }
-
-            // Check if coach type changed (HS to College) - redirect to appropriate folder
-            const collegeDivisions = ['D1 FBS', 'D1 FCS', 'D2', 'D3', 'NAIA', 'NJCAA', 'FBS', 'FCS', '3C2A'];
-            const newCollegeDivision = formData.college_division;
-            const isNowCollegeCoach = newCollegeDivision && collegeDivisions.includes(newCollegeDivision);
-
-            if (isNowCollegeCoach) {
-                // Coach changed from HS to College - redirect to collegecoach folder
-                showSuccessMessage('Profile updated! Redirecting to college coach dashboard...');
-                setTimeout(() => {
-                    window.location.href = '../../collegecoach/mainpage-coach.html';
-                }, 1000);
-                return;
             }
 
             // Refresh the profile display
@@ -2284,41 +2231,7 @@ async function saveProfileChanges() {
     }
 }
 
-function setupEditSchoolTypeToggle() {
-    const schoolTypeButtons = document.querySelectorAll('.school-type-btn');
-    const highschoolFields = document.getElementById('editHighschoolFields');
-    const collegeFields = document.getElementById('editCollegeFields');
-
-    schoolTypeButtons.forEach(button => {
-        // Remove any existing listeners by cloning
-        const newButton = button.cloneNode(true);
-        button.parentNode.replaceChild(newButton, button);
-    });
-
-    // Re-query after cloning
-    document.querySelectorAll('.school-type-btn').forEach(button => {
-        button.addEventListener('click', function() {
-            // Remove active class from all buttons
-            document.querySelectorAll('.school-type-btn').forEach(btn => btn.classList.remove('active'));
-
-            // Add active class to clicked button
-            this.classList.add('active');
-
-            // Show/hide appropriate fields
-            if (this.dataset.type === 'highschool') {
-                if (highschoolFields) highschoolFields.style.display = 'block';
-                if (collegeFields) collegeFields.style.display = 'none';
-            } else {
-                if (highschoolFields) highschoolFields.style.display = 'none';
-                if (collegeFields) collegeFields.style.display = 'block';
-            }
-        });
-    });
-}
-
 function setupEditProfileModal() {
-    // Setup school type toggle
-    setupEditSchoolTypeToggle();
 
     // Close button
     const closeBtn = document.getElementById('editModalClose');
