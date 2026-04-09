@@ -307,9 +307,11 @@ function formatNotificationMessage(notification) {
     let nameHtml;
     if (notification.related_user_username) {
         const folder = getNotificationProfileFolder(notification);
-        nameHtml = `<a href="../../${folder}/tabs/my-profile.html?username=${notification.related_user_username}&from=notifications" class="notification-user-link">${name}</a>`;
+        const _nLogo = typeof getSchoolLogoHTML === 'function' ? getSchoolLogoHTML(notification.related_user_school, '../../assets', 14) : '';
+        nameHtml = `<a href="../../${folder}/tabs/my-profile.html?username=${notification.related_user_username}&from=notifications" class="notification-user-link">${name}${_nLogo}</a>`;
     } else {
-        nameHtml = `<strong>${name}</strong>`;
+        const _nLogo = typeof getSchoolLogoHTML === 'function' ? getSchoolLogoHTML(notification.related_user_school, '../../assets', 14) : '';
+        nameHtml = `<strong>${name}${_nLogo}</strong>`;
     }
 
     // Rebuild message based on notification type/title using current profile data

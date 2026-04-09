@@ -64,6 +64,8 @@ class SuggestedConnectionsWidget {
         this.widgetContainer.innerHTML = '<div class="connections-loading">Loading...</div>';
 
         try {
+            const _connAssets = window.location.pathname.includes('/tabs/') ? '../../assets' : '../assets';
+            if (typeof ensureSchoolLogosLoaded === 'function') await ensureSchoolLogosLoaded(_connAssets);
             const response = await API.get('/profile/suggested-connections?limit=5');
             this.connections = response.connections || [];
             this.hasMore = response.hasMore || false;
@@ -178,7 +180,7 @@ class SuggestedConnectionsWidget {
             <div class="follow-item" data-user-id="${connection.user_id}" data-username="${connection.username || ''}" data-profile-type="${profileType}" data-role="${connection.role}">
                 ${avatarHTML}
                 <div class="follow-info">
-                    <div class="follow-name">${this.escapeHTML(fullName)}</div>
+                    <div class="follow-name">${this.escapeHTML(fullName)}${typeof getSchoolLogoHTML === 'function' && connection.college_division ? getSchoolLogoHTML(connection.team_name, (window.location.pathname.includes('/tabs/') ? '../../assets' : '../assets'), 14) : ''}</div>
                     ${sub.text ? `<div class="follow-subheader" style="color: ${sub.color};">${this.escapeHTML(sub.text)}</div>` : ''}
                 </div>
             </div>
@@ -206,6 +208,8 @@ class SuggestedConnectionsWidget {
         this.modalList.innerHTML = '<div class="connections-loading">Loading...</div>';
 
         try {
+            const _connAssets = window.location.pathname.includes('/tabs/') ? '../../assets' : '../assets';
+            if (typeof ensureSchoolLogosLoaded === 'function') await ensureSchoolLogosLoaded(_connAssets);
             // Load more connections (up to 50)
             const response = await API.get('/profile/suggested-connections?limit=50');
             this.allConnections = response.connections || [];
@@ -252,7 +256,7 @@ class SuggestedConnectionsWidget {
             <div class="connection-modal-item" data-user-id="${connection.user_id}" data-username="${connection.username || ''}" data-profile-type="${profileType}" data-role="${connection.role}">
                 ${avatarHTML}
                 <div class="connection-modal-info">
-                    <div class="connection-modal-name">${this.escapeHTML(fullName)}</div>
+                    <div class="connection-modal-name">${this.escapeHTML(fullName)}${typeof getSchoolLogoHTML === 'function' && connection.college_division ? getSchoolLogoHTML(connection.team_name, (window.location.pathname.includes('/tabs/') ? '../../assets' : '../assets'), 14) : ''}</div>
                     ${sub.text ? `<div class="connection-modal-subheader" style="color: ${sub.color};">${this.escapeHTML(sub.text)}</div>` : ''}
                 </div>
                 <button class="connection-modal-btn-follow" data-user-id="${connection.user_id}">Follow</button>

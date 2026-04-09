@@ -80,7 +80,9 @@ async function updateSidebarFooterFromAPI() {
                 // Update name
                 const userName = document.querySelector('.sidebar-footer .user-name');
                 if (userName) {
-                    userName.textContent = `${profile.first_name} ${profile.last_name}`;
+                    if (typeof ensureSchoolLogosLoaded === 'function') await ensureSchoolLogosLoaded('../../assets');
+                    const _prLogo = typeof getSchoolLogoHTML === 'function' ? getSchoolLogoHTML(profile.team_name, '../../assets', 16) : '';
+                    userName.innerHTML = `${profile.first_name} ${profile.last_name}${_prLogo}`;
                 }
 
                 // Update role/info line for transfer player: position • height • weight • YOE
@@ -524,7 +526,8 @@ function updateNavbarForLoggedInUser(user, profile) {
         // Update name
         const userName = document.querySelector('.sidebar-footer .user-name');
         if (userName) {
-            userName.textContent = `${profile.first_name} ${profile.last_name}`;
+            const _prLogo = typeof getSchoolLogoHTML === 'function' ? getSchoolLogoHTML(profile.team_name, '../../assets', 16) : '';
+            userName.innerHTML = `${profile.first_name} ${profile.last_name}${_prLogo}`;
         }
 
         // Update role/info based on logged-in user's specific profile type (userFolder)
@@ -858,7 +861,8 @@ async function displayProfile(profile, type, accessLevel = 'full', hasPendingReq
     // Update profile name
     const nameElement = document.querySelector('.profile-name');
     if (nameElement) {
-        nameElement.textContent = `${profile.first_name} ${profile.last_name}`;
+        const _profLogo = typeof getSchoolLogoHTML === 'function' ? getSchoolLogoHTML(profile.team_name, '../../assets', 20) : '';
+        nameElement.innerHTML = `${profile.first_name} ${profile.last_name}${_profLogo}`;
 
         // Check if this profile follows the current user and add badge
         if (viewingUserId) {

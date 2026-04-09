@@ -496,9 +496,42 @@
 
 ---
 
+## School Search & School Logo System
+
+47. **School search with logo + auto-division is a shared module used across create-profile, edit-profile, and logo display.** The module lives at `frontend/shared/school-search.js` + `frontend/shared/school-search.css`. It provides three things: (1) `initSchoolSearch(config)` — wraps any college name `<input>` with a fuzzy-search dropdown (828 schools from `frontend/assets/school-logos.json`) that shows logos and auto-fills the division `<select>`, with a "Can't find your school? Enter manually" fallback; (2) `getSchoolLogoHTML(schoolName, assetBasePath, size)` — returns a small `<img>` tag for a school's logo or `''` if not found; (3) `ensureSchoolLogosLoaded(assetBasePath)` — async preload of the JSON data.
+
+48. **`school-search.js` must be loaded on EVERY page across ALL 6 roles, not just college roles.** Even hsplayer, hscoach, and other users see college profiles in their feed, search results, messages, notifications, and suggested connections. If `school-search.js` isn't loaded on those pages, `getSchoolLogoHTML()` returns `''` and no logos appear next to college users' names. The script tag goes after `api.js` on every mainpage and tab HTML file across all 6 role folders. Watch for versioned script tags (e.g., `api.js?v=2`) — sed replacements won't match if the exact string differs.
+
+49. **Asset paths for school logos depend on page depth — hardcoding breaks on tab pages.** Mainpage files (`frontend/{role}/mainpage-*.html`) need `../assets`, tab files (`frontend/{role}/tabs/*.html`) need `../../assets`. The critical mistake: `mainpage-*.js` files are loaded on BOTH mainpage AND tab pages (via `<script src="../mainpage-coach.js">`), so any logo path inside them must use `window.location.pathname.includes('/tabs/') ? '../../assets' : '../assets'` to detect the correct depth. Hardcoding `'../assets'` causes broken `<img>` tags (wrong path) on every tab page. This applies to ALL shared JS files too (`feed.js`, `search.js`, `suggested-connections.js`).
+
+50. **All `getSchoolLogoHTML()` and `ensureSchoolLogosLoaded()` calls must be guarded with `typeof` checks.** Since `school-search.js` may load after other scripts (or fail to load), every call must be `typeof getSchoolLogoHTML === 'function' ? getSchoolLogoHTML(...) : ''` and `typeof ensureSchoolLogosLoaded === 'function'` before `await`. Without this, pages throw `ReferenceError` and the entire function that renders the sidebar footer or user info fails silently — the name doesn't display at all, not just the logo.
+
+51. **Every async function that renders user names with logos MUST `await ensureSchoolLogosLoaded()` before calling `getSchoolLogoHTML()`.** `getSchoolLogoHTML()` is synchronous — it returns `''` if the JSON isn't loaded yet. This caused logos to silently not appear on messages, suggested connections, and tab pages even though the code was correct. The fix: every async rendering function (`loadConversations()`, `loadConnections()`, `loadAllConnectionsForModal()`, `updateSidebarFooter()`, `loadCurrentUser()`, `populateSidebarFooter()`) must `await ensureSchoolLogosLoaded(path)` before any call to `getSchoolLogoHTML()`. For sync functions called from async parents, the parent must ensure the data is loaded first. The JSON is cached after the first successful load, so subsequent `await` calls return instantly.
+
+52. **School logo icon is displayed next to user names at 25+ locations across ALL 6 roles.** The logo appears for collegeplayer, collegecoach, and transferplayer profiles (any user whose `team_name` matches a school in the JSON). It does NOT appear for manually-typed school names not in the JSON, or for hsplayer/hscoach/other profiles (they have no college `team_name`). But ALL 6 roles must render logos for OTHER users they see. The display locations and sizes:
+
+    | Location | Size | Files |
+    |----------|------|-------|
+    | Sidebar footer (all pages) | 16px | `sidebar-footer.js`, `mainpage-*.js`, `my-profile.js`, `messages.js` × 3 college roles |
+    | Feed post author name | 16px | `shared/feed.js` (2 templates) |
+    | Feed reposter/quoter name | 16px | `shared/feed.js` (2 locations) |
+    | Feed comment author | 14px | `shared/feed.js` (2 comment templates) |
+    | Search results | 16px | `shared/search.js` |
+    | Suggested connections | 14px | `shared/suggested-connections.js` (widget + modal) |
+    | Message conversation list | 14px | `messages.js` × 6 roles |
+    | Message thread header | 16px | `messages.js` × 6 roles |
+    | Notification actors | 14px | `notifications.js` × 3 college roles |
+    | My Profile page header | 20px | `my-profile.js` × 5 roles (all except other) |
+
+    **Key rule:** When adding the logo to a new location, always check: (1) is `school-search.js` loaded on that page's HTML? (2) is the asset path dynamically detected with `/tabs/` check? (3) is the containing function async, and does it `await ensureSchoolLogosLoaded()` before rendering? (4) is the `getSchoolLogoHTML` call guarded with `typeof`? Missing any one of these 4 causes the logo to silently not appear or shows a broken image.
+
+---
+
 ## TODOs
 **TODO: Get rid of transfer player message on college player create a profile page
-**TODO: Fix sign up college inputs with their logos, show logo icon badge
+
+**TODO: Fix search for users
+**TODO: Transfer portal tab on collegeplayer needs to direct them to switch profile
 **TODO: Discover page player cards need to be same height, fix frontend
 **TODO: Save button on posts
 **TODO: Copy twitter algorithm on how they show certain posts on feed, as well as the suggested connections on the feed right sidebar

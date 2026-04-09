@@ -130,6 +130,7 @@ async function loadCurrentUser() {
 }
 
 async function loadConversations() {
+    if (typeof ensureSchoolLogosLoaded === 'function') await ensureSchoolLogosLoaded('../../assets');
     try {
         const response = await API.get('/messages/conversations');
         conversations = response.conversations || [];
@@ -192,7 +193,7 @@ function renderConversationsList() {
                 </div>
                 <div class="conversation-info">
                     <div class="conversation-top">
-                        <div class="conversation-name">${participant.first_name || 'Unknown'} ${participant.last_name || ''}</div>
+                        <div class="conversation-name">${participant.first_name || 'Unknown'} ${participant.last_name || ''}${typeof getSchoolLogoHTML === 'function' ? getSchoolLogoHTML(participant.team_name, '../../assets', 14) : ''}</div>
                         <div class="conversation-time">${formatTimeAgo(conv.last_message_time)}</div>
                     </div>
                     <div class="conversation-preview">
@@ -326,7 +327,8 @@ function updateThreadHeader(participant) {
     const threadAvatarCircle = document.querySelector('.thread-avatar-circle');
 
     if (threadUserName) {
-        threadUserName.textContent = `${participant.first_name || 'Unknown'} ${participant.last_name || ''}`;
+        const _thLogo = typeof getSchoolLogoHTML === 'function' ? getSchoolLogoHTML(participant.team_name, '../../assets', 16) : '';
+        threadUserName.innerHTML = `${participant.first_name || 'Unknown'} ${participant.last_name || ''}${_thLogo}`;
     }
 
     if (threadUserRole) {

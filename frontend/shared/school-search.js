@@ -58,6 +58,31 @@ function _getLogoPath(basePath, logoFile) {
     return `${basePath}/logos/${logoFile}`;
 }
 
+/**
+ * Ensure school logos JSON is loaded (call early on pages that display school logos).
+ * Safe to call multiple times — data is cached after first load.
+ */
+async function ensureSchoolLogosLoaded(assetBasePath) {
+    if (!_schoolLogosData) await _loadSchoolLogosData(assetBasePath);
+}
+
+/**
+ * Get a small inline school logo <img> tag for a given school name.
+ * Returns empty string if school not found in JSON or data not yet loaded.
+ * @param {string} schoolName - The team_name / school name to look up
+ * @param {string} assetBasePath - Relative path to assets/ from current page
+ * @param {number} [size=18] - Logo size in pixels
+ * @returns {string} HTML string — either an <img> tag or ''
+ */
+function getSchoolLogoHTML(schoolName, assetBasePath, size) {
+    size = size || 18;
+    if (!schoolName || !_schoolLogosData) return '';
+    const school = _schoolLogosData[schoolName];
+    if (!school || !school.logo) return '';
+    const src = `${assetBasePath}/logos/${school.logo}`;
+    return `<img src="${src}" alt="" class="school-logo-icon" style="width:${size}px;height:${size}px;object-fit:contain;vertical-align:middle;margin-left:4px;border-radius:2px;">`;
+}
+
 const _fallbackSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"></path><path d="M6 12v5c3 3 9 3 12 0v-5"></path></svg>';
 
 const _clearSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>';
