@@ -7762,6 +7762,7 @@ function setupProfileViewersModal() {
 async function openProfileViewersModal() {
     const modal = document.getElementById('profileViewersModal');
     const modalBody = document.getElementById('profileViewersModalBody');
+    const _assetsPath = window.location.pathname.includes('/tabs/') ? '../../assets' : '../assets';
 
     if (!modal || !modalBody) return;
 
@@ -7772,6 +7773,7 @@ async function openProfileViewersModal() {
     modal.classList.add('active');
 
     try {
+        if (typeof ensureSchoolLogosLoaded === 'function') await ensureSchoolLogosLoaded(_assetsPath);
         const response = await API.get(`/profile/viewers/${currentUserId}`);
         const viewers = response.viewers || [];
 
