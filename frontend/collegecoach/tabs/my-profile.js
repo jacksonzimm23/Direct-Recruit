@@ -6,6 +6,7 @@ let viewingUserId = null;
 let isOwnProfile = true;
 let isCollegeCoach = false;
 let loggedInUserFolder = null; // Track the logged-in user's folder for navigation
+let editSchoolSearch = null; // School search instance for edit modal
 let viewedProfileType = null; // Track the type of profile being viewed ('player' or 'coach')
 let isViewedProfileHSPlayer = false; // Track if viewed profile is an HS player
 let isViewedProfileTransferPlayer = false; // Track if viewed profile is a transfer player
@@ -131,6 +132,13 @@ async function updateSidebarFooterFromAPI() {
 }
 
 document.addEventListener('DOMContentLoaded', async function() {
+    // Initialize school search for edit modal
+    editSchoolSearch = initSchoolSearch({
+        nameInput: '#editCollegeName',
+        divisionSelect: '#editDivision',
+        assetBasePath: '../../assets'
+    });
+
     // Hide sidebar footer initially to prevent flash of old content
     const sidebarFooter = document.querySelector('.sidebar-footer');
     if (sidebarFooter) {
@@ -2041,6 +2049,15 @@ function populateEditForm() {
     if (collegeName) collegeName.value = currentProfile.team_name || '';
     if (collegeState) collegeState.value = currentProfile.state || '';
     if (division) division.value = currentProfile.college_division || '';
+
+    // Show school logo preview if school is in the database
+    if (editSchoolSearch) {
+        if (currentProfile.team_name) {
+            editSchoolSearch.preselectSchool(currentProfile.team_name);
+        } else {
+            editSchoolSearch.clearSelection();
+        }
+    }
 
     // Handle coaching positions - split slash-separated string into array
     editSelectedCoachingPositions = [];

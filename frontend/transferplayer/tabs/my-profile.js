@@ -15,6 +15,7 @@ let isCollegeCoach = false;
 let currentProfileType = 'player'; // Track whether viewing a player or coach profile
 let loggedInUserFolder = null; // Track the logged-in user's folder for navigation
 let editSelectedPositions = []; // Track selected positions in edit modal
+let editSchoolSearch = null; // School search instance for edit modal
 let viewedProfileType = null; // Track the type of profile being viewed ('player' or 'coach')
 let isViewedProfileHSPlayer = false; // Track if viewed profile is an HS player
 let isViewedProfileTransferPlayer = false; // Track if viewed profile is a transfer player
@@ -164,6 +165,13 @@ async function updateSidebarFooterFromAPI() {
 }
 
 document.addEventListener('DOMContentLoaded', async function() {
+    // Initialize school search for edit modal
+    editSchoolSearch = initSchoolSearch({
+        nameInput: '#editCollegeName',
+        divisionSelect: '#editDivision',
+        assetBasePath: '../../assets'
+    });
+
     // Hide sidebar footer initially to prevent flash of old content
     const sidebarFooter = document.querySelector('.sidebar-footer');
     if (sidebarFooter) {
@@ -970,13 +978,15 @@ async function displayProfile(profile, type, accessLevel = 'full', hasPendingReq
     // Update profile image and role-colored border/background
     const avatarElement = document.querySelector('.profile-avatar-large');
     if (avatarElement) {
+        const isTransfer = profile.transfer === 'y' || profile.is_transfer_player;
         if (profile.profile_image_url) {
             avatarElement.innerHTML = `<img src="${profile.profile_image_url}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
+            avatarElement.style.backgroundColor = 'transparent';
+        } else {
+            avatarElement.style.backgroundColor = getRoleAvatarBg(type, isTransfer, profile.college_division);
         }
-        const isTransfer = profile.transfer === 'y' || profile.is_transfer_player;
         avatarElement.style.border = `3px solid ${getRoleBorderColor(type, isTransfer, profile.college_division)}`;
         avatarElement.style.color = getRoleBorderColor(type, isTransfer, profile.college_division);
-        avatarElement.style.backgroundColor = getRoleAvatarBg(type, isTransfer, profile.college_division);
     }
 
     // Show profile content now that data is loaded
@@ -2536,7 +2546,7 @@ async function uploadCroppedImage(file) {
             // Update avatar - use the URL directly (signed URLs already have cache-busting via signature)
             // Don't add extra query params as it breaks the S3 signature
             avatarElement.innerHTML = `<img src="${imageUrl}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
-
+            avatarElement.style.backgroundColor = 'transparent';
             // Update avatar in sidebar
             const sidebarAvatar = document.querySelector('.sidebar-footer .user-avatar-circle');
             if (sidebarAvatar) {
@@ -2545,6 +2555,7 @@ async function uploadCroppedImage(file) {
 
             // Show success message
             showSuccessMessage('Profile photo updated successfully!');
+
         } else {
             throw new Error('No image URL returned from server');
         }
@@ -2724,6 +2735,15 @@ function populateEditForm() {
         if (collegeState) collegeState.value = currentProfile.state || '';
         if (division) division.value = currentProfile.college_division || '';
         if (eligibility) eligibility.value = currentProfile.eligibility || '';
+
+        // Show school logo preview if school is in the database
+        if (editSchoolSearch) {
+            if (currentProfile.team_name) {
+                editSchoolSearch.preselectSchool(currentProfile.team_name);
+            } else {
+                editSchoolSearch.clearSelection();
+            }
+        }
     } else {
         // Show high school fields and set active button
         if (schoolTypeHS) schoolTypeHS.classList.add('active');

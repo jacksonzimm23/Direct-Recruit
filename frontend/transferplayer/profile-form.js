@@ -7,6 +7,13 @@ document.addEventListener('DOMContentLoaded', async function() {
     const schoolTypeInput = document.getElementById('schoolType');
     const profileForm = document.getElementById('playerProfileForm');
 
+    // Initialize school search with logo + auto-division
+    const schoolSearch = initSchoolSearch({
+        nameInput: '#previousCollegeName',
+        divisionSelect: '#previousDivision',
+        assetBasePath: '../assets'
+    });
+
     // Position checkboxes
     const positionCheckboxes = document.querySelectorAll('input[name="position"]');
     const selectedPositionsContainer = document.getElementById('selectedPositions');
@@ -416,6 +423,7 @@ async function loadExistingProfile() {
                 // Fill in transfer player data
                 if (profile.team_name) {
                     document.getElementById('previousCollegeName').value = profile.team_name;
+                    if (schoolSearch) schoolSearch.preselectSchool(profile.team_name);
                 }
                 if (profile.state) {
                     document.getElementById('previousState').value = profile.state;

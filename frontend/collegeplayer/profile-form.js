@@ -7,6 +7,13 @@ document.addEventListener('DOMContentLoaded', async function() {
     const schoolTypeInput = document.getElementById('schoolType');
     const profileForm = document.getElementById('playerProfileForm');
 
+    // Initialize school search with logo + auto-division
+    const schoolSearch = initSchoolSearch({
+        nameInput: '#collegeName',
+        divisionSelect: '#division',
+        assetBasePath: '../assets'
+    });
+
     // Position checkboxes
     const positionCheckboxes = document.querySelectorAll('input[name="position"]');
     const selectedPositionsContainer = document.getElementById('selectedPositions');
@@ -427,6 +434,7 @@ async function loadExistingProfile() {
                 // Fill in college data - college name is stored in team_name column
                 if (profile.team_name) {
                     document.getElementById('collegeName').value = profile.team_name;
+                    if (schoolSearch) schoolSearch.preselectSchool(profile.team_name);
                 }
                 if (profile.state) {
                     document.getElementById('collegeState').value = profile.state;
