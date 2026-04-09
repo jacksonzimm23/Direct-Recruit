@@ -1162,7 +1162,7 @@ class Post {
           COALESCE(pp.position, cp.position_title) as author_position,
           COALESCE(pp.team_name, cp.team_name) as author_school,
           pp.graduation_year as author_grad_year,
-          pp.state as author_state,
+          COALESCE(pp.state, cp.state) as author_state,
           cp.verified as author_verified,
           COALESCE(pp.college_division, cp.college_division) as author_division,
           pp.transfer as author_transfer,

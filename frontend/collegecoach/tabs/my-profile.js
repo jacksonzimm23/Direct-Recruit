@@ -3150,22 +3150,18 @@ function createProfilePostElement(post) {
                 </div>
                 <div class="profile-post-info">
                     <div class="profile-post-author">
-                        ${authorName}
+                        ${authorName}${typeof getSchoolLogoHTML === 'function' && post.author_division ? getSchoolLogoHTML(post.author_school, (window.location.pathname.includes('/tabs/') ? '../../assets' : '../assets'), 16) : ''}
                         ${post.author_verified ? `
                             <svg class="verified-badge" viewBox="0 0 24 24" fill="#1DA1F2" width="16" height="16">
                                 <path d="M22.5 12.5c0-1.58-.875-2.95-2.148-3.6.154-.435.238-.905.238-1.4 0-2.21-1.71-3.998-3.818-3.998-.47 0-.92.084-1.336.25C14.818 2.415 13.51 1.5 12 1.5s-2.816.917-3.437 2.25c-.415-.165-.866-.25-1.336-.25-2.11 0-3.818 1.79-3.818 4 0 .494.083.964.237 1.4-1.272.65-2.147 2.018-2.147 3.6 0 1.495.782 2.798 1.942 3.486-.02.17-.032.34-.032.514 0 2.21 1.708 4 3.818 4 .47 0 .92-.086 1.335-.25.62 1.334 1.926 2.25 3.437 2.25 1.512 0 2.818-.916 3.437-2.25.415.163.865.248 1.336.248 2.11 0 3.818-1.79 3.818-4 0-.174-.012-.344-.033-.513 1.158-.687 1.943-1.99 1.943-3.484zm-6.616-3.334l-4.334 6.5c-.145.217-.382.334-.625.334-.143 0-.288-.04-.416-.126l-.115-.094-2.415-2.415c-.293-.293-.293-.768 0-1.06s.768-.294 1.06 0l1.77 1.767 3.825-5.74c.23-.345.696-.436 1.04-.207.346.23.44.696.21 1.04z"/>
                             </svg>
                         ` : ''}
+                        ${post.author_username ? `<span class="profile-post-handle" style="color: rgba(254,252,251,0.5); font-weight: 400; font-size: 0.875rem;">@${post.author_username}</span>` : ''}
                     </div>
                     <div class="profile-post-meta ${post.author_role === 'coach' ? 'coach-meta' : (post.author_role === 'other' ? 'other-meta' : (post.author_transfer === 'y' ? 'transfer-player-meta' : 'player-meta'))}">${metaInfo}</div>
                 </div>
                 <div class="profile-post-header-actions">
                     ${optionsButton}
-                    <div class="profile-post-view-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="9 18 15 12 9 6"></polyline>
-                        </svg>
-                    </div>
                 </div>
             </div>
             <div class="profile-post-content">
@@ -3279,22 +3275,18 @@ function createProfileRepostElement(post) {
                 </div>
                 <div class="profile-post-info">
                     <div class="profile-post-author">
-                        ${originalAuthorName}
+                        ${originalAuthorName}${typeof getSchoolLogoHTML === 'function' && post.original_author_division ? getSchoolLogoHTML(post.original_author_school, (window.location.pathname.includes('/tabs/') ? '../../assets' : '../assets'), 16) : ''}
                         ${post.original_author_verified ? `
                             <svg class="verified-badge" viewBox="0 0 24 24" fill="#1DA1F2" width="16" height="16">
                                 <path d="M22.5 12.5c0-1.58-.875-2.95-2.148-3.6.154-.435.238-.905.238-1.4 0-2.21-1.71-3.998-3.818-3.998-.47 0-.92.084-1.336.25C14.818 2.415 13.51 1.5 12 1.5s-2.816.917-3.437 2.25c-.415-.165-.866-.25-1.336-.25-2.11 0-3.818 1.79-3.818 4 0 .494.083.964.237 1.4-1.272.65-2.147 2.018-2.147 3.6 0 1.495.782 2.798 1.942 3.486-.02.17-.032.34-.032.514 0 2.21 1.708 4 3.818 4 .47 0 .92-.086 1.335-.25.62 1.334 1.926 2.25 3.437 2.25 1.512 0 2.818-.916 3.437-2.25.415.163.865.248 1.336.248 2.11 0 3.818-1.79 3.818-4 0-.174-.012-.344-.033-.513 1.158-.687 1.943-1.99 1.943-3.484zm-6.616-3.334l-4.334 6.5c-.145.217-.382.334-.625.334-.143 0-.288-.04-.416-.126l-.115-.094-2.415-2.415c-.293-.293-.293-.768 0-1.06s.768-.294 1.06 0l1.77 1.767 3.825-5.74c.23-.345.696-.436 1.04-.207.346.23.44.696.21 1.04z"/>
                             </svg>
                         ` : ''}
+                        ${post.original_author_username ? `<span class="profile-post-handle" style="color: rgba(254,252,251,0.5); font-weight: 400; font-size: 0.875rem;">@${post.original_author_username}</span>` : ''}
                     </div>
                     <div class="profile-post-meta ${post.original_author_role === 'coach' ? 'coach-meta' : (post.original_author_role === 'other' ? 'other-meta' : (post.original_author_transfer === 'y' ? 'transfer-player-meta' : 'player-meta'))}">${originalMetaInfo}</div>
                 </div>
                 <div class="profile-post-header-actions">
                     ${optionsButton}
-                    <div class="profile-post-view-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="9 18 15 12 9 6"></polyline>
-                        </svg>
-                    </div>
                 </div>
             </div>
             <div class="profile-post-content">
@@ -3417,23 +3409,18 @@ function createProfileQuotePostElement(post) {
                 </div>
                 <div class="profile-post-info">
                     <div class="profile-post-author" onclick="event.stopPropagation(); goToProfile('${post.author_username || quoterId}', '${post.author_role || 'player'}', '${post.author_division || ''}', '${quoterId}', ${post.author_transfer === 'y'})" style="cursor: pointer;">
-                        ${quoterName}
-                        ${post.author_username ? `<span class="profile-post-handle">@${post.author_username}</span>` : ''}
+                        ${quoterName}${typeof getSchoolLogoHTML === 'function' && post.author_division ? getSchoolLogoHTML(post.author_school, (window.location.pathname.includes('/tabs/') ? '../../assets' : '../assets'), 16) : ''}
                         ${post.author_verified ? `
                             <svg class="verified-badge" viewBox="0 0 24 24" fill="#1DA1F2" width="16" height="16">
                                 <path d="M22.5 12.5c0-1.58-.875-2.95-2.148-3.6.154-.435.238-.905.238-1.4 0-2.21-1.71-3.998-3.818-3.998-.47 0-.92.084-1.336.25C14.818 2.415 13.51 1.5 12 1.5s-2.816.917-3.437 2.25c-.415-.165-.866-.25-1.336-.25-2.11 0-3.818 1.79-3.818 4 0 .494.083.964.237 1.4-1.272.65-2.147 2.018-2.147 3.6 0 1.495.782 2.798 1.942 3.486-.02.17-.032.34-.032.514 0 2.21 1.708 4 3.818 4 .47 0 .92-.086 1.335-.25.62 1.334 1.926 2.25 3.437 2.25 1.512 0 2.818-.916 3.437-2.25.415.163.865.248 1.336.248 2.11 0 3.818-1.79 3.818-4 0-.174-.012-.344-.033-.513 1.158-.687 1.943-1.99 1.943-3.484zm-6.616-3.334l-4.334 6.5c-.145.217-.382.334-.625.334-.143 0-.288-.04-.416-.126l-.115-.094-2.415-2.415c-.293-.293-.293-.768 0-1.06s.768-.294 1.06 0l1.77 1.767 3.825-5.74c.23-.345.696-.436 1.04-.207.346.23.44.696.21 1.04z"/>
                             </svg>
                         ` : ''}
+                        ${post.author_username ? `<span class="profile-post-handle" style="color: rgba(254,252,251,0.5); font-weight: 400; font-size: 0.875rem;">@${post.author_username}</span>` : ''}
                     </div>
                     <div class="profile-post-meta ${post.author_role === 'coach' ? 'coach-meta' : (post.author_role === 'other' ? 'other-meta' : (post.author_transfer === 'y' ? 'transfer-player-meta' : 'player-meta'))}">${quoterMetaInfo}</div>
                 </div>
                 <div class="profile-post-header-actions">
                     ${optionsButton}
-                    <div class="profile-post-view-icon" onclick="navigateToQuotePost('${post.share_id}')">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="9 18 15 12 9 6"></polyline>
-                        </svg>
-                    </div>
                 </div>
             </div>
             <div class="profile-post-content" onclick="navigateToQuotePost('${post.share_id}')" style="cursor: pointer;">
@@ -3726,7 +3713,7 @@ function createProfileReplyElement(reply) {
     const isOwnReply = !viewingUserId || viewingUserId === currentUserId;
 
     return `
-        <article class="profile-reply-card" data-comment-id="${reply.id}" data-post-id="${reply.original_post_id}" data-content="${escapeHtmlAttr(reply.content)}">
+        <article class="profile-reply-card" data-comment-id="${reply.id}" data-post-id="${reply.original_post_id}" data-content="${escapeHtmlAttr(reply.content)}" onclick="if(!event.target.closest('button')){navigateToPost('${reply.original_post_id}')}" style="cursor: pointer;">
             <div class="profile-reply-context">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
                     <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
@@ -3738,7 +3725,7 @@ function createProfileReplyElement(reply) {
             </div>
             <div class="profile-reply-content">
                 <div class="profile-reply-header">
-                    <div class="profile-reply-avatar">
+                    <div class="profile-reply-avatar" style="border: 2px solid ${getRoleBorderColor(reply.author_role, reply.author_transfer === 'y', reply.author_division)}; color: ${getRoleBorderColor(reply.author_role, reply.author_transfer === 'y', reply.author_division)}; background: ${getRoleAvatarBg(reply.author_role, reply.author_transfer === 'y', reply.author_division)}">
                         ${reply.author_image
                             ? `<img src="${reply.author_image}" alt="${authorName}">`
                             : `<svg viewBox="0 0 24 24" fill="currentColor">
@@ -3748,8 +3735,8 @@ function createProfileReplyElement(reply) {
                         }
                     </div>
                     <div class="profile-reply-info">
-                        <div class="profile-reply-author">${authorName}</div>
-                        <div class="profile-reply-time">${timeAgo}</div>
+                        <div class="profile-reply-author">${authorName}${typeof getSchoolLogoHTML === 'function' && reply.author_division ? getSchoolLogoHTML(reply.author_school, (window.location.pathname.includes('/tabs/') ? '../../assets' : '../assets'), 14) : ''} ${reply.author_username ? `<span style="color: rgba(254,252,251,0.5); font-weight: 400; font-size: 0.875rem;">@${reply.author_username}</span>` : ''}</div>
+                        <div class="profile-reply-meta" style="font-weight: 700;">${(() => { const sub = buildCommentSubheader(reply.author_role, { transfer: reply.author_transfer, position: reply.author_position, height: reply.author_height, weight: reply.author_weight, eligibility: reply.author_eligibility, division: reply.author_division, school: reply.author_school, grad_year: reply.author_grad_year, state: reply.author_state, subheader: reply.author_subheader }); return sub ? sub.replace(/<\/span>$/, ` • ${timeAgo}</span>`) : `<span style="font-size:11px;color:rgba(254,252,251,0.5);">${timeAgo}</span>`; })()}</div>
                     </div>
                     <div class="profile-reply-actions">
                         ${isOwnReply ? `
@@ -3761,11 +3748,6 @@ function createProfileReplyElement(reply) {
                                 </svg>
                             </button>
                         ` : ''}
-                        <div class="profile-reply-view-icon" onclick="navigateToPost('${reply.original_post_id}')">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <polyline points="9 18 15 12 9 6"></polyline>
-                            </svg>
-                        </div>
                     </div>
                 </div>
                 <div class="profile-reply-text" onclick="navigateToPost('${reply.original_post_id}')">
@@ -3773,7 +3755,7 @@ function createProfileReplyElement(reply) {
                 </div>
                 <div class="profile-reply-stats" onclick="event.stopPropagation();">
                     <button class="comment-like-btn ${reply.user_liked ? 'liked' : ''}" onclick="event.stopPropagation(); likePostComment('${reply.id}', this)">
-                        <svg viewBox="0 0 24 24" fill="${reply.user_liked ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2" width="14" height="14">
+                        <svg viewBox="0 0 24 24" fill="${reply.user_liked ? '#e74c3c' : 'none'}" stroke="${reply.user_liked ? '#e74c3c' : 'currentColor'}" stroke-width="2" width="14" height="14">
                             <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
                         </svg>
                         <span>${reply.likes_count || 0}</span>
@@ -4302,7 +4284,7 @@ async function loadPostComments(postId) {
                         <div class="comment-content">${comment.content}</div>
                         <div class="comment-actions">
                             <button class="comment-like-btn ${comment.user_liked ? 'liked' : ''}" onclick="event.stopPropagation(); likePostComment('${comment.id}', this)">
-                                <svg viewBox="0 0 24 24" fill="${comment.user_liked ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2" width="14" height="14">
+                                <svg viewBox="0 0 24 24" fill="${comment.user_liked ? '#e74c3c' : 'none'}" stroke="${comment.user_liked ? '#e74c3c' : 'currentColor'}" stroke-width="2" width="14" height="14">
                                     <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
                                 </svg>
                                 <span>${comment.likes_count || 0}</span>
@@ -4634,7 +4616,7 @@ async function loadShareComments(shareId) {
                         <p>${formatPostContent(comment.content)}</p>
                         <div class="comment-actions">
                             <button class="comment-like-btn ${comment.user_liked ? 'liked' : ''}" onclick="event.stopPropagation(); likeShareComment('${comment.id}', this)">
-                                <svg viewBox="0 0 24 24" fill="${comment.user_liked ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2" width="14" height="14">
+                                <svg viewBox="0 0 24 24" fill="${comment.user_liked ? '#e74c3c' : 'none'}" stroke="${comment.user_liked ? '#e74c3c' : 'currentColor'}" stroke-width="2" width="14" height="14">
                                     <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
                                 </svg>
                                 <span>${comment.likes_count || 0}</span>
@@ -5521,22 +5503,18 @@ function createProfileLikedPostElement(post) {
                 </div>
                 <div class="profile-post-info">
                     <div class="profile-post-author">
-                        ${authorName}
+                        ${authorName}${typeof getSchoolLogoHTML === 'function' && post.author_division ? getSchoolLogoHTML(post.author_school, (window.location.pathname.includes('/tabs/') ? '../../assets' : '../assets'), 16) : ''}
                         ${post.author_verified ? `
                             <svg class="verified-badge" viewBox="0 0 24 24" fill="#1DA1F2" width="16" height="16">
                                 <path d="M22.5 12.5c0-1.58-.875-2.95-2.148-3.6.154-.435.238-.905.238-1.4 0-2.21-1.71-3.998-3.818-3.998-.47 0-.92.084-1.336.25C14.818 2.415 13.51 1.5 12 1.5s-2.816.917-3.437 2.25c-.415-.165-.866-.25-1.336-.25-2.11 0-3.818 1.79-3.818 4 0 .494.083.964.237 1.4-1.272.65-2.147 2.018-2.147 3.6 0 1.495.782 2.798 1.942 3.486-.02.17-.032.34-.032.514 0 2.21 1.708 4 3.818 4 .47 0 .92-.086 1.335-.25.62 1.334 1.926 2.25 3.437 2.25 1.512 0 2.818-.916 3.437-2.25.415.163.865.248 1.336.248 2.11 0 3.818-1.79 3.818-4 0-.174-.012-.344-.033-.513 1.158-.687 1.943-1.99 1.943-3.484zm-6.616-3.334l-4.334 6.5c-.145.217-.382.334-.625.334-.143 0-.288-.04-.416-.126l-.115-.094-2.415-2.415c-.293-.293-.293-.768 0-1.06s.768-.294 1.06 0l1.77 1.767 3.825-5.74c.23-.345.696-.436 1.04-.207.346.23.44.696.21 1.04z"/>
                             </svg>
                         ` : ''}
+                        ${post.author_username ? `<span class="profile-post-handle" style="color: rgba(254,252,251,0.5); font-weight: 400; font-size: 0.875rem;">@${post.author_username}</span>` : ''}
                     </div>
                     <div class="profile-post-meta ${post.author_role === 'coach' ? 'coach-meta' : (post.author_role === 'other' ? 'other-meta' : (post.author_transfer === 'y' ? 'transfer-player-meta' : 'player-meta'))}">${metaInfo}</div>
                 </div>
                 <div class="profile-post-header-actions">
                     ${optionsButton}
-                    <div class="profile-post-view-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="9 18 15 12 9 6"></polyline>
-                        </svg>
-                    </div>
                 </div>
             </div>
             <div class="profile-post-content">
@@ -5646,22 +5624,17 @@ function createProfileLikedQuotePostElement(post) {
                 </div>
                 <div class="profile-post-info">
                     <div class="profile-post-author" onclick="event.stopPropagation(); goToProfile('${post.author_username || quoterId}', '${post.author_role || 'player'}', '${post.author_division || ''}', '${quoterId}', ${post.author_transfer === 'y'})" style="cursor: pointer;">
-                        ${quoterName}
-                        ${post.author_username ? `<span class="profile-post-handle">@${post.author_username}</span>` : ''}
+                        ${quoterName}${typeof getSchoolLogoHTML === 'function' && post.author_division ? getSchoolLogoHTML(post.author_school, (window.location.pathname.includes('/tabs/') ? '../../assets' : '../assets'), 16) : ''}
                         ${post.author_verified ? `
                             <svg class="verified-badge" viewBox="0 0 24 24" fill="#1DA1F2" width="16" height="16">
                                 <path d="M22.5 12.5c0-1.58-.875-2.95-2.148-3.6.154-.435.238-.905.238-1.4 0-2.21-1.71-3.998-3.818-3.998-.47 0-.92.084-1.336.25C14.818 2.415 13.51 1.5 12 1.5s-2.816.917-3.437 2.25c-.415-.165-.866-.25-1.336-.25-2.11 0-3.818 1.79-3.818 4 0 .494.083.964.237 1.4-1.272.65-2.147 2.018-2.147 3.6 0 1.495.782 2.798 1.942 3.486-.02.17-.032.34-.032.514 0 2.21 1.708 4 3.818 4 .47 0 .92-.086 1.335-.25.62 1.334 1.926 2.25 3.437 2.25 1.512 0 2.818-.916 3.437-2.25.415.163.865.248 1.336.248 2.11 0 3.818-1.79 3.818-4 0-.174-.012-.344-.033-.513 1.158-.687 1.943-1.99 1.943-3.484zm-6.616-3.334l-4.334 6.5c-.145.217-.382.334-.625.334-.143 0-.288-.04-.416-.126l-.115-.094-2.415-2.415c-.293-.293-.293-.768 0-1.06s.768-.294 1.06 0l1.77 1.767 3.825-5.74c.23-.345.696-.436 1.04-.207.346.23.44.696.21 1.04z"/>
                             </svg>
                         ` : ''}
+                        ${post.author_username ? `<span class="profile-post-handle" style="color: rgba(254,252,251,0.5); font-weight: 400; font-size: 0.875rem;">@${post.author_username}</span>` : ''}
                     </div>
                     <div class="profile-post-meta ${post.author_role === 'coach' ? 'coach-meta' : (post.author_role === 'other' ? 'other-meta' : (post.author_transfer === 'y' ? 'transfer-player-meta' : 'player-meta'))}">${quoterMetaInfo}</div>
                 </div>
                 <div class="profile-post-header-actions">
-                    <div class="profile-post-view-icon" onclick="navigateToQuotePost('${post.share_id}')">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="9 18 15 12 9 6"></polyline>
-                        </svg>
-                    </div>
                 </div>
             </div>
             <div class="profile-post-content" onclick="navigateToQuotePost('${post.share_id}')" style="cursor: pointer;">
