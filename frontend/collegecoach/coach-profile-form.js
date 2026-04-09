@@ -6,6 +6,14 @@ document.addEventListener('DOMContentLoaded', async function() {
     // The loadExistingProfile function is only for EDIT profile pages
     // await loadExistingProfile();
     const form = document.getElementById('coachProfileForm');
+
+    // Initialize school search with logo + auto-division
+    const schoolSearch = initSchoolSearch({
+        nameInput: '#collegeName',
+        divisionSelect: '#division',
+        assetBasePath: '../assets'
+    });
+
     const coachingPositionCheckboxes = document.querySelectorAll('input[name="coachingPosition"]');
     const selectedCoachingPositionsContainer = document.getElementById('selectedCoachingPositions');
     const schoolTypeInput = document.getElementById('schoolType');
@@ -498,6 +506,7 @@ async function loadExistingProfile() {
                 // Fill in college data
                 if (profile.team_name) {
                     document.getElementById('collegeName').value = profile.team_name;
+                    if (schoolSearch) schoolSearch.preselectSchool(profile.team_name);
                 }
                 if (profile.state) {
                     document.getElementById('collegeState').value = profile.state;

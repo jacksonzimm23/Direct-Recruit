@@ -8,6 +8,7 @@ let isCollegeCoach = false;
 let currentProfileType = 'player'; // Track whether viewing a player or coach profile
 let loggedInUserFolder = null; // Track the logged-in user's folder for navigation
 let editSelectedPositions = []; // Track selected positions in edit modal
+let editSchoolSearch = null; // School search instance for edit modal
 
 // Profile posts, replies, and likes state
 let profilePostsLoaded = false;
@@ -162,6 +163,13 @@ async function updateSidebarFooterFromAPI() {
 }
 
 document.addEventListener('DOMContentLoaded', async function() {
+    // Initialize school search for edit modal
+    editSchoolSearch = initSchoolSearch({
+        nameInput: '#editCollegeName',
+        divisionSelect: '#editDivision',
+        assetBasePath: '../../assets'
+    });
+
     // Hide sidebar footer initially to prevent flash of old content
     const sidebarFooter = document.querySelector('.sidebar-footer');
     if (sidebarFooter) {
@@ -2133,6 +2141,15 @@ function populateEditForm() {
     if (conference) conference.value = currentProfile.conference || '';
     if (jerseyNumber) jerseyNumber.value = currentProfile.number || '';
     if (eligibility) eligibility.value = currentProfile.eligibility || '';
+
+    // Show school logo preview if school is in the database
+    if (editSchoolSearch) {
+        if (currentProfile.team_name) {
+            editSchoolSearch.preselectSchool(currentProfile.team_name);
+        } else {
+            editSchoolSearch.clearSelection();
+        }
+    }
 
     // Populate bio, email, and phone
     const bio = document.getElementById('editBio');
