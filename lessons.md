@@ -449,12 +449,55 @@
 
     **Tier selection modal (college coach only):** Built dynamically in `showTierSelectionModal()` at the bottom of `coach-profile-form.js`. Creates a full-screen overlay with 3 cards (Starter/Pro/Elite), Pro highlighted as "Most Popular" with orange border. Each card's "Select" button calls `API.payments.createCheckoutSession('collegecoach', tier, ...)`. Styled inline with orange accent (`#ff6b35`) matching the coach theme.
 
+41. **Profile type switching handles Stripe subscription transitions.** When a user switches profile types via Settings, the backend (`backend/routes/settings.js`) handles 4 subscription scenarios:
+
+    | Scenario | Example | Action |
+    |---|---|---|
+    | Free → Paid | collegeplayer → hsplayer | Frontend redirects to Stripe Checkout after switch |
+    | Paid → Free | hsplayer → collegeplayer | Backend cancels Stripe subscription |
+    | Paid → Paid (different price) | hsplayer → collegecoach | Backend cancels old sub, frontend redirects to new checkout |
+    | hsplayer ↔ transferplayer | Same $10/mo plan | Keep subscription, no payment change |
+
+    The switch endpoint returns `requires_payment: true/false` and `payment_profile_type` in the response. The frontend (`frontend/shared/settings.js` → `executeSwitchProfile()`) checks these fields and either redirects to Stripe or shows success directly. For coach switches, `showSwitchTierModal()` in settings.js shows the tier picker before checkout.
+
+    Payment success after a switch goes to `frontend/shared/payment-success-switch.html`, which reads `switchRedirectUrl` from localStorage and redirects to the new role's mainpage.
+
+42. **Subscription management lives in Settings for all 6 roles.** Every `tabs/settings.html` has a "Subscription" nav button and section. The content is populated dynamically by `initializeSubscriptionSection()` in `frontend/shared/settings.js`. It fetches `API.payments.getSubscriptionStatus()` and shows:
+    - **Free types:** "Your account type is free — no subscription needed."
+    - **Paid with active sub:** Plan name, price, green "Active" badge, next billing date, Cancel button (+ Change Plan for coaches)
+    - **Paid with cancelled/none:** Subscribe/Resubscribe button
+    - **Cancelling:** Yellow "Cancelling" badge with access-until date
+
+    Cancel uses a confirmation modal → calls `API.payments.cancelSubscription()` → Stripe cancels at end of billing period. The save/discard footer is hidden on Subscription, Profile Type, and Security sections since they don't use form inputs.
+
+43. **Feature gating locks the entire platform for unpaid users on paid profiles.** Phase 6 has two enforcement layers:
+
+    **Frontend paywall (automatic):** An IIFE at the bottom of `frontend/shared/api.js` runs on every page load. It calls `/auth/me`, checks if the user is on a paid profile type (hsplayer, transferplayer, collegecoach) with `subscription_status` not `active` or `past_due`, and redirects to `frontend/shared/subscription-required.html`. Skipped on: landing pages, create-profile, verify-email, payment-success, and the paywall page itself (prevents redirect loops).
+
+    **Backend AI gating:** `backend/routes/ai.js` has a `requireActiveSubscription()` helper that checks `User.getSubscriptionInfo()` before all 4 AI endpoints (message, pi-message, show-more, pi-search). Returns 403 if subscription isn't active or past_due. Same check in `backend/routes/ai-rep.js` for matches and profile-completion endpoints.
+
+    **`past_due` is treated as active** — Stripe retries failed payments automatically over several days. Users are only locked out when Stripe fires `customer.subscription.deleted` (which sets status to `cancelled`).
+
+    **Paywall page options:** Subscribe Now (players go direct to checkout, coaches see tier picker), Switch Profile Type (redirects to Settings), Log Out.
+
+44. **AI token caps are now tier-based, not hardcoded.** `AiAnalytics.getUsageByCoach()` in `backend/models/AiAnalytics.js` queries the coach's `subscription_tier` from the users table and returns the real cap:
+
+    | Tier | Plan Name | Token Cap |
+    |---|---|---|
+    | starter | Starter | 4,000,000 |
+    | pro | Pro | 10,000,000 |
+    | elite | Elite | 20,000,000 |
+
+    Default (no tier set) falls back to Starter/4M. The old hardcoded `plan: 'Pro'` and `tokenCap: 10_000_000` no longer exist.
+
+45. **The `/api/auth/me` endpoint returns subscription data.** `subscription_status` and `subscription_tier` are included in the user object returned by `/me`. Also, `User.findById()` now selects `subscription_status` and `subscription_tier` from the users table, so `req.user` in authMiddleware has these fields available on every authenticated request.
+
+46. **The edit profile modal no longer toggles between HS ↔ College.** Previously, hsplayer/collegeplayer could switch to the other type from the edit profile modal, and same for hscoach/collegecoach. The School Type toggle buttons, conditional field containers, `setupEditSchoolTypeToggle()` function, and redirect-on-type-change logic were all removed from all 4 files (hsplayer, collegeplayer, hscoach, collegecoach). Each modal now shows only the static fields for that profile type. Profile type switching is handled exclusively through Settings → Profile Type (with Stripe integration).
+
 ---
 
 ## TODOs
-
-**TODO: Adding subscription tiers and stripe (Stripe integration for paid profile types: collegecoach, hsplayer, transferplayer)
-
+**TODO: Get rid of transfer player message on college player create a profile page
 **TODO: Fix sign up college inputs with their logos, show logo icon badge
 **TODO: Discover page player cards need to be same height, fix frontend
 **TODO: Save button on posts
