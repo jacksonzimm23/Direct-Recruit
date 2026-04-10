@@ -864,8 +864,8 @@ async function loadProfileByUsername(username) {
                 removeSensitiveElementsForOtherProfile();
             }
 
-            // Record profile view if viewing someone else's HS player profile
-            if (!isOwnProfile && response.type === 'player') {
+            // Record profile view if viewing someone else's profile
+            if (!isOwnProfile) {
                 recordProfileView(viewingUserId);
             }
 
@@ -7583,15 +7583,12 @@ async function loadProfileViewCount() {
     const profileStatsWidget = document.getElementById('profileStatsWidget');
     const mobileProfileViewsLink = document.getElementById('mobileProfileViewsLink');
 
-    // Only show profile stats for own profile and if it's a player profile (not coach)
-    if (!isOwnProfile || currentProfileType !== 'player') {
+    // Only show profile stats for own profile
+    if (!isOwnProfile) {
         if (profileStatsWidget) profileStatsWidget.style.display = 'none';
         if (mobileProfileViewsLink) mobileProfileViewsLink.style.display = 'none';
         return;
     }
-
-    // Transfer players should always see profile stats (they're in the transfer portal)
-    // This is the transferplayer folder, so always show for own profile
     if (profileStatsWidget) profileStatsWidget.style.display = 'block';
     if (mobileProfileViewsLink) mobileProfileViewsLink.style.display = 'flex';
 

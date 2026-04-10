@@ -2,53 +2,52 @@ const pool = require('../config/database');
 const logger = require('../utils/logger');
 
 class ProfileView {
-  // Record a profile view (only for HS players)
-  // Returns true if this is a new unique view, false if already viewed
-  static async recordView(viewedPlayerId, viewerId) {
-    // Don't record if viewing own profile
-    if (viewedPlayerId === viewerId) {
+  // Record a profile view with 2-day cooldown.
+  // If the same viewer viewed the same user within the last 2 days, skip.
+  // Returns true if a new view was recorded, false if cooldown is active.
+  static async recordView(viewedUserId, viewerId) {
+    if (viewedUserId === viewerId) {
       return false;
     }
 
     try {
-      // Try to insert the view (will fail if already exists due to UNIQUE constraint)
-      const result = await pool.query(
-        `INSERT INTO profile_views (viewed_player_id, viewer_id)
-         VALUES ($1, $2)
-         ON CONFLICT (viewed_player_id, viewer_id) DO NOTHING
-         RETURNING id`,
-        [viewedPlayerId, viewerId]
+      // Check 2-day cooldown
+      const existing = await pool.query(
+        `SELECT 1 FROM profile_views
+         WHERE viewed_user_id = $1 AND viewer_id = $2
+         AND created_at > NOW() - INTERVAL '2 days'
+         LIMIT 1`,
+        [viewedUserId, viewerId]
       );
 
-      // If a row was inserted, increment the cc_views count
-      if (result.rows.length > 0) {
-        await pool.query(
-          `UPDATE player_profiles
-           SET cc_views = COALESCE(cc_views, 0) + 1
-           WHERE user_id = $1`,
-          [viewedPlayerId]
-        );
-        return true;
+      if (existing.rows.length > 0) {
+        return false; // Cooldown active
       }
 
-      return false; // Already viewed before
+      // Insert new view
+      await pool.query(
+        `INSERT INTO profile_views (viewed_user_id, viewer_id) VALUES ($1, $2)`,
+        [viewedUserId, viewerId]
+      );
+
+      return true;
     } catch (error) {
       logger.error('Error recording profile view:', error);
       throw error;
     }
   }
 
-  // Get the view count for a player
-  static async getViewCount(playerId) {
+  // Get total view count for any user
+  static async getViewCount(userId) {
     const result = await pool.query(
-      `SELECT cc_views FROM player_profiles WHERE user_id = $1`,
-      [playerId]
+      `SELECT COUNT(*)::integer AS view_count FROM profile_views WHERE viewed_user_id = $1`,
+      [userId]
     );
-    return result.rows[0]?.cc_views || 0;
+    return result.rows[0]?.view_count || 0;
   }
 
   // Get list of viewers with their profile info (same fields as followers/following)
-  static async getViewers(playerId) {
+  static async getViewers(userId) {
     const result = await pool.query(
       `SELECT
         pv.id,
@@ -78,9 +77,9 @@ class ProfileView {
       LEFT JOIN player_profiles pp ON u.id = pp.user_id AND u.role = 'player'
       LEFT JOIN coach_profiles cp ON u.id = cp.user_id AND u.role = 'coach'
       LEFT JOIN other_profiles op ON u.id = op.user_id AND u.role = 'other'
-      WHERE pv.viewed_player_id = $1
+      WHERE pv.viewed_user_id = $1
       ORDER BY pv.created_at DESC`,
-      [playerId]
+      [userId]
     );
     return result.rows;
   }

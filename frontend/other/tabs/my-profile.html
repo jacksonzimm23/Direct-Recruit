@@ -99,6 +99,15 @@
                 </svg>
                 <span>Settings</span>
             </a>
+            <div class="mobile-sidebar-divider"></div>
+            <a href="#" class="mobile-sidebar-nav-item mobile-sidebar-stat-item" id="mobileProfileViewsLink">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+                <span>Profile Views</span>
+                <span class="mobile-stat-value" id="mobileProfileViewsCount">0</span>
+            </a>
         </nav>
         <div class="mobile-sidebar-footer">
             <img src="https://res.cloudinary.com/dzmsj6nwv/image/upload/v1770078659/LOGO.PNG_i0uvv4.png" alt="Direct Recruit" class="mobile-sidebar-logo">
@@ -122,6 +131,14 @@
         </svg>
     </button>
 
+    <!-- Right Sidebar Toggle Button -->
+    <button class="right-sidebar-toggle" id="rightSidebarToggle" aria-label="Toggle Right Sidebar">
+        <svg class="toggle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="3" y1="12" x2="21" y2="12"></line>
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <line x1="3" y1="18" x2="21" y2="18"></line>
+        </svg>
+    </button>
 
     <!-- Main Container -->
     <div class="dashboard-container" id="dashboardContainer">
@@ -272,6 +289,19 @@
 
             </div>
         </main>
+
+        <!-- Right Sidebar -->
+        <aside class="right-sidebar" id="rightSidebar">
+            <div class="widget" id="profileStatsWidget">
+                <h3 class="widget-title">Profile Stats</h3>
+                <div class="widget-content">
+                    <a href="#" class="profile-stat-item profile-stat-clickable" id="profileViewsLink">
+                        <div class="profile-stat-label">Profile Views</div>
+                        <div class="profile-stat-value" id="profileViewsCount">0</div>
+                    </a>
+                </div>
+            </div>
+        </aside>
     </div>
 
     <script src="../../shared/api.js"></script>
@@ -506,6 +536,25 @@
                 </button>
             </div>
             <div class="follow-list-modal-body" id="followListModalBody">
+                <div class="follow-list-loading">Loading...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Profile Viewers Modal -->
+    <div class="follow-list-modal" id="profileViewersModal">
+        <div class="follow-list-modal-overlay" id="profileViewersModalOverlay"></div>
+        <div class="follow-list-modal-content">
+            <div class="follow-list-modal-header">
+                <h2>Profile Viewers</h2>
+                <button class="follow-list-modal-close" id="profileViewersModalClose">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="follow-list-modal-body" id="profileViewersModalBody">
                 <div class="follow-list-loading">Loading...</div>
             </div>
         </div>
