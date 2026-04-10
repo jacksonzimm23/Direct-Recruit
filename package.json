@@ -19,6 +19,7 @@
     "typescript": "^5.9.3"
   },
   "overrides": {
-    "minimatch": ">=10.2.5"
+    "minimatch": ">=10.2.5",
+    "tar": ">=7.5.13"
   }
 }
