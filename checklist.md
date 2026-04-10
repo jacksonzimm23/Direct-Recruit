@@ -24,13 +24,7 @@ Currently working on:
 To do:
 - when a person follows a private account, unrequests, they cannot click follow again since the follow notification sent to the private account
 - transfer portal analysis page, personality test with spider map? 
-- team logos for offers tab 
-- scroll bars 
-- landing page 
-- multiple accounts for multi-sport athletes 
-- team account confirmation, team pages contact DR directly 
-- change account type 
-
+ 
 
 
 
@@ -44,19 +38,60 @@ hscoach@test.com	High School Coach
 collegecoach@test.com	College Coach
 other@test.com	Other (Parent/Fan)
 
-## Pre-Launch Checklist
 
+
+
+## Stripe Implementation Plan — Direct Recruit
+### Phase 1: Stripe Foundation (Backend)
+- [ ] Install `stripe` npm package in `/backend`
+- [ ] Add Stripe env vars to `.env` (`STRIPE_SECRET_KEY`, `STRIPE_PUBLISHABLE_KEY`, `STRIPE_WEBHOOK_SECRET`)
+- [ ] Create Stripe products & prices in Stripe Dashboard: Player Plan ($10/mo), Coach Starter ($20/mo), Coach Pro ($50/mo), Coach Elite ($100/mo)
+- [ ] Add DB columns to `users` table: `stripe_customer_id`, `stripe_subscription_id`, `subscription_status`, `subscription_tier`
+- [ ] Create migration files (one in `backend/scripts/`, one in `backend/migrations/`)
+- [ ] Create `backend/routes/payments.js` with: `POST /create-checkout-session`, `POST /webhook`, `GET /subscription-status`, `POST /cancel`
+- [ ] Create local dev mock `backend/utils/local/stripe-local.js` (skips Stripe in development, auto-approves)
+- [ ] Mount routes in `server.js` (webhook route needs `express.raw()` body parser, not JSON)
+### Phase 2: Signup Flow — Players ($10/mo)
+- [ ] After `authAPI.register()` in `hsplayer/profile-form.js` and `transferplayer/profile-form.js`, redirect to Stripe Checkout instead of immediately creating profile
+- [ ] Create `frontend/hsplayer/payment-success.html` and `frontend/transferplayer/payment-success.html`
+- [ ] On payment-success page: verify session with backend, create the profile, then redirect to `verify-email.html`
+- [ ] Handle webhook `checkout.session.completed` — update user's Stripe fields in DB
+### Phase 3: Signup Flow — College Coaches (tiered)
+- [ ] Create tier selection step in `collegecoach/coach-profile-form.js` — show Starter/Pro/Elite picker before Stripe Checkout
+- [ ] Create `frontend/collegecoach/payment-success.html`
+- [ ] Pass selected tier's Stripe Price ID to the checkout session endpoint
+- [ ] Store `subscription_tier` (starter/pro/elite) in DB on webhook confirmation
+=
+### Phase 4: Profile Type Switching + Stripe
+- [ ] In `frontend/shared/settings.js` switch modal — if target type is paid, add payment step after Step 3 confirmation
+- [ ] In `backend/routes/settings.js` POST endpoint — if switching FROM paid to free, cancel Stripe subscription
+- [ ] If switching FROM paid TO paid (e.g., TRANSFER? hsplayer → collegecoach), cancel old subscription and create new checkout
+- [ ] Handle edge case: switching between hsplayer ↔ transferplayer (same $10/mo plan, no payment change needed)
+### Phase 5: Subscription Management in Settings
+- [ ] Add "Subscription" section to all 6 `tabs/settings.html` pages
+- [ ] Show current plan, next billing date, subscription status
+- [ ] For college coaches: "Change Plan" button (upgrade/downgrade between tiers)
+- [ ] "Cancel Subscription" button with confirmation modal
+- [ ] Handle webhook events: `customer.subscription.updated`, `customer.subscription.deleted`, `invoice.payment_failed`
+- [ ] When subscription lapses/cancels: update `subscription_status` in DB, gate paid features
+### Phase 6: Feature Gating (Full Platform Lock for Unpaid Users)
+- [ ] Backend middleware to check `subscription_status === 'active'` on ALL `/api/*` routes for paid profile types (hsplayer, transferplayer, collegecoach). Only exempt: `/api/auth/me`, `/api/auth/logout`, `/api/payments/*`, `/api/settings/switch-profile/*`
+- [ ] Create a "Subscription Required" paywall page (`frontend/shared/subscription-required.html`) — shown when an unpaid user tries to access any part of the platform
+- [ ] Paywall page options: (1) "Subscribe Now" button → redirects to Stripe Checkout for their profile type, (2) "Switch Profile Type" button → redirects to Settings profile switch flow (can switch to a free type)
+- [ ] Frontend auth-check: on every page load, if user is a paid profile type with `subscription_status !== 'active'`, redirect to the paywall page instead of loading the dashboard
+- [ ] Gate AI RA + PI token caps to `subscription_tier` for collegecoach (Starter: 4M, Pro: 10M, Elite: 20M)
+- [ ] Replace hardcoded `plan: 'Pro'` and `tokenCap: 10_000_000` in `AiAnalytics.getUsageByCoach()` with real tier lookup
+- [ ] Handle `invoice.payment_failed` gracefully — show warning banner before full lock, give grace period
+
+## Pre-Launch Checklist
 ### Critical
 - [x] Add graceful shutdown handler (SIGTERM/SIGINT) to server.js
-
 ### High Priority
 - [x] Expand Helmet security headers (HSTS, Content-Security-Policy)
 - [x] Add Redis connection failure handling on startup
 - [x] Move Socket.IO rate limiter from in-memory Map to Redis
-
 ### Medium Priority
 - [x] Add request timeout to Express server
-
 ### Manual Verification
 - [ ] End-to-end test on production (register → verify → profile → posts → messages → password reset → delete account)
 - [ ] Verify EC2 .env has all required production variables

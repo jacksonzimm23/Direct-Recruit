@@ -51,7 +51,8 @@ const MIGRATIONS = [
   'add-ai-engagement-events.sql',
   'add-coach-user-id-to-ai-analytics.sql',
   'add-profile-switching.sql',
-  'add-stripe-subscriptions.sql'
+  'add-stripe-subscriptions.sql',
+  'add-fuzzy-search.sql'
 ];
 
 async function applyManualFixes() {
@@ -284,7 +285,6 @@ async function runMigrations() {
       // Many migrations use IF NOT EXISTS, so errors on re-run are expected
       if (err.message.includes('already exists') ||
           err.message.includes('duplicate key') ||
-          err.message.includes('does not exist') ||
           err.message.includes('multiple primary keys')) {
         console.log(`  SKIP: ${migration} (already applied)`);
       } else {
@@ -560,6 +560,8 @@ async function main() {
 
     await runMigrations();
     await applyManualFixes();
+    // Re-run migrations that depend on tables created by applyManualFixes
+    await runMigrations();
     const users = await seedUsers();
     await seedProfiles(users);
     await seedFollows(users);

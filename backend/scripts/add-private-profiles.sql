@@ -37,8 +37,3 @@ CREATE TRIGGER update_follow_requests_updated_at
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_column();
 
--- Add comment for documentation
-COMMENT ON TABLE follow_requests IS 'Stores pending follow requests for private accounts';
-COMMENT ON COLUMN player_profiles.profile_visibility IS 'Profile visibility: everyone (public) or private';
-COMMENT ON COLUMN coach_profiles.profile_visibility IS 'Profile visibility: everyone (public) or private';
-COMMENT ON COLUMN other_profiles.profile_visibility IS 'Profile visibility: everyone (public) or private';
