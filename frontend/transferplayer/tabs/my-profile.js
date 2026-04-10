@@ -2250,7 +2250,7 @@ async function setupFollowButton() {
                 loadFollowCounts(viewingUserId);
             } catch (error) {
                 console.error('Error toggling follow:', error);
-                alert('Failed to update follow status');
+                showToast('Failed to update follow status', 'error');
             }
         });
     } catch (error) {
@@ -2490,7 +2490,7 @@ async function handlePhotoUpload(event) {
     // Validate file type
     const validTypes = ['image/jpeg', 'image/jpg', 'image/png'];
     if (!validTypes.includes(file.type)) {
-        alert('Please select a valid image file (JPG, JPEG, or PNG)');
+        showToast('Please select a valid image file (JPG, JPEG, or PNG)', 'warning');
         event.target.value = '';
         return;
     }
@@ -2498,7 +2498,7 @@ async function handlePhotoUpload(event) {
     // Validate file size (max 5MB)
     const maxSize = 5 * 1024 * 1024; // 5MB in bytes
     if (file.size > maxSize) {
-        alert('File size must be less than 5MB');
+        showToast('File size must be less than 5MB', 'warning');
         event.target.value = '';
         return;
     }
@@ -2571,7 +2571,7 @@ async function uploadCroppedImage(file) {
         avatarElement.innerHTML = originalAvatarHTML;
 
         // Show error message
-        alert(`Failed to upload photo: ${error.message}`);
+        showToast(`Failed to upload photo: ${error.message}`, 'error');
     } finally {
         // Re-enable button
         changePhotoBtn.disabled = false;
@@ -2897,7 +2897,7 @@ async function saveProfileChanges() {
     try {
         // Validate at least one position is selected
         if (editSelectedPositions.length === 0) {
-            alert('Please select at least one position.');
+            showToast('Please select at least one position.', 'warning');
             return;
         }
 
@@ -3018,7 +3018,7 @@ async function saveProfileChanges() {
 
     } catch (error) {
         console.error('Error saving profile:', error);
-        alert('Failed to save profile changes: ' + error.message);
+        showToast('Failed to save profile changes: ' + error.message, 'error');
 
         // Restore button
         const saveBtn = document.getElementById('btnModalSave');
@@ -3547,17 +3547,17 @@ async function saveNewOffer() {
         logoFile = null;
 
         if (!collegeName) {
-            alert('Please enter a college or university name.');
+            showToast('Please enter a college or university name.', 'warning');
             return;
         }
         if (!division) {
-            alert('Please select a division.');
+            showToast('Please select a division.', 'warning');
             return;
         }
     } else {
         // Search mode - must have selected a school
         if (!selectedOfferSchool) {
-            alert('Please select a school from the dropdown.');
+            showToast('Please select a school from the dropdown.', 'warning');
             return;
         }
         collegeName = selectedOfferSchool.name;
@@ -3589,7 +3589,7 @@ async function saveNewOffer() {
         }
     } catch (error) {
         console.error('Error saving offer:', error);
-        alert('Failed to add offer: ' + error.message);
+        showToast('Failed to add offer: ' + error.message, 'error');
     } finally {
         // Restore button
         saveBtn.textContent = originalText;
@@ -3865,11 +3865,11 @@ async function saveEditedOffer() {
 
     // Validate inputs
     if (!collegeName) {
-        alert('Please enter a college or university name.');
+        showToast('Please enter a college or university name.', 'warning');
         return;
     }
     if (!division) {
-        alert('Please select a division.');
+        showToast('Please select a division.', 'warning');
         return;
     }
 
@@ -3892,7 +3892,7 @@ async function saveEditedOffer() {
         }
     } catch (error) {
         console.error('Error updating offer:', error);
-        alert('Failed to update offer: ' + error.message);
+        showToast('Failed to update offer: ' + error.message, 'error');
     } finally {
         saveBtn.textContent = originalText;
         saveBtn.disabled = false;
@@ -3944,7 +3944,7 @@ async function confirmDeleteOffer() {
         }
     } catch (error) {
         console.error('Error deleting offer:', error);
-        alert('Failed to delete offer: ' + error.message);
+        showToast('Failed to delete offer: ' + error.message, 'error');
     } finally {
         confirmBtn.textContent = originalText;
         confirmBtn.disabled = false;
@@ -7196,11 +7196,11 @@ async function confirmDeleteHighlight() {
             hideDeleteHighlightConfirmModal();
             loadHighlights();
         } else {
-            alert(response.message || 'Failed to delete highlight');
+            showToast(response.message || 'Failed to delete highlight', 'error');
         }
     } catch (error) {
         console.error('Error deleting highlight:', error);
-        alert('Failed to delete highlight. Please try again.');
+        showToast('Failed to delete highlight. Please try again.', 'error');
     }
 }
 
@@ -7277,15 +7277,15 @@ async function saveAcademicsChanges() {
 
     // Validate inputs
     if (gpa && (parseFloat(gpa) < 0 || parseFloat(gpa) > 5)) {
-        alert('GPA must be between 0 and 5');
+        showToast('GPA must be between 0 and 5', 'warning');
         return;
     }
     if (satScore && (parseInt(satScore) < 400 || parseInt(satScore) > 1600)) {
-        alert('SAT score must be between 400 and 1600');
+        showToast('SAT score must be between 400 and 1600', 'warning');
         return;
     }
     if (actScore && (parseInt(actScore) < 1 || parseInt(actScore) > 36)) {
-        alert('ACT score must be between 1 and 36');
+        showToast('ACT score must be between 1 and 36', 'warning');
         return;
     }
 
@@ -7312,11 +7312,11 @@ async function saveAcademicsChanges() {
             // Close modal
             hideEditAcademicsModal();
         } else {
-            alert(response.message || 'Failed to save academic information');
+            showToast(response.message || 'Failed to save academic information', 'error');
         }
     } catch (error) {
         console.error('Error saving academics:', error);
-        alert('Failed to save academic information. Please try again.');
+        showToast('Failed to save academic information. Please try again.', 'error');
     }
 }
 
@@ -9201,7 +9201,7 @@ async function addPostComment(postId) {
 }
 
 async function deletePostComment(postId, commentId) {
-    if (!confirm('Delete this comment?')) return;
+    if (!(await showConfirmModal({ title: 'Delete Comment', message: 'Are you sure you want to delete this comment?', confirmText: 'Delete', cancelText: 'Cancel' }))) return;
 
     try {
         await API.delete(`/posts/comments/${commentId}`);

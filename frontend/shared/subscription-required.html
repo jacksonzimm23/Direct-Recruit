@@ -92,7 +92,7 @@
                         window.location.href = url;
                     }
                 } catch (e) {
-                    alert('Failed to start checkout: ' + e.message);
+                    showToast('Failed to start checkout: ' + e.message, 'error');
                     btn.textContent = 'Subscribe Now';
                     btn.disabled = false;
                 }
@@ -132,7 +132,7 @@
                             localStorage.setItem('switchRedirectUrl', '/frontend/collegecoach/mainpage-coach.html');
                             window.location.href = url;
                         } catch (e) {
-                            alert('Failed: ' + e.message);
+                            showToast('Failed: ' + e.message, 'error');
                             btn.textContent = t.name + ' — $' + t.price + '/mo';
                             btn.disabled = false;
                         }

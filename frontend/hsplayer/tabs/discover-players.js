@@ -355,7 +355,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         const folder = playerType === 'college' ? 'collegeplayer' : 'hsplayer';
                         window.location.href = `../../${folder}/tabs/my-profile.html?username=${username}&from=discover`;
                     } else {
-                        alert('Profile not available. User has not set up their profile yet.');
+                        showToast('Profile not available. User has not set up their profile yet.', 'warning');
                     }
                 });
             }
@@ -528,7 +528,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     const folder = isCollegeCoach ? 'collegecoach' : 'hscoach';
                     window.location.href = `../../${folder}/tabs/my-profile.html?username=${username}&from=discover`;
                 } else {
-                    alert('Profile not available. Coach has not set up their profile yet.');
+                    showToast('Profile not available. Coach has not set up their profile yet.', 'warning');
                 }
             });
         });
@@ -544,7 +544,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     const folder = isCollegeCoach ? 'collegecoach' : 'hscoach';
                     window.location.href = `../../${folder}/tabs/my-profile.html?username=${username}&from=discover`;
                 } else {
-                    alert('Profile not available. Coach has not set up their profile yet.');
+                    showToast('Profile not available. Coach has not set up their profile yet.', 'warning');
                 }
             });
         });

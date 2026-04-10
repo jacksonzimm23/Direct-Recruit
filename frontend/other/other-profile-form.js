@@ -251,7 +251,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Validate password meets requirements
             if (passwordInput.dataset.valid !== 'true') {
-                alert('Please make sure your password meets all the requirements.');
+                showToast('Please make sure your password meets all the requirements.', 'warning');
                 passwordInput.focus();
                 return;
             }
@@ -261,7 +261,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Validate passwords match
             if (password !== confirmPassword) {
-                alert('Passwords do not match!');
+                showToast('Passwords do not match!', 'warning');
+                if (confirmPasswordInput) {
+                    confirmPasswordInput.dispatchEvent(new Event('input'));
+                    confirmPasswordInput.focus();
+                    confirmPasswordInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
                 return;
             }
 
@@ -298,9 +303,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 // If user was created but profile creation failed, show helpful error
                 if (userCreated) {
-                    alert('Account was created but profile setup failed: ' + error.message + '\n\nPlease contact support or try logging in and completing your profile.');
+                    showToast('Account was created but profile setup failed: ' + error.message + '. Please contact support or try logging in and completing your profile.', 'error');
                 } else {
-                    alert('Failed to create profile: ' + error.message);
+                    showToast('Failed to create profile: ' + error.message, 'error');
                 }
 
                 submitBtn.disabled = false;

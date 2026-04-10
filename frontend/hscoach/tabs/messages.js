@@ -460,7 +460,7 @@ async function sendMessage() {
         console.error('Failed to send message:', error);
         // Restore message on error
         messageInput.value = message;
-        alert('Failed to send message. Please try again.');
+        showToast('Failed to send message. Please try again.', 'error');
     }
 }
 
@@ -841,7 +841,7 @@ function handleFileSelect(e) {
 
     // Check file size (max 10MB)
     if (file.size > 10 * 1024 * 1024) {
-        alert('File size must be less than 10MB');
+        showToast('File size must be less than 10MB', 'warning');
         e.target.value = '';
         return;
     }
@@ -861,7 +861,7 @@ function handleImageSelect(e) {
 
     // Check file size (max 5MB for images)
     if (file.size > 5 * 1024 * 1024) {
-        alert('Image size must be less than 5MB');
+        showToast('Image size must be less than 5MB', 'warning');
         e.target.value = '';
         return;
     }
@@ -1044,7 +1044,7 @@ async function deleteConversation() {
 
     } catch (error) {
         console.error('Failed to delete conversation:', error);
-        alert('Failed to delete conversation. Please try again.');
+        showToast('Failed to delete conversation. Please try again.', 'error');
     }
 }
 

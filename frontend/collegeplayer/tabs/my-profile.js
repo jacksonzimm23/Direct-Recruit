@@ -1706,7 +1706,7 @@ async function setupFollowButton() {
                 loadFollowCounts(viewingUserId);
             } catch (error) {
                 console.error('Error toggling follow:', error);
-                alert('Failed to update follow status');
+                showToast('Failed to update follow status', 'error');
             }
         });
     } catch (error) {
@@ -1909,7 +1909,7 @@ async function handlePhotoUpload(event) {
     // Validate file type
     const validTypes = ['image/jpeg', 'image/jpg', 'image/png'];
     if (!validTypes.includes(file.type)) {
-        alert('Please select a valid image file (JPG, JPEG, or PNG)');
+        showToast('Please select a valid image file (JPG, JPEG, or PNG)', 'warning');
         event.target.value = '';
         return;
     }
@@ -1917,7 +1917,7 @@ async function handlePhotoUpload(event) {
     // Validate file size (max 5MB)
     const maxSize = 5 * 1024 * 1024; // 5MB in bytes
     if (file.size > maxSize) {
-        alert('File size must be less than 5MB');
+        showToast('File size must be less than 5MB', 'warning');
         event.target.value = '';
         return;
     }
@@ -1990,7 +1990,7 @@ async function uploadCroppedImage(file) {
         avatarElement.innerHTML = originalAvatarHTML;
 
         // Show error message
-        alert(`Failed to upload photo: ${error.message}`);
+        showToast(`Failed to upload photo: ${error.message}`, 'error');
     } finally {
         // Re-enable button
         changePhotoBtn.disabled = false;
@@ -2300,7 +2300,7 @@ async function saveProfileChanges() {
     try {
         // Validate at least one position is selected
         if (editSelectedPositions.length === 0) {
-            alert('Please select at least one position.');
+            showToast('Please select at least one position.', 'warning');
             return;
         }
 
@@ -2408,7 +2408,7 @@ async function saveProfileChanges() {
 
     } catch (error) {
         console.error('Error saving profile:', error);
-        alert('Failed to save profile changes: ' + error.message);
+        showToast('Failed to save profile changes: ' + error.message, 'error');
 
         // Restore button
         const saveBtn = document.getElementById('btnModalSave');
@@ -4273,7 +4273,7 @@ async function addPostComment(postId) {
 }
 
 async function deletePostComment(postId, commentId) {
-    if (!confirm('Delete this comment?')) return;
+    if (!(await showConfirmModal({ title: 'Delete Comment', message: 'Are you sure you want to delete this comment?', confirmText: 'Delete', cancelText: 'Cancel' }))) return;
 
     try {
         await API.delete(`/posts/comments/${commentId}`);
@@ -8721,11 +8721,11 @@ async function confirmDeleteHighlight() {
             hideDeleteHighlightConfirmModal();
             loadHighlights();
         } else {
-            alert(response.message || 'Failed to delete highlight');
+            showToast(response.message || 'Failed to delete highlight', 'error');
         }
     } catch (error) {
         console.error('Error deleting highlight:', error);
-        alert('Failed to delete highlight. Please try again.');
+        showToast('Failed to delete highlight. Please try again.', 'error');
     }
 }
 

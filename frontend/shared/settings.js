@@ -325,10 +325,10 @@ async function saveSettings() {
 }
 
 // Discard Changes
-function discardChanges() {
+async function discardChanges() {
     if (!formModified) return;
 
-    if (confirm('Are you sure you want to discard all changes?')) {
+    if (await showConfirmModal({ title: 'Discard Changes', message: 'Are you sure you want to discard all changes?', confirmText: 'Discard', cancelText: 'Keep Editing' })) {
         // Reset form inputs to original values
         document.querySelectorAll('.form-input, .form-select').forEach(input => {
             if (input.dataset.originalValue !== undefined) {
@@ -2731,7 +2731,7 @@ async function executeSwitchProfile(profileData) {
                         window.location.href = url;
                     } catch (payError) {
                         console.error('Checkout error:', payError);
-                        alert('Profile switched but payment setup failed. You can complete payment from your dashboard.');
+                        showToast('Profile switched but payment setup failed. You can complete payment from your dashboard.', 'warning');
                         window.location.href = redirectUrl;
                     }
                 }
@@ -2984,7 +2984,7 @@ async function handleSubscribe(profileFolder) {
     } catch (error) {
         console.error('Subscribe failed:', error);
         if (btn) { btn.textContent = 'Subscribe'; btn.disabled = false; }
-        alert('Failed to start checkout: ' + error.message);
+        showToast('Failed to start checkout: ' + error.message, 'error');
     }
 }
 
@@ -3046,7 +3046,7 @@ function showSwitchTierModal() {
                 window.location.href = url;
             } catch (error) {
                 console.error('Checkout error:', error);
-                alert('Failed to start checkout: ' + error.message);
+                showToast('Failed to start checkout: ' + error.message, 'error');
                 btn.textContent = 'Select';
                 btn.disabled = false;
             }

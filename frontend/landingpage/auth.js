@@ -525,7 +525,12 @@ function showRegistrationModal(role) {
         const confirmPassword = document.getElementById('reg-confirm-password').value;
 
         if (password !== confirmPassword) {
-            alert('Passwords do not match');
+            showToast('Passwords do not match', 'warning');
+            const confirmEl = document.getElementById('reg-confirm-password');
+            if (confirmEl) {
+                confirmEl.focus();
+                confirmEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
             return;
         }
 
@@ -547,7 +552,7 @@ function showRegistrationModal(role) {
                 window.location.href = '../collegecoach/create-coach-profile.html';
             }
         } catch (error) {
-            alert('Registration failed: ' + error.message);
+            showToast('Registration failed: ' + error.message, 'error');
             submitBtn.disabled = false;
             submitBtn.textContent = 'Create Account';
         }

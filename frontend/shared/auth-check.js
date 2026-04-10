@@ -20,8 +20,8 @@ function checkRole(requiredRole) {
 }
 
 // Logout function
-function logout() {
-    if (confirm('Are you sure you want to logout?')) {
+async function logout() {
+    if (await showConfirmModal({ title: 'Logout', message: 'Are you sure you want to logout?', confirmText: 'Logout', cancelText: 'Cancel' })) {
         authAPI.logout();
     }
 }

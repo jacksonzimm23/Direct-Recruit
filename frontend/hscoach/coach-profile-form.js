@@ -168,6 +168,43 @@ document.addEventListener('DOMContentLoaded', async function() {
         });
     }
 
+    // Password match validation
+    const confirmPasswordInput = document.getElementById('confirmPassword');
+    const passwordMatchDiv = document.getElementById('passwordMatch');
+    if (confirmPasswordInput && passwordMatchDiv) {
+        confirmPasswordInput.addEventListener('input', function() {
+            const password = passwordInput.value;
+            const confirmPassword = this.value;
+
+            if (confirmPassword.length === 0) {
+                passwordMatchDiv.style.display = 'none';
+                confirmPasswordInput.classList.remove('match-success', 'match-error');
+                return;
+            }
+
+            passwordMatchDiv.style.display = 'block';
+
+            if (password === confirmPassword) {
+                passwordMatchDiv.textContent = 'Passwords match!';
+                passwordMatchDiv.className = 'password-match match';
+                confirmPasswordInput.classList.add('match-success');
+                confirmPasswordInput.classList.remove('match-error');
+            } else {
+                passwordMatchDiv.textContent = 'Passwords do not match';
+                passwordMatchDiv.className = 'password-match no-match';
+                confirmPasswordInput.classList.add('match-error');
+                confirmPasswordInput.classList.remove('match-success');
+            }
+        });
+
+        // Also check on password input change
+        passwordInput.addEventListener('input', function() {
+            if (confirmPasswordInput.value.length > 0) {
+                confirmPasswordInput.dispatchEvent(new Event('input'));
+            }
+        });
+    }
+
     function updateChecklistItem(element, isValid) {
         if (!element) return;
         const icon = element.querySelector('.check-icon');
@@ -225,7 +262,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             .map(cb => cb.value);
 
         if (selectedPositions.length === 0) {
-            alert('Please select at least one coaching position');
+            showToast('Please select at least one coaching position', 'warning');
             return false;
         }
 
@@ -252,9 +289,24 @@ document.addEventListener('DOMContentLoaded', async function() {
 
         // Validate password meets requirements (only for new profiles)
         if (!isUpdating && passwordInput && passwordInput.dataset.valid !== 'true') {
-            alert('Please make sure your password meets all the requirements.');
+            showToast('Please make sure your password meets all the requirements.', 'warning');
             passwordInput.focus();
             return false;
+        }
+
+        // Validate passwords match (only for new profiles)
+        if (!isUpdating) {
+            const pw = document.getElementById('password').value;
+            const cpw = document.getElementById('confirmPassword').value;
+            if (pw !== cpw) {
+                showToast('Passwords do not match!', 'warning');
+                const confirmEl = document.getElementById('confirmPassword');
+                if (confirmEl) {
+                    confirmEl.focus();
+                    confirmEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+                return false;
+            }
         }
 
         submitBtn.disabled = true;
@@ -268,13 +320,6 @@ document.addEventListener('DOMContentLoaded', async function() {
 
             // Only register new user if not updating
             if (!isUpdating) {
-                // Validate passwords match
-                if (password !== confirmPassword) {
-                    alert('Passwords do not match!');
-                    submitBtn.disabled = false;
-                    submitBtn.textContent = originalText;
-                    return;
-                }
 
                 // Store email for verification page
                 localStorage.setItem('pendingVerificationEmail', email);
@@ -312,9 +357,9 @@ document.addEventListener('DOMContentLoaded', async function() {
 
             // If user was created but profile creation failed, show helpful error
             if (userCreated) {
-                alert('Account was created but profile setup failed: ' + error.message + '\n\nPlease contact support or try logging in and completing your profile.');
+                showToast('Account was created but profile setup failed: ' + error.message + '. Please contact support or try logging in and completing your profile.', 'error');
             } else {
-                alert(`Failed to ${isUpdating ? 'update' : 'create'} profile: ` + error.message);
+                showToast(`Failed to ${isUpdating ? 'update' : 'create'} profile: ` + error.message, 'error');
             }
 
             submitBtn.disabled = false;

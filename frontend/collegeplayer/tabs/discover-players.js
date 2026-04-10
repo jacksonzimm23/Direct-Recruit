@@ -633,7 +633,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             const navigateToProfile = () => {
                 if (!username) {
-                    alert('Profile not available. User has not set up their profile yet.');
+                    showToast('Profile not available. User has not set up their profile yet.', 'warning');
                     return;
                 }
 

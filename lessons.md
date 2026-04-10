@@ -593,10 +593,6 @@
 ---
 
 ## TODOs
-**TODO: Transferplayer changing profile inputs, profile picture changes till reload
-**TODO: Scroll bars
-**TODO: Private profile, checklist comment
-*TODO: Make sure no console confirmations, put modals 
 **TODO: All vulenerabilities
 
 **TODO: Copy twitter algorithm on how they show certain posts on feed, as well as the suggested connections on the feed right sidebar

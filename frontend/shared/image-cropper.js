@@ -415,7 +415,7 @@ class ImageCropper {
 
         } catch (error) {
             console.error('Crop error:', error);
-            alert('Failed to crop image. Please try again.');
+            showToast('Failed to crop image. Please try again.', 'error');
             confirmBtn.disabled = false;
             confirmBtn.textContent = 'Save Photo';
         }

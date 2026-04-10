@@ -372,7 +372,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                     // Navigate to transfer player profile (transfer portal shows transfer players)
                     window.location.href = `../../transferplayer/tabs/my-profile.html?username=${username}&from=transfer-portal`;
                 } else {
-                    alert('Profile not available. User has not set up their profile yet.');
+                    showToast('Profile not available. User has not set up their profile yet.', 'warning');
                 }
             });
 
@@ -385,7 +385,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                         // Navigate to transfer player profile (transfer portal shows transfer players)
                         window.location.href = `../../transferplayer/tabs/my-profile.html?username=${username}&from=transfer-portal`;
                     } else {
-                        alert('Profile not available. User has not set up their profile yet.');
+                        showToast('Profile not available. User has not set up their profile yet.', 'warning');
                     }
                 });
             }

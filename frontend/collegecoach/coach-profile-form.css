@@ -616,3 +616,28 @@ input.input-success {
         padding: 0.6rem 1rem;
     }
 }
+
+/* Password match highlight */
+input.match-success {
+    border-color: #22c55e !important;
+    box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.1) !important;
+}
+
+input.match-error {
+    border-color: #ef4444 !important;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1) !important;
+}
+
+.password-match {
+    font-size: 0.85rem;
+    margin-top: 0.5rem;
+    font-weight: 500;
+}
+
+.password-match.match {
+    color: #22c55e;
+}
+
+.password-match.no-match {
+    color: #ef4444;
+}
