@@ -705,6 +705,79 @@
 
 ---
 
+## Settings Subscription Section — `getProfileFolder` Bug
+
+69. **`getProfileFolder(me.user)` returns the wrong folder because `me.user` doesn't have `college_division`.** The `/api/auth/me` endpoint returns `college_division` on `me.profile`, not `me.user`. Calling `getProfileFolder(me.user)` for a college coach returns `'hscoach'` (because `isCollege` is false), which is not in `PAID_PROFILE_TYPES`, so the Subscription tab shows "Your account type is free." The fix is to merge user and profile fields:
+
+    ```javascript
+    getProfileFolder({
+        role: me.user.role,
+        is_transfer_player: me.user.is_transfer_player,
+        college_division: me.profile && me.profile.college_division
+    });
+    ```
+
+    This pattern is already used correctly in `frontend/shared/mobile-header.js` (line 129) and `frontend/shared/view-profile.js` (line 32). Any future code calling `getProfileFolder` from an `/auth/me` response must merge both objects — never pass `me.user` alone.
+
+    **Key file:** `frontend/shared/settings.js` — `initializeSubscriptionSection()`.
+
+---
+
+## Seed Data — Subscription Fields for Paid Test Accounts
+
+70. **Seed script now sets subscription fields for the 3 paid test accounts.** Previously, `seed-local.js` never set `subscription_status`, `subscription_tier`, `stripe_subscription_id`, or `stripe_customer_id`, so all paid accounts showed "No Subscription" in Settings. The `seedSubscriptions()` function now runs after `seedProfiles()` and sets:
+    - `hsplayer@test.com` → `tier='player'`, `status='active'`
+    - `transferplayer@test.com` → `tier='player'`, `status='active'`
+    - `collegecoach@test.com` → `tier='pro'`, `status='active'`
+
+    All use mock Stripe IDs (`sub_mock_*`, `cus_mock_*`) that work with `stripe-local.js`. After seeding, the Settings Subscription tab shows correct plan names and the AI Usage modal shows the correct tier.
+
+    **Key file:** `backend/scripts/seed-local.js` — `seedSubscriptions()`.
+
+---
+
+## AI Usage Modal — Stripe Billing Period
+
+71. **AI Usage billing period now uses the Stripe subscription cycle, not calendar month.** Previously, `AiAnalytics.getUsageByCoach()` hardcoded `periodStart` to the 1st of the month and `periodEnd` to the last day. Now it fetches the coach's `stripe_subscription_id` from the users table and calls `stripe.getSubscription()` to get `current_period_start` and `current_period_end`. Token usage is summed within the Stripe billing window so the numbers match the displayed period. Falls back to calendar month if no active subscription or if the Stripe call fails.
+
+    In local dev, the `stripe-local.js` mock returns `current_period_start = now` and `current_period_end = now + 30 days`, so the modal shows a 30-day window starting from today.
+
+    **Key file:** `backend/models/AiAnalytics.js` — `getUsageByCoach()`.
+
+---
+
+## AI Recruiting Assistant — Row-Based Player Cards
+
+72. **AI Recruiting Assistant now outputs horizontal row cards matching the Discover page format.** The old vertical card grid (`.ra-player-card` with avatar, position badges, stats grid, detail items with icons) was replaced with horizontal rows (`.ra-player-row`) matching the discover page desktop row layout.
+
+    **HS Player row format:**
+    ```
+    [52px avatar, cerulean border] | Name
+                                   | Position • Height • Weight • GradYear  (cerulean #1282a2)
+                                   | School, State • Offers: N              (gray, offers orange)
+                                   |                          [Save] [View Profile]
+    ```
+
+    **Transfer Player row format:**
+    ```
+    [52px avatar, red border] | Name + school logo
+                              | Position • Height • Weight • YOE: N year(s)  (red #dc2626)
+                              | Previously: School (Division)                (gray)
+                              |                          [Save] [View Profile]
+    ```
+
+    **Key changes:**
+    - Positions displayed as plain text joined by `/` (e.g., `CB/WR`), not badge spans
+    - Transfer players show school logo via `getSchoolLogoHTML()` — requires `ensureSchoolLogosLoaded('../../assets')` before rendering
+    - Save and View Profile buttons moved to `.ra-row-actions` on the right side of the row
+    - Container class `ra-player-cards` kept (to avoid updating all querySelector references) but CSS changed from grid to `flex-direction: column`
+    - All old CSS classes removed: `.ra-player-card`, `.ra-card-header`, `.ra-card-avatar`, `.ra-portal-badge`, `.ra-card-name`, `.ra-card-positions`, `.ra-position-badge`, `.ra-card-stats`, `.ra-stat-item`, `.ra-card-gpa-row`, `.ra-card-details`, `.ra-detail-item`
+    - Portal Intelligence card output was NOT changed — only RA cards
+
+    **Key files:**
+    - JS: `frontend/collegecoach/tabs/discover-recruit-assistant.js` — `createPlayerCard()` rewritten
+    - CSS: `frontend/collegecoach/tabs/recruit-assistant.css` — card styles replaced with row styles
+
+---
+
 ## TODOs
-*TODO: Update AI logo next to tabs and attach AI usage to backend
-*TODO: AI Recruiting Assistant to output new HS and transfer player cards
