@@ -75,6 +75,12 @@ async function applyManualFixes() {
     "ALTER TABLE player_profiles ADD COLUMN IF NOT EXISTS followers_count INTEGER DEFAULT 0",
     "ALTER TABLE player_profiles ADD COLUMN IF NOT EXISTS following_count INTEGER DEFAULT 0",
     "ALTER TABLE player_profiles ADD COLUMN IF NOT EXISTS message_permissions VARCHAR(20) DEFAULT 'everyone'",
+    "ALTER TABLE player_profiles ADD COLUMN IF NOT EXISTS lastseasonstat1 VARCHAR(50)",
+    "ALTER TABLE player_profiles ADD COLUMN IF NOT EXISTS lastseasonstat2 VARCHAR(50)",
+    "ALTER TABLE player_profiles ADD COLUMN IF NOT EXISTS lastseasonstat3 VARCHAR(50)",
+    "ALTER TABLE player_profiles ADD COLUMN IF NOT EXISTS careerstat1 VARCHAR(50)",
+    "ALTER TABLE player_profiles ADD COLUMN IF NOT EXISTS careerstat2 VARCHAR(50)",
+    "ALTER TABLE player_profiles ADD COLUMN IF NOT EXISTS careerstat3 VARCHAR(50)",
 
     // coach_profiles
     "ALTER TABLE coach_profiles ADD COLUMN IF NOT EXISTS followers_count INTEGER DEFAULT 0",

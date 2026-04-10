@@ -292,6 +292,7 @@
     color: var(--cerulean);
     font-weight: 600;
     margin-bottom: 0.5rem;
+    white-space: nowrap;
 }
 
 .profile-meta {
@@ -299,6 +300,7 @@
     color: rgba(254, 252, 251, 0.7);
     font-size: 0.95rem;
     line-height: 1.6;
+    white-space: nowrap;
 }
 
 .profile-username {
@@ -1208,64 +1210,6 @@
 
 .form-row-3 {
     grid-template-columns: repeat(3, 1fr);
-}
-
-/* Card Stats Section */
-.card-stats-section {
-    margin: 1rem 0;
-    padding: 1rem;
-    background: rgba(18, 130, 162, 0.08);
-    border: 1px solid rgba(18, 130, 162, 0.2);
-    border-radius: 10px;
-}
-
-.card-stats-title {
-    font-size: 0.9rem;
-    font-weight: 700;
-    color: var(--linen);
-    margin: 0 0 0.25rem 0;
-}
-
-.card-stats-section > .form-hint {
-    font-size: 0.75rem;
-    margin-bottom: 0.75rem !important;
-}
-
-.card-stats-group {
-    margin-bottom: 0.75rem;
-}
-
-.card-stats-group:last-child {
-    margin-bottom: 0;
-}
-
-.card-stats-subtitle {
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: var(--cerulean);
-    margin: 0 0 0.5rem 0;
-}
-
-/* Make card stats inputs smaller */
-.card-stats-section .form-group {
-    gap: 0.25rem;
-}
-
-.card-stats-section .form-group label {
-    font-size: 0.7rem;
-}
-
-.card-stats-section .form-group input {
-    padding: 0.5rem 0.75rem;
-    font-size: 0.875rem;
-}
-
-/* Responsive: stack on smaller screens */
-@media (max-width: 600px) {
-    .card-stats-section .form-row-3 {
-        grid-template-columns: 1fr 1fr 1fr;
-        gap: 0.5rem;
-    }
 }
 
 .form-group {

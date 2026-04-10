@@ -209,14 +209,107 @@
     font-weight: 700;
 }
 
-/* Players Grid */
+/* Players Grid — 2-column desktop row layout */
 .players-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 1.5rem;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0;
+    margin-bottom: 2rem;
 }
 
-/* Player Card */
+/* === DESKTOP TRANSFER PORTAL ROW LAYOUT === */
+.discover-desktop-row {
+    display: flex;
+    align-items: center;
+    gap: 0.875rem;
+    padding: 0.75rem 1rem;
+    cursor: pointer;
+    border-bottom: 1px solid rgba(254, 252, 251, 0.06);
+    min-height: 76px;
+    box-sizing: border-box;
+    transition: background 0.15s ease;
+}
+.discover-desktop-row:hover {
+    background: rgba(254, 252, 251, 0.05);
+}
+
+.discover-desktop-avatar {
+    width: 52px;
+    height: 52px;
+    min-width: 52px;
+    border-radius: 50%;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.discover-desktop-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.discover-desktop-avatar svg {
+    width: 26px;
+    height: 26px;
+}
+.discover-desktop-avatar.transfer-border {
+    border: 2.5px solid #dc2626;
+    background: rgba(220, 38, 38, 0.15);
+    color: #dc2626;
+}
+
+.discover-desktop-info {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.discover-desktop-name {
+    font-weight: 800;
+    font-size: 0.95rem;
+    color: var(--white);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.discover-desktop-line2 {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #dc2626;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.discover-desktop-line3 {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: rgba(254, 252, 251, 0.6);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.discover-desktop-stats-line {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: rgba(254, 252, 251, 0.6);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.discover-desktop-stats-label,
+.discover-desktop-line3 .stats-line-label {
+    color: rgba(254, 252, 251, 0.4);
+    font-weight: 600;
+}
+
+/* Player Card (legacy — kept for safety) */
 .player-card {
     background: rgba(254, 252, 251, 0.03);
     border: 1px solid rgba(18, 130, 162, 0.2);
@@ -615,13 +708,16 @@
 }
 
 /* Responsive Design */
-@media (max-width: 1200px) {
+@media (max-width: 1280px) {
     .players-grid {
-        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        grid-template-columns: 1fr;
     }
 }
 
 @media (max-width: 768px) {
+    /* Hide desktop rows on mobile */
+    .discover-desktop-row { display: none !important; }
+
     /* Hide desktop filters on mobile */
     .filters-container {
         display: none !important;
@@ -761,7 +857,8 @@
         font-size: 0.65rem;
     }
 
-    .discover-row-details.discover-row-stats-line .stats-label {
+    .discover-row-details.discover-row-stats-line .stats-label,
+    .discover-row-details.discover-row-line3 .stats-line-label {
         color: rgba(254, 252, 251, 0.4);
         font-weight: 600;
     }

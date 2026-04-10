@@ -177,170 +177,82 @@ document.addEventListener('DOMContentLoaded', async function() {
     // Mobile detection
     function isMobile() { return window.innerWidth <= 768; }
 
-    // Create mobile transfer player row
-    function createMobileTransferRow(player) {
-        const displayName = `${player.first_name || ''} ${player.last_name || ''}`.trim() || 'Unknown Player';
-        const height = formatHeight(player.height);
-        const weight = player.weight ? `${player.weight} lbs` : '';
-        const eligibility = player.eligibility ? `YOE: ${player.eligibility}` : '';
-        const gpa = player.gpa ? `GPA: ${parseFloat(player.gpa).toFixed(1)}` : '';
-        const position = player.position ? player.position.split(/[,\/]/)[0].trim() : '';
-        const previousSchool = player.team_name || '';
-        const division = formatDivision(player.college_division);
-        const profileImage = player.profile_image_url;
-
-        // Line 2: Position • Height • Weight • Eligibility
-        const line2Parts = [position, height, weight, eligibility].filter(p => p);
-
-        // Line 3: Previous School (Division) • GPA
-        const schoolDiv = previousSchool + (division ? ` (${division})` : '');
-        const line3Parts = [schoolDiv, gpa].filter(p => p);
-
-        // Stats lines (last season + career)
+    // Build stat lines HTML for a player (shared between desktop and mobile)
+    function buildStatLines(player, mobile) {
         const statLabels = getStatLabelsForPosition(player.position);
         let lastSeasonHtml = '';
         let careerHtml = '';
         if (statLabels) {
-            const ls1 = player.lastseasonstat1 !== null && player.lastseasonstat1 !== undefined ? player.lastseasonstat1 : '-';
-            const ls2 = player.lastseasonstat2 !== null && player.lastseasonstat2 !== undefined ? player.lastseasonstat2 : '-';
-            const ls3 = player.lastseasonstat3 !== null && player.lastseasonstat3 !== undefined ? player.lastseasonstat3 : '-';
-            const lastParts = [`${statLabels[0]}: ${ls1}`, `${statLabels[1]}: ${ls2}`, `${statLabels[2]}: ${ls3}`];
-            lastSeasonHtml = `<div class="discover-row-details discover-row-stats-line"><span class="stats-label">Last Season:</span> ${lastParts.join(' • ')}</div>`;
+            const ls1 = player.lastseasonstat1 != null ? player.lastseasonstat1 : '-';
+            const ls2 = player.lastseasonstat2 != null ? player.lastseasonstat2 : '-';
+            const ls3 = player.lastseasonstat3 != null ? player.lastseasonstat3 : '-';
+            const lastParts = `${statLabels[0]}: ${ls1} • ${statLabels[1]}: ${ls2} • ${statLabels[2]}: ${ls3}`;
 
-            const cs1 = player.careerstat1 !== null && player.careerstat1 !== undefined ? player.careerstat1 : '-';
-            const cs2 = player.careerstat2 !== null && player.careerstat2 !== undefined ? player.careerstat2 : '-';
-            const cs3 = player.careerstat3 !== null && player.careerstat3 !== undefined ? player.careerstat3 : '-';
-            const careerParts = [`${statLabels[0]}: ${cs1}`, `${statLabels[1]}: ${cs2}`, `${statLabels[2]}: ${cs3}`];
-            careerHtml = `<div class="discover-row-details discover-row-stats-line"><span class="stats-label">Career:</span> ${careerParts.join(' • ')}</div>`;
+            const cs1 = player.careerstat1 != null ? player.careerstat1 : '-';
+            const cs2 = player.careerstat2 != null ? player.careerstat2 : '-';
+            const cs3 = player.careerstat3 != null ? player.careerstat3 : '-';
+            const careerParts = `${statLabels[0]}: ${cs1} • ${statLabels[1]}: ${cs2} • ${statLabels[2]}: ${cs3}`;
+
+            if (mobile) {
+                lastSeasonHtml = `<div class="discover-row-details discover-row-stats-line"><span class="stats-label">Last Season:</span> ${lastParts}</div>`;
+                careerHtml = `<div class="discover-row-details discover-row-stats-line"><span class="stats-label">Career:</span> ${careerParts}</div>`;
+            } else {
+                lastSeasonHtml = `<div class="discover-desktop-stats-line"><span class="discover-desktop-stats-label">Last Season:</span> ${lastParts}</div>`;
+                careerHtml = `<div class="discover-desktop-stats-line"><span class="discover-desktop-stats-label">Career:</span> ${careerParts}</div>`;
+            }
         }
+        return { lastSeasonHtml, careerHtml };
+    }
 
-        return `
+    // Create transfer player row HTML (desktop or mobile)
+    function createTransferPlayerCard(player) {
+        const displayName = `${player.first_name || ''} ${player.last_name || ''}`.trim() || 'Unknown Player';
+        const height = formatHeight(player.height);
+        const weight = player.weight ? `${player.weight} lbs` : '';
+        const eligibility = player.eligibility ? `YOE: ${player.eligibility} year${player.eligibility > 1 ? 's' : ''}` : '';
+        const position = player.position ? player.position.split(/[,\/]/).map(p => p.trim()).filter(p => p).join('/') : '';
+        const previousSchool = player.team_name || '';
+        const division = formatDivision(player.college_division);
+        const profileImage = player.profile_image_url;
+        const logoHtml = (typeof getSchoolLogoHTML === 'function') ? getSchoolLogoHTML(previousSchool, '../../assets', isMobile() ? 14 : 16) : '';
+
+        // Line 2: Position • Height • Weight • YOE
+        const line2Parts = [position, height, weight, eligibility].filter(p => p);
+        // Line 3: Previously: School (Division)
+        const line3 = previousSchool ? `<span class="stats-line-label">Previously:</span> ${previousSchool}${division ? ` (${division})` : ''}` : '';
+
+        if (isMobile()) {
+            const { lastSeasonHtml, careerHtml } = buildStatLines(player, true);
+            return `
             <div class="discover-row transfer-row" data-username="${player.username || ''}">
                 <div class="discover-row-avatar transfer-border">
                     ${profileImage ? `<img src="${profileImage}" alt="${displayName}">` : `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>`}
                 </div>
                 <div class="discover-row-info">
-                    <div class="discover-row-name">${displayName}</div>
+                    <div class="discover-row-name">${displayName} ${logoHtml}</div>
                     <div class="discover-row-details transfer-details-color">${line2Parts.join(' • ')}</div>
-                    <div class="discover-row-details discover-row-line3">${line3Parts.join(' • ')}</div>
+                    <div class="discover-row-details discover-row-line3">${line3}</div>
                     ${lastSeasonHtml}
                     ${careerHtml}
                 </div>
             </div>`;
-    }
-
-    // Create transfer player card HTML
-    function createTransferPlayerCard(player) {
-        if (isMobile()) return createMobileTransferRow(player);
-        const displayName = `${player.first_name || ''} ${player.last_name || ''}`.trim() || 'Unknown Player';
-        const height = formatHeight(player.height);
-        const weight = player.weight ? `${player.weight} lbs` : 'N/A';
-        const eligibility = player.eligibility ? `${player.eligibility} Year${player.eligibility > 1 ? 's' : ''}` : 'N/A';
-        const gpa = player.gpa ? parseFloat(player.gpa).toFixed(2) : 'N/A';
-        const previousSchool = player.team_name || 'Unknown School';
-        const division = formatDivision(player.college_division);
-        const profileImage = player.profile_image_url;
-
-        // Get stat labels for this player's position
-        const statLabels = getStatLabelsForPosition(player.position);
-
-        // Format stats rows
-        let lastSeasonStatsHTML = '';
-        let careerStatsHTML = '';
-
-        if (statLabels) {
-            // Last Season Stats
-            const lastStat1 = player.lastseasonstat1 !== null && player.lastseasonstat1 !== undefined ? player.lastseasonstat1 : '-';
-            const lastStat2 = player.lastseasonstat2 !== null && player.lastseasonstat2 !== undefined ? player.lastseasonstat2 : '-';
-            const lastStat3 = player.lastseasonstat3 !== null && player.lastseasonstat3 !== undefined ? player.lastseasonstat3 : '-';
-
-            lastSeasonStatsHTML = `
-                <div class="stats-section-card">
-                    <div class="stats-section-title">Last Season Stats</div>
-                    <div class="player-highlights">
-                        <div class="highlight-item"><span class="stat-title">${statLabels[0]}:</span> ${lastStat1}</div>
-                        <div class="highlight-item"><span class="stat-title">${statLabels[1]}:</span> ${lastStat2}</div>
-                        <div class="highlight-item"><span class="stat-title">${statLabels[2]}:</span> ${lastStat3}</div>
-                    </div>
-                </div>
-            `;
-
-            // Career Stats
-            const careerStat1 = player.careerstat1 !== null && player.careerstat1 !== undefined ? player.careerstat1 : '-';
-            const careerStat2 = player.careerstat2 !== null && player.careerstat2 !== undefined ? player.careerstat2 : '-';
-            const careerStat3 = player.careerstat3 !== null && player.careerstat3 !== undefined ? player.careerstat3 : '-';
-
-            careerStatsHTML = `
-                <div class="stats-section-card">
-                    <div class="stats-section-title">Career Stats</div>
-                    <div class="player-highlights">
-                        <div class="highlight-item"><span class="stat-title">${statLabels[0]}:</span> ${careerStat1}</div>
-                        <div class="highlight-item"><span class="stat-title">${statLabels[1]}:</span> ${careerStat2}</div>
-                        <div class="highlight-item"><span class="stat-title">${statLabels[2]}:</span> ${careerStat3}</div>
-                    </div>
-                </div>
-            `;
         }
 
+        // Desktop row
+        const { lastSeasonHtml, careerHtml } = buildStatLines(player, false);
         return `
-            <div class="player-card transfer-portal" data-username="${player.username || ''}">
-                <div class="player-card-header">
-                    <div class="player-avatar-large">
-                        ${profileImage
-                            ? `<img src="${profileImage}" alt="${displayName}" class="avatar-image">`
-                            : `<svg viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                                <circle cx="12" cy="7" r="4"></circle>
-                            </svg>`
-                        }
-                    </div>
-                    <div class="transfer-portal-badge">PORTAL</div>
-                </div>
-                <h3 class="player-name">
-                    ${displayName}
-                    <svg class="transfer-portal-icon" viewBox="0 0 24 24" fill="currentColor">
-                        <circle cx="12" cy="12" r="10"/>
-                        <circle cx="12" cy="12" r="6" fill="var(--oxford-blue)"/>
-                        <circle cx="12" cy="12" r="2"/>
-                    </svg>
-                </h3>
-                <div class="player-positions">
-                    ${formatPositions(player.position)}
-                </div>
-                <div class="player-stats-box">
-                    <div class="player-stats">
-                        <div class="stat-item">
-                            <div class="stat-label">Height</div>
-                            <div class="stat-value">${height}</div>
-                        </div>
-                        <div class="stat-item">
-                            <div class="stat-label">Weight</div>
-                            <div class="stat-value">${weight}</div>
-                        </div>
-                        <div class="stat-item">
-                            <div class="stat-label">Eligibility</div>
-                            <div class="stat-value">${eligibility}</div>
-                        </div>
-                    </div>
-                    <div class="player-gpa-row">
-                        <span class="gpa-label">GPA:</span>
-                        <span class="gpa-value">${gpa}</span>
-                    </div>
-                </div>
-                <div class="player-details">
-                    <div class="detail-item portal-previous">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-                            <circle cx="12" cy="10" r="3"></circle>
-                        </svg>
-                        Previously: ${previousSchool}${division ? ` (${division})` : ''}
-                    </div>
-                </div>
-                ${lastSeasonStatsHTML}
-                ${careerStatsHTML}
-                <button class="btn-view-profile">View Profile</button>
+        <div class="discover-desktop-row" data-username="${player.username || ''}">
+            <div class="discover-desktop-avatar transfer-border">
+                ${profileImage ? `<img src="${profileImage}" alt="${displayName}">` : `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>`}
             </div>
-        `;
+            <div class="discover-desktop-info">
+                <div class="discover-desktop-name">${displayName} ${logoHtml}</div>
+                <div class="discover-desktop-line2">${line2Parts.join(' • ')}</div>
+                <div class="discover-desktop-line3">${line3}</div>
+                ${lastSeasonHtml}
+                ${careerHtml}
+            </div>
+        </div>`;
     }
 
     // Fetch and render transfer players
@@ -354,8 +266,8 @@ document.addEventListener('DOMContentLoaded', async function() {
             emptyState.style.display = 'none';
             loadMoreContainer.style.display = 'none';
 
-            // Clear existing player cards (but keep loading/empty states)
-            const existingCards = playersGrid.querySelectorAll('.player-card, .discover-row');
+            // Clear existing player rows (but keep loading/empty states)
+            const existingCards = playersGrid.querySelectorAll('.player-card, .discover-row, .discover-desktop-row');
             existingCards.forEach(card => card.remove());
 
             // Reset pagination state
@@ -388,6 +300,11 @@ document.addEventListener('DOMContentLoaded', async function() {
             const response = await API.get(url);
             const players = response.players || [];
             hasMorePlayers = response.hasMore || false;
+
+            // Ensure school logos are loaded before rendering
+            if (typeof ensureSchoolLogosLoaded === 'function') {
+                await ensureSchoolLogosLoaded('../../assets');
+            }
 
             // Hide loading state
             loadingState.style.display = 'none';
@@ -444,7 +361,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     // Setup view profile button handlers and make cards clickable
     function setupViewProfileButtons() {
-        const playerCards = playersGrid.querySelectorAll('.player-card, .discover-row');
+        const playerCards = playersGrid.querySelectorAll('.player-card, .discover-row, .discover-desktop-row');
         playerCards.forEach(card => {
             const username = card.dataset.username;
 

@@ -828,7 +828,7 @@ async function displayProfile(profile, type, accessLevel = 'full', hasPendingReq
     // Update profile name
     const nameElement = document.querySelector('.profile-name');
     if (nameElement) {
-        const _profLogo = typeof getSchoolLogoHTML === 'function' ? getSchoolLogoHTML(profile.team_name, '../../assets', 20) : '';
+        const _profLogo = typeof getSchoolLogoHTML === 'function' ? getSchoolLogoHTML(profile.team_name, '../../assets', 28) : '';
         nameElement.innerHTML = `${profile.first_name} ${profile.last_name}${_profLogo}`;
 
         // Check if this profile follows the current user and add badge
@@ -2197,9 +2197,9 @@ async function saveProfileChanges() {
                 Object.assign(currentProfile, formData);
             }
 
-            // Restore the signed image URL if the API returned an unsigned S3 key
-            // (S3 keys start with 'profiles/' while signed URLs start with 'https://')
-            if (currentSignedImageUrl && currentSignedImageUrl.startsWith('https://')) {
+            // Restore the signed/full image URL if the API returned an unsigned S3 key
+            // (S3 keys start with 'profiles/' while displayable URLs start with 'http')
+            if (currentSignedImageUrl && currentSignedImageUrl.startsWith('http')) {
                 // Check if the response has an unsigned S3 key or no image URL
                 if (!currentProfile.profile_image_url || currentProfile.profile_image_url.startsWith('profiles/')) {
                     currentProfile.profile_image_url = currentSignedImageUrl;
