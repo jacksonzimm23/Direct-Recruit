@@ -1,5 +1,8 @@
 // Transfer Portal JavaScript - Transfer Player Welcome Page
 
+// Module-level storage for current player data (used by card preview and stats modal)
+let currentPlayerData = null;
+
 document.addEventListener('DOMContentLoaded', async function() {
     // Check if coming from portal entry (show welcome animation)
     const urlParams = new URLSearchParams(window.location.search);
@@ -9,6 +12,14 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     // Initialize leave portal button
     initLeavePortalButton();
+
+    // Initialize edit card stats button
+    const editStatsBtn = document.getElementById('editCardStatsBtn');
+    if (editStatsBtn) {
+        editStatsBtn.addEventListener('click', function() {
+            showEditCardStatsModal();
+        });
+    }
 
     // Load and display the player's portal card preview
     await loadPlayerCardPreview();
@@ -52,11 +63,6 @@ function showLeavePortalModal() {
             </p>
 
             <div class="modal-warning">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
-                    <line x1="12" y1="9" x2="12" y2="13"></line>
-                    <line x1="12" y1="17" x2="12.01" y2="17"></line>
-                </svg>
                 <p><strong>This will change your profile type.</strong> You can switch your profile type in Settings.</p>
             </div>
 
@@ -103,6 +109,183 @@ function showLeavePortalModal() {
         }
     };
     document.addEventListener('keydown', handleEscape);
+}
+
+// All football positions for the stats modal dropdown
+const allPositions = [
+    'QB', 'RB', 'FB', 'WR', 'TE', 'OT', 'OG', 'C',
+    'DE', 'DT', 'NT', 'OLB', 'MLB', 'ILB',
+    'CB', 'FS', 'SS', 'K', 'P', 'LS', 'ATH'
+];
+
+function showEditCardStatsModal() {
+    if (!currentPlayerData) return;
+
+    // Determine current primary position
+    const currentPosition = currentPlayerData.position
+        ? currentPlayerData.position.split(/[,\/]/)[0].trim().toUpperCase()
+        : '';
+
+    // Build position options
+    const positionOptions = allPositions.map(pos => {
+        const selected = pos === currentPosition ? 'selected' : '';
+        const fullName = positionNames[pos] || pos;
+        return `<option value="${pos}" ${selected}>${fullName}</option>`;
+    }).join('');
+
+    // Get initial stat labels
+    const initialLabels = getStatLabelsForPosition(currentPosition);
+
+    // Build stat inputs HTML
+    function buildStatsInputsHTML(labels) {
+        if (!labels) {
+            return `<div class="stats-modal-no-stats">No stats available for this position.</div>`;
+        }
+        return `
+            <div class="stats-modal-group">
+                <h5 class="stats-modal-subtitle">Last Season Stats</h5>
+                <div class="stats-form-row">
+                    <div class="stats-form-field">
+                        <label class="stats-label" id="modalLabelLS1">${labels[0]}</label>
+                        <input type="text" id="modalLastSeason1" placeholder="0" value="${currentPlayerData.lastseasonstat1 || ''}">
+                    </div>
+                    <div class="stats-form-field">
+                        <label class="stats-label" id="modalLabelLS2">${labels[1]}</label>
+                        <input type="text" id="modalLastSeason2" placeholder="0" value="${currentPlayerData.lastseasonstat2 || ''}">
+                    </div>
+                    <div class="stats-form-field">
+                        <label class="stats-label" id="modalLabelLS3">${labels[2]}</label>
+                        <input type="text" id="modalLastSeason3" placeholder="0" value="${currentPlayerData.lastseasonstat3 || ''}">
+                    </div>
+                </div>
+            </div>
+            <div class="stats-modal-group">
+                <h5 class="stats-modal-subtitle">Career Stats</h5>
+                <div class="stats-form-row">
+                    <div class="stats-form-field">
+                        <label class="stats-label" id="modalLabelC1">${labels[0]}</label>
+                        <input type="text" id="modalCareer1" placeholder="0" value="${currentPlayerData.careerstat1 || ''}">
+                    </div>
+                    <div class="stats-form-field">
+                        <label class="stats-label" id="modalLabelC2">${labels[1]}</label>
+                        <input type="text" id="modalCareer2" placeholder="0" value="${currentPlayerData.careerstat2 || ''}">
+                    </div>
+                    <div class="stats-form-field">
+                        <label class="stats-label" id="modalLabelC3">${labels[2]}</label>
+                        <input type="text" id="modalCareer3" placeholder="0" value="${currentPlayerData.careerstat3 || ''}">
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    // Create modal overlay
+    const modalOverlay = document.createElement('div');
+    modalOverlay.className = 'portal-modal-overlay';
+    modalOverlay.innerHTML = `
+        <div class="portal-modal stats-modal">
+            <button class="portal-modal-close" id="statsModalClose">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+            <div class="portal-modal-icon stats-modal-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+                    <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
+                    <line x1="9" y1="10" x2="15" y2="10"></line>
+                    <line x1="9" y1="14" x2="15" y2="14"></line>
+                    <line x1="9" y1="18" x2="13" y2="18"></line>
+                </svg>
+            </div>
+            <h3 class="portal-modal-title">Edit Player Card Stats</h3>
+            <p class="portal-modal-text">These stats appear on your transfer portal player card visible to college coaches.</p>
+
+            <div class="stats-modal-position">
+                <label class="stats-label">Position (determines stat labels)</label>
+                <select id="statsModalPosition">
+                    <option value="">Select Position</option>
+                    ${positionOptions}
+                </select>
+            </div>
+
+            <div id="statsModalInputs">
+                ${buildStatsInputsHTML(initialLabels)}
+            </div>
+
+            <div class="stats-modal-actions">
+                <button class="stats-modal-cancel" id="statsModalCancel">Cancel</button>
+                <button class="stats-modal-save" id="statsModalSave">Save Stats</button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modalOverlay);
+
+    // Animate in
+    requestAnimationFrame(() => {
+        modalOverlay.classList.add('active');
+    });
+
+    // Position change handler — update stat labels
+    const positionSelect = document.getElementById('statsModalPosition');
+    positionSelect.addEventListener('change', () => {
+        const inputsContainer = document.getElementById('statsModalInputs');
+        const newLabels = getStatLabelsForPosition(positionSelect.value);
+        inputsContainer.innerHTML = buildStatsInputsHTML(newLabels);
+    });
+
+    // Close handlers
+    function closeModal() {
+        modalOverlay.classList.remove('active');
+        setTimeout(() => modalOverlay.remove(), 200);
+        document.removeEventListener('keydown', handleEscape);
+    }
+
+    document.getElementById('statsModalClose').addEventListener('click', closeModal);
+    document.getElementById('statsModalCancel').addEventListener('click', closeModal);
+    modalOverlay.addEventListener('click', (e) => {
+        if (e.target === modalOverlay) closeModal();
+    });
+
+    const handleEscape = (e) => {
+        if (e.key === 'Escape') closeModal();
+    };
+    document.addEventListener('keydown', handleEscape);
+
+    // Save handler
+    document.getElementById('statsModalSave').addEventListener('click', async () => {
+        const saveBtn = document.getElementById('statsModalSave');
+        saveBtn.disabled = true;
+        saveBtn.textContent = 'Saving...';
+
+        try {
+            const formData = {
+                lastseasonstat1: document.getElementById('modalLastSeason1')?.value || null,
+                lastseasonstat2: document.getElementById('modalLastSeason2')?.value || null,
+                lastseasonstat3: document.getElementById('modalLastSeason3')?.value || null,
+                careerstat1: document.getElementById('modalCareer1')?.value || null,
+                careerstat2: document.getElementById('modalCareer2')?.value || null,
+                careerstat3: document.getElementById('modalCareer3')?.value || null
+            };
+
+            await API.put('/profile', formData);
+
+            // Update local data and refresh card preview
+            Object.assign(currentPlayerData, formData);
+            const cardWrapper = document.getElementById('playerCardWrapper');
+            if (cardWrapper) {
+                cardWrapper.innerHTML = createPreviewPlayerCard(currentPlayerData);
+            }
+
+            closeModal();
+        } catch (error) {
+            console.error('Error saving card stats:', error);
+            saveBtn.disabled = false;
+            saveBtn.textContent = 'Save Stats';
+        }
+    });
 }
 
 function showWelcomeAnimation() {
@@ -170,10 +353,13 @@ async function loadPlayerCardPreview() {
     if (!cardWrapper) return;
 
     try {
+        if (typeof ensureSchoolLogosLoaded === 'function') {
+            await ensureSchoolLogosLoaded('../../assets');
+        }
         const response = await API.get('/auth/me');
         if (response.profile) {
-            const player = response.profile;
-            const cardHTML = createPreviewPlayerCard(player);
+            currentPlayerData = response.profile;
+            const cardHTML = createPreviewPlayerCard(currentPlayerData);
             cardWrapper.innerHTML = cardHTML;
         }
     } catch (error) {
@@ -278,114 +464,57 @@ function getStatLabelsForPosition(position) {
     return null;
 }
 
-// Create the preview player card HTML (matches collegecoach transfer portal card)
+// Create the preview player card HTML (row format matching collegecoach transfer portal)
 function createPreviewPlayerCard(player) {
     const displayName = `${player.first_name || ''} ${player.last_name || ''}`.trim() || 'Unknown Player';
     const height = formatHeight(player.height);
-    const weight = player.weight ? `${player.weight} lbs` : 'N/A';
-    const eligibility = player.eligibility ? `${player.eligibility} Year${player.eligibility > 1 ? 's' : ''}` : 'N/A';
-    const gpa = player.gpa ? parseFloat(player.gpa).toFixed(2) : 'N/A';
-    const previousSchool = player.team_name || 'Unknown School';
+    const weight = player.weight ? `${player.weight} lbs` : '';
+    const eligibility = player.eligibility ? `YOE: ${player.eligibility} year${player.eligibility > 1 ? 's' : ''}` : '';
+    const position = player.position ? player.position.split(/[,\/]/).map(p => p.trim()).filter(p => p).join('/') : '';
+    const previousSchool = player.team_name || '';
     const division = formatDivision(player.college_division);
     const profileImage = player.profile_image_url;
+    const logoHtml = (typeof getSchoolLogoHTML === 'function') ? getSchoolLogoHTML(previousSchool, '../../assets', 16) : '';
 
-    // Get stat labels for this player's position
+    // Line 2: Position • Height • Weight • YOE
+    const line2Parts = [position, height, weight, eligibility].filter(p => p);
+    // Line 3: Previously: School (Division)
+    const line3 = previousSchool ? `<span class="stats-line-label">Previously:</span> ${previousSchool}${division ? ` (${division})` : ''}` : '';
+
+    // Stat lines
     const statLabels = getStatLabelsForPosition(player.position);
-
-    // Format stats rows
-    let lastSeasonStatsHTML = '';
-    let careerStatsHTML = '';
-
+    let lastSeasonHtml = '';
+    let careerHtml = '';
     if (statLabels) {
-        // Last Season Stats
-        const lastStat1 = player.lastseasonstat1 !== null && player.lastseasonstat1 !== undefined ? player.lastseasonstat1 : '-';
-        const lastStat2 = player.lastseasonstat2 !== null && player.lastseasonstat2 !== undefined ? player.lastseasonstat2 : '-';
-        const lastStat3 = player.lastseasonstat3 !== null && player.lastseasonstat3 !== undefined ? player.lastseasonstat3 : '-';
+        const ls1 = player.lastseasonstat1 != null ? player.lastseasonstat1 : '-';
+        const ls2 = player.lastseasonstat2 != null ? player.lastseasonstat2 : '-';
+        const ls3 = player.lastseasonstat3 != null ? player.lastseasonstat3 : '-';
+        lastSeasonHtml = `<div class="preview-row-stats-line"><span class="preview-row-stats-label">Last Season:</span> ${statLabels[0]}: ${ls1} • ${statLabels[1]}: ${ls2} • ${statLabels[2]}: ${ls3}</div>`;
 
-        lastSeasonStatsHTML = `
-            <div class="stats-section-card">
-                <div class="stats-section-title">Last Season Stats</div>
-                <div class="player-highlights">
-                    <div class="highlight-item"><span class="stat-title">${statLabels[0]}:</span> ${lastStat1}</div>
-                    <div class="highlight-item"><span class="stat-title">${statLabels[1]}:</span> ${lastStat2}</div>
-                    <div class="highlight-item"><span class="stat-title">${statLabels[2]}:</span> ${lastStat3}</div>
-                </div>
-            </div>
-        `;
-
-        // Career Stats
-        const careerStat1 = player.careerstat1 !== null && player.careerstat1 !== undefined ? player.careerstat1 : '-';
-        const careerStat2 = player.careerstat2 !== null && player.careerstat2 !== undefined ? player.careerstat2 : '-';
-        const careerStat3 = player.careerstat3 !== null && player.careerstat3 !== undefined ? player.careerstat3 : '-';
-
-        careerStatsHTML = `
-            <div class="stats-section-card">
-                <div class="stats-section-title">Career Stats</div>
-                <div class="player-highlights">
-                    <div class="highlight-item"><span class="stat-title">${statLabels[0]}:</span> ${careerStat1}</div>
-                    <div class="highlight-item"><span class="stat-title">${statLabels[1]}:</span> ${careerStat2}</div>
-                    <div class="highlight-item"><span class="stat-title">${statLabels[2]}:</span> ${careerStat3}</div>
-                </div>
-            </div>
-        `;
+        const cs1 = player.careerstat1 != null ? player.careerstat1 : '-';
+        const cs2 = player.careerstat2 != null ? player.careerstat2 : '-';
+        const cs3 = player.careerstat3 != null ? player.careerstat3 : '-';
+        careerHtml = `<div class="preview-row-stats-line"><span class="preview-row-stats-label">Career:</span> ${statLabels[0]}: ${cs1} • ${statLabels[1]}: ${cs2} • ${statLabels[2]}: ${cs3}</div>`;
     }
 
     return `
-        <div class="preview-player-card">
-            <div class="player-card-header">
-                <div class="player-avatar-large">
-                    ${profileImage
-                        ? `<img src="${profileImage}" alt="${displayName}" class="avatar-image">`
-                        : `<svg viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                            <circle cx="12" cy="7" r="4"></circle>
-                        </svg>`
-                    }
-                </div>
-                <div class="transfer-portal-badge">PORTAL</div>
+        <div class="preview-player-row">
+            <div class="preview-row-avatar">
+                ${profileImage
+                    ? `<img src="${profileImage}" alt="${displayName}">`
+                    : `<svg viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>`
+                }
             </div>
-            <h3 class="player-name">
-                ${displayName}
-                <svg class="transfer-portal-icon" viewBox="0 0 24 24" fill="currentColor">
-                    <circle cx="12" cy="12" r="10"/>
-                    <circle cx="12" cy="12" r="6" fill="var(--oxford-blue)"/>
-                    <circle cx="12" cy="12" r="2"/>
-                </svg>
-            </h3>
-            <div class="player-positions">
-                ${formatPositions(player.position)}
+            <div class="preview-row-info">
+                <div class="preview-row-name">${displayName} ${logoHtml}</div>
+                <div class="preview-row-line2">${line2Parts.join(' • ')}</div>
+                <div class="preview-row-line3">${line3}</div>
+                ${lastSeasonHtml}
+                ${careerHtml}
             </div>
-            <div class="player-stats-box">
-                <div class="player-stats">
-                    <div class="stat-item">
-                        <div class="stat-label">Height</div>
-                        <div class="stat-value">${height}</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-label">Weight</div>
-                        <div class="stat-value">${weight}</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-label">Eligibility</div>
-                        <div class="stat-value">${eligibility}</div>
-                    </div>
-                </div>
-                <div class="player-gpa-row">
-                    <span class="gpa-label">GPA:</span>
-                    <span class="gpa-value">${gpa}</span>
-                </div>
-            </div>
-            <div class="player-details">
-                <div class="detail-item portal-previous">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-                        <circle cx="12" cy="10" r="3"></circle>
-                    </svg>
-                    Previously: ${previousSchool}${division ? ` (${division})` : ''}
-                </div>
-            </div>
-            ${lastSeasonStatsHTML}
-            ${careerStatsHTML}
         </div>
     `;
 }

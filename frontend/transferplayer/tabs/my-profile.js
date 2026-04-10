@@ -905,7 +905,7 @@ async function displayProfile(profile, type, accessLevel = 'full', hasPendingReq
     // Update profile name
     const nameElement = document.querySelector('.profile-name');
     if (nameElement) {
-        const _profLogo = typeof getSchoolLogoHTML === 'function' ? getSchoolLogoHTML(profile.team_name, '../../assets', 20) : '';
+        const _profLogo = typeof getSchoolLogoHTML === 'function' ? getSchoolLogoHTML(profile.team_name, '../../assets', 28) : '';
         nameElement.innerHTML = `${profile.first_name} ${profile.last_name}${_profLogo}`;
 
         // Check if this profile follows the current user and add badge
@@ -2829,102 +2829,8 @@ function populateEditForm() {
         updateEditSelectedPositions();
     }
 
-    // Populate card stats (for transfer portal player cards)
-    const lastSeasonStat1 = document.getElementById('editLastSeasonStat1');
-    const lastSeasonStat2 = document.getElementById('editLastSeasonStat2');
-    const lastSeasonStat3 = document.getElementById('editLastSeasonStat3');
-    const careerStat1 = document.getElementById('editCareerStat1');
-    const careerStat2 = document.getElementById('editCareerStat2');
-    const careerStat3 = document.getElementById('editCareerStat3');
-
-    if (lastSeasonStat1) lastSeasonStat1.value = currentProfile.lastseasonstat1 || '';
-    if (lastSeasonStat2) lastSeasonStat2.value = currentProfile.lastseasonstat2 || '';
-    if (lastSeasonStat3) lastSeasonStat3.value = currentProfile.lastseasonstat3 || '';
-    if (careerStat1) careerStat1.value = currentProfile.careerstat1 || '';
-    if (careerStat2) careerStat2.value = currentProfile.careerstat2 || '';
-    if (careerStat3) careerStat3.value = currentProfile.careerstat3 || '';
-
-    // Update stat labels based on position
-    updateCardStatLabels(currentProfile.position);
-
     // Add visual indicator for empty fields
     markEmptyFields();
-}
-
-// Get stat labels based on position (for transfer portal player cards)
-// Matches the stats shown in collegecoach transfer-portal.js
-function getStatLabelsForPosition(position) {
-    if (!position) return null;
-    const pos = position.toUpperCase();
-
-    if (pos.includes('QB')) {
-        return ['Total Yards', 'Total TDs', 'INT'];
-    } else if (pos.includes('RB') || pos.includes('FB')) {
-        return ['Total Yards', 'Rec', 'Total TDs'];
-    } else if (pos.includes('WR') || pos.includes('TE')) {
-        return ['Rec', 'Rec Yards', 'Total TDs'];
-    } else if (pos.includes('OL') || pos.includes('OT') || pos.includes('OG') || pos.includes('C') || pos.includes('LS')) {
-        return null; // No stats for OL and LS positions
-    } else if (pos.includes('DL') || pos.includes('DE') || pos.includes('DT') || pos.includes('NT')) {
-        return ['Tackles', 'TFLs', 'Sacks'];
-    } else if (pos.includes('LB') || pos.includes('ILB') || pos.includes('OLB') || pos.includes('MLB')) {
-        return ['Tackles', 'TFLs', 'Sacks'];
-    } else if (pos.includes('CB') || pos.includes('S') || pos.includes('DB') || pos.includes('FS') || pos.includes('SS')) {
-        return ['Tackles', 'PBUs', 'INTs'];
-    } else if (pos.includes('K')) {
-        return ['Made', 'Att', 'Long'];
-    } else if (pos.includes('P')) {
-        return ['Att', 'Avg', 'I20'];
-    }
-
-    return null;
-}
-
-// Update card stat labels based on position
-function updateCardStatLabels(position) {
-    const labels = getStatLabelsForPosition(position);
-    const noPositionWarning = document.getElementById('cardStatsNoPosition');
-    const cardStatsHint = document.getElementById('cardStatsHint');
-    const cardStatsSection = document.getElementById('editCardStatsSection');
-
-    // Show/hide position warning message and stats section
-    if (!position) {
-        // No position selected - show warning
-        if (noPositionWarning) noPositionWarning.style.display = 'block';
-        if (cardStatsHint) cardStatsHint.style.display = 'none';
-        if (cardStatsSection) cardStatsSection.style.display = 'block';
-    } else if (!labels) {
-        // Position has no stats (OL/LS) - hide entire stats section
-        if (cardStatsSection) cardStatsSection.style.display = 'none';
-        return;
-    } else {
-        // Position has stats - show section and update labels
-        if (noPositionWarning) noPositionWarning.style.display = 'none';
-        if (cardStatsHint) cardStatsHint.style.display = 'block';
-        if (cardStatsSection) cardStatsSection.style.display = 'block';
-    }
-
-    // Update last season stat labels
-    const labelLastSeason1 = document.getElementById('labelLastSeasonStat1');
-    const labelLastSeason2 = document.getElementById('labelLastSeasonStat2');
-    const labelLastSeason3 = document.getElementById('labelLastSeasonStat3');
-
-    if (labels) {
-        if (labelLastSeason1) labelLastSeason1.textContent = labels[0];
-        if (labelLastSeason2) labelLastSeason2.textContent = labels[1];
-        if (labelLastSeason3) labelLastSeason3.textContent = labels[2];
-    }
-
-    // Update career stat labels
-    const labelCareer1 = document.getElementById('labelCareerStat1');
-    const labelCareer2 = document.getElementById('labelCareerStat2');
-    const labelCareer3 = document.getElementById('labelCareerStat3');
-
-    if (labels) {
-        if (labelCareer1) labelCareer1.textContent = labels[0];
-        if (labelCareer2) labelCareer2.textContent = labels[1];
-        if (labelCareer3) labelCareer3.textContent = labels[2];
-    }
 }
 
 function markEmptyFields() {
@@ -2971,13 +2877,6 @@ function updateEditSelectedPositions() {
         `;
         container.appendChild(pill);
     });
-
-    // Update card stat labels based on first selected position
-    if (editSelectedPositions.length > 0) {
-        updateCardStatLabels(editSelectedPositions[0]);
-    } else {
-        updateCardStatLabels(null);
-    }
 
     // Add click handlers to remove buttons
     document.querySelectorAll('#editSelectedPositions .remove-item').forEach(btn => {
@@ -3058,13 +2957,6 @@ async function saveProfileChanges() {
             formData.college_division = null; // Clear college division for HS players
         }
 
-        // Add card stats (for transfer portal player cards)
-        formData.lastseasonstat1 = document.getElementById('editLastSeasonStat1').value || null;
-        formData.lastseasonstat2 = document.getElementById('editLastSeasonStat2').value || null;
-        formData.lastseasonstat3 = document.getElementById('editLastSeasonStat3').value || null;
-        formData.careerstat1 = document.getElementById('editCareerStat1').value || null;
-        formData.careerstat2 = document.getElementById('editCareerStat2').value || null;
-        formData.careerstat3 = document.getElementById('editCareerStat3').value || null;
 
         // Add social media links
         const hudlLink = document.getElementById('editHudlLink');
@@ -3091,9 +2983,9 @@ async function saveProfileChanges() {
                 currentProfile = { ...currentProfile, ...formData };
             }
 
-            // Restore the signed image URL if the API returned an unsigned S3 key
-            // (S3 keys start with 'profiles/' while signed URLs start with 'https://')
-            if (currentSignedImageUrl && currentSignedImageUrl.startsWith('https://')) {
+            // Restore the signed/full image URL if the API returned an unsigned S3 key
+            // (S3 keys start with 'profiles/' while displayable URLs start with 'http')
+            if (currentSignedImageUrl && currentSignedImageUrl.startsWith('http')) {
                 // Check if the response has an unsigned S3 key or no image URL
                 if (!currentProfile.profile_image_url || currentProfile.profile_image_url.startsWith('profiles/')) {
                     currentProfile.profile_image_url = currentSignedImageUrl;

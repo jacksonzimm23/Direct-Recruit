@@ -593,7 +593,7 @@
 ---
 
 ## TODOs
-**TODO: Transferplayer 3 stats
+**TODO: Transferplayer changing profile inputs, profile picture changes till reload
 **TODO: Scroll bars
 **TODO: Private profile, checklist comment
 *TODO: Make sure no console confirmations, put modals 
