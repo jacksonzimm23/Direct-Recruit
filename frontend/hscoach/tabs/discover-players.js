@@ -135,18 +135,15 @@ document.addEventListener('DOMContentLoaded', async function() {
         const displayName = `${player.first_name || ''} ${player.last_name || ''}`.trim() || 'Unknown Player';
         const height = formatHeight(player.height);
         const weight = player.weight ? `${player.weight} lbs` : '';
-        const gpaVal = player.gpa ? parseFloat(player.gpa) : null;
-        const gpa = gpaVal ? `GPA: ${gpaVal.toFixed(1)}` : '';
         const school = player.team_name || '';
         const state = player.state || '';
-        const gradYear = player.graduation_year ? `Class of ${player.graduation_year}` : '';
+        const gradYear = player.graduation_year || '';
         const offerCount = countOffers(player.offers);
         const profileImage = player.profile_image_url;
-        const position = player.position ? player.position.split(/[,\/]/)[0].trim() : '';
-        const line2Parts = [position, height, weight, gpa].filter(p => p);
+        const position = formatAllPositions(player.position);
+        const line2Parts = [position, height, weight, gradYear].filter(p => p);
         const schoolState = school + (state ? `, ${state}` : '');
-        const line3Parts = [schoolState, gradYear].filter(p => p);
-        const offersHtml = ` • <span class="discover-row-offers">Offers: ${offerCount}</span>`;
+        const offersHtml = `<span class="discover-row-offers">Offers: ${offerCount}</span>`;
         return `
             <div class="discover-row" data-username="${player.username || ''}">
                 <div class="discover-row-avatar player-border" style="color: ${getRoleBorderColor('player', false, null)}; background: ${getRoleAvatarBg('player', false, null)}; border: 2px solid ${getRoleBorderColor('player', false, null)}">
@@ -154,8 +151,8 @@ document.addEventListener('DOMContentLoaded', async function() {
                 </div>
                 <div class="discover-row-info">
                     <div class="discover-row-name">${displayName}</div>
-                    <div class="discover-row-details player-details-color">${line2Parts.join(' • ')}</div>
-                    <div class="discover-row-details discover-row-line3">${line3Parts.join(' • ')}${offersHtml}</div>
+                    <div class="discover-row-details player-details-color">${line2Parts.join(' &bull; ')}</div>
+                    <div class="discover-row-details discover-row-line3">${schoolState}${schoolState ? ' &bull; ' : ''}${offersHtml}</div>
                 </div>
             </div>`;
     }
@@ -167,20 +164,17 @@ document.addEventListener('DOMContentLoaded', async function() {
         const division = coach.college_division || '';
         const shortDiv = getShortDivision(division);
         const profileImage = coach.profile_image_url;
-        const positionAcronym = getPositionAcronym(coach.position_title);
-        let recruiting = '';
-        if (coach.cc_pos && coach.cc_pos.trim()) {
-            recruiting = coach.cc_pos.split(',').map(p => p.trim()).filter(p => p).join(', ');
-        }
-        const line2Parts = [positionAcronym, school + (state ? `, ${state}` : ''), shortDiv, recruiting ? `Recruiting: ${recruiting}` : ''].filter(p => p);
+        const logoHtml = (typeof getSchoolLogoHTML === 'function') ? getSchoolLogoHTML(school, '../../assets', 14) : '';
+        const schoolState = school + (state ? `, ${state}` : '');
+        const line2Parts = [schoolState, shortDiv].filter(p => p);
         return `
             <div class="discover-row" data-username="${coach.username || ''}">
                 <div class="discover-row-avatar coach-border" style="color: ${getRoleBorderColor('coach', false, coach.college_division)}; background: ${getRoleAvatarBg('coach', false, coach.college_division)}; border: 2px solid ${getRoleBorderColor('coach', false, coach.college_division)}">
                     ${profileImage ? `<img src="${profileImage}" alt="${displayName}">` : `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>`}
                 </div>
                 <div class="discover-row-info">
-                    <div class="discover-row-name">${displayName}</div>
-                    <div class="discover-row-details coach-details-color">${line2Parts.join(' • ')}</div>
+                    <div class="discover-row-name">${displayName}${logoHtml ? ' ' + logoHtml : ''}</div>
+                    <div class="discover-row-details coach-details-color">${line2Parts.join(' &bull; ')}</div>
                 </div>
             </div>`;
     }
