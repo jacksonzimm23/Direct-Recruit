@@ -18,7 +18,7 @@ class PortalSignal {
    */
   static async queryBySignalFilters(filters, excludeUserId, limit = 10, offset = 0) {
     const signalTypes = filters.signal_types || ['bio_and_film', 'portal_keywords', 'browsing_coaches'];
-    const days = filters.days || 14;
+    const days = parseInt(filters.days, 10) || 14;
     const values = [];
     let paramCount = 1;
 
@@ -30,13 +30,16 @@ class PortalSignal {
     // Player updated bio AND uploaded highlight within the lookback window
     if (signalTypes.includes('bio_and_film')) {
       signalConditions.push(`bio_and_film_signal`);
+      values.push(days, days);
+      const daysParam1 = `$${paramCount++}`;
+      const daysParam2 = `$${paramCount++}`;
       signalSelects.push(`
         CASE WHEN EXISTS (
           SELECT 1 FROM player_highlights ph
           WHERE ph.user_id = pp.user_id
-            AND ph.created_at >= NOW() - INTERVAL '1 day' * ${days}
+            AND ph.created_at >= NOW() - INTERVAL '1 day' * ${daysParam1}::integer
         ) AND pp.bio IS NOT NULL AND pp.bio != ''
-          AND pp.updated_at >= NOW() - INTERVAL '1 day' * ${days}
+          AND pp.updated_at >= NOW() - INTERVAL '1 day' * ${daysParam2}::integer
         THEN true ELSE false END AS bio_and_film_signal`);
     }
 
@@ -61,12 +64,14 @@ class PortalSignal {
     // Player viewed coaches from other teams within the lookback window
     if (signalTypes.includes('browsing_coaches')) {
       signalConditions.push(`browsing_coaches_signal`);
+      values.push(days);
+      const daysParam3 = `$${paramCount++}`;
       signalSelects.push(`
         CASE WHEN EXISTS (
           SELECT 1 FROM coach_profile_views cpv
           JOIN coach_profiles cp_viewed ON cpv.viewed_coach_id = cp_viewed.user_id
           WHERE cpv.viewer_id = pp.user_id
-            AND cpv.created_at >= NOW() - INTERVAL '1 day' * ${days}
+            AND cpv.created_at >= NOW() - INTERVAL '1 day' * ${daysParam3}::integer
             AND LOWER(TRIM(cp_viewed.team_name)) != LOWER(TRIM(pp.team_name))
         ) THEN true ELSE false END AS browsing_coaches_signal`);
     }

@@ -194,9 +194,9 @@ class Notification {
          AND type = $2
          AND ($3::uuid IS NULL OR related_user_id = $3)
          AND ($4::uuid IS NULL OR related_entity_id = $4)
-         AND created_at > NOW() - INTERVAL '${withinHours} hours'
+         AND created_at > NOW() - INTERVAL '1 hour' * $5::numeric
        LIMIT 1`,
-      [userId, type, relatedUserId, relatedEntityId]
+      [userId, type, relatedUserId, relatedEntityId, withinHours]
     );
     return result.rows.length > 0;
   }
