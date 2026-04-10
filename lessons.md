@@ -527,11 +527,77 @@
 
 ---
 
-## TODOs
-**TODO: Get rid of transfer player message on college player create a profile page
+## Search Bar — Display Pattern & Fuzzy Search
 
-**TODO: Fix search for users
-**TODO: Transfer portal tab on collegeplayer needs to direct them to switch profile
-**TODO: Discover page player cards need to be same height, fix frontend
-**TODO: Save button on posts
+53. **The search bar (`frontend/shared/search.js`) must match the feed post author display pattern.** Search results use the same visual structure as feed posts: a `<div>` avatar container (not a bare `<img>`) with a colored border ring and background via `getRoleBorderColor()` / `getRoleAvatarBg()`, containing either the profile image or an SVG person icon fallback. The username is gray (`rgba(255,255,255,0.5)`, `font-weight: 400`) matching the feed's `.post-user-handle` — NOT bold or role-colored. The subheader IS bold (`font-weight: 700`) and role-colored via CSS classes (`.player-meta`, `.transfer-player-meta`, `.coach-meta`, `.other-meta`) matching the feed's `.post-meta` pattern.
+
+    **Common mistake:** Using a bare `<img>` tag for the avatar with an `onerror` fallback to an SVG data URI initial letter. This loses the colored border ring and background. Instead, use a `<div>` container with inline border/color/background styles, containing either `<img>` or the person SVG fallback — exactly like feed.js's `.post-avatar-circle`.
+
+54. **Fuzzy search requires the `pg_trgm` PostgreSQL extension.** All 3 search models (PlayerProfile, CoachProfile, OtherProfile) use `similarity()` for fuzzy matching on `first_name`, `last_name`, and `username`. Without `pg_trgm` enabled, search returns a 500 error: `function similarity(character varying, unknown) does not exist`. The extension is created in `backend/scripts/add-fuzzy-search.sql` and listed in the `MIGRATIONS` array in `backend/scripts/seed-local.js`. If search breaks after a database wipe, run: `docker exec dr-postgres psql -U postgres -d direct_recruit -c "CREATE EXTENSION IF NOT EXISTS pg_trgm;"`. For production, ensure the extension exists in the prod migration path too.
+
+    **Key files:**
+    - Frontend: `frontend/shared/search.js` (render logic), `frontend/shared/search.css` (avatar container + role-colored subtitle classes)
+    - Backend: `backend/routes/profile.js` (`GET /api/profile/search`), `backend/models/PlayerProfile.js`, `backend/models/CoachProfile.js`, `backend/models/OtherProfile.js` (all have `search()` with `similarity()`)
+    - Migration: `backend/scripts/add-fuzzy-search.sql`
+
+---
+
+## Feed Posts — Rendering, Click Behavior & Single Post View
+
+55. **Feed posts are rendered by `FeedManager` in `frontend/shared/feed.js` using 4 template methods.** Each creates an `<article class="post-card">` element with a `data-post-id` (and `data-share-id` for shares). The 4 methods:
+    - `createPostElement(post)` — regular posts (~line 570)
+    - `createRepostElement(post)` — reposts (~line 861), adds `feed-repost-card` class
+    - `createQuotePostElement(post)` — quote posts (~line 985), adds `quote-post-card feed-quote-card` classes
+    - `createSingleQuotePostElement(share)` — quote posts on single post view (~line 1118), adds `single-quote-view` class
+
+    Each post card contains: `.post-header` (avatar, name, username, subheader, three-dot menu), `.post-content` (text + media), `.post-stats` (likes/comments/shares counts), `.post-actions-bar` (like/comment/save/share buttons), and `.post-comments-section`.
+
+56. **Clicking anywhere on a post card navigates to the single post view — except interactive elements.** A document-level click handler (capture phase) at the bottom of `feed.js` catches clicks on `.post-card` and calls `feedManager.navigateToPostView()` which redirects to `tabs/post-view.html?id={postId}` (or `?share={shareId}` for quote/repost shares). The handler excludes: `a` tags, `button`, `input`, `textarea`, `.post-stats`, `.post-actions-bar`, `.post-comments-section`, `.quoted-post-embed`, `.media-wrapper`, `.media-grid-cell`, `video`, and `IMG` tags — these all have their own click behavior.
+
+    **Critical:** The handler skips navigation entirely on `post-view.html` pages (`window.location.pathname.includes('post-view.html')`) to prevent reloading the page when clicking the post you're already viewing. The CSS also disables the hover effect on post-view pages via `.post-view-container .post-card` overrides (cursor: default, no transform, no background change).
+
+57. **The single post view page (`tabs/post-view.html`) reuses `feed.js` to render posts.** All 6 role folders have identical `post-view.html` files. They load `feed.js`, create a `FeedManager(true)` instance, fetch the post via `API.get('/posts/${postId}')` or `API.get('/posts/share/${shareId}')`, then call `feedManager.createPostElement()` or `createSingleQuotePostElement()` to render it. Comments are auto-expanded on single post view via `commentsSection.style.display = 'block'` + `feedManager.loadComments(targetPostId)`. The post is wrapped in a `.post-view-container` div, which is used for the CSS hover override.
+
+    **Key files:**
+    - Feed rendering + click handler: `frontend/shared/feed.js`
+    - Feed styling + post-view overrides: `frontend/shared/feed.css`
+    - Single post pages: `frontend/{role}/tabs/post-view.html` (6 identical files)
+
+---
+
+## Discover Page — Desktop Row Layout
+
+58. **Discover pages use a 2-column row layout on desktop, not cards.** The old card grid (`repeat(auto-fill, minmax(300px, 1fr))`) was replaced with `repeat(2, 1fr)` rows using `.discover-desktop-row` elements. Each row is a flex container (76px min-height, 52px avatar) with 2–3 lines of text. Mobile rows (`.discover-row`) are unchanged — they're scoped inside `@media (max-width: 768px)` and use smaller 40px avatars. The `isMobile()` check in JS determines which HTML is generated; CSS provides a safety net with `.discover-desktop-row { display: none !important; }` in the mobile media query. At the 1024px breakpoint, the grid collapses to `1fr` (single column).
+
+    **Desktop row line format per profile type:**
+
+    | Profile Type | Line 1 | Line 2 (colored) | Line 3 (gray) | Color |
+    |---|---|---|---|---|
+    | HS Player | Name | Position • Height • Weight • GradYear | Team, State • Offers: # (orange) | `#1282a2` cerulean |
+    | College Player | Name + logo | Position • Team • Division | — | `#1282a2` cerulean |
+    | Transfer Player | Name + logo | Position • Height • Weight • YOE: N year(s) | Previous division: Div • Offers: # (orange) | `#b91c1c` red |
+    | HS Coach | Name | Team, State | — | `#ff6b35` orange |
+    | College Coach | Name + logo | Team, State • Division | — | `#ff6b35` orange |
+    | Other | Name | subheader | — | `#d4a017` gold |
+
+    **Position display:** Desktop rows show ALL positions separated by `/` (e.g. `CB/WR`) using `formatAllPositions()`. Mobile rows only show the first position (`split(/[,\/]/)[0]`). Coach position titles use `getPositionAcronym()` to convert full names to abbreviations (e.g. "Head Coach" → "HC").
+
+    **Avatar SVG fallback coloring:** The `.discover-desktop-avatar` border variants must include a `color` property (not just `border` and `background`) so that the SVG fallback icon (`fill="currentColor"`) inherits the correct role color. Missing this causes all fallback avatars to render in the default text color instead of their role color.
+
+    **Key files (12 total):**
+    - CSS: `frontend/{role}/tabs/discover-players.css` (6 files) — desktop row styles + grid changes
+    - JS: `frontend/{role}/tabs/discover-players.js` (6 files) — card functions rewritten to return row HTML
+
+    **School logos** (`getSchoolLogoHTML()`) appear on Line 1 for college player, transfer player, and college coach rows. Each JS file calls `await ensureSchoolLogosLoaded('../../assets')` before rendering.
+
+---
+
+## TODOs
+**TODO: Transferplayer 3 stats
+**TODO: Scroll bars
+**TODO: Private profile, checklist comment
+*TODO: Make sure no console confirmations, put modals 
+**TODO: All vulenerabilities
+
 **TODO: Copy twitter algorithm on how they show certain posts on feed, as well as the suggested connections on the feed right sidebar
+

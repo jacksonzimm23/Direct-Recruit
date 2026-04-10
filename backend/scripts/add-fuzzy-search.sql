@@ -4,7 +4,7 @@ CREATE EXTENSION IF NOT EXISTS pg_trgm;
 
 -- Set similarity threshold (lower = more forgiving, default is 0.3)
 -- 0.2 catches more typos while still being relevant
-ALTER DATABASE CURRENT_DATABASE() SET pg_trgm.similarity_threshold = 0.2;
+SELECT set_config('pg_trgm.similarity_threshold', '0.2', false);
 
 -- Add GIN trigram indexes for fast fuzzy search on player_profiles
 CREATE INDEX IF NOT EXISTS idx_player_first_name_trgm ON player_profiles USING GIN (first_name gin_trgm_ops);
