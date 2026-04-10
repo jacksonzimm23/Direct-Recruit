@@ -4,6 +4,7 @@ const pool = require('../config/database');
 const { getSignedS3Url } = require('../utils/s3');
 const { authMiddleware } = require('../middleware/auth');
 const logger = require('../utils/logger');
+const { coachPopularityExpr } = require('../utils/popularity-score');
 
 // Helper function to add signed URLs to coach profiles
 async function addSignedUrlsToCoaches(coaches) {
@@ -65,7 +66,7 @@ router.get('/college', authMiddleware, async (req, res) => {
             paramCount++;
         }
 
-        query += ` ORDER BY followers_count DESC, created_at DESC
+        query += ` ORDER BY ${coachPopularityExpr('coach_profiles')} DESC NULLS LAST, created_at DESC
              LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
         values.push(limit, offset);
 

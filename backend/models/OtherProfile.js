@@ -1,4 +1,5 @@
 const pool = require('../config/database');
+const { otherPopularityExpr } = require('../utils/popularity-score');
 
 class OtherProfile {
   static async create(userId, profileData) {
@@ -114,7 +115,7 @@ class OtherProfile {
       query += ` ORDER BY GREATEST(similarity(op.first_name, $${paramCount}), similarity(op.last_name, $${paramCount}), similarity(op.username, $${paramCount}), COALESCE(similarity(op.subheader, $${paramCount}), 0)) DESC, op.created_at DESC LIMIT $${paramCount + 1} OFFSET $${paramCount + 2}`;
       values.push(filters.searchTerm, limit, offset);
     } else {
-      query += ` ORDER BY op.created_at DESC LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
+      query += ` ORDER BY ${otherPopularityExpr('op')} DESC NULLS LAST, op.created_at DESC LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
       values.push(limit, offset);
     }
 

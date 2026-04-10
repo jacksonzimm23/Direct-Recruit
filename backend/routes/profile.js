@@ -775,7 +775,7 @@ router.get('/suggested-connections', authMiddleware, async (req, res) => {
     const offset = Math.max(parseInt(req.query.offset) || 0, 0);
     const currentUserId = req.userId;
 
-    // Query to get random users from all profile types, excluding current user
+    // Query to get suggested connections ranked by engagement + relevance signals
     const pool = require('../config/database');
 
     const result = await pool.query(`
@@ -820,7 +820,38 @@ router.get('/suggested-connections', authMiddleware, async (req, res) => {
         AND u.profile_completed = true
         AND u.is_active = true
         AND (pp.user_id IS NOT NULL OR cp.user_id IS NOT NULL OR op.user_id IS NOT NULL)
-      ORDER BY RANDOM()
+        AND u.id NOT IN (SELECT following_id FROM follows WHERE follower_id = $1)
+      ORDER BY (
+        -- Base engagement: followers + profile views + post engagement
+        (COALESCE(pp.followers_count, cp.followers_count, op.followers_count, 0) * 3.0)
+        + (COALESCE(pp.cc_views, 0) * 1.0)
+        + COALESCE((
+            SELECT SUM(COALESCE(p.engagement_score, 0))
+            FROM posts p
+            WHERE p.user_id = u.id
+              AND p.created_at > NOW() - INTERVAL '30 days'
+              AND (p.is_deleted = false OR p.is_deleted IS NULL)
+          ), 0) * 2.0
+        -- Same-state bonus
+        + CASE WHEN COALESCE(pp.state, cp.state, '') = (
+            SELECT COALESCE(pp2.state, cp2.state, '')
+            FROM users u2
+            LEFT JOIN player_profiles pp2 ON u2.id = pp2.user_id
+            LEFT JOIN coach_profiles cp2 ON u2.id = cp2.user_id
+            WHERE u2.id = $1
+          ) AND COALESCE(pp.state, cp.state, '') != '' THEN 10.0 ELSE 0 END
+        -- Mutual connections bonus (friends of friends)
+        + COALESCE((
+            SELECT COUNT(*) * 5.0
+            FROM follows f1
+            JOIN follows f2 ON f1.following_id = f2.follower_id
+            WHERE f1.follower_id = $1
+              AND f2.following_id = u.id
+              AND f2.following_id != $1
+          ), 0)
+        -- Small random factor to add variety
+        + (RANDOM() * 2.0)
+      ) DESC NULLS LAST
       LIMIT $2 OFFSET $3
     `, [currentUserId, limit + 1, offset]);
 

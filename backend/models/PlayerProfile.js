@@ -1,4 +1,5 @@
 const pool = require('../config/database');
+const { playerPopularityExpr } = require('../utils/popularity-score');
 
 // Build a dynamic SQL scoring expression based on which filters are active.
 // Returns { expr: string, paramCount: number }.
@@ -295,10 +296,10 @@ class PlayerProfile {
 
     // Add limit + 1 to check if there are more results
     if (filters.searchTerm) {
-      query += ` ORDER BY GREATEST(similarity(pp.first_name, $${paramCount}), similarity(pp.last_name, $${paramCount}), similarity(pp.username, $${paramCount})) DESC, pp.created_at DESC LIMIT $${paramCount + 1} OFFSET $${paramCount + 2}`;
+      query += ` ORDER BY GREATEST(similarity(pp.first_name, $${paramCount}), similarity(pp.last_name, $${paramCount}), similarity(pp.username, $${paramCount})) DESC, COALESCE(pp.followers_count, 0) DESC, pp.created_at DESC LIMIT $${paramCount + 1} OFFSET $${paramCount + 2}`;
       values.push(filters.searchTerm, limit + 1, offset);
     } else {
-      query += ` ORDER BY pp.created_at DESC LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
+      query += ` ORDER BY ${playerPopularityExpr('pp')} DESC NULLS LAST, pp.created_at DESC LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
       values.push(limit + 1, offset);
     }
 
@@ -350,10 +351,10 @@ class PlayerProfile {
 
     // Add limit + 1 to check if there are more results
     if (filters.searchTerm) {
-      query += ` ORDER BY GREATEST(similarity(pp.first_name, $${paramCount}), similarity(pp.last_name, $${paramCount}), similarity(pp.username, $${paramCount})) DESC, pp.created_at DESC LIMIT $${paramCount + 1} OFFSET $${paramCount + 2}`;
+      query += ` ORDER BY GREATEST(similarity(pp.first_name, $${paramCount}), similarity(pp.last_name, $${paramCount}), similarity(pp.username, $${paramCount})) DESC, COALESCE(pp.followers_count, 0) DESC, pp.created_at DESC LIMIT $${paramCount + 1} OFFSET $${paramCount + 2}`;
       values.push(filters.searchTerm, limit + 1, offset);
     } else {
-      query += ` ORDER BY pp.created_at DESC LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
+      query += ` ORDER BY ${playerPopularityExpr('pp')} DESC NULLS LAST, pp.created_at DESC LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
       values.push(limit + 1, offset);
     }
 
@@ -433,10 +434,10 @@ class PlayerProfile {
 
     // Add limit + 1 to check if there are more results
     if (filters.searchTerm) {
-      query += ` ORDER BY GREATEST(similarity(pp.first_name, $${paramCount}), similarity(pp.last_name, $${paramCount}), similarity(pp.username, $${paramCount})) DESC, pp.created_at DESC LIMIT $${paramCount + 1} OFFSET $${paramCount + 2}`;
+      query += ` ORDER BY GREATEST(similarity(pp.first_name, $${paramCount}), similarity(pp.last_name, $${paramCount}), similarity(pp.username, $${paramCount})) DESC, COALESCE(pp.followers_count, 0) DESC, pp.created_at DESC LIMIT $${paramCount + 1} OFFSET $${paramCount + 2}`;
       values.push(filters.searchTerm, limit + 1, offset);
     } else {
-      query += ` ORDER BY pp.created_at DESC LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
+      query += ` ORDER BY ${playerPopularityExpr('pp')} DESC NULLS LAST, pp.created_at DESC LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
       values.push(limit + 1, offset);
     }
 
