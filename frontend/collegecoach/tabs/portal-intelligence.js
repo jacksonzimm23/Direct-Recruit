@@ -869,7 +869,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     if (watchlistClearAll) {
         watchlistClearAll.addEventListener('click', async () => {
-            if (!confirm('Remove all players from your watchlist?')) return;
+            if (!(await showConfirmModal({ title: 'Clear Watchlist', message: 'Remove all players from your watchlist?', confirmText: 'Clear All', cancelText: 'Cancel' }))) return;
             try {
                 const data = await API.ai.clearWatchlist();
                 updateWatchlistCount(data.count);

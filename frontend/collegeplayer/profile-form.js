@@ -276,7 +276,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 
         // Validate at least one position is selected
         if (selectedPositions.length === 0) {
-            alert('Please select at least one position.');
+            showToast('Please select at least one position.', 'warning');
             return;
         }
 
@@ -299,9 +299,24 @@ document.addEventListener('DOMContentLoaded', async function() {
 
         // Validate password meets requirements (only for new profiles)
         if (!isUpdating && passwordInput.dataset.valid !== 'true') {
-            alert('Please make sure your password meets all the requirements.');
+            showToast('Please make sure your password meets all the requirements.', 'warning');
             passwordInput.focus();
             return;
+        }
+
+        // Validate passwords match (only for new profiles)
+        if (!isUpdating) {
+            const pw = document.getElementById('password').value;
+            const cpw = document.getElementById('confirmPassword').value;
+            if (pw !== cpw) {
+                showToast('Passwords do not match!', 'warning');
+                if (confirmPasswordInput) {
+                    confirmPasswordInput.dispatchEvent(new Event('input'));
+                    confirmPasswordInput.focus();
+                    confirmPasswordInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+                return;
+            }
         }
 
         submitBtn.disabled = true;
@@ -315,13 +330,6 @@ document.addEventListener('DOMContentLoaded', async function() {
 
             // Only register new user if not updating
             if (!isUpdating) {
-                // Validate passwords match
-                if (password !== confirmPassword) {
-                    alert('Passwords do not match!');
-                    submitBtn.disabled = false;
-                    submitBtn.textContent = originalText;
-                    return;
-                }
 
                 // Store email for verification page
                 localStorage.setItem('pendingVerificationEmail', email);
@@ -370,9 +378,9 @@ document.addEventListener('DOMContentLoaded', async function() {
 
             // If user was created but profile creation failed, show helpful error
             if (userCreated) {
-                alert('Account was created but profile setup failed: ' + error.message + '\n\nPlease contact support or try logging in and completing your profile.');
+                showToast('Account was created but profile setup failed: ' + error.message + '. Please contact support or try logging in and completing your profile.', 'error');
             } else {
-                alert(`Failed to ${isUpdating ? 'update' : 'create'} profile: ` + error.message);
+                showToast(`Failed to ${isUpdating ? 'update' : 'create'} profile: ` + error.message, 'error');
             }
 
             submitBtn.disabled = false;

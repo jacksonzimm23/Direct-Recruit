@@ -2528,7 +2528,7 @@ async function addPostComment(postId) {
 }
 
 async function deletePostComment(postId, commentId) {
-    if (!confirm('Delete this comment?')) return;
+    if (!(await showConfirmModal({ title: 'Delete Comment', message: 'Are you sure you want to delete this comment?', confirmText: 'Delete', cancelText: 'Cancel' }))) return;
 
     try {
         await API.delete(`/posts/comments/${commentId}`);

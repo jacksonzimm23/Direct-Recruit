@@ -1786,7 +1786,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         scheduleSave();
     });
 
-    function handlePositionRemove(e) {
+    async function handlePositionRemove(e) {
         e.stopPropagation();
         const slot = e.currentTarget;
 
@@ -1794,7 +1794,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         const hasRecruits = recruitsList && recruitsList.children.length > 0;
 
         if (hasRecruits) {
-            if (!confirm('This position has recruits. Are you sure you want to remove it?')) {
+            if (!(await showConfirmModal({ title: 'Remove Position', message: 'This position has recruits. Are you sure you want to remove it?', confirmText: 'Remove', cancelText: 'Cancel' }))) {
                 return;
             }
         }

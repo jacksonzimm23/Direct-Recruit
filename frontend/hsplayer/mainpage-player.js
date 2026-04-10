@@ -199,7 +199,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     trendingItems.forEach(item => {
         item.addEventListener('click', function() {
             const name = this.querySelector('.trending-name').textContent;
-            alert(`Viewing ${name}'s profile...`);
+            // TODO: Navigate to user's profile
         });
     });
 
@@ -207,7 +207,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     const showMoreBtns = document.querySelectorAll('.widget-show-more');
     showMoreBtns.forEach(btn => {
         btn.addEventListener('click', function() {
-            alert('Show more functionality will be implemented.');
+            // TODO: Implement show more functionality
         });
     });
 
@@ -589,7 +589,7 @@ function initMobilePostModal() {
     // Media button click
     mediaBtn.addEventListener('click', function() {
         if (selectedFiles.length >= maxMediaFiles) {
-            alert(`Maximum ${maxMediaFiles} media files allowed`);
+            showToast(`Maximum ${maxMediaFiles} media files allowed`, 'warning');
             return;
         }
         mediaInput.click();
@@ -602,13 +602,13 @@ function initMobilePostModal() {
         // Check how many more files we can add
         const remainingSlots = maxMediaFiles - selectedFiles.length;
         if (remainingSlots === 0) {
-            alert(`Maximum ${maxMediaFiles} media files allowed`);
+            showToast(`Maximum ${maxMediaFiles} media files allowed`, 'warning');
             this.value = '';
             return;
         }
 
         if (files.length > remainingSlots) {
-            alert(`Maximum ${maxMediaFiles} media files allowed. You can only add ${remainingSlots} more.`);
+            showToast(`Maximum ${maxMediaFiles} media files allowed. You can only add ${remainingSlots} more.`, 'warning');
             files = files.slice(0, remainingSlots);
         }
 
@@ -617,7 +617,7 @@ function initMobilePostModal() {
             const maxSize = file.type.startsWith('video/') ? 200 * 1024 * 1024 : 10 * 1024 * 1024;
             if (file.size > maxSize) {
                 const maxSizeMB = maxSize / (1024 * 1024);
-                alert(`File "${file.name}" is too large. Maximum size is ${maxSizeMB}MB.`);
+                showToast(`File "${file.name}" is too large. Maximum size is ${maxSizeMB}MB.`, 'warning');
                 return;
             }
 
@@ -665,7 +665,7 @@ function initMobilePostModal() {
         const content = textarea.value.trim();
 
         if (!content && selectedFiles.length === 0) {
-            alert('Please enter some content or add media to your post.');
+            showToast('Please enter some content or add media to your post.', 'warning');
             return;
         }
 
@@ -712,7 +712,7 @@ function initMobilePostModal() {
             }
         } catch (error) {
             console.error('Error creating post:', error);
-            alert('Failed to create post. Please try again.');
+            showToast('Failed to create post. Please try again.', 'error');
         } finally {
             submitBtn.disabled = false;
             submitBtn.textContent = 'Post';

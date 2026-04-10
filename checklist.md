@@ -21,11 +21,6 @@ Currently working on:
 [x] Update profile doesn't have same validation endpoints as other updates, validate info and then send to database
 
 
-To do:
-- when a person follows a private account, unrequests, they cannot click follow again since the follow notification sent to the private account
-- transfer portal analysis page, personality test with spider map? 
- 
-
 
 
 Password: Test123!@#

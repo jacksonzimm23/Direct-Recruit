@@ -3166,7 +3166,7 @@ class FeedManager {
     }
 
     async deletePost(postId) {
-        if (!confirm('Are you sure you want to delete this post?')) return;
+        if (!(await showConfirmModal({ title: 'Delete Post', message: 'Are you sure you want to delete this post?', confirmText: 'Delete', cancelText: 'Cancel' }))) return;
 
         try {
             await postsAPI.deletePost(postId);
