@@ -20,6 +20,7 @@
   },
   "overrides": {
     "minimatch": ">=10.2.5",
-    "tar": ">=7.5.13"
+    "tar": ">=7.5.13",
+    "@xmldom/xmldom": ">=0.8.12"
   }
 }
