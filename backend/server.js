@@ -194,6 +194,16 @@ server.listen(PORT, () => {
   }
 });
 
+// Recalculate engagement scores every 15 minutes for time decay
+const Post = require('./models/Post');
+setInterval(async () => {
+  try {
+    await Post.recalculateAllEngagementScores();
+  } catch (err) {
+    logger.error('Engagement score batch recalc failed:', err.message);
+  }
+}, 15 * 60 * 1000);
+
 // Graceful shutdown — drain connections before exiting
 function gracefulShutdown(signal) {
   logger.info(`${signal} received, shutting down gracefully...`);

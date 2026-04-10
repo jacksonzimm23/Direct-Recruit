@@ -52,7 +52,8 @@ const MIGRATIONS = [
   'add-coach-user-id-to-ai-analytics.sql',
   'add-profile-switching.sql',
   'add-stripe-subscriptions.sql',
-  'add-fuzzy-search.sql'
+  'add-fuzzy-search.sql',
+  'add-engagement-score-index.sql'
 ];
 
 async function applyManualFixes() {
