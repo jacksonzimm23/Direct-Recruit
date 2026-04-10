@@ -240,6 +240,17 @@ class Notification {
     });
   }
 
+  static async deleteFollowRequestNotification(targetUserId, requesterUserId) {
+    const result = await pool.query(
+      `DELETE FROM notifications
+       WHERE user_id = $1
+         AND related_user_id = $2
+         AND title = 'Follow Request'`,
+      [targetUserId, requesterUserId]
+    );
+    return result.rowCount > 0;
+  }
+
   static async createFollowRequestNotification(targetUserId, requesterUserId, requesterName) {
     // Don't notify if requesting to follow self (shouldn't happen but safety check)
     if (targetUserId === requesterUserId) return null;

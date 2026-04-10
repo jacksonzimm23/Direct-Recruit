@@ -226,6 +226,8 @@ router.delete('/:userId/request', authMiddleware, validateUUID('userId'), async 
     if (!result) {
       return res.status(400).json({ error: 'No pending follow request found' });
     }
+    // Clean up the follow request notification so re-following can create a new one
+    await Notification.deleteFollowRequestNotification(userId, req.userId);
     res.json({ message: 'Follow request cancelled' });
   } catch (error) {
     logger.error('Cancel follow request error:', error);
