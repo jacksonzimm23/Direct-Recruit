@@ -87,10 +87,10 @@ class PendingPasswordReset {
   static async setCooldown(userId, minutes) {
     const result = await pool.query(
       `UPDATE pending_password_resets
-       SET cooldown_until = NOW() + INTERVAL '${minutes} minutes'
+       SET cooldown_until = NOW() + INTERVAL '1 minute' * $2::integer
        WHERE user_id = $1
        RETURNING *`,
-      [userId]
+      [userId, minutes]
     );
     return result.rows[0];
   }
