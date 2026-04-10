@@ -801,6 +801,7 @@ async function loadOwnProfile() {
             viewingUserId = response.user.id;
             isOwnProfile = true;
             displayProfile(response.profile, response.user.role);
+            loadProfileViewCount();
         } else {
             showIncompleteProfile();
         }
@@ -823,11 +824,16 @@ async function loadProfileByUsername(username) {
             // This prevents data from being visible in Elements inspector
             if (!isOwnProfile) {
                 removeSensitiveElementsForOtherProfile();
+                recordProfileView(viewingUserId);
             }
 
             // Record coach profile view for Portal Intelligence signal tracking
             if (!isOwnProfile && response.type === 'coach') {
                 API.post(`/profile/coach-view/${viewingUserId}`).catch(() => {});
+            }
+
+            if (isOwnProfile) {
+                loadProfileViewCount();
             }
         } else {
             showError('Profile not found');
@@ -1659,7 +1665,10 @@ function setupUI() {
     const rightSidebar = document.getElementById('rightSidebar');
     const rightSidebarToggle = document.getElementById('rightSidebarToggle');
 
-    // Use setTimeout to ensure this runs after mainpage-coach.js DOMContentLoaded
+    // Note: Right sidebar toggle click handler is in mainpage-coach.js (loaded on all tab pages)
+    // This function only manages visibility based on profile ownership
+
+    // Use setTimeout to ensure this runs after DOMContentLoaded
     setTimeout(() => {
         // Show or hide right sidebar based on profile ownership
         if (isOwnProfile) {
@@ -6485,6 +6494,38 @@ function showProfileToast(message, type = 'info') {
         toast.classList.remove('show');
         setTimeout(() => toast.remove(), 300);
     }, 3000);
+}
+
+// ==================== PROFILE VIEW TRACKING ====================
+
+async function recordProfileView(viewedUserId) {
+    try {
+        await API.post(`/profile/view/${viewedUserId}`);
+    } catch (error) {
+        console.error('Error recording profile view:', error);
+    }
+}
+
+async function loadProfileViewCount() {
+    const viewCountEl = document.getElementById('profileViewsCount');
+    const mobileViewCountEl = document.getElementById('mobileProfileViewsCount');
+    const statsWidget = document.getElementById('profileStatsWidget');
+    const mobileLink = document.getElementById('mobileProfileViewsLink');
+
+    if (!isOwnProfile) {
+        if (statsWidget) statsWidget.style.display = 'none';
+        if (mobileLink) mobileLink.style.display = 'none';
+        return;
+    }
+
+    try {
+        const response = await API.get(`/profile/views/${currentUserId}`);
+        const count = response.viewCount || 0;
+        if (viewCountEl) viewCountEl.textContent = count;
+        if (mobileViewCountEl) mobileViewCountEl.textContent = count;
+    } catch (error) {
+        console.error('Error loading profile view count:', error);
+    }
 }
 
 // Escape HTML utility

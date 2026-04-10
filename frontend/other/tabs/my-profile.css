@@ -82,14 +82,24 @@
     display: flex;
 }
 
-/* Dashboard layout without right sidebar */
+/* Ensure dashboard supports right sidebar */
 .dashboard-container {
-    grid-template-columns: 280px 1fr;
+    grid-template-columns: 280px 1fr 260px;
+}
+
+/* When right sidebar is hidden */
+.dashboard-container.right-sidebar-hidden {
+    grid-template-columns: 280px 1fr 0px;
 }
 
 /* When left sidebar is hidden */
 .dashboard-container.sidebar-hidden {
-    grid-template-columns: 0px 1fr;
+    grid-template-columns: 0px 1fr 260px;
+}
+
+/* When both sidebars are hidden */
+.dashboard-container.sidebar-hidden.right-sidebar-hidden {
+    grid-template-columns: 0px 1fr 0px;
 }
 
 .profile-content {

@@ -665,36 +665,34 @@ router.get('/username/:username', authMiddleware, async (req, res) => {
   }
 });
 
-// Record a profile view (for HS players only)
+// Record a profile view (all profile types, 2-day cooldown per viewer)
 router.post('/view/:userId', authMiddleware, validateUUID('userId'), async (req, res) => {
   try {
-    const viewedPlayerId = req.params.userId;
+    const viewedUserId = req.params.userId;
     const viewerId = req.userId;
 
-    // Check if the viewed user is an HS player (no college_division)
-    const playerProfile = await PlayerProfile.findByUserId(viewedPlayerId);
-    if (!playerProfile) {
-      return res.status(404).json({ error: 'Player profile not found' });
-    }
+    const isNewView = await ProfileView.recordView(viewedUserId, viewerId);
 
-    // Only track cc_views for HS players (those without college_division)
-    if (playerProfile.college_division && playerProfile.college_division.trim() !== '') {
-      // Still track AI engagement for all player types
-      AiEngagement.trackIfAiDriven(viewerId, viewedPlayerId, 'profile_view')
-        .catch(err => logger.error('Engagement track error:', err.message));
-      return res.json({ success: true, isNewView: false, message: 'View tracking only for HS players' });
+    // If new view and viewed user is an HS player, increment cc_views for backward compat
+    if (isNewView) {
+      const playerProfile = await PlayerProfile.findByUserId(viewedUserId);
+      if (playerProfile && (!playerProfile.college_division || playerProfile.college_division.trim() === '')) {
+        const pool = require('../config/database');
+        await pool.query(
+          `UPDATE player_profiles SET cc_views = COALESCE(cc_views, 0) + 1 WHERE user_id = $1`,
+          [viewedUserId]
+        );
+      }
     }
-
-    const isNewView = await ProfileView.recordView(viewedPlayerId, viewerId);
 
     // Track AI engagement (fire-and-forget)
-    AiEngagement.trackIfAiDriven(viewerId, viewedPlayerId, 'profile_view')
+    AiEngagement.trackIfAiDriven(viewerId, viewedUserId, 'profile_view')
       .catch(err => logger.error('Engagement track error:', err.message));
 
     res.json({
       success: true,
       isNewView,
-      viewCount: await ProfileView.getViewCount(viewedPlayerId)
+      viewCount: await ProfileView.getViewCount(viewedUserId)
     });
   } catch (error) {
     logger.error('Record profile view error:', error);

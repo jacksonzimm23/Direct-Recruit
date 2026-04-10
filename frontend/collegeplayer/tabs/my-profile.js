@@ -836,6 +836,7 @@ async function loadOwnProfile() {
             viewingUserId = response.user.id;
             isOwnProfile = true;
             displayProfile(response.profile, response.user.role);
+            loadProfileViewCount();
         } else {
             showIncompleteProfile();
         }
@@ -859,6 +860,11 @@ async function loadProfileByUsername(username) {
             // This prevents data from being visible in Elements inspector
             if (!isOwnProfile) {
                 removeSensitiveElementsForOtherProfile();
+                recordProfileView(viewingUserId);
+            }
+
+            if (isOwnProfile) {
+                loadProfileViewCount();
             }
         } else {
             showError('Profile not found');
@@ -1772,7 +1778,10 @@ function setupUI() {
     const rightSidebar = document.getElementById('rightSidebar');
     const rightSidebarToggle = document.getElementById('rightSidebarToggle');
 
-    // Use setTimeout to ensure this runs after mainpage-player.js DOMContentLoaded
+    // Note: Right sidebar toggle click handler is in mainpage-player.js (loaded on all tab pages)
+    // This function only manages visibility based on profile ownership
+
+    // Use setTimeout to ensure this runs after DOMContentLoaded
     setTimeout(() => {
         // Show or hide right sidebar based on profile ownership
         if (isOwnProfile) {
@@ -8745,6 +8754,78 @@ function setupDeleteHighlightConfirmModal() {
         deleteBtn.addEventListener('click', confirmDeleteHighlight);
     }
 }
+
+// ==================== PROFILE VIEW TRACKING ====================
+
+async function recordProfileView(viewedUserId) {
+    try {
+        await API.post(`/profile/view/${viewedUserId}`);
+    } catch (error) {
+        console.error('Error recording profile view:', error);
+    }
+}
+
+async function loadProfileViewCount() {
+    const viewCountEl = document.getElementById('profileViewsCount');
+    const mobileViewCountEl = document.getElementById('mobileProfileViewsCount');
+    const statsWidget = document.getElementById('profileStatsWidget');
+    const mobileLink = document.getElementById('mobileProfileViewsLink');
+
+    if (!isOwnProfile) {
+        if (statsWidget) statsWidget.style.display = 'none';
+        if (mobileLink) mobileLink.style.display = 'none';
+        return;
+    }
+
+    try {
+        const response = await API.get(`/profile/views/${currentUserId}`);
+        const count = response.viewCount || 0;
+        if (viewCountEl) viewCountEl.textContent = count;
+        if (mobileViewCountEl) mobileViewCountEl.textContent = count;
+    } catch (error) {
+        console.error('Error loading profile view count:', error);
+    }
+}
+
+function setupProfileViewersModal() {
+    const profileViewsLink = document.getElementById('profileViewsLink');
+    const mobileProfileViewsLink = document.getElementById('mobileProfileViewsLink');
+    const modal = document.getElementById('profileViewersModal');
+    const modalOverlay = document.getElementById('profileViewersModalOverlay');
+    const modalClose = document.getElementById('profileViewersModalClose');
+
+    if (profileViewsLink) {
+        profileViewsLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            if (isOwnProfile) {
+                openProfileViewersModal();
+            }
+        });
+    }
+
+    if (mobileProfileViewsLink) {
+        mobileProfileViewsLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            if (isOwnProfile) {
+                const mobileSidebar = document.getElementById('mobileSidebar');
+                const mobileSidebarOverlay = document.getElementById('mobileSidebarOverlay');
+                if (mobileSidebar) mobileSidebar.classList.remove('active');
+                if (mobileSidebarOverlay) mobileSidebarOverlay.classList.remove('active');
+                document.body.style.overflow = '';
+                openProfileViewersModal();
+            }
+        });
+    }
+
+    if (modalOverlay) {
+        modalOverlay.addEventListener('click', () => closeProfileViewersModal());
+    }
+    if (modalClose) {
+        modalClose.addEventListener('click', () => closeProfileViewersModal());
+    }
+}
+
+document.addEventListener('DOMContentLoaded', setupProfileViewersModal);
 
 // Initialize highlights
 document.addEventListener('DOMContentLoaded', () => {

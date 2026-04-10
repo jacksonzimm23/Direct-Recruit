@@ -355,7 +355,7 @@ class Post {
         CASE
           WHEN EXISTS(
             SELECT 1 FROM profile_views pv
-            WHERE pv.viewer_id = $1 AND pv.viewed_player_id = fp.user_id
+            WHERE pv.viewer_id = $1 AND pv.viewed_user_id = fp.user_id
             AND pv.created_at > NOW() - INTERVAL '30 days'
           ) THEN 1.5
           ELSE 1.0

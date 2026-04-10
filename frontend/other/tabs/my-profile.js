@@ -625,6 +625,7 @@ async function loadOwnProfile() {
             viewingUserId = response.user.id;
             isOwnProfile = true;
             displayProfile(response.profile, 'other'); // Own profile is always 'other' type
+            loadProfileViewCount();
 
             // Show Likes tab for own profile
             const likesTab = document.querySelector('.profile-tab[data-tab="likes"]');
@@ -663,6 +664,11 @@ async function loadProfileByUsername(username) {
             // This prevents data from being visible in Elements inspector
             if (!isOwnProfile) {
                 removeSensitiveElementsForOtherProfile();
+                recordProfileView(viewingUserId);
+            }
+
+            if (isOwnProfile) {
+                loadProfileViewCount();
             }
 
             // Show Likes tab for all profiles
@@ -817,6 +823,40 @@ async function displayProfile(profile, type, accessLevel = 'full', hasPendingReq
     if (dashboardContainer) {
         dashboardContainer.classList.add('profile-loaded');
     }
+
+    // Right sidebar toggle visibility based on profile ownership
+    const rightSidebarToggle = document.getElementById('rightSidebarToggle');
+
+    // Note: Right sidebar toggle click handler is in mainpage-other.js (loaded on all tab pages)
+    // This function only manages visibility based on profile ownership
+
+    // Use setTimeout to ensure this runs after DOMContentLoaded
+    setTimeout(() => {
+        // Show or hide right sidebar based on profile ownership
+        if (isOwnProfile) {
+            // Show toggle button for own profile
+            if (rightSidebarToggle) {
+                rightSidebarToggle.classList.add('show-toggle');
+                rightSidebarToggle.style.display = ''; // Ensure button is visible
+            }
+
+            // Restore right sidebar state from localStorage
+            // Remove any hidden class first to ensure we start fresh
+            if (dashboardContainer) dashboardContainer.classList.remove('right-sidebar-hidden');
+
+            // Then check if it should be hidden based on saved preference
+            const rightSidebarHidden = localStorage.getItem('playerRightSidebarHidden') === 'true';
+            if (rightSidebarHidden && dashboardContainer) {
+                dashboardContainer.classList.add('right-sidebar-hidden');
+            }
+        } else {
+            // Keep right sidebar hidden for other profiles
+            if (dashboardContainer) dashboardContainer.classList.add('right-sidebar-hidden');
+            if (rightSidebarToggle) {
+                rightSidebarToggle.style.display = 'none';
+            }
+        }
+    }, 0);
 
     // Update sidebar footer with current profile info (only for own profile)
     if (isOwnProfile) {
@@ -5597,3 +5637,163 @@ async function confirmDeleteReply(commentId, postId) {
         }
     }
 }
+
+// ==================== PROFILE VIEW TRACKING ====================
+
+async function recordProfileView(viewedUserId) {
+    try {
+        await API.post(`/profile/view/${viewedUserId}`);
+    } catch (error) {
+        console.error('Error recording profile view:', error);
+    }
+}
+
+async function loadProfileViewCount() {
+    const viewCountEl = document.getElementById('profileViewsCount');
+    const mobileViewCountEl = document.getElementById('mobileProfileViewsCount');
+    const statsWidget = document.getElementById('profileStatsWidget');
+    const mobileLink = document.getElementById('mobileProfileViewsLink');
+
+    if (!isOwnProfile) {
+        if (statsWidget) statsWidget.style.display = 'none';
+        if (mobileLink) mobileLink.style.display = 'none';
+        return;
+    }
+
+    try {
+        const response = await API.get(`/profile/views/${currentUserId}`);
+        const count = response.viewCount || 0;
+        if (viewCountEl) viewCountEl.textContent = count;
+        if (mobileViewCountEl) mobileViewCountEl.textContent = count;
+    } catch (error) {
+        console.error('Error loading profile view count:', error);
+    }
+}
+
+// ==================== PROFILE VIEWERS MODAL ====================
+
+function setupProfileViewersModal() {
+    const profileViewsLink = document.getElementById('profileViewsLink');
+    const mobileProfileViewsLink = document.getElementById('mobileProfileViewsLink');
+    const modal = document.getElementById('profileViewersModal');
+    const modalOverlay = document.getElementById('profileViewersModalOverlay');
+    const modalClose = document.getElementById('profileViewersModalClose');
+
+    if (profileViewsLink) {
+        profileViewsLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            if (isOwnProfile) {
+                openProfileViewersModal();
+            }
+        });
+    }
+
+    if (mobileProfileViewsLink) {
+        mobileProfileViewsLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            if (isOwnProfile) {
+                const mobileSidebar = document.getElementById('mobileSidebar');
+                const mobileSidebarOverlay = document.getElementById('mobileSidebarOverlay');
+                if (mobileSidebar) mobileSidebar.classList.remove('active');
+                if (mobileSidebarOverlay) mobileSidebarOverlay.classList.remove('active');
+                document.body.style.overflow = '';
+                openProfileViewersModal();
+            }
+        });
+    }
+
+    if (modalOverlay) {
+        modalOverlay.addEventListener('click', () => closeProfileViewersModal());
+    }
+    if (modalClose) {
+        modalClose.addEventListener('click', () => closeProfileViewersModal());
+    }
+}
+
+async function openProfileViewersModal() {
+    const modal = document.getElementById('profileViewersModal');
+    const modalBody = document.getElementById('profileViewersModalBody');
+    const _assetsPath = window.location.pathname.includes('/tabs/') ? '../../assets' : '../assets';
+
+    if (!modal || !modalBody) return;
+
+    // Show loading state
+    modalBody.innerHTML = '<div class="follow-list-loading">Loading...</div>';
+
+    // Show modal
+    modal.classList.add('active');
+
+    try {
+        if (typeof ensureSchoolLogosLoaded === 'function') await ensureSchoolLogosLoaded(_assetsPath);
+        const response = await API.get(`/profile/viewers/${currentUserId}`);
+        const viewers = response.viewers || [];
+
+        if (viewers.length === 0) {
+            modalBody.innerHTML = '<div class="follow-list-empty">No profile views yet</div>';
+            return;
+        }
+
+        // Render the list using same format as followers/following modal
+        modalBody.innerHTML = viewers.map(viewer => {
+            const roleInfo = getFollowListRoleInfo(viewer);
+            return `
+            <div class="follow-list-item" data-user-id="${viewer.id}" data-role="${viewer.role}">
+                <div class="follow-list-avatar" style="border: 2px solid ${getRoleBorderColor(viewer.role, viewer.is_transfer === 'y' || viewer.is_transfer === true, viewer.player_college_division || viewer.coach_college_division)}; color: ${getRoleBorderColor(viewer.role, viewer.is_transfer === 'y' || viewer.is_transfer === true, viewer.player_college_division || viewer.coach_college_division)}; background: ${getRoleAvatarBg(viewer.role, viewer.is_transfer === 'y' || viewer.is_transfer === true, viewer.player_college_division || viewer.coach_college_division)}">
+                    ${viewer.profile_image_url
+                        ? `<img src="${viewer.profile_image_url}" alt="${viewer.first_name}">`
+                        : `<svg viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="12" cy="7" r="4"></circle>
+                           </svg>`
+                    }
+                </div>
+                <div class="follow-list-info">
+                    <div class="follow-list-name">${viewer.first_name} ${viewer.last_name}${(typeof getSchoolLogoHTML === 'function' && (viewer.player_college_division || viewer.coach_college_division)) ? getSchoolLogoHTML(viewer.player_team_name || viewer.coach_team_name, _assetsPath, 14) : ''} ${viewer.username ? `<span style="color: rgba(254,252,251,0.5); font-weight: 400;">@${viewer.username}</span>` : ''}</div>
+                    <div class="follow-list-role ${roleInfo.colorClass}">${roleInfo.text}</div>
+                </div>
+            </div>
+        `}).join('');
+
+        // Add click handlers to navigate to profiles
+        modalBody.querySelectorAll('.follow-list-item').forEach(item => {
+            item.addEventListener('click', async () => {
+                const visitorUserId = item.dataset.userId;
+                const role = item.dataset.role;
+
+                try {
+                    let profileResponse;
+                    if (role === 'player') {
+                        profileResponse = await API.get(`/profile/player/${visitorUserId}`);
+                    } else if (role === 'coach') {
+                        profileResponse = await API.get(`/profile/coach/${visitorUserId}`);
+                    } else {
+                        profileResponse = await API.get(`/profile/other/${visitorUserId}`);
+                    }
+
+                    if (profileResponse.profile && profileResponse.profile.username) {
+                        closeProfileViewersModal();
+                        const profile = profileResponse.profile;
+                        const folder = getProfileFolder({ role, ...profile });
+                        const currentFrom = new URLSearchParams(window.location.search).get('from') || 'profile';
+                        window.location.href = `../../${folder}/tabs/my-profile.html?username=${profile.username}&from=${currentFrom}`;
+                    }
+                } catch (error) {
+                    console.error('Error fetching profile:', error);
+                }
+            });
+        });
+
+    } catch (error) {
+        console.error('Error loading profile viewers:', error);
+        modalBody.innerHTML = '<div class="follow-list-empty">Failed to load viewers</div>';
+    }
+}
+
+function closeProfileViewersModal() {
+    const modal = document.getElementById('profileViewersModal');
+    if (modal) {
+        modal.classList.remove('active');
+    }
+}
+
+document.addEventListener('DOMContentLoaded', setupProfileViewersModal);

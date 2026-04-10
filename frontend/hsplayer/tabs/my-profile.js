@@ -861,8 +861,8 @@ async function loadProfileByUsername(username) {
                 removeSensitiveElementsForOtherProfile();
             }
 
-            // Record profile view if viewing someone else's HS player profile
-            if (!isOwnProfile && response.type === 'player') {
+            // Record profile view if viewing someone else's profile
+            if (!isOwnProfile) {
                 recordProfileView(viewingUserId);
             }
 
@@ -6646,15 +6646,8 @@ async function loadProfileViewCount() {
     const profileStatsWidget = document.getElementById('profileStatsWidget');
     const mobileProfileViewsLink = document.getElementById('mobileProfileViewsLink');
 
-    // Only show profile stats for own profile and if it's a player profile (not coach)
-    if (!isOwnProfile || currentProfileType !== 'player') {
-        if (profileStatsWidget) profileStatsWidget.style.display = 'none';
-        if (mobileProfileViewsLink) mobileProfileViewsLink.style.display = 'none';
-        return;
-    }
-
-    // Check if this is an HS player (no college_division)
-    if (currentProfile && currentProfile.college_division && currentProfile.college_division.trim() !== '') {
+    // Only show profile stats for own profile
+    if (!isOwnProfile) {
         if (profileStatsWidget) profileStatsWidget.style.display = 'none';
         if (mobileProfileViewsLink) mobileProfileViewsLink.style.display = 'none';
         return;
