@@ -592,8 +592,83 @@
 
 ---
 
-## TODOs
-**TODO: All vulenerabilities
+## UI Alerts & Confirmations
 
-**TODO: Copy twitter algorithm on how they show certain posts on feed, as well as the suggested connections on the feed right sidebar
+59. **Never use native `alert()` or `confirm()` anywhere on the platform.** All user-facing messages must use the platform's own UI components:
+    - **Yes/no or save/cancel actions** → `showConfirmModal({ title, message, confirmText, cancelText, danger })` in `frontend/shared/api.js`. Returns a `Promise<boolean>`. CSS is injected automatically on first call — no CSS file changes needed.
+    - **Everything else** (errors, warnings, validation) → `showToast(message, type)` in `frontend/shared/api.js`. Types: `'error'` (red), `'warning'` (yellow), `'success'` (green). Auto-dismisses after 4 seconds.
+    - **Placeholder stubs** (e.g., `alert('Coming soon')`) → remove entirely or replace with a `// TODO` comment.
+
+    Both functions are globally available on every page since `shared/api.js` is loaded everywhere. If you add a new feature that needs user feedback, use these — never `alert()` or `confirm()`.
+
+---
+
+## Feed Ranking — Twitter/Instagram-Style Engagement Scoring
+
+60. **Engagement scores are recalculated in real-time on every engagement action.** The `engagement_score` column on the `posts` table is updated inside the same database transaction as every like, unlike, comment, delete comment, save, unsave, share, unshare, and unrepost. This is done via `Post._engagementScoreSQL()` — a static helper that returns the UPDATE SQL string for use with `client.query()` inside transactions. Never call it with `pool.query()` directly — it must run inside the transaction to keep the score consistent with the counts.
+
+    **The 9 methods that trigger score recalculation (all in `backend/models/Post.js`):**
+    - `like()`, `unlike()`, `addComment()`, `deleteComment()`, `savePost()`, `unsavePost()`, `sharePost()`, `unsharePost()`, `unrepostByPostId()`
+
+    Each method already had a transaction (`BEGIN`/`COMMIT`/`ROLLBACK`) that updates the count column. The engagement score recalc line goes immediately after the count update, inside the same `if (result.rows[0])` guard.
+
+61. **The engagement scoring formula uses weighted engagement divided by time decay.** The formula:
+
+    ```
+    score = (likes × 2.0 + comments × 3.0 + shares × 5.0 + saves × 2.5) / (hours_old + 2)^1.5
+    ```
+
+    **Weight rationale (inspired by Twitter/Instagram):**
+    - **Shares (5.0):** Strongest signal — user is redistributing content to their network (like Twitter retweets at 20x weight)
+    - **Comments (3.0):** Active engagement — indicates quality discussion
+    - **Saves (2.5):** High-value signal — user wants to revisit later (Instagram weights saves heavily)
+    - **Likes (2.0):** Lowest weight — passive, low-effort signal
+
+    **Time decay:** The `POWER(hours + 2, 1.5)` divisor ensures newer posts rank higher than older posts with similar engagement. The `+ 2` offset prevents division by zero for brand-new posts and gives them a small initial boost window.
+
+62. **Both feeds are ranked by engagement, not just Discover.** The two-tab feed system:
+
+    - **Discover feed** (`getDiscoverFeed()`): All public posts from everyone, ranked by `engagement_score DESC`. This was already set up in the SQL — it just needed the scores to actually be populated.
+    - **Following feed** (`getFollowingFeed()`): Posts from followed users + your own posts, ranked by engagement score with a **relationship boost** — posts from users whose profiles you've viewed in the last 30 days get a 1.5x score multiplier. Uses the existing `profile_views` table as a proxy for interest/relationship strength.
+
+    **The following feed ORDER BY:**
+    ```sql
+    ORDER BY (
+      COALESCE(fp.engagement_score, 0) *
+      CASE WHEN EXISTS(
+        SELECT 1 FROM profile_views pv
+        WHERE pv.viewer_id = $1 AND pv.viewed_player_id = fp.user_id
+        AND pv.created_at > NOW() - INTERVAL '30 days'
+      ) THEN 1.5 ELSE 1.0 END
+    ) DESC NULLS LAST, fp.sort_date DESC
+    ```
+
+    **Important:** `p.engagement_score` had to be added to both SELECT halves of the `getFollowingFeed()` CTE (original posts AND reposts/quotes UNION ALL) for the ORDER BY to reference it.
+
+63. **Engagement scores decay over time and need periodic batch recalculation.** Because the formula includes time decay, scores become stale as posts age — even without new engagement. Two mechanisms handle this:
+
+    - **Real-time recalc:** Triggered on every engagement action (Step 60 above). Keeps scores accurate when users interact.
+    - **Batch recalc:** A `setInterval` in `backend/server.js` calls `Post.recalculateAllEngagementScores()` every 15 minutes. This updates scores for all posts from the last 7 days, ensuring time decay stays fresh even for posts with no new engagement. Errors are caught and logged — never blocks the server.
+
+    **If scores seem wrong:** Run the backfill script manually: `node backend/scripts/recalculate-engagement-scores.js`. This recalculates ALL posts (not just last 7 days).
+
+64. **The engagement score index is critical for feed performance.** Migration `008_add_engagement_score_index.sql` creates a composite index on `(engagement_score DESC NULLS LAST, created_at DESC)`. Both the Discover and Following feeds ORDER BY this column — without the index, sorting the full posts table gets slow as data grows. The index exists in both migration paths:
+    - Local dev: `backend/scripts/add-engagement-score-index.sql` (in the MIGRATIONS array in `seed-local.js`)
+    - Production: `backend/migrations/008_add_engagement_score_index.sql`
+
+    **Key files for the entire engagement system:**
+    - Scoring formula + all engagement methods: `backend/models/Post.js` (`_engagementScoreSQL()`, `recalculateAllEngagementScores()`)
+    - Batch recalc interval: `backend/server.js` (setInterval after server.listen)
+    - One-time backfill: `backend/scripts/recalculate-engagement-scores.js`
+    - Index migration: `backend/migrations/008_add_engagement_score_index.sql`
+
+65. **No frontend changes were needed for engagement ranking.** The two-tab UI (Discover / Your Network) in `frontend/shared/feed.js` already calls `postsAPI.getDiscoverFeed()` and `postsAPI.getFollowingFeed()` separately. The ranking change is entirely server-side — the backend returns posts in the new ranked order, and the frontend renders them identically. All 4 post rendering templates (`createPostElement`, `createRepostElement`, `createQuotePostElement`, `createSingleQuotePostElement`) are untouched.
+
+---
+
+## TODOs
+
+**~~TODO: Copy twitter algorithm on how they show certain posts on feed~~, as well as the suggested connections on the feed right sidebar
+
+*TODO: Add profile view modal for all profile types 
 

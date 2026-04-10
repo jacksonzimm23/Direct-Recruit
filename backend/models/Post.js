@@ -198,6 +198,7 @@ class Post {
           p.likes_count,
           p.comments_count,
           p.shares_count,
+          p.engagement_score,
           p.created_at,
           p.created_at as sort_date,
           false as is_repost,
@@ -271,6 +272,7 @@ class Post {
           CASE WHEN ps.share_type = 'quote' THEN COALESCE(ps.likes_count, 0) ELSE p.likes_count END as likes_count,
           CASE WHEN ps.share_type = 'quote' THEN COALESCE(ps.comments_count, 0) ELSE p.comments_count END as comments_count,
           CASE WHEN ps.share_type = 'quote' THEN COALESCE(ps.shares_count, 0) ELSE p.shares_count END as shares_count,
+          p.engagement_score,
           p.created_at as created_at,
           ps.created_at as sort_date,
           CASE WHEN ps.share_type = 'repost' THEN true ELSE false END as is_repost,
@@ -348,7 +350,17 @@ class Post {
              EXISTS(SELECT 1 FROM post_shares WHERE original_post_id = fp.id AND user_id = $1 AND share_type = 'repost') as user_reposted,
              true as is_following
       FROM feed_posts fp
-      ORDER BY fp.sort_date DESC
+      ORDER BY (
+        COALESCE(fp.engagement_score, 0) *
+        CASE
+          WHEN EXISTS(
+            SELECT 1 FROM profile_views pv
+            WHERE pv.viewer_id = $1 AND pv.viewed_player_id = fp.user_id
+            AND pv.created_at > NOW() - INTERVAL '30 days'
+          ) THEN 1.5
+          ELSE 1.0
+        END
+      ) DESC NULLS LAST, fp.sort_date DESC
       LIMIT $2 OFFSET $3`,
       [userId, limit, offset]
     );
@@ -771,6 +783,7 @@ class Post {
           'UPDATE posts SET likes_count = likes_count + 1 WHERE id = $1',
           [postId]
         );
+        await client.query(Post._engagementScoreSQL(), [postId]);
       }
 
       await client.query('COMMIT');
@@ -798,6 +811,7 @@ class Post {
           'UPDATE posts SET likes_count = GREATEST(likes_count - 1, 0) WHERE id = $1',
           [postId]
         );
+        await client.query(Post._engagementScoreSQL(), [postId]);
       }
 
       await client.query('COMMIT');
@@ -857,6 +871,7 @@ class Post {
         'UPDATE posts SET comments_count = comments_count + 1 WHERE id = $1',
         [postId]
       );
+      await client.query(Post._engagementScoreSQL(), [postId]);
 
       await client.query('COMMIT');
       return result.rows[0];
@@ -945,6 +960,7 @@ class Post {
           'UPDATE posts SET comments_count = GREATEST(comments_count - 1, 0) WHERE id = $1',
           [postId]
         );
+        await client.query(Post._engagementScoreSQL(), [postId]);
       }
 
       await client.query('COMMIT');
@@ -1041,6 +1057,7 @@ class Post {
           'UPDATE posts SET saves_count = saves_count + 1 WHERE id = $1',
           [postId]
         );
+        await client.query(Post._engagementScoreSQL(), [postId]);
       }
 
       await client.query('COMMIT');
@@ -1068,6 +1085,7 @@ class Post {
           'UPDATE posts SET saves_count = GREATEST(saves_count - 1, 0) WHERE id = $1',
           [postId]
         );
+        await client.query(Post._engagementScoreSQL(), [postId]);
       }
 
       await client.query('COMMIT');
@@ -1297,6 +1315,7 @@ class Post {
         'UPDATE posts SET shares_count = shares_count + 1 WHERE id = $1',
         [originalPostId]
       );
+      await client.query(Post._engagementScoreSQL(), [originalPostId]);
 
       await client.query('COMMIT');
       return result.rows[0];
@@ -1323,6 +1342,7 @@ class Post {
           'UPDATE posts SET shares_count = GREATEST(shares_count - 1, 0) WHERE id = $1',
           [result.rows[0].original_post_id]
         );
+        await client.query(Post._engagementScoreSQL(), [result.rows[0].original_post_id]);
       }
 
       await client.query('COMMIT');
@@ -1351,6 +1371,7 @@ class Post {
           'UPDATE posts SET shares_count = GREATEST(shares_count - 1, 0) WHERE id = $1',
           [postId]
         );
+        await client.query(Post._engagementScoreSQL(), [postId]);
       }
 
       await client.query('COMMIT');
@@ -1634,20 +1655,31 @@ class Post {
     return parseInt(result.rows[0].count);
   }
 
-  // Recalculate engagement score manually (if needed)
-  static async recalculateEngagementScore(postId) {
-    const result = await pool.query(
-      `UPDATE posts SET engagement_score = (
+  // Returns the SQL string for recalculating engagement score on a single post.
+  // Use inside transactions: await client.query(Post._engagementScoreSQL(), [postId]);
+  static _engagementScoreSQL() {
+    return `UPDATE posts SET engagement_score = (
+      (likes_count * 2.0) +
+      (comments_count * 3.0) +
+      (shares_count * 5.0) +
+      (saves_count * 2.5)
+    ) / POWER(EXTRACT(EPOCH FROM (NOW() - created_at)) / 3600.0 + 2, 1.5)
+    WHERE id = $1`;
+  }
+
+  // Batch recalculate engagement scores for recent posts (time decay refresh).
+  // Called every 15 minutes from server.js setInterval.
+  static async recalculateAllEngagementScores() {
+    await pool.query(`
+      UPDATE posts SET engagement_score = (
         (likes_count * 2.0) +
         (comments_count * 3.0) +
-        (shares_count * 4.0) +
-        (saves_count * 1.0)
+        (shares_count * 5.0) +
+        (saves_count * 2.5)
       ) / POWER(EXTRACT(EPOCH FROM (NOW() - created_at)) / 3600.0 + 2, 1.5)
-      WHERE id = $1
-      RETURNING engagement_score`,
-      [postId]
-    );
-    return result.rows[0]?.engagement_score;
+      WHERE created_at > NOW() - INTERVAL '7 days'
+      AND (is_deleted = false OR is_deleted IS NULL)
+    `);
   }
 
   // ==================== SHARE ENGAGEMENT ====================
