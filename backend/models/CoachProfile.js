@@ -75,7 +75,7 @@ class CoachProfile {
       values.push(filters.searchTerm);
       paramCount++;
     } else {
-      query += ' ORDER BY cp.verified DESC, cp.created_at DESC LIMIT 50';
+      query += ' ORDER BY cp.verified DESC, COALESCE(cp.followers_count, 0) DESC, cp.created_at DESC LIMIT 50';
     }
     const result = await pool.query(query, values);
     return result.rows;

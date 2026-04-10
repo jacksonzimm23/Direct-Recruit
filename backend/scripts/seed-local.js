@@ -53,7 +53,8 @@ const MIGRATIONS = [
   'add-profile-switching.sql',
   'add-stripe-subscriptions.sql',
   'add-fuzzy-search.sql',
-  'add-engagement-score-index.sql'
+  'add-engagement-score-index.sql',
+  'add-popularity-indexes.sql'
 ];
 
 async function applyManualFixes() {

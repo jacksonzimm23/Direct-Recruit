@@ -666,9 +666,46 @@
 
 ---
 
+## Discover Pages & Suggested Connections — Engagement-Based Profile Ranking
+
+66. **Discover pages rank profiles by a "popularity score" instead of `created_at DESC`.** The popularity score is computed inline in SQL using existing columns — no new database columns needed. The formula varies by profile type:
+
+    - **Players:** `(followers_count × 3) + (cc_views × 1) + (30-day post engagement_score SUM × 2)`
+    - **Coaches:** `(followers_count × 3) + (30-day coach_profile_views COUNT × 1) + (30-day post engagement_score SUM × 2)`
+    - **Other:** `(followers_count × 3) + (30-day post engagement_score SUM × 2)`
+
+    The SQL expressions live in `backend/utils/popularity-score.js` as three functions: `playerPopularityExpr(alias)`, `coachPopularityExpr(alias)`, `otherPopularityExpr(alias)`. Each returns a SQL string that can be dropped into an `ORDER BY` clause. The alias parameter must match the table alias used in the query (e.g., `'pp'` for player_profiles, `'coach_profiles'` if no alias).
+
+    **When search is active:** Similarity scoring stays primary — `followers_count` is added only as a lightweight tiebreaker for equally-similar results. The full popularity subquery is skipped during search to avoid overhead.
+
+    **Filters are unaffected.** Only the `ORDER BY` clause changed — all `WHERE` conditions (position, state, graduation_year, min_height, min_weight, min_gpa, college_division, eligibility) remain identical.
+
+67. **Suggested connections now rank by engagement + relevance instead of `ORDER BY RANDOM()`.** The `GET /profile/suggested-connections` endpoint in `backend/routes/profile.js` was rewritten with a multi-signal ranking:
+
+    - **Base engagement score:** Same popularity formula as discover pages (followers × 3 + cc_views × 1 + post engagement × 2)
+    - **Same-state bonus (+10):** Users from the same state as the current user rank higher — important for a recruiting platform where geography matters
+    - **Mutual connections bonus (+5 per mutual):** "Friends of friends" — if people you follow also follow this user, they're more relevant
+    - **Small random factor (0-2):** Prevents the same 5 users from always appearing, but is small enough that engagement still dominates
+
+    **Bug fix included:** The query now excludes already-followed users via `AND u.id NOT IN (SELECT following_id FROM follows WHERE follower_id = $1)`. Previously, followed users could appear in suggestions.
+
+68. **Performance indexes for popularity scoring are in migration 009.** The correlated subqueries for post engagement use `SELECT SUM(engagement_score) FROM posts WHERE user_id = X AND created_at > 30 days`. Without proper indexes this would be slow. Migration `009_add_popularity_indexes.sql` adds:
+    - `idx_player/coach/other_profiles_followers_count` — for sorting by followers
+    - `idx_posts_user_engagement` — composite (user_id, created_at DESC) with partial WHERE for the 30-day engagement subquery
+    - `idx_follows_follower_following` — composite for the suggested connections exclusion + mutual connections subquery
+
+    **Key files:**
+    - Popularity score expressions: `backend/utils/popularity-score.js`
+    - Player discover (3 methods): `backend/models/PlayerProfile.js` — `searchHSPlayers()`, `searchCollegePlayers()`, `searchTransferPlayers()`
+    - Coach discover: `backend/routes/coaches.js` — `GET /coaches/college`
+    - Coach search: `backend/models/CoachProfile.js` — `search()` (adds `followers_count` tiebreaker)
+    - Other discover: `backend/models/OtherProfile.js` — `discover()`
+    - Suggested connections: `backend/routes/profile.js` — `GET /profile/suggested-connections`
+    - Index migration: `backend/migrations/009_add_popularity_indexes.sql`
+
+---
+
 ## TODOs
-
-**~~TODO: Copy twitter algorithm on how they show certain posts on feed~~, as well as the suggested connections on the feed right sidebar
-
 *TODO: Add profile view modal for all profile types 
 
+Take a look at the right sidebar on the hsplayer and transferplayer page. They have the profile views modal to see who is viewing their profile. 2 things, currently, it only shows collegecoach views, make it so it shows all profile views from any profile type (and add a 2 day cool down, to where if a person views the same profile twice in 1 day, it will only show once. And if they view 2 days later it will show who viewed). also, make it so ALL profiles have this right sidebar (with the toggle) on the my profile page to see all profile views. Make sure profile modal is displaying profiles in the correct format and colors, and make sure only the logged in user viewing the my profile page can see the profile views right sidebar. No one else should be able to see this info. Please plan out for me
