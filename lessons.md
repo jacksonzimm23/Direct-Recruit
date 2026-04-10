@@ -706,6 +706,5 @@
 ---
 
 ## TODOs
-*TODO: Add profile view modal for all profile types 
-
-Take a look at the right sidebar on the hsplayer and transferplayer page. They have the profile views modal to see who is viewing their profile. 2 things, currently, it only shows collegecoach views, make it so it shows all profile views from any profile type (and add a 2 day cool down, to where if a person views the same profile twice in 1 day, it will only show once. And if they view 2 days later it will show who viewed). also, make it so ALL profiles have this right sidebar (with the toggle) on the my profile page to see all profile views. Make sure profile modal is displaying profiles in the correct format and colors, and make sure only the logged in user viewing the my profile page can see the profile views right sidebar. No one else should be able to see this info. Please plan out for me
+*TODO: Update AI logo next to tabs and attach AI usage to backend
+*TODO: AI Recruiting Assistant to output new HS and transfer player cards

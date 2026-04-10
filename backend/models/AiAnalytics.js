@@ -1,5 +1,6 @@
 const pool = require('../config/database');
 const logger = require('../utils/logger');
+const stripe = require('../utils/stripe');
 
 class AiAnalytics {
   /**
@@ -55,13 +56,38 @@ class AiAnalytics {
   }
 
   /**
-   * Get token usage for a specific coach within the current billing period (calendar month).
+   * Get token usage for a specific coach within the current billing period.
+   * Uses Stripe subscription cycle dates if available, falls back to calendar month.
    * Both RA and PI usage count toward the same pool.
    */
   static async getUsageByCoach(coachUserId) {
-    const now = new Date();
-    const periodStart = new Date(now.getFullYear(), now.getMonth(), 1);
-    const periodEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+    // Look up the coach's subscription info
+    const userSub = await pool.query(
+      'SELECT subscription_tier, stripe_subscription_id, subscription_status FROM users WHERE id = $1',
+      [coachUserId]
+    );
+    const tier = userSub.rows[0]?.subscription_tier || 'starter';
+    const subId = userSub.rows[0]?.stripe_subscription_id;
+    const subStatus = userSub.rows[0]?.subscription_status;
+
+    // Determine billing period from Stripe or fall back to calendar month
+    let periodStart, periodEnd;
+    if (subId && (subStatus === 'active' || subStatus === 'past_due')) {
+      try {
+        const sub = await stripe.getSubscription(subId);
+        periodStart = new Date(sub.current_period_start * 1000);
+        periodEnd = new Date(sub.current_period_end * 1000);
+      } catch (err) {
+        logger.warn(`Failed to fetch Stripe subscription for billing period: ${err.message}`);
+        const now = new Date();
+        periodStart = new Date(now.getFullYear(), now.getMonth(), 1);
+        periodEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+      }
+    } else {
+      const now = new Date();
+      periodStart = new Date(now.getFullYear(), now.getMonth(), 1);
+      periodEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+    }
 
     const result = await pool.query(
       `SELECT
@@ -75,9 +101,6 @@ class AiAnalytics {
       [coachUserId, periodStart, periodEnd]
     );
 
-    // Look up the coach's actual subscription tier
-    const userSub = await pool.query('SELECT subscription_tier FROM users WHERE id = $1', [coachUserId]);
-    const tier = userSub.rows[0]?.subscription_tier || 'starter';
     const TIER_CAPS = { starter: 4_000_000, pro: 10_000_000, elite: 20_000_000, player: 0 };
     const TIER_NAMES = { starter: 'Starter', pro: 'Pro', elite: 'Elite', player: 'Player' };
 

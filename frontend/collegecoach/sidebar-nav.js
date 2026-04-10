@@ -52,7 +52,8 @@
             icon: `<circle cx="11" cy="11" r="8"></circle>
                    <path d="m21 21-4.35-4.35"></path>`,
             label: 'Discover',
-            pages: ['discover-players']
+            pages: ['discover-players'],
+            hasAiBadge: true
         },
         {
             href: `${tabsPath}my-profile.html`,
@@ -98,7 +99,8 @@
                    <path d="M12 8v8"></path>
                    <circle cx="12" cy="12" r="3"></circle>`,
             label: 'Transfer Portal',
-            pages: ['transfer-portal']
+            pages: ['transfer-portal'],
+            hasAiBadge: true
         },
         {
             href: `${tabsPath}settings.html`,
@@ -117,6 +119,7 @@
         const activeClass = isActive ? ' active' : '';
         const idAttr = item.id ? ` id="${item.id}"` : '';
         const badgeHTML = item.hasBadge ? '<span class="notification-badge" style="display: none;"></span>' : '';
+        const aiBadgeHTML = item.hasAiBadge ? '<span class="nav-ai-badge">AI</span>' : '';
 
         navHTML += `
             <a href="${item.href}" class="nav-item${activeClass}"${idAttr}>
@@ -124,6 +127,7 @@
                     ${item.icon}
                 </svg>
                 <span>${item.label}</span>
+                ${aiBadgeHTML}
                 ${badgeHTML}
             </a>
         `;

@@ -57,6 +57,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (!messagesContainer || !input) return;
 
+    // Preload school logos for transfer player display
+    if (typeof ensureSchoolLogosLoaded === 'function') {
+        ensureSchoolLogosLoaded('../../assets');
+    }
+
     let chats = [];
     let activeChatId = null;
     let isSending = false;
@@ -148,6 +153,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         currentSearchOffset = msg.metadata.offset || 0;
 
                         try {
+                            if (typeof ensureSchoolLogosLoaded === 'function') await ensureSchoolLogosLoaded('../../assets');
                             const searchData = await API.ai.reSearch(msg.metadata.filters, msg.metadata.offset || 0);
                             if (searchData.players && searchData.players.length > 0) {
                                 const cardsContainer = document.createElement('div');
@@ -314,6 +320,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // If players were returned, render player cards
             if (data.players && data.players.length > 0) {
+                if (typeof ensureSchoolLogosLoaded === 'function') await ensureSchoolLogosLoaded('../../assets');
                 const cardsContainer = document.createElement('div');
                 cardsContainer.className = 'ra-player-cards';
                 data.players.forEach(player => {
@@ -387,116 +394,66 @@ document.addEventListener('DOMContentLoaded', function() {
         return division;
     }
 
+    // Helper: format all positions as plain text joined by /
+    function formatAllPositions(posStr) {
+        if (!posStr) return '';
+        return posStr.split(/[,\/]/).map(p => p.trim()).filter(p => p).join('/');
+    }
+
     function createPlayerCard(player) {
-        const card = document.createElement('div');
+        const row = document.createElement('div');
         const isTransfer = player.transfer === 'y';
         const displayName = `${player.first_name || ''} ${player.last_name || ''}`.trim() || 'Unknown Player';
         const height = formatHeight(player.height);
-        const weight = player.weight ? `${player.weight} lbs` : 'N/A';
-        const gpaVal = player.gpa ? parseFloat(player.gpa) : null;
-        const gpa = gpaVal ? gpaVal.toFixed(1) : 'N/A';
-        const school = player.team_name || 'Unknown School';
+        const weight = player.weight ? `${player.weight} lbs` : '';
+        const school = player.team_name || '';
         const state = player.state || '';
-        const gradYear = player.graduation_year || 'N/A';
         const profileImage = player.profile_image_url;
+        const position = formatAllPositions(player.position);
 
-        card.className = `ra-player-card${isTransfer ? ' ra-transfer' : ''}`;
+        const avatarHtml = profileImage
+            ? `<img src="${profileImage}" alt="${escapeHtml(displayName)}">`
+            : `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>`;
 
-        let detailsHtml = '';
+        let line1, line2, line3, avatarClass;
+
         if (isTransfer) {
-            const eligibility = player.eligibility ? `${player.eligibility} Year${player.eligibility > 1 ? 's' : ''}` : 'N/A';
+            const eligibility = player.eligibility ? `YOE: ${player.eligibility} year${player.eligibility > 1 ? 's' : ''}` : '';
             const division = formatDivision(player.college_division);
-            detailsHtml = `
-                <div class="ra-card-stats">
-                    <div class="ra-stat-item">
-                        <div class="ra-stat-label">Height</div>
-                        <div class="ra-stat-value">${height}</div>
-                    </div>
-                    <div class="ra-stat-item">
-                        <div class="ra-stat-label">Weight</div>
-                        <div class="ra-stat-value">${weight}</div>
-                    </div>
-                    <div class="ra-stat-item">
-                        <div class="ra-stat-label">Eligibility</div>
-                        <div class="ra-stat-value">${eligibility}</div>
-                    </div>
-                </div>
-                <div class="ra-card-gpa-row">
-                    <span class="ra-gpa-label">GPA:</span>
-                    <span class="ra-gpa-value">${gpa}</span>
-                </div>
-                <div class="ra-card-details">
-                    <div class="ra-detail-item ra-transfer-detail">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-                            <circle cx="12" cy="10" r="3"></circle>
-                        </svg>
-                        Previously: ${escapeHtml(school)}${division ? ` (${division})` : ''}
-                    </div>
-                </div>`;
+            const logoHtml = (typeof getSchoolLogoHTML === 'function') ? getSchoolLogoHTML(school, '../../assets', 16) : '';
+
+            const line2Parts = [position, height, weight, eligibility].filter(p => p);
+
+            line1 = `${escapeHtml(displayName)}${logoHtml ? ' ' + logoHtml : ''}`;
+            line2 = line2Parts.join(' &bull; ');
+            line3 = school ? `<span class="ra-row-stats-label">Previously:</span> ${escapeHtml(school)}${division ? ` (${division})` : ''}` : '';
+            avatarClass = 'ra-row-avatar transfer-border';
+            row.className = 'ra-player-row ra-transfer';
         } else {
+            const gradYear = player.graduation_year || '';
             const offerCount = countOffers(player.offers);
-            detailsHtml = `
-                <div class="ra-card-stats">
-                    <div class="ra-stat-item">
-                        <div class="ra-stat-label">Height</div>
-                        <div class="ra-stat-value">${height}</div>
-                    </div>
-                    <div class="ra-stat-item">
-                        <div class="ra-stat-label">Weight</div>
-                        <div class="ra-stat-value">${weight}</div>
-                    </div>
-                    <div class="ra-stat-item">
-                        <div class="ra-stat-label">GPA</div>
-                        <div class="ra-stat-value">${gpa}</div>
-                    </div>
-                </div>
-                <div class="ra-card-details">
-                    <div class="ra-detail-item">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-                            <path d="M9 22V12h6v10"></path>
-                        </svg>
-                        ${escapeHtml(school)}${state ? `, ${escapeHtml(state)}` : ''}
-                    </div>
-                    <div class="ra-detail-item">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                            <line x1="16" y1="2" x2="16" y2="6"></line>
-                            <line x1="8" y1="2" x2="8" y2="6"></line>
-                            <line x1="3" y1="10" x2="21" y2="10"></line>
-                        </svg>
-                        Class of ${gradYear}
-                    </div>
-                    <div class="ra-detail-item ra-offers-detail">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                            <polyline points="22 4 12 14.01 9 11.01"></polyline>
-                        </svg>
-                        Offers: ${offerCount}
-                    </div>
-                </div>`;
+            const schoolState = school + (state ? `, ${escapeHtml(state)}` : '');
+            const offersHtml = `<span class="ra-row-offers">Offers: ${offerCount}</span>`;
+
+            const line2Parts = [position, height, weight, gradYear].filter(p => p);
+
+            line1 = escapeHtml(displayName);
+            line2 = line2Parts.join(' &bull; ');
+            line3 = `${escapeHtml(schoolState)}${schoolState ? ' &bull; ' : ''}${offersHtml}`;
+            avatarClass = 'ra-row-avatar player-border';
+            row.className = 'ra-player-row';
         }
 
-        card.innerHTML = `
-            <div class="ra-card-header">
-                <div class="ra-card-avatar">
-                    ${profileImage
-                        ? `<img src="${profileImage}" alt="${escapeHtml(displayName)}" class="ra-avatar-image">`
-                        : `<svg viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                            <circle cx="12" cy="7" r="4"></circle>
-                        </svg>`
-                    }
-                </div>
-                ${isTransfer ? '<div class="ra-portal-badge">PORTAL</div>' : ''}
+        row.innerHTML = `
+            <div class="${avatarClass}">
+                ${avatarHtml}
             </div>
-            <h3 class="ra-card-name">${escapeHtml(displayName)}</h3>
-            <div class="ra-card-positions">
-                ${formatPositions(player.position)}
+            <div class="ra-row-info">
+                <div class="ra-row-name">${line1}</div>
+                <div class="ra-row-line2 ${isTransfer ? 'color-red' : 'color-cerulean'}">${line2}</div>
+                <div class="ra-row-line3">${line3}</div>
             </div>
-            ${detailsHtml}
-            <div class="ra-card-actions">
+            <div class="ra-row-actions">
                 <button class="ra-btn-save-player" data-player-id="${player.user_id || ''}" data-saved="false" title="Save player for later">
                     <svg class="ra-save-icon-outline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
@@ -511,7 +468,7 @@ document.addEventListener('DOMContentLoaded', function() {
         `;
 
         // Save button toggle
-        const saveBtn = card.querySelector('.ra-btn-save-player');
+        const saveBtn = row.querySelector('.ra-btn-save-player');
         if (saveBtn && player.user_id) {
             saveBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -519,20 +476,20 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
 
-        card.querySelector('.ra-btn-view-profile').addEventListener('click', (e) => {
+        row.querySelector('.ra-btn-view-profile').addEventListener('click', (e) => {
             e.stopPropagation();
             if (player.username) {
                 window.location.href = `../../shared/view-profile.html?username=${player.username}`;
             }
         });
 
-        card.addEventListener('click', () => {
+        row.addEventListener('click', () => {
             if (player.username) {
                 window.location.href = `../../shared/view-profile.html?username=${player.username}`;
             }
         });
 
-        return card;
+        return row;
     }
 
     // ========================

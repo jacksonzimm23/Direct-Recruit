@@ -2843,7 +2843,11 @@ async function initializeSubscriptionSection() {
 
     try {
         const me = await API.auth.getCurrentUser();
-        const profileFolder = getProfileFolder(me.user);
+        const profileFolder = getProfileFolder({
+            role: me.user.role,
+            is_transfer_player: me.user.is_transfer_player,
+            college_division: me.profile && me.profile.college_division
+        });
         const isPaid = PAID_PROFILE_TYPES.includes(profileFolder);
 
         if (!isPaid) {
