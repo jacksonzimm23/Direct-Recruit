@@ -440,6 +440,28 @@ async function seedProfiles(users) {
   }
 }
 
+async function seedSubscriptions(users) {
+  console.log('\n--- Seeding subscriptions for paid accounts ---\n');
+
+  const paidAccounts = [
+    { email: 'hsplayer@test.com', tier: 'player', subId: 'sub_mock_hsplayer', cusId: 'cus_mock_hsplayer' },
+    { email: 'transferplayer@test.com', tier: 'player', subId: 'sub_mock_transferplayer', cusId: 'cus_mock_transferplayer' },
+    { email: 'collegecoach@test.com', tier: 'pro', subId: 'sub_mock_collegecoach', cusId: 'cus_mock_collegecoach' }
+  ];
+
+  for (const acct of paidAccounts) {
+    const userId = users[acct.email];
+    if (!userId) continue;
+    await pool.query(
+      `UPDATE users SET subscription_status = 'active', subscription_tier = $1,
+       stripe_subscription_id = $2, stripe_customer_id = $3
+       WHERE id = $4`,
+      [acct.tier, acct.subId, acct.cusId, userId]
+    );
+    console.log(`  SET: ${acct.email} → tier=${acct.tier}, status=active`);
+  }
+}
+
 async function seedFollows(users) {
   console.log('\n--- Seeding follow relationships ---\n');
 
@@ -573,6 +595,7 @@ async function main() {
     await runMigrations();
     const users = await seedUsers();
     await seedProfiles(users);
+    await seedSubscriptions(users);
     await seedFollows(users);
     await seedPosts(users);
     await seedConversation(users);

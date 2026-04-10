@@ -310,6 +310,7 @@ function updateNavbarForLoggedInUser(user, profile) {
                         <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                     </svg>
                     <span>Discover</span>
+                    ${userFolder === 'collegecoach' ? '<span class="nav-ai-badge">AI</span>' : ''}
                 </a>
                 <a href="/frontend/${userFolder}/tabs/my-profile.html" class="nav-item ${profileActive}" id="profileNavItem">
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -352,6 +353,7 @@ function updateNavbarForLoggedInUser(user, profile) {
                         <circle cx="12" cy="12" r="3"></circle>
                     </svg>
                     <span>Transfer Portal</span>
+                    ${userFolder === 'collegecoach' ? '<span class="nav-ai-badge">AI</span>' : ''}
                 </a>
                 ` : ''}
                 <a href="/frontend/${userFolder}/tabs/settings.html" class="nav-item">
@@ -482,6 +484,22 @@ function updateNavbarForLoggedInUser(user, profile) {
             .sidebar .sidebar-nav .nav-item.active .nav-icon,
             .sidebar .sidebar-nav a.nav-item.active .nav-icon {
                 color: ${navActiveColor} !important;
+            }
+            /* AI badge - always orange regardless of viewed profile theme */
+            .sidebar .sidebar-nav .nav-ai-badge {
+                font-size: 0.6rem !important;
+                font-weight: 800 !important;
+                letter-spacing: 0.05em !important;
+                padding: 0.15rem 0.45rem !important;
+                border-radius: 50px !important;
+                background: rgba(255, 107, 53, 0.2) !important;
+                color: #ff6b35 !important;
+                border: 1px solid rgba(255, 107, 53, 0.3) !important;
+                margin-left: auto !important;
+            }
+            .sidebar .sidebar-nav .nav-item.active .nav-ai-badge {
+                background: rgba(255, 107, 53, 0.25) !important;
+                color: #ff7d4d !important;
             }
         `;
         document.head.appendChild(styleTag);
