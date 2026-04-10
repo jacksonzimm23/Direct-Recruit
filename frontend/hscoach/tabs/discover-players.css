@@ -237,10 +237,100 @@
 /* Players Grid */
 .players-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-    gap: 1.5rem;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0;
     margin-bottom: 2rem;
 }
+
+/* === DESKTOP DISCOVER ROW LAYOUT === */
+.discover-desktop-row {
+    display: flex;
+    align-items: center;
+    gap: 0.875rem;
+    padding: 0.75rem 1rem;
+    cursor: pointer;
+    border-bottom: 1px solid rgba(254, 252, 251, 0.06);
+    min-height: 76px;
+    box-sizing: border-box;
+    transition: background 0.15s ease;
+}
+.discover-desktop-row:hover {
+    background: rgba(254, 252, 251, 0.05);
+}
+
+.discover-desktop-avatar {
+    width: 52px;
+    height: 52px;
+    min-width: 52px;
+    border-radius: 50%;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.discover-desktop-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.discover-desktop-avatar svg {
+    width: 26px;
+    height: 26px;
+}
+
+.discover-desktop-avatar.player-border {
+    border: 2.5px solid #1282a2;
+    background: rgba(18, 130, 162, 0.15);
+    color: #1282a2;
+}
+.discover-desktop-avatar.coach-border {
+    border: 2.5px solid #ff6b35;
+    background: rgba(255, 107, 53, 0.15);
+    color: #ff6b35;
+}
+
+.discover-desktop-info {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.discover-desktop-name {
+    font-weight: 800;
+    font-size: 0.95rem;
+    color: var(--white);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.discover-desktop-line2 {
+    font-size: 0.8rem;
+    font-weight: 700;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.discover-desktop-line3 {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: rgba(254, 252, 251, 0.6);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.discover-desktop-offers {
+    color: #ff6b35;
+    font-weight: 700;
+}
+
+.discover-desktop-line2.color-cerulean { color: #1282a2; }
+.discover-desktop-line2.color-orange { color: #ff6b35; }
 
 /* Player Card */
 .player-card {
@@ -500,8 +590,8 @@
 
 .coaches-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-    gap: 1.5rem;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0;
     margin-bottom: 2rem;
 }
 
@@ -689,11 +779,11 @@
     }
 
     .players-grid {
-        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        grid-template-columns: 1fr;
     }
 
     .coaches-grid {
-        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        grid-template-columns: 1fr;
     }
 }
 
@@ -886,6 +976,8 @@
 
     .discover-row-details.player-details-color { color: #1282a2; }
     .discover-row-details.coach-details-color { color: #ff6b35; }
+
+    .discover-desktop-row { display: none !important; }
 }
 
 @media (max-width: 480px) {

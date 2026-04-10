@@ -29,6 +29,11 @@ document.addEventListener('DOMContentLoaded', function() {
         const loadMoreBtn = document.getElementById('loadMoreUsersBtn');
 
         if (isLoadingUsers) return;
+
+        // Ensure school logos are loaded before rendering
+        if (typeof ensureSchoolLogosLoaded === 'function') {
+            await ensureSchoolLogosLoaded('../../assets');
+        }
         if (!append) {
             // Reset all offsets
             offsets = { hsplayer: 0, collegeplayer: 0, transferplayer: 0, hscoach: 0, collegecoach: 0, other: 0 };
@@ -455,288 +460,162 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // ============ CARD TEMPLATES ============
 
-    // HS Player Card
+    // SVG fallback for missing profile images
+    const avatarSvg = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>`;
+
+    // Format all positions separated by /
+    function formatAllPositions(posStr) {
+        if (!posStr) return '';
+        return posStr.split(/[,\/]/).map(p => p.trim()).filter(p => p).join('/');
+    }
+
     function createHSPlayerCard(player) {
         if (isMobile()) return createMobileHSPlayerRow(player);
         const displayName = `${player.first_name || ''} ${player.last_name || ''}`.trim() || 'Unknown Player';
         const height = formatHeight(player.height);
-        const weight = player.weight ? `${player.weight} lbs` : 'N/A';
-        const gpaVal = player.gpa ? parseFloat(player.gpa) : null;
-        const gpa = gpaVal ? gpaVal.toFixed(1) : 'N/A';
-        const school = player.team_name || 'Unknown School';
+        const weight = player.weight ? `${player.weight} lbs` : '';
+        const gradYear = player.graduation_year || '';
+        const school = player.team_name || '';
         const state = player.state || '';
-        const gradYear = player.graduation_year || 'N/A';
         const offerCount = countOffers(player.offers);
         const profileImage = player.profile_image_url;
+        const position = formatAllPositions(player.position);
+        const line2Parts = [position, height, weight, gradYear].filter(p => p);
+        const schoolState = school + (state ? `, ${state}` : '');
+        const offersHtml = `<span class="discover-desktop-offers">Offers: ${offerCount}</span>`;
 
         return `
-            <div class="player-card" data-username="${player.username || ''}" data-user-type="hsplayer">
-                <div class="player-card-header">
-                    <div class="player-avatar-large" style="color: ${getRoleBorderColor('player', false, null)}; background: ${getRoleAvatarBg('player', false, null)}; border: 2px solid ${getRoleBorderColor('player', false, null)}">
-                        ${profileImage
-                            ? `<img src="${profileImage}" alt="${displayName}" class="avatar-image">`
-                            : `<svg viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                                <circle cx="12" cy="7" r="4"></circle>
-                            </svg>`
-                        }
-                    </div>
+            <div class="discover-desktop-row" data-username="${player.username || ''}" data-user-type="hsplayer">
+                <div class="discover-desktop-avatar player-border">
+                    ${profileImage ? `<img src="${profileImage}" alt="${displayName}">` : avatarSvg}
                 </div>
-                <h3 class="player-name">${displayName}</h3>
-                <div class="player-positions">
-                    ${formatPositions(player.position)}
+                <div class="discover-desktop-info">
+                    <div class="discover-desktop-name">${displayName}</div>
+                    <div class="discover-desktop-line2 color-cerulean">${line2Parts.join(' &bull; ')}</div>
+                    <div class="discover-desktop-line3">${schoolState}${schoolState ? ' &bull; ' : ''}${offersHtml}</div>
                 </div>
-                <div class="player-stats">
-                    <div class="stat-item">
-                        <div class="stat-label">Height</div>
-                        <div class="stat-value">${height}</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-label">Weight</div>
-                        <div class="stat-value">${weight}</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-label">GPA</div>
-                        <div class="stat-value">${gpa}</div>
-                    </div>
-                </div>
-                <div class="player-details">
-                    <div class="detail-item">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-                            <path d="M9 22V12h6v10"></path>
-                        </svg>
-                        ${school}${state ? `, ${state}` : ''}
-                    </div>
-                    <div class="detail-item">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                            <line x1="16" y1="2" x2="16" y2="6"></line>
-                            <line x1="8" y1="2" x2="8" y2="6"></line>
-                            <line x1="3" y1="10" x2="21" y2="10"></line>
-                        </svg>
-                        Class of ${gradYear}
-                    </div>
-                    <div class="detail-item offers-detail">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                            <polyline points="22 4 12 14.01 9 11.01"></polyline>
-                        </svg>
-                        Offers: ${offerCount}
-                    </div>
-                </div>
-                <button class="btn-view-profile">View Profile</button>
-            </div>
-        `;
+            </div>`;
     }
 
-    // College Player Card
     function createCollegePlayerCard(player) {
         if (isMobile()) return createMobileCollegePlayerRow(player);
         const displayName = `${player.first_name || ''} ${player.last_name || ''}`.trim() || 'Unknown Player';
-        const school = player.team_name || 'Unknown School';
+        const school = player.team_name || '';
         const division = player.college_division || '';
-        const state = player.state || '';
+        const shortDiv = getShortDivision(division);
         const profileImage = player.profile_image_url;
-        const shortDivision = getShortDivision(division);
-        const divisionDisplay = formatDivisionDisplay(division);
+        const position = formatAllPositions(player.position);
+        const logoHtml = (typeof getSchoolLogoHTML === 'function') ? getSchoolLogoHTML(school, '../../assets', 18) : '';
+        const line2Parts = [position, school, shortDiv].filter(p => p);
 
         return `
-            <div class="player-card" data-username="${player.username || ''}" data-user-type="collegeplayer">
-                <div class="player-card-header">
-                    <div class="player-avatar-large" style="color: ${getRoleBorderColor('player', false, player.college_division)}; background: ${getRoleAvatarBg('player', false, player.college_division)}; border: 2px solid ${getRoleBorderColor('player', false, player.college_division)}">
-                        ${profileImage
-                            ? `<img src="${profileImage}" alt="${displayName}" class="avatar-image">`
-                            : `<svg viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                                <circle cx="12" cy="7" r="4"></circle>
-                            </svg>`
-                        }
-                    </div>
-                    <div class="division-badge">🎓 ${shortDivision}</div>
+            <div class="discover-desktop-row" data-username="${player.username || ''}" data-user-type="collegeplayer">
+                <div class="discover-desktop-avatar player-border">
+                    ${profileImage ? `<img src="${profileImage}" alt="${displayName}">` : avatarSvg}
                 </div>
-                <h3 class="player-name">${displayName}</h3>
-                <div class="player-positions">
-                    ${formatPositions(player.position)}
+                <div class="discover-desktop-info">
+                    <div class="discover-desktop-name">${displayName}${logoHtml ? ' ' + logoHtml : ''}</div>
+                    <div class="discover-desktop-line2 color-cerulean">${line2Parts.join(' &bull; ')}</div>
                 </div>
-                <div class="player-school-box">
-                    <div class="school-name">${school}${state ? ', ' + state : ''}</div>
-                    <div class="school-division">${divisionDisplay || 'N/A'}</div>
-                </div>
-                <button class="btn-view-profile">View Profile</button>
-            </div>
-        `;
+            </div>`;
     }
 
-    // Transfer Player Card
     function createTransferPlayerCard(player) {
         if (isMobile()) return createMobileTransferPlayerRow(player);
         const displayName = `${player.first_name || ''} ${player.last_name || ''}`.trim() || 'Unknown Player';
         const height = formatHeight(player.height);
-        const weight = player.weight ? `${player.weight} lbs` : 'N/A';
+        const weight = player.weight ? `${player.weight} lbs` : '';
         const profileImage = player.profile_image_url;
-        const eligibility = player.eligibility || 'N/A';
+        const position = formatAllPositions(player.position);
+        const eligibility = player.eligibility;
+        const yoe = eligibility ? `YOE: ${eligibility} year${eligibility == 1 ? '' : 's'}` : '';
+        const prevDiv = player.college_division || '';
+        const shortDiv = getShortDivision(prevDiv);
+        const offerCount = countOffers(player.offers);
+        const school = player.team_name || '';
+        const logoHtml = (typeof getSchoolLogoHTML === 'function') ? getSchoolLogoHTML(school, '../../assets', 18) : '';
+        const line2Parts = [position, height, weight, yoe].filter(p => p);
+        const line3Parts = shortDiv ? [`Previous division: ${shortDiv}`] : [];
+        const offersHtml = `<span class="discover-desktop-offers">Offers: ${offerCount}</span>`;
 
         return `
-            <div class="player-card transfer-card" data-username="${player.username || ''}" data-user-type="transferplayer" style="border-color: rgba(220, 53, 69, 0.3);">
-                <div class="player-card-header">
-                    <div class="player-avatar-large" style="color: ${getRoleBorderColor('player', true, null)}; background: ${getRoleAvatarBg('player', true, null)}; border: 2px solid ${getRoleBorderColor('player', true, null)}">
-                        ${profileImage
-                            ? `<img src="${profileImage}" alt="${displayName}" class="avatar-image">`
-                            : `<svg viewBox="0 0 24 24" fill="currentColor" style="color: #dc3545;">
-                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                                <circle cx="12" cy="7" r="4"></circle>
-                            </svg>`
-                        }
-                    </div>
-                    <div class="division-badge" style="background: #dc3545;">🔄 Transfer</div>
+            <div class="discover-desktop-row" data-username="${player.username || ''}" data-user-type="transferplayer">
+                <div class="discover-desktop-avatar transfer-border">
+                    ${profileImage ? `<img src="${profileImage}" alt="${displayName}">` : `<svg viewBox="0 0 24 24" fill="currentColor" style="color:#b91c1c;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>`}
                 </div>
-                <h3 class="player-name">${displayName}</h3>
-                <div class="player-positions">
-                    ${formatPositions(player.position)}
+                <div class="discover-desktop-info">
+                    <div class="discover-desktop-name">${displayName}${logoHtml ? ' ' + logoHtml : ''}</div>
+                    <div class="discover-desktop-line2 color-red">${line2Parts.join(' &bull; ')}</div>
+                    <div class="discover-desktop-line3">${line3Parts.join('')}${line3Parts.length ? ' &bull; ' : ''}${offersHtml}</div>
                 </div>
-                <div class="player-stats">
-                    <div class="stat-item">
-                        <div class="stat-label">Height</div>
-                        <div class="stat-value">${height}</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-label">Weight</div>
-                        <div class="stat-value">${weight}</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-label">Eligibility</div>
-                        <div class="stat-value">${eligibility} yr</div>
-                    </div>
-                </div>
-                <button class="btn-view-profile" style="background: #dc3545;">View Profile</button>
-            </div>
-        `;
+            </div>`;
     }
 
-    // HS Coach Card
     function createHSCoachCard(coach) {
         if (isMobile()) return createMobileHSCoachRow(coach);
         const displayName = `${coach.first_name || ''} ${coach.last_name || ''}`.trim() || 'Unknown Coach';
-        const school = coach.high_school || coach.school_name || 'Unknown School';
+        const school = coach.high_school || coach.school_name || '';
         const state = coach.state || '';
         const profileImage = coach.profile_image_url;
-        const positionAcronym = getPositionAcronym(coach.position_title);
+        const schoolState = school + (state ? `, ${state}` : '');
 
         return `
-            <div class="coach-card" data-username="${coach.username || ''}" data-user-type="hscoach">
-                <div class="coach-card-header">
-                    <div class="coach-avatar-large" style="color: ${getRoleBorderColor('coach', false, null)}; background: ${getRoleAvatarBg('coach', false, null)}; border: 2px solid ${getRoleBorderColor('coach', false, null)}">
-                        ${profileImage
-                            ? `<img src="${profileImage}" alt="${displayName}" class="avatar-image">`
-                            : `<svg viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                                <circle cx="12" cy="7" r="4"></circle>
-                            </svg>`
-                        }
-                    </div>
-                    <div class="coach-badge">🏈 HS</div>
+            <div class="discover-desktop-row" data-username="${coach.username || ''}" data-user-type="hscoach">
+                <div class="discover-desktop-avatar coach-border">
+                    ${profileImage ? `<img src="${profileImage}" alt="${displayName}">` : avatarSvg}
                 </div>
-                <h3 class="coach-name">${displayName}</h3>
-                ${positionAcronym ? `<div class="coach-position">Position: ${positionAcronym}</div>` : ''}
-                <div class="coach-school">
-                    <div class="school-name">${school}${state ? ', ' + state : ''}</div>
-                    <div class="school-division">High School</div>
+                <div class="discover-desktop-info">
+                    <div class="discover-desktop-name">${displayName}</div>
+                    <div class="discover-desktop-line2 color-orange">${schoolState}</div>
                 </div>
-                <button class="btn-view-profile-coach">View Profile</button>
-            </div>
-        `;
+            </div>`;
     }
 
-    // College Coach Card
     function createCollegeCoachCard(coach) {
         if (isMobile()) return createMobileCollegeCoachRow(coach);
         const displayName = `${coach.first_name || ''} ${coach.last_name || ''}`.trim() || 'Unknown Coach';
-        const school = coach.team_name || 'Unknown School';
-        const division = coach.college_division || '';
+        const school = coach.team_name || '';
         const state = coach.state || '';
+        const division = coach.college_division || '';
+        const shortDiv = getShortDivision(division);
         const profileImage = coach.profile_image_url;
-        const positionAcronym = getPositionAcronym(coach.position_title);
-        const shortDivision = getShortDivision(division);
-        const divisionDisplay = formatDivisionDisplay(division);
-
-        // Parse recruiting positions
-        let recruitingTags = '';
-        if (coach.cc_pos && coach.cc_pos.trim()) {
-            const positions = coach.cc_pos.split(',').map(p => p.trim()).filter(p => p);
-            recruitingTags = positions.map(pos => `<span class="position-tag">${pos}</span>`).join('');
-        }
-        if (!recruitingTags) {
-            recruitingTags = '<span class="position-tag">All Positions</span>';
-        }
+        const logoHtml = (typeof getSchoolLogoHTML === 'function') ? getSchoolLogoHTML(school, '../../assets', 18) : '';
+        const schoolState = school + (state ? `, ${state}` : '');
+        const line2Parts = [schoolState, shortDiv].filter(p => p);
 
         return `
-            <div class="coach-card" data-username="${coach.username || ''}" data-user-type="collegecoach">
-                <div class="coach-card-header">
-                    <div class="coach-avatar-large" style="color: ${getRoleBorderColor('coach', false, coach.college_division)}; background: ${getRoleAvatarBg('coach', false, coach.college_division)}; border: 2px solid ${getRoleBorderColor('coach', false, coach.college_division)}">
-                        ${profileImage
-                            ? `<img src="${profileImage}" alt="${displayName}" class="avatar-image">`
-                            : `<svg viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                                <circle cx="12" cy="7" r="4"></circle>
-                            </svg>`
-                        }
-                    </div>
-                    <div class="coach-badge">🎓 ${shortDivision}</div>
+            <div class="discover-desktop-row" data-username="${coach.username || ''}" data-user-type="collegecoach">
+                <div class="discover-desktop-avatar coach-border">
+                    ${profileImage ? `<img src="${profileImage}" alt="${displayName}">` : avatarSvg}
                 </div>
-                <h3 class="coach-name">
-                    ${displayName}
-                    <svg class="verified-badge" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
-                        <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"/>
-                    </svg>
-                </h3>
-                <div class="coach-position">Position: ${positionAcronym || 'Coach'}</div>
-                <div class="coach-school">
-                    <div class="school-name">${school}${state ? ', ' + state : ''}</div>
-                    <div class="school-division">${divisionDisplay}</div>
+                <div class="discover-desktop-info">
+                    <div class="discover-desktop-name">${displayName}${logoHtml ? ' ' + logoHtml : ''}</div>
+                    <div class="discover-desktop-line2 color-orange">${line2Parts.join(' &bull; ')}</div>
                 </div>
-                <div class="coach-recruiting">
-                    <div class="recruiting-label">Recruiting:</div>
-                    <div class="position-tags">
-                        ${recruitingTags}
-                    </div>
-                </div>
-                <button class="btn-view-profile-coach">View Profile</button>
-            </div>
-        `;
+            </div>`;
     }
 
-    // Other Profile Card (Yellow Theme)
     function createOtherCard(profile) {
         if (isMobile()) return createMobileOtherRow(profile);
         const displayName = `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || 'Unknown User';
-        const subheader = profile.subheader || '';
+        const subheader = profile.subheader || 'Direct Recruit User';
         const profileImage = profile.profile_picture_url || profile.profile_image_url;
 
         return `
-            <div class="other-card" data-username="${profile.username || ''}" data-user-type="other">
-                <div class="other-card-header">
-                    <div class="other-avatar-large" style="color: ${getRoleBorderColor('other', false, null)}; background: ${getRoleAvatarBg('other', false, null)}; border: 2px solid ${getRoleBorderColor('other', false, null)}">
-                        ${profileImage
-                            ? `<img src="${profileImage}" alt="${displayName}" class="avatar-image">`
-                            : `<svg viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                                <circle cx="12" cy="7" r="4"></circle>
-                            </svg>`
-                        }
-                    </div>
+            <div class="discover-desktop-row" data-username="${profile.username || ''}" data-user-type="other">
+                <div class="discover-desktop-avatar other-border">
+                    ${profileImage ? `<img src="${profileImage}" alt="${displayName}">` : avatarSvg}
                 </div>
-                <h3 class="other-name">${displayName}</h3>
-                <div class="other-subheader">${subheader || 'Direct Recruit User'}</div>
-                <button class="btn-view-profile-other">View Profile</button>
-            </div>
-        `;
+                <div class="discover-desktop-info">
+                    <div class="discover-desktop-name">${displayName}</div>
+                    <div class="discover-desktop-line2 color-gold">${subheader}</div>
+                </div>
+            </div>`;
     }
 
     // Attach click listeners to user cards
     function attachUserCardListeners() {
-        const userCards = document.querySelectorAll('.player-card, .coach-card, .other-card, .discover-row');
+        const userCards = document.querySelectorAll('.player-card, .coach-card, .other-card, .discover-row, .discover-desktop-row');
         userCards.forEach(card => {
             // Remove existing listeners by cloning
             const newCard = card.cloneNode(true);
