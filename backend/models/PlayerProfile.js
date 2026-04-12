@@ -37,6 +37,20 @@ function buildRelevanceScoreExpr(filters, heightCaseExpr, validStatKeys, values,
     paramCount++;
   }
 
+  // SAT score excess: reward higher SAT above minimum (divide by 50 so +500 over min = 10 pts max)
+  if (filters.min_sat_score) {
+    scoreParts.push(`CASE WHEN pp.sat_score IS NOT NULL AND pp.sat_score > $${paramCount} THEN LEAST((pp.sat_score - $${paramCount}) / 50.0, 10.0) ELSE 0 END`);
+    values.push(filters.min_sat_score);
+    paramCount++;
+  }
+
+  // ACT score excess: reward higher ACT above minimum (multiply by 2 so +5 over min = 10 pts max)
+  if (filters.min_act_score) {
+    scoreParts.push(`CASE WHEN pp.act_score IS NOT NULL AND pp.act_score > $${paramCount} THEN LEAST((pp.act_score - $${paramCount}) * 2.0, 10.0) ELSE 0 END`);
+    values.push(filters.min_act_score);
+    paramCount++;
+  }
+
   // Stat performance scoring: for each stat filter, reward exceeding the threshold
   if (filters.stat_filters && filters.stat_filters.length > 0) {
     filters.stat_filters.forEach((sf, index) => {
@@ -288,6 +302,16 @@ class PlayerProfile {
       values.push(filters.min_gpa);
       paramCount++;
     }
+    if (filters.min_sat_score) {
+      query += ` AND pp.sat_score >= $${paramCount}`;
+      values.push(filters.min_sat_score);
+      paramCount++;
+    }
+    if (filters.min_act_score) {
+      query += ` AND pp.act_score >= $${paramCount}`;
+      values.push(filters.min_act_score);
+      paramCount++;
+    }
     if (filters.searchTerm) {
       query += ` AND (similarity(pp.first_name, $${paramCount}) > 0.2 OR similarity(pp.last_name, $${paramCount}) > 0.2 OR similarity(pp.username, $${paramCount}) > 0.2 OR pp.first_name ILIKE $${paramCount + 1} OR pp.last_name ILIKE $${paramCount + 1} OR pp.username ILIKE $${paramCount + 1})`;
       values.push(filters.searchTerm, `%${filters.searchTerm}%`);
@@ -424,6 +448,16 @@ class PlayerProfile {
     if (filters.min_gpa) {
       query += ` AND pp.gpa >= $${paramCount}`;
       values.push(filters.min_gpa);
+      paramCount++;
+    }
+    if (filters.min_sat_score) {
+      query += ` AND pp.sat_score >= $${paramCount}`;
+      values.push(filters.min_sat_score);
+      paramCount++;
+    }
+    if (filters.min_act_score) {
+      query += ` AND pp.act_score >= $${paramCount}`;
+      values.push(filters.min_act_score);
       paramCount++;
     }
     if (filters.searchTerm) {
@@ -602,6 +636,20 @@ class PlayerProfile {
     if (filters.min_gpa) {
       whereClauses.push(`pp.gpa >= $${paramCount}`);
       values.push(filters.min_gpa);
+      paramCount++;
+    }
+
+    // SAT score filter
+    if (filters.min_sat_score) {
+      whereClauses.push(`pp.sat_score >= $${paramCount}`);
+      values.push(filters.min_sat_score);
+      paramCount++;
+    }
+
+    // ACT score filter
+    if (filters.min_act_score) {
+      whereClauses.push(`pp.act_score >= $${paramCount}`);
+      values.push(filters.min_act_score);
       paramCount++;
     }
 

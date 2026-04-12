@@ -32,6 +32,8 @@ When the coach describes players they're looking for, respond with ONLY a valid 
     "min_weight": 200,
     "max_weight": null,
     "min_gpa": 3.5,
+    "min_sat_score": 1200,
+    "min_act_score": 28,
     "college_division": null,
     "eligibility": null,
     "searchTerm": null,
@@ -62,6 +64,8 @@ When the coach describes players they're looking for, respond with ONLY a valid 
 - min_height / max_height: In INCHES (e.g., 74 = 6'2"). Convert feet/inches to total inches. Height conversion: feet * 12 + inches (6'0"=72, 6'1"=73, 6'2"=74, 5'10"=70, 5'11"=71)
 - min_weight / max_weight: In POUNDS
 - min_gpa: Decimal 0.00-4.00
+- min_sat_score: Integer 400-1600 (SAT score)
+- min_act_score: Integer 1-36 (ACT score)
 - graduation_year: Integer year (e.g., 2026)
 - college_division: Only for transfer players — one of: "D1 FBS", "D1 FCS", "D2", "D3", "NAIA", "NJCAA", "3C2A"
 - eligibility: Integer years remaining (transfer players only)

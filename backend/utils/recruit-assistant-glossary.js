@@ -259,13 +259,17 @@ const RA_GLOSSARY = {
     academicTerms: {
         'high gpa':         { min_gpa: 3.5 },
         'good grades':      { min_gpa: 3.0 },
-        'strong academics': { min_gpa: 3.2 },
+        'strong academics': { min_gpa: 3.2, min_sat_score: 1200, min_act_score: 25 },
         'honor roll':       { min_gpa: 3.5 },
         'academic':         { min_gpa: 3.0 },
         'smart':            { min_gpa: 3.0 },
         'qualifies':        { min_gpa: 'coach_baseline' },
         'qualifier':        { min_gpa: 'coach_baseline' },
-        'eligible':         { min_gpa: 'coach_baseline' }
+        'eligible':         { min_gpa: 'coach_baseline' },
+        'high sat':         { min_sat_score: 1400 },
+        'good sat':         { min_sat_score: 1200 },
+        'high act':         { min_act_score: 30 },
+        'good act':         { min_act_score: 25 }
     },
 
     // ========================================================
