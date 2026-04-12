@@ -203,6 +203,8 @@
             'Highlights/Film': 'Coaches frequently filter by film availability. Adding highlights significantly increases your search visibility.',
             'Stats': 'Coaches can search by game statistics. Adding your stats helps you appear in performance-based searches.',
             'GPA': 'Many coaches include academic filters in their searches. Adding your GPA opens up more results.',
+            'SAT Score': 'Coaches can filter by SAT score. Adding yours helps you appear in academic-focused searches.',
+            'ACT Score': 'Coaches can filter by ACT score. Adding yours helps you appear in academic-focused searches.',
             'Offers': 'Coaches can filter by offer count and division. Listing your offers boosts your profile ranking.',
             'Position': 'Position is one of the most common search filters. Make sure your position is set.',
             'Height': 'Height is a top search filter for coaches. Adding it helps you appear in size-based searches.',

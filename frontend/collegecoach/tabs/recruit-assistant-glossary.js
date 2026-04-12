@@ -600,7 +600,11 @@ const RA_GLOSSARY = {
         'smart':            { column: 'gpa', operator: '>=', value: 3.0 },
         'qualifies':        { column: 'gpa', operator: '>=', value: null }, // uses coach's min GPA baseline
         'qualifier':        { column: 'gpa', operator: '>=', value: null }, // uses coach's min GPA baseline
-        'eligible':         { column: 'gpa', operator: '>=', value: null }  // uses coach's min GPA baseline
+        'eligible':         { column: 'gpa', operator: '>=', value: null }, // uses coach's min GPA baseline
+        'high sat':         { column: 'sat_score', operator: '>=', value: 1400 },
+        'good sat':         { column: 'sat_score', operator: '>=', value: 1200 },
+        'high act':         { column: 'act_score', operator: '>=', value: 30 },
+        'good act':         { column: 'act_score', operator: '>=', value: 25 }
     },
 
     // ========================================================

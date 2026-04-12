@@ -36,6 +36,8 @@ function extractActiveFilters(filters) {
   if (filters.min_weight) active.push('min_weight');
   if (filters.max_weight) active.push('max_weight');
   if (filters.min_gpa) active.push('min_gpa');
+  if (filters.min_sat_score) active.push('min_sat_score');
+  if (filters.min_act_score) active.push('min_act_score');
   if (filters.graduation_year) active.push('graduation_year');
   if (filters.college_division) active.push('college_division');
   if (filters.eligibility) active.push('eligibility');
