@@ -4,12 +4,12 @@
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- User types enum
-CREATE TYPE user_role AS ENUM ('player', 'coach');
-CREATE TYPE position_type AS ENUM ('QB', 'RB', 'WR', 'TE', 'OL', 'DL', 'LB', 'DB', 'K', 'P');
-CREATE TYPE player_status AS ENUM ('freshman', 'sophomore', 'junior', 'senior');
+DO $$ BEGIN CREATE TYPE user_role AS ENUM ('player', 'coach'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN CREATE TYPE position_type AS ENUM ('QB', 'RB', 'WR', 'TE', 'OL', 'DL', 'LB', 'DB', 'K', 'P'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN CREATE TYPE player_status AS ENUM ('freshman', 'sophomore', 'junior', 'senior'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- Main users table
-CREATE TABLE users (
+CREATE TABLE IF NOT EXISTS users (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     email VARCHAR(255) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
@@ -23,7 +23,7 @@ CREATE TABLE users (
 );
 
 -- Player profiles
-CREATE TABLE player_profiles (
+CREATE TABLE IF NOT EXISTS player_profiles (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id UUID REFERENCES users(id) ON DELETE CASCADE UNIQUE,
     first_name VARCHAR(100) NOT NULL,
@@ -53,7 +53,7 @@ CREATE TABLE player_profiles (
 );
 
 -- Coach profiles
-CREATE TABLE coach_profiles (
+CREATE TABLE IF NOT EXISTS coach_profiles (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id UUID REFERENCES users(id) ON DELETE CASCADE UNIQUE,
     first_name VARCHAR(100) NOT NULL,
@@ -73,7 +73,7 @@ CREATE TABLE coach_profiles (
 );
 
 -- Followers/Following system
-CREATE TABLE follows (
+CREATE TABLE IF NOT EXISTS follows (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     follower_id UUID REFERENCES users(id) ON DELETE CASCADE,
     following_id UUID REFERENCES users(id) ON DELETE CASCADE,
@@ -83,7 +83,7 @@ CREATE TABLE follows (
 );
 
 -- Posts/Feed system
-CREATE TABLE posts (
+CREATE TABLE IF NOT EXISTS posts (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id UUID REFERENCES users(id) ON DELETE CASCADE,
     content TEXT NOT NULL,
@@ -96,7 +96,7 @@ CREATE TABLE posts (
 );
 
 -- Likes
-CREATE TABLE post_likes (
+CREATE TABLE IF NOT EXISTS post_likes (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     post_id UUID REFERENCES posts(id) ON DELETE CASCADE,
     user_id UUID REFERENCES users(id) ON DELETE CASCADE,
@@ -105,7 +105,7 @@ CREATE TABLE post_likes (
 );
 
 -- Comments
-CREATE TABLE post_comments (
+CREATE TABLE IF NOT EXISTS post_comments (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     post_id UUID REFERENCES posts(id) ON DELETE CASCADE,
     user_id UUID REFERENCES users(id) ON DELETE CASCADE,
@@ -115,14 +115,14 @@ CREATE TABLE post_comments (
 );
 
 -- Messaging system
-CREATE TABLE conversations (
+CREATE TABLE IF NOT EXISTS conversations (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     created_by UUID REFERENCES users(id) ON DELETE SET NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE conversation_participants (
+CREATE TABLE IF NOT EXISTS conversation_participants (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     conversation_id UUID REFERENCES conversations(id) ON DELETE CASCADE,
     user_id UUID REFERENCES users(id) ON DELETE CASCADE,
@@ -132,7 +132,7 @@ CREATE TABLE conversation_participants (
     UNIQUE(conversation_id, user_id)
 );
 
-CREATE TABLE messages (
+CREATE TABLE IF NOT EXISTS messages (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     conversation_id UUID REFERENCES conversations(id) ON DELETE CASCADE,
     sender_id UUID REFERENCES users(id) ON DELETE CASCADE,
@@ -142,7 +142,7 @@ CREATE TABLE messages (
 );
 
 -- Player stats (optional, for tracking athletic performance)
-CREATE TABLE player_stats (
+CREATE TABLE IF NOT EXISTS player_stats (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     player_id UUID REFERENCES player_profiles(id) ON DELETE CASCADE,
     season_year INTEGER,
@@ -153,7 +153,7 @@ CREATE TABLE player_stats (
 );
 
 -- Player highlights (Hudl video links)
-CREATE TABLE player_highlights (
+CREATE TABLE IF NOT EXISTS player_highlights (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id UUID REFERENCES users(id) ON DELETE CASCADE,
     highlight_type VARCHAR(20) NOT NULL, -- 'season' or 'game'
@@ -164,23 +164,23 @@ CREATE TABLE player_highlights (
 );
 
 -- Indexes for performance
-CREATE INDEX idx_users_email ON users(email);
-CREATE INDEX idx_users_role ON users(role);
-CREATE INDEX idx_player_profiles_user_id ON player_profiles(user_id);
-CREATE INDEX idx_player_profiles_position ON player_profiles(position);
-CREATE INDEX idx_player_profiles_graduation_year ON player_profiles(graduation_year);
-CREATE INDEX idx_coach_profiles_user_id ON coach_profiles(user_id);
-CREATE INDEX idx_follows_follower ON follows(follower_id);
-CREATE INDEX idx_follows_following ON follows(following_id);
-CREATE INDEX idx_posts_user_id ON posts(user_id);
-CREATE INDEX idx_posts_created_at ON posts(created_at DESC);
-CREATE INDEX idx_post_likes_post_id ON post_likes(post_id);
-CREATE INDEX idx_post_comments_post_id ON post_comments(post_id);
-CREATE INDEX idx_messages_conversation_id ON messages(conversation_id);
-CREATE INDEX idx_messages_created_at ON messages(created_at);
-CREATE INDEX idx_conversations_created_by ON conversations(created_by);
-CREATE INDEX idx_player_highlights_user_id ON player_highlights(user_id);
-CREATE INDEX idx_player_highlights_type ON player_highlights(highlight_type);
+CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
+CREATE INDEX IF NOT EXISTS idx_player_profiles_user_id ON player_profiles(user_id);
+CREATE INDEX IF NOT EXISTS idx_player_profiles_position ON player_profiles(position);
+CREATE INDEX IF NOT EXISTS idx_player_profiles_graduation_year ON player_profiles(graduation_year);
+CREATE INDEX IF NOT EXISTS idx_coach_profiles_user_id ON coach_profiles(user_id);
+CREATE INDEX IF NOT EXISTS idx_follows_follower ON follows(follower_id);
+CREATE INDEX IF NOT EXISTS idx_follows_following ON follows(following_id);
+CREATE INDEX IF NOT EXISTS idx_posts_user_id ON posts(user_id);
+CREATE INDEX IF NOT EXISTS idx_posts_created_at ON posts(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_post_likes_post_id ON post_likes(post_id);
+CREATE INDEX IF NOT EXISTS idx_post_comments_post_id ON post_comments(post_id);
+CREATE INDEX IF NOT EXISTS idx_messages_conversation_id ON messages(conversation_id);
+CREATE INDEX IF NOT EXISTS idx_messages_created_at ON messages(created_at);
+CREATE INDEX IF NOT EXISTS idx_conversations_created_by ON conversations(created_by);
+CREATE INDEX IF NOT EXISTS idx_player_highlights_user_id ON player_highlights(user_id);
+CREATE INDEX IF NOT EXISTS idx_player_highlights_type ON player_highlights(highlight_type);
 
 -- Function to update updated_at timestamp
 CREATE OR REPLACE FUNCTION update_updated_at_column()
@@ -192,8 +192,13 @@ END;
 $$ language 'plpgsql';
 
 -- Triggers for updated_at
+DROP TRIGGER IF EXISTS update_users_updated_at ON users;
 CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON users FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+DROP TRIGGER IF EXISTS update_player_profiles_updated_at ON player_profiles;
 CREATE TRIGGER update_player_profiles_updated_at BEFORE UPDATE ON player_profiles FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+DROP TRIGGER IF EXISTS update_coach_profiles_updated_at ON coach_profiles;
 CREATE TRIGGER update_coach_profiles_updated_at BEFORE UPDATE ON coach_profiles FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+DROP TRIGGER IF EXISTS update_posts_updated_at ON posts;
 CREATE TRIGGER update_posts_updated_at BEFORE UPDATE ON posts FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+DROP TRIGGER IF EXISTS update_conversations_updated_at ON conversations;
 CREATE TRIGGER update_conversations_updated_at BEFORE UPDATE ON conversations FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
