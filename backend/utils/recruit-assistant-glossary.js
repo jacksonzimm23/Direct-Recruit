@@ -143,7 +143,10 @@ const RA_GLOSSARY = {
         'interceptions': 'int', 'picks': 'int',
         'field goals': 'm', 'field goals made': 'm',
         'extra points': 'pats',
-        'punts': 'att', 'punt average': 'avg', 'inside 20': 'i20', 'touchbacks': 'tb'
+        'punts': 'att', 'punt average': 'avg', 'inside 20': 'i20', 'touchbacks': 'tb',
+        // Composite stats — sum of multiple stat types
+        'touchdowns': 'total_tds', 'tds': 'total_tds', 'total touchdowns': 'total_tds', 'total tds': 'total_tds', 'scores': 'total_tds',
+        'yards': 'total_yds', 'total yards': 'total_yds', 'all-purpose yards': 'total_yds', 'all purpose yards': 'total_yds', 'scrimmage yards': 'total_yds'
     },
 
     // ========================================================

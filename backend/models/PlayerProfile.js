@@ -1,6 +1,12 @@
 const pool = require('../config/database');
 const { playerPopularityExpr } = require('../utils/popularity-score');
 
+// Composite stat keys that sum multiple JSONB fields (e.g., "total_tds" = pass_tds + rush_tds + rec_tds)
+const COMPOSITE_STAT_KEYS = {
+  'total_tds': ['pass_tds', 'rush_tds', 'rec_tds'],
+  'total_yds': ['pass_yds', 'rush_yds', 'rec_yds']
+};
+
 // Build a dynamic SQL scoring expression based on which filters are active.
 // Returns { expr: string, paramCount: number }.
 // Scoring is query-adaptive: factors are weighted based on what the coach asked for.
@@ -59,9 +65,14 @@ function buildRelevanceScoreExpr(filters, heightCaseExpr, validStatKeys, values,
       const scoreAlias = `score_sg${index}`;
       const scoreStatsAlias = `score_sf${index}`;
 
+      const compositeKeys = COMPOSITE_STAT_KEYS[sf.stat_key];
+      const scoreStatExpr = compositeKeys
+        ? compositeKeys.map(k => `COALESCE(CAST(${scoreStatsAlias}.stats->>'${k}' AS NUMERIC), 0)`).join(' + ')
+        : `COALESCE(CAST(${scoreStatsAlias}.stats->>'${sf.stat_key}' AS NUMERIC), 0)`;
+
       let statScoreSubquery = `COALESCE((
         SELECT LEAST(
-          SUM(COALESCE(CAST(${scoreStatsAlias}.stats->>'${sf.stat_key}' AS NUMERIC), 0)) / NULLIF($${paramCount}, 0) * 5.0,
+          SUM(${scoreStatExpr}) / NULLIF($${paramCount}, 0) * 5.0,
           10.0
         )
         FROM player_games ${scoreAlias}
@@ -494,7 +505,8 @@ class PlayerProfile {
       'rush_yds', 'rush_tds', 'pass_yds', 'pass_tds', 'ints', 'comp_%',
       'rec', 'rec_yds', 'rec_tds', 'tackles', 'tfls', 'sacks', 'pbu',
       'ff', 'int', 'att', 'm', 'blk', 'long', 'pats', 'avg', 'tb',
-      'fc', 'i20', '50+'
+      'fc', 'i20', '50+',
+      'total_tds', 'total_yds'
     ]);
 
     const values = [];
@@ -734,13 +746,19 @@ class PlayerProfile {
         }
 
         const op = sf.operator || '>=';
+        // Build the stat expression — composite keys sum multiple JSONB fields
+        const compositeKeys = COMPOSITE_STAT_KEYS[sf.stat_key];
+        const statExpr = compositeKeys
+          ? compositeKeys.map(k => `COALESCE(CAST(${alias}.stats->>'${k}' AS NUMERIC), 0)`).join(' + ')
+          : `COALESCE(CAST(${alias}.stats->>'${sf.stat_key}' AS NUMERIC), 0)`;
+
         if (sf.per_game) {
           // Per-game mode: check if ANY single game meets the threshold
-          statSubquery += ` AND COALESCE(CAST(${alias}.stats->>'${sf.stat_key}' AS NUMERIC), 0) ${op} $${paramCount}`;
+          statSubquery += ` AND (${statExpr}) ${op} $${paramCount}`;
         } else {
           // Aggregate mode (default): SUM the stat across all matching games
           statSubquery += ` GROUP BY pp_stat.user_id
-            HAVING SUM(COALESCE(CAST(${alias}.stats->>'${sf.stat_key}' AS NUMERIC), 0)) ${op} $${paramCount}`;
+            HAVING SUM(${statExpr}) ${op} $${paramCount}`;
         }
         values.push(sf.value);
         paramCount++;
