@@ -277,18 +277,7 @@ class PlayerProfile {
       paramCount++;
     }
     if (filters.min_height) {
-      // Height stored as string like "6'1"" - convert to inches for comparison
-      // Extract feet and inches: CAST(SPLIT_PART(height, '''', 1) AS INTEGER) * 12 + CAST(REGEXP_REPLACE(SPLIT_PART(height, '''', 2), '[^0-9]', '', 'g') AS INTEGER)
-      query += ` AND (
-        CASE
-          WHEN pp.height ~ '^[0-9]+''[0-9]+"?$' THEN
-            CAST(SPLIT_PART(pp.height, '''', 1) AS INTEGER) * 12 +
-            CAST(NULLIF(REGEXP_REPLACE(SPLIT_PART(pp.height, '''', 2), '[^0-9]', '', 'g'), '') AS INTEGER)
-          WHEN pp.height ~ '^[0-9]+$' THEN
-            CAST(pp.height AS INTEGER)
-          ELSE 0
-        END
-      ) >= $${paramCount}`;
+      query += ` AND pp.height >= $${paramCount}`;
       values.push(filters.min_height);
       paramCount++;
     }
@@ -423,20 +412,7 @@ class PlayerProfile {
       paramCount++;
     }
     if (filters.min_height) {
-      // Height stored as string like "6'1"" - convert to inches for comparison
-      query += ` AND (
-        CASE
-          WHEN pp.height ~ '^[0-9]+''[0-9]+"?$' THEN
-            CAST(SPLIT_PART(pp.height, '''', 1) AS INTEGER) * 12 +
-            CAST(NULLIF(REGEXP_REPLACE(SPLIT_PART(pp.height, '''', 2), '[^0-9]', '', 'g'), '') AS INTEGER)
-          WHEN pp.height ~ '^[0-9]+'' [0-9]+"?$' THEN
-            CAST(SPLIT_PART(pp.height, '''', 1) AS INTEGER) * 12 +
-            CAST(NULLIF(REGEXP_REPLACE(SPLIT_PART(pp.height, '''', 2), '[^0-9]', '', 'g'), '') AS INTEGER)
-          WHEN pp.height ~ '^[0-9]+$' THEN
-            CAST(pp.height AS INTEGER)
-          ELSE 0
-        END
-      ) >= $${paramCount}`;
+      query += ` AND pp.height >= $${paramCount}`;
       values.push(filters.min_height);
       paramCount++;
     }
