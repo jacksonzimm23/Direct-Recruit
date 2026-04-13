@@ -98,7 +98,7 @@ class ImageCropper {
     }
 
     setupEventListeners() {
-        // Close button
+        // Close button (X) — same as cancel
         document.getElementById('cropperClose').addEventListener('click', () => {
             this.close();
         });
@@ -139,10 +139,10 @@ class ImageCropper {
             this.render();
         }, { passive: false });
 
-        // Close on background click
+        // Background click — do not close (only cancel/save buttons close the modal)
         this.modal.addEventListener('click', (e) => {
             if (e.target === this.modal) {
-                this.close();
+                // Intentionally do nothing
             }
         });
 
