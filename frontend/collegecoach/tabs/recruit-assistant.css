@@ -836,7 +836,7 @@
 .ra-player-cards {
     display: flex;
     flex-direction: column;
-    width: 100%;
+    max-width: 75%;
     padding: 0.25rem 0;
 }
 
@@ -1270,6 +1270,10 @@
 
     .ra-baselines-pos-fields {
         grid-template-columns: 1fr;
+    }
+
+    .ra-player-cards {
+        max-width: 100%;
     }
 
     .ra-player-row {
