@@ -512,12 +512,13 @@ document.addEventListener('DOMContentLoaded', function() {
         `;
 
         const viewBtn = card.querySelector('.pi-btn-view-profile');
-        const profileUrl = `../../shared/view-profile.html?username=${player.username}&from=transfer-portal`;
         viewBtn.addEventListener('click', (e) => {
             e.stopPropagation();
+            sessionStorage.setItem('piScrollPosition', String(messagesContainer.scrollTop));
             if (player.username) {
-                sessionStorage.setItem('piScrollPosition', String(messagesContainer.scrollTop));
-                window.location.href = profileUrl;
+                window.location.href = `../../shared/view-profile.html?username=${player.username}&from=transfer-portal`;
+            } else if (player.user_id) {
+                window.location.href = `../../shared/view-profile.html?userId=${player.user_id}&from=transfer-portal`;
             }
         });
 
@@ -531,9 +532,11 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         card.addEventListener('click', () => {
+            sessionStorage.setItem('piScrollPosition', String(messagesContainer.scrollTop));
             if (player.username) {
-                sessionStorage.setItem('piScrollPosition', String(messagesContainer.scrollTop));
-                window.location.href = profileUrl;
+                window.location.href = `../../shared/view-profile.html?username=${player.username}&from=transfer-portal`;
+            } else if (player.user_id) {
+                window.location.href = `../../shared/view-profile.html?userId=${player.user_id}&from=transfer-portal`;
             }
         });
 
@@ -794,10 +797,13 @@ document.addEventListener('DOMContentLoaded', function() {
             watchlistBody.querySelectorAll('.pi-watchlist-item').forEach(item => {
                 item.addEventListener('click', (e) => {
                     if (e.target.closest('.pi-watchlist-item-remove')) return;
+                    sessionStorage.setItem('piWatchlistModalOpen', 'true');
                     const username = item.dataset.username;
+                    const userId = item.dataset.userId;
                     if (username) {
-                        sessionStorage.setItem('piWatchlistModalOpen', 'true');
                         window.location.href = `../../shared/view-profile.html?username=${username}&from=transfer-portal`;
+                    } else if (userId) {
+                        window.location.href = `../../shared/view-profile.html?userId=${userId}&from=transfer-portal`;
                     }
                 });
             });

@@ -32,9 +32,10 @@ document.addEventListener('DOMContentLoaded', async function() {
     initializePhotoUpload();
     initializeShareButton();
 
-    // Get username from URL if viewing someone else's profile
+    // Get username or userId from URL if viewing someone else's profile
     const urlParams = new URLSearchParams(window.location.search);
     const username = urlParams.get('username');
+    const userIdParam = urlParams.get('userId');
 
     // Load current user first
     await loadCurrentUser();
@@ -42,6 +43,8 @@ document.addEventListener('DOMContentLoaded', async function() {
     // Load profile data based on URL params
     if (username) {
         await loadProfileByUsername(username);
+    } else if (userIdParam) {
+        await loadProfileByUserId(userIdParam);
     } else {
         await loadOwnProfile();
     }
@@ -88,7 +91,7 @@ function updateNavbarForLoggedInUser(user, profile) {
 
     const urlParams = new URLSearchParams(window.location.search);
     const fromPage = urlParams.get('from');
-    const hasUsername = urlParams.get('username');
+    const hasUsername = urlParams.get('username') || urlParams.get('userId');
 
     let feedActive = '';
     let discoverActive = '';
@@ -709,6 +712,42 @@ async function loadProfileByUsername(username) {
     }
 }
 
+async function loadProfileByUserId(userId) {
+    try {
+        const response = await API.get(`/profile/by-id/${userId}`);
+        if (response.profile) {
+            currentProfile = response.profile;
+            viewingUserId = response.profile.user_id;
+            isOwnProfile = currentUserId === viewingUserId;
+            displayProfile(response.profile, response.type, response.accessLevel, response.hasPendingRequest);
+
+            document.documentElement.classList.add('sidebar-ready');
+
+            if (!isOwnProfile) {
+                removeSensitiveElementsForOtherProfile();
+                recordProfileView(viewingUserId);
+            }
+
+            if (isOwnProfile) {
+                loadProfileViewCount();
+            }
+
+            const likesTab = document.querySelector('.profile-tab[data-tab="likes"]');
+            if (likesTab) {
+                likesTab.style.display = '';
+            }
+
+            loadFollowCounts(viewingUserId);
+            loadProfilePosts();
+        } else {
+            showError('Profile not found');
+        }
+    } catch (error) {
+        console.error('Error loading profile:', error);
+        showError('Failed to load profile');
+    }
+}
+
 // Load and display follower/following counts from the database
 async function loadFollowCounts(userId) {
     try {
@@ -1135,7 +1174,7 @@ function updateProfileActions(hasPendingRequest = false) {
 
     // Check if navigated to this profile via URL parameter
     const urlParams = new URLSearchParams(window.location.search);
-    const hasUsernameParam = urlParams.get('username');
+    const hasUsernameParam = urlParams.get('username') || urlParams.get('userId');
 
     if (isOwnProfile && !hasUsernameParam) {
         // Show edit and share buttons (viewing own profile directly)
@@ -1910,7 +1949,7 @@ function updateActiveNavItem() {
 
     const urlParams = new URLSearchParams(window.location.search);
     const fromPage = urlParams.get('from');
-    const hasUsername = urlParams.get('username');
+    const hasUsername = urlParams.get('username') || urlParams.get('userId');
 
     if (feedNavItem && profileNavItem) {
         // Remove active from all first

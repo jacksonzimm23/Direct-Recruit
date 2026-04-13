@@ -67,10 +67,9 @@ class PortalWatchlist {
         pp.graduation_year,
         pp.state,
         pp.profile_image_url,
-        u.username
+        pp.username
        FROM portal_watchlist pw
        JOIN player_profiles pp ON pp.user_id = pw.player_user_id
-       JOIN users u ON u.id = pw.player_user_id
        WHERE pw.coach_user_id = $1
        ORDER BY pw.created_at DESC`,
       [coachUserId]
