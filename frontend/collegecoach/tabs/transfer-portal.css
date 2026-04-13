@@ -948,6 +948,9 @@
 
 .tp-tab-content.active {
     display: block;
+    overflow-y: auto;
+    flex: 1;
+    min-height: 0;
 }
 
 /* ==============================
