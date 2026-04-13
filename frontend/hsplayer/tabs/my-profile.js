@@ -3253,20 +3253,41 @@ function getSchoolLogoPath(logoFile) {
 
 // Fuzzy search: matches if all typed words appear somewhere in the school name (case-insensitive)
 function fuzzyMatchSchool(query, schoolName) {
-    const queryLower = query.toLowerCase();
+    const queryLower = query.toLowerCase().trim();
     const nameLower = schoolName.toLowerCase();
 
-    // Exact substring match gets highest priority
-    if (nameLower.includes(queryLower)) return 3;
+    if (!queryLower) return 0;
 
-    // All words in query appear in the name
+    // Exact full match
+    if (nameLower === queryLower) return 100;
+
+    // Name starts with query (e.g., "georgia" → "Georgia Southern...")
+    if (nameLower.startsWith(queryLower)) return 90;
+
+    // A word in the name starts with the full query (e.g., "georgia" in "University of Georgia")
+    const nameWords = nameLower.split(/[\s,()]+/).filter(Boolean);
+    if (nameWords.some(w => w.startsWith(queryLower))) return 80;
+
+    // Exact substring match (query appears somewhere in name)
+    if (nameLower.includes(queryLower)) return 70;
+
+    // Multi-word query: all words appear in name
     const queryWords = queryLower.split(/\s+/).filter(Boolean);
-    const allWordsMatch = queryWords.every(w => nameLower.includes(w));
-    if (allWordsMatch) return 2;
+    if (queryWords.length > 1) {
+        const allMatch = queryWords.every(w => nameLower.includes(w));
+        if (allMatch) {
+            // Boost score by how much of the name the query covers
+            const coverage = queryLower.length / nameLower.length;
+            return 50 + Math.round(coverage * 30);
+        }
 
-    // Partial: most words match
-    const matchCount = queryWords.filter(w => nameLower.includes(w)).length;
-    if (matchCount > 0 && matchCount >= queryWords.length - 1) return 1;
+        // Most words match (allow 1 miss)
+        const matchCount = queryWords.filter(w => nameLower.includes(w)).length;
+        if (matchCount >= queryWords.length - 1) return 30;
+    }
+
+    // Single word: check if it starts any word in the name
+    if (queryWords.length === 1 && nameWords.some(w => w.startsWith(queryWords[0]))) return 60;
 
     return 0;
 }
@@ -3303,6 +3324,7 @@ function renderSchoolDropdown(query) {
         if (score > 0) results.push({ name, score });
     }
     results.sort((a, b) => b.score - a.score || a.name.localeCompare(b.name));
+    results.splice(20); // Show top 20 matches only
 
     if (results.length === 0) {
         dropdown.innerHTML = '<div class="school-dropdown-empty">No schools found</div>';
