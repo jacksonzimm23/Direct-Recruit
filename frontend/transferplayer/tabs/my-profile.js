@@ -180,9 +180,10 @@ document.addEventListener('DOMContentLoaded', async function() {
         sidebarFooter.style.opacity = '0';
     }
 
-    // Get username from URL if viewing someone else's profile
+    // Get username or userId from URL if viewing someone else's profile
     const urlParams = new URLSearchParams(window.location.search);
     const username = urlParams.get('username');
+    const userIdParam = urlParams.get('userId');
 
     // Load current user first
     await loadCurrentUser();
@@ -190,6 +191,8 @@ document.addEventListener('DOMContentLoaded', async function() {
     // Load profile data
     if (username) {
         await loadProfileByUsername(username);
+    } else if (userIdParam) {
+        await loadProfileByUserId(userIdParam);
     } else {
         await loadOwnProfile();
     }
@@ -242,7 +245,7 @@ function updateNavbarForLoggedInUser(user, profile) {
     // The active state will be finalized by updateActiveNavItem() after profile loads
     const urlParams = new URLSearchParams(window.location.search);
     const fromPage = urlParams.get('from');
-    const hasUsername = urlParams.get('username');
+    const hasUsername = urlParams.get('username') || urlParams.get('userId');
 
     // Determine active states - only one should be active
     // If viewing own profile (no username param), highlight My Profile
@@ -900,6 +903,32 @@ async function loadProfileByUsername(username) {
     }
 }
 
+async function loadProfileByUserId(userId) {
+    try {
+        const response = await API.get(`/profile/by-id/${userId}`);
+        if (response.profile) {
+            currentProfile = response.profile;
+            viewingUserId = response.profile.user_id;
+            isOwnProfile = currentUserId === viewingUserId;
+            displayProfile(response.profile, response.type, response.accessLevel, response.hasPendingRequest);
+
+            if (!isOwnProfile) {
+                removeSensitiveElementsForOtherProfile();
+                recordProfileView(viewingUserId);
+            }
+
+            if (isOwnProfile) {
+                loadProfileViewCount();
+            }
+        } else {
+            showError('Profile not found');
+        }
+    } catch (error) {
+        console.error('Error loading profile:', error);
+        showError('Failed to load profile');
+    }
+}
+
 async function displayProfile(profile, type, accessLevel = 'full', hasPendingRequest = false) {
     // Store the profile type globally
     currentProfileType = type;
@@ -1510,7 +1539,7 @@ function updateProfileActions(hasPendingRequest = false) {
 
     // Check if navigated to this profile (has username in URL) - always show back button in this case
     const urlParams = new URLSearchParams(window.location.search);
-    const hasUsernameParam = urlParams.get('username');
+    const hasUsernameParam = urlParams.get('username') || urlParams.get('userId');
 
     if (isOwnProfile && !hasUsernameParam) {
         // Show edit and share buttons (only when directly on own profile, not navigated via URL)
@@ -2288,7 +2317,7 @@ function updateActiveNavItem() {
     // Check if we came from another page
     const urlParams = new URLSearchParams(window.location.search);
     const fromPage = urlParams.get('from');
-    const hasUsername = urlParams.get('username');
+    const hasUsername = urlParams.get('username') || urlParams.get('userId');
 
     // Remove active from all first
     if (feedNavItem) feedNavItem.classList.remove('active');

@@ -609,6 +609,63 @@ router.get('/check-email/:email', availabilityLimiter, async (req, res) => {
   }
 });
 
+// Get profile by user ID (generic — determines type automatically)
+router.get('/by-id/:userId', authMiddleware, validateUUID('userId'), async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    let profile = null;
+    let profileType = null;
+
+    profile = await PlayerProfile.findByUserId(userId);
+    if (profile) {
+      profileType = 'player';
+    }
+
+    if (!profile) {
+      profile = await CoachProfile.findByUserId(userId);
+      if (profile) {
+        profileType = 'coach';
+      }
+    }
+
+    if (!profile) {
+      profile = await OtherProfile.findByUserId(userId);
+      if (profile) {
+        profileType = 'other';
+      }
+    }
+
+    if (!profile) {
+      return res.status(404).json({ error: 'Profile not found' });
+    }
+
+    // Attach username from users table (findByUserId doesn't join users)
+    const user = await User.findById(userId);
+    if (user && user.username) {
+      profile.username = user.username;
+    }
+
+    const viewAccess = await canViewFullProfile(req.userId, profile.user_id);
+    profile = await addSignedUrlToProfile(profile);
+
+    const responseProfile = viewAccess.canView
+      ? profile
+      : getPrivateProfileData(profile, profileType);
+
+    return res.json({
+      profile: responseProfile,
+      type: profileType,
+      accessLevel: viewAccess.canView ? 'full' : 'limited',
+      accessReason: viewAccess.reason,
+      hasPendingRequest: viewAccess.hasPendingRequest || false
+    });
+  } catch (error) {
+    logger.error('Get profile by user ID error:', error);
+    res.status(500).json({ error: 'Failed to fetch profile' });
+  }
+});
+
 // Get profile by username
 router.get('/username/:username', authMiddleware, async (req, res) => {
   try {

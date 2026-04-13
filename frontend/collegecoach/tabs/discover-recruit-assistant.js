@@ -493,16 +493,20 @@ document.addEventListener('DOMContentLoaded', function() {
 
         row.querySelector('.ra-btn-view-profile').addEventListener('click', (e) => {
             e.stopPropagation();
+            sessionStorage.setItem('raScrollPosition', String(messagesContainer.scrollTop));
             if (player.username) {
-                sessionStorage.setItem('raScrollPosition', String(messagesContainer.scrollTop));
                 window.location.href = `../../shared/view-profile.html?username=${player.username}&from=discover`;
+            } else if (player.user_id) {
+                window.location.href = `../../shared/view-profile.html?userId=${player.user_id}&from=discover`;
             }
         });
 
         row.addEventListener('click', () => {
+            sessionStorage.setItem('raScrollPosition', String(messagesContainer.scrollTop));
             if (player.username) {
-                sessionStorage.setItem('raScrollPosition', String(messagesContainer.scrollTop));
                 window.location.href = `../../shared/view-profile.html?username=${player.username}&from=discover`;
+            } else if (player.user_id) {
+                window.location.href = `../../shared/view-profile.html?userId=${player.user_id}&from=discover`;
             }
         });
 
@@ -1186,9 +1190,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Click item to view profile
                 item.addEventListener('click', (e) => {
                     if (e.target.closest('.ra-saved-item-remove')) return;
+                    sessionStorage.setItem('raSavedModalOpen', 'true');
                     if (player.username) {
-                        sessionStorage.setItem('raSavedModalOpen', 'true');
                         window.location.href = `../../shared/view-profile.html?username=${player.username}&from=discover`;
+                    } else if (player.user_id) {
+                        window.location.href = `../../shared/view-profile.html?userId=${player.user_id}&from=discover`;
                     }
                 });
 

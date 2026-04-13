@@ -68,10 +68,9 @@ class RaSavedPlayers {
         pp.eligibility,
         pp.offers,
         pp.profile_image_url,
-        u.username
+        pp.username
        FROM ra_saved_players rs
        JOIN player_profiles pp ON pp.user_id = rs.player_user_id
-       JOIN users u ON u.id = rs.player_user_id
        WHERE rs.coach_user_id = $1
        ORDER BY rs.saved_at DESC`,
       [coachUserId]

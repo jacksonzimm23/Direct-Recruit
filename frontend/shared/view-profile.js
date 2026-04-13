@@ -4,10 +4,11 @@
 document.addEventListener('DOMContentLoaded', async function() {
     const urlParams = new URLSearchParams(window.location.search);
     const username = urlParams.get('username');
+    const userId = urlParams.get('userId');
 
 
-    if (!username) {
-        showError('No username specified');
+    if (!username && !userId) {
+        showError('No username or user ID specified');
         return;
     }
 
@@ -20,7 +21,12 @@ document.addEventListener('DOMContentLoaded', async function() {
 
 
         // Fetch the profile to determine its type
-        const response = await API.get(`/profile/username/${username}`);
+        let response;
+        if (username) {
+            response = await API.get(`/profile/username/${username}`);
+        } else {
+            response = await API.get(`/profile/by-id/${userId}`);
+        }
 
 
         if (!response.profile) {
@@ -31,11 +37,20 @@ document.addEventListener('DOMContentLoaded', async function() {
         // Determine the correct folder based on profile type and division
         const targetFolder = getProfileFolder({ role: response.type, ...response.profile });
 
-
-        // Redirect to the appropriate my-profile page with the username
-        // Preserve the 'from' parameter if present
+        // Build the target URL with username or userId
+        const profileUsername = username || response.profile.username;
         const fromParam = urlParams.get('from');
-        let targetUrl = `../${targetFolder}/tabs/my-profile.html?username=${encodeURIComponent(username)}`;
+        let targetUrl;
+
+        if (profileUsername) {
+            targetUrl = `../${targetFolder}/tabs/my-profile.html?username=${encodeURIComponent(profileUsername)}`;
+        } else if (userId || response.profile.user_id) {
+            targetUrl = `../${targetFolder}/tabs/my-profile.html?userId=${encodeURIComponent(userId || response.profile.user_id)}`;
+        } else {
+            showError('Profile has no identifier');
+            return;
+        }
+
         if (fromParam) {
             targetUrl += `&from=${encodeURIComponent(fromParam)}`;
         }
