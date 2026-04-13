@@ -1384,7 +1384,7 @@
 
 .pi-player-cards {
     display: flex;
-    flex-wrap: wrap;
+    flex-direction: column;
     gap: 12px;
     padding: 8px 0;
     max-width: 100%;
@@ -1397,8 +1397,7 @@
     padding: 14px;
     cursor: pointer;
     transition: all 0.2s ease;
-    width: calc(50% - 6px);
-    min-width: 280px;
+    width: 67%;
 }
 
 .pi-player-card:hover {

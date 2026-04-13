@@ -168,7 +168,13 @@ document.addEventListener('DOMContentLoaded', function() {
             // Batch check flag states for all rendered player cards
             batchCheckFlags(messagesContainer);
 
-            scrollToBottom();
+            const savedScroll = sessionStorage.getItem('piScrollPosition');
+            if (savedScroll !== null) {
+                messagesContainer.scrollTop = parseInt(savedScroll);
+                sessionStorage.removeItem('piScrollPosition');
+            } else {
+                scrollToBottom();
+            }
         } catch (e) {
             console.error('Failed to load PI chat:', e);
         }
@@ -437,20 +443,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 section += `<div class="pi-detail-meta">${bc.unique_teams_browsed || 0} different program${(bc.unique_teams_browsed || 0) !== 1 ? 's' : ''} &middot; ${bc.total_external_views || 0} total coach profile view${(bc.total_external_views || 0) !== 1 ? 's' : ''}</div>`;
             }
             if (bc.coaches_viewed && bc.coaches_viewed.length > 0) {
-                section += '<div class="pi-coaches-list">';
-                bc.coaches_viewed.forEach(coach => {
-                    const coachName = escapeHtml(coach.name || 'Unknown Coach');
-                    const coachTitle = coach.title ? escapeHtml(coach.title) : '';
-                    const team = escapeHtml(coach.team || 'Unknown');
-                    const div = coach.division ? ` (${formatDivision(coach.division)})` : '';
-                    const views = coach.views || 1;
-                    const lastViewed = coach.last_viewed ? formatDate(coach.last_viewed) : '';
-                    section += `<div class="pi-coach-item">`;
-                    section += `<div class="pi-coach-name">${coachName}${coachTitle ? ' &mdash; ' + coachTitle : ''}</div>`;
-                    section += `<div class="pi-coach-meta">${team}${div} &middot; ${views} view${views > 1 ? 's' : ''}${lastViewed ? ' &middot; Last viewed ' + lastViewed : ''}</div>`;
-                    section += `</div>`;
-                });
-                section += '</div>';
+                const recentDates = bc.coaches_viewed
+                    .filter(c => c.last_viewed)
+                    .map(c => formatDate(c.last_viewed))
+                    .filter((d, i, arr) => arr.indexOf(d) === i)
+                    .slice(0, 3);
+                if (recentDates.length > 0) {
+                    section += `<div class="pi-detail-meta">Recent activity: ${recentDates.join(', ')}</div>`;
+                }
             }
             section += '</div>';
             signalDetailsHtml += section;
@@ -512,10 +512,11 @@ document.addEventListener('DOMContentLoaded', function() {
         `;
 
         const viewBtn = card.querySelector('.pi-btn-view-profile');
-        const profileUrl = `../../collegeplayer/tabs/my-profile.html?username=${player.username}&from=transfer-portal`;
+        const profileUrl = `../../shared/view-profile.html?username=${player.username}&from=transfer-portal`;
         viewBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             if (player.username) {
+                sessionStorage.setItem('piScrollPosition', String(messagesContainer.scrollTop));
                 window.location.href = profileUrl;
             }
         });
@@ -531,6 +532,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         card.addEventListener('click', () => {
             if (player.username) {
+                sessionStorage.setItem('piScrollPosition', String(messagesContainer.scrollTop));
                 window.location.href = profileUrl;
             }
         });
@@ -795,7 +797,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     const username = item.dataset.username;
                     if (username) {
                         sessionStorage.setItem('piWatchlistModalOpen', 'true');
-                        window.location.href = `../../collegeplayer/tabs/my-profile.html?username=${username}&from=transfer-portal`;
+                        window.location.href = `../../shared/view-profile.html?username=${username}&from=transfer-portal`;
                     }
                 });
             });

@@ -169,7 +169,13 @@ document.addEventListener('DOMContentLoaded', function() {
                         }
                     }
                 }
-                scrollToBottom();
+                const savedScroll = sessionStorage.getItem('raScrollPosition');
+                if (savedScroll !== null) {
+                    messagesContainer.scrollTop = parseInt(savedScroll);
+                    sessionStorage.removeItem('raScrollPosition');
+                } else {
+                    scrollToBottom();
+                }
             }
             renderHistory();
         } catch (e) {
@@ -479,13 +485,15 @@ document.addEventListener('DOMContentLoaded', function() {
         row.querySelector('.ra-btn-view-profile').addEventListener('click', (e) => {
             e.stopPropagation();
             if (player.username) {
-                window.location.href = `../../shared/view-profile.html?username=${player.username}`;
+                sessionStorage.setItem('raScrollPosition', String(messagesContainer.scrollTop));
+                window.location.href = `../../shared/view-profile.html?username=${player.username}&from=discover`;
             }
         });
 
         row.addEventListener('click', () => {
             if (player.username) {
-                window.location.href = `../../shared/view-profile.html?username=${player.username}`;
+                sessionStorage.setItem('raScrollPosition', String(messagesContainer.scrollTop));
+                window.location.href = `../../shared/view-profile.html?username=${player.username}&from=discover`;
             }
         });
 
@@ -1171,7 +1179,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (e.target.closest('.ra-saved-item-remove')) return;
                     if (player.username) {
                         sessionStorage.setItem('raSavedModalOpen', 'true');
-                        window.location.href = `../../shared/view-profile.html?username=${player.username}`;
+                        window.location.href = `../../shared/view-profile.html?username=${player.username}&from=discover`;
                     }
                 });
 

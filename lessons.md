@@ -780,4 +780,79 @@
 
 ---
 
+## Docker — Retaining vs Resetting Local Database
+
+73. **Use `docker-compose stop` / `docker-compose start` to keep your data.** These commands pause and resume the containers without touching the database volume. All accounts, profiles, stats, highlights, and uploads survive.
+
+    **To stop (keeps all data):**
+    ```
+    docker-compose stop
+    ```
+
+    **To start again later:**
+    ```
+    docker-compose start
+    ```
+
+    Then just run `node backend/server.js` — everything is still there.
+
+    **To wipe everything and start fresh:**
+    ```
+    docker-compose down -v
+    docker-compose up -d
+    cd backend
+    npm run seed
+    node scripts/seed-demo-data.js
+    ```
+
+    The `-v` flag in `docker-compose down -v` is what **deletes** the database volume. Never use `-v` unless you want to lose all data. `docker-compose down` (without `-v`) stops and removes containers but keeps the volume — data survives.
+
+    **Remember:** If local PostgreSQL is running on port 5432, stop it first: `net stop postgresql-x64-18` (admin PowerShell). The seed script will silently connect to the wrong database otherwise (see lesson 10).
+
+---
+
+## Demo Data Seed Script
+
+74. **`node backend/scripts/seed-demo-data.js` creates 15 fully-populated QB profiles for demo recordings.** Run it after the base `npm run seed`. It creates 5 HS players (2 from CO), 5 transfer players (various divisions), and 5 college players (with portal intelligence signals). Also creates 4 minimal coach accounts for the `browsing_coaches` portal signal.
+
+    **All accounts use password `Test123!@#`.** Email format: `demo.firstname.lastname@test.com` (e.g., `demo.cody.harmon@test.com`).
+
+    **What each profile includes:** Position (QB), height, weight, GPA, SAT, ACT, bio, jersey number, player status, offers (pipe-delimited with real school names from `school-logos.json` so logos display), star rating (HS only), conference/division (college/transfer), twitter/instagram/hudl, last season + career stats, 8 games with randomized QB stats, 2-3 highlight videos, 2-3 posts, follow relationships, and active subscriptions for paid types.
+
+    **College players have portal intelligence signals:** `portal_keywords` (bio contains transfer-related keywords), `bio_and_film` (recent highlight upload + bio update within 14 days), and `browsing_coaches` (coach_profile_views showing they viewed coaches at other schools). Search for them via Portal Intelligence as `collegecoach@test.com`.
+
+    **The script is idempotent** — safe to re-run. It checks if accounts exist before creating them.
+
+    **Demo account emails (all use password `Test123!@#`):**
+
+    *HS Players:*
+    - `demo.cody.harmon@test.com` — Valor Christian, Highlands Ranch, CO (4-star, Class of 2026)
+    - `demo.tyler.rae@test.com` — Cherry Creek, Greenwood Village, CO (3-star, Class of 2027)
+    - `demo.jaylen.archer@test.com` — IMG Academy, Bradenton, FL (5-star, Class of 2026)
+    - `demo.bryce.nolan@test.com` — Katy High School, Katy, TX (4-star, Class of 2026)
+    - `demo.mason.park@test.com` — De La Salle, Concord, CA (3-star, Class of 2027)
+
+    *Transfer Players:*
+    - `demo.darius.cole@test.com` — Oregon State University, D1 FBS (3 yrs eligibility)
+    - `demo.elijah.monroe@test.com` — Sam Houston State University, D1 FBS (2 yrs eligibility)
+    - `demo.keegan.shaw@test.com` — Colorado Mesa University, D2 (3 yrs eligibility)
+    - `demo.andre.voss@test.com` — Bethune-Cookman University, D1 FCS (2 yrs eligibility)
+    - `demo.julian.west@test.com` — University of Mount Union, D3 (4 yrs eligibility)
+
+    *College Players (portal signals active):*
+    - `demo.ryan.keeler@test.com` — Kansas State University, D1 FBS (portal_keywords + browsing_coaches)
+    - `demo.trevon.james@test.com` — Boise State University, D1 FBS (bio_and_film + browsing_coaches)
+    - `demo.marcus.bell@test.com` — Eastern Washington University, D1 FCS (portal_keywords)
+    - `demo.sean.calloway@test.com` — Colorado School of Mines, D2 (browsing_coaches + bio_and_film)
+    - `demo.nate.fischer@test.com` — University of Wisconsin - Whitewater, D3 (portal_keywords + bio_and_film)
+
+    *Extra coaches (for portal browsing signal):*
+    - `demo.coach.sec@test.com` — University of Alabama
+    - `demo.coach.big12@test.com` — University of Oklahoma
+    - `demo.coach.pac12@test.com` — University of Oregon
+    - `demo.coach.d2@test.com` — Colorado State University Pueblo
+
+---
+
 ## TODOs
+**TODO: Restore all scroll positions when navigating across pages/modals
