@@ -181,7 +181,7 @@ class SuggestedConnectionsWidget {
                 ${avatarHTML}
                 <div class="follow-info">
                     <div class="follow-name">${this.escapeHTML(fullName)}${typeof getSchoolLogoHTML === 'function' && connection.college_division ? getSchoolLogoHTML(connection.team_name, (window.location.pathname.includes('/tabs/') ? '../../assets' : '../assets'), 14) : ''}</div>
-                    ${sub.text ? `<div class="follow-subheader" style="color: ${sub.color};">${this.escapeHTML(sub.text)}</div>` : ''}
+                    ${sub.text ? `<div class="follow-subheader" style="color: ${sub.color}; font-weight: 700;">${this.escapeHTML(sub.text)}</div>` : ''}
                 </div>
             </div>
         `;
@@ -257,7 +257,7 @@ class SuggestedConnectionsWidget {
                 ${avatarHTML}
                 <div class="connection-modal-info">
                     <div class="connection-modal-name">${this.escapeHTML(fullName)}${typeof getSchoolLogoHTML === 'function' && connection.college_division ? getSchoolLogoHTML(connection.team_name, (window.location.pathname.includes('/tabs/') ? '../../assets' : '../assets'), 14) : ''}</div>
-                    ${sub.text ? `<div class="connection-modal-subheader" style="color: ${sub.color};">${this.escapeHTML(sub.text)}</div>` : ''}
+                    ${sub.text ? `<div class="connection-modal-subheader" style="color: ${sub.color}; font-weight: 700;">${this.escapeHTML(sub.text)}</div>` : ''}
                 </div>
                 <button class="connection-modal-btn-follow" data-user-id="${connection.user_id}">Follow</button>
             </div>
