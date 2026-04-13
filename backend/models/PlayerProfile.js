@@ -690,6 +690,15 @@ class PlayerProfile {
         values.push(of.min_count);
         paramCount++;
       }
+      // Max offer count (for "sleeper" / "under the radar" searches)
+      if (of.max_count) {
+        whereClauses.push(`(
+          pp.offers IS NULL OR pp.offers = ''
+          OR array_length(string_to_array(pp.offers, '|'), 1) <= $${paramCount}
+        )`);
+        values.push(of.max_count);
+        paramCount++;
+      }
     }
 
     // Search term (name/username) — fuzzy + ILIKE fallback
