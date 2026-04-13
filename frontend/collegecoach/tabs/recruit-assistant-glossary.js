@@ -334,7 +334,19 @@ const RA_GLOSSARY = {
         'inside 20':            'i20',
         'inside the 20':        'i20',
         'fair catches':         'fc',
-        'blocked punts':        'blk'
+        'blocked punts':        'blk',
+
+        // Composite stats — generic terms sum across all stat types
+        'touchdowns':           'total_tds',
+        'tds':                  'total_tds',
+        'total touchdowns':     'total_tds',
+        'total tds':            'total_tds',
+        'scores':               'total_tds',
+        'yards':                'total_yds',
+        'total yards':          'total_yds',
+        'all-purpose yards':    'total_yds',
+        'all purpose yards':    'total_yds',
+        'scrimmage yards':      'total_yds'
     },
 
     // ========================================================

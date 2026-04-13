@@ -280,6 +280,10 @@ router.post('/chats/:chatId/message', validateUUID('chatId'), async (req, res) =
           if (p.college_division) parts.push(`Division: ${p.college_division}`);
           if (p.eligibility) parts.push(`Eligibility: ${p.eligibility} year(s)`);
           if (p.graduation_year) parts.push(`Class of ${p.graduation_year}`);
+          if (p.offers) {
+            const offerList = p.offers.split('|').map(o => o.trim()).filter(Boolean);
+            parts.push(`Offers (${offerList.length}): ${offerList.join(', ')}`);
+          }
           if (p.username) parts.push(`Username: ${p.username}`);
 
           // Include stats if available
@@ -365,6 +369,7 @@ router.post('/chats/:chatId/message', validateUUID('chatId'), async (req, res) =
         eligibility: p.eligibility,
         graduation_year: p.graduation_year,
         transfer: p.transfer,
+        offers: p.offers || null,
         relevance_score: p.relevance_score || null
       };
 

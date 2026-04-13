@@ -109,6 +109,12 @@ RECRUITING TERMS — reference the glossary's recruitingTerms, academicTerms, cl
 
 STAT TERMS — reference the glossary's statAliases and statsByPosition to map natural language stat references to the correct stat_key and position. For example, "a QB who threw for 3000 yards" → stat_key: "pass_yds", value: 3000, positions: ["QB"].
 
+COMPOSITE / TOTAL STATS — when a coach uses generic stat terms without specifying the type, use composite stat keys that sum across all relevant categories:
+- "touchdowns", "TDs", "scores" (generic, no type specified) → stat_key: "total_tds" (sums pass_tds + rush_tds + rec_tds). Example: "20+ TDs" → total_tds >= 20
+- "yards", "total yards", "all-purpose yards" (generic, no type specified) → stat_key: "total_yds" (sums pass_yds + rush_yds + rec_yds). Example: "3000+ yards" → total_yds >= 3000
+- ONLY use the specific stat key when the coach explicitly specifies the type: "passing TDs" → pass_tds, "rushing yards" → rush_yds, "receiving touchdowns" → rec_tds, "threw for 3000 yards" → pass_yds
+- The word "threw" or "passing" = pass_yds/pass_tds. "Ran for" or "rushing" = rush_yds/rush_tds. "Caught" or "receiving" = rec_yds/rec_tds. No qualifier = total (composite).
+
 OFFER SEARCH — You can filter players by their offers. Coaches may ask for players with a certain number of offers, or offers at a specific division level. You can filter by division (D1 FBS, D1 FCS, D2, D3, NAIA, NJCAA) but NOT by conference (Big Ten, SEC, ACC, Pac-12, Big 12, etc.). If a coach asks about a specific conference, let them know: "I can search by division level (like D1 FBS or D2) but not by specific conference. Want me to search by division instead?" Use the glossary's offerTerms to interpret offer-related phrases.
 
 If the coach specifies explicit measurements (e.g., "6'2+ QBs", "over 200 lbs"), use those exact values instead of baselines.
@@ -228,7 +234,11 @@ async function getRecruitingFilters(messages, coachBaselines, coachState, coachD
     // If Claude returned text with JSON embedded, try to extract it
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
-      return { ...JSON.parse(jsonMatch[0]), _meta };
+      try {
+        return { ...JSON.parse(jsonMatch[0]), _meta };
+      } catch (e2) {
+        // JSON extraction also failed — fall through to conversational fallback
+      }
     }
     // Fallback: return as conversational response
     return { filters: null, summary: null, message: text, _meta };
