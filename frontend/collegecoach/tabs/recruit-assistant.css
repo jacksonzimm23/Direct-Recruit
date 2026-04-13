@@ -9,10 +9,18 @@
     border-right: none;
 }
 
+/* RA tab container — fill remaining space below subtabs */
+#recruitAssistantTab.active {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+}
+
 /* Two-column layout: history sidebar + chat */
 .ra-layout {
     display: flex;
-    height: 100vh;
+    flex: 1;
+    min-height: 0;
 }
 
 /* ========================
@@ -1200,7 +1208,8 @@
 /* Mobile */
 @media (max-width: 768px) {
     .ra-layout {
-        height: calc(100vh - 60px);
+        flex: 1;
+        min-height: 0;
     }
 
     .ra-history {

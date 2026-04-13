@@ -21,6 +21,7 @@ document.addEventListener('DOMContentLoaded', function() {
             tab.classList.add('active');
 
             // Show/hide tab content
+            const mainContent = document.querySelector('.main-content');
             Object.entries(tabContents).forEach(([key, content]) => {
                 if (content) {
                     if (key === targetTab) {
@@ -30,6 +31,14 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 }
             });
+            // Constrain main-content when RA is active to prevent gap below
+            if (mainContent) {
+                if (targetTab === 'recruit-assistant') {
+                    mainContent.classList.add('ra-active');
+                } else {
+                    mainContent.classList.remove('ra-active');
+                }
+            }
 
             // Save active tab to sessionStorage
             sessionStorage.setItem('dpActiveTab', targetTab);

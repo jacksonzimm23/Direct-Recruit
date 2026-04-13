@@ -4,6 +4,10 @@
 /* Override main-content to span full width (no right sidebar) */
 .main-content {
     grid-column: 2 / -1 !important;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
 }
 
 /* Filters Container */
@@ -951,13 +955,15 @@
    ============================== */
 #portalIntelligenceTab.active {
     display: flex;
+    flex: 1;
+    overflow: hidden;
 }
 
 .pi-layout {
     display: flex;
     width: 100%;
-    height: calc(100vh - 160px);
-    min-height: 500px;
+    flex: 1;
+    min-height: 0;
 }
 
 /* ==============================
@@ -2454,7 +2460,7 @@
     }
 
     .pi-layout {
-        height: calc(100vh - 180px);
+        flex: 1;
         min-height: 400px;
     }
 
