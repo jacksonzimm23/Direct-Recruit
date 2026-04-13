@@ -525,7 +525,8 @@
     font-size: 0.8rem;
     font-weight: 600;
     color: rgba(254, 252, 251, 0.6);
-    white-space: nowrap;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
 }
 
 .preview-row-stats-label,

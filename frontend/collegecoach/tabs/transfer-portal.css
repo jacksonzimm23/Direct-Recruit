@@ -298,9 +298,8 @@
     font-size: 0.75rem;
     font-weight: 600;
     color: rgba(254, 252, 251, 0.6);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
 }
 
 .discover-desktop-stats-label,
@@ -855,6 +854,10 @@
         color: rgba(254, 252, 251, 0.6);
         font-weight: 700;
         font-size: 0.65rem;
+        white-space: normal;
+        overflow: visible;
+        text-overflow: unset;
+        word-wrap: break-word;
     }
 
     .discover-row-details.discover-row-stats-line .stats-label,
