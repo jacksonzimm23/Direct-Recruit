@@ -2086,6 +2086,8 @@ const POSITION_OPTIONS = [
     'ILB', 'OLB', 'CB', 'S', 'K', 'P', 'LS'
 ];
 
+let switchSchoolSearch = null;
+
 const DIVISION_OPTIONS = [
     ['D1 FBS', 'D1 FBS (Football Bowl Subdivision)'],
     ['D1 FCS', 'D1 FCS (Football Championship Subdivision)'],
@@ -2255,6 +2257,23 @@ function goToStep2() {
     body.innerHTML = renderStep2();
     updateStepIndicator(2);
     attachStep2Listeners();
+
+    // Clean up any previous school search instance
+    if (switchSchoolSearch) {
+        switchSchoolSearch.destroy();
+        switchSchoolSearch = null;
+    }
+
+    // Initialize school search for college target types
+    if (['collegeplayer', 'transferplayer', 'collegecoach'].includes(selectedTargetType)) {
+        if (typeof initSchoolSearch === 'function') {
+            switchSchoolSearch = initSchoolSearch({
+                nameInput: '#switchTeamName',
+                divisionSelect: '#switchDivision',
+                assetBasePath: '../../assets'
+            });
+        }
+    }
 }
 
 function renderStep2() {
@@ -2376,7 +2395,7 @@ function renderStep2() {
         if (needsCollege) {
             fieldsHTML += `
                 <div class="switch-form-row">
-                    <div class="switch-form-group">
+                    <div class="switch-form-group form-group">
                         <label>Division <span class="required">*</span></label>
                         <select id="switchDivision" class="form-input">
                             <option value="">Select Division</option>
@@ -2456,7 +2475,7 @@ function renderStep2() {
         if (isCollege) {
             fieldsHTML += `
                 <div class="switch-form-row">
-                    <div class="switch-form-group">
+                    <div class="switch-form-group form-group">
                         <label>Division <span class="required">*</span></label>
                         <select id="switchDivision" class="form-input">
                             <option value="">Select Division</option>
@@ -2500,6 +2519,10 @@ function renderStep2() {
 
 function attachStep2Listeners() {
     document.getElementById('switchBackBtn2').addEventListener('click', () => {
+        if (switchSchoolSearch) {
+            switchSchoolSearch.destroy();
+            switchSchoolSearch = null;
+        }
         const body = document.querySelector('.switch-modal-body');
         body.innerHTML = renderStep1();
         updateStepIndicator(1);
@@ -2759,6 +2782,10 @@ async function executeSwitchProfile(profileData) {
 }
 
 function closeSwitchProfileModal() {
+    if (switchSchoolSearch) {
+        switchSchoolSearch.destroy();
+        switchSchoolSearch = null;
+    }
     const modal = document.getElementById('switchProfileModal');
     if (modal) {
         modal.remove();
