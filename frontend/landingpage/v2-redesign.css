@@ -216,8 +216,13 @@
 
 /* Splash responsive */
 @media (max-width: 768px) {
+    /* Override styles.css hiding nav-links on mobile for the landing page */
+    .v2-nav-minimal .nav-links {
+        display: flex !important;
+    }
+
     .v2-splash {
-        padding: 100px 24px 40px;
+        padding: 80px 24px 40px;
     }
 
     .v2-splash-inner {
@@ -1766,6 +1771,40 @@
     .v2-feature-tab {
         font-size: 13px;
         padding: 8px 12px;
+    }
+
+    /* Cut all section spacing by 50% on mobile */
+    .v2-features-hero {
+        min-height: auto;
+        padding: 30px 20px;
+    }
+
+    .v2-schools {
+        padding: 20px 0;
+    }
+
+    .v2-schools .v2-section-title {
+        margin-bottom: 24px;
+    }
+
+    .v2-features {
+        padding: 30px 0 50px;
+    }
+
+    .v2-video-demo {
+        padding: 50px 0 25px;
+    }
+
+    .v2-comparison {
+        display: none;
+    }
+
+    .v2-pricing-preview {
+        padding: 50px 0;
+    }
+
+    .v2-final-cta {
+        padding: 50px 0;
     }
 
     /* Video */

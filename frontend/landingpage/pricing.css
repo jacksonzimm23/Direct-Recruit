@@ -379,6 +379,18 @@
    ============================================ */
 
 @media (max-width: 768px) {
+    .pricing-hero {
+        padding: 20px 0 12px;
+    }
+
+    .pricing-section {
+        padding: 30px 0;
+    }
+
+    .pricing-cta {
+        padding: 40px 0;
+    }
+
     .pricing-container {
         padding: 0 20px;
     }
