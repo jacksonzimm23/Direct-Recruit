@@ -1132,12 +1132,19 @@
 
 .v2-video-demo {
     background: linear-gradient(180deg, #060d1e 0%, var(--oxford-blue, #0a1128) 100%);
-    padding: 100px 0;
+    padding: 100px 0 50px 0;
 }
 
 .v2-video-wrapper {
     max-width: 800px;
     margin: 0 auto;
+}
+
+.v2-video-wrapper video {
+    width: 100%;
+    border-radius: 16px;
+    display: block;
+    border: 1px solid rgba(255, 255, 255, 0.25);
 }
 
 .v2-video-placeholder {
