@@ -74,6 +74,15 @@
                 </svg>
                 <span>Settings</span>
             </a>
+            <div class="mobile-sidebar-divider"></div>
+            <a href="#" class="mobile-sidebar-nav-item mobile-sidebar-stat-item" id="mobileProfileViewsLink">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+                <span>Profile Views</span>
+                <span class="mobile-stat-value" id="mobileProfileViewsCount">0</span>
+            </a>
         </nav>
         <div class="mobile-sidebar-footer">
             <img src="https://res.cloudinary.com/dzmsj6nwv/image/upload/v1770078659/LOGO.PNG_i0uvv4.png" alt="Direct Recruit" class="mobile-sidebar-logo">
@@ -117,7 +126,8 @@
                 </div>
                 <span class="mobile-post-modal-username" id="mobilePostModalUsername">User</span>
             </div>
-            <textarea class="mobile-post-modal-textarea" id="mobilePostModalTextarea" placeholder="Share an update, highlight, or achievement..."></textarea>
+            <textarea class="mobile-post-modal-textarea" id="mobilePostModalTextarea" placeholder="Share an update, highlight, or achievement..." maxlength="300"></textarea>
+            <span class="char-counter mobile-post-char-counter">0/300</span>
             <div class="mobile-post-modal-media-preview" id="mobilePostModalMediaPreview"></div>
         </div>
         <div class="mobile-post-modal-footer">
@@ -254,7 +264,8 @@
                     </svg>
                 </div>
                 <div class="post-input-container">
-                    <textarea placeholder="Share recruiting updates, team news, or program highlights..." class="post-input" rows="3"></textarea>
+                    <textarea placeholder="Share recruiting updates, team news, or program highlights..." class="post-input" rows="3" maxlength="300"></textarea>
+                    <span class="char-counter">0/300</span>
                     <!-- Media Preview Container -->
                     <div class="media-preview-container" id="mediaPreviewContainer" style="display: none;">
                         <div class="media-preview-grid" id="mediaPreviewGrid"></div>

@@ -434,7 +434,7 @@ router.delete('/shares/:shareId', authMiddleware, validateUUID('shareId'), async
 
 // Create post
 router.post('/', authMiddleware, postLimiter, sanitizeBody, [
-  body('content').trim().notEmpty().withMessage('Content required').isLength({ max: 5000 }).withMessage('Post content must be 5000 characters or less'),
+  body('content').trim().notEmpty().withMessage('Content required').isLength({ max: 300 }).withMessage('Post content must be 300 characters or less'),
   body('media_urls').optional().isArray(),
   body('media_type').optional().isIn(['image', 'video', 'mixed']),
   body('visibility').optional().isIn(['public', 'followers_only', 'private'])
@@ -473,7 +473,7 @@ router.get('/share/:shareId', authMiddleware, validateUUID('shareId'), async (re
 
 // Update quote content for a share
 router.put('/share/:shareId', authMiddleware, validateUUID('shareId'), [
-  body('quote_content').trim()
+  body('quote_content').trim().isLength({ max: 300 }).withMessage('Quote content must be 300 characters or less')
 ], async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -511,7 +511,13 @@ router.get('/:postId', authMiddleware, validateUUID('postId'), async (req, res) 
 });
 
 // Update post
-router.put('/:postId', authMiddleware, validateUUID('postId'), async (req, res) => {
+router.put('/:postId', authMiddleware, validateUUID('postId'), [
+  body('content').optional().trim().isLength({ max: 300 }).withMessage('Post content must be 300 characters or less')
+], async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
   try {
     const post = await Post.update(req.params.postId, req.userId, req.body);
     if (!post) {
@@ -628,7 +634,7 @@ router.get('/:postId/shares', authMiddleware, validateUUID('postId'), async (req
 
 // Add comment
 router.post('/:postId/comments', authMiddleware, validateUUID('postId'), sanitizeBody, [
-  body('content').trim().notEmpty().withMessage('Comment content required').isLength({ max: 2000 }).withMessage('Comment must be 2000 characters or less'),
+  body('content').trim().notEmpty().withMessage('Comment content required').isLength({ max: 300 }).withMessage('Comment must be 300 characters or less'),
   body('parent_comment_id').optional().isUUID()
 ], async (req, res) => {
   const errors = validationResult(req);
@@ -723,6 +729,9 @@ router.put('/:postId/comments/:commentId', authMiddleware, validateUUID('postId'
     if (!content || !content.trim()) {
       return res.status(400).json({ error: 'Comment content is required' });
     }
+    if (content.trim().length > 300) {
+      return res.status(400).json({ error: 'Comment must be 300 characters or less' });
+    }
     const result = await Post.updateComment(req.params.commentId, req.userId, content.trim());
     if (!result) {
       return res.status(404).json({ error: 'Comment not found or unauthorized' });
@@ -766,7 +775,7 @@ router.delete('/:postId/save', authMiddleware, validateUUID('postId'), async (re
 // Share post (repost)
 router.post('/:postId/share', authMiddleware, validateUUID('postId'), [
   body('share_type').optional().isIn(['repost', 'quote']),
-  body('quote_content').optional().trim(),
+  body('quote_content').optional().trim().isLength({ max: 300 }).withMessage('Quote content must be 300 characters or less'),
   body('media_urls').optional().isArray(),
   body('media_type').optional().isIn(['image', 'video', 'mixed'])
 ], async (req, res) => {
@@ -935,7 +944,7 @@ router.delete('/share/:shareId/save', authMiddleware, validateUUID('shareId'), a
 
 // Add comment to a share (quote post)
 router.post('/share/:shareId/comments', authMiddleware, validateUUID('shareId'), sanitizeBody, [
-  body('content').trim().notEmpty().withMessage('Comment content is required').isLength({ max: 2000 }).withMessage('Comment must be 2000 characters or less')
+  body('content').trim().notEmpty().withMessage('Comment content is required').isLength({ max: 300 }).withMessage('Comment must be 300 characters or less')
 ], async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {

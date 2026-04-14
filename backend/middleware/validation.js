@@ -88,6 +88,7 @@ const validateRegistration = [
 // --- Profile creation validators (required fields enforced) ---
 
 const validatePlayerProfile = [
+  body('username').optional().trim().isLength({ max: 15 }).withMessage('Username must be 15 characters or less'),
   body('first_name').trim().notEmpty().withMessage('First name required').isLength({ max: 50 }).withMessage('First name must be 50 characters or less'),
   body('last_name').trim().notEmpty().withMessage('Last name required').isLength({ max: 50 }).withMessage('Last name must be 50 characters or less'),
   body('team_name').optional({ nullable: true }).trim().isLength({ max: 100 }).withMessage('Team name must be 100 characters or less'),
@@ -100,6 +101,7 @@ const validatePlayerProfile = [
 ];
 
 const validateCoachProfile = [
+  body('username').optional().trim().isLength({ max: 15 }).withMessage('Username must be 15 characters or less'),
   body('first_name').trim().notEmpty().withMessage('First name required').isLength({ max: 50 }).withMessage('First name must be 50 characters or less'),
   body('last_name').trim().notEmpty().withMessage('Last name required').isLength({ max: 50 }).withMessage('Last name must be 50 characters or less'),
   body('team_name').optional({ nullable: true }).trim().isLength({ max: 100 }).withMessage('Team name must be 100 characters or less'),
@@ -109,6 +111,7 @@ const validateCoachProfile = [
 ];
 
 const validateOtherProfile = [
+  body('username').optional().trim().isLength({ max: 15 }).withMessage('Username must be 15 characters or less'),
   body('first_name').trim().notEmpty().withMessage('First name required').isLength({ max: 50 }).withMessage('First name must be 50 characters or less'),
   body('last_name').trim().notEmpty().withMessage('Last name required').isLength({ max: 50 }).withMessage('Last name must be 50 characters or less'),
   body('subheader').optional({ nullable: true }).trim().isLength({ max: 100 }).withMessage('Subheader must be 100 characters or less'),
@@ -118,6 +121,7 @@ const validateOtherProfile = [
 // --- Profile update validators (all fields optional for partial updates) ---
 
 const validatePlayerProfileUpdate = [
+  body('username').optional().trim().isLength({ max: 15 }).withMessage('Username must be 15 characters or less'),
   body('first_name').optional({ nullable: true }).trim().isLength({ max: 50 }).withMessage('First name must be 50 characters or less'),
   body('last_name').optional({ nullable: true }).trim().isLength({ max: 50 }).withMessage('Last name must be 50 characters or less'),
   body('team_name').optional({ nullable: true }).trim().isLength({ max: 100 }).withMessage('Team name must be 100 characters or less'),
@@ -130,6 +134,7 @@ const validatePlayerProfileUpdate = [
 ];
 
 const validateCoachProfileUpdate = [
+  body('username').optional().trim().isLength({ max: 15 }).withMessage('Username must be 15 characters or less'),
   body('first_name').optional({ nullable: true }).trim().isLength({ max: 50 }).withMessage('First name must be 50 characters or less'),
   body('last_name').optional({ nullable: true }).trim().isLength({ max: 50 }).withMessage('Last name must be 50 characters or less'),
   body('team_name').optional({ nullable: true }).trim().isLength({ max: 100 }).withMessage('Team name must be 100 characters or less'),
@@ -139,6 +144,7 @@ const validateCoachProfileUpdate = [
 ];
 
 const validateOtherProfileUpdate = [
+  body('username').optional().trim().isLength({ max: 15 }).withMessage('Username must be 15 characters or less'),
   body('first_name').optional({ nullable: true }).trim().isLength({ max: 50 }).withMessage('First name must be 50 characters or less'),
   body('last_name').optional({ nullable: true }).trim().isLength({ max: 50 }).withMessage('Last name must be 50 characters or less'),
   body('subheader').optional({ nullable: true }).trim().isLength({ max: 100 }).withMessage('Subheader must be 100 characters or less'),

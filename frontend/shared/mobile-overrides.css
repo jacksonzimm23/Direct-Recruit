@@ -1276,41 +1276,19 @@ html {
         z-index: 2000 !important;
     }
 
-    /* Profile Viewers Modal - keep centered rounded style (matches other pages) */
+    /* Profile Viewers Modal - full screen on mobile */
     #profileViewersModal .follow-list-modal-content,
     #mobileProfileViewersModal .follow-list-modal-content {
-        position: absolute !important;
-        width: 90% !important;
-        max-width: 350px !important;
-        height: auto !important;
-        max-height: 70vh !important;
-        border-radius: 16px !important;
-        top: 50% !important;
-        left: 50% !important;
-        transform: translate(-50%, -50%) !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        height: 100% !important;
+        max-height: 100% !important;
+        border-radius: 0 !important;
+        top: 0 !important;
+        left: 0 !important;
+        transform: none !important;
         background: rgba(10, 17, 40, 0.98) !important;
-        border: 1px solid rgba(18, 130, 162, 0.3) !important;
-    }
-
-    #profileViewersModal .follow-list-modal-header,
-    #mobileProfileViewersModal .follow-list-modal-header {
-        padding: 1rem 1.25rem !important;
-    }
-
-    #profileViewersModal .follow-list-modal-body,
-    #mobileProfileViewersModal .follow-list-modal-body {
-        padding: 0.75rem 1rem !important;
-    }
-
-    #profileViewersModal .follow-list-item,
-    #mobileProfileViewersModal .follow-list-item {
-        padding: 0.6rem 0.5rem !important;
-    }
-
-    #profileViewersModal .follow-list-avatar,
-    #mobileProfileViewersModal .follow-list-avatar {
-        width: 40px !important;
-        height: 40px !important;
+        border: none !important;
     }
 
     /* Followers/Following Modal - full screen */
@@ -2627,6 +2605,197 @@ html {
 /* ============================================
    iOS SAFE AREAS (for app deployment)
    ============================================ */
+/* ==================== FULL-SCREEN MODALS ON MOBILE ==================== */
+/* All modals must be full-screen on mobile (≤768px) — see lessons.md #75 */
+
+@media (max-width: 768px) {
+
+    /* --- Feed modals (likes list, shares list, quote editor) --- */
+    .feed-modal {
+        width: 100% !important;
+        max-width: 100% !important;
+        height: 100% !important;
+        max-height: 100% !important;
+        border-radius: 0 !important;
+        top: 0 !important;
+        left: 0 !important;
+        transform: none !important;
+    }
+
+    /* --- Confirm modal (generic yes/no dialog) --- */
+    .confirm-modal {
+        width: 100% !important;
+        max-width: 100% !important;
+        height: 100% !important;
+        max-height: 100% !important;
+        border-radius: 0 !important;
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: center !important;
+    }
+
+    .confirm-modal-overlay {
+        align-items: stretch !important;
+    }
+
+    /* --- Logout modal --- */
+    .logout-modal {
+        width: 100% !important;
+        max-width: 100% !important;
+        height: 100% !important;
+        max-height: 100% !important;
+        border-radius: 0 !important;
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: center !important;
+    }
+
+    .logout-modal-overlay {
+        align-items: stretch !important;
+    }
+
+    /* --- Profile post modal (my-profile tabs) --- */
+    .profile-post-modal-overlay {
+        padding: 0 !important;
+    }
+
+    .profile-post-modal {
+        width: 100% !important;
+        max-width: 100% !important;
+        height: 100% !important;
+        max-height: 100% !important;
+        border-radius: 0 !important;
+    }
+
+    /* --- Likes modal (my-profile) --- */
+    .likes-modal-overlay .likes-modal,
+    .likes-modal {
+        width: 100% !important;
+        max-width: 100% !important;
+        height: 100% !important;
+        max-height: 100% !important;
+        border-radius: 0 !important;
+        top: 0 !important;
+        left: 0 !important;
+        transform: none !important;
+    }
+
+    /* --- Shares modal (my-profile) --- */
+    .shares-modal-overlay .shares-modal,
+    .shares-modal {
+        width: 100% !important;
+        max-width: 100% !important;
+        height: 100% !important;
+        max-height: 100% !important;
+        border-radius: 0 !important;
+        top: 0 !important;
+        left: 0 !important;
+        transform: none !important;
+    }
+
+    /* --- Delete message modal --- */
+    .delete-modal-overlay .delete-modal,
+    .delete-modal {
+        width: 100% !important;
+        max-width: 100% !important;
+        height: 100% !important;
+        max-height: 100% !important;
+        border-radius: 0 !important;
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: center !important;
+    }
+
+    .delete-modal-overlay {
+        align-items: stretch !important;
+    }
+
+    /* --- Reply edit/delete modals --- */
+    .reply-edit-modal-overlay .reply-edit-modal,
+    .reply-edit-modal {
+        width: 100% !important;
+        max-width: 100% !important;
+        height: 100% !important;
+        max-height: 100% !important;
+        border-radius: 0 !important;
+        top: 0 !important;
+        left: 0 !important;
+        transform: none !important;
+    }
+
+    .reply-delete-modal-overlay .reply-delete-modal,
+    .reply-delete-modal {
+        width: 100% !important;
+        max-width: 100% !important;
+        height: 100% !important;
+        max-height: 100% !important;
+        border-radius: 0 !important;
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: center !important;
+    }
+
+    /* --- Delete account modal --- */
+    .delete-account-modal-content {
+        width: 100% !important;
+        max-width: 100% !important;
+        height: 100% !important;
+        max-height: 100% !important;
+        border-radius: 0 !important;
+        top: 0 !important;
+        left: 0 !important;
+        transform: none !important;
+    }
+
+    /* --- Email verification modal --- */
+    .email-verification-modal-content {
+        width: 100% !important;
+        max-width: 100% !important;
+        height: 100% !important;
+        max-height: 100% !important;
+        border-radius: 0 !important;
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: center !important;
+    }
+
+    .email-verification-modal {
+        align-items: stretch !important;
+    }
+
+    /* --- Forgot password modal --- */
+    .forgot-password-modal-content {
+        width: 100% !important;
+        max-width: 100% !important;
+        height: 100% !important;
+        max-height: 100% !important;
+        border-radius: 0 !important;
+        top: 0 !important;
+        left: 0 !important;
+        transform: none !important;
+    }
+
+    /* --- Landing page modals (coach/player type selection, registration) --- */
+    .coach-type-modal .modal-content,
+    .player-type-modal .modal-content,
+    .registration-modal .modal-content,
+    .modal-content {
+        width: 100% !important;
+        max-width: 100% !important;
+        height: 100% !important;
+        max-height: 100% !important;
+        border-radius: 0 !important;
+        top: 0 !important;
+        left: 0 !important;
+        transform: none !important;
+        position: fixed !important;
+    }
+
+    .modal-overlay {
+        align-items: stretch !important;
+    }
+}
+
 @supports (padding-bottom: env(safe-area-inset-bottom)) {
     @media (max-width: 768px) {
         .sidebar {

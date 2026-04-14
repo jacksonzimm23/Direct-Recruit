@@ -522,6 +522,14 @@ function initMobilePostModal() {
     let selectedFiles = [];
     const maxMediaFiles = 4;
 
+    // Character counter for mobile post textarea
+    const mobilePostCounter = document.querySelector('.mobile-post-char-counter');
+    if (textarea && mobilePostCounter) {
+        textarea.addEventListener('input', () => {
+            if (typeof updateCharCounter === 'function') updateCharCounter(mobilePostCounter, textarea.value.length, 300);
+        });
+    }
+
     // Update the mobile media counter display
     function updateMobileMediaCounter() {
         if (mediaCounter) {

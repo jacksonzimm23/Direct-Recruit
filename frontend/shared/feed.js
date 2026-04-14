@@ -4,6 +4,17 @@
 // Global feedManager variable - declared at top to ensure it's always accessible
 var feedManager;
 
+// Shared character counter helper — updates counter text and color classes
+function updateCharCounter(counterEl, currentLength, maxLength) {
+    counterEl.textContent = `${currentLength}/${maxLength}`;
+    counterEl.classList.remove('warning', 'limit');
+    if (currentLength >= maxLength) {
+        counterEl.classList.add('limit');
+    } else if (currentLength >= maxLength * 0.8) {
+        counterEl.classList.add('warning');
+    }
+}
+
 // Asset path for school logos (determined by page depth)
 var _feedAssetsPath = window.location.pathname.includes('/tabs/') ? '../../assets' : '../assets';
 // Pre-load school logos data for feed rendering
@@ -110,10 +121,12 @@ class FeedManager {
                 }
             });
 
-            // Auto-resize textarea
+            // Auto-resize textarea + character counter
             this.postInput.addEventListener('input', () => {
                 this.postInput.style.height = 'auto';
                 this.postInput.style.height = this.postInput.scrollHeight + 'px';
+                const counter = this.postInput.parentElement.querySelector('.char-counter');
+                if (counter) updateCharCounter(counter, this.postInput.value.length, 300);
             });
         }
 
@@ -844,7 +857,7 @@ class FeedManager {
             <div class="post-comments-section" id="comments-${postId}" style="display: none;">
                 <div class="comments-list"></div>
                 <div class="comment-input-container">
-                    <input type="text" placeholder="Write a comment..." class="comment-input" id="comment-input-${postId}" onkeypress="if(event.key==='Enter') feedManager.addComment('${postId}')">
+                    <input type="text" placeholder="Write a comment..." class="comment-input" maxlength="300" id="comment-input-${postId}" onkeypress="if(event.key==='Enter') feedManager.addComment('${postId}')">
                     <button onclick="feedManager.addComment('${postId}')">Post</button>
                 </div>
             </div>
@@ -971,7 +984,7 @@ class FeedManager {
             <div class="post-comments-section" id="comments-${postId}" style="display: none;">
                 <div class="comments-list"></div>
                 <div class="comment-input-container">
-                    <input type="text" placeholder="Write a comment..." class="comment-input" id="comment-input-${postId}" onkeypress="if(event.key==='Enter') feedManager.addComment('${postId}')">
+                    <input type="text" placeholder="Write a comment..." class="comment-input" maxlength="300" id="comment-input-${postId}" onkeypress="if(event.key==='Enter') feedManager.addComment('${postId}')">
                     <button onclick="feedManager.addComment('${postId}')">Post</button>
                 </div>
             </div>
@@ -1104,7 +1117,7 @@ class FeedManager {
             <div class="post-comments-section" id="share-comments-${post.share_id}" style="display: none;">
                 <div class="comments-list"></div>
                 <div class="comment-input-container">
-                    <input type="text" placeholder="Write a comment..." class="comment-input" id="share-comment-input-${post.share_id}" onkeypress="if(event.key==='Enter') feedManager.addShareComment('${post.share_id}')">
+                    <input type="text" placeholder="Write a comment..." class="comment-input" maxlength="300" id="share-comment-input-${post.share_id}" onkeypress="if(event.key==='Enter') feedManager.addShareComment('${post.share_id}')">
                     <button onclick="feedManager.addShareComment('${post.share_id}')">Post</button>
                 </div>
             </div>
@@ -1242,7 +1255,7 @@ class FeedManager {
             <div class="post-comments-section" id="share-comments-${share.share_id}" style="display: none;">
                 <div class="comments-list"></div>
                 <div class="comment-input-container">
-                    <input type="text" placeholder="Write a comment..." class="comment-input" id="share-comment-input-${share.share_id}" onkeypress="if(event.key==='Enter') feedManager.addShareComment('${share.share_id}')">
+                    <input type="text" placeholder="Write a comment..." class="comment-input" maxlength="300" id="share-comment-input-${share.share_id}" onkeypress="if(event.key==='Enter') feedManager.addShareComment('${share.share_id}')">
                     <button onclick="feedManager.addShareComment('${share.share_id}')">Post</button>
                 </div>
             </div>
@@ -1831,7 +1844,8 @@ class FeedManager {
                         </button>
                     </div>
                     <div class="feed-modal-body">
-                        <textarea id="edit-quote-textarea" class="edit-post-textarea" placeholder="Add your comment...">${share.quote_content || ''}</textarea>
+                        <textarea id="edit-quote-textarea" class="edit-post-textarea" placeholder="Add your comment..." maxlength="300">${share.quote_content || ''}</textarea>
+                        <span class="char-counter">${(share.quote_content || '').length}/300</span>
 
                         <div class="edit-modal-media-section">
                             <div class="edit-modal-media-header">
@@ -1868,8 +1882,13 @@ class FeedManager {
 
             document.body.appendChild(modal);
 
-            // Focus textarea
-            document.getElementById('edit-quote-textarea').focus();
+            // Focus textarea + wire up char counter
+            const quoteTextarea = document.getElementById('edit-quote-textarea');
+            quoteTextarea.focus();
+            const quoteCounter = quoteTextarea.parentElement.querySelector('.char-counter');
+            if (quoteCounter) {
+                quoteTextarea.addEventListener('input', () => updateCharCounter(quoteCounter, quoteTextarea.value.length, 300));
+            }
 
             // Update modal class based on media presence
             const updateModalSize = () => {
@@ -3559,7 +3578,8 @@ class FeedManager {
                         </button>
                     </div>
                     <div class="feed-modal-body">
-                        <textarea class="edit-post-textarea" id="edit-post-content" placeholder="What's on your mind?">${this.escapeHtml(post.content || '')}</textarea>
+                        <textarea class="edit-post-textarea" id="edit-post-content" placeholder="What's on your mind?" maxlength="300">${this.escapeHtml(post.content || '')}</textarea>
+                        <span class="char-counter">${(post.content || '').length}/300</span>
 
                         <div class="edit-modal-media-section">
                             <div class="edit-modal-media-header">
@@ -3601,6 +3621,10 @@ class FeedManager {
                 const textarea = document.getElementById('edit-post-content');
                 textarea.focus();
                 textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+                const editCounter = textarea.parentElement.querySelector('.char-counter');
+                if (editCounter) {
+                    textarea.addEventListener('input', () => updateCharCounter(editCounter, textarea.value.length, 300));
+                }
             }, 100);
 
             // Update modal class based on media presence
