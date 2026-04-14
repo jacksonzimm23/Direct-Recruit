@@ -2205,3 +2205,20 @@
         width: 100%;
     }
 }
+
+/* ==================== CHARACTER COUNTER ==================== */
+.char-counter {
+    display: block;
+    text-align: right;
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.4);
+    margin-top: 4px;
+    font-weight: 500;
+    transition: color 0.2s ease;
+}
+.char-counter.warning {
+    color: #f59e0b;
+}
+.char-counter.limit {
+    color: #ef4444;
+}

@@ -34,6 +34,9 @@ document.addEventListener('DOMContentLoaded', async function() {
     // Initialize mobile sidebar functionality
     initMobileSidebar();
 
+    // Load mobile profile views count
+    loadMobileProfileViewsCount();
+
     // Initialize mobile post modal
     initMobilePostModal();
 
@@ -462,6 +465,18 @@ function initMobileSidebar() {
             showLogoutModal();
         });
     }
+
+    // Mobile profile views link - open modal directly
+    // Skip if on my-profile page (that page has its own handler)
+    const isMyProfilePage = window.location.pathname.includes('my-profile.html');
+    const mobileProfileViewsLink = document.getElementById('mobileProfileViewsLink');
+    if (mobileProfileViewsLink && !isMyProfilePage) {
+        mobileProfileViewsLink.addEventListener('click', function(e) {
+            e.preventDefault();
+            closeMobileSidebar();
+            openMobileProfileViewersModal();
+        });
+    }
 }
 
 // Update unread messages badge in sidebar
@@ -520,6 +535,14 @@ function initMobilePostModal() {
 
     let selectedFiles = [];
     const maxMediaFiles = 4;
+
+    // Character counter for mobile post textarea
+    const mobilePostCounter = document.querySelector('.mobile-post-char-counter');
+    if (textarea && mobilePostCounter) {
+        textarea.addEventListener('input', () => {
+            if (typeof updateCharCounter === 'function') updateCharCounter(mobilePostCounter, textarea.value.length, 300);
+        });
+    }
 
     // Update the mobile media counter display
     function updateMobileMediaCounter() {
@@ -742,3 +765,231 @@ function initMobilePostModal() {
     updateModalUserInfo();
 }
 
+// ==================== MOBILE PROFILE VIEWERS MODAL ====================
+
+function ensureProfileViewersModal() {
+    if (document.getElementById('mobileProfileViewersModal')) return;
+
+    const modalHTML = `
+    <div class="follow-list-modal" id="mobileProfileViewersModal">
+        <div class="follow-list-modal-overlay" id="mobileProfileViewersModalOverlay"></div>
+        <div class="follow-list-modal-content">
+            <div class="follow-list-modal-header">
+                <h2>Profile Viewers</h2>
+                <button class="follow-list-modal-close" id="mobileProfileViewersModalClose">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="follow-list-modal-body" id="mobileProfileViewersModalBody">
+                <div class="follow-list-loading">Loading...</div>
+            </div>
+        </div>
+    </div>`;
+
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+    const overlay = document.getElementById('mobileProfileViewersModalOverlay');
+    const closeBtn = document.getElementById('mobileProfileViewersModalClose');
+
+    if (overlay) {
+        overlay.addEventListener('click', closeMobileProfileViewersModal);
+    }
+    if (closeBtn) {
+        closeBtn.addEventListener('click', closeMobileProfileViewersModal);
+    }
+}
+
+async function openMobileProfileViewersModal() {
+    ensureProfileViewersModal();
+
+    const modal = document.getElementById('mobileProfileViewersModal');
+    const modalBody = document.getElementById('mobileProfileViewersModalBody');
+
+    if (!modal || !modalBody) return;
+
+    modalBody.innerHTML = '<div class="follow-list-loading">Loading...</div>';
+    modal.classList.add('active');
+
+    try {
+        const authResponse = await API.get('/auth/me');
+        if (!authResponse.user) {
+            modalBody.innerHTML = '<div class="follow-list-empty">Please log in to view this</div>';
+            return;
+        }
+        const currentUserId = authResponse.user.id;
+
+        const response = await API.get(`/profile/viewers/${currentUserId}`);
+        const viewers = response.viewers || [];
+
+        if (viewers.length === 0) {
+            modalBody.innerHTML = '<div class="follow-list-empty">No profile views yet</div>';
+            return;
+        }
+
+        modalBody.innerHTML = viewers.map(viewer => {
+            const roleInfo = getMobileRoleInfo(viewer);
+            return `
+            <div class="follow-list-item" data-user-id="${viewer.id}" data-role="${viewer.role}">
+                <div class="follow-list-avatar" style="border: 2px solid ${getRoleBorderColor(viewer.role, viewer.is_transfer === 'y' || viewer.is_transfer === true, viewer.player_college_division || viewer.coach_college_division)}; color: ${getRoleBorderColor(viewer.role, viewer.is_transfer === 'y' || viewer.is_transfer === true, viewer.player_college_division || viewer.coach_college_division)}; background: ${getRoleAvatarBg(viewer.role, viewer.is_transfer === 'y' || viewer.is_transfer === true, viewer.player_college_division || viewer.coach_college_division)}">
+                    ${viewer.profile_image_url
+                        ? `<img src="${viewer.profile_image_url}" alt="${viewer.first_name}">`
+                        : `<svg viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="12" cy="7" r="4"></circle>
+                           </svg>`
+                    }
+                </div>
+                <div class="follow-list-info">
+                    <div class="follow-list-name">${viewer.first_name} ${viewer.last_name}</div>
+                    <div class="follow-list-role ${roleInfo.colorClass}">${roleInfo.text}</div>
+                </div>
+            </div>
+        `}).join('');
+
+        modalBody.querySelectorAll('.follow-list-item').forEach(item => {
+            item.addEventListener('click', async () => {
+                const visitorUserId = item.dataset.userId;
+                const role = item.dataset.role;
+
+                try {
+                    let profileResponse;
+                    if (role === 'player') {
+                        profileResponse = await API.get(`/profile/player/${visitorUserId}`);
+                    } else if (role === 'coach') {
+                        profileResponse = await API.get(`/profile/coach/${visitorUserId}`);
+                    } else {
+                        profileResponse = await API.get(`/profile/other/${visitorUserId}`);
+                    }
+
+                    if (profileResponse.profile && profileResponse.profile.username) {
+                        closeMobileProfileViewersModal();
+                        const profile = profileResponse.profile;
+                        const folder = getProfileFolder({ role, ...profile });
+                        const isInTabs = window.location.pathname.includes('/tabs/');
+                        const basePath = isInTabs ? '../../' : '../';
+                        window.location.href = `${basePath}${folder}/tabs/my-profile.html?username=${profile.username}&from=profile`;
+                    }
+                } catch (error) {
+                    console.error('Error fetching profile:', error);
+                }
+            });
+        });
+
+    } catch (error) {
+        console.error('Error loading profile viewers:', error);
+        modalBody.innerHTML = '<div class="follow-list-empty">Failed to load viewers</div>';
+    }
+}
+
+function closeMobileProfileViewersModal() {
+    const modal = document.getElementById('mobileProfileViewersModal');
+    if (modal) {
+        modal.classList.remove('active');
+    }
+}
+
+function getMobileRoleInfo(user) {
+    const role = user.role;
+    let text = '';
+    let colorClass = '';
+
+    if (role === 'player') {
+        const isTransfer = user.is_transfer === 'y' || user.is_transfer === true;
+        const hasCollegeDivision = user.player_college_division &&
+            ['D1 FBS', 'D1 FCS', 'D2', 'D3', 'NAIA', 'NJCAA', 'FBS', 'FCS', '3C2A'].includes(user.player_college_division);
+
+        if (isTransfer) {
+            colorClass = 'role-transfer-player';
+            const parts = [];
+            if (user.player_position) parts.push(user.player_position);
+            const heightStr = formatHeightForMobileDisplay(user.player_height);
+            if (heightStr) parts.push(heightStr);
+            if (user.player_weight) parts.push(`${user.player_weight} lbs`);
+            if (user.years_of_eligibility) parts.push(`${user.years_of_eligibility} YOE`);
+            text = parts.join(' \u2022 ') || 'Transfer Player';
+        } else if (hasCollegeDivision) {
+            colorClass = 'role-college-player';
+            const parts = [];
+            if (user.player_position) parts.push(user.player_position);
+            const schoolParts = [];
+            if (user.player_team_name) schoolParts.push(user.player_team_name);
+            if (user.player_state) schoolParts.push(user.player_state);
+            if (schoolParts.length > 0) parts.push(schoolParts.join(', '));
+            if (user.player_college_division) parts.push(formatDivisionDisplay(user.player_college_division));
+            text = parts.join(' \u2022 ') || 'College Player';
+        } else {
+            colorClass = 'role-hs-player';
+            const parts = [];
+            if (user.player_position) parts.push(user.player_position);
+            const heightStr = formatHeightForMobileDisplay(user.player_height);
+            if (heightStr) parts.push(heightStr);
+            if (user.player_weight) parts.push(`${user.player_weight} lbs`);
+            if (user.graduation_year) parts.push(user.graduation_year);
+            text = parts.join(' \u2022 ') || 'HS Player';
+        }
+    } else if (role === 'coach') {
+        const hasCollegeDivision = user.coach_college_division &&
+            ['D1 FBS', 'D1 FCS', 'D2', 'D3', 'NAIA', 'NJCAA', 'FBS', 'FCS', '3C2A'].includes(user.coach_college_division);
+
+        if (hasCollegeDivision) {
+            colorClass = 'role-college-coach';
+            const parts = [];
+            const teamParts = [];
+            if (user.coach_team_name) teamParts.push(user.coach_team_name);
+            if (user.coach_state) teamParts.push(user.coach_state);
+            if (teamParts.length > 0) parts.push(teamParts.join(', '));
+            if (user.coach_college_division) parts.push(formatDivisionDisplay(user.coach_college_division));
+            text = parts.join(' \u2022 ') || 'College Coach';
+        } else {
+            colorClass = 'role-hs-coach';
+            const parts = [];
+            if (user.coach_team_name) parts.push(user.coach_team_name);
+            if (user.coach_state) parts.push(user.coach_state);
+            text = parts.join(', ') || 'HS Coach';
+        }
+    } else if (role === 'other') {
+        colorClass = 'role-other';
+        text = user.other_subheader || 'Other';
+    } else {
+        text = role || 'User';
+    }
+
+    return { text, colorClass };
+}
+
+function formatHeightForMobileDisplay(height) {
+    if (!height) return '';
+    if (typeof height === 'string' && height.includes("'")) {
+        return height;
+    }
+    const totalInches = parseInt(height);
+    if (isNaN(totalInches)) return '';
+    const feet = Math.floor(totalInches / 12);
+    const inches = totalInches % 12;
+    return `${feet}'${inches}"`;
+}
+
+async function loadMobileProfileViewsCount() {
+    const mobileViewCountElement = document.getElementById('mobileProfileViewsCount');
+    const mobileProfileViewsLink = document.getElementById('mobileProfileViewsLink');
+
+    if (!mobileViewCountElement || !mobileProfileViewsLink) return;
+
+    try {
+        const authResponse = await API.get('/auth/me');
+        if (!authResponse.user) return;
+
+        const currentUserId = authResponse.user.id;
+        const response = await API.get(`/profile/views/${currentUserId}`);
+        const viewCount = response.viewCount || 0;
+
+        mobileViewCountElement.textContent = viewCount;
+        mobileProfileViewsLink.style.display = 'flex';
+    } catch (error) {
+        console.error('Error loading mobile profile views count:', error);
+        mobileViewCountElement.textContent = '0';
+    }
+}

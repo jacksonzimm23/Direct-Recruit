@@ -84,8 +84,8 @@ document.addEventListener('DOMContentLoaded', function() {
             if (usernameCharCount) {
                 usernameCharCount.textContent = username.length;
                 // Show warning color when approaching limit
-                if (username.length >= 18) {
-                    usernameCharCount.style.color = username.length >= 20 ? '#ff6b6b' : '#ffa500';
+                if (username.length >= 12) {
+                    usernameCharCount.style.color = username.length >= 15 ? '#ff6b6b' : '#ffa500';
                 } else {
                     usernameCharCount.style.color = '';
                 }
@@ -102,7 +102,7 @@ document.addEventListener('DOMContentLoaded', function() {
             isUsernameAvailable = false;
 
             // Check for max length
-            if (username.length >= 20) {
+            if (username.length >= 15) {
                 if (usernameLengthError) {
                     usernameLengthError.style.display = 'block';
                     usernameHint.style.display = 'none';

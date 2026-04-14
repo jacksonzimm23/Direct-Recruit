@@ -3246,7 +3246,7 @@ function createProfileQuotePostElement(post) {
             <div class="profile-comments-section" id="share-comments-${post.share_id}" style="display: none;">
                 <div class="comments-list"></div>
                 <div class="comment-input-container">
-                    <input type="text" placeholder="Write a comment..." class="comment-input" id="share-comment-input-${post.share_id}" onkeypress="if(event.key==='Enter') addShareComment('${post.share_id}')">
+                    <input type="text" placeholder="Write a comment..." class="comment-input" maxlength="300" id="share-comment-input-${post.share_id}" onkeypress="if(event.key==='Enter') addShareComment('${post.share_id}')">
                     <button onclick="addShareComment('${post.share_id}')">Post</button>
                 </div>
             </div>
@@ -3649,7 +3649,7 @@ function editReply(commentId, postId) {
                 </button>
             </div>
             <div class="reply-edit-modal-body">
-                <textarea id="editReplyContent" placeholder="Edit your reply...">${currentContent}</textarea>
+                <textarea id="editReplyContent" maxlength="300" placeholder="Edit your reply...">${currentContent}</textarea>
             </div>
             <div class="reply-edit-modal-footer">
                 <button class="btn-cancel" onclick="closeReplyModal()">Cancel</button>
@@ -3970,7 +3970,7 @@ async function togglePostComments(postId) {
             <div class="comments-loading">Loading comments...</div>
         </div>
         <div class="comment-input-container">
-            <input type="text" class="comment-input" placeholder="Write a comment..." id="comment-input-${postId}">
+            <input type="text" class="comment-input" maxlength="300" placeholder="Write a comment..." id="comment-input-${postId}">
             <button onclick="event.stopPropagation(); addPostComment('${postId}')">Post</button>
         </div>
     `;
@@ -4915,7 +4915,7 @@ async function editQuote(shareId) {
                     </button>
                 </div>
                 <div class="feed-modal-body">
-                    <textarea id="edit-quote-textarea" class="edit-post-textarea" placeholder="Add your comment...">${share.quote_content || ''}</textarea>
+                    <textarea id="edit-quote-textarea" class="edit-post-textarea" maxlength="300" placeholder="Add your comment...">${share.quote_content || ''}</textarea>
 
                     <div class="edit-modal-media-section">
                         <div class="edit-modal-media-header">
@@ -5782,7 +5782,7 @@ function createProfileLikedQuotePostElement(post) {
             <div class="profile-comments-section" id="share-comments-${post.share_id}" style="display: none;">
                 <div class="comments-list"></div>
                 <div class="comment-input-container">
-                    <input type="text" placeholder="Write a comment..." class="comment-input" id="share-comment-input-${post.share_id}" onkeypress="if(event.key==='Enter') addShareComment('${post.share_id}')">
+                    <input type="text" placeholder="Write a comment..." class="comment-input" maxlength="300" id="share-comment-input-${post.share_id}" onkeypress="if(event.key==='Enter') addShareComment('${post.share_id}')">
                     <button onclick="addShareComment('${post.share_id}')">Post</button>
                 </div>
             </div>
@@ -5958,7 +5958,7 @@ async function editProfilePost(postId) {
                     </button>
                 </div>
                 <div class="feed-modal-body">
-                    <textarea id="edit-profile-post-content" class="edit-post-textarea" placeholder="What's on your mind?">${escapeHtml(post.content || '')}</textarea>
+                    <textarea id="edit-profile-post-content" class="edit-post-textarea" maxlength="300" placeholder="What's on your mind?">${escapeHtml(post.content || '')}</textarea>
 
                     <div class="edit-modal-media-section">
                         <div class="edit-modal-media-header">

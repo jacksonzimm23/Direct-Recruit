@@ -826,25 +826,25 @@
     **Demo account emails (all use password `Test123!@#`):**
 
     *HS Players:*
-    - `demo.cody.harmon@test.com` — Valor Christian, Highlands Ranch, CO (4-star, Class of 2026)
-    - `demo.tyler.rae@test.com` — Cherry Creek, Greenwood Village, CO (3-star, Class of 2027)
-    - `demo.jaylen.archer@test.com` — IMG Academy, Bradenton, FL (5-star, Class of 2026)
-    - `demo.bryce.nolan@test.com` — Katy High School, Katy, TX (4-star, Class of 2026)
-    - `demo.mason.park@test.com` — De La Salle, Concord, CA (3-star, Class of 2027)
+     `demo.cody.harmon@test.com` — Valor Christian, Highlands Ranch, CO (4-star, Class of 2026)
+     `demo.tyler.rae@test.com` — Cherry Creek, Greenwood Village, CO (3-star, Class of 2027)
+     `demo.jaylen.archer@test.com` — IMG Academy, Bradenton, FL (5-star, Class of 2026)
+     `demo.bryce.nolan@test.com` — Katy High School, Katy, TX (4-star, Class of 2026)
+     `demo.mason.park@test.com` — De La Salle, Concord, CA (3-star, Class of 2027)
 
     *Transfer Players:*
-    - `demo.darius.cole@test.com` — Oregon State University, D1 FBS (3 yrs eligibility)
-    - `demo.elijah.monroe@test.com` — Sam Houston State University, D1 FBS (2 yrs eligibility)
-    - `demo.keegan.shaw@test.com` — Colorado Mesa University, D2 (3 yrs eligibility)
-    - `demo.andre.voss@test.com` — Bethune-Cookman University, D1 FCS (2 yrs eligibility)
-    - `demo.julian.west@test.com` — University of Mount Union, D3 (4 yrs eligibility)
+     `demo.darius.cole@test.com` — Oregon State University, D1 FBS (3 yrs eligibility)
+     `demo.elijah.monroe@test.com` — Sam Houston State University, D1 FBS (2 yrs eligibility)
+     `demo.keegan.shaw@test.com` — Colorado Mesa University, D2 (3 yrs eligibility)
+     `demo.andre.voss@test.com` — Bethune-Cookman University, D1 FCS (2 yrs eligibility)
+     `demo.julian.west@test.com` — University of Mount Union, D3 (4 yrs eligibility)
 
     *College Players (portal signals active):*
-    - `demo.ryan.keeler@test.com` — Kansas State University, D1 FBS (portal_keywords + browsing_coaches)
-    - `demo.trevon.james@test.com` — Boise State University, D1 FBS (bio_and_film + browsing_coaches)
-    - `demo.marcus.bell@test.com` — Eastern Washington University, D1 FCS (portal_keywords)
-    - `demo.sean.calloway@test.com` — Colorado School of Mines, D2 (browsing_coaches + bio_and_film)
-    - `demo.nate.fischer@test.com` — University of Wisconsin - Whitewater, D3 (portal_keywords + bio_and_film)
+     `demo.ryan.keeler@test.com` — Kansas State University, D1 FBS (portal_keywords + browsing_coaches)
+     `demo.trevon.james@test.com` — Boise State University, D1 FBS (bio_and_film + browsing_coaches)
+     `demo.marcus.bell@test.com` — Eastern Washington University, D1 FCS (portal_keywords)
+     `demo.sean.calloway@test.com` — Colorado School of Mines, D2 (browsing_coaches + bio_and_film)
+     `demo.nate.fischer@test.com` — University of Wisconsin - Whitewater, D3 (portal_keywords + bio_and_film)
 
     *Extra coaches (for portal browsing signal):*
     - `demo.coach.sec@test.com` — University of Alabama
@@ -854,5 +854,17 @@
 
 ---
 
+## Mobile UX
+
+75. **No popup modals on mobile — all modals must be full-screen.** Centered popup modals with backdrops feel cramped on small screens and are a poor mobile UX pattern. On mobile (≤768px), every modal must be a full-screen overlay (100vw × 100vh, fixed position, no backdrop gap visible). This applies to: profile viewers, followers/following lists, logout confirmation, share/repost menus, confirm modals, and any other modal-like UI. Desktop (>768px) can keep the centered popup style.
+
+---
+
 ## TODOs
 **TODO: Restore all scroll positions when navigating across pages/modals
+
+docker-compose stop
+
+docker-compose start
+
+DO NOT run seed

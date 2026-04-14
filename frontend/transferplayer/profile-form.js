@@ -158,24 +158,47 @@ document.addEventListener('DOMContentLoaded', async function() {
     // Username availability validation
     const usernameInput = document.getElementById('username');
     const usernameError = document.getElementById('usernameError');
+    const usernameLengthError = document.getElementById('usernameLengthError');
     const usernameHint = document.getElementById('usernameHint');
+    const usernameCharCount = document.getElementById('usernameCharCount');
     let usernameCheckTimeout;
     let isUsernameAvailable = false;
 
     if (usernameInput && usernameError) {
         usernameInput.addEventListener('input', function() {
-            // Convert to lowercase automatically
-            this.value = this.value.toLowerCase();
+            // Convert to lowercase and remove invalid characters
+            this.value = this.value.toLowerCase().replace(/[^a-z0-9_]/g, '');
             const username = this.value.trim();
+
+            // Update character count
+            if (usernameCharCount) {
+                usernameCharCount.textContent = username.length;
+                if (username.length >= 12) {
+                    usernameCharCount.style.color = username.length >= 15 ? '#ff6b6b' : '#ffa500';
+                } else {
+                    usernameCharCount.style.color = '';
+                }
+            }
 
             // Clear previous timeout
             clearTimeout(usernameCheckTimeout);
 
             // Reset error state
             usernameError.style.display = 'none';
+            if (usernameLengthError) usernameLengthError.style.display = 'none';
             usernameHint.style.display = 'block';
             usernameInput.style.borderColor = '';
             isUsernameAvailable = false;
+
+            // Check for max length
+            if (username.length >= 15) {
+                if (usernameLengthError) {
+                    usernameLengthError.style.display = 'block';
+                    usernameHint.style.display = 'none';
+                    usernameInput.style.borderColor = '#ff6b6b';
+                }
+                return;
+            }
 
             // Only check if username is not empty and matches pattern (lowercase only)
             if (username.length >= 3 && /^[a-z0-9_]+$/.test(username)) {
