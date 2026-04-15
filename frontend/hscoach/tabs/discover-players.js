@@ -29,7 +29,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     const loadMoreContainer = document.getElementById('loadMoreContainer');
     const loadMoreBtn = document.getElementById('loadMorePlayersBtn');
     let playerOffset = 0;
-    const playerLimit = 9;
+    const playerLimit = window.innerWidth <= 768 ? 5 : 10;
     let hasMorePlayers = true;
     let isLoadingPlayers = false;
     let totalPlayersLoaded = 0;
@@ -522,7 +522,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     // Pagination state for coaches
     let coachOffset = 0;
-    const coachLimit = 9;
+    const coachLimit = window.innerWidth <= 768 ? 5 : 10;
     let hasMoreCoaches = true;
     let isLoadingCoaches = false;
 

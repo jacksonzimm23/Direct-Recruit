@@ -4,7 +4,7 @@
 document.addEventListener('DOMContentLoaded', function() {
 
     // Pagination state - separate offsets for each user type
-    const userLimit = 4; // Limit per user type per load
+    const userLimit = window.innerWidth <= 768 ? 5 : 10; // Limit per user type per load
     let offsets = {
         hsplayer: 0,
         collegeplayer: 0,
@@ -50,29 +50,30 @@ document.addEventListener('DOMContentLoaded', function() {
             // Only fetch user types that still have more data
             const fetchPromises = [];
             const fetchTypes = [];
+            const perSourceLimit = Math.ceil(userLimit / 6);
 
             if (hasMore.hsplayer) {
-                fetchPromises.push(API.get(`/profile/discover/hsplayers?limit=${userLimit}&offset=${offsets.hsplayer}`).catch(() => ({ players: [] })));
+                fetchPromises.push(API.get(`/profile/discover/hsplayers?limit=${perSourceLimit}&offset=${offsets.hsplayer}`).catch(() => ({ players: [] })));
                 fetchTypes.push('hsplayer');
             }
             if (hasMore.collegeplayer) {
-                fetchPromises.push(API.get(`/profile/discover/collegeplayers?limit=${userLimit}&offset=${offsets.collegeplayer}`).catch(() => ({ players: [] })));
+                fetchPromises.push(API.get(`/profile/discover/collegeplayers?limit=${perSourceLimit}&offset=${offsets.collegeplayer}`).catch(() => ({ players: [] })));
                 fetchTypes.push('collegeplayer');
             }
             if (hasMore.transferplayer) {
-                fetchPromises.push(API.get(`/profile/discover/transferplayers?limit=${userLimit}&offset=${offsets.transferplayer}`).catch(() => ({ players: [] })));
+                fetchPromises.push(API.get(`/profile/discover/transferplayers?limit=${perSourceLimit}&offset=${offsets.transferplayer}`).catch(() => ({ players: [] })));
                 fetchTypes.push('transferplayer');
             }
             if (hasMore.hscoach) {
-                fetchPromises.push(API.get(`/coaches/hs?limit=${userLimit}&offset=${offsets.hscoach}`).catch(() => ({ coaches: [] })));
+                fetchPromises.push(API.get(`/coaches/hs?limit=${perSourceLimit}&offset=${offsets.hscoach}`).catch(() => ({ coaches: [] })));
                 fetchTypes.push('hscoach');
             }
             if (hasMore.collegecoach) {
-                fetchPromises.push(API.get(`/coaches/college?limit=${userLimit}&offset=${offsets.collegecoach}`).catch(() => ({ coaches: [] })));
+                fetchPromises.push(API.get(`/coaches/college?limit=${perSourceLimit}&offset=${offsets.collegecoach}`).catch(() => ({ coaches: [] })));
                 fetchTypes.push('collegecoach');
             }
             if (hasMore.other) {
-                fetchPromises.push(API.get(`/profile/discover/other?limit=${userLimit}&offset=${offsets.other}`).catch(() => ({ profiles: [] })));
+                fetchPromises.push(API.get(`/profile/discover/other?limit=${perSourceLimit}&offset=${offsets.other}`).catch(() => ({ profiles: [] })));
                 fetchTypes.push('other');
             }
 
@@ -104,11 +105,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 hasMore[type] = resHasMore;
             });
 
-            // Shuffle the array to mix user types
+            // Shuffle the array to mix user types, then cap to userLimit
             shuffleArray(allUsers);
+            const displayUsers = allUsers.slice(0, userLimit);
 
-            if (allUsers.length > 0) {
-                const userCards = allUsers.map(user => createUserCard(user)).join('');
+            if (displayUsers.length > 0) {
+                const userCards = displayUsers.map(user => createUserCard(user)).join('');
 
                 if (append) {
                     usersGrid.insertAdjacentHTML('beforeend', userCards);
