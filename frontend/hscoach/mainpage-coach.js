@@ -527,9 +527,11 @@ function initMobileSidebar() {
     if (mobileSidebarLogout) {
         mobileSidebarLogout.addEventListener('click', async function() {
             closeMobileSidebar();
-            localStorage.removeItem('sidebarFooterProfile');
-            // Clear authentication and redirect
-            await API.auth.logout();
+            const confirmed = await showLogoutConfirmModal();
+            if (confirmed) {
+                localStorage.removeItem('sidebarFooterProfile');
+                await API.auth.logout();
+            }
         });
     }
 

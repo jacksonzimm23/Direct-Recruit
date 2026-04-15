@@ -346,6 +346,43 @@
 
             <!-- Recruiting Assistant AI Tab Content -->
             <div class="dp-tab-content" id="recruitAssistantTab">
+                <!-- Mobile Action Bar (hidden on desktop) -->
+                <div class="ra-mobile-actions" id="raMobileActions">
+                    <button class="ra-mobile-action-btn" id="raMobileNewChat" title="New Chat">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 20h9"></path>
+                            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                        </svg>
+                        <span>New</span>
+                    </button>
+                    <button class="ra-mobile-action-btn" id="raMobileHistory" title="Chat History">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <polyline points="12 6 12 12 16 14"></polyline>
+                        </svg>
+                        <span>History</span>
+                    </button>
+                    <button class="ra-mobile-action-btn" id="raMobileSaved" title="Saved Players">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+                        </svg>
+                        <span>Saved</span>
+                    </button>
+                    <button class="ra-mobile-action-btn" id="raMobileBaselines" title="Baseline Metrics">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 20V10"></path>
+                            <path d="M18 20V4"></path>
+                            <path d="M6 20v-4"></path>
+                        </svg>
+                        <span>Baselines</span>
+                    </button>
+                    <button class="ra-mobile-action-btn" id="raMobileUsage" title="View Usage">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
+                        </svg>
+                        <span>Usage</span>
+                    </button>
+                </div>
                 <div class="ra-layout">
                     <!-- Chat History Sidebar -->
                     <div class="ra-history" id="raHistory">
@@ -437,7 +474,7 @@
                                 </button>
                             </div>
                             <div class="ra-input-disclaimer">
-                                Recruit Assistant uses AI to match players — results are suggestions, not guarantees.
+                                Recruiting Assistant uses AI to match players — results are suggestions, not guarantees.
                             </div>
                         </div>
                     </div>

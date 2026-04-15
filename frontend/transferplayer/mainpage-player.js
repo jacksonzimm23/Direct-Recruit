@@ -480,8 +480,8 @@ function initMobileSidebar() {
     if (mobileSidebarLogout) {
         mobileSidebarLogout.addEventListener('click', async function() {
             closeMobileSidebar();
-            // Clear authentication and redirect
-            await API.auth.logout();
+            const confirmed = await showLogoutConfirmModal();
+            if (confirmed) await API.auth.logout();
         });
     }
 

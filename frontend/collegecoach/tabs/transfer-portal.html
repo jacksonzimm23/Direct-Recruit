@@ -290,6 +290,36 @@
 
             <!-- Portal Intelligence Tab Content -->
             <div class="tp-tab-content" id="portalIntelligenceTab">
+                <!-- Mobile Action Bar (hidden on desktop) -->
+                <div class="pi-mobile-actions" id="piMobileActions">
+                    <button class="pi-mobile-action-btn" id="piMobileNewChat" title="New Chat">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 20h9"></path>
+                            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                        </svg>
+                        <span>New</span>
+                    </button>
+                    <button class="pi-mobile-action-btn" id="piMobileHistory" title="Chat History">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <polyline points="12 6 12 12 16 14"></polyline>
+                        </svg>
+                        <span>History</span>
+                    </button>
+                    <button class="pi-mobile-action-btn" id="piMobileWatchlist" title="Portal Watchlist">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                            <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                        </svg>
+                        <span>Watchlist</span>
+                    </button>
+                    <button class="pi-mobile-action-btn" id="piMobileUsage" title="View Usage">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
+                        </svg>
+                        <span>Usage</span>
+                    </button>
+                </div>
                 <div class="pi-layout">
                     <!-- Chat History Sidebar -->
                     <div class="pi-history" id="piHistory">

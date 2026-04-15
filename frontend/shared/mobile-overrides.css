@@ -770,6 +770,22 @@ html {
         min-height: calc(100vh - 90px) !important;
     }
 
+    /* AI chat pages (RA/PI) — fit between mobile header and bottom nav */
+    .main-content:has(.ra-layout),
+    .main-content:has(.pi-layout) {
+        position: fixed !important;
+        top: 50px !important; /* below mobile header */
+        bottom: 70px !important; /* above bottom nav */
+        left: 0 !important;
+        right: 0 !important;
+        height: auto !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        min-height: unset !important;
+        box-sizing: border-box !important;
+        overflow: hidden !important;
+    }
+
     .content-header {
         display: flex !important;
         position: relative !important;
@@ -1298,6 +1314,33 @@ html {
         height: 100% !important;
         max-height: 100% !important;
         border-radius: 0 !important;
+    }
+
+    /* === DISCOVER / TRANSFER PORTAL SUBTABS === */
+    .dp-subtabs,
+    .tp-subtabs {
+        gap: 0.25rem !important;
+        padding: 0.25rem !important;
+    }
+
+    .dp-subtab,
+    .tp-subtab {
+        gap: 0.3rem !important;
+        padding: 0.5rem 0.5rem !important;
+        font-size: 0.78rem !important;
+        white-space: nowrap !important;
+    }
+
+    .dp-subtab svg,
+    .tp-subtab svg {
+        width: 14px !important;
+        height: 14px !important;
+    }
+
+    .dp-subtab-badge,
+    .tp-subtab-badge {
+        font-size: 0.5rem !important;
+        padding: 0.1rem 0.3rem !important;
     }
 
     /* === NOTIFICATIONS PAGE === */
