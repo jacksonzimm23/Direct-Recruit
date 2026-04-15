@@ -5642,6 +5642,8 @@ input[type="file"]::file-selector-button:hover {
     display: flex;
     align-items: center;
     gap: 0.35rem;
+    flex-wrap: nowrap;
+    min-width: 0;
 }
 
 .profile-post-author .verified-badge {
@@ -5833,6 +5835,7 @@ input[type="file"]::file-selector-button:hover {
 
 .profile-post-stats {
     display: flex;
+    align-items: center;
     gap: 1rem;
     font-size: 0.8rem;
     color: rgba(254, 252, 251, 0.5);
@@ -6157,6 +6160,11 @@ input[type="file"]::file-selector-button:hover {
     font-weight: 700;
     color: var(--white);
     font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    flex-wrap: nowrap;
+    min-width: 0;
 }
 
 .profile-reply-time {
@@ -6297,7 +6305,9 @@ input[type="file"]::file-selector-button:hover {
 .profile-post-more-btn {
     background: none;
     border: none;
-    padding: 0.5rem;
+    padding: 0;
+    width: 24px;
+    height: 24px;
     cursor: pointer;
     color: rgba(254, 252, 251, 0.5);
     border-radius: 50%;
@@ -6305,6 +6315,7 @@ input[type="file"]::file-selector-button:hover {
     display: flex;
     align-items: center;
     justify-content: center;
+    flex-shrink: 0;
 }
 
 .profile-post-more-btn:hover {
@@ -6715,11 +6726,17 @@ input[type="file"]::file-selector-button:hover {
 .reply-menu-btn {
     background: transparent;
     border: none;
-    padding: 0.25rem;
+    padding: 0;
+    width: 24px;
+    height: 24px;
     cursor: pointer;
     color: rgba(254, 252, 251, 0.5);
     transition: all 0.2s ease;
-    border-radius: 4px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
 }
 
 .reply-menu-btn:hover {
@@ -7263,6 +7280,18 @@ input[type="file"]::file-selector-button:hover {
         font-size: 0.75rem;
     }
 
+    .profile-post-more-btn-mobile {
+        display: none !important;
+    }
+
+    .profile-post-author {
+        overflow: hidden;
+    }
+
+    .profile-reply-author {
+        overflow: hidden;
+    }
+
     .profile-post-content {
         font-size: 0.9rem;
         line-height: 1.5;
@@ -7683,7 +7712,52 @@ input[type="file"]::file-selector-button:hover {
 .profile-post-handle {
     color: rgba(255, 255, 255, 0.5);
     font-weight: 400;
+    font-size: 0.875rem;
     margin-left: 0.25rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+    flex-shrink: 1;
+}
+
+.profile-post-timestamp {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.8125rem;
+    font-weight: 400;
+    white-space: nowrap;
+    flex-shrink: 0;
+    margin-left: auto;
+}
+
+.profile-post-meta:empty {
+    display: none;
+}
+
+.profile-post-more-btn-mobile {
+    display: none;
+    width: 32px;
+    height: 32px;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    border-radius: 50%;
+    color: rgba(255, 255, 255, 0.5);
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-left: auto;
+    flex-shrink: 0;
+}
+
+.profile-post-more-btn-mobile:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--white);
+}
+
+.profile-post-more-btn-mobile svg {
+    width: 18px;
+    height: 18px;
 }
 
 /* ==================== LIKES MODAL ==================== */
