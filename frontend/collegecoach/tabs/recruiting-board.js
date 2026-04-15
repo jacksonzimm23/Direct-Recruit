@@ -293,13 +293,16 @@ document.addEventListener('DOMContentLoaded', async function() {
             </div>
         `;
 
-        // Add drag listeners
+        // Add drag listeners (desktop)
         card.addEventListener('dragstart', handleDragStart);
         card.addEventListener('dragend', handleDragEnd);
 
+        // Add touch drag listeners (mobile)
+        initTouchDragForCard(card);
+
         // Add click to show context menu
         card.addEventListener('click', (e) => {
-            if (!card.classList.contains('dragging')) {
+            if (!card.classList.contains('dragging') && !touchDragJustEnded) {
                 e.stopPropagation();
                 showPlayerContextMenu(card, player);
             }
@@ -1562,6 +1565,8 @@ document.addEventListener('DOMContentLoaded', async function() {
             slot.addEventListener('dragleave', handleColumnDragLeave);
             slot.addEventListener('drop', handleColumnDrop);
         });
+        // Add touch drag listeners for mobile
+        initTouchDragForColumns();
     }
 
     function handleColumnDragStart(e) {
@@ -1984,6 +1989,252 @@ document.addEventListener('DOMContentLoaded', async function() {
             if (rankElement) {
                 rankElement.textContent = index + 1;
             }
+        });
+    }
+
+    // ==================== Touch Drag and Drop ====================
+    let touchDragActive = false;
+    let touchLongPressTimer = null;
+    let touchStartX = 0;
+    let touchStartY = 0;
+    let touchClone = null;
+    let touchDragType = null; // 'card' or 'column'
+    let touchDragJustEnded = false;
+    const LONG_PRESS_MS = 400;
+    const TOUCH_DRAG_THRESHOLD = 10;
+
+    function createTouchClone(element) {
+        const rect = element.getBoundingClientRect();
+        const clone = document.createElement('div');
+        clone.className = 'touch-drag-clone';
+        clone.innerHTML = element.innerHTML;
+        clone.style.width = rect.width + 'px';
+        clone.style.left = rect.left + 'px';
+        clone.style.top = rect.top + 'px';
+        document.body.appendChild(clone);
+        return clone;
+    }
+
+    function moveTouchClone(clone, x, y) {
+        if (!clone) return;
+        const width = clone.offsetWidth;
+        const height = clone.offsetHeight;
+        clone.style.left = (x - width / 2) + 'px';
+        clone.style.top = (y - height / 2) + 'px';
+    }
+
+    function removeTouchClone() {
+        if (touchClone && touchClone.parentNode) {
+            touchClone.parentNode.removeChild(touchClone);
+        }
+        touchClone = null;
+    }
+
+    function getDropTargetUnderFinger(x, y, selector) {
+        const cx = Math.max(0, Math.min(x, window.innerWidth - 1));
+        const cy = Math.max(0, Math.min(y, window.innerHeight - 1));
+        const el = document.elementFromPoint(cx, cy);
+        return el ? el.closest(selector) : null;
+    }
+
+    function cleanupTouchDrag() {
+        clearTimeout(touchLongPressTimer);
+        touchLongPressTimer = null;
+        removeTouchClone();
+        document.body.classList.remove('touch-dragging');
+
+        document.querySelectorAll('.recruit-card.dragging').forEach(c => c.classList.remove('dragging'));
+        document.querySelectorAll('.recruits-list.drag-over').forEach(l => l.classList.remove('drag-over'));
+        document.querySelectorAll('.position-slot.dragging').forEach(s => s.classList.remove('dragging'));
+        document.querySelectorAll('.position-slot.drag-over').forEach(s => s.classList.remove('drag-over'));
+
+        touchDragActive = false;
+        touchDragType = null;
+        draggedElement = null;
+        sourceContainer = null;
+        draggedColumn = null;
+        columnSourceGroup = null;
+    }
+
+    // --- Player card touch handlers ---
+    function handleCardTouchStart(e) {
+        if (e.touches.length > 1) return;
+        const touch = e.touches[0];
+        touchStartX = touch.clientX;
+        touchStartY = touch.clientY;
+        const card = this;
+
+        touchLongPressTimer = setTimeout(function() {
+            touchDragActive = true;
+            touchDragType = 'card';
+            draggedElement = card;
+            sourceContainer = card.parentElement;
+            card.classList.add('dragging');
+            touchClone = createTouchClone(card);
+            moveTouchClone(touchClone, touchStartX, touchStartY);
+            document.body.classList.add('touch-dragging');
+            if (navigator.vibrate) navigator.vibrate(50);
+        }, LONG_PRESS_MS);
+    }
+
+    function handleCardTouchMove(e) {
+        if (!touchDragActive) {
+            if (touchLongPressTimer) {
+                const touch = e.touches[0];
+                const dx = touch.clientX - touchStartX;
+                const dy = touch.clientY - touchStartY;
+                if (Math.sqrt(dx * dx + dy * dy) > TOUCH_DRAG_THRESHOLD) {
+                    clearTimeout(touchLongPressTimer);
+                    touchLongPressTimer = null;
+                }
+            }
+            return;
+        }
+        e.preventDefault();
+        const touch = e.touches[0];
+        moveTouchClone(touchClone, touch.clientX, touch.clientY);
+
+        document.querySelectorAll('.recruits-list.drag-over').forEach(l => l.classList.remove('drag-over'));
+        const targetList = getDropTargetUnderFinger(touch.clientX, touch.clientY, '.recruits-list');
+        if (targetList) {
+            targetList.classList.add('drag-over');
+        }
+    }
+
+    function handleCardTouchEnd(e) {
+        clearTimeout(touchLongPressTimer);
+        touchLongPressTimer = null;
+
+        if (!touchDragActive || touchDragType !== 'card') return;
+        e.preventDefault();
+
+        const touch = e.changedTouches[0];
+        const targetList = getDropTargetUnderFinger(touch.clientX, touch.clientY, '.recruits-list');
+
+        if (targetList && draggedElement) {
+            const targetPosition = targetList.dataset.position;
+            const sourcePosition = sourceContainer.dataset.position;
+            const playerId = draggedElement.dataset.playerId;
+            const afterElement = getDragAfterElement(targetList, touch.clientY);
+
+            if (afterElement == null) {
+                targetList.appendChild(draggedElement);
+            } else {
+                targetList.insertBefore(draggedElement, afterElement);
+            }
+
+            if (targetPosition !== sourcePosition) {
+                draggedElement.dataset.position = targetPosition;
+                updatePlayerPosition(playerId, sourcePosition, targetPosition);
+            }
+
+            updateRankings(targetList);
+            if (sourceContainer !== targetList) {
+                updateRankings(sourceContainer);
+            }
+        }
+
+        cleanupTouchDrag();
+        touchDragJustEnded = true;
+        setTimeout(function() { touchDragJustEnded = false; }, 300);
+    }
+
+    function handleCardTouchCancel() {
+        cleanupTouchDrag();
+    }
+
+    // --- Position column touch handlers ---
+    function handleColumnTouchStart(e) {
+        if (e.touches.length > 1) return;
+        if (e.target.classList.contains('position-label-input') || e.target.closest('.recruit-card')) return;
+
+        const touch = e.touches[0];
+        touchStartX = touch.clientX;
+        touchStartY = touch.clientY;
+        const slot = this;
+
+        touchLongPressTimer = setTimeout(function() {
+            touchDragActive = true;
+            touchDragType = 'column';
+            draggedColumn = slot;
+            columnSourceGroup = slot.parentElement;
+            slot.classList.add('dragging');
+            touchClone = createTouchClone(slot);
+            moveTouchClone(touchClone, touchStartX, touchStartY);
+            document.body.classList.add('touch-dragging');
+            if (navigator.vibrate) navigator.vibrate(50);
+        }, LONG_PRESS_MS);
+    }
+
+    function handleColumnTouchMove(e) {
+        if (!touchDragActive) {
+            if (touchLongPressTimer) {
+                const touch = e.touches[0];
+                const dx = touch.clientX - touchStartX;
+                const dy = touch.clientY - touchStartY;
+                if (Math.sqrt(dx * dx + dy * dy) > TOUCH_DRAG_THRESHOLD) {
+                    clearTimeout(touchLongPressTimer);
+                    touchLongPressTimer = null;
+                }
+            }
+            return;
+        }
+        e.preventDefault();
+        const touch = e.touches[0];
+        moveTouchClone(touchClone, touch.clientX, touch.clientY);
+
+        document.querySelectorAll('.position-slot.drag-over').forEach(s => s.classList.remove('drag-over'));
+        const targetSlot = getDropTargetUnderFinger(touch.clientX, touch.clientY, '.position-slot');
+        if (targetSlot && targetSlot !== draggedColumn && targetSlot.parentElement === columnSourceGroup) {
+            targetSlot.classList.add('drag-over');
+        }
+    }
+
+    function handleColumnTouchEnd(e) {
+        clearTimeout(touchLongPressTimer);
+        touchLongPressTimer = null;
+
+        if (!touchDragActive || touchDragType !== 'column') return;
+        e.preventDefault();
+
+        const touch = e.changedTouches[0];
+        const targetSlot = getDropTargetUnderFinger(touch.clientX, touch.clientY, '.position-slot');
+
+        if (targetSlot && targetSlot !== draggedColumn && targetSlot.parentElement === columnSourceGroup) {
+            const group = targetSlot.parentElement;
+            const slots = Array.from(group.querySelectorAll('.position-slot'));
+            const fromIndex = slots.indexOf(draggedColumn);
+            const toIndex = slots.indexOf(targetSlot);
+
+            if (fromIndex < toIndex) {
+                group.insertBefore(draggedColumn, targetSlot.nextSibling);
+            } else {
+                group.insertBefore(draggedColumn, targetSlot);
+            }
+            scheduleSave();
+        }
+
+        cleanupTouchDrag();
+    }
+
+    function handleColumnTouchCancel() {
+        cleanupTouchDrag();
+    }
+
+    // --- Attach touch listeners ---
+    function initTouchDragForCard(card) {
+        card.addEventListener('touchstart', handleCardTouchStart, { passive: true });
+        card.addEventListener('touchmove', handleCardTouchMove, { passive: false });
+        card.addEventListener('touchend', handleCardTouchEnd);
+        card.addEventListener('touchcancel', handleCardTouchCancel);
+    }
+
+    function initTouchDragForColumns() {
+        document.querySelectorAll('.position-slot').forEach(function(slot) {
+            slot.addEventListener('touchstart', handleColumnTouchStart, { passive: true });
+            slot.addEventListener('touchmove', handleColumnTouchMove, { passive: false });
+            slot.addEventListener('touchend', handleColumnTouchEnd);
+            slot.addEventListener('touchcancel', handleColumnTouchCancel);
         });
     }
 
