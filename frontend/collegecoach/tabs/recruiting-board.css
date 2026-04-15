@@ -401,6 +401,26 @@
     cursor: grabbing;
 }
 
+/* Touch drag clone */
+.touch-drag-clone {
+    position: fixed;
+    z-index: 9999;
+    pointer-events: none;
+    opacity: 0.85;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    border-radius: 8px;
+    transform: scale(1.03);
+    background: var(--rich-black);
+    border: 1px solid rgba(255, 107, 53, 0.4);
+    max-width: 200px;
+    overflow: hidden;
+}
+
+body.touch-dragging {
+    overflow: hidden !important;
+    overscroll-behavior: none;
+}
+
 .recruit-rank {
     background: var(--accent-orange);
     color: var(--white);
