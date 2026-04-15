@@ -25,6 +25,9 @@ document.addEventListener('DOMContentLoaded', async function() {
         dashboardContainer.classList.add('sidebar-hidden');
     }
 
+    // Recruiting Calendar modal
+    initRecruitingCalendar();
+
     // Load current user and initialize
     await loadCurrentUser();
     await loadConversations();
@@ -1060,4 +1063,41 @@ async function deleteConversation() {
         console.error('Failed to delete conversation:', error);
         showToast('Failed to delete conversation. Please try again.', 'error');
     }
+}
+
+// ========================
+// RECRUITING CALENDAR MODAL
+// ========================
+function initRecruitingCalendar() {
+    const openBtn = document.getElementById('recruitingCalendarBtn');
+    const overlay = document.getElementById('rcOverlay');
+    const closeBtn = document.getElementById('rcCloseBtn');
+    const tabs = document.querySelectorAll('.rc-tab');
+
+    if (!openBtn || !overlay) return;
+
+    openBtn.addEventListener('click', () => {
+        overlay.classList.add('active');
+    });
+
+    if (closeBtn) {
+        closeBtn.addEventListener('click', () => {
+            overlay.classList.remove('active');
+        });
+    }
+
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) overlay.classList.remove('active');
+    });
+
+    tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            const target = tab.dataset.tab;
+            tabs.forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            document.querySelectorAll('.rc-tab-content').forEach(c => c.classList.remove('active'));
+            const content = document.querySelector(`.rc-tab-content[data-tab="${target}"]`);
+            if (content) content.classList.add('active');
+        });
+    });
 }

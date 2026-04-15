@@ -1278,6 +1278,24 @@ html {
         border-bottom: 1px solid rgba(18, 130, 162, 0.2) !important;
     }
 
+    .conversations-footer {
+        margin-top: auto !important;
+    }
+
+    /* === RECRUITING CALENDAR MODAL — FULL SCREEN === */
+    .rc-overlay {
+        padding: 0 !important;
+    }
+
+    .rc-modal {
+        max-width: 100% !important;
+        width: 100% !important;
+        height: 100% !important;
+        max-height: 100% !important;
+        border-radius: 0 !important;
+        border: none !important;
+    }
+
     .chat-area {
         width: 100% !important;
         height: 50vh !important;

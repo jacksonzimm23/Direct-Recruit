@@ -1016,12 +1016,22 @@
     }
 
     .recruiting-period-indicator {
-        padding: 0.3rem 0.75rem;
+        padding: 0.4rem 0.75rem;
         font-size: 0.68rem;
+    }
+
+    .rpi-content {
+        flex-wrap: wrap;
+        gap: 0.3rem;
     }
 
     .rpi-permissions {
         font-size: 0.65rem;
+        white-space: normal;
+        overflow: visible;
+        text-overflow: unset;
+        line-height: 1.4;
+        flex-basis: 100%;
     }
 
     .message-input-container {
