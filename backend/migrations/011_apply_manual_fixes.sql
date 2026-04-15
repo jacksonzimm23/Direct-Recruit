@@ -237,16 +237,18 @@ CREATE TABLE IF NOT EXISTS share_comment_likes (
 );
 
 -- ============================================================
--- 19. PROFILE_VIEWS — create table
+-- 19. PROFILE_VIEWS — create table (if not already created + renamed by 010)
 -- ============================================================
+-- Migration 010 renames viewed_player_id → viewed_user_id. If 010 already ran,
+-- the table exists with the new column name, so CREATE TABLE is a no-op.
+-- Use viewed_user_id (the post-010 name) for the CREATE TABLE definition.
 CREATE TABLE IF NOT EXISTS profile_views (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    viewed_player_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    viewed_user_id UUID REFERENCES users(id) ON DELETE CASCADE,
     viewer_id UUID REFERENCES users(id) ON DELETE CASCADE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE(viewed_player_id, viewer_id)
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
-CREATE INDEX IF NOT EXISTS idx_profile_views_viewed_player ON profile_views(viewed_player_id);
+CREATE INDEX IF NOT EXISTS idx_profile_views_viewed_user ON profile_views(viewed_user_id);
 CREATE INDEX IF NOT EXISTS idx_profile_views_viewer ON profile_views(viewer_id);
 CREATE INDEX IF NOT EXISTS idx_profile_views_created_at ON profile_views(created_at DESC);
 
