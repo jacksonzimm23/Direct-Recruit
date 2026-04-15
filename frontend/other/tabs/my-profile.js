@@ -2570,7 +2570,7 @@ async function loadPostComments(postId) {
                         <div class="comment-header">
                             <span class="comment-author" onclick="event.stopPropagation(); goToProfile('${comment.author_username || comment.user_id}', '${comment.author_role || 'player'}', '${comment.author_division || ''}', '${comment.user_id}', ${comment.author_transfer === 'y'})" style="cursor: pointer;">${commentAuthorName}${typeof getSchoolLogoHTML === 'function' && comment.author_division ? ' ' + getSchoolLogoHTML(comment.author_school, _assetsPath, 14) : ''}</span>
                             ${comment.author_username ? `<span class="comment-username" style="color: rgba(254,252,251,0.5); font-size: 12px; font-weight: 400;">@${comment.author_username}</span>` : ''}
-                            <span class="comment-time">${formatTimeAgo(comment.created_at)}</span>
+                            <span class="comment-timestamp">${formatTimeAgo(comment.created_at)}</span>
                         </div>
                         ${subheader ? `<div class="comment-subheader">${subheader}</div>` : ''}
                         <div class="comment-content">${comment.content}</div>
@@ -2902,12 +2902,7 @@ async function loadShareComments(shareId) {
                     subheader: comment.subheader
                 });
                 const commentTimeAgo = formatTimeAgo(comment.created_at);
-                let commentMetaLine = '';
-                if (shareSubheader) {
-                    commentMetaLine = shareSubheader.replace(/<\/span>$/, ` \u2022 ${commentTimeAgo}</span>`);
-                } else {
-                    commentMetaLine = `<span style="font-size:11px;color:rgba(254,252,251,0.5);">${commentTimeAgo}</span>`;
-                }
+                let commentMetaLine = shareSubheader || '';
                 return `
                 <div class="comment" data-comment-id="${comment.id}">
                     <div class="comment-avatar" onclick="goToProfile('${comment.username || comment.user_id}', '${comment.role || 'player'}', '${comment.division || ''}', '${comment.user_id}', ${comment.transfer === 'y'})" style="cursor: pointer; border: 2px solid ${getRoleBorderColor(comment.role || 'player', comment.transfer === 'y', comment.division)}; color: ${getRoleBorderColor(comment.role || 'player', comment.transfer === 'y', comment.division)}; background: ${getRoleAvatarBg(comment.role || 'player', comment.transfer === 'y', comment.division)}">
@@ -2920,6 +2915,7 @@ async function loadShareComments(shareId) {
                         <div class="comment-header">
                             <span class="comment-author" onclick="goToProfile('${comment.username || comment.user_id}', '${comment.role || 'player'}', '${comment.division || ''}', '${comment.user_id}', ${comment.transfer === 'y'})" style="cursor: pointer;">${comment.first_name} ${comment.last_name}${typeof getSchoolLogoHTML === 'function' && comment.division ? ' ' + getSchoolLogoHTML(comment.team_name, _assetsPath, 14) : ''}</span>
                             ${comment.username ? `<span class="comment-username" style="color: rgba(254,252,251,0.5); font-size: 12px; font-weight: 400;">@${comment.username}</span>` : ''}
+                            <span class="comment-timestamp">${commentTimeAgo}</span>
                         </div>
                         <div class="comment-subheader">${commentMetaLine}</div>
                         <p>${formatPostContent(comment.content)}</p>
@@ -3673,8 +3669,6 @@ function buildPostMetaInfo(post) {
         }
     }
 
-    const timeAgo = formatTimeAgo(post.created_at);
-
     if (post.author_role === 'player') {
         const parts = [];
         if (post.author_transfer === 'y') {
@@ -3719,7 +3713,6 @@ function buildPostMetaInfo(post) {
             if (post.author_weight) parts.push(`${post.author_weight} lbs`);
             if (post.author_grad_year) parts.push(post.author_grad_year);
         }
-        parts.push(timeAgo);
         metaInfo = starsHtml + parts.join(' • ');
     } else if (post.author_role === 'coach') {
         // Coach
@@ -3734,25 +3727,24 @@ function buildPostMetaInfo(post) {
                 parts.push(post.author_state);
             }
             if (post.author_division) parts.push(formatDivisionDisplay(post.author_division));
-            parts.push(timeAgo);
             metaInfo = parts.join(' • ');
         } else {
             // HS Coach: School, State (comma-separated like sidebar)
             if (post.author_school) parts.push(post.author_school);
             if (post.author_state) parts.push(post.author_state);
             const schoolState = parts.join(', ');
-            metaInfo = schoolState ? `${schoolState} • ${timeAgo}` : timeAgo;
+            metaInfo = schoolState || '';
         }
     } else if (post.author_role === 'other') {
         // Other profile type: subheader in yellow
         if (post.author_subheader) {
-            metaInfo = `<span style="color: #d4a017;">${post.author_subheader} • ${timeAgo}</span>`;
+            metaInfo = `<span style="color: #d4a017;">${post.author_subheader}</span>`;
         } else {
-            metaInfo = `<span style="color: #d4a017;">${timeAgo}</span>`;
+            metaInfo = '';
         }
     } else {
         // Fallback
-        metaInfo = timeAgo;
+        metaInfo = '';
     }
 
     return metaInfo;
@@ -3899,12 +3891,11 @@ function createProfilePostElement(post) {
                                 <path d="M22.5 12.5c0-1.58-.875-2.95-2.148-3.6.154-.435.238-.905.238-1.4 0-2.21-1.71-3.998-3.818-3.998-.47 0-.92.084-1.336.25C14.818 2.415 13.51 1.5 12 1.5s-2.816.917-3.437 2.25c-.415-.165-.866-.25-1.336-.25-2.11 0-3.818 1.79-3.818 4 0 .494.083.964.237 1.4-1.272.65-2.147 2.018-2.147 3.6 0 1.495.782 2.798 1.942 3.486-.02.17-.032.34-.032.514 0 2.21 1.708 4 3.818 4 .47 0 .92-.086 1.335-.25.62 1.334 1.926 2.25 3.437 2.25 1.512 0 2.818-.916 3.437-2.25.415.163.865.248 1.336.248 2.11 0 3.818-1.79 3.818-4 0-.174-.012-.344-.033-.513 1.158-.687 1.943-1.99 1.943-3.484zm-6.616-3.334l-4.334 6.5c-.145.217-.382.334-.625.334-.143 0-.288-.04-.416-.126l-.115-.094-2.415-2.415c-.293-.293-.293-.768 0-1.06s.768-.294 1.06 0l1.77 1.767 3.825-5.74c.23-.345.696-.436 1.04-.207.346.23.44.696.21 1.04z"/>
                             </svg>
                         ` : ''}
-                        ${post.author_username ? `<span class="profile-post-handle" style="color: rgba(254,252,251,0.5); font-weight: 400; font-size: 0.875rem;">@${post.author_username}</span>` : ''}
+                        ${post.author_username ? `<span class="profile-post-handle">@${post.author_username}</span>` : ''}
+                        <span class="profile-post-timestamp">${formatTimeAgo(post.created_at)}</span>
+                        ${optionsButton}
                     </div>
                     <div class="profile-post-meta ${post.author_role === 'coach' ? 'coach-meta' : (post.author_role === 'other' ? 'other-meta' : (post.author_transfer === 'y' ? 'transfer-player-meta' : 'player-meta'))}">${metaInfo}</div>
-                </div>
-                <div class="profile-post-header-actions">
-                    ${optionsButton}
                 </div>
             </div>
             <div class="profile-post-content">
@@ -3991,10 +3982,9 @@ function createProfileRepostElement(post) {
             <div class="profile-post-header">
                 <div class="profile-post-avatar" style="border: 2px solid ${getRoleBorderColor(post.original_author_role, post.original_author_transfer === 'y', post.original_author_division)}; color: ${getRoleBorderColor(post.original_author_role, post.original_author_transfer === 'y', post.original_author_division)}; background: ${getRoleAvatarBg(post.original_author_role, post.original_author_transfer === 'y', post.original_author_division)}">${post.original_author_image ? `<img src="${post.original_author_image}" alt="${originalAuthorName}">` : `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>`}</div>
                 <div class="profile-post-info">
-                    <div class="profile-post-author">${originalAuthorName}${typeof getSchoolLogoHTML === 'function' && post.original_author_division ? getSchoolLogoHTML(post.original_author_school, (window.location.pathname.includes('/tabs/') ? '../../assets' : '../assets'), 16) : ''}${post.original_author_verified ? `<svg class="verified-badge" viewBox="0 0 24 24" fill="#1DA1F2" width="16" height="16"><path d="M22.5 12.5c0-1.58-.875-2.95-2.148-3.6.154-.435.238-.905.238-1.4 0-2.21-1.71-3.998-3.818-3.998-.47 0-.92.084-1.336.25C14.818 2.415 13.51 1.5 12 1.5s-2.816.917-3.437 2.25c-.415-.165-.866-.25-1.336-.25-2.11 0-3.818 1.79-3.818 4 0 .494.083.964.237 1.4-1.272.65-2.147 2.018-2.147 3.6 0 1.495.782 2.798 1.942 3.486-.02.17-.032.34-.032.514 0 2.21 1.708 4 3.818 4 .47 0 .92-.086 1.335-.25.62 1.334 1.926 2.25 3.437 2.25 1.512 0 2.818-.916 3.437-2.25.415.163.865.248 1.336.248 2.11 0 3.818-1.79 3.818-4 0-.174-.012-.344-.033-.513 1.158-.687 1.943-1.99 1.943-3.484zm-6.616-3.334l-4.334 6.5c-.145.217-.382.334-.625.334-.143 0-.288-.04-.416-.126l-.115-.094-2.415-2.415c-.293-.293-.293-.768 0-1.06s.768-.294 1.06 0l1.77 1.767 3.825-5.74c.23-.345.696-.436 1.04-.207.346.23.44.696.21 1.04z"/></svg>` : ''}${post.original_author_username ? `<span class="profile-post-handle" style="color: rgba(254,252,251,0.5); font-weight: 400; font-size: 0.875rem;">@${post.original_author_username}</span>` : ''}</div>
+                    <div class="profile-post-author">${originalAuthorName}${typeof getSchoolLogoHTML === 'function' && post.original_author_division ? getSchoolLogoHTML(post.original_author_school, (window.location.pathname.includes('/tabs/') ? '../../assets' : '../assets'), 16) : ''}${post.original_author_verified ? `<svg class="verified-badge" viewBox="0 0 24 24" fill="#1DA1F2" width="16" height="16"><path d="M22.5 12.5c0-1.58-.875-2.95-2.148-3.6.154-.435.238-.905.238-1.4 0-2.21-1.71-3.998-3.818-3.998-.47 0-.92.084-1.336.25C14.818 2.415 13.51 1.5 12 1.5s-2.816.917-3.437 2.25c-.415-.165-.866-.25-1.336-.25-2.11 0-3.818 1.79-3.818 4 0 .494.083.964.237 1.4-1.272.65-2.147 2.018-2.147 3.6 0 1.495.782 2.798 1.942 3.486-.02.17-.032.34-.032.514 0 2.21 1.708 4 3.818 4 .47 0 .92-.086 1.335-.25.62 1.334 1.926 2.25 3.437 2.25 1.512 0 2.818-.916 3.437-2.25.415.163.865.248 1.336.248 2.11 0 3.818-1.79 3.818-4 0-.174-.012-.344-.033-.513 1.158-.687 1.943-1.99 1.943-3.484zm-6.616-3.334l-4.334 6.5c-.145.217-.382.334-.625.334-.143 0-.288-.04-.416-.126l-.115-.094-2.415-2.415c-.293-.293-.293-.768 0-1.06s.768-.294 1.06 0l1.77 1.767 3.825-5.74c.23-.345.696-.436 1.04-.207.346.23.44.696.21 1.04z"/></svg>` : ''}${post.original_author_username ? `<span class="profile-post-handle">@${post.original_author_username}</span>` : ''}<span class="profile-post-timestamp">${formatTimeAgo(post.original_created_at)}</span>${optionsButton}</div>
                     <div class="profile-post-meta ${post.original_author_role === 'coach' ? 'coach-meta' : (post.original_author_role === 'other' ? 'other-meta' : (post.original_author_transfer === 'y' ? 'transfer-player-meta' : 'player-meta'))}">${originalMetaInfo}</div>
                 </div>
-                <div class="profile-post-header-actions">${optionsButton}</div>
             </div>
             <div class="profile-post-content"><p>${formatPostContent(post.original_content || '')}</p>${mediaHtml}</div>
             <div class="profile-post-stats" onclick="event.stopPropagation();">
@@ -4119,12 +4109,11 @@ function createProfileQuotePostElement(post) {
                                 <path d="M22.5 12.5c0-1.58-.875-2.95-2.148-3.6.154-.435.238-.905.238-1.4 0-2.21-1.71-3.998-3.818-3.998-.47 0-.92.084-1.336.25C14.818 2.415 13.51 1.5 12 1.5s-2.816.917-3.437 2.25c-.415-.165-.866-.25-1.336-.25-2.11 0-3.818 1.79-3.818 4 0 .494.083.964.237 1.4-1.272.65-2.147 2.018-2.147 3.6 0 1.495.782 2.798 1.942 3.486-.02.17-.032.34-.032.514 0 2.21 1.708 4 3.818 4 .47 0 .92-.086 1.335-.25.62 1.334 1.926 2.25 3.437 2.25 1.512 0 2.818-.916 3.437-2.25.415.163.865.248 1.336.248 2.11 0 3.818-1.79 3.818-4 0-.174-.012-.344-.033-.513 1.158-.687 1.943-1.99 1.943-3.484zm-6.616-3.334l-4.334 6.5c-.145.217-.382.334-.625.334-.143 0-.288-.04-.416-.126l-.115-.094-2.415-2.415c-.293-.293-.293-.768 0-1.06s.768-.294 1.06 0l1.77 1.767 3.825-5.74c.23-.345.696-.436 1.04-.207.346.23.44.696.21 1.04z"/>
                             </svg>
                         ` : ''}
-                        ${post.author_username ? `<span class="profile-post-handle" style="color: rgba(254,252,251,0.5); font-weight: 400; font-size: 0.875rem;">@${post.author_username}</span>` : ''}
+                        ${post.author_username ? `<span class="profile-post-handle">@${post.author_username}</span>` : ''}
+                        <span class="profile-post-timestamp">${formatTimeAgo(post.created_at)}</span>
+                        ${optionsButton}
                     </div>
                     <div class="profile-post-meta ${post.author_role === 'coach' ? 'coach-meta' : (post.author_role === 'other' ? 'other-meta' : (post.author_transfer === 'y' ? 'transfer-player-meta' : 'player-meta'))}">${quoterMetaInfo}</div>
-                </div>
-                <div class="profile-post-header-actions">
-                    ${optionsButton}
                 </div>
             </div>
             <div class="profile-post-content" onclick="navigateToQuotePost('${post.share_id}')" style="cursor: pointer;">
@@ -4580,19 +4569,8 @@ function createProfileReplyElement(reply) {
                         }
                     </div>
                     <div class="profile-reply-info">
-                        <div class="profile-reply-author">${authorName}${typeof getSchoolLogoHTML === 'function' && reply.author_division ? getSchoolLogoHTML(reply.author_school, (window.location.pathname.includes('/tabs/') ? '../../assets' : '../assets'), 14) : ''} ${reply.author_username ? `<span style="color: rgba(254,252,251,0.5); font-weight: 400; font-size: 0.875rem;">@${reply.author_username}</span>` : ''}</div>
-                        <div class="profile-reply-meta" style="font-weight: 700;">${(() => { const sub = buildCommentSubheader(reply.author_role, { transfer: reply.author_transfer, position: reply.author_position, height: reply.author_height, weight: reply.author_weight, eligibility: reply.author_eligibility, division: reply.author_division, school: reply.author_school, grad_year: reply.author_grad_year, state: reply.author_state, subheader: reply.author_subheader }); return sub ? sub.replace(/<\/span>$/, ` • ${timeAgo}</span>`) : `<span style="font-size:11px;color:rgba(254,252,251,0.5);">${timeAgo}</span>`; })()}</div>
-                    </div>
-                    <div class="profile-reply-actions">
-                        ${isOwnReply ? `
-                            <button class="reply-menu-btn" onclick="event.stopPropagation(); showReplyMenu('${reply.id}', '${reply.original_post_id}', event)">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <circle cx="12" cy="12" r="1"></circle>
-                                    <circle cx="19" cy="12" r="1"></circle>
-                                    <circle cx="5" cy="12" r="1"></circle>
-                                </svg>
-                            </button>
-                        ` : ''}
+                        <div class="profile-reply-author">${authorName}${typeof getSchoolLogoHTML === 'function' && reply.author_division ? getSchoolLogoHTML(reply.author_school, (window.location.pathname.includes('/tabs/') ? '../../assets' : '../assets'), 14) : ''} ${reply.author_username ? `<span class="profile-post-handle">@${reply.author_username}</span>` : ''}<span class="profile-post-timestamp">${timeAgo}</span>${isOwnReply ? `<button class="reply-menu-btn" onclick="event.stopPropagation(); showReplyMenu('${reply.id}', '${reply.original_post_id}', event)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle></svg></button>` : ''}</div>
+                        <div class="profile-reply-meta" style="font-weight: 700;">${buildCommentSubheader(reply.author_role, { transfer: reply.author_transfer, position: reply.author_position, height: reply.author_height, weight: reply.author_weight, eligibility: reply.author_eligibility, division: reply.author_division, school: reply.author_school, grad_year: reply.author_grad_year, state: reply.author_state, subheader: reply.author_subheader }) || ''}</div>
                     </div>
                 </div>
                 <div class="profile-reply-text" onclick="navigateToPost('${reply.original_post_id}')">
@@ -4748,12 +4726,11 @@ function createProfileLikedPostElement(post) {
                                 <path d="M22.5 12.5c0-1.58-.875-2.95-2.148-3.6.154-.435.238-.905.238-1.4 0-2.21-1.71-3.998-3.818-3.998-.47 0-.92.084-1.336.25C14.818 2.415 13.51 1.5 12 1.5s-2.816.917-3.437 2.25c-.415-.165-.866-.25-1.336-.25-2.11 0-3.818 1.79-3.818 4 0 .494.083.964.237 1.4-1.272.65-2.147 2.018-2.147 3.6 0 1.495.782 2.798 1.942 3.486-.02.17-.032.34-.032.514 0 2.21 1.708 4 3.818 4 .47 0 .92-.086 1.335-.25.62 1.334 1.926 2.25 3.437 2.25 1.512 0 2.818-.916 3.437-2.25.415.163.865.248 1.336.248 2.11 0 3.818-1.79 3.818-4 0-.174-.012-.344-.033-.513 1.158-.687 1.943-1.99 1.943-3.484zm-6.616-3.334l-4.334 6.5c-.145.217-.382.334-.625.334-.143 0-.288-.04-.416-.126l-.115-.094-2.415-2.415c-.293-.293-.293-.768 0-1.06s.768-.294 1.06 0l1.77 1.767 3.825-5.74c.23-.345.696-.436 1.04-.207.346.23.44.696.21 1.04z"/>
                             </svg>
                         ` : ''}
-                        ${post.author_username ? `<span class="profile-post-handle" style="color: rgba(254,252,251,0.5); font-weight: 400; font-size: 0.875rem;">@${post.author_username}</span>` : ''}
+                        ${post.author_username ? `<span class="profile-post-handle">@${post.author_username}</span>` : ''}
+                        <span class="profile-post-timestamp">${formatTimeAgo(post.created_at)}</span>
+                        ${optionsButton}
                     </div>
                     <div class="profile-post-meta ${post.author_role === 'coach' ? 'coach-meta' : (post.author_role === 'other' ? 'other-meta' : (post.author_transfer === 'y' ? 'transfer-player-meta' : 'player-meta'))}">${metaInfo}</div>
-                </div>
-                <div class="profile-post-header-actions">
-                    ${optionsButton}
                 </div>
             </div>
             <div class="profile-post-content">
@@ -4805,6 +4782,7 @@ function createProfileLikedQuotePostElement(post) {
     const quoterMetaInfo = buildPostMetaInfo(post);
     const originalAuthorName = `${post.original_author_first_name || ''} ${post.original_author_last_name || ''}`.trim() || 'Unknown User';
     const originalTimeAgo = formatTimeAgo(post.original_created_at);
+    const quoteTimeAgo = formatTimeAgo(post.created_at);
     const originalPostId = post.original_post_id || post.id;
     const isLiked = post.user_liked !== false;
     const isSaved = post.user_saved || false;
@@ -4869,11 +4847,10 @@ function createProfileLikedQuotePostElement(post) {
                                 <path d="M22.5 12.5c0-1.58-.875-2.95-2.148-3.6.154-.435.238-.905.238-1.4 0-2.21-1.71-3.998-3.818-3.998-.47 0-.92.084-1.336.25C14.818 2.415 13.51 1.5 12 1.5s-2.816.917-3.437 2.25c-.415-.165-.866-.25-1.336-.25-2.11 0-3.818 1.79-3.818 4 0 .494.083.964.237 1.4-1.272.65-2.147 2.018-2.147 3.6 0 1.495.782 2.798 1.942 3.486-.02.17-.032.34-.032.514 0 2.21 1.708 4 3.818 4 .47 0 .92-.086 1.335-.25.62 1.334 1.926 2.25 3.437 2.25 1.512 0 2.818-.916 3.437-2.25.415.163.865.248 1.336.248 2.11 0 3.818-1.79 3.818-4 0-.174-.012-.344-.033-.513 1.158-.687 1.943-1.99 1.943-3.484zm-6.616-3.334l-4.334 6.5c-.145.217-.382.334-.625.334-.143 0-.288-.04-.416-.126l-.115-.094-2.415-2.415c-.293-.293-.293-.768 0-1.06s.768-.294 1.06 0l1.77 1.767 3.825-5.74c.23-.345.696-.436 1.04-.207.346.23.44.696.21 1.04z"/>
                             </svg>
                         ` : ''}
-                        ${post.author_username ? `<span class="profile-post-handle" style="color: rgba(254,252,251,0.5); font-weight: 400; font-size: 0.875rem;">@${post.author_username}</span>` : ''}
+                        ${post.author_username ? `<span class="profile-post-handle">@${post.author_username}</span>` : ''}
+                        <span class="profile-post-timestamp">${quoteTimeAgo}</span>
                     </div>
                     <div class="profile-post-meta ${post.author_role === 'coach' ? 'coach-meta' : (post.author_role === 'other' ? 'other-meta' : (post.author_transfer === 'y' ? 'transfer-player-meta' : 'player-meta'))}">${quoterMetaInfo}</div>
-                </div>
-                <div class="profile-post-header-actions">
                 </div>
             </div>
             <div class="profile-post-content" onclick="navigateToQuotePost('${post.share_id}')" style="cursor: pointer;">

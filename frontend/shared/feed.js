@@ -683,14 +683,13 @@ class FeedManager {
                 if (post.author_grad_year) parts.push(post.author_grad_year);
             }
 
-            parts.push(timeAgo);
             metaInfo = starsHtml + parts.join(' • ');
         } else if (post.author_role === 'other') {
             // Other profile: entire meta info in yellow
             if (post.author_subheader) {
-                metaInfo = `<span style="color: #d4a017;">${post.author_subheader} • ${timeAgo}</span>`;
+                metaInfo = `<span style="color: #d4a017;">${post.author_subheader}</span>`;
             } else {
-                metaInfo = `<span style="color: #d4a017;">${timeAgo}</span>`;
+                metaInfo = '';
             }
         } else {
             // Coach
@@ -707,15 +706,12 @@ class FeedManager {
                     parts.push(post.author_state);
                 }
                 if (post.author_division) parts.push(formatDivisionDisplay(post.author_division));
-                parts.push(timeAgo);
                 metaInfo = parts.join(' • ');
             } else {
                 // HS Coach: School, State (comma-separated like sidebar)
                 if (post.author_school) parts.push(post.author_school);
                 if (post.author_state) parts.push(post.author_state);
-                // Use comma separator for HS Coach to match sidebar, then add timeAgo with bullet
-                const schoolState = parts.join(', ');
-                metaInfo = schoolState ? `${schoolState} • ${timeAgo}` : timeAgo;
+                metaInfo = parts.join(', ');
             }
         }
 
@@ -801,19 +797,18 @@ class FeedManager {
                             ` : ''}
                         </a>
                         ${post.author_username ? `<span class="post-user-handle">@${post.author_username}</span>` : ''}
+                        <span class="post-timestamp">${timeAgo}</span>
+                        <button class="post-more-btn" onclick="feedManager.showPostMenu('${postId}', ${isOwnPost}, event)">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="1"></circle>
+                                <circle cx="19" cy="12" r="1"></circle>
+                                <circle cx="5" cy="12" r="1"></circle>
+                            </svg>
+                        </button>
                     </div>
                     <div class="post-meta ${post.author_role === 'coach' ? 'coach-meta' : (post.author_role === 'other' ? 'other-meta' : (post.author_transfer === 'y' ? 'transfer-player-meta' : 'player-meta'))}">
                         ${metaInfo}
                     </div>
-                </div>
-                <div class="post-header-actions">
-                    <button class="post-more-btn" onclick="feedManager.showPostMenu('${postId}', ${isOwnPost}, event)">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <circle cx="12" cy="12" r="1"></circle>
-                            <circle cx="19" cy="12" r="1"></circle>
-                            <circle cx="5" cy="12" r="1"></circle>
-                        </svg>
-                    </button>
                 </div>
             </div>
             <div class="post-content" data-post-id="${postId}" style="cursor: pointer;">
@@ -889,7 +884,7 @@ class FeedManager {
         const authorName = `${post.author_first_name || ''} ${post.author_last_name || ''}`.trim() || 'Unknown User';
 
         // Build meta info for original author
-        let metaInfo = this.buildAuthorMetaInfo(post, timeAgo);
+        let metaInfo = this.buildAuthorMetaInfo(post);
 
         // Build media HTML
         let mediaHtml = this.buildMediaHtml(post);
@@ -928,19 +923,18 @@ class FeedManager {
                             ` : ''}
                         </a>
                         ${post.author_username ? `<span class="post-user-handle">@${post.author_username}</span>` : ''}
+                        <span class="post-timestamp">${timeAgo}</span>
+                        <button class="post-more-btn" onclick="feedManager.showPostMenu('${postId}', ${isOwnPost}, event)">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="1"></circle>
+                                <circle cx="19" cy="12" r="1"></circle>
+                                <circle cx="5" cy="12" r="1"></circle>
+                            </svg>
+                        </button>
                     </div>
                     <div class="post-meta ${post.author_role === 'coach' ? 'coach-meta' : (post.author_role === 'other' ? 'other-meta' : (post.author_transfer === 'y' ? 'transfer-player-meta' : 'player-meta'))}">
                         ${metaInfo}
                     </div>
-                </div>
-                <div class="post-header-actions">
-                    <button class="post-more-btn" onclick="feedManager.showPostMenu('${postId}', ${isOwnPost}, event)">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <circle cx="12" cy="12" r="1"></circle>
-                            <circle cx="19" cy="12" r="1"></circle>
-                            <circle cx="5" cy="12" r="1"></circle>
-                        </svg>
-                    </button>
                 </div>
             </div>
             <div class="post-content" data-post-id="${postId}" style="cursor: pointer;">
@@ -1011,7 +1005,7 @@ class FeedManager {
         const isOwnQuote = post.reposter_user_id === this.currentUserId;
 
         // Build meta info for quoter (reposter) using similar logic to buildAuthorMetaInfo
-        const quoterMetaInfo = this.buildReposterMetaInfo(post, repostTimeAgo);
+        const quoterMetaInfo = this.buildReposterMetaInfo(post);
 
         // Build media HTML for the quote's own media (user's attached media)
         const quoteMediaHtml = post.quote_media_urls ? this.buildMediaHtml({ media_urls: post.quote_media_urls, media_type: post.quote_media_type }) : '';
@@ -1040,19 +1034,18 @@ class FeedManager {
                             ${reposterName}${typeof getSchoolLogoHTML === 'function' ? getSchoolLogoHTML(post.reposter_school, _feedAssetsPath, 16) : ''}
                         </a>
                         ${post.reposter_username ? `<span class="post-user-handle">@${post.reposter_username}</span>` : ''}
+                        <span class="post-timestamp">${repostTimeAgo}</span>
+                        <button class="post-more-btn" onclick="event.stopPropagation(); feedManager.showQuotePostMenu('${post.share_id}', ${isOwnQuote}, event)">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="1"></circle>
+                                <circle cx="19" cy="12" r="1"></circle>
+                                <circle cx="5" cy="12" r="1"></circle>
+                            </svg>
+                        </button>
                     </div>
                     <div class="post-meta ${post.reposter_role === 'coach' ? 'coach-meta' : (post.reposter_role === 'other' ? 'other-meta' : (post.reposter_transfer === 'y' ? 'transfer-player-meta' : 'player-meta'))}">
                         ${quoterMetaInfo}
                     </div>
-                </div>
-                <div class="post-header-actions">
-                    <button class="post-more-btn" onclick="event.stopPropagation(); feedManager.showQuotePostMenu('${post.share_id}', ${isOwnQuote}, event)">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <circle cx="12" cy="12" r="1"></circle>
-                            <circle cx="19" cy="12" r="1"></circle>
-                            <circle cx="5" cy="12" r="1"></circle>
-                        </svg>
-                    </button>
                 </div>
             </div>
             <div class="post-content" data-post-id="${postId}" data-share-id="${post.share_id}" style="cursor: pointer;">
@@ -1149,7 +1142,7 @@ class FeedManager {
         const sharesCount = share.share_shares_count || 0;
 
         // Build meta info for quoter
-        const quoterMetaInfo = this.buildQuoterMetaInfo(share, quoteTimeAgo);
+        const quoterMetaInfo = this.buildQuoterMetaInfo(share);
 
         // Build media HTML for the quote's own media (user's attached media)
         const quoteMediaHtml = share.quote_media_urls ? this.buildMediaHtml({ media_urls: share.quote_media_urls, media_type: share.quote_media_type }) : '';
@@ -1176,19 +1169,18 @@ class FeedManager {
                             ${quoterName}${typeof getSchoolLogoHTML === 'function' ? getSchoolLogoHTML(share.quoter_school, _feedAssetsPath, 16) : ''}
                         </a>
                         ${share.quoter_username ? `<span class="post-user-handle">@${share.quoter_username}</span>` : ''}
+                        <span class="post-timestamp">${quoteTimeAgo}</span>
+                        <button class="post-more-btn" onclick="feedManager.showQuotePostMenu('${share.share_id}', ${isOwnQuote}, event)">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="1"></circle>
+                                <circle cx="19" cy="12" r="1"></circle>
+                                <circle cx="5" cy="12" r="1"></circle>
+                            </svg>
+                        </button>
                     </div>
                     <div class="post-meta ${share.quoter_role === 'coach' ? 'coach-meta' : (share.quoter_role === 'other' ? 'other-meta' : (share.quoter_transfer === 'y' ? 'transfer-player-meta' : 'player-meta'))}">
                         ${quoterMetaInfo}
                     </div>
-                </div>
-                <div class="post-header-actions">
-                    <button class="post-more-btn" onclick="feedManager.showQuotePostMenu('${share.share_id}', ${isOwnQuote}, event)">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <circle cx="12" cy="12" r="1"></circle>
-                            <circle cx="19" cy="12" r="1"></circle>
-                            <circle cx="5" cy="12" r="1"></circle>
-                        </svg>
-                    </button>
                 </div>
             </div>
             <div class="post-content">
@@ -1265,11 +1257,10 @@ class FeedManager {
     }
 
     // Helper to build quoter meta info (for single quote post view)
-    buildQuoterMetaInfo(share, timeAgo) {
+    buildQuoterMetaInfo(share) {
         let metaInfo = '';
         let starsHtml = '';
 
-        // Add star rating for HS players and transfer players
         if (share.quoter_role === 'player' && share.quoter_star_rating && share.quoter_star_rating >= 1 && share.quoter_star_rating <= 5) {
             const isHSPlayer = !share.quoter_division && share.quoter_transfer !== 'y';
             const isTransferPlayer = share.quoter_transfer === 'y';
@@ -1281,7 +1272,6 @@ class FeedManager {
         if (share.quoter_role === 'player') {
             const parts = [];
             if (share.quoter_transfer === 'y') {
-                // Transfer Player: Position • Height • Weight • YOE
                 if (share.quoter_position) parts.push(share.quoter_position);
                 if (share.quoter_height) {
                     const heightStr = String(share.quoter_height);
@@ -1302,12 +1292,10 @@ class FeedManager {
                     parts.push(`YOE: ${share.quoter_eligibility} ${yearText}`);
                 }
             } else if (share.quoter_division) {
-                // College player
                 if (share.quoter_position) parts.push(share.quoter_position);
                 if (share.quoter_school) parts.push(share.quoter_school);
                 if (share.quoter_division) parts.push(formatDivisionDisplay(share.quoter_division));
             } else {
-                // HS player: Position • Height • Weight • GradYear
                 if (share.quoter_position) parts.push(share.quoter_position);
                 if (share.quoter_height) {
                     const h = String(share.quoter_height);
@@ -1317,18 +1305,16 @@ class FeedManager {
                 if (share.quoter_weight) parts.push(`${share.quoter_weight} lbs`);
                 if (share.quoter_grad_year) parts.push(share.quoter_grad_year);
             }
-            parts.push(timeAgo);
             metaInfo = starsHtml + parts.join(' • ');
         } else if (share.quoter_role === 'other') {
             if (share.quoter_subheader) {
-                metaInfo = `<span style="color: #d4a017;">${share.quoter_subheader} • ${timeAgo}</span>`;
+                metaInfo = `<span style="color: #d4a017;">${share.quoter_subheader}</span>`;
             } else {
-                metaInfo = timeAgo;
+                metaInfo = '';
             }
         } else if (share.quoter_role === 'coach') {
             const parts = [];
             if (share.quoter_division) {
-                // College Coach: School, State • Division
                 if (share.quoter_school && share.quoter_state) {
                     parts.push(`${share.quoter_school}, ${share.quoter_state}`);
                 } else if (share.quoter_school) {
@@ -1337,24 +1323,21 @@ class FeedManager {
                     parts.push(share.quoter_state);
                 }
                 if (share.quoter_division) parts.push(formatDivisionDisplay(share.quoter_division));
-                parts.push(timeAgo);
                 metaInfo = parts.join(' • ');
             } else {
-                // HS Coach: School, State
                 if (share.quoter_school) parts.push(share.quoter_school);
                 if (share.quoter_state) parts.push(share.quoter_state);
-                const schoolState = parts.join(', ');
-                metaInfo = schoolState ? `${schoolState} • ${timeAgo}` : timeAgo;
+                metaInfo = parts.join(', ');
             }
         } else {
-            metaInfo = timeAgo;
+            metaInfo = '';
         }
 
         return metaInfo;
     }
 
     // Helper to build author meta info string
-    buildAuthorMetaInfo(post, timeAgo) {
+    buildAuthorMetaInfo(post) {
         let metaInfo = '';
         let starsHtml = '';
 
@@ -1403,18 +1386,16 @@ class FeedManager {
                 if (post.author_weight) parts.push(`${post.author_weight} lbs`);
                 if (post.author_grad_year) parts.push(post.author_grad_year);
             }
-            parts.push(timeAgo);
             metaInfo = starsHtml + parts.join(' • ');
         } else if (post.author_role === 'other') {
             if (post.author_subheader) {
-                metaInfo = `<span style="color: #d4a017;">${post.author_subheader} • ${timeAgo}</span>`;
+                metaInfo = `<span style="color: #d4a017;">${post.author_subheader}</span>`;
             } else {
-                metaInfo = timeAgo;
+                metaInfo = '';
             }
         } else if (post.author_role === 'coach') {
             const parts = [];
             if (post.author_division) {
-                // College Coach: School, State • Division
                 if (post.author_school && post.author_state) {
                     parts.push(`${post.author_school}, ${post.author_state}`);
                 } else if (post.author_school) {
@@ -1423,17 +1404,14 @@ class FeedManager {
                     parts.push(post.author_state);
                 }
                 if (post.author_division) parts.push(formatDivisionDisplay(post.author_division));
-                parts.push(timeAgo);
                 metaInfo = parts.join(' • ');
             } else {
-                // HS Coach: School, State
                 if (post.author_school) parts.push(post.author_school);
                 if (post.author_state) parts.push(post.author_state);
-                const schoolState = parts.join(', ');
-                metaInfo = schoolState ? `${schoolState} • ${timeAgo}` : timeAgo;
+                metaInfo = parts.join(', ');
             }
         } else {
-            metaInfo = timeAgo;
+            metaInfo = '';
         }
 
         return metaInfo;
@@ -1441,14 +1419,13 @@ class FeedManager {
 
     // Helper to build reposter/quoter meta info string (for repost and quote posts in feed)
     // Uses same format as buildAuthorMetaInfo but for the reposter/quoter
-    buildReposterMetaInfo(post, timeAgo) {
+    buildReposterMetaInfo(post) {
         let metaInfo = '';
         const role = post.reposter_role;
 
         if (role === 'player') {
             const parts = [];
             if (post.reposter_transfer === 'y') {
-                // Transfer Player: Position • Height • Weight • YOE
                 if (post.reposter_position) parts.push(post.reposter_position);
                 if (post.reposter_height) {
                     const h = String(post.reposter_height);
@@ -1460,17 +1437,13 @@ class FeedManager {
                     const yt = post.reposter_eligibility === 1 ? 'year' : 'years';
                     parts.push(`YOE: ${post.reposter_eligibility} ${yt}`);
                 }
-                parts.push(timeAgo);
                 metaInfo = parts.join(' • ');
             } else if (post.reposter_division) {
-                // College Player: Position • School • Division
                 if (post.reposter_position) parts.push(post.reposter_position);
                 if (post.reposter_school) parts.push(post.reposter_school);
                 if (post.reposter_division) parts.push(formatDivisionDisplay(post.reposter_division));
-                parts.push(timeAgo);
                 metaInfo = parts.join(' • ');
             } else {
-                // HS Player: Position • Height • Weight • GradYear
                 if (post.reposter_position) parts.push(post.reposter_position);
                 if (post.reposter_height) {
                     const h = String(post.reposter_height);
@@ -1479,13 +1452,11 @@ class FeedManager {
                 }
                 if (post.reposter_weight) parts.push(`${post.reposter_weight} lbs`);
                 if (post.reposter_grad_year) parts.push(post.reposter_grad_year);
-                parts.push(timeAgo);
                 metaInfo = parts.join(' • ');
             }
         } else if (role === 'coach') {
             const parts = [];
             if (post.reposter_division) {
-                // College Coach: School, State • Division
                 if (post.reposter_school && post.reposter_state) {
                     parts.push(`${post.reposter_school}, ${post.reposter_state}`);
                 } else if (post.reposter_school) {
@@ -1494,24 +1465,20 @@ class FeedManager {
                     parts.push(post.reposter_state);
                 }
                 if (post.reposter_division) parts.push(formatDivisionDisplay(post.reposter_division));
-                parts.push(timeAgo);
                 metaInfo = parts.join(' • ');
             } else {
-                // HS Coach: School, State
                 if (post.reposter_school) parts.push(post.reposter_school);
                 if (post.reposter_state) parts.push(post.reposter_state);
-                const schoolState = parts.join(', ');
-                metaInfo = schoolState ? `${schoolState} • ${timeAgo}` : timeAgo;
+                metaInfo = parts.join(', ');
             }
         } else if (role === 'other') {
-            // Other role - use subheader if available
             if (post.reposter_subheader) {
-                metaInfo = `${post.reposter_subheader} • ${timeAgo}`;
+                metaInfo = post.reposter_subheader;
             } else {
-                metaInfo = timeAgo;
+                metaInfo = '';
             }
         } else {
-            metaInfo = timeAgo;
+            metaInfo = '';
         }
 
         return metaInfo;
@@ -1668,17 +1635,16 @@ class FeedManager {
                             ${quoterName}${typeof getSchoolLogoHTML === 'function' ? getSchoolLogoHTML(post.quoter_school, _feedAssetsPath, 16) : ''}
                         </a>
                         ${post.quoter_username ? `<span class="post-user-handle">@${post.quoter_username}</span>` : ''}
+                        <span class="post-timestamp">${timeAgo}</span>
+                        <button class="post-more-btn" onclick="event.stopPropagation(); feedManager.showQuotePostMenu('${post.id}', ${isOwnQuote}, event)">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="1"></circle>
+                                <circle cx="19" cy="12" r="1"></circle>
+                                <circle cx="5" cy="12" r="1"></circle>
+                            </svg>
+                        </button>
                     </div>
-                    <div class="post-meta">${timeAgo}</div>
-                </div>
-                <div class="post-header-actions">
-                    <button class="post-more-btn" onclick="event.stopPropagation(); feedManager.showQuotePostMenu('${post.id}', ${isOwnQuote}, event)">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <circle cx="12" cy="12" r="1"></circle>
-                            <circle cx="19" cy="12" r="1"></circle>
-                            <circle cx="5" cy="12" r="1"></circle>
-                        </svg>
-                    </button>
+                    <div class="post-meta"></div>
                 </div>
             </div>
             <div class="post-content" data-post-id="${post.original_post_id}" data-share-id="${post.id}" style="cursor: pointer;">
@@ -2425,14 +2391,8 @@ class FeedManager {
                         subheader: comment.author_subheader
                     });
                     const commentTimeAgo = this.getTimeAgo(comment.created_at);
-                    // Append timeAgo to subheader to match post format
-                    let commentMetaLine = '';
-                    if (commentSub) {
-                        // Insert timeAgo before closing </span>
-                        commentMetaLine = commentSub.replace(/<\/span>$/, ` \u2022 ${commentTimeAgo}</span>`);
-                    } else {
-                        commentMetaLine = `<span style="font-size:11px;color:rgba(254,252,251,0.5);">${commentTimeAgo}</span>`;
-                    }
+                    // commentSub is the role-colored subheader (no timeAgo)
+                    let commentMetaLine = commentSub || '';
                     return `
                     <div class="comment" data-comment-id="${comment.id}">
                         <div class="comment-avatar clickable-profile" onclick="feedManager.goToProfile('${comment.author_username || comment.user_id}', '${comment.author_role || 'player'}', '${comment.author_division || ''}', '${comment.user_id}', ${comment.author_transfer === 'y'})" style="border: 2px solid ${getRoleBorderColor(comment.author_role || 'player', comment.author_transfer === 'y', comment.author_division)}; color: ${getRoleBorderColor(comment.author_role || 'player', comment.author_transfer === 'y', comment.author_division)}; background: ${getRoleAvatarBg(comment.author_role || 'player', comment.author_transfer === 'y', comment.author_division)}">
@@ -2444,7 +2404,8 @@ class FeedManager {
                         <div class="comment-body">
                             <div class="comment-header">
                                 <span class="comment-author clickable-profile" onclick="feedManager.goToProfile('${comment.author_username || comment.user_id}', '${comment.author_role || 'player'}', '${comment.author_division || ''}', '${comment.user_id}', ${comment.author_transfer === 'y'})">${comment.author_first_name || ''} ${comment.author_last_name || ''}${typeof getSchoolLogoHTML === 'function' ? getSchoolLogoHTML(comment.author_school, _feedAssetsPath, 14) : ''}</span>
-                                ${comment.author_username ? `<span class="comment-username" style="color: rgba(254,252,251,0.5); font-size: 12px; font-weight: 400;">@${comment.author_username}</span>` : ''}
+                                ${comment.author_username ? `<span class="comment-username">@${comment.author_username}</span>` : ''}
+                                <span class="comment-timestamp">${commentTimeAgo}</span>
                             </div>
                             <div class="comment-subheader">${commentMetaLine}</div>
                             <div class="comment-content">${this.escapeHtml(comment.content)}</div>
@@ -2668,12 +2629,7 @@ class FeedManager {
                         subheader: comment.subheader
                     });
                     const shareCommentTimeAgo = this.getTimeAgo(comment.created_at);
-                    let shareCommentMetaLine = '';
-                    if (shareSub) {
-                        shareCommentMetaLine = shareSub.replace(/<\/span>$/, ` \u2022 ${shareCommentTimeAgo}</span>`);
-                    } else {
-                        shareCommentMetaLine = `<span style="font-size:11px;color:rgba(254,252,251,0.5);">${shareCommentTimeAgo}</span>`;
-                    }
+                    let shareCommentMetaLine = shareSub || '';
                     return `
                     <div class="comment" data-comment-id="${comment.id}">
                         <div class="comment-avatar clickable-profile" onclick="feedManager.goToProfile('${comment.username || comment.user_id}', '${comment.role || 'player'}', '${comment.division || ''}', '${comment.user_id}', ${comment.transfer === 'y'})" style="border: 2px solid ${getRoleBorderColor(comment.role || 'player', comment.transfer === 'y', comment.division)}; color: ${getRoleBorderColor(comment.role || 'player', comment.transfer === 'y', comment.division)}; background: ${getRoleAvatarBg(comment.role || 'player', comment.transfer === 'y', comment.division)}">
@@ -2685,7 +2641,8 @@ class FeedManager {
                         <div class="comment-content">
                             <div class="comment-header">
                                 <span class="comment-author clickable-profile" onclick="feedManager.goToProfile('${comment.username || comment.user_id}', '${comment.role || 'player'}', '${comment.division || ''}', '${comment.user_id}', ${comment.transfer === 'y'})">${comment.first_name} ${comment.last_name}${typeof getSchoolLogoHTML === 'function' ? getSchoolLogoHTML(comment.team_name, _feedAssetsPath, 14) : ''}</span>
-                                ${comment.username ? `<span class="comment-username" style="color: rgba(254,252,251,0.5); font-size: 12px; font-weight: 400;">@${comment.username}</span>` : ''}
+                                ${comment.username ? `<span class="comment-username">@${comment.username}</span>` : ''}
+                                <span class="comment-timestamp">${shareCommentTimeAgo}</span>
                             </div>
                             <div class="comment-subheader">${shareCommentMetaLine}</div>
                             <p>${this.formatContent(comment.content)}</p>
