@@ -1759,15 +1759,31 @@ html {
         height: 14px !important;
     }
 
-    /* Modal adjustments for recruiting board */
+    /* Modal adjustments for recruiting board — full-screen on mobile */
+    .recruiting-board-modal.active {
+        display: flex !important;
+        align-items: stretch !important;
+        justify-content: stretch !important;
+    }
+
     .recruiting-board-modal-content {
-        width: 95% !important;
-        max-width: 95% !important;
-        max-height: 85vh !important;
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        transform: none !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        height: 100% !important;
+        max-height: 100% !important;
+        border-radius: 0 !important;
+        display: flex !important;
+        flex-direction: column !important;
+        z-index: 1001 !important;
     }
 
     .recruiting-board-modal-header {
         padding: 1rem !important;
+        flex-shrink: 0 !important;
     }
 
     .recruiting-board-modal-header h3 {
@@ -1776,11 +1792,14 @@ html {
 
     .recruiting-board-modal-body {
         padding: 1rem !important;
+        flex: 1 !important;
+        overflow-y: auto !important;
     }
 
     .recruiting-board-modal-footer {
         padding: 1rem !important;
         gap: 0.75rem !important;
+        flex-shrink: 0 !important;
     }
 
     .recruiting-board-modal-footer .btn-cancel,
@@ -1789,9 +1808,10 @@ html {
         font-size: 0.9rem !important;
     }
 
-    /* Collaborator modal - more compact */
+    /* Collaborator modal - full-screen like all others */
     .recruiting-board-modal.collab-modal .recruiting-board-modal-content {
-        max-height: 80vh !important;
+        height: 100% !important;
+        max-height: 100% !important;
     }
 
     .collab-search-results {
@@ -2665,8 +2685,8 @@ html {
         transform: none !important;
     }
 
-    /* --- Confirm modal (generic yes/no dialog) --- */
-    .confirm-modal {
+    /* --- Confirm modal (generic yes/no dialog from api.js showConfirmModal) --- */
+    .confirm-modal-overlay .confirm-modal {
         width: 100% !important;
         max-width: 100% !important;
         height: 100% !important;
