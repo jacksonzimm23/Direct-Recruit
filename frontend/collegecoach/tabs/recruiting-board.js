@@ -1239,7 +1239,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     function closeInviteConfirmModal() {
         inviteConfirmModal.classList.remove('active');
-        document.body.style.overflow = 'hidden';
+        document.body.style.overflow = '';
         selectedCoachForInvite = null;
     }
 
@@ -1292,7 +1292,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     function closeRemoveCollabModal() {
         removeCollabModal.classList.remove('active');
-        document.body.style.overflow = 'hidden';
+        document.body.style.overflow = '';
         selectedCollabForRemoval = null;
     }
 
@@ -1336,7 +1336,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     function closeTransferConfirmModal() {
         transferConfirmModal.classList.remove('active');
-        document.body.style.overflow = 'hidden';
+        document.body.style.overflow = '';
         selectedCollabForTransfer = null;
     }
 
