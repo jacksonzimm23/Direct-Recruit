@@ -723,6 +723,51 @@
         text-align: left;
     }
 
+    /* Hide desktop filters on mobile */
+    .filters-section {
+        display: none !important;
+    }
+
+    /* Inline filter button on mobile */
+    .mobile-filter-btn {
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        width: calc(100% - 2rem);
+        margin: 0 1rem 0.75rem;
+        padding: 0.65rem 1rem;
+        background: rgba(254, 252, 251, 0.05);
+        border: 1.5px solid rgba(185, 28, 28, 0.4);
+        border-radius: 10px;
+        color: #b91c1c;
+        font-size: 0.85rem;
+        font-weight: 700;
+        font-family: 'Inter', sans-serif;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .mobile-filter-btn:active {
+        background: rgba(185, 28, 28, 0.15);
+    }
+
+    .mobile-filter-btn svg {
+        width: 16px;
+        height: 16px;
+    }
+
+    .mobile-filter-btn .filter-count-badge {
+        background: #b91c1c;
+        color: var(--white);
+        font-size: 0.7rem;
+        font-weight: 800;
+        padding: 0.1rem 0.45rem;
+        border-radius: 50px;
+        min-width: 18px;
+        text-align: center;
+    }
+
     .discover-section {
         margin-bottom: 0.5rem;
     }

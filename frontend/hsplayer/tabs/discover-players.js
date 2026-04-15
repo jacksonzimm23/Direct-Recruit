@@ -6,7 +6,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Pagination state for players
     let playerOffset = 0;
-    const playerLimit = 9;
+    const playerLimit = window.innerWidth <= 768 ? 5 : 10;
     let hasMorePlayers = true;
     let isLoadingPlayers = false;
 
@@ -33,25 +33,27 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         try {
-            // Fetch both HS and college players
+            // Fetch both HS and college players (fetch enough per source to fill playerLimit combined)
+            const perSourceLimit = Math.ceil(playerLimit / 2);
             const [hsResponse, collegeResponse] = await Promise.all([
-                API.get(`/profile/discover/hsplayers?limit=${playerLimit}&offset=${playerOffset}`),
-                API.get(`/profile/discover/collegeplayers?limit=${playerLimit}&offset=${playerOffset}`)
+                API.get(`/profile/discover/hsplayers?limit=${perSourceLimit}&offset=${playerOffset}`),
+                API.get(`/profile/discover/collegeplayers?limit=${perSourceLimit}&offset=${playerOffset}`)
             ]);
 
             const hsPlayers = (hsResponse && hsResponse.players) ? hsResponse.players : [];
             const collegePlayers = (collegeResponse && collegeResponse.players) ? collegeResponse.players : [];
 
-            // Combine and interleave the players
+            // Combine and interleave the players, cap to playerLimit
             const allPlayers = [];
             const maxLen = Math.max(hsPlayers.length, collegePlayers.length);
             for (let i = 0; i < maxLen; i++) {
                 if (i < hsPlayers.length) allPlayers.push({ ...hsPlayers[i], playerType: 'hs' });
                 if (i < collegePlayers.length) allPlayers.push({ ...collegePlayers[i], playerType: 'college' });
             }
+            const displayPlayers = allPlayers.slice(0, playerLimit);
 
-            if (allPlayers.length > 0) {
-                const playerCards = allPlayers.map(player => {
+            if (displayPlayers.length > 0) {
+                const playerCards = displayPlayers.map(player => {
                     if (player.playerType === 'college') {
                         return createCollegePlayerCard(player);
                     } else {
@@ -66,7 +68,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
 
                 // Update pagination state
-                playerOffset += playerLimit;
+                playerOffset += perSourceLimit;
                 hasMorePlayers = (hsResponse && hsResponse.hasMore) || (collegeResponse && collegeResponse.hasMore);
 
                 // Add click handlers to new cards
@@ -388,7 +390,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Pagination state for coaches
     let coachOffset = 0;
-    const coachLimit = 9;
+    const coachLimit = window.innerWidth <= 768 ? 5 : 10;
     let hasMoreCoaches = true;
     let isLoadingCoaches = false;
 
@@ -646,13 +648,13 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // ========== MOBILE FILTER MODAL ==========
-    const mobileFilterFab = document.getElementById('mobileFilterFab');
+    const mobileFilterBtn = document.getElementById('mobileFilterBtn');
     const mobileFilterOverlay = document.getElementById('mobileFilterOverlay');
     const mobileFilterModal = document.getElementById('mobileFilterModal');
     const mobileFilterClose = document.getElementById('mobileFilterClose');
     const mobileFilterReset = document.getElementById('mobileFilterReset');
     const mobileFilterApply = document.getElementById('mobileFilterApply');
-    const filterBadge = document.getElementById('filterBadge');
+    const filterCountBadge = document.getElementById('filterCountBadge');
 
     // Mobile filter elements
     const mobileCoachStateFilter = document.getElementById('mobileCoachStateFilter');
@@ -685,11 +687,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Update filter badge count
     function updateFilterBadge() {
-        if (!filterBadge) return;
+        if (!filterCountBadge) return;
         let count = 0;
         if (coachStateFilter && coachStateFilter.value) count++;
         if (divisionFilter && divisionFilter.value) count++;
-        filterBadge.textContent = count > 0 ? count : '';
+        if (count > 0) {
+            filterCountBadge.textContent = count;
+            filterCountBadge.style.display = 'inline-flex';
+        } else {
+            filterCountBadge.style.display = 'none';
+        }
     }
 
     // Apply mobile filters
@@ -719,8 +726,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Event listeners for mobile filter
-    if (mobileFilterFab) {
-        mobileFilterFab.addEventListener('click', openMobileFilterModal);
+    if (mobileFilterBtn) {
+        mobileFilterBtn.addEventListener('click', openMobileFilterModal);
     }
     if (mobileFilterOverlay) {
         mobileFilterOverlay.addEventListener('click', closeMobileFilterModal);
