@@ -188,6 +188,50 @@ function showConfirmModal({ title = 'Confirm', message, confirmText = 'Confirm',
     });
 }
 
+// Logout confirmation modal — uses the logout door icon
+function showLogoutConfirmModal() {
+    return new Promise((resolve) => {
+        if (!document.getElementById('confirm-modal-styles')) {
+            // Ensure confirm modal CSS is loaded
+            showConfirmModal({ title: '', message: '' }).then(() => {});
+            document.querySelector('.confirm-modal-overlay')?.remove();
+        }
+
+        const overlay = document.createElement('div');
+        overlay.className = 'confirm-modal-overlay';
+        overlay.innerHTML = `
+            <div class="confirm-modal">
+                <div class="confirm-modal-icon danger">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                        <polyline points="16 17 21 12 16 7"></polyline>
+                        <line x1="21" y1="12" x2="9" y2="12"></line>
+                    </svg>
+                </div>
+                <h2 class="confirm-modal-title">Log Out</h2>
+                <p class="confirm-modal-text">Are you sure you want to log out?</p>
+                <div class="confirm-modal-actions">
+                    <button class="confirm-modal-btn confirm-modal-btn-cancel">Cancel</button>
+                    <button class="confirm-modal-btn confirm-modal-btn-confirm danger">Log Out</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(overlay);
+
+        function close(result) {
+            overlay.remove();
+            resolve(result);
+        }
+
+        overlay.querySelector('.confirm-modal-btn-cancel').addEventListener('click', () => close(false));
+        overlay.querySelector('.confirm-modal-btn-confirm').addEventListener('click', () => close(true));
+        overlay.addEventListener('click', (e) => { if (e.target === overlay) close(false); });
+        document.addEventListener('keydown', function handler(e) {
+            if (e.key === 'Escape') { document.removeEventListener('keydown', handler); close(false); }
+        });
+    });
+}
+
 // Global error handler — catches uncaught exceptions
 window.onerror = function(message, source, lineno, colno, error) {
     console.error('Uncaught error:', { message, source, lineno, colno, error });

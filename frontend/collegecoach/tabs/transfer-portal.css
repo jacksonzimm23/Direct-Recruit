@@ -2112,9 +2112,29 @@
 }
 
 @media (max-width: 768px) {
-    .pi-usage-modal {
-        max-width: 100%;
-        border-radius: 12px;
+    /* Full-screen modals on mobile (lesson 75) */
+    .pi-usage-overlay.active,
+    .pi-watchlist-overlay.active {
+        display: flex !important;
+        align-items: stretch !important;
+        padding: 0 !important;
+    }
+
+    .pi-usage-modal,
+    .pi-watchlist-modal {
+        width: 100% !important;
+        max-width: 100% !important;
+        height: 100% !important;
+        max-height: 100% !important;
+        border-radius: 0 !important;
+        margin: 0 !important;
+        animation: none !important;
+        transform: none !important;
+    }
+
+    .pi-usage-overlay,
+    .pi-watchlist-overlay {
+        z-index: 10001 !important;
     }
 }
 
@@ -2441,9 +2461,56 @@
     }
 }
 
+/* Mobile action bar — hidden on desktop */
+.pi-mobile-actions {
+    display: none;
+}
+
 @media (max-width: 768px) {
+    .pi-mobile-actions {
+        display: flex !important;
+        justify-content: space-around;
+        align-items: center;
+        padding: 0.35rem 0.5rem;
+        height: 48px;
+        min-height: 48px;
+        background: rgba(220, 38, 38, 0.04);
+        border-bottom: 1px solid rgba(220, 38, 38, 0.12);
+        flex-shrink: 0;
+    }
+
+    .pi-mobile-action-btn {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 2px;
+        background: none;
+        border: none;
+        color: rgba(254, 252, 251, 0.5);
+        cursor: pointer;
+        padding: 0.25rem 0.5rem;
+        border-radius: 8px;
+        transition: color 0.2s, background 0.2s;
+    }
+
+    .pi-mobile-action-btn:active {
+        background: rgba(220, 38, 38, 0.12);
+        color: #dc2626;
+    }
+
+    .pi-mobile-action-btn svg {
+        width: 18px;
+        height: 18px;
+    }
+
+    .pi-mobile-action-btn span {
+        font-size: 0.6rem;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+    }
+
     .tp-subtabs {
-        margin: 0 1rem 0.75rem;
+        margin: 0 1rem 0.4rem;
     }
 
     .tp-subtab {
@@ -2462,39 +2529,99 @@
         padding: 0.1rem 0.35rem;
     }
 
+    /* Let the PI tab fill remaining space — override tp-tab-content.active overflow */
+    #portalIntelligenceTab.active {
+        flex: 1 !important;
+        flex-direction: column !important;
+        min-height: 0 !important;
+        overflow: hidden !important;
+        overflow-y: hidden !important;
+        display: flex !important;
+    }
+
     .pi-layout {
         flex: 1;
-        min-height: 400px;
+        min-height: 0;
+        overflow: hidden;
+    }
+
+    .pi-chat {
+        min-height: 0;
+        overflow: hidden;
     }
 
     .pi-history {
         display: none;
     }
 
+    .pi-history-footer {
+        display: none !important;
+    }
+
+    .pi-history-empty-new-chat {
+        margin-top: 1rem;
+        padding: 0.6rem 1.5rem;
+        background: rgba(220, 38, 38, 0.15);
+        border: 1px solid rgba(220, 38, 38, 0.3);
+        border-radius: 10px;
+        color: #dc2626;
+        font-size: 0.9rem;
+        font-weight: 600;
+        cursor: pointer;
+    }
+
+    .pi-history-list {
+        flex: 1;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .pi-history-item-delete {
+        display: none !important;
+    }
+
     .pi-messages {
         padding: 1rem;
+        flex: 1;
+        min-height: 0;
+        overflow-y: auto;
     }
 
     .pi-input-area {
-        padding: 0.75rem 1rem 1rem;
+        padding: 0.5rem 0.75rem 0.5rem;
+        flex-shrink: 0;
+    }
+
+    .pi-input-disclaimer {
+        font-size: 0.55rem !important;
+        margin-top: 0.15rem !important;
     }
 
     .pi-welcome-icon {
-        width: 56px;
-        height: 56px;
+        width: 48px;
+        height: 48px;
     }
 
     .pi-welcome-icon svg {
-        width: 28px;
-        height: 28px;
+        width: 24px;
+        height: 24px;
     }
 
     .pi-welcome h2 {
-        font-size: 1.25rem;
+        font-size: 1.1rem;
     }
 
     .pi-welcome p {
-        font-size: 0.9rem;
+        font-size: 0.85rem;
+    }
+
+    .pi-suggestions {
+        gap: 0.4rem;
+    }
+
+    .pi-suggestion {
+        font-size: 0.8rem;
+        padding: 0.6rem 0.75rem;
     }
 
     .pi-msg {
@@ -2508,7 +2635,7 @@
 
     .pi-player-cards {
         flex-direction: column;
-        max-width: 100%;
+        max-width: 88%;
     }
 
     .pi-player-card {

@@ -53,10 +53,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (!messagesContainer || !input) return;
 
+    // Shorten placeholder on mobile to prevent text wrapping in textarea
+    if (window.innerWidth <= 768 && input) {
+        input.placeholder = 'Ask about portal predictions...';
+    }
+
     let chats = [];
     let activeChatId = null;
     let isSending = false;
     let watchlistCount = 0;
+    let longPressTriggered = false;
     let lastSignalFilters = null;
     let currentSearchOffset = 0;
 
@@ -195,6 +201,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         <path d="M12 2a4 4 0 0 0-4 4c0 1.95 1.4 3.57 3.25 3.92"></path>
                     </svg>
                     <span>No conversations yet</span>
+                    <button class="pi-history-empty-new-chat" onclick="document.getElementById('piNewChatBtn').click()">Start New Chat</button>
                 </div>
             `;
             return;
@@ -217,8 +224,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                     <button class="pi-history-item-delete" data-delete-id="${chat.id}" title="Delete chat">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="3 6 5 6 21 6"></polyline>
-                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
                         </svg>
                     </button>
                 </div>
@@ -228,7 +235,9 @@ document.addEventListener('DOMContentLoaded', function() {
         historyList.querySelectorAll('.pi-history-item').forEach(item => {
             item.addEventListener('click', (e) => {
                 if (e.target.closest('.pi-history-item-delete')) return;
+                if (longPressTriggered) { longPressTriggered = false; return; }
                 selectChat(item.dataset.chatId);
+                if (window.innerWidth <= 768 && typeof closeMobileHistoryPanel === 'function') closeMobileHistoryPanel();
             });
         });
 
@@ -854,6 +863,144 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (newChatBtn) {
         newChatBtn.addEventListener('click', () => createNewChat());
+    }
+
+    // Mobile action bar buttons
+    const piMobileNewChat = document.getElementById('piMobileNewChat');
+    const piMobileHistory = document.getElementById('piMobileHistory');
+    const piMobileWatchlist = document.getElementById('piMobileWatchlist');
+    const piMobileUsage = document.getElementById('piMobileUsage');
+
+    // Move modal overlays to document.body on mobile so they escape the fixed .main-content clipping
+    if (window.innerWidth <= 768) {
+        const usageOverlay = document.getElementById('piUsageOverlay');
+        const watchlistOverlay = document.querySelector('.pi-watchlist-overlay');
+        if (usageOverlay) document.body.appendChild(usageOverlay);
+        if (watchlistOverlay) document.body.appendChild(watchlistOverlay);
+    }
+
+    if (piMobileNewChat) piMobileNewChat.addEventListener('click', () => createNewChat());
+    if (piMobileWatchlist) piMobileWatchlist.addEventListener('click', () => openWatchlistModal());
+    if (piMobileUsage) piMobileUsage.addEventListener('click', () => openPiUsageModal());
+    // Mobile history panel toggle — slide-in with backdrop overlay
+    let piHistoryOverlay = null;
+
+    function openMobileHistoryPanel() {
+        const history = document.getElementById('piHistory');
+        const actionsBar = document.getElementById('piMobileActions');
+        if (history) {
+            history.style.display = 'flex';
+            history.style.position = 'fixed';
+            history.style.top = '0';
+            history.style.left = '0';
+            history.style.width = '68%';
+            history.style.bottom = '0';
+            history.style.right = '';
+            history.style.zIndex = '1001';
+            history.style.background = 'rgba(10, 17, 40, 0.98)';
+            history.style.flexDirection = 'column';
+        }
+        if (actionsBar) actionsBar.style.display = 'none';
+
+        // Create backdrop overlay for closing
+        if (!piHistoryOverlay) {
+            piHistoryOverlay = document.createElement('div');
+            piHistoryOverlay.style.cssText = 'position:fixed;top:0;left:68%;right:0;bottom:0;background:transparent;z-index:1002;';
+            piHistoryOverlay.addEventListener('click', closeMobileHistoryPanel);
+        }
+        document.body.appendChild(piHistoryOverlay);
+    }
+
+    function closeMobileHistoryPanel() {
+        const history = document.getElementById('piHistory');
+        const actionsBar = document.getElementById('piMobileActions');
+        if (history && window.innerWidth <= 768) {
+            history.style.display = 'none';
+            history.style.position = '';
+            history.style.top = '';
+            history.style.left = '';
+            history.style.width = '';
+            history.style.bottom = '';
+            history.style.right = '';
+            history.style.zIndex = '';
+            history.style.background = '';
+            history.style.flexDirection = '';
+        }
+        if (actionsBar && window.innerWidth <= 768) actionsBar.style.display = 'flex';
+        if (piHistoryOverlay && piHistoryOverlay.parentNode) {
+            piHistoryOverlay.parentNode.removeChild(piHistoryOverlay);
+        }
+    }
+
+    if (piMobileHistory) {
+        piMobileHistory.addEventListener('click', () => {
+            const history = document.getElementById('piHistory');
+            const isVisible = history && history.style.display === 'flex';
+            if (isVisible) {
+                closeMobileHistoryPanel();
+            } else {
+                openMobileHistoryPanel();
+            }
+        });
+    }
+
+    // Long-press to delete on mobile + desktop
+    const historyListEl = document.getElementById('piHistoryList');
+    if (historyListEl) {
+        let longPressTimer = null;
+
+        historyListEl.addEventListener('touchstart', (e) => {
+            const item = e.target.closest('.pi-history-item');
+            if (!item) return;
+            longPressTriggered = false;
+            longPressTimer = setTimeout(() => {
+                longPressTriggered = true;
+                const chatId = item.dataset.chatId;
+                if (chatId && typeof showConfirmModal === 'function') {
+                    showConfirmModal({
+                        title: 'Delete Conversation',
+                        message: 'Are you sure you want to delete this conversation?',
+                        confirmText: 'Delete',
+                        danger: true
+                    }).then(confirmed => {
+                        if (confirmed) deleteChat(chatId);
+                    });
+                }
+            }, 400);
+        }, { passive: true });
+
+        historyListEl.addEventListener('touchend', () => { clearTimeout(longPressTimer); });
+        historyListEl.addEventListener('touchmove', () => { clearTimeout(longPressTimer); });
+
+        historyListEl.addEventListener('mousedown', (e) => {
+            const item = e.target.closest('.pi-history-item');
+            if (!item) return;
+            longPressTriggered = false;
+            longPressTimer = setTimeout(() => {
+                longPressTriggered = true;
+                const chatId = item.dataset.chatId;
+                if (chatId && typeof showConfirmModal === 'function') {
+                    showConfirmModal({
+                        title: 'Delete Conversation',
+                        message: 'Are you sure you want to delete this conversation?',
+                        confirmText: 'Delete',
+                        danger: true
+                    }).then(confirmed => {
+                        if (confirmed) deleteChat(chatId);
+                    });
+                }
+            }, 400);
+        });
+
+        historyListEl.addEventListener('mouseup', () => { clearTimeout(longPressTimer); });
+        historyListEl.addEventListener('mouseleave', () => { clearTimeout(longPressTimer); });
+    }
+
+    // Patch new chat button inside history panel to close panel
+    if (newChatBtn) {
+        newChatBtn.addEventListener('click', () => {
+            if (window.innerWidth <= 768) closeMobileHistoryPanel();
+        });
     }
 
     suggestions.forEach(btn => {

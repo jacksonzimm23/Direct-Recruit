@@ -76,6 +76,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let isSending = false;
     let lastSearchFilters = null;
     let currentSearchOffset = 0;
+    let longPressTriggered = false;
 
     const SHOW_MORE_PATTERN = /^(show\s*(me\s*)?more|more\s*players?|next\s*(5|players?|results?|batch)?|load\s*more|keep\s*going|any\s*more|see\s*more)/i;
 
@@ -206,6 +207,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
                     </svg>
                     <span>No conversations yet</span>
+                    <button class="ra-history-empty-new-chat" onclick="document.getElementById('raNewChatBtn').click()">Start New Chat</button>
                 </div>
             `;
             return;
@@ -227,8 +229,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                     <button class="ra-history-item-delete" data-delete-id="${chat.id}" title="Delete chat">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="3 6 5 6 21 6"></polyline>
-                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
                         </svg>
                     </button>
                 </div>
@@ -239,7 +241,9 @@ document.addEventListener('DOMContentLoaded', function() {
         historyList.querySelectorAll('.ra-history-item').forEach(item => {
             item.addEventListener('click', (e) => {
                 if (e.target.closest('.ra-history-item-delete')) return;
+                if (longPressTriggered) { longPressTriggered = false; return; }
                 selectChat(item.dataset.chatId);
+                if (window.innerWidth <= 768 && typeof closeMobileHistoryPanel === 'function') closeMobileHistoryPanel();
             });
         });
 
@@ -615,6 +619,147 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (newChatBtn) {
         newChatBtn.addEventListener('click', () => createNewChat());
+    }
+
+    // Mobile action bar buttons
+    const raMobileNewChat = document.getElementById('raMobileNewChat');
+    const raMobileHistory = document.getElementById('raMobileHistory');
+    const raMobileSaved = document.getElementById('raMobileSaved');
+    const raMobileBaselines = document.getElementById('raMobileBaselines');
+    const raMobileUsage = document.getElementById('raMobileUsage');
+
+    // Move modal overlays to document.body on mobile so they escape the fixed .main-content clipping
+    if (window.innerWidth <= 768) {
+        const baselinesOverlay = document.querySelector('.ra-baselines-overlay');
+        const usageOverlay = document.getElementById('raUsageOverlay');
+        if (baselinesOverlay) document.body.appendChild(baselinesOverlay);
+        if (usageOverlay) document.body.appendChild(usageOverlay);
+    }
+
+    if (raMobileNewChat) raMobileNewChat.addEventListener('click', () => createNewChat());
+    if (raMobileSaved) raMobileSaved.addEventListener('click', () => openSavedModal());
+    if (raMobileBaselines) raMobileBaselines.addEventListener('click', () => openBaselines());
+    if (raMobileUsage) raMobileUsage.addEventListener('click', () => openUsageModal());
+    // Mobile history panel toggle — slide-in with backdrop overlay
+    let raHistoryOverlay = null;
+
+    function openMobileHistoryPanel() {
+        const history = document.getElementById('raHistory');
+        const actionsBar = document.getElementById('raMobileActions');
+        if (history) {
+            history.style.display = 'flex';
+            history.style.position = 'fixed';
+            history.style.top = '0';
+            history.style.left = '0';
+            history.style.width = '68%';
+            history.style.bottom = '0';
+            history.style.right = '';
+            history.style.zIndex = '1001';
+            history.style.background = 'rgba(10, 17, 40, 0.98)';
+            history.style.flexDirection = 'column';
+        }
+        if (actionsBar) actionsBar.style.display = 'none';
+
+        // Create backdrop overlay for closing
+        if (!raHistoryOverlay) {
+            raHistoryOverlay = document.createElement('div');
+            raHistoryOverlay.style.cssText = 'position:fixed;top:0;left:68%;right:0;bottom:0;background:transparent;z-index:1002;';
+            raHistoryOverlay.addEventListener('click', closeMobileHistoryPanel);
+        }
+        document.body.appendChild(raHistoryOverlay);
+    }
+
+    function closeMobileHistoryPanel() {
+        const history = document.getElementById('raHistory');
+        const actionsBar = document.getElementById('raMobileActions');
+        if (history && window.innerWidth <= 768) {
+            history.style.display = 'none';
+            history.style.position = '';
+            history.style.top = '';
+            history.style.left = '';
+            history.style.width = '';
+            history.style.bottom = '';
+            history.style.right = '';
+            history.style.zIndex = '';
+            history.style.background = '';
+            history.style.flexDirection = '';
+        }
+        if (actionsBar && window.innerWidth <= 768) actionsBar.style.display = 'flex';
+        if (raHistoryOverlay && raHistoryOverlay.parentNode) {
+            raHistoryOverlay.parentNode.removeChild(raHistoryOverlay);
+        }
+    }
+
+    if (raMobileHistory) {
+        raMobileHistory.addEventListener('click', () => {
+            const history = document.getElementById('raHistory');
+            const isVisible = history && history.style.display === 'flex';
+            if (isVisible) {
+                closeMobileHistoryPanel();
+            } else {
+                openMobileHistoryPanel();
+            }
+        });
+    }
+
+    // Long-press to delete on mobile + desktop
+    const historyListEl = document.getElementById('raHistoryList');
+    if (historyListEl) {
+        let longPressTimer = null;
+
+        historyListEl.addEventListener('touchstart', (e) => {
+            const item = e.target.closest('.ra-history-item');
+            if (!item) return;
+            longPressTriggered = false;
+            longPressTimer = setTimeout(() => {
+                longPressTriggered = true;
+                const chatId = item.dataset.chatId;
+                if (chatId && typeof showConfirmModal === 'function') {
+                    showConfirmModal({
+                        title: 'Delete Conversation',
+                        message: 'Are you sure you want to delete this conversation?',
+                        confirmText: 'Delete',
+                        danger: true
+                    }).then(confirmed => {
+                        if (confirmed) deleteChat(chatId);
+                    });
+                }
+            }, 400);
+        }, { passive: true });
+
+        historyListEl.addEventListener('touchend', () => { clearTimeout(longPressTimer); });
+        historyListEl.addEventListener('touchmove', () => { clearTimeout(longPressTimer); });
+
+        historyListEl.addEventListener('mousedown', (e) => {
+            const item = e.target.closest('.ra-history-item');
+            if (!item) return;
+            longPressTriggered = false;
+            longPressTimer = setTimeout(() => {
+                longPressTriggered = true;
+                const chatId = item.dataset.chatId;
+                if (chatId && typeof showConfirmModal === 'function') {
+                    showConfirmModal({
+                        title: 'Delete Conversation',
+                        message: 'Are you sure you want to delete this conversation?',
+                        confirmText: 'Delete',
+                        danger: true
+                    }).then(confirmed => {
+                        if (confirmed) deleteChat(chatId);
+                    });
+                }
+            }, 400);
+        });
+
+        historyListEl.addEventListener('mouseup', () => { clearTimeout(longPressTimer); });
+        historyListEl.addEventListener('mouseleave', () => { clearTimeout(longPressTimer); });
+    }
+
+    // Patch new chat button inside history panel to close panel
+    const historyNewChatBtn = document.getElementById('raNewChatBtn');
+    if (historyNewChatBtn) {
+        historyNewChatBtn.addEventListener('click', () => {
+            if (window.innerWidth <= 768) closeMobileHistoryPanel();
+        });
     }
 
     // Suggestion buttons
