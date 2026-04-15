@@ -1,5 +1,40 @@
 /* Messages Page Specific Styles */
 
+.conversations-footer {
+    padding: 0.75rem;
+    border-top: 1px solid rgba(212, 160, 23, 0.2);
+}
+
+.recruiting-calendar-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    width: 100%;
+    padding: 0.65rem 0.75rem;
+    background: rgba(212, 160, 23, 0.08);
+    border: 1px solid rgba(212, 160, 23, 0.2);
+    border-radius: 10px;
+    color: rgba(254, 252, 251, 0.75);
+    font-size: 0.85rem;
+    font-family: 'Inter', sans-serif;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.recruiting-calendar-btn:hover {
+    background: rgba(212, 160, 23, 0.15);
+    border-color: #d4a017;
+    color: var(--white);
+}
+
+.recruiting-calendar-btn svg {
+    width: 18px;
+    height: 18px;
+    color: #d4a017;
+    flex-shrink: 0;
+}
+
 .messages-content {
     padding: 0 !important;
     display: flex;
@@ -1254,5 +1289,425 @@
 
 .delete-modal .btn-delete:hover {
     background: #dc2626;
+}
+
+/* ========================
+   RECRUITING CALENDAR MODAL
+   ======================== */
+.rc-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    z-index: 2000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+}
+
+.rc-overlay.active {
+    display: flex;
+}
+
+.rc-modal {
+    background: #0f1a35;
+    border: 1px solid rgba(212, 160, 23, 0.2);
+    border-radius: 16px;
+    width: 100%;
+    max-width: 720px;
+    height: 85vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    animation: rcSlideIn 0.25s ease;
+}
+
+@keyframes rcSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px) scale(0.97);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.rc-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid rgba(212, 160, 23, 0.15);
+    flex-shrink: 0;
+}
+
+.rc-header h2 {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--white);
+    margin: 0;
+}
+
+.rc-close {
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    background: rgba(254, 252, 251, 0.06);
+    border: 1px solid rgba(254, 252, 251, 0.1);
+    color: rgba(254, 252, 251, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.rc-close:hover {
+    background: rgba(255, 107, 107, 0.15);
+    border-color: rgba(255, 107, 107, 0.3);
+    color: #ff6b6b;
+}
+
+.rc-close svg {
+    width: 18px;
+    height: 18px;
+}
+
+/* Tabs */
+.rc-tabs {
+    display: flex;
+    gap: 0;
+    padding: 0.75rem 1.5rem 0;
+    border-bottom: 1px solid rgba(212, 160, 23, 0.1);
+    flex-shrink: 0;
+    overflow-x: auto;
+}
+
+.rc-tabs::-webkit-scrollbar {
+    display: none;
+}
+
+.rc-tab {
+    padding: 0.6rem 1rem;
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: rgba(254, 252, 251, 0.45);
+    font-size: 0.8rem;
+    font-weight: 600;
+    font-family: 'Inter', sans-serif;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.rc-tab:hover {
+    color: rgba(254, 252, 251, 0.75);
+}
+
+.rc-tab.active {
+    color: #d4a017;
+    border-bottom-color: #d4a017;
+}
+
+/* Body */
+.rc-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1.25rem 1.5rem;
+}
+
+.rc-body::-webkit-scrollbar {
+    width: 5px;
+}
+
+.rc-body::-webkit-scrollbar-thumb {
+    background: rgba(212, 160, 23, 0.2);
+    border-radius: 3px;
+}
+
+/* Tab Content */
+.rc-tab-content {
+    display: none;
+}
+
+.rc-tab-content.active {
+    display: block;
+}
+
+/* Sections */
+.rc-section {
+    margin-bottom: 1.5rem;
+}
+
+.rc-section:last-child {
+    margin-bottom: 0;
+}
+
+.rc-section h3 {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--white);
+    margin: 0 0 0.5rem 0;
+}
+
+.rc-section p {
+    font-size: 0.85rem;
+    color: rgba(254, 252, 251, 0.65);
+    line-height: 1.6;
+    margin: 0 0 0.75rem 0;
+}
+
+.rc-subtitle {
+    font-size: 0.8rem !important;
+    color: rgba(212, 160, 23, 0.7) !important;
+    font-style: italic;
+}
+
+/* Definition Cards */
+.rc-definitions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+}
+
+.rc-def-card {
+    padding: 0.75rem 1rem;
+    border-radius: 10px;
+    border: 1px solid;
+}
+
+.rc-def-label {
+    font-size: 0.8rem;
+    font-weight: 700;
+    margin-bottom: 0.3rem;
+}
+
+.rc-def-desc {
+    font-size: 0.78rem;
+    line-height: 1.5;
+    color: rgba(254, 252, 251, 0.6);
+}
+
+.rc-def-contact {
+    background: rgba(34, 197, 94, 0.06);
+    border-color: rgba(34, 197, 94, 0.2);
+}
+.rc-def-contact .rc-def-label { color: #22c55e; }
+
+.rc-def-evaluation {
+    background: rgba(59, 130, 246, 0.06);
+    border-color: rgba(59, 130, 246, 0.2);
+}
+.rc-def-evaluation .rc-def-label { color: #3b82f6; }
+
+.rc-def-quiet {
+    background: rgba(254, 252, 251, 0.03);
+    border-color: rgba(254, 252, 251, 0.1);
+}
+.rc-def-quiet .rc-def-label { color: rgba(254, 252, 251, 0.8); }
+
+.rc-def-dead {
+    background: rgba(239, 68, 68, 0.06);
+    border-color: rgba(239, 68, 68, 0.2);
+}
+.rc-def-dead .rc-def-label { color: #ef4444; }
+
+/* Tables */
+.rc-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8rem;
+}
+
+.rc-table th {
+    text-align: left;
+    padding: 0.6rem 0.75rem;
+    font-weight: 700;
+    color: rgba(254, 252, 251, 0.7);
+    border-bottom: 1px solid rgba(212, 160, 23, 0.15);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.rc-table td {
+    padding: 0.55rem 0.75rem;
+    color: rgba(254, 252, 251, 0.65);
+    border-bottom: 1px solid rgba(254, 252, 251, 0.05);
+}
+
+.rc-table tbody tr:hover {
+    background: rgba(254, 252, 251, 0.02);
+}
+
+.rc-table .rc-yes {
+    color: #22c55e;
+    font-weight: 600;
+}
+
+.rc-table .rc-no {
+    color: #ef4444;
+    font-weight: 600;
+}
+
+.rc-table .rc-campus {
+    color: #f59e0b;
+    font-weight: 600;
+    font-size: 0.75rem;
+}
+
+/* Exception rows (indented sub-rules) */
+.rc-exception td {
+    font-size: 0.75rem;
+    color: rgba(254, 252, 251, 0.45);
+    padding-top: 0.3rem;
+    padding-bottom: 0.3rem;
+}
+
+.rc-note-row td {
+    font-size: 0.72rem;
+    color: rgba(212, 160, 23, 0.5);
+    font-style: italic;
+    padding-top: 0.2rem;
+    padding-bottom: 0.5rem;
+    border-bottom: none;
+}
+
+/* Badges */
+.rc-badge {
+    display: inline-block;
+    padding: 0.2rem 0.6rem;
+    border-radius: 6px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+}
+
+.rc-badge-contact {
+    background: rgba(34, 197, 94, 0.12);
+    color: #22c55e;
+    border: 1px solid rgba(34, 197, 94, 0.25);
+}
+
+.rc-badge-evaluation {
+    background: rgba(59, 130, 246, 0.12);
+    color: #3b82f6;
+    border: 1px solid rgba(59, 130, 246, 0.25);
+}
+
+.rc-badge-quiet {
+    background: rgba(254, 252, 251, 0.06);
+    color: rgba(254, 252, 251, 0.6);
+    border: 1px solid rgba(254, 252, 251, 0.12);
+}
+
+.rc-badge-dead {
+    background: rgba(239, 68, 68, 0.12);
+    color: #ef4444;
+    border: 1px solid rgba(239, 68, 68, 0.25);
+}
+
+/* Rules list (D2) */
+.rc-rules-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.rc-rule-item {
+    padding: 0.65rem 0.85rem;
+    background: rgba(254, 252, 251, 0.03);
+    border: 1px solid rgba(254, 252, 251, 0.07);
+    border-radius: 8px;
+}
+
+.rc-rule-title {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #d4a017;
+    margin-bottom: 0.2rem;
+}
+
+.rc-rule-desc {
+    font-size: 0.78rem;
+    color: rgba(254, 252, 251, 0.55);
+    line-height: 1.5;
+}
+
+/* Key reminders list */
+.rc-list {
+    margin: 0;
+    padding-left: 1.25rem;
+    list-style: disc;
+}
+
+.rc-list li {
+    font-size: 0.8rem;
+    color: rgba(254, 252, 251, 0.55);
+    line-height: 1.6;
+    margin-bottom: 0.4rem;
+}
+
+.rc-list li:last-child {
+    margin-bottom: 0;
+}
+
+/* Source link */
+.rc-source a {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #d4a017;
+    text-decoration: none;
+    transition: color 0.15s ease;
+}
+
+.rc-source a:hover {
+    color: #e0b020;
+    text-decoration: underline;
+}
+
+.rc-source a svg {
+    flex-shrink: 0;
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+    .rc-modal {
+        max-width: 100%;
+        max-height: 92vh;
+        border-radius: 12px;
+    }
+
+    .rc-tabs {
+        padding: 0.5rem 1rem 0;
+    }
+
+    .rc-tab {
+        padding: 0.5rem 0.7rem;
+        font-size: 0.72rem;
+    }
+
+    .rc-body {
+        padding: 1rem;
+    }
+
+    .rc-table {
+        font-size: 0.72rem;
+    }
+
+    .rc-table th, .rc-table td {
+        padding: 0.45rem 0.5rem;
+    }
+
+    .conversations-footer {
+        padding: 0.5rem;
+    }
 }
 
