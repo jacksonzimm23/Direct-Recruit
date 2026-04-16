@@ -177,6 +177,25 @@
     height: 20px;
 }
 
+.signin-terms-notice {
+    text-align: center;
+    margin-top: 1rem;
+    margin-bottom: 0;
+    font-size: 0.8rem;
+    color: rgba(254, 252, 251, 0.5);
+    line-height: 1.5;
+}
+
+.signin-terms-notice a {
+    color: rgba(254, 252, 251, 0.75);
+    text-decoration: underline;
+    transition: color 0.3s ease;
+}
+
+.signin-terms-notice a:hover {
+    color: var(--cerulean);
+}
+
 .signin-footer {
     text-align: center;
     margin-top: 2rem;

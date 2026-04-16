@@ -35,7 +35,6 @@ other@test.com	Other (Parent/Fan)
 
 
 
-
 ## Stripe Implementation Plan — Direct Recruit
 ### Phase 1: Stripe Foundation (Backend)
 - [ ] Install `stripe` npm package in `/backend`

@@ -422,6 +422,12 @@ function showRegistrationModal(role) {
                     <label for="reg-confirm-password">Confirm Password</label>
                     <input type="password" id="reg-confirm-password" required placeholder="Re-enter password">
                 </div>
+                <div class="form-group tos-agreement">
+                    <label class="tos-label">
+                        <input type="checkbox" id="reg-agree-tos" required>
+                        <span>I agree to the <a href="terms-of-service.html" target="_blank" rel="noopener">Terms of Service</a> and <a href="privacy-policy.html" target="_blank" rel="noopener">Privacy Policy</a></span>
+                    </label>
+                </div>
                 <button type="submit" class="btn-primary">Create Account</button>
             </form>
             <p class="modal-footer">
@@ -512,6 +518,34 @@ function showRegistrationModal(role) {
             padding: 14px;
             margin-top: 8px;
         }
+        .registration-form .tos-agreement {
+            margin-top: 8px;
+            margin-bottom: 16px;
+        }
+        .tos-label {
+            display: flex !important;
+            align-items: flex-start;
+            gap: 8px;
+            font-weight: 400 !important;
+            font-size: 13px;
+            color: #555 !important;
+            cursor: pointer;
+            line-height: 1.5;
+            margin-bottom: 0 !important;
+        }
+        .tos-label input[type="checkbox"] {
+            width: 16px !important;
+            height: 16px;
+            margin-top: 2px;
+            cursor: pointer;
+            accent-color: #1282a2;
+            flex-shrink: 0;
+        }
+        .tos-label a {
+            color: #1282a2;
+            text-decoration: underline;
+            font-weight: 600;
+        }
         .modal-footer {
             text-align: center;
             margin-top: 20px;
@@ -540,6 +574,16 @@ function showRegistrationModal(role) {
             if (confirmEl) {
                 confirmEl.focus();
                 confirmEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+            return;
+        }
+
+        const agreeEl = document.getElementById('reg-agree-tos');
+        if (!agreeEl || !agreeEl.checked) {
+            showToast('You must agree to the Terms of Service and Privacy Policy', 'warning');
+            if (agreeEl) {
+                agreeEl.focus();
+                agreeEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }
             return;
         }

@@ -861,7 +861,7 @@
 ---
 
 ## TODOs
-**TODO: Restore all scroll positions when navigating across pages/modals
+**TODO: Rotate all creds (Stripe is good)
 
 docker-compose stop
 
