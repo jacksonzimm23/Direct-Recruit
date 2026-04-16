@@ -658,7 +658,7 @@
 
 .v2-features {
     background: var(--oxford-blue, #0a1128);
-    padding: 60px 0 100px;
+    padding: 60px 0 40px;
 }
 
 .v2-feature-tabs {
@@ -1282,7 +1282,7 @@
 
 .v2-comparison {
     background: linear-gradient(180deg, var(--oxford-blue, #0a1128) 0%, #060d1e 100%);
-    padding: 100px 0;
+    padding: 60px 0 100px;
 }
 
 .v2-comparison-table {
