@@ -221,6 +221,11 @@ function renderNotificationCard(notification) {
                 <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
                 <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
             </svg>`;
+        } else if (notification.title === 'AI Search Match') {
+            iconClass = 'ai-search-icon';
+            iconSvg = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+            </svg>`;
         }
     }
 
@@ -349,6 +354,8 @@ function formatNotificationMessage(notification) {
             return `${nameHtml} replied to your comment${replyPreview}`;
         case 'Portal Entry':
             return `${nameHtml} has entered the transfer portal`;
+        case 'AI Search Match':
+            return notification.message;
         default:
             // Fallback: try to replace any name pattern in the original message
             let message = notification.message || '';
@@ -408,6 +415,10 @@ function setupNotificationActions() {
             const notificationId = this.dataset.id;
             if (this.classList.contains('unread')) {
                 await markNotificationAsRead(notificationId, this);
+            }
+            const notification = allNotifications.find(n => String(n.id) === String(notificationId));
+            if (notification && notification.title === 'AI Search Match') {
+                window.location.href = 'ai-rep.html';
             }
         });
     });

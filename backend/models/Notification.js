@@ -187,16 +187,17 @@ class Notification {
   }
 
   // Check if a notification already exists (to prevent duplicates)
-  static async exists({ userId, type, relatedUserId, relatedEntityId, withinHours = 24 }) {
+  static async exists({ userId, type, relatedUserId, relatedEntityId, title = null, withinHours = 24 }) {
     const result = await pool.query(
       `SELECT id FROM notifications
        WHERE user_id = $1
          AND type = $2
          AND ($3::uuid IS NULL OR related_user_id = $3)
          AND ($4::uuid IS NULL OR related_entity_id = $4)
+         AND ($6::text IS NULL OR title = $6)
          AND created_at > NOW() - INTERVAL '1 hour' * $5::numeric
        LIMIT 1`,
-      [userId, type, relatedUserId, relatedEntityId, withinHours]
+      [userId, type, relatedUserId, relatedEntityId, withinHours, title]
     );
     return result.rows.length > 0;
   }
@@ -484,6 +485,29 @@ class Notification {
       message: `${playerName}${posText}${schoolText} has entered the transfer portal`,
       relatedUserId: playerUserId,
       relatedEntityType: 'portal_watchlist'
+    });
+  }
+  // Create notification when a player appears in an AI search result
+  static async createAiSearchMatchNotification(playerUserId, coachDivision, aiType) {
+    const divisionText = coachDivision ? `A ${coachDivision}` : 'A';
+    const sourceText = aiType === 'portal_intelligence' ? 'portal intelligence search' : 'recruiting search';
+
+    // Dedupe: don't send more than 1 per player per 6 hours
+    const alreadyExists = await this.exists({
+      userId: playerUserId,
+      type: 'interaction',
+      title: 'AI Search Match',
+      withinHours: 6
+    });
+    if (alreadyExists) return null;
+
+    return this.create({
+      userId: playerUserId,
+      type: 'interaction',
+      title: 'AI Search Match',
+      message: `${divisionText} coach's ${sourceText} matched your profile`,
+      relatedUserId: null,
+      relatedEntityType: 'ai_search'
     });
   }
 }

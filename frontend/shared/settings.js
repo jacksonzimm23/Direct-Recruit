@@ -2375,7 +2375,7 @@ function renderStep2() {
                 <div class="switch-form-group">
                     <label>Height <span class="required">*</span></label>
                     <div style="display:flex;gap:8px;align-items:center;">
-                        <input type="number" id="switchHeightFt" placeholder="Ft" class="form-input" min="4" max="7" style="width:70px;">
+                        <input type="number" id="switchHeightFt" placeholder="Ft" class="form-input" min="0" style="width:70px;">
                         <span style="color:rgba(255,255,255,0.5);font-size:13px;">ft</span>
                         <input type="number" id="switchHeightIn" placeholder="In" class="form-input" min="0" max="11" style="width:70px;">
                         <span style="color:rgba(255,255,255,0.5);font-size:13px;">in</span>
@@ -2383,7 +2383,7 @@ function renderStep2() {
                 </div>
                 <div class="switch-form-group">
                     <label>Weight (lbs) <span class="required">*</span></label>
-                    <input type="number" id="switchWeight" placeholder="e.g. 200" class="form-input" min="80" max="500">
+                    <input type="number" id="switchWeight" placeholder="e.g. 200" class="form-input" min="0">
                 </div>
             </div>
             <div class="switch-form-group">

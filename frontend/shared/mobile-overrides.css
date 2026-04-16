@@ -631,6 +631,7 @@ html {
         flex-direction: column !important;
         align-items: center !important;
         justify-content: center !important;
+        position: relative !important;
         padding: 0.5rem 0.25rem !important;
         gap: 0.2rem !important;
         min-width: 55px !important;
@@ -717,6 +718,27 @@ html {
     }
 
     .nav-item span {
+        display: none !important;
+    }
+
+    /* Re-show notification badges hidden by the span rule above */
+    .nav-item .notification-badge {
+        display: flex !important;
+        position: absolute !important;
+        top: -2px !important;
+        right: 2px !important;
+        min-width: 22px !important;
+        height: 22px !important;
+        font-size: 0.75rem !important;
+        padding: 0 5px !important;
+        align-items: center !important;
+        justify-content: center !important;
+        margin-left: 0 !important;
+        line-height: 1 !important;
+    }
+
+    /* JS sets display:none when count is 0 — respect that */
+    .nav-item .notification-badge[style*="display: none"] {
         display: none !important;
     }
 
@@ -2156,6 +2178,14 @@ html {
     .nav-icon {
         width: 26px !important;
         height: 26px !important;
+    }
+
+    .nav-item .notification-badge {
+        top: 0px !important;
+        right: 0px !important;
+        min-width: 20px !important;
+        height: 20px !important;
+        font-size: 0.7rem !important;
     }
 
     /* Smaller posts */
