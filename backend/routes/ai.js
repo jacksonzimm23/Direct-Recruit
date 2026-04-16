@@ -13,6 +13,7 @@ const PlayerGameStats = require('../models/PlayerGameStats');
 const AiAnalytics = require('../models/AiAnalytics');
 const RaSavedPlayers = require('../models/RaSavedPlayers');
 const AiEngagement = require('../models/AiEngagement');
+const Notification = require('../models/Notification');
 const User = require('../models/User');
 const logger = require('../utils/logger');
 
@@ -425,6 +426,14 @@ router.post('/chats/:chatId/message', validateUUID('chatId'), async (req, res) =
       latencyMs: aiResponse._meta?.latency_ms || null
     }).catch(err => logger.error('AI analytics log error:', err.message));
 
+    // Notify matched players (fire-and-forget, deduplicated per 6 hours)
+    if (result.players.length > 0) {
+      result.players.forEach(p => {
+        Notification.createAiSearchMatchNotification(p.user_id, coachDivision, 'recruit_assistant')
+          .catch(err => logger.error('AI match notification error:', err.message));
+      });
+    }
+
     return res.json({
       response: responseText,
       players: result.players,
@@ -630,6 +639,14 @@ router.post('/chats/:chatId/pi-message', validateUUID('chatId'), async (req, res
       outputTokens: aiResponse._meta?.output_tokens || null,
       latencyMs: aiResponse._meta?.latency_ms || null
     }).catch(err => logger.error('PI analytics log error:', err.message));
+
+    // Notify matched players (fire-and-forget, deduplicated per 6 hours)
+    if (result.players.length > 0) {
+      result.players.forEach(p => {
+        Notification.createAiSearchMatchNotification(p.user_id, coachDivision, 'portal_intelligence')
+          .catch(err => logger.error('AI match notification error:', err.message));
+      });
+    }
 
     return res.json({
       response: responseText,
