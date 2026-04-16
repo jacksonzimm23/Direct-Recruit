@@ -68,6 +68,16 @@ if (document.getElementById('signinForm')) {
                 window.location.href = '../other/mainpage-other.html';
             }
         } catch (error) {
+            // If email not verified, redirect to verify-email page
+            if (error.data && error.data.requiresVerification) {
+                localStorage.setItem('pendingVerificationEmail', error.data.email);
+                // Determine correct verify-email page based on role
+                let folder = 'hsplayer';
+                if (error.data.role === 'coach') folder = 'hscoach';
+                else if (error.data.role === 'other') folder = 'other';
+                window.location.href = `../${folder}/verify-email.html`;
+                return;
+            }
             // Show inline error message instead of alert
             const errorEl = document.getElementById('loginError');
             if (errorEl) {

@@ -196,7 +196,9 @@ router.post('/login', authLimiter, async (req, res) => {
         return res.status(401).json({ error: 'Invalid credentials' });
       }
       if (cognitoError.name === 'UserNotConfirmedException') {
-        return res.status(401).json({ error: 'Please verify your email before logging in', requiresVerification: true });
+        // Resend verification code so user has a fresh code
+        try { await cognito.resendConfirmationCode(email); } catch (e) { /* ignore resend errors */ }
+        return res.status(401).json({ error: 'Please verify your email before logging in', requiresVerification: true, email, role: user.role });
       }
       if (cognitoError.name === 'UserNotFoundException') {
         return res.status(401).json({ error: 'Invalid credentials' });

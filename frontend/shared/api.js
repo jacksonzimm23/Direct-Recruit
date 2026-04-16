@@ -317,7 +317,9 @@ async function apiRequest(endpoint, options = {}) {
                 console.error('Validation errors:', data.errors);
                 throw new Error(errorMessages);
             }
-            throw new Error(data.error || data.message || 'Request failed');
+            const err = new Error(data.error || data.message || 'Request failed');
+            err.data = data;
+            throw err;
         }
 
         return data;
