@@ -752,3 +752,50 @@
     opacity: 0.3;
     pointer-events: none;
 }
+
+/* Interactive Filter Graph */
+.ai-rep-filter-graph-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 0.25rem;
+    flex-wrap: wrap;
+}
+
+.ai-rep-filter-graph-sub {
+    font-size: 0.8rem;
+    color: rgba(254, 252, 251, 0.35);
+    font-weight: 500;
+    margin: 0 0 1rem 0;
+}
+
+.ai-rep-filter-dropdowns {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.ai-rep-dropdown {
+    background: rgba(254, 252, 251, 0.06);
+    border: 1px solid rgba(254, 252, 251, 0.12);
+    border-radius: 8px;
+    color: #fefcfb;
+    font-size: 0.8rem;
+    font-weight: 600;
+    padding: 0.4rem 0.7rem;
+    cursor: pointer;
+    outline: none;
+    transition: border-color 0.2s;
+    font-family: 'Inter', sans-serif;
+}
+
+.ai-rep-dropdown:hover,
+.ai-rep-dropdown:focus {
+    border-color: var(--cerulean);
+}
+
+.ai-rep-dropdown option,
+.ai-rep-dropdown optgroup {
+    background: #0f1a3a;
+    color: #fefcfb;
+}
