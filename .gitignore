@@ -38,7 +38,7 @@ uploads/
 # Sensitive business docs
 cost-model.html
 PI.md
-PROD-MIGRATION-GUIDE.md
+DEPLOYMENT-GUIDE.md
 
 # Admin dashboard (private, never commit)
 frontend/admin/
