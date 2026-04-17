@@ -1,0 +1,253 @@
+/* Coach Signup Request Form — styled to match the landing page theme */
+
+.coach-request-section {
+    min-height: 100vh;
+    padding: 6rem 1.5rem 4rem;
+    background: linear-gradient(135deg, var(--oxford-blue) 0%, var(--penn-blue) 50%, var(--indigo-dye) 100%);
+    display: flex;
+    justify-content: center;
+}
+
+.coach-request-container {
+    max-width: 640px;
+    width: 100%;
+    background: rgba(254, 252, 251, 0.04);
+    backdrop-filter: blur(10px);
+    border: 2px solid rgba(18, 130, 162, 0.3);
+    border-radius: 20px;
+    padding: 2.5rem;
+    position: relative;
+}
+
+.back-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: rgba(254, 252, 251, 0.7);
+    text-decoration: none;
+    font-size: 0.9rem;
+    font-weight: 500;
+    margin-bottom: 1.5rem;
+    transition: color 0.2s ease;
+}
+
+.back-button:hover {
+    color: var(--white);
+}
+
+.back-button svg {
+    width: 18px;
+    height: 18px;
+}
+
+.request-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.request-header h1 {
+    font-size: clamp(1.6rem, 4vw, 2.2rem);
+    font-weight: 900;
+    color: var(--white);
+    margin-bottom: 0.5rem;
+}
+
+.request-header p {
+    font-size: 1rem;
+    color: rgba(254, 252, 251, 0.7);
+    line-height: 1.5;
+}
+
+.coach-request-form .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+@media (max-width: 520px) {
+    .coach-request-form .form-row {
+        grid-template-columns: 1fr;
+    }
+}
+
+.coach-request-form .form-group {
+    margin-bottom: 1.1rem;
+}
+
+.coach-request-form label {
+    display: block;
+    color: var(--white);
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-bottom: 0.4rem;
+}
+
+.coach-request-form .required {
+    color: #ff6b35;
+}
+
+.coach-request-form .optional {
+    color: rgba(254, 252, 251, 0.5);
+    font-weight: 400;
+    font-size: 0.85rem;
+}
+
+.coach-request-form input,
+.coach-request-form textarea,
+.coach-request-form select {
+    width: 100%;
+    background: rgba(10, 17, 40, 0.5);
+    border: 1.5px solid rgba(18, 130, 162, 0.35);
+    border-radius: 10px;
+    padding: 0.75rem 1rem;
+    color: var(--white);
+    font-size: 1rem;
+    font-family: inherit;
+    transition: border-color 0.2s ease, background 0.2s ease;
+    box-sizing: border-box;
+}
+
+.coach-request-form input:focus,
+.coach-request-form textarea:focus,
+.coach-request-form select:focus {
+    outline: none;
+    border-color: #1282a2;
+    background: rgba(10, 17, 40, 0.8);
+}
+
+.coach-request-form select option {
+    background: #0a1128;
+    color: var(--white);
+}
+
+.coach-request-form input::placeholder,
+.coach-request-form textarea::placeholder {
+    color: rgba(254, 252, 251, 0.35);
+}
+
+.coach-request-form .form-hint {
+    display: block;
+    font-size: 0.8rem;
+    color: rgba(254, 252, 251, 0.55);
+    margin-top: 0.35rem;
+}
+
+.coach-request-form textarea {
+    resize: vertical;
+    min-height: 80px;
+}
+
+.form-actions {
+    margin-top: 1.5rem;
+}
+
+.btn-submit {
+    width: 100%;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.5rem;
+    background: linear-gradient(135deg, #1282a2 0%, #ff6b35 140%);
+    color: var(--white);
+    border: none;
+    border-radius: 10px;
+    padding: 0.9rem 1.5rem;
+    font-size: 1rem;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+}
+
+.btn-submit:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(18, 130, 162, 0.3);
+}
+
+.btn-submit:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.btn-submit .btn-icon {
+    width: 18px;
+    height: 18px;
+}
+
+.request-footer {
+    text-align: center;
+    margin-top: 1.5rem;
+    color: rgba(254, 252, 251, 0.7);
+    font-size: 0.9rem;
+}
+
+.request-footer a {
+    color: #1282a2;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.request-footer a:hover {
+    text-decoration: underline;
+}
+
+/* Success state */
+.success-state {
+    text-align: center;
+    padding: 2rem 1rem;
+}
+
+.success-icon {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    background: rgba(34, 197, 94, 0.15);
+    border: 2px solid #22c55e;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    color: #22c55e;
+}
+
+.success-icon svg {
+    width: 40px;
+    height: 40px;
+}
+
+.success-state h2 {
+    color: var(--white);
+    font-size: 1.75rem;
+    font-weight: 800;
+    margin-bottom: 0.75rem;
+}
+
+.success-state p {
+    color: rgba(254, 252, 251, 0.75);
+    font-size: 1rem;
+    line-height: 1.5;
+    margin-bottom: 0.75rem;
+}
+
+.success-state .success-detail {
+    color: rgba(254, 252, 251, 0.6);
+    font-size: 0.9rem;
+    margin-bottom: 2rem;
+}
+
+.btn-back-home {
+    display: inline-block;
+    background: rgba(18, 130, 162, 0.2);
+    border: 1.5px solid #1282a2;
+    color: var(--white);
+    text-decoration: none;
+    font-weight: 600;
+    padding: 0.7rem 1.5rem;
+    border-radius: 10px;
+    transition: background 0.2s ease;
+}
+
+.btn-back-home:hover {
+    background: rgba(18, 130, 162, 0.35);
+}

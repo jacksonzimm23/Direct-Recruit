@@ -198,7 +198,34 @@ router.post('/login', authLimiter, async (req, res) => {
       if (cognitoError.name === 'UserNotConfirmedException') {
         // Resend verification code so user has a fresh code
         try { await cognito.resendConfirmationCode(email); } catch (e) { /* ignore resend errors */ }
-        return res.status(401).json({ error: 'Please verify your email before logging in', requiresVerification: true, email, role: user.role });
+
+        // Determine profile subtype so the frontend can route to the correct verify-email page.
+        // Important when a coach has completed profile creation + paid but bailed on email verification.
+        let subtype = null;
+        try {
+          if (user.role === 'coach') {
+            const coachProfile = await CoachProfile.findByUserId(user.id);
+            if (coachProfile && coachProfile.college_division) subtype = 'collegecoach';
+            else if (coachProfile) subtype = 'hscoach';
+          } else if (user.role === 'player') {
+            const playerProfile = await PlayerProfile.findByUserId(user.id);
+            if (playerProfile) {
+              if (playerProfile.transfer === 'y' || playerProfile.is_transfer_player) subtype = 'transferplayer';
+              else if (playerProfile.college_division) subtype = 'collegeplayer';
+              else subtype = 'hsplayer';
+            }
+          }
+        } catch (e) {
+          logger.warn('[login] failed to resolve profile subtype for unverified user:', e.message);
+        }
+
+        return res.status(401).json({
+          error: 'Please verify your email before logging in',
+          requiresVerification: true,
+          email,
+          role: user.role,
+          subtype  // collegecoach | hscoach | hsplayer | collegeplayer | transferplayer | null
+        });
       }
       if (cognitoError.name === 'UserNotFoundException') {
         return res.status(401).json({ error: 'Invalid credentials' });

@@ -259,6 +259,35 @@ router.put('/', authMiddleware, sanitizeBody, async (req, res) => {
 router.post('/coach', authMiddleware, requireRole('coach'), sanitizeBody, validateCoachProfile, handleValidationErrors, async (req, res) => {
   try {
     const existingProfile = await CoachProfile.findByUserId(req.userId);
+    const isCollegeCoach = !!req.body.college_division;
+
+    // Invite-token gate: new College Coach signups require a valid invite.
+    // Existing (legacy/seeded) profiles and HS coaches are unaffected.
+    let inviteIdToConsume = null;
+    if (!existingProfile && isCollegeCoach) {
+      const inviteToken = req.body.inviteToken;
+      if (!inviteToken) {
+        return res.status(403).json({
+          error: 'College coach signup is invite-only. Request access first.'
+        });
+      }
+      const pool = require('../config/database');
+      const inviteResult = await pool.query(
+        `SELECT id, school, division FROM coach_invites
+         WHERE token = $1 AND used_at IS NULL AND revoked_at IS NULL AND expires_at > NOW()
+         FOR UPDATE`,
+        [inviteToken]
+      );
+      if (!inviteResult.rows[0]) {
+        return res.status(403).json({ error: 'Invalid or expired invite' });
+      }
+      // SECURITY: override school + division from verified invite regardless of what frontend sent
+      req.body.team_name = inviteResult.rows[0].school;
+      if (inviteResult.rows[0].division) {
+        req.body.college_division = inviteResult.rows[0].division;
+      }
+      inviteIdToConsume = inviteResult.rows[0].id;
+    }
 
     let profile;
     if (existingProfile) {
@@ -274,6 +303,12 @@ router.post('/coach', authMiddleware, requireRole('coach'), sanitizeBody, valida
         await User.updateUsername(req.userId, req.body.username);
       }
       await User.markProfileCompleted(req.userId);
+    }
+
+    // Mark the invite consumed only after a successful profile creation
+    if (inviteIdToConsume) {
+      const pool = require('../config/database');
+      await pool.query('UPDATE coach_invites SET used_at = NOW() WHERE id = $1', [inviteIdToConsume]);
     }
 
     res.json({

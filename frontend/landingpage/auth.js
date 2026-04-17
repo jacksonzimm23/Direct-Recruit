@@ -71,10 +71,19 @@ if (document.getElementById('signinForm')) {
             // If email not verified, redirect to verify-email page
             if (error.data && error.data.requiresVerification) {
                 localStorage.setItem('pendingVerificationEmail', error.data.email);
-                // Determine correct verify-email page based on role
-                let folder = 'hsplayer';
-                if (error.data.role === 'coach') folder = 'hscoach';
-                else if (error.data.role === 'other') folder = 'other';
+                // Prefer the specific subtype (set by backend when the user has completed
+                // profile creation but not email verification — e.g. coach bailed after paying).
+                // Fall back to generic role routing for pre-profile registrations.
+                let folder = null;
+                if (error.data.subtype) {
+                    folder = error.data.subtype;
+                } else if (error.data.role === 'coach') {
+                    folder = 'hscoach';
+                } else if (error.data.role === 'other') {
+                    folder = 'other';
+                } else {
+                    folder = 'hsplayer';
+                }
                 window.location.href = `../${folder}/verify-email.html`;
                 return;
             }
@@ -102,7 +111,8 @@ function selectRole(role) {
     } else if (role === 'hscoach') {
         window.location.href = '../hscoach/create-coach-profile.html';
     } else if (role === 'collegecoach') {
-        window.location.href = '../collegecoach/create-coach-profile.html';
+        // College coach signup is invite-only — send to the contact form
+        window.location.href = 'coach-signup-request.html';
     } else if (role === 'hsplayer') {
         window.location.href = '../hsplayer/create-profile.html';
     } else if (role === 'collegeplayer') {

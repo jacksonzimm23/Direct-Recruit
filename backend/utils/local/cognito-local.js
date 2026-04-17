@@ -35,13 +35,17 @@ async function getPasswordHash(email) {
   const entry = passwordStore.get(email);
   if (entry) return entry.hash;
 
-  // Fallback: check DB (handles server restart case)
+  // Fallback: check DB (handles server restart case). Respect the user's real
+  // email_verified state so unverified users hit UserNotConfirmedException in signIn.
   try {
     const pool = require('../../config/database');
-    const result = await pool.query('SELECT password_hash FROM users WHERE email = $1', [email]);
+    const result = await pool.query('SELECT password_hash, email_verified FROM users WHERE email = $1', [email]);
     if (result.rows.length > 0 && result.rows[0].password_hash) {
       // Cache it in memory
-      passwordStore.set(email, { hash: result.rows[0].password_hash, verified: true });
+      passwordStore.set(email, {
+        hash: result.rows[0].password_hash,
+        verified: !!result.rows[0].email_verified
+      });
       return result.rows[0].password_hash;
     }
   } catch (err) {

@@ -4,6 +4,24 @@
 (function() {
   'use strict';
 
+  // Skip SW in local dev — it caches aggressively and fights with live reloads.
+  // Also actively unregister any existing SW and wipe its caches so old installs clean up.
+  const host = window.location.hostname;
+  const isLocalDev = host === 'localhost' || host === '127.0.0.1' || host === '';
+  if (isLocalDev) {
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(function(regs) {
+        regs.forEach(function(r) { r.unregister().catch(function() {}); });
+      }).catch(function() {});
+    }
+    if (typeof caches !== 'undefined' && caches.keys) {
+      caches.keys().then(function(names) {
+        names.forEach(function(n) { caches.delete(n).catch(function() {}); });
+      }).catch(function() {});
+    }
+    return;
+  }
+
   // Only register service worker in production and if supported
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', function() {

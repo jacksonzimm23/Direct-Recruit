@@ -101,11 +101,29 @@ const messageLimiter = rateLimit({
   legacyHeaders: false
 });
 
+// Coach signup request limiter — public contact form abuse protection
+const coachRequestLimiter = rateLimit({
+  ...getRedisStore('rl:coachreq:'),
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: isDevelopment ? 10000 : 3, // 3 requests per hour per IP
+  keyGenerator: (req) => req.ip,
+  message: 'Too many signup requests. Please try again later.',
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: (req) => isDevelopment,
+  handler: (req, res) => {
+    res.status(429).json({
+      error: 'Too many signup requests. Please try again later.'
+    });
+  }
+});
+
 module.exports = {
   apiLimiter,
   authLimiter,
   postLimiter,
   messageLimiter,
   passwordResetLimiter,
-  availabilityLimiter
+  availabilityLimiter,
+  coachRequestLimiter
 };

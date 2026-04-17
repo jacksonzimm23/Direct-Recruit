@@ -1,10 +1,54 @@
 // Coach Profile Form JavaScript - College Coach Version
 
+// Token validated from the invite link — null means paywall shown or user not invited
+let validatedInviteToken = null;
+
 document.addEventListener('DOMContentLoaded', async function() {
     // This is a CREATE profile page - do NOT load existing profile data
     // If user is logged in and tries to create a new profile, they should start fresh
     // The loadExistingProfile function is only for EDIT profile pages
     // await loadExistingProfile();
+
+    // Invite-token gate: unless a valid ?token= is present, show paywall overlay.
+    // This page is invite-only for College Coach signups.
+    const urlToken = new URLSearchParams(window.location.search).get('token');
+    if (!urlToken) {
+        showInvitePaywall('invite-only');
+        return;
+    }
+    try {
+        // Use API_BASE_URL from shared/api.js so this works on both Live Server and node
+        const apiBase = (typeof window.API_BASE_URL === 'string')
+            ? window.API_BASE_URL
+            : (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+                ? `http://${window.location.hostname}:5000/api`
+                : `${window.location.origin}/api`);
+        const validateRes = await fetch(apiBase + '/coach-signup/validate-token?token=' + encodeURIComponent(urlToken), {
+            credentials: 'include'
+        });
+        const validateData = await validateRes.json();
+        if (!validateData.valid) {
+            showInvitePaywall(validateData.reason || 'invalid');
+            return;
+        }
+        validatedInviteToken = urlToken;
+        // Pre-fill name fields (still editable) and lock the school field
+        if (validateData.first_name) {
+            const fn = document.getElementById('firstName');
+            if (fn) fn.value = validateData.first_name;
+        }
+        if (validateData.last_name) {
+            const ln = document.getElementById('lastName');
+            if (ln) ln.value = validateData.last_name;
+        }
+        // School + division are locked — set after schoolSearch init below so values stick
+        window._inviteSchool = validateData.school;
+        window._inviteDivision = validateData.division || null;
+    } catch (e) {
+        showInvitePaywall('error');
+        return;
+    }
+
     const form = document.getElementById('coachProfileForm');
 
     // Initialize school search with logo + auto-division
@@ -13,6 +57,64 @@ document.addEventListener('DOMContentLoaded', async function() {
         divisionSelect: '#division',
         assetBasePath: '../assets'
     });
+
+    // Lock the school field to the verified invite school.
+    // Use schoolSearch.preselectSchool() so the module renders its "picked" state:
+    // logo + school name + division in a preview strip, with the search input hidden.
+    // Then we hide the clear/change and manual-entry buttons so the admin's canonical
+    // pick can't be overridden from the client.
+    if (window._inviteSchool && schoolSearch && typeof schoolSearch.preselectSchool === 'function') {
+        schoolSearch.preselectSchool(window._inviteSchool);
+
+        const group = document.getElementById('collegeName').closest('.form-group');
+        if (group) {
+            // Hide the "Change school" clear button on the preview strip
+            const previewClear = group.querySelector('.school-preview-clear');
+            if (previewClear) previewClear.style.display = 'none';
+
+            // Hide the "Can't find your school? Enter manually" + "Back to school search" buttons
+            const cantFind = group.querySelector('.school-cant-find-btn');
+            if (cantFind) cantFind.style.display = 'none';
+            const backToSearch = group.querySelector('.school-back-to-search-btn');
+            if (backToSearch) backToSearch.style.display = 'none';
+
+            // Give the preview strip an orange border ring to indicate it's locked
+            const preview = group.querySelector('.school-preview');
+            if (preview) {
+                preview.style.borderColor = '#ff6b35';
+                preview.style.boxShadow = '0 0 0 1px rgba(255,107,53,0.3)';
+            }
+
+            // Add a lock hint below the preview
+            if (!group.querySelector('.invite-lock-hint')) {
+                const hint = document.createElement('small');
+                hint.className = 'invite-lock-hint';
+                hint.textContent = '🔒 Verified school — contact support to change';
+                hint.style.cssText = 'display:block;color:#ff6b35;font-size:0.8rem;margin-top:0.25rem;font-weight:500;';
+                group.appendChild(hint);
+            }
+        }
+    }
+
+    // Lock the division select to the verified invite division.
+    // `disabled` prevents submission of the <select> value, so we also add a hidden mirror input.
+    if (window._inviteDivision) {
+        const divisionSelect = document.getElementById('division');
+        if (divisionSelect) {
+            divisionSelect.value = window._inviteDivision;
+            divisionSelect.setAttribute('disabled', 'disabled');
+            divisionSelect.classList.add('invite-locked');
+            // Hidden mirror input so disabled select's value is still submitted
+            if (!document.getElementById('divisionLockedMirror')) {
+                const hidden = document.createElement('input');
+                hidden.type = 'hidden';
+                hidden.name = 'division';
+                hidden.id = 'divisionLockedMirror';
+                hidden.value = window._inviteDivision;
+                divisionSelect.parentNode.appendChild(hidden);
+            }
+        }
+    }
 
     const coachingPositionCheckboxes = document.querySelectorAll('input[name="coachingPosition"]');
     const selectedCoachingPositionsContainer = document.getElementById('selectedCoachingPositions');
@@ -355,6 +457,11 @@ document.addEventListener('DOMContentLoaded', async function() {
             profileData.college_division = document.getElementById('division').value;
             profileData.conference = document.getElementById('conference').value;
 
+            // Invite token — required for new College Coach profiles (backend re-validates and overrides team_name)
+            if (validatedInviteToken) {
+                profileData.inviteToken = validatedInviteToken;
+            }
+
             if (isUpdating) {
                 // Updates: create/update profile directly, no payment
                 await profileAPI.createCoachProfile(profileData);
@@ -654,12 +761,14 @@ function showTierSelectionModal() {
             btn.disabled = true;
 
             try {
+                // Preserve invite token across Stripe redirect so the cancel URL lets the user retry with the same invite
+                const tokenQuery = validatedInviteToken ? ('?token=' + encodeURIComponent(validatedInviteToken)) : '';
                 const { url } = await API.payments.createCheckoutSession(
                     'collegecoach',
                     tier,
                     'signup',
-                    window.location.origin + '/frontend/collegecoach/payment-success.html',
-                    window.location.origin + '/frontend/collegecoach/create-coach-profile.html'
+                    window.location.origin + '/frontend/collegecoach/payment-success.html' + tokenQuery,
+                    window.location.origin + '/frontend/collegecoach/create-coach-profile.html' + tokenQuery
                 );
                 window.location.href = url;
             } catch (error) {
@@ -697,3 +806,99 @@ function tierCard(name, price, features, isPopular) {
         </div>
     `;
 }
+
+// Full-screen paywall overlay shown when a user hits create-profile without a valid invite token
+function showInvitePaywall(reason) {
+    const messages = {
+        'invite-only': {
+            title: "Invite-only signup",
+            body: "College Coach accounts are invite-only. Request access below — we'll review and follow up within 48 hours."
+        },
+        'expired': {
+            title: "This invite has expired",
+            body: "Invites are valid for 7 days. Request a new one below and we'll get back in touch."
+        },
+        'used': {
+            title: "Invite already used",
+            body: "This invite link has already been redeemed. If your account already exists but you haven't verified your email, just sign in below — we'll send you a fresh verification code."
+        },
+        'revoked': {
+            title: "Invite revoked",
+            body: "This invite is no longer valid. If you think this is wrong, contact support."
+        },
+        'invalid': {
+            title: "Invalid invite link",
+            body: "We couldn't recognize this invite link. Please double-check the URL or request a new invite."
+        },
+        'error': {
+            title: "Something went wrong",
+            body: "We couldn't validate your invite. Please try again or request a new one."
+        }
+    };
+    const msg = messages[reason] || messages['invalid'];
+
+    // Hide original page content by adding a fixed overlay on top
+    const overlay = document.createElement('div');
+    overlay.id = 'invitePaywallOverlay';
+    overlay.style.cssText = `
+        position: fixed; inset: 0; z-index: 99999;
+        background: linear-gradient(135deg, #0a1128 0%, #1a2540 50%, #0a1128 100%);
+        display: flex; align-items: center; justify-content: center;
+        padding: 2rem; font-family: 'Inter', sans-serif;
+    `;
+    overlay.innerHTML = `
+      <div style="max-width:520px; width:100%; background: rgba(254,252,251,0.04); backdrop-filter: blur(10px);
+                  border: 2px solid rgba(18,130,162,0.3); border-radius:20px; padding:3rem 2.5rem; text-align:center;">
+        <div style="width:64px;height:64px;border-radius:50%;background:rgba(255,107,53,0.15);
+                    border:2px solid #ff6b35;display:inline-flex;align-items:center;justify-content:center;
+                    margin-bottom:1.5rem;color:#ff6b35;">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+          </svg>
+        </div>
+        <h1 style="font-size:1.8rem;font-weight:900;color:#fff;margin:0 0 0.75rem;background:linear-gradient(135deg,#1282a2,#ff6b35);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">
+          ${msg.title}
+        </h1>
+        <p style="color:rgba(254,252,251,0.75);font-size:1rem;line-height:1.6;margin:0 0 2rem;">
+          ${msg.body}
+        </p>
+        <div style="display:flex;gap:0.75rem;flex-direction:column;">
+          <a href="../landingpage/coach-signup-request.html"
+             style="display:inline-block;background:linear-gradient(135deg,#1282a2 0%,#ff6b35 140%);color:#fff;
+                    text-decoration:none;font-weight:700;padding:0.9rem 1.5rem;border-radius:10px;">
+            Request Access
+          </a>
+          <a href="../landingpage/signin.html"
+             style="display:inline-block;background:rgba(18,130,162,0.15);border:1.5px solid #1282a2;color:#fff;
+                    text-decoration:none;font-weight:600;padding:0.7rem 1.5rem;border-radius:10px;">
+            Already approved? Sign in
+          </a>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+    // Block the form from ever rendering behind this
+    document.body.style.overflow = 'hidden';
+}
+
+// CSS for the locked school input
+(function injectInviteLockedCSS() {
+    if (document.getElementById('invite-locked-style')) return;
+    const style = document.createElement('style');
+    style.id = 'invite-locked-style';
+    style.textContent = `
+        .invite-locked {
+            background-color: rgba(10, 17, 40, 0.6) !important;
+            color: rgba(254, 252, 251, 0.75) !important;
+            cursor: not-allowed !important;
+            border-color: #ff6b35 !important;
+            opacity: 0.95;
+        }
+        .invite-locked:focus {
+            outline: none !important;
+            box-shadow: 0 0 0 2px rgba(255, 107, 53, 0.25);
+        }
+    `;
+    document.head.appendChild(style);
+})();
