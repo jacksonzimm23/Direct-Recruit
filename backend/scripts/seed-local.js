@@ -55,7 +55,9 @@ const MIGRATIONS = [
   'add-fuzzy-search.sql',
   'add-engagement-score-index.sql',
   'add-popularity-indexes.sql',
-  'expand-profile-views.sql'
+  'expand-profile-views.sql',
+  'add-coach-verification.sql',
+  'add-coach-verification-school-lock.sql'
 ];
 
 async function applyManualFixes() {

@@ -584,10 +584,282 @@ Thank you for being part of the Direct Recruit community. We wish you all the be
   }
 }
 
+/**
+ * Send internal notification to admin when a college coach submits a signup request.
+ * Plain admin-facing email listing all submitted fields + link to the admin dashboard.
+ */
+async function sendCoachRequestNotification(toEmail, data) {
+  const notes = data.notes && data.notes.trim() ? data.notes : '(none)';
+  const phone = data.phone && data.phone.trim() ? data.phone : '(not provided)';
+  const division = data.division || '(not provided)';
+  const params = {
+    Source: FROM_EMAIL,
+    Destination: { ToAddresses: [toEmail] },
+    Message: {
+      Subject: {
+        Data: `New College Coach Signup Request: ${data.first_name} ${data.last_name} — ${data.school}`,
+        Charset: 'UTF-8'
+      },
+      Body: {
+        Html: {
+          Data: `
+            <!DOCTYPE html>
+            <html><head><meta charset="UTF-8"></head>
+            <body style="font-family: Arial, sans-serif; color:#1a1a2e;">
+              <h2 style="color:#1282a2;">New College Coach Signup Request</h2>
+              <p><strong>Submitted:</strong> ${new Date().toISOString()}</p>
+              <table cellpadding="6" style="border-collapse:collapse;">
+                <tr><td><strong>Name:</strong></td><td>${data.first_name} ${data.last_name}</td></tr>
+                <tr><td><strong>School:</strong></td><td>${data.school}</td></tr>
+                <tr><td><strong>Division:</strong></td><td>${division}</td></tr>
+                <tr><td><strong>Position:</strong></td><td>${data.position}</td></tr>
+                <tr><td><strong>Phone:</strong></td><td>${phone}</td></tr>
+                <tr><td><strong>.edu Email:</strong></td><td><a href="mailto:${data.edu_email}">${data.edu_email}</a></td></tr>
+                <tr><td><strong>Personal Email:</strong></td><td><a href="mailto:${data.personal_email}">${data.personal_email}</a></td></tr>
+                <tr><td><strong>Notes:</strong></td><td>${notes}</td></tr>
+              </table>
+              <p style="margin-top:20px;">
+                <a href="https://directrecruit.net/admin/coach-verification.html"
+                   style="background:#1282a2;color:#fff;padding:10px 18px;border-radius:6px;text-decoration:none;">
+                  Review in Admin Dashboard
+                </a>
+              </p>
+            </body></html>
+          `,
+          Charset: 'UTF-8'
+        },
+        Text: {
+          Data: `
+New College Coach Signup Request
+Submitted: ${new Date().toISOString()}
+
+Name: ${data.first_name} ${data.last_name}
+School: ${data.school}
+Division: ${division}
+Position: ${data.position}
+Phone: ${phone}
+.edu Email: ${data.edu_email}
+Personal Email: ${data.personal_email}
+Notes: ${notes}
+
+Review: https://directrecruit.net/admin/coach-verification.html
+          `,
+          Charset: 'UTF-8'
+        }
+      }
+    }
+  };
+
+  try {
+    const command = new SendEmailCommand(params);
+    const response = await sesClient.send(command);
+    logger.info('[Email] Coach request notification sent to:', toEmail, 'MessageId:', response.MessageId);
+    return { success: true, messageId: response.MessageId };
+  } catch (error) {
+    logger.error('[Email] Failed to send coach request notification:', error);
+    throw error;
+  }
+}
+
+/**
+ * Send branded invite email to a verified coach's .edu address with single-use signup link.
+ */
+async function sendCoachInvite(toEmail, data, link) {
+  const expiresText = data.expires_at
+    ? new Date(data.expires_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+    : '7 days from today';
+  const params = {
+    Source: FROM_EMAIL,
+    Destination: { ToAddresses: [toEmail] },
+    Message: {
+      Subject: {
+        Data: `You're invited to join Direct Recruit — ${data.school}`,
+        Charset: 'UTF-8'
+      },
+      Body: {
+        Html: {
+          Data: `
+            <!DOCTYPE html>
+            <html>
+            <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            </head>
+            <body style="margin: 0; padding: 0; font-family: Arial, Helvetica, sans-serif; background-color: #f4f4f4;">
+              <table role="presentation" style="width: 100%; border-collapse: collapse; background-color: #f4f4f4;">
+                <tr>
+                  <td align="center" style="padding: 40px 20px;">
+                    <table role="presentation" style="max-width: 480px; width: 100%; border-collapse: collapse;">
+                      <tr>
+                        <td style="text-align: center; padding-bottom: 30px;">
+                          <h1 style="color: #1282a2; font-size: 28px; margin: 0;">Direct Recruit</h1>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td style="background-color: #ffffff; border: 1px solid #e0e0e0; border-radius: 8px; padding: 40px 30px;">
+                          <h2 style="color: #1a1a2e; font-size: 24px; margin: 0 0 20px 0; text-align: center;">You're Invited</h2>
+                          <p style="color: #555555; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0; text-align: center;">
+                            Hi ${data.first_name},
+                          </p>
+                          <p style="color: #555555; font-size: 16px; line-height: 1.6; margin: 0 0 30px 0; text-align: center;">
+                            Your account at <strong>${data.school}</strong> has been approved. Click the button below to finish setting up your Direct Recruit profile.
+                          </p>
+                          <table role="presentation" style="width: 100%; border-collapse: collapse; margin-bottom: 30px;">
+                            <tr>
+                              <td align="center">
+                                <a href="${link}" style="background-color: #ff6b35; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: bold; font-size: 16px; display: inline-block;">
+                                  Complete Your Signup
+                                </a>
+                              </td>
+                            </tr>
+                          </table>
+                          <p style="color: #888888; font-size: 14px; line-height: 1.5; margin: 0 0 10px 0; text-align: center;">
+                            This link expires on ${expiresText} and can only be used once.
+                          </p>
+                          <p style="color: #888888; font-size: 12px; line-height: 1.5; margin: 0; text-align: center; word-break: break-all;">
+                            If the button doesn't work, paste this URL into your browser:<br>
+                            <span style="color: #1282a2;">${link}</span>
+                          </p>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td style="text-align: center; padding-top: 30px;">
+                          <p style="color: #999999; font-size: 12px; margin: 0;">
+                            &copy; ${new Date().getFullYear()} Direct Recruit. All rights reserved.
+                          </p>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </body>
+            </html>
+          `,
+          Charset: 'UTF-8'
+        },
+        Text: {
+          Data: `
+Direct Recruit — You're Invited
+
+Hi ${data.first_name},
+
+Your account at ${data.school} has been approved. Complete your signup using the link below:
+
+${link}
+
+This link expires on ${expiresText} and can only be used once.
+
+© ${new Date().getFullYear()} Direct Recruit. All rights reserved.
+          `,
+          Charset: 'UTF-8'
+        }
+      }
+    }
+  };
+
+  try {
+    const command = new SendEmailCommand(params);
+    const response = await sesClient.send(command);
+    logger.info('[Email] Coach invite sent to:', toEmail, 'MessageId:', response.MessageId);
+    return { success: true, messageId: response.MessageId };
+  } catch (error) {
+    logger.error('[Email] Failed to send coach invite:', error);
+    throw error;
+  }
+}
+
+/**
+ * Send polite rejection email to a coach's personal address.
+ */
+async function sendCoachRejection(toEmail, firstName) {
+  const params = {
+    Source: FROM_EMAIL,
+    Destination: { ToAddresses: [toEmail] },
+    Message: {
+      Subject: { Data: 'Your Direct Recruit application', Charset: 'UTF-8' },
+      Body: {
+        Html: {
+          Data: `
+            <!DOCTYPE html>
+            <html><head><meta charset="UTF-8"></head>
+            <body style="margin: 0; padding: 0; font-family: Arial, Helvetica, sans-serif; background-color: #f4f4f4;">
+              <table role="presentation" style="width: 100%; border-collapse: collapse;">
+                <tr>
+                  <td align="center" style="padding: 40px 20px;">
+                    <table role="presentation" style="max-width: 480px; width: 100%; border-collapse: collapse;">
+                      <tr>
+                        <td style="text-align: center; padding-bottom: 30px;">
+                          <h1 style="color: #1282a2; font-size: 28px; margin: 0;">Direct Recruit</h1>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td style="background-color: #ffffff; border: 1px solid #e0e0e0; border-radius: 8px; padding: 40px 30px;">
+                          <p style="color: #555555; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
+                            Hi ${firstName},
+                          </p>
+                          <p style="color: #555555; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
+                            Thank you for your interest in Direct Recruit. After reviewing your signup request, we're unable to approve your account at this time.
+                          </p>
+                          <p style="color: #555555; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
+                            If you believe this was a mistake or would like to provide additional verification, please reply to this email.
+                          </p>
+                          <p style="color: #555555; font-size: 16px; line-height: 1.6; margin: 0;">
+                            — The Direct Recruit Team
+                          </p>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td style="text-align: center; padding-top: 30px;">
+                          <p style="color: #999999; font-size: 12px; margin: 0;">
+                            &copy; ${new Date().getFullYear()} Direct Recruit. All rights reserved.
+                          </p>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </body></html>
+          `,
+          Charset: 'UTF-8'
+        },
+        Text: {
+          Data: `
+Hi ${firstName},
+
+Thank you for your interest in Direct Recruit. After reviewing your signup request, we're unable to approve your account at this time.
+
+If you believe this was a mistake or would like to provide additional verification, please reply to this email.
+
+— The Direct Recruit Team
+
+© ${new Date().getFullYear()} Direct Recruit. All rights reserved.
+          `,
+          Charset: 'UTF-8'
+        }
+      }
+    }
+  };
+
+  try {
+    const command = new SendEmailCommand(params);
+    const response = await sesClient.send(command);
+    logger.info('[Email] Coach rejection sent to:', toEmail, 'MessageId:', response.MessageId);
+    return { success: true, messageId: response.MessageId };
+  } catch (error) {
+    logger.error('[Email] Failed to send coach rejection:', error);
+    return { success: false, error: error.message };
+  }
+}
+
 module.exports = {
   sendEmailChangeVerification,
   sendEmailChangeConfirmation,
   sendPasswordChangeConfirmation,
   sendPasswordResetVerification,
-  sendAccountDeletionConfirmation
+  sendAccountDeletionConfirmation,
+  sendCoachRequestNotification,
+  sendCoachInvite,
+  sendCoachRejection
 };

@@ -41,10 +41,47 @@ async function sendAccountDeletionConfirmation(toEmail) {
   return { success: true, messageId: 'local-dev-' + Date.now() };
 }
 
+async function sendCoachRequestNotification(toEmail, data) {
+  console.log('\n[LOCAL EMAIL] Coach Request Notification');
+  console.log(`  To: ${toEmail}`);
+  console.log(`  Name: ${data.first_name} ${data.last_name}`);
+  console.log(`  School: ${data.school}`);
+  console.log(`  Division: ${data.division || '(not provided)'}`);
+  console.log(`  Position: ${data.position}`);
+  console.log(`  Phone: ${data.phone || '(not provided)'}`);
+  console.log(`  .edu Email: ${data.edu_email}`);
+  console.log(`  Personal Email: ${data.personal_email}`);
+  console.log(`  Notes: ${data.notes || '(none)'}`);
+  console.log('  (Review in admin dashboard at /frontend/admin/coach-verification.html)\n');
+  return { success: true, messageId: 'local-dev-' + Date.now() };
+}
+
+async function sendCoachInvite(toEmail, data, link) {
+  console.log('\n[LOCAL EMAIL] Coach Invite');
+  console.log(`  To: ${toEmail}`);
+  console.log(`  Name: ${data.first_name}`);
+  console.log(`  School: ${data.school}`);
+  console.log(`  Expires: ${data.expires_at || '7 days from now'}`);
+  console.log(`  INVITE URL: ${link}`);
+  console.log('  (Copy the URL above to test the invite flow)\n');
+  return { success: true, messageId: 'local-dev-' + Date.now() };
+}
+
+async function sendCoachRejection(toEmail, firstName) {
+  console.log('\n[LOCAL EMAIL] Coach Rejection');
+  console.log(`  To: ${toEmail}`);
+  console.log(`  Name: ${firstName}`);
+  console.log('  Polite rejection sent.\n');
+  return { success: true, messageId: 'local-dev-' + Date.now() };
+}
+
 module.exports = {
   sendEmailChangeVerification,
   sendEmailChangeConfirmation,
   sendPasswordChangeConfirmation,
   sendPasswordResetVerification,
-  sendAccountDeletionConfirmation
+  sendAccountDeletionConfirmation,
+  sendCoachRequestNotification,
+  sendCoachInvite,
+  sendCoachRejection
 };

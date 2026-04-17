@@ -25,6 +25,8 @@ const aiRoutes = require('./routes/ai');
 const adminAnalyticsRoutes = require('./routes/admin-analytics');
 const aiRepRoutes = require('./routes/ai-rep');
 const paymentsRoutes = require('./routes/payments');
+const coachSignupRoutes = require('./routes/coach-signup');
+const adminCoachVerificationRoutes = require('./routes/admin-coach-verification');
 const initializeSocket = require('./socket');
 const { apiLimiter } = require('./middleware/rateLimit');
 const logger = require('./utils/logger');
@@ -106,6 +108,8 @@ app.use('/api/ai', aiRoutes);
 app.use('/api/admin/analytics', adminAnalyticsRoutes);
 app.use('/api/ai-rep', aiRepRoutes);
 app.use('/api/payments', paymentsRoutes);
+app.use('/api/coach-signup', coachSignupRoutes);
+app.use('/api/admin/coach-verification', adminCoachVerificationRoutes);
 
 // In development, serve frontend files so cookies work on the same origin
 if (process.env.NODE_ENV !== 'production') {
