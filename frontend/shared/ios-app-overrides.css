@@ -1,0 +1,74 @@
+/* ============================================================
+   iOS App Overrides (Phase 2b)
+   Loaded LAST in the CSS chain on HTML files that opt in.
+   ALL selectors are scoped under .ios-app — zero impact on
+   mobile web or desktop. .ios-app is added to <html> by
+   capacitor-init.js when inside the Capacitor WebView.
+   ============================================================ */
+
+/* Dark bg prevents white flashes during MPA navigation reloads */
+html.ios-app { background-color: #0a1128; }
+html.ios-app body { background-color: inherit; }
+
+/* ---- Safe areas: notch + home indicator ---- */
+/* These LAYER on top of existing mobile-overrides.css rules.
+   env(safe-area-inset-*) returns 0 on devices without notches — safe everywhere. */
+
+.ios-app .mobile-header {
+    padding-top: calc(0.75rem + env(safe-area-inset-top, 0px)) !important;
+}
+
+.ios-app .mobile-fab-post {
+    bottom: calc(85px + env(safe-area-inset-bottom, 0px)) !important;
+}
+
+.ios-app .mobile-filter-fab {
+    bottom: calc(90px + env(safe-area-inset-bottom, 0px)) !important;
+}
+
+.ios-app .mobile-sidebar {
+    padding-top: env(safe-area-inset-top, 0px);
+}
+
+/* ---- Web-isms: make it feel native ---- */
+
+/* No blue/gray flash on tap, no iOS long-press menu */
+.ios-app * {
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+}
+
+/* No accidental text selection during scroll.
+   Re-enabled on form fields and user-generated content. */
+.ios-app {
+    -webkit-user-select: none;
+    user-select: none;
+}
+.ios-app input,
+.ios-app textarea,
+.ios-app [contenteditable="true"],
+.ios-app .post-text,
+.ios-app .post-content,
+.ios-app .message-body,
+.ios-app .comment-text {
+    -webkit-user-select: text;
+    user-select: text;
+}
+
+/* No pull-to-refresh browser indicator */
+.ios-app body { overscroll-behavior-y: contain; }
+
+/* Kill sticky :hover on tap-only devices — after tapping a button,
+   the hover background otherwise stays highlighted until next tap */
+@media (hover: none) {
+    .ios-app a:hover,
+    .ios-app button:hover,
+    .ios-app .nav-item:hover,
+    .ios-app .post-card:hover {
+        background: inherit;
+        color: inherit;
+    }
+}
+
+/* Reassert iOS text-size auto-adjustment control */
+.ios-app { -webkit-text-size-adjust: 100%; }

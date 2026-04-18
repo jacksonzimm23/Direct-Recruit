@@ -5,19 +5,31 @@ const config: CapacitorConfig = {
   appName: 'Direct Recruit',
   webDir: 'frontend',
 
-  // Remote mode: load from production server
-  server: {
-    url: 'https://directrecruit.net',
-    cleartext: false
-  },
+  // Bundled mode: frontend files ship inside the .ipa.
+  // API calls still hit https://directrecruit.net via fetch/XHR.
+  // Safer for Apple Guideline 4.2 review than pure remote-loading.
 
   ios: {
-    // Content inset adjustment for safe areas
-    contentInset: 'automatic',
-    // Allow navigation to external URLs (e.g., for OAuth, links)
+    // 'never' = CSS controls safe-area padding (Phase 2b)
+    contentInset: 'never',
     allowsLinkPreview: true,
-    // Scroll behavior
     scrollEnabled: true
+  },
+
+  plugins: {
+    SplashScreen: {
+      launchShowDuration: 1500,
+      launchAutoHide: false,       // Phase 2b hides it programmatically
+      backgroundColor: '#0a1128',  // Match site dark theme
+      showSpinner: false,
+      splashFullScreen: true,
+      splashImmersive: true
+    },
+    StatusBar: {
+      style: 'DARK',               // Light text on dark bg
+      backgroundColor: '#0a1128',
+      overlaysWebView: true        // Needed for safe-area CSS in Phase 2b
+    }
   }
 };
 
