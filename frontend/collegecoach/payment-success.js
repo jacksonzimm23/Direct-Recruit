@@ -19,6 +19,21 @@
 
     try {
         const profileData = JSON.parse(pendingData);
+
+        // For profile-type switches the switch transaction already created the coach_profiles
+        // row server-side BEFORE Stripe checkout. Calling createCoachProfile here would create
+        // a duplicate. Just clear pending data and route to the mainpage (user is already
+        // email-verified from their original account).
+        if (profileData._isSwitch) {
+            localStorage.removeItem('pendingProfileData');
+            statusTitle.textContent = 'Switch Complete!';
+            statusMessage.textContent = "You're now a College Coach. Redirecting to your dashboard...";
+            setTimeout(() => {
+                window.location.href = 'mainpage-coach.html';
+            }, 1500);
+            return;
+        }
+
         await API.profile.createCoachProfile(profileData);
 
         localStorage.removeItem('pendingProfileData');

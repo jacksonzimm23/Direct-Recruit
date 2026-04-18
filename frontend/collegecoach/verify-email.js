@@ -14,8 +14,10 @@ document.addEventListener('DOMContentLoaded', function() {
     const pendingEmail = localStorage.getItem('pendingVerificationEmail');
 
     if (!pendingEmail) {
-        // No pending verification, redirect to signup
-        window.location.href = 'create-profile.html';
+        // No pending verification — for college coach, the actual signup file is
+        // create-coach-profile.html (gated by an invite token). Switches don't even
+        // reach this page (they skip email verification entirely).
+        window.location.href = 'create-coach-profile.html';
         return;
     }
 

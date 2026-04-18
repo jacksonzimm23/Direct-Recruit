@@ -860,7 +860,52 @@
 
 ---
 
+## College Coach Signup — Invite-Only Verification Flow
+
+76. **College Coach signups are invite-only and gated behind a manual admin approval step.** Anyone selecting "College Coach" on `/landingpage/get-started.html` is now routed to `/landingpage/coach-signup-request.html` (a public contact form) instead of straight to create-coach-profile. They submit name (first + last), school, division (free-text on the form), position, phone, .edu email, personal email, and optional notes (150 char max). A `coach_signup_requests` row is inserted with `status='pending'`, an SES email is sent to `jackson@directrecruit.net` with all the details, and the coach sees a "we'll be in touch" success screen. HS coaches remain open-signup; the gate ONLY applies to college coach.
+
+    **Why:** anyone with a credit card could previously register as a college coach and access the AI Recruiting Assistant + Portal Intelligence. This protects platform credibility (no fake recruiters messaging recruits) and gates the paid AI features behind real coaches.
+
+77. **Admin approval happens in `/frontend/admin/coach-verification.html` (gitignored, scp'd to EC2 separately, same pattern as ai-dashboard).** Auth follows the same admin pattern as the AI analytics dashboard. The dashboard shows pending/approved/rejected tabs with a horizontally-scrollable table (sticky Actions column on the right). For each pending row Jackson sees: created time, name, submitted school + a 🔒 locked-school chip if locked, division, position, .edu email (mailto link), personal email, phone, notes preview, status, and Action buttons.
+
+    **The Lock School flow is critical and required before approval can fire.** Each pending row has a pencil button next to the submitted school. Clicking it opens a floating editor panel (positioned via JS, anchored to the pencil button — NOT inside the table because `overflow-x: auto` on the table wrapper would clip the school-search dropdown). The panel reuses the same shared `initSchoolSearch` widget from `frontend/shared/school-search.js` that the collegecoach create-profile page uses — fuzzy search across all 828 schools in `frontend/assets/school-logos.json`, logo + division displayed inline, division auto-fills when a school is picked. Manual-entry mode is hidden via CSS so the admin MUST pick from the canonical list. On Lock, the request gets `locked_school` + `locked_division` + `locked_at` populated. The Approve button is `disabled` (greyed) until `locked_school IS NOT NULL` — server-side enforcement also returns 400 "Request must be locked before approval" if you try to approve via curl without locking.
+
+    **Why force the lock step:** coaches type school names with typos and inconsistent capitalization ("Colorado School Of Mines" vs "Colorado School of Mines"). Without canonical names, the school-logo display + school-based AI filters break. The locked value is what gets copied into `coach_invites.school` + `coach_invites.division` on approval and ultimately into `coach_profiles.team_name` + `coach_profiles.college_division`.
+
+78. **Approved coaches receive a single-use 64-hex token via email to their .edu address.** `crypto.randomBytes(32).toString('hex')` → stored in `coach_invites.token` with `expires_at = NOW() + 7 days`. Email is built by `sendCoachInvite()` in `backend/utils/email.js` (with a console-log mock in `backend/utils/local/email-local.js` that prints `INVITE URL: ...` to the terminal in dev). The link format is `${APP_URL}${FRONTEND_PATH_PREFIX}/collegecoach/create-coach-profile.html?token=${token}` — env vars default to `http://localhost:5000` + `/frontend` in dev, `https://directrecruit.net` + `''` in prod.
+
+    **Token lifecycle:** valid → used (after successful profile insert sets `used_at`) → optionally revoked (admin click → sets `revoked_at`) → optionally expired (after 7 days). `GET /api/coach-signup/validate-token` distinguishes all four states for paywall messaging (`invalid` / `expired` / `used` / `revoked`).
+
+    **Resilient to bailing:** the token is consumed AFTER profile insert succeeds, NOT on Stripe success or registration. So if a coach registers, hits Stripe, and bails → token is still valid, they can come back via the same URL and retry. Only successful profile creation kills the token. If they bail AFTER profile creation but BEFORE email verification → invite is dead, but they sign in via signin.html which auto-resends the verification code and routes them to the right verify-email page (see lesson 80).
+
+79. **The create-coach-profile page is now invite-locked on three fields.** When `?token=...` is present in the URL, `coach-profile-form.js` validates the token via `GET /api/coach-signup/validate-token`. On success: first/last name pre-filled but editable; school field is locked using `schoolSearch.preselectSchool()` which renders the logo + name + division preview with the input hidden — IMPORTANT: only call `preselectSchool` if the value is an exact JSON key match (otherwise the module switches to manual mode and traps the admin/user); the division `<select>` is `disabled` with a hidden mirror `<input type="hidden" name="division">` so the value still submits (disabled selects don't); a 🔒 hint appears: "Verified school — contact support to change". Without a token → full-screen paywall overlay with "Request access" CTA → contact form.
+
+    **Server-side override is the actual security boundary.** `req.body.team_name` and `req.body.college_division` are overridden from `coach_invites` regardless of what the frontend sends. `readonly` / `disabled` / `hidden` mirrors are UX only — DevTools tampering is allowed because the backend always wins. The override happens inside `createCoachProfile` in `backend/routes/profile.js`, which only fires for new (non-update) profiles where `school_type === 'college'`, so the existing `collegecoach@test.com` seed account and any legacy profiles are grandfathered in.
+
+80. **Recovery flow when a coach gets stuck mid-signup.** Common case: coach finishes Stripe → profile created → invite consumed → but they close the tab before entering their email verification code. The invite URL is now dead. Fix: `POST /api/auth/login` returns `{requiresVerification: true, email, role, subtype}` on `UserNotConfirmedException` AND auto-resends the Cognito verification code. The new `subtype` field (set by querying `coach_profiles.college_division` etc. before responding) lets `frontend/landingpage/auth.js` route to the correct `/{subtype}/verify-email.html` instead of always defaulting to `/hscoach/verify-email.html` (the bug it had before).
+
+    Also: `cognito-local.js` had a subtle bug where the DB-fallback in `getPasswordHash()` always cached `verified: true`, hiding the unverified state across server restarts. Fixed to read `email_verified` from the users table and respect it.
+
+81. **The free-text Division field on the public contact form is intentional.** Coaches type whatever ("D1 FBS", "Division II", "fbs"). Backend just guards against absurdly long strings (>50 chars). The admin Lock modal is where it gets canonicalized to one of the 6 valid enum values via the school-search auto-fill. Don't add a dropdown to the public form — it adds friction without value, since the admin canonicalizes anyway.
+
+82. **`coach_signup_requests.edu_email` has a UNIQUE constraint that doubles as anti-resubmit logic.** `POST /api/coach-signup/request` uses ON CONFLICT semantics: brand-new edu_email → insert + email Jackson; same pending edu_email within 24h → silent success (no spam); same pending edu_email after 24h → refresh row + re-email Jackson; status=approved or rejected → silent success (no email, no DB change). All paths return 200 to avoid leaking whether an email is in the system.
+
+83. **Production setup checklist for this feature.**
+    - Run `cd backend && npm run migrate:prod` to apply migrations 018 + 019 (coach_signup_requests, coach_invites, plus division/locked_school columns).
+    - `scp` `frontend/admin/coach-verification.html` to EC2 (gitignored, won't come down with `git pull`).
+    - Set in prod `.env`: `APP_URL=https://directrecruit.net`, `FRONTEND_PATH_PREFIX=` (empty), `ADMIN_NOTIFY_EMAIL=jackson@directrecruit.net`. Admin auth reuses the existing AI analytics dashboard env var — no new key needed.
+    - Confirm SES is out of sandbox mode in AWS Console → SES → Account dashboard. Sandbox mode only allows sending to verified addresses, which would block emails to arbitrary .edu addresses.
+    - `pm2 restart all` after pulling.
+    - Send yourself a real test request → approve → confirm the invite email actually arrives in a real .edu inbox.
+
+84. **CSP ('script-src \'self\'') breaks any inline `<script>` on pages served by the node backend.** `payment-success.html` (collegecoach, hsplayer, transferplayer) and `payment-success-switch.html` were originally written with inline scripts, which silently fail with a console error — coach gets stuck on "Setting up your profile..." forever because the profile-creation code never runs. Fix: extract to external `payment-success.js` files. This was hidden during local dev because Live Server (port 5500) doesn't enforce CSP, only the node backend does. Test all post-Stripe pages on `:5000` to catch this category of bug, not just `:5500`.
+
+85. **Service worker disabled in local dev.** `frontend/shared/sw-register.js` short-circuits when `window.location.hostname === 'localhost'` or `127.0.0.1`, AND actively unregisters any previously installed SW + wipes its caches. Reason: the SW had a network-first strategy that cached aggressively and treated CSP-blocked Google Fonts requests as network failures, causing it to serve stale or 503 responses for unrelated assets (logos, CSS) until a hard refresh. In dev this fights with file edits — every change required Ctrl+Shift+R until the SW was removed. Production deploys (`directrecruit.net`) still register the SW for PWA behavior.
+
+---
+
 ## TODOs
+**TODO: Settings switch profile, college coach request form
 **TODO: Rotate all creds (Stripe is good)
 
 docker-compose stop

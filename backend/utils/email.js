@@ -592,12 +592,15 @@ async function sendCoachRequestNotification(toEmail, data) {
   const notes = data.notes && data.notes.trim() ? data.notes : '(none)';
   const phone = data.phone && data.phone.trim() ? data.phone : '(not provided)';
   const division = data.division || '(not provided)';
+  const isSwitch = !!data.is_switch;
+  const requestKind = isSwitch ? 'Profile-Type Switch' : 'New Signup';
+  const subjectLine = `[${requestKind}] ${data.first_name} ${data.last_name} — ${data.school}`;
   const params = {
     Source: FROM_EMAIL,
     Destination: { ToAddresses: [toEmail] },
     Message: {
       Subject: {
-        Data: `New College Coach Signup Request: ${data.first_name} ${data.last_name} — ${data.school}`,
+        Data: subjectLine,
         Charset: 'UTF-8'
       },
       Body: {
@@ -606,8 +609,9 @@ async function sendCoachRequestNotification(toEmail, data) {
             <!DOCTYPE html>
             <html><head><meta charset="UTF-8"></head>
             <body style="font-family: Arial, sans-serif; color:#1a1a2e;">
-              <h2 style="color:#1282a2;">New College Coach Signup Request</h2>
+              <h2 style="color:#1282a2;">New College Coach ${isSwitch ? 'Switch' : 'Signup'} Request</h2>
               <p><strong>Submitted:</strong> ${new Date().toISOString()}</p>
+              <p><strong>Type:</strong> ${isSwitch ? '🔄 Switch from existing account' : '🆕 New signup'}</p>
               <table cellpadding="6" style="border-collapse:collapse;">
                 <tr><td><strong>Name:</strong></td><td>${data.first_name} ${data.last_name}</td></tr>
                 <tr><td><strong>School:</strong></td><td>${data.school}</td></tr>
@@ -630,8 +634,9 @@ async function sendCoachRequestNotification(toEmail, data) {
         },
         Text: {
           Data: `
-New College Coach Signup Request
+New College Coach ${isSwitch ? 'Switch' : 'Signup'} Request
 Submitted: ${new Date().toISOString()}
+Type: ${isSwitch ? 'Switch from existing account' : 'New signup'}
 
 Name: ${data.first_name} ${data.last_name}
 School: ${data.school}
@@ -668,12 +673,22 @@ async function sendCoachInvite(toEmail, data, link) {
   const expiresText = data.expires_at
     ? new Date(data.expires_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
     : '7 days from today';
+  // Switches: user already has an account; signups: brand-new account
+  const isSwitch = !!data.is_switch;
+  const subjectLine = isSwitch
+    ? `Verify your College Coach account — ${data.school}`
+    : `You're invited to join Direct Recruit — ${data.school}`;
+  const headline = isSwitch ? 'Verify Your College Coach Switch' : "You're Invited";
+  const bodyLead = isSwitch
+    ? `Your switch to a College Coach account at <strong>${data.school}</strong> has been approved. Click the button below to finish the switch — your existing account, posts, and connections will be preserved.`
+    : `Your account at <strong>${data.school}</strong> has been approved. Click the button below to finish setting up your Direct Recruit profile.`;
+  const ctaText = isSwitch ? 'Complete Your Switch' : 'Complete Your Signup';
   const params = {
     Source: FROM_EMAIL,
     Destination: { ToAddresses: [toEmail] },
     Message: {
       Subject: {
-        Data: `You're invited to join Direct Recruit — ${data.school}`,
+        Data: subjectLine,
         Charset: 'UTF-8'
       },
       Body: {
@@ -697,18 +712,18 @@ async function sendCoachInvite(toEmail, data, link) {
                       </tr>
                       <tr>
                         <td style="background-color: #ffffff; border: 1px solid #e0e0e0; border-radius: 8px; padding: 40px 30px;">
-                          <h2 style="color: #1a1a2e; font-size: 24px; margin: 0 0 20px 0; text-align: center;">You're Invited</h2>
+                          <h2 style="color: #1a1a2e; font-size: 24px; margin: 0 0 20px 0; text-align: center;">${headline}</h2>
                           <p style="color: #555555; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0; text-align: center;">
                             Hi ${data.first_name},
                           </p>
                           <p style="color: #555555; font-size: 16px; line-height: 1.6; margin: 0 0 30px 0; text-align: center;">
-                            Your account at <strong>${data.school}</strong> has been approved. Click the button below to finish setting up your Direct Recruit profile.
+                            ${bodyLead}
                           </p>
                           <table role="presentation" style="width: 100%; border-collapse: collapse; margin-bottom: 30px;">
                             <tr>
                               <td align="center">
                                 <a href="${link}" style="background-color: #ff6b35; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: bold; font-size: 16px; display: inline-block;">
-                                  Complete Your Signup
+                                  ${ctaText}
                                 </a>
                               </td>
                             </tr>
@@ -740,11 +755,13 @@ async function sendCoachInvite(toEmail, data, link) {
         },
         Text: {
           Data: `
-Direct Recruit — You're Invited
+Direct Recruit — ${headline}
 
 Hi ${data.first_name},
 
-Your account at ${data.school} has been approved. Complete your signup using the link below:
+${isSwitch
+  ? `Your switch to a College Coach account at ${data.school} has been approved. Complete your switch using the link below — your existing account, posts, and connections will be preserved.`
+  : `Your account at ${data.school} has been approved. Complete your signup using the link below:`}
 
 ${link}
 

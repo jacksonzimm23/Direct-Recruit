@@ -19,12 +19,15 @@ function adminAuth(req, res, next) {
 
 router.use(adminAuth);
 
-function buildInviteLink(token) {
+function buildInviteLink(token /*, isSwitch — no longer needed at link-build time */) {
   const isProd = process.env.NODE_ENV === 'production';
   const appUrl = process.env.APP_URL || (isProd ? 'https://directrecruit.net' : 'http://localhost:5000');
   const prefix = process.env.FRONTEND_PATH_PREFIX !== undefined
     ? process.env.FRONTEND_PATH_PREFIX
     : (isProd ? '' : '/frontend');
+  // Both new signups AND profile-type switches go to the same create-coach-profile page.
+  // The page itself detects switch mode from the validate-token response (is_switch flag)
+  // and adapts its UI/submit flow accordingly.
   return `${appUrl}${prefix}/collegecoach/create-coach-profile.html?token=${encodeURIComponent(token)}`;
 }
 
@@ -46,6 +49,9 @@ router.get('/requests', async (req, res) => {
         r.edu_email, r.personal_email, r.notes, r.status, r.rejected_reason,
         r.ip_address, r.created_at, r.reviewed_at,
         r.locked_school, r.locked_division, r.locked_at,
+        r.is_switch, r.existing_user_id,
+        eu.email AS existing_user_email,
+        eu.role  AS existing_user_role,
         i.id         AS invite_id,
         i.token      AS invite_token,
         i.division   AS invite_division,
@@ -54,6 +60,7 @@ router.get('/requests', async (req, res) => {
         i.revoked_at AS invite_revoked_at,
         i.created_at AS invite_created_at
       FROM coach_signup_requests r
+      LEFT JOIN users eu ON eu.id = r.existing_user_id
       LEFT JOIN LATERAL (
         SELECT * FROM coach_invites
         WHERE request_id = r.id
@@ -98,7 +105,7 @@ router.post('/requests/:id/approve', async (req, res) => {
     // Fetch request and verify status + locked
     const r = await pool.query(
       `SELECT id, first_name, last_name, school, position, edu_email, personal_email, status,
-              locked_school, locked_division
+              locked_school, locked_division, is_switch
          FROM coach_signup_requests WHERE id = $1`,
       [requestId]
     );
@@ -116,14 +123,16 @@ router.post('/requests/:id/approve', async (req, res) => {
     const token = crypto.randomBytes(32).toString('hex');
     const expiresAt = new Date(Date.now() + INVITE_EXPIRY_DAYS * 24 * 60 * 60 * 1000);
 
-    // Use locked_school + locked_division (the admin-canonicalized values) for the invite
+    // Use locked_school + locked_division (the admin-canonicalized values) for the invite.
+    // Carry is_switch forward so the email link routes to the correct destination page.
     const inviteIns = await pool.query(
       `INSERT INTO coach_invites
-        (request_id, token, edu_email, first_name, last_name, school, division, position, expires_at)
-        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+        (request_id, token, edu_email, first_name, last_name, school, division, position, expires_at, is_switch)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
         RETURNING id, expires_at`,
       [requestId, token, request.edu_email, request.first_name, request.last_name,
-       request.locked_school, request.locked_division, request.position, expiresAt]
+       request.locked_school, request.locked_division, request.position, expiresAt,
+       !!request.is_switch]
     );
 
     await pool.query(
@@ -131,12 +140,13 @@ router.post('/requests/:id/approve', async (req, res) => {
       [requestId]
     );
 
-    const link = buildInviteLink(token);
+    const link = buildInviteLink(token, !!request.is_switch);
     try {
       await sendCoachInvite(request.edu_email, {
         first_name: request.first_name,
         school: request.locked_school,
-        expires_at: inviteIns.rows[0].expires_at
+        expires_at: inviteIns.rows[0].expires_at,
+        is_switch: !!request.is_switch
       }, link);
     } catch (emailErr) {
       logger.error('[admin-coach-verification] failed to send invite email:', emailErr);
@@ -276,7 +286,7 @@ router.post('/invites/:id/resend', async (req, res) => {
 
     // Fetch current invite
     const current = await pool.query(
-      `SELECT request_id, edu_email, first_name, last_name, school, division, position, used_at
+      `SELECT request_id, edu_email, first_name, last_name, school, division, position, used_at, is_switch
          FROM coach_invites WHERE id = $1`,
       [inviteId]
     );
@@ -294,19 +304,20 @@ router.post('/invites/:id/resend', async (req, res) => {
     const expiresAt = new Date(Date.now() + INVITE_EXPIRY_DAYS * 24 * 60 * 60 * 1000);
     const ins = await pool.query(
       `INSERT INTO coach_invites
-        (request_id, token, edu_email, first_name, last_name, school, division, position, expires_at)
-        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+        (request_id, token, edu_email, first_name, last_name, school, division, position, expires_at, is_switch)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
         RETURNING id, expires_at`,
       [data.request_id, newToken, data.edu_email, data.first_name, data.last_name,
-       data.school, data.division, data.position, expiresAt]
+       data.school, data.division, data.position, expiresAt, !!data.is_switch]
     );
 
-    const link = buildInviteLink(newToken);
+    const link = buildInviteLink(newToken, !!data.is_switch);
     try {
       await sendCoachInvite(data.edu_email, {
         first_name: data.first_name,
         school: data.school,
-        expires_at: ins.rows[0].expires_at
+        expires_at: ins.rows[0].expires_at,
+        is_switch: !!data.is_switch
       }, link);
     } catch (emailErr) {
       logger.error('[admin-coach-verification] failed to re-send invite email:', emailErr);
