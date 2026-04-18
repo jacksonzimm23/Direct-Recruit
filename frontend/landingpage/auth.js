@@ -47,6 +47,21 @@ if (document.getElementById('signinForm')) {
         try {
             const data = await authAPI.login(email, password, rememberMe);
 
+            // Honor ?next=<relative-path> on the signin URL so flows that bounce users
+            // through signin (e.g., the invite-gated profile-type switch to collegecoach)
+            // can return them to where they were after authentication.
+            // SECURITY: only allow same-origin relative paths starting with "/" — never an
+            // absolute URL or scheme — to avoid open-redirect to phishing sites.
+            const nextRaw = new URLSearchParams(window.location.search).get('next');
+            if (nextRaw) {
+                let nextPath = null;
+                try { nextPath = decodeURIComponent(nextRaw); } catch (e) { nextPath = null; }
+                if (nextPath && nextPath.startsWith('/') && !nextPath.startsWith('//')) {
+                    window.location.href = nextPath;
+                    return;
+                }
+            }
+
             // Redirect to correct role folder after login
             if (data.user.role === 'player' || data.user.role === 'coach') {
                 try {
