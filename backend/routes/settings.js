@@ -912,6 +912,45 @@ router.post('/switch-profile', authMiddleware, async (req, res) => {
 
     const targetRole = User.getBaseRole(target_type);
 
+    // ─── Invite gate for switches TO collegecoach ──────────────────────────────
+    // Switching to College Coach requires a verified invite token (manual admin
+    // approval based on a contact-form request). Switching FROM collegecoach to
+    // any other type stays unrestricted.
+    let inviteIdToConsume = null;
+    let inviteToken = null;
+    if (target_type === 'collegecoach') {
+      inviteToken = req.body.inviteToken;
+      if (!inviteToken) {
+        await client.query('ROLLBACK');
+        return res.status(403).json({
+          error: 'Switching to College Coach requires verification. Request access from Settings → Profile Type.'
+        });
+      }
+      const inv = await client.query(
+        `SELECT i.id, i.school, i.division, r.personal_email
+           FROM coach_invites i
+           JOIN coach_signup_requests r ON r.id = i.request_id
+           WHERE i.token = $1
+             AND i.used_at IS NULL AND i.revoked_at IS NULL AND i.expires_at > NOW()
+           FOR UPDATE OF i`,
+        [inviteToken]
+      );
+      if (!inv.rows[0]) {
+        await client.query('ROLLBACK');
+        return res.status(403).json({ error: 'Invalid or expired invite' });
+      }
+      // SECURITY: invite must belong to THIS authenticated user (matches by email)
+      if (inv.rows[0].personal_email && inv.rows[0].personal_email.toLowerCase() !== user.email.toLowerCase()) {
+        await client.query('ROLLBACK');
+        return res.status(403).json({ error: 'This invite is for a different account' });
+      }
+      // SECURITY: override school + division regardless of what frontend sent
+      profile_data.team_name = inv.rows[0].school;
+      profile_data.college_division = inv.rows[0].division;
+      inviteIdToConsume = inv.rows[0].id;
+    }
+    // ────────────────────────────────────────────────────────────────────────────
+
     // Validate required fields for target type
     const validationError = validateProfileDataForType(target_type, profile_data);
     if (validationError) {
@@ -1047,12 +1086,19 @@ router.post('/switch-profile', authMiddleware, async (req, res) => {
       );
     }
 
-    // Log the switch in history
+    // Log the switch in history with audit metadata
     await client.query(
-      `INSERT INTO profile_switch_history (user_id, from_role, from_subtype, to_role, to_subtype)
-       VALUES ($1, $2, $3, $4, $5)`,
-      [req.userId, user.role, currentSubtype, targetRole, target_type]
+      `INSERT INTO profile_switch_history
+        (user_id, from_role, from_subtype, to_role, to_subtype, invite_token, source)
+        VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+      [req.userId, user.role, currentSubtype, targetRole, target_type, inviteToken, 'switch']
     );
+
+    // Consume the invite ONLY after the switch transaction succeeds. Inside the same
+    // transaction so the consumption rolls back if anything later fails.
+    if (inviteIdToConsume) {
+      await client.query('UPDATE coach_invites SET used_at = NOW() WHERE id = $1', [inviteIdToConsume]);
+    }
 
     await client.query('COMMIT');
 

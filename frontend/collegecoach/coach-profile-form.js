@@ -2,6 +2,9 @@
 
 // Token validated from the invite link — null means paywall shown or user not invited
 let validatedInviteToken = null;
+// True when the invite came from a profile-type switch (existing user) vs a brand-new signup.
+// Switch mode hides registration fields + posts to /settings/switch-profile instead of /profile/coach.
+let isSwitchMode = false;
 
 document.addEventListener('DOMContentLoaded', async function() {
     // This is a CREATE profile page - do NOT load existing profile data
@@ -32,6 +35,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             return;
         }
         validatedInviteToken = urlToken;
+        isSwitchMode = !!validateData.is_switch;
         // Pre-fill name fields (still editable) and lock the school field
         if (validateData.first_name) {
             const fn = document.getElementById('firstName');
@@ -115,6 +119,77 @@ document.addEventListener('DOMContentLoaded', async function() {
             }
         }
     }
+
+    // ─── Switch mode: hide registration fields the user already has ──────────────
+    // For switches, the user is already authenticated with email/password/username.
+    // Hide those form sections + the page subtitle changes to reflect the switch context.
+    if (isSwitchMode) {
+        // Hide email, password, confirmPassword, and their parent .form-group containers.
+        // Username stays visible only if the user doesn't already have one — fetch /auth/me to check.
+        ['email', 'password', 'confirmPassword'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) {
+                const group = el.closest('.form-group');
+                if (group) group.style.display = 'none';
+                el.removeAttribute('required');
+            }
+        });
+        // Page header copy — let user know they're switching, not creating
+        const headerTitle = document.querySelector('.form-header h1');
+        const headerSub = document.querySelector('.form-header p');
+        if (headerTitle) headerTitle.textContent = 'Complete Your College Coach Switch';
+        if (headerSub) headerSub.textContent = "Verified — fill in your remaining coaching info to switch your account. Your existing posts, connections, and email stay intact.";
+        // Submit button copy
+        const submitBtn = document.querySelector('button[type="submit"]');
+        if (submitBtn) {
+            // Find the text node and replace just the label, leaving the SVG icon intact
+            for (const node of submitBtn.childNodes) {
+                if (node.nodeType === Node.TEXT_NODE && node.textContent.trim()) {
+                    node.textContent = ' Confirm Switch ';
+                    break;
+                }
+            }
+        }
+        // Pre-fill + LOCK the username from the existing account so coaches can't accidentally
+        // change it during the switch (and to prevent the username availability check from
+        // firing on their own already-owned username). Username comes from the user's existing
+        // profile (it's stored on profile rows + users.username — read whichever is populated).
+        try {
+            const apiBase = (typeof window.API_BASE_URL === 'string')
+                ? window.API_BASE_URL
+                : `http://${window.location.hostname}:5000/api`;
+            const me = await fetch(apiBase + '/auth/me', { credentials: 'include' }).then(r => r.json());
+            const existingUsername = (me?.profile?.username) || (me?.user?.username) || null;
+            if (existingUsername) {
+                const usernameEl = document.getElementById('username');
+                if (usernameEl) {
+                    usernameEl.value = existingUsername;
+                    usernameEl.readOnly = true;
+                    usernameEl.classList.add('invite-locked');
+                    // Make sure submit doesn't try to validate "isUsernameAvailable" since user already owns it
+                    window._inviteSwitchUsername = existingUsername;
+                    // Replace the helper text + add a friendly note about changing it later
+                    const group = usernameEl.closest('.form-group');
+                    if (group) {
+                        // Hide the existing hint + char counter (they don't apply when locked)
+                        const hint = group.querySelector('#usernameHint');
+                        if (hint) hint.style.display = 'none';
+                        const lengthErr = group.querySelector('#usernameLengthError');
+                        if (lengthErr) lengthErr.style.display = 'none';
+                        // Add a lock note if not already added
+                        if (!group.querySelector('.username-switch-lock-hint')) {
+                            const note = document.createElement('small');
+                            note.className = 'username-switch-lock-hint';
+                            note.textContent = '🔒 Locked from your existing account — you can change your username later from My Profile.';
+                            note.style.cssText = 'display:block;color:#ff6b35;font-size:0.8rem;margin-top:0.25rem;font-weight:500;';
+                            group.appendChild(note);
+                        }
+                    }
+                }
+            }
+        } catch (e) { /* non-fatal — user fills username manually */ }
+    }
+    // ──────────────────────────────────────────────────────────────────────────────
 
     const coachingPositionCheckboxes = document.querySelectorAll('input[name="coachingPosition"]');
     const selectedCoachingPositionsContainer = document.getElementById('selectedCoachingPositions');
@@ -385,27 +460,30 @@ document.addEventListener('DOMContentLoaded', async function() {
         const originalText = submitBtn.textContent;
         const isUpdating = originalText === 'Update Profile';
 
-        // Validate username is available (only for new profiles, not updates)
-        if (!isUpdating && !isUsernameAvailable) {
+        // Skip new-account validation in switch mode — user already has username/email/password.
+        const skipNewAccountChecks = isUpdating || isSwitchMode;
+
+        // Validate username is available (only for new profiles, not updates or switches)
+        if (!skipNewAccountChecks && !isUsernameAvailable) {
             usernameInput.focus();
             return false;
         }
 
-        // Validate email is available (only for new profiles, not updates)
-        if (!isUpdating && !isEmailAvailable) {
+        // Validate email is available (only for new profiles, not updates or switches)
+        if (!skipNewAccountChecks && !isEmailAvailable) {
             emailInput.focus();
             return false;
         }
 
         // Validate password meets requirements (only for new profiles)
-        if (!isUpdating && passwordInput && passwordInput.dataset.valid !== 'true') {
+        if (!skipNewAccountChecks && passwordInput && passwordInput.dataset.valid !== 'true') {
             showToast('Please make sure your password meets all the requirements.', 'warning');
             passwordInput.focus();
             return false;
         }
 
         // Validate passwords match (only for new profiles)
-        if (!isUpdating) {
+        if (!skipNewAccountChecks) {
             const pw = document.getElementById('password').value;
             const cpw = document.getElementById('confirmPassword').value;
             if (pw !== cpw) {
@@ -424,12 +502,14 @@ document.addEventListener('DOMContentLoaded', async function() {
 
         let userCreated = false;
         try {
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-            const confirmPassword = document.getElementById('confirmPassword').value;
+            // In switch mode the user is already authenticated — no email/password fields exist
+            // and we skip the register call entirely. The DOM elements may be hidden so guard reads.
+            const email = isSwitchMode ? '' : document.getElementById('email').value;
+            const password = isSwitchMode ? '' : document.getElementById('password').value;
+            const confirmPassword = isSwitchMode ? '' : document.getElementById('confirmPassword').value;
 
-            // Only register new user if not updating
-            if (!isUpdating) {
+            // Only register a brand-new user if this is neither an update NOR a switch
+            if (!isUpdating && !isSwitchMode) {
 
                 // Store email for verification page
                 localStorage.setItem('pendingVerificationEmail', email);
@@ -439,7 +519,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                 userCreated = true;
             }
 
-            submitBtn.textContent = isUpdating ? 'Updating Profile...' : 'Creating Profile...';
+            submitBtn.textContent = isSwitchMode ? 'Switching profile...' : (isUpdating ? 'Updating Profile...' : 'Creating Profile...');
 
             // Step 2: Build profile data from form
             const profileData = {
@@ -466,6 +546,32 @@ document.addEventListener('DOMContentLoaded', async function() {
                 // Updates: create/update profile directly, no payment
                 await profileAPI.createCoachProfile(profileData);
                 showSuccessMessage(isUpdating);
+            } else if (isSwitchMode) {
+                // Profile-type switch: POST to switch-profile endpoint with the invite token.
+                // Backend validates token, overrides school+division from invite, runs the
+                // switch transaction, marks the invite consumed.
+                const result = await API.settings.switchProfile(
+                    'collegecoach',
+                    profileData,
+                    /* confirm */ true,
+                    /* inviteToken */ validatedInviteToken
+                );
+                if (result && result.requires_payment) {
+                    // User is moving from a free type (or different paid tier) to collegecoach —
+                    // need a Stripe checkout. The switch transaction has ALREADY run server-side,
+                    // so flag the pending data as switch-origin so payment-success.js doesn't
+                    // try to create the profile a second time.
+                    const switchPending = { ...profileData, _isSwitch: true };
+                    localStorage.setItem('pendingProfileData', JSON.stringify(switchPending));
+                    submitBtn.textContent = 'Choose your plan...';
+                    showTierSelectionModal();
+                } else {
+                    // Same-price transition (or already paid same tier) — switch is done. Go to mainpage.
+                    showToast('Switched to College Coach!', 'success');
+                    setTimeout(() => {
+                        window.location.href = 'mainpage-coach.html';
+                    }, 1200);
+                }
             } else {
                 // New signups: store profile data and show tier selection
                 localStorage.setItem('pendingProfileData', JSON.stringify(profileData));

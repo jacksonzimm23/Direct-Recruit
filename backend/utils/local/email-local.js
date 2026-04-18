@@ -44,6 +44,7 @@ async function sendAccountDeletionConfirmation(toEmail) {
 async function sendCoachRequestNotification(toEmail, data) {
   console.log('\n[LOCAL EMAIL] Coach Request Notification');
   console.log(`  To: ${toEmail}`);
+  console.log(`  Type: ${data.is_switch ? '🔄 SWITCH from existing account' : '🆕 NEW SIGNUP'}`);
   console.log(`  Name: ${data.first_name} ${data.last_name}`);
   console.log(`  School: ${data.school}`);
   console.log(`  Division: ${data.division || '(not provided)'}`);
@@ -59,6 +60,7 @@ async function sendCoachRequestNotification(toEmail, data) {
 async function sendCoachInvite(toEmail, data, link) {
   console.log('\n[LOCAL EMAIL] Coach Invite');
   console.log(`  To: ${toEmail}`);
+  console.log(`  Type: ${data.is_switch ? '🔄 SWITCH (existing user)' : '🆕 NEW SIGNUP'}`);
   console.log(`  Name: ${data.first_name}`);
   console.log(`  School: ${data.school}`);
   console.log(`  Expires: ${data.expires_at || '7 days from now'}`);

@@ -57,4 +57,24 @@ const requireRole = (...roles) => {
   };
 };
 
-module.exports = { authMiddleware, requireRole, validateUUID };
+// Soft-auth middleware — populates req.user / req.userId if a valid token is present,
+// but never 401s. Use on endpoints that work for both logged-in and logged-out users
+// where the auth state changes behavior (e.g., the coach signup-request form: anonymous
+// submission for new signups, authenticated submission for profile-type switches).
+const optionalAuthMiddleware = async (req, res, next) => {
+  try {
+    const token = req.cookies?.token || req.header('Authorization')?.replace('Bearer ', '');
+    if (!token) return next();
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await User.findById(decoded.userId);
+    if (user && user.is_active) {
+      req.user = user;
+      req.userId = user.id;
+    }
+  } catch (e) {
+    // Bad / expired token — silently continue as anonymous
+  }
+  next();
+};
+
+module.exports = { authMiddleware, optionalAuthMiddleware, requireRole, validateUUID };

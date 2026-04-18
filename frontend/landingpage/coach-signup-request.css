@@ -120,6 +120,20 @@
     color: var(--white);
 }
 
+/* Inputs locked in switch mode (already known from authenticated user) */
+.coach-request-form .switch-locked {
+    background: rgba(10, 17, 40, 0.7);
+    color: rgba(254, 252, 251, 0.6);
+    cursor: not-allowed;
+    border-color: rgba(255, 107, 53, 0.4);
+}
+
+.coach-request-form .switch-locked:focus {
+    outline: none;
+    border-color: rgba(255, 107, 53, 0.4);
+    background: rgba(10, 17, 40, 0.7);
+}
+
 .coach-request-form input::placeholder,
 .coach-request-form textarea::placeholder {
     color: rgba(254, 252, 251, 0.35);

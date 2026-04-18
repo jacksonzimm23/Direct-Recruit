@@ -3,6 +3,7 @@ const router = express.Router();
 const pool = require('../config/database');
 const logger = require('../utils/logger');
 const { coachRequestLimiter, authLimiter } = require('../middleware/rateLimit');
+const { optionalAuthMiddleware } = require('../middleware/auth');
 const { sendCoachRequestNotification } = require('../utils/email');
 
 const ADMIN_NOTIFY_EMAIL = process.env.ADMIN_NOTIFY_EMAIL || 'jackson@directrecruit.net';
@@ -17,8 +18,9 @@ function isEduEmail(email) {
   return typeof email === 'string' && /\.edu(?:\.[a-z]{2})?$/i.test(email.trim());
 }
 
-// POST /api/coach-signup/request — public contact form submission
-router.post('/request', coachRequestLimiter, async (req, res) => {
+// POST /api/coach-signup/request — public contact form submission.
+// Soft-auth: anonymous (new signup) OR authenticated (profile-type switch).
+router.post('/request', coachRequestLimiter, optionalAuthMiddleware, async (req, res) => {
   try {
     const {
       first_name,
@@ -29,11 +31,19 @@ router.post('/request', coachRequestLimiter, async (req, res) => {
       phone,
       edu_email,
       personal_email,
-      notes
+      notes,
+      is_switch: clientIsSwitch
     } = req.body || {};
 
+    // Determine if this is a switch request. ONLY trust is_switch when the user
+    // is actually authenticated — otherwise force false to prevent spoofing.
+    const isSwitch = !!(req.user && clientIsSwitch);
+    const existingUserId = isSwitch ? req.user.id : null;
+    // For switches, server-trust the personal_email — must equal the authenticated user's email
+    const effectivePersonalEmail = isSwitch ? req.user.email : personal_email;
+
     // Server-side validation
-    if (!first_name || !last_name || !school || !division || !position || !edu_email || !personal_email) {
+    if (!first_name || !last_name || !school || !division || !position || !edu_email || !effectivePersonalEmail) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
     // Division is free-text on the public form (admin canonicalizes via the lock step) —
@@ -44,11 +54,20 @@ router.post('/request', coachRequestLimiter, async (req, res) => {
     if (!isEduEmail(edu_email)) {
       return res.status(400).json({ error: 'A valid .edu email address is required' });
     }
-    if (!isValidEmail(personal_email)) {
+    if (!isValidEmail(effectivePersonalEmail)) {
       return res.status(400).json({ error: 'Personal email is invalid' });
     }
     if (notes && typeof notes === 'string' && notes.length > 150) {
       return res.status(400).json({ error: 'Notes must be 150 characters or less' });
+    }
+    // Switch requests can't already be on collegecoach
+    if (isSwitch && req.user.role === 'coach') {
+      // We need to check the subtype — fetch the coach profile
+      const CoachProfile = require('../models/CoachProfile');
+      const existing = await CoachProfile.findByUserId(req.user.id);
+      if (existing && existing.college_division) {
+        return res.status(400).json({ error: 'You are already a College Coach' });
+      }
     }
 
     const normalizedEdu = edu_email.trim().toLowerCase();
@@ -67,12 +86,13 @@ router.post('/request', coachRequestLimiter, async (req, res) => {
       // Brand new request
       const ins = await pool.query(
         `INSERT INTO coach_signup_requests
-          (first_name, last_name, school, division, position, phone, edu_email, personal_email, notes, ip_address)
-          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+          (first_name, last_name, school, division, position, phone, edu_email, personal_email, notes, ip_address, is_switch, existing_user_id)
+          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
           RETURNING id`,
         [first_name.trim(), last_name.trim(), school.trim(), division.trim(),
          position.trim(), phone ? phone.trim() : null, normalizedEdu,
-         personal_email.trim(), notes ? notes.trim() : null, ip]
+         effectivePersonalEmail.trim(), notes ? notes.trim() : null, ip,
+         isSwitch, existingUserId]
       );
       requestId = ins.rows[0].id;
       shouldSendEmail = true;
@@ -88,11 +108,12 @@ router.post('/request', coachRequestLimiter, async (req, res) => {
           await pool.query(
             `UPDATE coach_signup_requests
                SET first_name=$1, last_name=$2, school=$3, division=$4, position=$5, phone=$6,
-                   personal_email=$7, notes=$8, ip_address=$9, created_at=CURRENT_TIMESTAMP
-             WHERE id=$10`,
+                   personal_email=$7, notes=$8, ip_address=$9, created_at=CURRENT_TIMESTAMP,
+                   is_switch=$10, existing_user_id=$11
+             WHERE id=$12`,
             [first_name.trim(), last_name.trim(), school.trim(), division.trim(),
-             position.trim(), phone ? phone.trim() : null, personal_email.trim(),
-             notes ? notes.trim() : null, ip, requestId]
+             position.trim(), phone ? phone.trim() : null, effectivePersonalEmail.trim(),
+             notes ? notes.trim() : null, ip, isSwitch, existingUserId, requestId]
           );
           shouldSendEmail = true;
         }
@@ -111,8 +132,9 @@ router.post('/request', coachRequestLimiter, async (req, res) => {
           position: position.trim(),
           phone: phone ? phone.trim() : '',
           edu_email: normalizedEdu,
-          personal_email: personal_email.trim(),
-          notes: notes ? notes.trim() : ''
+          personal_email: effectivePersonalEmail.trim(),
+          notes: notes ? notes.trim() : '',
+          is_switch: isSwitch
         });
       } catch (emailErr) {
         // Don't fail the request if email sending fails — request is saved
@@ -141,7 +163,7 @@ router.get('/validate-token', authLimiter, async (req, res) => {
     // One lookup without filters to classify reason (expired vs used vs revoked vs invalid)
     const r = await pool.query(
       `SELECT id, first_name, last_name, school, division, edu_email, position,
-              expires_at, used_at, revoked_at
+              expires_at, used_at, revoked_at, is_switch
          FROM coach_invites WHERE token = $1`,
       [token]
     );
@@ -162,7 +184,8 @@ router.get('/validate-token', authLimiter, async (req, res) => {
       school: row.school,
       division: row.division,
       edu_email: row.edu_email,
-      position: row.position
+      position: row.position,
+      is_switch: !!row.is_switch
     });
   } catch (err) {
     logger.error('[coach-signup] validate-token error:', err);

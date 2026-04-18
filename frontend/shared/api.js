@@ -925,11 +925,14 @@ const paymentsAPI = {
 // Unified API object for convenience
 const settingsAPI = {
     getSwitchProfileInfo: async () => apiRequest('/settings/switch-profile/info'),
-    switchProfile: async (targetType, profileData, confirm = true) =>
-        apiRequest('/settings/switch-profile', {
+    switchProfile: async (targetType, profileData, confirm = true, inviteToken = null) => {
+        const body = { target_type: targetType, profile_data: profileData, confirm };
+        if (inviteToken) body.inviteToken = inviteToken;
+        return apiRequest('/settings/switch-profile', {
             method: 'POST',
-            body: JSON.stringify({ target_type: targetType, profile_data: profileData, confirm })
-        })
+            body: JSON.stringify(body)
+        });
+    }
 };
 
 const API = {

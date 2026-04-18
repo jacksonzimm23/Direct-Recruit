@@ -2253,6 +2253,14 @@ function attachStep1Listeners() {
 }
 
 function goToStep2() {
+    // Switching TO collegecoach is invite-gated — user must request access via the contact form,
+    // get manually approved, and redeem an invite link. Redirect them to the contact form
+    // instead of letting them fill out the standard switch profile form.
+    if (selectedTargetType === 'collegecoach') {
+        showCollegeCoachSwitchVerificationSplash();
+        return;
+    }
+
     const body = document.querySelector('.switch-modal-body');
     body.innerHTML = renderStep2();
     updateStepIndicator(2);
@@ -2791,6 +2799,55 @@ function closeSwitchProfileModal() {
         modal.remove();
         document.body.style.overflow = '';
     }
+}
+
+// Replaces step 2 of the switch flow when user picks College Coach.
+// Switching to College Coach is invite-only — they can't fill out a form here;
+// they have to submit a contact request, get manually approved, and redeem an invite.
+function showCollegeCoachSwitchVerificationSplash() {
+    const body = document.querySelector('.switch-modal-body');
+    if (!body) return;
+    // Settings is loaded from /{role}/tabs/settings.html — landingpage is at /landingpage/.
+    // Use absolute path to avoid breaking depending on which role's settings page we're in.
+    const requestUrl = '/frontend/landingpage/coach-signup-request.html?switch=1';
+    body.innerHTML = `
+        <div style="padding: 1rem 0.5rem; text-align: center;">
+            <div style="width:64px;height:64px;border-radius:50%;background:rgba(255,107,53,0.15);
+                        border:2px solid #ff6b35;display:inline-flex;align-items:center;justify-content:center;
+                        margin-bottom:1.25rem;color:#ff6b35;">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                </svg>
+            </div>
+            <h2 style="font-size:1.4rem;font-weight:800;color:#fff;margin:0 0 0.5rem;">
+                College Coach accounts require verification
+            </h2>
+            <p style="color:rgba(255,255,255,0.7);font-size:0.95rem;line-height:1.5;margin:0 0 1.25rem;">
+                Submit a request and we'll review within 48 hours. We'll send a verification link
+                to your <strong>.edu</strong> email — once you click it, your account switches over
+                with school + division locked to what we verified.
+            </p>
+            <p style="color:rgba(255,255,255,0.5);font-size:0.85rem;line-height:1.5;margin:0 0 1.5rem;">
+                Your existing posts, connections, and account stay intact. The switch happens after
+                you click the verification link.
+            </p>
+            <div style="display:flex;gap:0.75rem;flex-direction:column;max-width:280px;margin:0 auto;">
+                <a href="${requestUrl}"
+                   style="display:inline-block;background:linear-gradient(135deg,#1282a2 0%,#ff6b35 140%);
+                          color:#fff;text-decoration:none;font-weight:700;padding:0.75rem 1.5rem;
+                          border-radius:10px;font-size:0.95rem;">
+                    Request Access
+                </a>
+                <button type="button" onclick="closeSwitchProfileModal()"
+                        style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.15);
+                               color:rgba(255,255,255,0.85);font-weight:600;padding:0.65rem 1.5rem;
+                               border-radius:10px;cursor:pointer;font-family:inherit;font-size:0.9rem;">
+                    Cancel
+                </button>
+            </div>
+        </div>
+    `;
 }
 
 function updateStepIndicator(step) {
