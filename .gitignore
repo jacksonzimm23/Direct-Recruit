@@ -39,6 +39,7 @@ uploads/
 cost-model.html
 PI.md
 DEPLOYMENT-GUIDE.md
+applesteps.md
 
 # Admin dashboard (private, never commit)
 frontend/admin/
