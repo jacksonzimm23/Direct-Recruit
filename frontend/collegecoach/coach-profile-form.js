@@ -36,6 +36,18 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
         validatedInviteToken = urlToken;
         isSwitchMode = !!validateData.is_switch;
+
+        // Switch mode requires the user to be signed in (the switch endpoint needs to know
+        // WHICH existing user to convert, and we verify they own the account by matching
+        // req.user.email against coach_invites.personal_email server-side).
+        // If they clicked the invite while logged out, bounce to signin with ?next= so they
+        // come back here automatically after authenticating.
+        if (isSwitchMode && typeof isAuthenticated === 'function' && !isAuthenticated()) {
+            const nextUrl = encodeURIComponent(window.location.pathname + window.location.search);
+            window.location.href = '../landingpage/signin.html?next=' + nextUrl;
+            return;
+        }
+
         // Pre-fill name fields (still editable) and lock the school field
         if (validateData.first_name) {
             const fn = document.getElementById('firstName');
