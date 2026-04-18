@@ -1,3 +1,37 @@
+// ==================== Mobile Web → App Store Redirect (Phase 1) ====================
+// Mobile browsers are redirected to platform-specific "Get the app" pages.
+// iOS app (Capacitor WebView) is exempted via window.Capacitor check.
+// Landing pages stay accessible on mobile web for SEO/signup flows.
+(function mobileWebRedirect() {
+    try {
+        if (window.Capacitor) return;  // Inside the iOS app — never redirect
+
+        const ua = navigator.userAgent || '';
+        const isIOSMobile = /iPhone|iPad|iPod/i.test(ua);
+        const isAndroidMobile = /Android/i.test(ua);
+        if (!isIOSMobile && !isAndroidMobile) return;  // Desktop — no redirect
+
+        // Exempt: all landing pages + the redirect targets themselves.
+        // Admin is NOT exempt per Phase 0 Decision 2.
+        const path = window.location.pathname;
+        if (path.includes('/landingpage/')) return;
+        if (path.endsWith('/get-the-app.html')) return;
+        if (path.endsWith('/coming-soon-android.html')) return;
+
+        // Resolve redirect target relative to whether we're served from EC2
+        // (paths like /hsplayer/mainpage-hsplayer.html) or Live Server
+        // (paths like /frontend/hsplayer/mainpage-hsplayer.html).
+        const prefix = path.startsWith('/frontend/') ? '/frontend' : '';
+        const target = isIOSMobile
+            ? `${prefix}/landingpage/get-the-app.html`
+            : `${prefix}/landingpage/coming-soon-android.html`;
+
+        window.location.replace(target);
+    } catch (e) {
+        console.error('[mobileWebRedirect]', e);
+    }
+})();
+
 // ==================== Global Error Handlers & Toast System ====================
 
 // Toast notification system
