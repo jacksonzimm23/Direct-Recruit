@@ -12,7 +12,7 @@ const config: CapacitorConfig = {
   ios: {
     // 'never' = CSS controls safe-area padding (Phase 2b)
     contentInset: 'never',
-    allowsLinkPreview: true,
+    allowsLinkPreview: false,
     scrollEnabled: true
   },
 

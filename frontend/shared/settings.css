@@ -483,6 +483,34 @@
     cursor: not-allowed;
 }
 
+/* Legal (Phase 5) */
+.legal-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.875rem 0.25rem;
+    color: var(--white);
+    text-decoration: none;
+    border-top: 1px solid rgba(254, 252, 251, 0.08);
+    transition: background 0.2s ease;
+}
+.legal-row:first-of-type {
+    border-top: none;
+}
+.legal-row:hover {
+    background: rgba(254, 252, 251, 0.04);
+}
+.legal-row-label {
+    font-size: 0.95rem;
+    font-weight: 500;
+}
+.legal-row-chevron {
+    width: 18px;
+    height: 18px;
+    color: rgba(254, 252, 251, 0.5);
+    flex-shrink: 0;
+}
+
 /* Danger Zone */
 .danger-zone {
     border-color: rgba(255, 107, 53, 0.3);
