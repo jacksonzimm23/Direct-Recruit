@@ -1,6 +1,11 @@
 // Role Selection JavaScript
 // Note: selectRole() function is now defined in auth.js to handle registration flow
 
+// Enterprise CTA — teams/staff inquiries go to a dedicated contact form
+function selectEnterprise() {
+    window.location.href = 'enterprise-request.html';
+}
+
 // Add keyboard navigation
 document.addEventListener('DOMContentLoaded', function() {
     const roleCards = document.querySelectorAll('.role-card');
@@ -32,7 +37,7 @@ document.addEventListener('DOMContentLoaded', function() {
 // Handle card click (not just button)
 document.addEventListener('DOMContentLoaded', function() {
     const roleCards = document.querySelectorAll('.role-card');
-    
+
     roleCards.forEach(card => {
         card.addEventListener('click', function(e) {
             // If clicking the card but not the button, trigger the button
@@ -42,4 +47,21 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     });
+
+    const enterpriseCard = document.querySelector('.enterprise-card');
+    if (enterpriseCard) {
+        enterpriseCard.addEventListener('click', function(e) {
+            if (!e.target.closest('.btn-enterprise-select')) {
+                const button = this.querySelector('.btn-enterprise-select');
+                if (button) button.click();
+            }
+        });
+        enterpriseCard.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                const button = this.querySelector('.btn-enterprise-select');
+                if (button) button.click();
+            }
+        });
+    }
 });

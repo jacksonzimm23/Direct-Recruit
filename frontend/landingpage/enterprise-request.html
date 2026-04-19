@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#0a1128">
+    <link rel="apple-touch-icon" href="../icons/ios/180.png">
+    <link rel="manifest" href="../manifest.json">
+    <link rel="icon" type="image/png" href="https://res.cloudinary.com/dzmsj6nwv/image/upload/v1770078659/LOGO.PNG_i0uvv4.png">
+    <title>Enterprise Inquiry - Direct Recruit</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="coach-signup-request.css">
+    <link rel="stylesheet" href="../shared/ios-app-overrides.css?v=1">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script src="../shared/capacitor-init.js"></script>
+    <script src="../shared/sw-register.js"></script>
+</head>
+<body>
+    <section class="coach-request-section">
+        <div class="coach-request-container">
+            <a href="get-started.html" class="back-button">
+                <svg viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd"/>
+                </svg>
+                Back to Role Selection
+            </a>
+
+            <div class="request-header">
+                <h1>Enterprise Inquiry</h1>
+                <p>Bring your entire high school or college program onto Direct Recruit. Tell us about your team and we'll be in touch within 48 hours.</p>
+            </div>
+
+            <div id="formWrap">
+                <form id="enterpriseRequestForm" class="coach-request-form" autocomplete="off" novalidate>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="firstName">First Name <span class="required">*</span></label>
+                            <input type="text" id="firstName" name="firstName" required autocomplete="off" maxlength="100" placeholder="John">
+                        </div>
+                        <div class="form-group">
+                            <label for="lastName">Last Name <span class="required">*</span></label>
+                            <input type="text" id="lastName" name="lastName" required autocomplete="off" maxlength="100" placeholder="Smith">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="school">School Name <span class="required">*</span></label>
+                        <input type="text" id="school" name="school" required autocomplete="off" maxlength="255" placeholder="University of Colorado">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="phone">Phone <span class="required">*</span></label>
+                        <input type="tel" id="phone" name="phone" required autocomplete="off" maxlength="50" placeholder="(555) 123-4567">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="personalEmail">Personal Email <span class="required">*</span></label>
+                        <input type="email" id="personalEmail" name="personalEmail" required autocomplete="off" maxlength="255" placeholder="john.smith@gmail.com">
+                        <small class="form-hint">We'll use this to follow up with you directly.</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="notes">Additional Notes <span class="optional">(optional)</span></label>
+                        <textarea id="notes" name="notes" autocomplete="off" maxlength="150" rows="3" placeholder="Anything else we should know? (150 chars max)"></textarea>
+                        <small class="form-hint"><span id="notesCharCount">0</span>/150</small>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn-submit" id="submitBtn">
+                            <span class="btn-label">Submit Inquiry</span>
+                            <svg class="btn-icon" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <p class="request-footer">
+                        Already have an account? <a href="signin.html">Sign In</a>
+                    </p>
+                </form>
+            </div>
+
+            <div id="successState" class="success-state" style="display: none;">
+                <div class="success-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                </div>
+                <h2>Inquiry Submitted</h2>
+                <p>Thanks! We'll review your request and reach out within 48 hours.</p>
+                <p class="success-detail">Keep an eye on your inbox — we'll follow up at the email you provided.</p>
+                <a href="get-started.html" class="btn-back-home">Back to Home</a>
+            </div>
+        </div>
+    </section>
+
+    <script src="../shared/api.js"></script>
+    <script src="enterprise-request.js"></script>
+</body>
+</html>

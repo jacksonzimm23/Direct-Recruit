@@ -19,6 +19,7 @@ const statsRoutes = require('./routes/stats');
 const highlightsRoutes = require('./routes/highlights');
 const coachesRoutes = require('./routes/coaches');
 const notificationsRoutes = require('./routes/notifications');
+const deviceTokensRoutes = require('./routes/device-tokens');
 const recruitingBoardRoutes = require('./routes/recruiting-board');
 const settingsRoutes = require('./routes/settings');
 const aiRoutes = require('./routes/ai');
@@ -27,6 +28,8 @@ const aiRepRoutes = require('./routes/ai-rep');
 const paymentsRoutes = require('./routes/payments');
 const coachSignupRoutes = require('./routes/coach-signup');
 const adminCoachVerificationRoutes = require('./routes/admin-coach-verification');
+const enterpriseRoutes = require('./routes/enterprise');
+const adminEnterpriseRoutes = require('./routes/admin-enterprise');
 const initializeSocket = require('./socket');
 const { apiLimiter } = require('./middleware/rateLimit');
 const logger = require('./utils/logger');
@@ -104,6 +107,7 @@ app.use('/api/stats', statsRoutes);
 app.use('/api/highlights', highlightsRoutes);
 app.use('/api/coaches', coachesRoutes);
 app.use('/api/notifications', notificationsRoutes);
+app.use('/api/device-tokens', deviceTokensRoutes);
 app.use('/api/recruiting-board', recruitingBoardRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/ai', aiRoutes);
@@ -112,6 +116,8 @@ app.use('/api/ai-rep', aiRepRoutes);
 app.use('/api/payments', paymentsRoutes);
 app.use('/api/coach-signup', coachSignupRoutes);
 app.use('/api/admin/coach-verification', adminCoachVerificationRoutes);
+app.use('/api/enterprise', enterpriseRoutes);
+app.use('/api/admin/enterprise', adminEnterpriseRoutes);
 
 // In development, serve frontend files so cookies work on the same origin
 if (process.env.NODE_ENV !== 'production') {
