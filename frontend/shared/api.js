@@ -767,6 +767,24 @@ const uploadAPI = {
         }
 
         return await response.json();
+    },
+
+    uploadMessageMedia: async (file) => {
+        const formData = new FormData();
+        formData.append('media', file);
+
+        const response = await fetch(`${API_BASE_URL}/upload/message-media`, {
+            method: 'POST',
+            credentials: 'include',
+            body: formData
+        });
+
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({}));
+            throw new Error(error.error || 'Upload failed');
+        }
+
+        return await response.json();
     }
 };
 

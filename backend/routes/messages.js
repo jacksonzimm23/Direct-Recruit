@@ -129,11 +129,32 @@ router.get('/conversations/:conversationId', authMiddleware, validateUUID('conve
 
 // Send message
 router.post('/conversations/:conversationId/messages', authMiddleware, validateUUID('conversationId'), messageLimiter, sanitizeBody, [
-  body('content').trim().notEmpty().withMessage('Message content required').isLength({ max: 5000 }).withMessage('Message must be 5000 characters or less')
+  body('content').optional({ checkFalsy: true }).isString().isLength({ max: 5000 }).withMessage('Message must be 5000 characters or less'),
+  body('media_url').optional({ checkFalsy: true }).isString().isLength({ max: 500 }),
+  body('media_type').optional({ checkFalsy: true }).isIn(['image', 'video']).withMessage('media_type must be image or video')
 ], async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res.status(400).json({ errors: errors.array() });
+  }
+
+  const content = req.body.content ? req.body.content.trim() : '';
+  const mediaUrl = req.body.media_url || null;
+  const mediaType = req.body.media_type || null;
+
+  if (!content && !mediaUrl) {
+    return res.status(400).json({ error: 'Message must have content or an attachment' });
+  }
+
+  // Security: if media_url is provided, it must belong to this user's upload path
+  if (mediaUrl) {
+    const expectedPrefix = `message-media/${req.userId}/`;
+    if (!mediaUrl.startsWith(expectedPrefix)) {
+      return res.status(400).json({ error: 'Invalid media reference' });
+    }
+    if (!mediaType) {
+      return res.status(400).json({ error: 'media_type required when media_url is provided' });
+    }
   }
 
   try {
@@ -144,7 +165,13 @@ router.post('/conversations/:conversationId/messages', authMiddleware, validateU
       return res.status(403).json({ error: 'Not a participant in this conversation' });
     }
 
-    const message = await Message.sendMessage(conversationId, req.userId, req.body.content);
+    const message = await Message.sendMessage(
+      conversationId,
+      req.userId,
+      content || null,
+      mediaUrl,
+      mediaType
+    );
 
     // Socket.IO will handle real-time delivery
     if (req.app.get('io')) {
@@ -171,13 +198,19 @@ router.post('/conversations/:conversationId/messages', authMiddleware, validateU
         [conversationId, req.userId]
       );
 
+      // Notification body — fall back to a media placeholder when only an attachment was sent
+      let notifContent = content;
+      if (!notifContent) {
+        notifContent = mediaType === 'video' ? 'sent a video' : 'sent a photo';
+      }
+
       // Create notification for each recipient
       for (const row of participantsResult.rows) {
         const notif = await Notification.createMessageNotification(
           row.user_id,
           req.userId,
           senderName,
-          req.body.content,
+          notifContent,
           conversationId
         );
         if (notif) notifyUser(req.app.get('io'), notif);

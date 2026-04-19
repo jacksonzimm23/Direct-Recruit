@@ -197,7 +197,7 @@ function renderConversationsList() {
                         <div class="conversation-time">${formatTimeAgo(conv.last_message_time)}</div>
                     </div>
                     <div class="conversation-preview">
-                        <span class="preview-text">${truncateMessage(conv.last_message || 'No messages yet')}</span>
+                        <span class="preview-text">${getConversationPreview(conv)}</span>
                     </div>
                 </div>
             </div>
@@ -307,7 +307,7 @@ function renderMessages(messages) {
             <div class="message-group ${isSent ? 'sent' : 'received'}">
                 <div class="message-content">
                     <div class="message-bubble ${isSent ? 'sent' : 'received'}">
-                        <p>${escapeHtml(msg.content)}</p>
+                        ${renderMessageBubbleContent(msg)}
                     </div>
                     <div class="message-time">
                         ${formatMessageTime(msg.created_at)}
@@ -438,30 +438,58 @@ async function sendMessage() {
     const messageInput = document.getElementById('messageInput');
     const message = messageInput.value.trim();
 
-    if (!message || !currentConversationId) return;
+    if (!currentConversationId) return;
+    if (!message && !currentAttachment) return;
 
-    // Clear input immediately for better UX
+    // Snapshot + clear immediately for responsive feel
+    const attachment = currentAttachment;
     messageInput.value = '';
     messageInput.style.height = 'auto';
+    removeAttachment();
 
     try {
-        const response = await API.post(`/messages/conversations/${currentConversationId}/messages`, {
-            content: message
-        });
+        let media_url = null;
+        let media_type = null;
+
+        if (attachment) {
+            const uploadResp = await API.upload.uploadMessageMedia(attachment.file);
+            media_url = uploadResp.s3Key;
+            media_type = uploadResp.media_type;
+        }
+
+        const body = {};
+        if (message) body.content = message;
+        if (media_url) { body.media_url = media_url; body.media_type = media_type; }
+
+        const response = await API.post(`/messages/conversations/${currentConversationId}/messages`, body);
 
         if (response.message) {
-            // Add message to UI
             appendMessage(response.message);
-
-            // Update conversation list
             await loadConversations();
         }
     } catch (error) {
         console.error('Failed to send message:', error);
-        // Restore message on error
+        // Restore input + attachment on failure
         messageInput.value = message;
+        if (attachment) {
+            currentAttachment = attachment;
+            showAttachmentPreview();
+        }
         showToast('Failed to send message. Please try again.', 'error');
     }
+}
+
+function renderMessageBubbleContent(msg) {
+    const parts = [];
+    if (msg.media_url && msg.media_type === 'image') {
+        const url = escapeHtml(msg.media_url);
+        parts.push(`<div class="message-media"><img src="${url}" alt="Attachment" onclick="window.open('${url}','_blank')" style="max-width:240px;max-height:240px;border-radius:8px;cursor:pointer;display:block;"></div>`);
+    } else if (msg.media_url && msg.media_type === 'video') {
+        const url = escapeHtml(msg.media_url);
+        parts.push(`<div class="message-media"><video src="${url}" controls preload="metadata" style="max-width:240px;max-height:240px;border-radius:8px;display:block;"></video></div>`);
+    }
+    if (msg.content) parts.push(`<p>${escapeHtml(msg.content)}</p>`);
+    return parts.join('');
 }
 
 function appendMessage(msg) {
@@ -477,7 +505,7 @@ function appendMessage(msg) {
     messageGroup.innerHTML = `
         <div class="message-content">
             <div class="message-bubble ${isSent ? 'sent' : 'received'}">
-                <p>${escapeHtml(msg.content)}</p>
+                ${renderMessageBubbleContent(msg)}
             </div>
             <div class="message-time">
                 ${formatMessageTime(msg.created_at)}
@@ -583,20 +611,29 @@ function setupEventListeners() {
         }
     });
 
-    // File attachment button
+    // File attachment button — hidden for v1 (images + video only)
     const attachFileBtn = document.getElementById('attachFileBtn');
-    const fileInput = document.getElementById('fileInput');
-    if (attachFileBtn && fileInput) {
-        attachFileBtn.addEventListener('click', () => fileInput.click());
-        fileInput.addEventListener('change', handleFileSelect);
-    }
+    if (attachFileBtn) attachFileBtn.style.display = 'none';
 
-    // Image attachment button
+    // Image/video attachment button
     const attachImageBtn = document.getElementById('attachImageBtn');
     const imageInput = document.getElementById('imageInput');
-    if (attachImageBtn && imageInput) {
-        attachImageBtn.addEventListener('click', () => imageInput.click());
+    if (imageInput) {
+        // Web picker: accept both images and videos so one button handles both
+        imageInput.setAttribute('accept', 'image/*,video/*');
         imageInput.addEventListener('change', handleImageSelect);
+    }
+    if (attachImageBtn) {
+        attachImageBtn.addEventListener('click', async () => {
+            const iOS = window.API && window.API.isIOSApp && window.API.isIOSApp();
+            if (iOS && window.NativeCamera && window.NativeCamera.showMessageMediaSheet) {
+                await window.NativeCamera.showMessageMediaSheet(async (file, mediaType) => {
+                    processMediaFile(file, mediaType);
+                });
+            } else if (imageInput) {
+                imageInput.click();
+            }
+        });
     }
 
     // Emoji button
@@ -712,6 +749,13 @@ function formatMessageDate(timestamp) {
 function formatMessageTime(timestamp) {
     const date = new Date(timestamp);
     return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+}
+
+function getConversationPreview(conv) {
+    if (!conv.last_message && !conv.last_message_media_type) return 'No messages yet';
+    if (!conv.last_message && conv.last_message_media_type === 'image') return '📷 Photo';
+    if (!conv.last_message && conv.last_message_media_type === 'video') return '🎥 Video';
+    return truncateMessage(conv.last_message || '');
 }
 
 function truncateMessage(message, maxLength = 40) {
@@ -857,27 +901,45 @@ function handleFileSelect(e) {
 
 function handleImageSelect(e) {
     const file = e.target.files[0];
-    if (!file) return;
+    if (!file) { return; }
+    const isVideo = (file.type || '').startsWith('video/');
+    processMediaFile(file, isVideo ? 'video' : 'image');
+    e.target.value = '';
+}
 
-    // Check file size (max 5MB for images)
-    if (file.size > 5 * 1024 * 1024) {
+function processMediaFile(file, mediaType) {
+    // Size limits: 5MB images, 200MB videos
+    if (mediaType === 'image' && file.size > 5 * 1024 * 1024) {
         showToast('Image size must be less than 5MB', 'warning');
-        e.target.value = '';
+        return;
+    }
+    if (mediaType === 'video' && file.size > 200 * 1024 * 1024) {
+        showToast('Video size must be less than 200MB', 'warning');
         return;
     }
 
-    // Create preview
-    const reader = new FileReader();
-    reader.onload = function(event) {
+    if (mediaType === 'image') {
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            currentAttachment = {
+                type: 'image',
+                file: file,
+                preview: event.target.result,
+                name: file.name || 'image'
+            };
+            showAttachmentPreview();
+        };
+        reader.readAsDataURL(file);
+    } else {
+        // Video: no inline preview, just show a video-placeholder chip via showAttachmentPreview
         currentAttachment = {
-            type: 'image',
+            type: 'video',
             file: file,
-            preview: event.target.result,
-            name: file.name
+            preview: null,
+            name: file.name || 'video'
         };
         showAttachmentPreview();
-    };
-    reader.readAsDataURL(file);
+    }
 }
 
 function showAttachmentPreview() {
@@ -888,6 +950,19 @@ function showAttachmentPreview() {
         preview.innerHTML = `
             <div class="preview-item image-preview">
                 <img src="${currentAttachment.preview}" alt="Preview">
+                <button class="remove-attachment" onclick="removeAttachment()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+        `;
+    } else if (currentAttachment.type === 'video') {
+        preview.innerHTML = `
+            <div class="preview-item file-preview">
+                <div class="file-icon">🎥</div>
+                <span class="file-name">${truncateFileName(currentAttachment.name || 'video')}</span>
                 <button class="remove-attachment" onclick="removeAttachment()">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <line x1="18" y1="6" x2="6" y2="18"></line>

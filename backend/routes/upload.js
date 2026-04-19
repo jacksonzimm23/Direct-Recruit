@@ -7,7 +7,7 @@ const CoachProfile = require('../models/CoachProfile');
 const OtherProfile = require('../models/OtherProfile');
 const path = require('path');
 const multer = require('multer');
-const { uploadToS3, getSignedS3Url, generateProfileImageKey, generatePostMediaKey, deleteFromS3 } = require('../utils/s3');
+const { uploadToS3, getSignedS3Url, getSignedVideoUrl, generateProfileImageKey, generatePostMediaKey, generateMessageMediaKey, deleteFromS3 } = require('../utils/s3');
 const logger = require('../utils/logger');
 
 // Memory storage for S3 uploads (keeps file in buffer instead of disk)
@@ -28,6 +28,28 @@ const s3Upload = multer({
   },
   limits: {
     fileSize: parseInt(process.env.MAX_FILE_SIZE) || 5 * 1024 * 1024 // 5MB default
+  }
+});
+
+// Multer config for message media (images and videos, same limits as post media)
+const messageMediaUpload = multer({
+  storage: memoryStorage,
+  fileFilter: (req, file, cb) => {
+    const allowedImageTypes = /jpeg|jpg|png|gif|webp/;
+    const allowedVideoTypes = /mp4|mov|avi|webm|mkv|m4v/;
+    const extname = path.extname(file.originalname).toLowerCase().slice(1);
+    const mimetype = file.mimetype;
+
+    if (allowedImageTypes.test(extname) && mimetype.startsWith('image/')) {
+      return cb(null, true);
+    }
+    if (allowedVideoTypes.test(extname) && mimetype.startsWith('video/')) {
+      return cb(null, true);
+    }
+    return cb(new Error('Only image files (jpg, png, gif, webp) and video files (mp4, mov, avi, webm) are allowed'));
+  },
+  limits: {
+    fileSize: 200 * 1024 * 1024
   }
 });
 
@@ -185,6 +207,45 @@ router.post('/post-media', authMiddleware, postMediaUpload.array('media', 4), as
     logger.error('Upload post media error:', error);
     if (error.message && error.message.includes('Only image files')) {
       return res.status(400).json({ error: 'Only image files are allowed' });
+    }
+    res.status(500).json({ error: 'Failed to upload media' });
+  }
+});
+
+// Upload a single message attachment (image or video) to S3
+router.post('/message-media', authMiddleware, messageMediaUpload.single('media'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file uploaded' });
+    }
+
+    const isVideo = req.file.mimetype.startsWith('video/');
+    const mediaType = isVideo ? 'video' : 'image';
+
+    const s3Key = generateMessageMediaKey(req.userId, req.file.originalname, mediaType);
+
+    await uploadToS3(req.file.buffer, s3Key, req.file.mimetype);
+
+    const signedUrl = isVideo ? await getSignedVideoUrl(s3Key) : await getSignedS3Url(s3Key);
+
+    logger.info('Message media uploaded to S3:', {
+      key: s3Key,
+      contentType: req.file.mimetype,
+      size: req.file.size
+    });
+
+    res.json({
+      message: 'Media uploaded successfully',
+      s3Key: s3Key,
+      url: signedUrl,
+      media_type: mediaType,
+      size: req.file.size,
+      originalName: req.file.originalname
+    });
+  } catch (error) {
+    logger.error('Upload message media error:', error);
+    if (error.message && (error.message.includes('Only image files') || error.message.includes('File too large'))) {
+      return res.status(400).json({ error: error.message });
     }
     res.status(500).json({ error: 'Failed to upload media' });
   }

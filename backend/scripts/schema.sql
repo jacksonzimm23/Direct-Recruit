@@ -136,9 +136,13 @@ CREATE TABLE IF NOT EXISTS messages (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     conversation_id UUID REFERENCES conversations(id) ON DELETE CASCADE,
     sender_id UUID REFERENCES users(id) ON DELETE CASCADE,
-    content TEXT NOT NULL,
+    content TEXT,
+    media_url TEXT,
+    media_type VARCHAR(20),
     read BOOLEAN DEFAULT false,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT messages_content_or_media_chk CHECK (content IS NOT NULL OR media_url IS NOT NULL),
+    CONSTRAINT messages_media_type_chk CHECK (media_type IS NULL OR media_type IN ('image','video'))
 );
 
 -- Player stats (optional, for tracking athletic performance)

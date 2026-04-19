@@ -184,12 +184,112 @@
         });
     }
 
+    // Phase 4b-III: pick a single image for a message attachment.
+    // No cropping, no forced resize — send the original.
+    // Returns { file, cancelled, error }.
+    async function pickMessageImage() {
+        try {
+            const Camera = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Camera;
+            if (!Camera) return { file: null, cancelled: false, error: 'Camera plugin not available' };
+
+            const photo = await Camera.getPhoto({
+                quality: 85,
+                allowEditing: false,
+                resultType: 'base64',
+                source: 'Prompt',
+                saveToGallery: false,
+                correctOrientation: true
+            });
+
+            if (!photo || !photo.base64String) return { file: null, cancelled: true };
+
+            const mimeType = 'image/' + (photo.format === 'png' ? 'png' : 'jpeg');
+            const ext = photo.format === 'png' ? 'png' : 'jpg';
+            const file = await base64ToFile(photo.base64String, 'message-' + Date.now() + '.' + ext, mimeType);
+            return { file: file, cancelled: false };
+        } catch (e) {
+            const msg = (e && e.message) || '';
+            if (msg.includes('cancel') || msg.includes('Cancel') || (e && e.code === 'USER_CANCELLED')) {
+                return { file: null, cancelled: true };
+            }
+            return { file: null, cancelled: false, error: msg || 'Camera failed' };
+        }
+    }
+
+    // Phase 4b-III: pick a single video for a message attachment.
+    async function pickMessageVideo() {
+        try {
+            const Camera = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Camera;
+            if (!Camera) return { file: null, cancelled: false, error: 'Camera plugin not available' };
+            if (typeof Camera.getVideo !== 'function') {
+                return { file: null, cancelled: false, error: 'Video picker not available in this plugin version' };
+            }
+
+            const video = await Camera.getVideo({ source: 'Prompt' });
+            const path = video && (video.webPath || video.path);
+            if (!path) return { file: null, cancelled: true };
+
+            const file = await webPathToFile(path, 'message-video-' + Date.now() + '.mp4', 'video/mp4');
+            return { file: file, cancelled: false };
+        } catch (e) {
+            const msg = (e && e.message) || '';
+            if (msg.includes('cancel') || msg.includes('Cancel') || (e && e.code === 'USER_CANCELLED')) {
+                return { file: null, cancelled: true };
+            }
+            return { file: null, cancelled: false, error: msg || 'Video picker failed' };
+        }
+    }
+
+    // Phase 4b-III: bottom-sheet for message attachments — Photo / Video / Cancel.
+    // onFilePicked: async (File, mediaType) => void. Called ONCE with the picked file.
+    function showMessageMediaSheet(onFilePicked) {
+        return new Promise(function (resolve) {
+            const overlay = document.createElement('div');
+            overlay.className = 'ios-media-sheet-overlay';
+            overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:999999;display:flex;align-items:flex-end;justify-content:center;';
+            overlay.innerHTML =
+                '<div style="background:#0a1128;border-radius:14px 14px 0 0;padding:16px;width:100%;max-width:500px;box-shadow:0 -4px 24px rgba(0,0,0,0.4);padding-bottom:calc(16px + env(safe-area-inset-bottom));">' +
+                '<button type="button" data-choice="photo" style="display:block;width:100%;padding:14px;background:#1282a2;color:#fff;border:none;border-radius:8px;font-size:16px;font-weight:600;margin-bottom:8px;cursor:pointer;">📷 Photo</button>' +
+                '<button type="button" data-choice="video" style="display:block;width:100%;padding:14px;background:#1282a2;color:#fff;border:none;border-radius:8px;font-size:16px;font-weight:600;margin-bottom:8px;cursor:pointer;">🎥 Video</button>' +
+                '<button type="button" data-choice="cancel" style="display:block;width:100%;padding:14px;background:transparent;color:#8892b0;border:1px solid rgba(100,116,152,0.3);border-radius:8px;font-size:16px;cursor:pointer;">Cancel</button>' +
+                '</div>';
+            document.body.appendChild(overlay);
+
+            function close() { if (overlay.parentNode) overlay.parentNode.removeChild(overlay); }
+
+            overlay.addEventListener('click', async function (e) {
+                if (e.target === overlay) { close(); resolve(); return; }
+                const choice = e.target && e.target.dataset && e.target.dataset.choice;
+                if (!choice) return;
+                close();
+
+                try {
+                    if (choice === 'photo') {
+                        const r = await pickMessageImage();
+                        if (r.file) await onFilePicked(r.file, 'image');
+                        else if (r.error && window.showToast) window.showToast('Photo picker failed: ' + r.error, 'error');
+                    } else if (choice === 'video') {
+                        const r = await pickMessageVideo();
+                        if (r.file) await onFilePicked(r.file, 'video');
+                        else if (r.error && window.showToast) window.showToast('Video picker failed: ' + r.error, 'error');
+                    }
+                } catch (cbErr) {
+                    console.error('[NativeCamera] onFilePicked failed:', cbErr);
+                }
+                resolve();
+            });
+        });
+    }
+
     // Expose globally — matches window.IAP / window.API patterns
     window.NativeCamera = {
         pickProfilePhoto: pickProfilePhoto,
         pickPostPhotos: pickPostPhotos,
         pickPostVideo: pickPostVideo,
         showPostMediaSheet: showPostMediaSheet,
+        pickMessageImage: pickMessageImage,
+        pickMessageVideo: pickMessageVideo,
+        showMessageMediaSheet: showMessageMediaSheet,
         base64ToFile: base64ToFile,
         webPathToFile: webPathToFile
     };

@@ -124,7 +124,7 @@ function initializeSocket(server) {
     });
 
     // Send message via socket (alternative to REST endpoint)
-    socket.on('send_message', async ({ conversationId, content }) => {
+    socket.on('send_message', async ({ conversationId, content, media_url, media_type }) => {
       try {
         if (!(await messageRateLimit(socket.id))) {
           socket.emit('error', { message: 'Too many messages. Please slow down.' });
@@ -137,7 +137,30 @@ function initializeSocket(server) {
           return;
         }
 
-        const message = await Message.sendMessage(conversationId, socket.userId, content);
+        const trimmedContent = content ? String(content).trim() : '';
+        const mediaUrl = media_url || null;
+        const mediaType = media_type || null;
+
+        if (!trimmedContent && !mediaUrl) {
+          socket.emit('error', { message: 'Message must have content or an attachment' });
+          return;
+        }
+        if (mediaUrl && !mediaUrl.startsWith(`message-media/${socket.userId}/`)) {
+          socket.emit('error', { message: 'Invalid media reference' });
+          return;
+        }
+        if (mediaUrl && !['image', 'video'].includes(mediaType)) {
+          socket.emit('error', { message: 'Invalid media_type' });
+          return;
+        }
+
+        const message = await Message.sendMessage(
+          conversationId,
+          socket.userId,
+          trimmedContent || null,
+          mediaUrl,
+          mediaType
+        );
         io.to(conversationId).emit('new_message', message);
       } catch (error) {
         logger.error('Send message error:', error);

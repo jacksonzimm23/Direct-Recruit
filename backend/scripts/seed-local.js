@@ -59,7 +59,9 @@ const MIGRATIONS = [
   'add-coach-verification.sql',
   'add-coach-verification-school-lock.sql',
   'add-switch-invite-audit.sql',
-  'add-subscription-source.sql'
+  'add-subscription-source.sql',
+  'add-device-tokens.sql',
+  'add-message-attachments.sql'
 ];
 
 async function applyManualFixes() {

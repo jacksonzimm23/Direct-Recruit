@@ -1,4 +1,10 @@
 const pool = require('../config/database');
+const { getSignedS3Url, getSignedVideoUrl } = require('../utils/s3');
+
+async function resolveMessageMediaUrl(key, type) {
+  if (!key) return null;
+  return type === 'video' ? await getSignedVideoUrl(key) : await getSignedS3Url(key);
+}
 
 class Message {
   static async createConversation(participantIds, createdBy = null) {
@@ -58,14 +64,14 @@ class Message {
     return await this.createConversation([user1Id, user2Id], user1Id);
   }
 
-  static async sendMessage(conversationId, senderId, content) {
+  static async sendMessage(conversationId, senderId, content, mediaUrl = null, mediaType = null) {
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
 
       const result = await client.query(
-        'INSERT INTO messages (conversation_id, sender_id, content) VALUES ($1, $2, $3) RETURNING *',
-        [conversationId, senderId, content]
+        'INSERT INTO messages (conversation_id, sender_id, content, media_url, media_type) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+        [conversationId, senderId, content, mediaUrl, mediaType]
       );
 
       await client.query(
@@ -74,7 +80,12 @@ class Message {
       );
 
       await client.query('COMMIT');
-      return result.rows[0];
+
+      const row = result.rows[0];
+      if (row.media_url) {
+        row.media_url = await resolveMessageMediaUrl(row.media_url, row.media_type);
+      }
+      return row;
     } catch (error) {
       await client.query('ROLLBACK');
       throw error;
@@ -99,6 +110,11 @@ class Message {
        LIMIT $2 OFFSET $3`,
       [conversationId, limit, offset]
     );
+    await Promise.all(result.rows.map(async (row) => {
+      if (row.media_url) {
+        row.media_url = await resolveMessageMediaUrl(row.media_url, row.media_type);
+      }
+    }));
     return result.rows;
   }
 
@@ -130,6 +146,7 @@ class Message {
                 'subheader', op.subheader
               )) FILTER (WHERE u.id != $1) as participants,
               (SELECT content FROM messages WHERE conversation_id = c.id ORDER BY created_at DESC LIMIT 1) as last_message,
+              (SELECT media_type FROM messages WHERE conversation_id = c.id ORDER BY created_at DESC LIMIT 1) as last_message_media_type,
               (SELECT created_at FROM messages WHERE conversation_id = c.id ORDER BY created_at DESC LIMIT 1) as last_message_time,
               (SELECT sender_id FROM messages WHERE conversation_id = c.id ORDER BY created_at DESC LIMIT 1) as last_message_sender_id,
               cp_user.last_read_at
