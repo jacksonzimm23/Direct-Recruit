@@ -58,7 +58,8 @@ const MIGRATIONS = [
   'expand-profile-views.sql',
   'add-coach-verification.sql',
   'add-coach-verification-school-lock.sql',
-  'add-switch-invite-audit.sql'
+  'add-switch-invite-audit.sql',
+  'add-subscription-source.sql'
 ];
 
 async function applyManualFixes() {
@@ -457,7 +458,8 @@ async function seedSubscriptions(users) {
     if (!userId) continue;
     await pool.query(
       `UPDATE users SET subscription_status = 'active', subscription_tier = $1,
-       stripe_subscription_id = $2, stripe_customer_id = $3
+       stripe_subscription_id = $2, stripe_customer_id = $3,
+       subscription_source = 'stripe'
        WHERE id = $4`,
       [acct.tier, acct.subId, acct.cusId, userId]
     );

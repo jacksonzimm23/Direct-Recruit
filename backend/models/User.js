@@ -95,7 +95,11 @@ class User {
     await pool.query('UPDATE users SET stripe_customer_id = $1 WHERE id = $2', [customerId, userId]);
   }
 
-  static async updateSubscription(userId, { subscriptionId, status, tier }) {
+  // NOTE: when source='apple_iap', the `subscriptionId` field stores
+  // RevenueCat's original_transaction_id, NOT a Stripe sub id. The column
+  // name is historical — it now holds "external payment processor sub id"
+  // regardless of processor. Always pair with `source` to interpret correctly.
+  static async updateSubscription(userId, { subscriptionId, status, tier, source }) {
     const fields = [];
     const values = [];
     let idx = 1;
@@ -112,6 +116,10 @@ class User {
       fields.push(`subscription_tier = $${idx++}`);
       values.push(tier);
     }
+    if (source !== undefined) {
+      fields.push(`subscription_source = $${idx++}`);
+      values.push(source);
+    }
 
     if (fields.length === 0) return;
 
@@ -124,7 +132,7 @@ class User {
 
   static async getSubscriptionInfo(userId) {
     const result = await pool.query(
-      'SELECT stripe_customer_id, stripe_subscription_id, subscription_status, subscription_tier FROM users WHERE id = $1',
+      'SELECT stripe_customer_id, stripe_subscription_id, subscription_status, subscription_tier, subscription_source FROM users WHERE id = $1',
       [userId]
     );
     return result.rows[0] || null;

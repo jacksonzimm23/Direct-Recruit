@@ -16,7 +16,8 @@
     "@capacitor/core": "^8.0.2",
     "@capacitor/ios": "^8.0.2",
     "@capacitor/splash-screen": "^8.0.1",
-    "@capacitor/status-bar": "^8.0.2"
+    "@capacitor/status-bar": "^8.0.2",
+    "@revenuecat/purchases-capacitor": "^10.4.0"
   },
   "devDependencies": {
     "typescript": "^5.9.3"

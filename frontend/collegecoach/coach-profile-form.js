@@ -878,6 +878,61 @@ function showTierSelectionModal() {
             btn.textContent = 'Redirecting...';
             btn.disabled = true;
 
+            // Phase 3c: iOS branch — use IAP instead of Stripe
+            if (API.isIOSApp()) {
+                try {
+                    const r = await window.IAP.purchaseTier('collegecoach', tier);
+                    if (r.success) {
+                        // Mirror payment-success.js logic inline (iOS never reaches that page via URL)
+                        try {
+                            const profileDataRaw = localStorage.getItem('pendingProfileData');
+                            const profileData = profileDataRaw ? JSON.parse(profileDataRaw) : null;
+                            if (profileData && !profileData._isSwitch) {
+                                await API.profile.createCoachProfile(profileData);
+                            }
+                            localStorage.removeItem('pendingProfileData');
+
+                            // Grace period for paywall IIFE on next page
+                            const me = await API.auth.getCurrentUser().catch(() => null);
+                            if (me && me.user && me.user.id) {
+                                localStorage.setItem('iap_pending_activation', JSON.stringify({
+                                    at: Date.now(), userId: me.user.id
+                                }));
+                            }
+
+                            // Match web flow: switch -> mainpage, new signup -> verify-email
+                            if (profileData && profileData._isSwitch) {
+                                window.location.href = 'mainpage-coach.html';
+                            } else {
+                                window.location.href = 'verify-email.html';
+                            }
+                        } catch (innerErr) {
+                            console.error('Post-IAP profile setup error:', innerErr);
+                            showToast('Profile setup failed after purchase: ' + innerErr.message, 'error');
+                            btn.textContent = 'Select';
+                            btn.disabled = false;
+                        }
+                        return;
+                    }
+                    if (r.cancelled) {
+                        btn.textContent = 'Select';
+                        btn.disabled = false;
+                        return;
+                    }
+                    showToast('Purchase failed: ' + (r.error || 'unknown'), 'error');
+                    btn.textContent = 'Select';
+                    btn.disabled = false;
+                    return;
+                } catch (iosErr) {
+                    console.error('IAP error:', iosErr);
+                    showToast('Purchase failed: ' + iosErr.message, 'error');
+                    btn.textContent = 'Select';
+                    btn.disabled = false;
+                    return;
+                }
+            }
+
+            // Web — existing Stripe flow
             try {
                 // Preserve invite token across Stripe redirect so the cancel URL lets the user retry with the same invite
                 const tokenQuery = validatedInviteToken ? ('?token=' + encodeURIComponent(validatedInviteToken)) : '';

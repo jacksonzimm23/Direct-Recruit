@@ -60,6 +60,7 @@
     </section>
 
     <script src="../shared/api.js"></script>
+    <script src="iap-products.js"></script>
     <script>
     (async function() {
         const PAID_FOLDERS = ['hsplayer', 'transferplayer', 'collegecoach'];
@@ -73,9 +74,47 @@
 
             const folder = getProfileFolder(me.user);
 
+            // Phase 3c: shared handler — branches to IAP on iOS, Stripe on web.
+            // profileType: 'hsplayer'|'transferplayer'|'collegecoach'; tier: null for players, 'starter'|'pro'|'elite' for coaches
+            async function handleSubscribeClick(profileType, tier, onError) {
+                if (API.isIOSApp()) {
+                    try {
+                        const r = await window.IAP.purchaseTier(profileType, tier);
+                        if (r.success) {
+                            localStorage.setItem('iap_pending_activation', JSON.stringify({
+                                at: Date.now(),
+                                userId: me.user.id
+                            }));
+                            // Reload the paywall page; the IIFE honors the grace key
+                            // and falls through to the user's mainpage.
+                            window.location.reload();
+                            return;
+                        }
+                        if (r.cancelled) { onError && onError(null); return; }
+                        onError && onError(r.error || 'Purchase failed');
+                    } catch (e) {
+                        onError && onError(e.message || 'Purchase failed');
+                    }
+                    return;
+                }
+
+                // Web — existing Stripe flow
+                const redirectUrl = '/frontend/' + (profileType === 'collegecoach'
+                    ? 'collegecoach/mainpage-coach.html'
+                    : profileType + '/' + (profileType.includes('coach') ? 'mainpage-coach.html' : 'mainpage-player.html'));
+                const { url } = await API.payments.createCheckoutSession(
+                    profileType, tier, 'resubscribe',
+                    window.location.origin + '/frontend/shared/payment-success-switch.html',
+                    window.location.href
+                );
+                localStorage.setItem('switchRedirectUrl', redirectUrl);
+                window.location.href = url;
+            }
+
             // Subscribe button
             document.getElementById('paywallSubscribeBtn').addEventListener('click', async () => {
                 const btn = document.getElementById('paywallSubscribeBtn');
+                const originalText = btn.textContent;
                 btn.textContent = 'Redirecting...';
                 btn.disabled = true;
 
@@ -83,19 +122,20 @@
                     if (folder === 'collegecoach') {
                         // Show tier selection inline
                         showTierSelection();
+                        // Restore button state (showTierSelection replaces content anyway on web path)
+                        btn.textContent = originalText;
+                        btn.disabled = false;
                     } else {
                         const profileType = folder === 'transferplayer' ? 'transferplayer' : 'hsplayer';
-                        const { url } = await API.payments.createCheckoutSession(
-                            profileType, null, 'resubscribe',
-                            window.location.origin + '/frontend/shared/payment-success-switch.html',
-                            window.location.href
-                        );
-                        localStorage.setItem('switchRedirectUrl', '/frontend/' + folder + '/' + (folder.includes('coach') ? 'mainpage-coach.html' : 'mainpage-player.html'));
-                        window.location.href = url;
+                        await handleSubscribeClick(profileType, null, (err) => {
+                            if (err) showToast('Failed to start checkout: ' + err, 'error');
+                            btn.textContent = originalText;
+                            btn.disabled = false;
+                        });
                     }
                 } catch (e) {
                     showToast('Failed to start checkout: ' + e.message, 'error');
-                    btn.textContent = 'Subscribe Now';
+                    btn.textContent = originalText;
                     btn.disabled = false;
                 }
             });
@@ -123,21 +163,14 @@
                     btn.className = 'paywall-btn ' + (t.tier === 'pro' ? 'paywall-btn-primary' : 'paywall-btn-secondary');
                     btn.textContent = t.name + ' — $' + t.price + '/mo';
                     btn.addEventListener('click', async () => {
+                        const originalText = btn.textContent;
                         btn.textContent = 'Redirecting...';
                         btn.disabled = true;
-                        try {
-                            const { url } = await API.payments.createCheckoutSession(
-                                'collegecoach', t.tier, 'resubscribe',
-                                window.location.origin + '/frontend/shared/payment-success-switch.html',
-                                window.location.href
-                            );
-                            localStorage.setItem('switchRedirectUrl', '/frontend/collegecoach/mainpage-coach.html');
-                            window.location.href = url;
-                        } catch (e) {
-                            showToast('Failed: ' + e.message, 'error');
-                            btn.textContent = t.name + ' — $' + t.price + '/mo';
+                        await handleSubscribeClick('collegecoach', t.tier, (err) => {
+                            if (err) showToast('Failed: ' + err, 'error');
+                            btn.textContent = originalText;
                             btn.disabled = false;
-                        }
+                        });
                     });
                     container.appendChild(btn);
                 });

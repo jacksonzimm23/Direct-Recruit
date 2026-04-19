@@ -2746,11 +2746,44 @@ async function executeSwitchProfile(profileData) {
                 localStorage.setItem('switchRedirectUrl', redirectUrl);
 
                 if (result.payment_profile_type === 'collegecoach') {
-                    // Coach needs tier selection first
+                    // Coach needs tier selection first (tier modal branches iOS vs Stripe)
                     showSwitchTierModal();
                 } else {
-                    // Player: redirect straight to Stripe Checkout
+                    // Player switch: iOS uses IAP, web uses Stripe
                     btn.textContent = 'Redirecting to payment...';
+
+                    // Phase 3c: iOS branch
+                    if (API.isIOSApp()) {
+                        try {
+                            const r = await window.IAP.purchaseTier(result.payment_profile_type, null);
+                            if (r.success) {
+                                const me = await API.auth.getCurrentUser().catch(() => null);
+                                if (me && me.user && me.user.id) {
+                                    localStorage.setItem('iap_pending_activation', JSON.stringify({
+                                        at: Date.now(), userId: me.user.id
+                                    }));
+                                }
+                                localStorage.removeItem('switchRedirectUrl');
+                                window.location.href = redirectUrl;
+                                return;
+                            }
+                            if (r.cancelled) {
+                                showToast('Profile switched but payment was cancelled. Subscribe from your dashboard.', 'warning');
+                                window.location.href = redirectUrl;
+                                return;
+                            }
+                            showToast('Purchase failed: ' + (r.error || 'unknown'), 'error');
+                            window.location.href = redirectUrl;
+                            return;
+                        } catch (iosErr) {
+                            console.error('IAP error:', iosErr);
+                            showToast('Profile switched but payment failed. Subscribe from your dashboard.', 'warning');
+                            window.location.href = redirectUrl;
+                            return;
+                        }
+                    }
+
+                    // Web — existing Stripe flow
                     try {
                         const { url } = await API.payments.createCheckoutSession(
                             result.payment_profile_type,
@@ -2987,13 +3020,23 @@ function renderSubscriptionUI(container, sub, profileFolder) {
 
     html += '</div>';
 
+    // Phase 3c: iOS devices must use Apple's subscription management (Apple
+    // Guideline 3.1.3). Stripe cancel/change buttons are replaced by a deep
+    // link to Apple's subscription center.
+    const isIOS = API.isIOSApp();
+
     // Buttons
     html += '<div class="sub-actions">';
     if (isActive && !sub.cancelAtPeriodEnd) {
-        if (isCoach) {
-            html += '<button class="btn-secondary" id="subChangePlanBtn">Change Plan</button>';
+        if (isIOS) {
+            html += '<button class="btn-primary" id="subManageAppleBtn">Manage in Apple Subscriptions</button>';
+            html += '<p class="sub-cancel-note" style="margin-top:12px;">Plan changes and cancellation are managed through Apple.</p>';
+        } else {
+            if (isCoach) {
+                html += '<button class="btn-secondary" id="subChangePlanBtn">Change Plan</button>';
+            }
+            html += '<button class="btn-danger-outline" id="subCancelBtn">Cancel Subscription</button>';
         }
-        html += '<button class="btn-danger-outline" id="subCancelBtn">Cancel Subscription</button>';
     } else if (isActive && sub.cancelAtPeriodEnd) {
         html += '<p class="sub-cancel-note">Your subscription will end at the end of the current billing period. You can resubscribe anytime.</p>';
     } else {
@@ -3006,6 +3049,13 @@ function renderSubscriptionUI(container, sub, profileFolder) {
     // Attach event listeners
     const cancelBtn = document.getElementById('subCancelBtn');
     if (cancelBtn) cancelBtn.addEventListener('click', () => showCancelSubscriptionModal(sub));
+
+    const manageAppleBtn = document.getElementById('subManageAppleBtn');
+    if (manageAppleBtn) {
+        manageAppleBtn.addEventListener('click', () => {
+            window.open('https://apps.apple.com/account/subscriptions', '_blank');
+        });
+    }
 
     const subscribeBtn = document.getElementById('subSubscribeBtn');
     if (subscribeBtn) subscribeBtn.addEventListener('click', () => handleSubscribe(profileFolder));
@@ -3058,9 +3108,34 @@ async function handleSubscribe(profileFolder) {
 
     try {
         if (profileFolder === 'collegecoach') {
+            // Coaches: the tier modal (shared between Stripe + iOS) handles branching
             showSwitchTierModal();
         } else {
             const profileType = profileFolder === 'hsplayer' ? 'hsplayer' : 'transferplayer';
+
+            // Phase 3c: iOS branch — use IAP instead of Stripe
+            if (API.isIOSApp()) {
+                const r = await window.IAP.purchaseTier(profileType, null);
+                if (r.success) {
+                    const me = await API.auth.getCurrentUser().catch(() => null);
+                    if (me && me.user && me.user.id) {
+                        localStorage.setItem('iap_pending_activation', JSON.stringify({
+                            at: Date.now(), userId: me.user.id
+                        }));
+                    }
+                    window.location.reload();
+                    return;
+                }
+                if (r.cancelled) {
+                    if (btn) { btn.textContent = 'Subscribe'; btn.disabled = false; }
+                    return;
+                }
+                showToast('Purchase failed: ' + (r.error || 'unknown'), 'error');
+                if (btn) { btn.textContent = 'Subscribe'; btn.disabled = false; }
+                return;
+            }
+
+            // Web — existing Stripe flow
             const { url } = await API.payments.createCheckoutSession(
                 profileType, null, 'resubscribe',
                 window.location.origin + '/frontend/shared/payment-success-switch.html',
@@ -3123,6 +3198,42 @@ function showSwitchTierModal() {
             btn.textContent = 'Redirecting...';
             btn.disabled = true;
 
+            // Phase 3c: iOS branch — use IAP instead of Stripe
+            if (API.isIOSApp()) {
+                try {
+                    const r = await window.IAP.purchaseTier('collegecoach', tier);
+                    if (r.success) {
+                        const me = await API.auth.getCurrentUser().catch(() => null);
+                        if (me && me.user && me.user.id) {
+                            localStorage.setItem('iap_pending_activation', JSON.stringify({
+                                at: Date.now(), userId: me.user.id
+                            }));
+                        }
+                        // Navigate directly to the stored redirect URL (bypass payment-success-switch.html)
+                        const redirectUrl = localStorage.getItem('switchRedirectUrl');
+                        localStorage.removeItem('switchRedirectUrl');
+                        window.location.href = redirectUrl || '/frontend/collegecoach/mainpage-coach.html';
+                        return;
+                    }
+                    if (r.cancelled) {
+                        btn.textContent = 'Select';
+                        btn.disabled = false;
+                        return;
+                    }
+                    showToast('Purchase failed: ' + (r.error || 'unknown'), 'error');
+                    btn.textContent = 'Select';
+                    btn.disabled = false;
+                    return;
+                } catch (iosErr) {
+                    console.error('IAP error:', iosErr);
+                    showToast('Purchase failed: ' + iosErr.message, 'error');
+                    btn.textContent = 'Select';
+                    btn.disabled = false;
+                    return;
+                }
+            }
+
+            // Web — existing Stripe flow
             try {
                 const { url } = await API.payments.createCheckoutSession(
                     'collegecoach',

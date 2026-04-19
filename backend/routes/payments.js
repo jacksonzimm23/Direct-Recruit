@@ -97,11 +97,15 @@ router.get('/subscription-status', authMiddleware, async (req, res) => {
     const response = {
       status: info.subscription_status || 'none',
       tier: info.subscription_tier || null,
+      source: info.subscription_source || null,
       stripeCustomerId: info.stripe_customer_id || null
     };
 
-    // If there's an active subscription, fetch current period details from Stripe
-    if (info.stripe_subscription_id && info.subscription_status === 'active') {
+    // Fetch current period details — ONLY for Stripe subs. Apple IAP periods
+    // are managed by App Store / RevenueCat; we read those from the webhook.
+    const isStripeSub = info.subscription_source === 'stripe'
+      || (info.stripe_subscription_id && !info.subscription_source);
+    if (isStripeSub && info.stripe_subscription_id && info.subscription_status === 'active') {
       try {
         const sub = await stripe.getSubscription(info.stripe_subscription_id);
         response.currentPeriodEnd = sub.current_period_end;
@@ -187,7 +191,8 @@ async function webhookHandler(req, res) {
           await User.updateSubscription(userId, {
             subscriptionId: session.subscription,
             status: 'active',
-            tier
+            tier,
+            source: 'stripe'
           });
 
           if (!session.customer) {
@@ -209,7 +214,8 @@ async function webhookHandler(req, res) {
           const status = subscription.cancel_at_period_end ? 'active' : subscription.status;
           await User.updateSubscription(userId, {
             subscriptionId: subscription.id,
-            status: status === 'active' ? 'active' : status
+            status: status === 'active' ? 'active' : status,
+            source: 'stripe'
           });
           logger.info(`Subscription updated for user ${userId}: status=${status}`);
         }
@@ -224,7 +230,8 @@ async function webhookHandler(req, res) {
           await User.updateSubscription(userId, {
             subscriptionId: null,
             status: 'cancelled',
-            tier: null
+            tier: null,
+            source: 'stripe'
           });
           logger.info(`Subscription cancelled for user ${userId}`);
         }
@@ -242,7 +249,8 @@ async function webhookHandler(req, res) {
             if (userId) {
               await User.updateSubscription(userId, {
                 subscriptionId,
-                status: 'past_due'
+                status: 'past_due',
+                source: 'stripe'
               });
               logger.warn(`Payment failed for user ${userId}, subscription ${subscriptionId}`);
             }
@@ -264,6 +272,109 @@ async function webhookHandler(req, res) {
   res.json({ received: true });
 }
 
-// Export both the router and the webhook handler
+// ─── RevenueCat IAP Support (Phase 3a) ──────────────────────────────────────
+// Maps RevenueCat product IDs (configured in App Store Connect) to our
+// internal tier strings. Product IDs come from env vars so prod/dev can differ.
+function mapRevenueCatProductToTier(productId) {
+  const map = {
+    [process.env.IAP_PRODUCT_PLAYER]: 'player',
+    [process.env.IAP_PRODUCT_COACH_STARTER]: 'starter',
+    [process.env.IAP_PRODUCT_COACH_PRO]: 'pro',
+    [process.env.IAP_PRODUCT_COACH_ELITE]: 'elite'
+  };
+  // Guard against undefined env vars mapping productId='undefined' -> 'player'
+  if (!productId) return null;
+  return map[productId] || null;
+}
+
+// POST /api/payments/revenuecat-webhook
+// Auth: custom Authorization header matching REVENUECAT_WEBHOOK_AUTH_HEADER env var.
+// Mounted with express.raw() in server.js — req.body is a Buffer.
+async function revenueCatWebhookHandler(req, res) {
+  try {
+    const expectedAuth = process.env.REVENUECAT_WEBHOOK_AUTH_HEADER;
+    if (!expectedAuth) {
+      logger.error('[RevenueCat webhook] REVENUECAT_WEBHOOK_AUTH_HEADER not set');
+      return res.status(500).send('webhook not configured');
+    }
+    if (req.headers['authorization'] !== expectedAuth) {
+      return res.status(401).send('unauthorized');
+    }
+
+    const event = JSON.parse(req.body.toString('utf8'));
+    const payload = event.event || {};
+    const { type, app_user_id, product_id, original_transaction_id } = payload;
+
+    // app_user_id = our Direct Recruit users.id (set by iOS app via
+    // Purchases.logIn(userId) in Phase 3b). Must exist.
+    if (!app_user_id) {
+      logger.error('[RevenueCat webhook] missing app_user_id');
+      return res.sendStatus(200); // ack anyway so RevenueCat doesn't retry
+    }
+
+    const tier = mapRevenueCatProductToTier(product_id);
+
+    switch (type) {
+      case 'INITIAL_PURCHASE':
+      case 'RENEWAL':
+      case 'PRODUCT_CHANGE': {
+        if (!tier) {
+          logger.error(`[RevenueCat webhook] unknown product_id: ${product_id}`);
+          return res.sendStatus(200);
+        }
+        await User.updateSubscription(app_user_id, {
+          subscriptionId: original_transaction_id,
+          status: 'active',
+          tier,
+          source: 'apple_iap'
+        });
+        logger.info(`[RevenueCat webhook] ${type}: user=${app_user_id} tier=${tier}`);
+        break;
+      }
+      case 'CANCELLATION':
+      case 'EXPIRATION': {
+        await User.updateSubscription(app_user_id, {
+          status: 'cancelled',
+          source: 'apple_iap'
+        });
+        logger.info(`[RevenueCat webhook] ${type}: user=${app_user_id}`);
+        break;
+      }
+      case 'BILLING_ISSUE': {
+        await User.updateSubscription(app_user_id, {
+          status: 'past_due',
+          source: 'apple_iap'
+        });
+        logger.warn(`[RevenueCat webhook] BILLING_ISSUE: user=${app_user_id}`);
+        break;
+      }
+      default:
+        logger.info(`[RevenueCat webhook] unhandled event type: ${type}`);
+    }
+
+    res.sendStatus(200);
+  } catch (error) {
+    logger.error(`[RevenueCat webhook] error: ${error.message}`);
+    res.sendStatus(500);
+  }
+}
+
+// GET /api/payments/revenuecat-config
+// Returns public RevenueCat API key + iOS product IDs for the mobile app.
+// Safe to expose client-side (like Stripe publishable keys).
+router.get('/revenuecat-config', authMiddleware, (req, res) => {
+  res.json({
+    apiKey: process.env.REVENUECAT_IOS_API_KEY || '',
+    products: {
+      player: process.env.IAP_PRODUCT_PLAYER || '',
+      coach_starter: process.env.IAP_PRODUCT_COACH_STARTER || '',
+      coach_pro: process.env.IAP_PRODUCT_COACH_PRO || '',
+      coach_elite: process.env.IAP_PRODUCT_COACH_ELITE || ''
+    }
+  });
+});
+
+// Export both the router and the webhook handlers
 module.exports = router;
 module.exports.webhookHandler = webhookHandler;
+module.exports.revenueCatWebhookHandler = revenueCatWebhookHandler;

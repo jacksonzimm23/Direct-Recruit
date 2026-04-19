@@ -34,6 +34,37 @@
                 hide();
             }
         }
+
+        // --- RevenueCat init (Phase 3b) ---
+        // Fetch RC config from backend, configure the SDK, log in user if
+        // already authenticated. Runs on every iOS app page load.
+        // No-op when user is logged out OR when REVENUECAT_IOS_API_KEY is unset.
+        (async () => {
+            try {
+                const Purchases = plugins.Purchases;
+                if (!Purchases) return;
+
+                const res = await fetch('/api/payments/revenuecat-config', { credentials: 'include' });
+                if (!res.ok) return;  // Not authenticated or backend error — skip
+                const cfg = await res.json();
+                if (!cfg.apiKey) return;  // Dev mode without RC keys — skip
+
+                await Purchases.configure({ apiKey: cfg.apiKey });
+
+                // If the user is already authenticated, tell RC who they are
+                try {
+                    const me = await fetch('/api/auth/me', { credentials: 'include' });
+                    if (me.ok) {
+                        const body = await me.json();
+                        if (body && body.user && body.user.id) {
+                            await Purchases.logIn({ appUserID: body.user.id });
+                        }
+                    }
+                } catch (_) { /* not authenticated — no-op */ }
+            } catch (e) {
+                console.error('[capacitorInit][RevenueCat]', e);
+            }
+        })();
     } catch (e) {
         console.error('[capacitorInit]', e);
     }

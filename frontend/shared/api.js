@@ -317,6 +317,13 @@ function isAuthenticated() {
     return !!getUser();
 }
 
+// Phase 3b: true when running inside the Capacitor iOS WebView.
+// Used to branch payment flows (Stripe on web vs RevenueCat IAP on iOS).
+// .ios-app class is set by capacitor-init.js at page-head parse time.
+function isIOSApp() {
+    return document.documentElement.classList.contains('ios-app');
+}
+
 // API Request wrapper
 async function apiRequest(endpoint, options = {}) {
     const config = {
@@ -387,10 +394,45 @@ const authAPI = {
         } else {
             localStorage.removeItem('dr_remember_me');
         }
+
+        // Phase 3b: keep RevenueCat identity in sync with our session on iOS.
+        // Best-effort — errors are swallowed so they never block login.
+        if (isIOSApp() && data && data.user && data.user.id) {
+            try {
+                const Purchases = window.Capacitor?.Plugins?.Purchases;
+                if (Purchases) {
+                    // If RC wasn't configured at page load (logged out at load time),
+                    // configure it now before logIn.
+                    const cfg = await fetch('/api/payments/revenuecat-config', { credentials: 'include' })
+                        .then(r => r.ok ? r.json() : null)
+                        .catch(() => null);
+                    if (cfg && cfg.apiKey) {
+                        try { await Purchases.configure({ apiKey: cfg.apiKey }); }
+                        catch (_) { /* already configured — fine */ }
+                        await Purchases.logIn({ appUserID: data.user.id });
+                    }
+                }
+            } catch (e) {
+                console.error('[authAPI.login][RevenueCat]', e);
+            }
+        }
+
         return data;
     },
 
     logout: async () => {
+        // Phase 3b: disassociate RC identity BEFORE clearing our session so
+        // next user on same device doesn't inherit previous user's RC state.
+        // Best-effort — errors swallowed so logout always completes.
+        if (isIOSApp()) {
+            try {
+                const Purchases = window.Capacitor?.Plugins?.Purchases;
+                if (Purchases) await Purchases.logOut();
+            } catch (e) {
+                console.error('[authAPI.logout][RevenueCat]', e);
+            }
+        }
+
         try {
             await apiRequest('/auth/logout', { method: 'POST' });
         } catch (error) {
@@ -1001,7 +1043,8 @@ const API = {
     getUser,
     setUser,
     clearAuth,
-    isAuthenticated
+    isAuthenticated,
+    isIOSApp
 };
 
 // Make API available globally
@@ -1041,7 +1084,31 @@ window.API_BASE_URL = API_BASE_URL;
 
             const status = me.user.subscription_status;
             // Allow active and past_due (Stripe retries payment)
-            if (status === 'active' || status === 'past_due') return;
+            if (status === 'active' || status === 'past_due') {
+                // Phase 3c: webhook has caught up — clear any stale grace key
+                try { localStorage.removeItem('iap_pending_activation'); } catch (_) {}
+                return;
+            }
+
+            // Phase 3c: iOS grace period — after IAP.purchaseTier() resolves
+            // but before the RevenueCat webhook lands (typically 1-5s), we
+            // honor a local flag set by purchaseTier-consumer code. Prevents
+            // the paywall from flickering back in the user's face after a
+            // successful IAP purchase. 60s is generous vs RC's P99 latency.
+            if (isIOSApp()) {
+                try {
+                    const raw = localStorage.getItem('iap_pending_activation');
+                    if (raw) {
+                        const data = JSON.parse(raw);
+                        const age = Date.now() - (data.at || 0);
+                        if (age < 60000 && data.userId === me.user.id) {
+                            return;  // Trust the IAP success
+                        }
+                        // Stale — clear and fall through to paywall redirect
+                        localStorage.removeItem('iap_pending_activation');
+                    }
+                } catch (_) { /* ignore; fall through */ }
+            }
 
             // Unpaid user on paid profile — redirect to paywall
             window.location.href = paywallPath;

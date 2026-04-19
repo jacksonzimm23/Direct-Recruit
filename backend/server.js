@@ -50,6 +50,8 @@ app.use(cors({
 app.use(cookieParser());
 // Stripe webhook needs raw body for signature verification — must be before express.json()
 app.post('/api/payments/webhook', express.raw({ type: 'application/json' }), paymentsRoutes.webhookHandler);
+// RevenueCat webhook also needs raw body (we parse manually inside the handler) — same ordering rule
+app.post('/api/payments/revenuecat-webhook', express.raw({ type: 'application/json' }), paymentsRoutes.revenueCatWebhookHandler);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
