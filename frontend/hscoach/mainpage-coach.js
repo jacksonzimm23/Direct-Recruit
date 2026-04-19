@@ -639,20 +639,72 @@ function initMobilePostModal() {
         }
     });
 
+    // Phase 4b-II: helper factored out so iOS branch + web change handler share it
+    function processMobileFile(file) {
+        const maxSize = file.type.startsWith('video/') ? 200 * 1024 * 1024 : 10 * 1024 * 1024;
+        if (file.size > maxSize) {
+            const maxSizeMB = maxSize / (1024 * 1024);
+            showToast(`File "${file.name}" is too large. Maximum size is ${maxSizeMB}MB.`, 'warning');
+            return;
+        }
+
+        selectedFiles.push(file);
+        updateMobileMediaCounter();
+
+        const previewItem = document.createElement('div');
+        previewItem.style.cssText = 'position: relative; display: inline-block; margin: 0.5rem 0.5rem 0 0;';
+
+        if (file.type.startsWith('image/')) {
+            const img = document.createElement('img');
+            img.src = URL.createObjectURL(file);
+            img.style.cssText = 'max-width: 150px; max-height: 150px; border-radius: 8px; object-fit: cover;';
+            previewItem.appendChild(img);
+        } else if (file.type.startsWith('video/')) {
+            const video = document.createElement('video');
+            video.src = URL.createObjectURL(file);
+            video.style.cssText = 'max-width: 150px; max-height: 150px; border-radius: 8px; object-fit: cover;';
+            video.muted = true;
+            previewItem.appendChild(video);
+        }
+
+        const removeBtn = document.createElement('button');
+        removeBtn.innerHTML = '×';
+        removeBtn.style.cssText = 'position: absolute; top: -8px; right: -8px; width: 24px; height: 24px; border-radius: 50%; background: #ff6b6b; color: white; border: none; cursor: pointer; font-size: 16px; line-height: 1;';
+        removeBtn.addEventListener('click', function() {
+            const index = selectedFiles.indexOf(file);
+            if (index > -1) selectedFiles.splice(index, 1);
+            previewItem.remove();
+            updateMobileMediaCounter();
+        });
+        previewItem.appendChild(removeBtn);
+
+        mediaPreview.appendChild(previewItem);
+    }
+
     // Media button click
-    mediaBtn.addEventListener('click', function() {
+    mediaBtn.addEventListener('click', async function() {
         if (selectedFiles.length >= maxMediaFiles) {
             showToast(`Maximum ${maxMediaFiles} media files allowed`, 'warning');
             return;
         }
+
+        // Phase 4b-II: iOS action-sheet with Photos / Video
+        if (window.API && window.API.isIOSApp && window.API.isIOSApp()
+            && window.NativeCamera && window.NativeCamera.showPostMediaSheet) {
+            const remaining = maxMediaFiles - selectedFiles.length;
+            await window.NativeCamera.showPostMediaSheet(async (pickedFiles) => {
+                pickedFiles.slice(0, remaining).forEach(processMobileFile);
+            }, remaining);
+            return;
+        }
+
         mediaInput.click();
     });
 
-    // Handle file selection
+    // Handle file selection (web path)
     mediaInput.addEventListener('change', function() {
         let files = Array.from(this.files);
 
-        // Check how many more files we can add
         const remainingSlots = maxMediaFiles - selectedFiles.length;
         if (remainingSlots === 0) {
             showToast(`Maximum ${maxMediaFiles} media files allowed`, 'warning');
@@ -665,51 +717,8 @@ function initMobilePostModal() {
             files = files.slice(0, remainingSlots);
         }
 
-        files.forEach(file => {
-            // Check file size (200MB for videos, 10MB for images)
-            const maxSize = file.type.startsWith('video/') ? 200 * 1024 * 1024 : 10 * 1024 * 1024;
-            if (file.size > maxSize) {
-                const maxSizeMB = maxSize / (1024 * 1024);
-                showToast(`File "${file.name}" is too large. Maximum size is ${maxSizeMB}MB.`, 'warning');
-                return;
-            }
+        files.forEach(processMobileFile);
 
-            selectedFiles.push(file);
-            updateMobileMediaCounter();
-
-            // Create preview
-            const previewItem = document.createElement('div');
-            previewItem.style.cssText = 'position: relative; display: inline-block; margin: 0.5rem 0.5rem 0 0;';
-
-            if (file.type.startsWith('image/')) {
-                const img = document.createElement('img');
-                img.src = URL.createObjectURL(file);
-                img.style.cssText = 'max-width: 150px; max-height: 150px; border-radius: 8px; object-fit: cover;';
-                previewItem.appendChild(img);
-            } else if (file.type.startsWith('video/')) {
-                const video = document.createElement('video');
-                video.src = URL.createObjectURL(file);
-                video.style.cssText = 'max-width: 150px; max-height: 150px; border-radius: 8px; object-fit: cover;';
-                video.muted = true;
-                previewItem.appendChild(video);
-            }
-
-            // Remove button
-            const removeBtn = document.createElement('button');
-            removeBtn.innerHTML = '×';
-            removeBtn.style.cssText = 'position: absolute; top: -8px; right: -8px; width: 24px; height: 24px; border-radius: 50%; background: #ff6b6b; color: white; border: none; cursor: pointer; font-size: 16px; line-height: 1;';
-            removeBtn.addEventListener('click', function() {
-                const index = selectedFiles.indexOf(file);
-                if (index > -1) selectedFiles.splice(index, 1);
-                previewItem.remove();
-                updateMobileMediaCounter();
-            });
-            previewItem.appendChild(removeBtn);
-
-            mediaPreview.appendChild(previewItem);
-        });
-
-        // Clear input
         this.value = '';
     });
 

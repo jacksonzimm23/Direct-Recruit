@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Message = require('../models/Message');
 const Notification = require('../models/Notification');
+const { notifyUser } = require('../utils/notifications');
 const PlayerProfile = require('../models/PlayerProfile');
 const CoachProfile = require('../models/CoachProfile');
 const User = require('../models/User');
@@ -172,13 +173,14 @@ router.post('/conversations/:conversationId/messages', authMiddleware, validateU
 
       // Create notification for each recipient
       for (const row of participantsResult.rows) {
-        await Notification.createMessageNotification(
+        const notif = await Notification.createMessageNotification(
           row.user_id,
           req.userId,
           senderName,
           req.body.content,
           conversationId
         );
+        if (notif) notifyUser(req.app.get('io'), notif);
       }
 
       // Track AI engagement for each recipient (fire-and-forget)

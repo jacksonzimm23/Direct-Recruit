@@ -14,6 +14,7 @@ const AiAnalytics = require('../models/AiAnalytics');
 const RaSavedPlayers = require('../models/RaSavedPlayers');
 const AiEngagement = require('../models/AiEngagement');
 const Notification = require('../models/Notification');
+const { notifyUser } = require('../utils/notifications');
 const User = require('../models/User');
 const logger = require('../utils/logger');
 
@@ -430,6 +431,7 @@ router.post('/chats/:chatId/message', validateUUID('chatId'), async (req, res) =
     if (result.players.length > 0) {
       result.players.forEach(p => {
         Notification.createAiSearchMatchNotification(p.user_id, coachDivision, 'recruit_assistant')
+          .then(notif => { if (notif) notifyUser(req.app.get('io'), notif); })
           .catch(err => logger.error('AI match notification error:', err.message));
       });
     }
@@ -644,6 +646,7 @@ router.post('/chats/:chatId/pi-message', validateUUID('chatId'), async (req, res
     if (result.players.length > 0) {
       result.players.forEach(p => {
         Notification.createAiSearchMatchNotification(p.user_id, coachDivision, 'portal_intelligence')
+          .then(notif => { if (notif) notifyUser(req.app.get('io'), notif); })
           .catch(err => logger.error('AI match notification error:', err.message));
       });
     }

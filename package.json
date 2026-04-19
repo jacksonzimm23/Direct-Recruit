@@ -12,14 +12,18 @@
   "license": "UNLICENSED",
   "dependencies": {
     "@capacitor/app": "^8.1.0",
+    "@capacitor/camera": "^7.0.5",
     "@capacitor/cli": "^8.0.2",
     "@capacitor/core": "^8.0.2",
     "@capacitor/ios": "^8.0.2",
+    "@capacitor/push-notifications": "^8.0.3",
     "@capacitor/splash-screen": "^8.0.1",
     "@capacitor/status-bar": "^8.0.2",
+    "@parse/node-apn": "^8.1.0",
     "@revenuecat/purchases-capacitor": "^10.4.0"
   },
   "devDependencies": {
+    "@capacitor/assets": "^3.0.5",
     "typescript": "^5.9.3"
   },
   "overrides": {

@@ -2480,7 +2480,20 @@ function setupUI() {
         if (isOwnProfile) {
             changePhotoBtn.classList.add('show-button');
             changePhotoBtn.style.display = 'flex';
-            changePhotoBtn.addEventListener('click', function() {
+            changePhotoBtn.addEventListener('click', async function() {
+                // Phase 4b-I: iOS native picker instead of web <input>
+                if (API.isIOSApp && API.isIOSApp() && window.NativeCamera) {
+                    const result = await window.NativeCamera.pickProfilePhoto();
+                    if (result.cancelled) return;
+                    if (result.error) {
+                        showToast('Photo picker failed: ' + result.error, 'error');
+                        return;
+                    }
+                    window.imageCropper.open(result.file, async function(croppedFile) {
+                        await uploadCroppedImage(croppedFile);
+                    });
+                    return;
+                }
                 photoUploadInput.click();
             });
 
@@ -6764,6 +6777,29 @@ function setupHighlightsModal() {
     const highlightTitleInput = document.getElementById('highlightTitle');
     const highlightLinkInputField = document.getElementById('highlightLink');
 
+    // Phase 4b-III: iOS branch — stash a File picked via NativeCamera so the
+    // save handler can read it regardless of whether the web <input> was used.
+    let _iosHighlightVideo = null;
+    const _hlVideoInputForIOS = document.getElementById('highlightVideoFile');
+    if (_hlVideoInputForIOS) {
+        _hlVideoInputForIOS.addEventListener('click', async function(e) {
+            if (window.API && window.API.isIOSApp && window.API.isIOSApp()
+                && window.NativeCamera && window.NativeCamera.pickPostVideo) {
+                e.preventDefault();
+                const r = await window.NativeCamera.pickPostVideo();
+                if (r.file) {
+                    _iosHighlightVideo = r.file;
+                    showToast('Selected: ' + r.file.name, 'success');
+                } else if (r.error) {
+                    showToast('Video picker failed: ' + r.error, 'error');
+                }
+            }
+        });
+        _hlVideoInputForIOS.addEventListener('change', function() {
+            _iosHighlightVideo = null;
+        });
+    }
+
     if (!addHighlightModal) return;
 
     // Open modal from Add Highlight buttons
@@ -6884,7 +6920,8 @@ function setupHighlightsModal() {
             const title = highlightTitleInput?.value?.trim();
             const link = highlightLinkInputField?.value?.trim();
             const videoFileInput = document.getElementById('highlightVideoFile');
-            const videoFile = videoFileInput?.files?.[0];
+            // Phase 4b-III: prefer iOS-picked stash, fall back to web input
+            const videoFile = _iosHighlightVideo || videoFileInput?.files?.[0];
 
             // Hide any previous errors
             hideHighlightError();
@@ -7004,6 +7041,8 @@ function setupHighlightsModal() {
         // Reset video file input
         const videoFileInput = document.getElementById('highlightVideoFile');
         if (videoFileInput) videoFileInput.value = '';
+        // Phase 4b-III: also clear the iOS stash
+        _iosHighlightVideo = null;
 
         // Hide validation errors
         hideHighlightError();

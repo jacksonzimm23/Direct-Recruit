@@ -763,6 +763,24 @@ router.delete('/account/delete', authMiddleware, async (req, res) => {
       // Continue with account deletion even if S3 cleanup fails
     }
 
+    // Phase 4a: cancel Stripe subscription for web users before DB deletion.
+    // Apple IAP / RevenueCat subs are user-managed through iOS Settings — we
+    // can't cancel those from our backend. For Stripe subs, cascade delete
+    // alone leaves an orphaned subscription in Stripe's dashboard that won't
+    // charge (webhook has no user to update) but is untidy technical debt.
+    try {
+      const subInfo = await User.getSubscriptionInfo(req.userId);
+      if (subInfo?.subscription_source === 'stripe' && subInfo.stripe_subscription_id) {
+        await stripe.cancelSubscription(subInfo.stripe_subscription_id);
+        logger.info(`Cancelled Stripe subscription ${subInfo.stripe_subscription_id} before deleting user ${req.userId}`);
+      } else if (subInfo?.subscription_source === 'apple_iap') {
+        logger.info(`User ${req.userId} has Apple IAP sub — not cancelling (Apple-managed)`);
+      }
+    } catch (cancelErr) {
+      // Best-effort — never block deletion over a cancel failure
+      logger.warn(`Failed to cancel subscription during deletion of user ${req.userId}: ${cancelErr.message}`);
+    }
+
     // Delete from PostgreSQL (cascades to all related tables)
     await User.delete(req.userId);
 

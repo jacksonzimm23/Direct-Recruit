@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Follow = require('../models/Follow');
 const Notification = require('../models/Notification');
+const { notifyUser } = require('../utils/notifications');
 const PlayerProfile = require('../models/PlayerProfile');
 const CoachProfile = require('../models/CoachProfile');
 const User = require('../models/User');
@@ -73,7 +74,8 @@ router.post('/:userId', authMiddleware, validateUUID('userId'), async (req, res)
       // Create notification for follow request
       try {
         const requesterName = await getUserName(req.userId);
-        await Notification.createFollowRequestNotification(userId, req.userId, requesterName);
+        const notif = await Notification.createFollowRequestNotification(userId, req.userId, requesterName);
+        if (notif) notifyUser(req.app.get('io'), notif);
       } catch (notifError) {
         logger.error('Failed to create follow request notification:', notifError);
       }
@@ -89,7 +91,8 @@ router.post('/:userId', authMiddleware, validateUUID('userId'), async (req, res)
       // Create notification for the followed user
       try {
         const followerName = await getUserName(req.userId);
-        await Notification.createFollowNotification(userId, req.userId, followerName);
+        const notif = await Notification.createFollowNotification(userId, req.userId, followerName);
+        if (notif) notifyUser(req.app.get('io'), notif);
       } catch (notifError) {
         logger.error('Failed to create follow notification:', notifError);
         // Don't fail the follow action if notification fails
@@ -296,7 +299,8 @@ router.post('/requests/:requestId/accept', authMiddleware, validateUUID('request
     // Create notification for the requester that their request was accepted
     try {
       const accepterName = await getUserName(req.userId);
-      await Notification.createFollowRequestAcceptedNotification(request.requester_id, req.userId, accepterName);
+      const notif = await Notification.createFollowRequestAcceptedNotification(request.requester_id, req.userId, accepterName);
+      if (notif) notifyUser(req.app.get('io'), notif);
     } catch (notifError) {
       logger.error('Failed to create follow request accepted notification:', notifError);
     }
@@ -351,7 +355,8 @@ router.post('/requests/user/:userId/accept', authMiddleware, validateUUID('userI
     // Create notification for the requester that their request was accepted
     try {
       const accepterName = await getUserName(req.userId);
-      await Notification.createFollowRequestAcceptedNotification(userId, req.userId, accepterName);
+      const notif = await Notification.createFollowRequestAcceptedNotification(userId, req.userId, accepterName);
+      if (notif) notifyUser(req.app.get('io'), notif);
     } catch (notifError) {
       logger.error('Failed to create follow request accepted notification:', notifError);
     }

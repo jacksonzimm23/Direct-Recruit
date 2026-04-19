@@ -8,6 +8,7 @@ const ProfileView = require('../models/ProfileView');
 const CoachProfileView = require('../models/CoachProfileView');
 const Follow = require('../models/Follow');
 const Notification = require('../models/Notification');
+const { notifyUser } = require('../utils/notifications');
 const PortalWatchlist = require('../models/PortalWatchlist');
 const { authMiddleware, requireRole, validateUUID } = require('../middleware/auth');
 const { validationResult } = require('express-validator');
@@ -162,7 +163,8 @@ router.post('/player', authMiddleware, requireRole('player'), sanitizeBody, vali
           const coachIds = await PortalWatchlist.getCoachesWatching(req.userId);
           const playerName = `${profile.first_name || ''} ${profile.last_name || ''}`.trim();
           for (const coachId of coachIds) {
-            await Notification.createPortalEntryNotification(coachId, req.userId, playerName, profile.position, profile.team_name);
+            const notif = await Notification.createPortalEntryNotification(coachId, req.userId, playerName, profile.position, profile.team_name);
+            if (notif) notifyUser(req.app.get('io'), notif);
           }
         } catch (notifError) {
           logger.error('Failed to send portal watchlist notifications:', notifError);
@@ -227,7 +229,8 @@ router.put('/', authMiddleware, sanitizeBody, async (req, res) => {
           const coachIds = await PortalWatchlist.getCoachesWatching(req.userId);
           const playerName = `${profile.first_name || ''} ${profile.last_name || ''}`.trim();
           for (const coachId of coachIds) {
-            await Notification.createPortalEntryNotification(coachId, req.userId, playerName, profile.position, profile.team_name);
+            const notif = await Notification.createPortalEntryNotification(coachId, req.userId, playerName, profile.position, profile.team_name);
+            if (notif) notifyUser(req.app.get('io'), notif);
           }
         } catch (notifError) {
           logger.error('Failed to send portal watchlist notifications:', notifError);

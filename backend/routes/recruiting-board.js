@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const RecruitingBoard = require('../models/RecruitingBoard');
 const Notification = require('../models/Notification');
+const { notifyUser } = require('../utils/notifications');
 const { authMiddleware, requireRole, validateUUID } = require('../middleware/auth');
 const { sanitizeBody } = require('../middleware/validation');
 const pool = require('../config/database');
@@ -502,7 +503,7 @@ router.post('/shared/:boardId/invite', authMiddleware, requireRole('coach'), val
     const inviteeName = invitee ? `${invitee.first_name} ${invitee.last_name}` : 'a coach';
 
     // Create notification for invitee
-    await Notification.create({
+    const inviteeNotif = await Notification.create({
       userId: inviteeUserId,
       type: 'interaction',
       title: 'Recruiting Board Invite',
@@ -511,9 +512,10 @@ router.post('/shared/:boardId/invite', authMiddleware, requireRole('coach'), val
       relatedEntityId: boardId,
       relatedEntityType: 'board_invite'
     });
+    if (inviteeNotif) notifyUser(req.app.get('io'), inviteeNotif);
 
     // Create tracking notification for sender
-    await Notification.create({
+    const senderNotif = await Notification.create({
       userId: req.userId,
       type: 'interaction',
       title: 'Recruiting Board Invite Sent',
@@ -522,6 +524,7 @@ router.post('/shared/:boardId/invite', authMiddleware, requireRole('coach'), val
       relatedEntityId: boardId,
       relatedEntityType: 'board_invite_sent'
     });
+    if (senderNotif) notifyUser(req.app.get('io'), senderNotif);
 
     res.json({ success: true, message: 'Invite sent successfully' });
   } catch (error) {
@@ -589,7 +592,7 @@ router.post('/invite/accept', authMiddleware, requireRole('coach'), async (req, 
     const accepterName = `${accepter.first_name} ${accepter.last_name}`;
 
     // Notify owner that invite was accepted
-    await Notification.create({
+    const acceptedNotif = await Notification.create({
       userId: board.owner_user_id,
       type: 'interaction',
       title: 'Invite Accepted',
@@ -598,6 +601,7 @@ router.post('/invite/accept', authMiddleware, requireRole('coach'), async (req, 
       relatedEntityId: boardId,
       relatedEntityType: 'board_invite_accepted'
     });
+    if (acceptedNotif) notifyUser(req.app.get('io'), acceptedNotif);
 
     res.json({ success: true, message: 'Invite accepted' });
   } catch (error) {
@@ -641,7 +645,7 @@ router.post('/invite/decline', authMiddleware, requireRole('coach'), async (req,
         const declinerName = `${decliner.first_name} ${decliner.last_name}`;
 
         // Notify owner that invite was declined
-        await Notification.create({
+        const declinedNotif = await Notification.create({
           userId: board.owner_user_id,
           type: 'interaction',
           title: 'Invite Declined',
@@ -650,6 +654,7 @@ router.post('/invite/decline', authMiddleware, requireRole('coach'), async (req,
           relatedEntityId: boardId,
           relatedEntityType: 'board_invite_declined'
         });
+        if (declinedNotif) notifyUser(req.app.get('io'), declinedNotif);
       }
     }
 
@@ -682,7 +687,7 @@ router.delete('/shared/:boardId/collaborator/:collaboratorId', authMiddleware, r
       const owner = ownerResult.rows[0];
       const ownerName = owner ? `${owner.first_name} ${owner.last_name}` : 'The board owner';
 
-      await Notification.create({
+      const removedNotif = await Notification.create({
         userId: collaboratorId,
         type: 'interaction',
         title: 'Removed from Recruiting Board',
@@ -691,6 +696,7 @@ router.delete('/shared/:boardId/collaborator/:collaboratorId', authMiddleware, r
         relatedEntityId: boardId,
         relatedEntityType: 'board_collaborator_removed'
       });
+      if (removedNotif) notifyUser(req.app.get('io'), removedNotif);
     }
 
     res.json({ success: true, message: 'Collaborator removed' });
@@ -722,7 +728,7 @@ router.post('/shared/:boardId/leave', authMiddleware, requireRole('coach'), vali
       const leaver = leaverResult.rows[0];
       const leaverName = leaver ? `${leaver.first_name} ${leaver.last_name}` : 'A collaborator';
 
-      await Notification.create({
+      const leftNotif = await Notification.create({
         userId: board.owner_user_id,
         type: 'interaction',
         title: 'Collaborator Left Board',
@@ -731,6 +737,7 @@ router.post('/shared/:boardId/leave', authMiddleware, requireRole('coach'), vali
         relatedEntityId: boardId,
         relatedEntityType: 'board_collaborator_left'
       });
+      if (leftNotif) notifyUser(req.app.get('io'), leftNotif);
     }
 
     res.json({ success: true, message: 'Left board successfully' });
@@ -765,7 +772,7 @@ router.post('/shared/:boardId/transfer-ownership', authMiddleware, requireRole('
     const transfererName = `${transferer.first_name} ${transferer.last_name}`;
 
     // Notify new owner
-    await Notification.create({
+    const ownerXferNotif = await Notification.create({
       userId: newOwnerUserId,
       type: 'interaction',
       title: 'Board Ownership Transferred',
@@ -774,6 +781,7 @@ router.post('/shared/:boardId/transfer-ownership', authMiddleware, requireRole('
       relatedEntityId: boardId,
       relatedEntityType: 'board_ownership_transfer'
     });
+    if (ownerXferNotif) notifyUser(req.app.get('io'), ownerXferNotif);
 
     res.json({ success: true, message: 'Ownership transferred successfully' });
   } catch (error) {

@@ -417,6 +417,27 @@ const authAPI = {
             }
         }
 
+        // Phase 4c-III: request iOS push notification permission + register for APNs.
+        // Apple shows the dialog once per install; later logins return the prior answer.
+        // Best-effort — errors are swallowed so they never block login.
+        if (isIOSApp()) {
+            try {
+                const Push = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.PushNotifications;
+                if (Push) {
+                    const perm = await Push.requestPermissions();
+                    if (perm && perm.receive === 'granted') {
+                        await Push.register();
+                        // Token arrives via the 'registration' listener in capacitor-init.js,
+                        // which calls API.deviceTokens.register() on the authenticated session.
+                    } else {
+                        console.warn('[authAPI.login][Push] permission not granted:', perm && perm.receive);
+                    }
+                }
+            } catch (e) {
+                console.error('[authAPI.login][Push]', e);
+            }
+        }
+
         return data;
     },
 
@@ -430,6 +451,16 @@ const authAPI = {
                 if (Purchases) await Purchases.logOut();
             } catch (e) {
                 console.error('[authAPI.logout][RevenueCat]', e);
+            }
+        }
+
+        // Phase 4c-III: clear delivered iOS notifications so next user doesn't see stale banners.
+        if (isIOSApp()) {
+            try {
+                const Push = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.PushNotifications;
+                if (Push) await Push.removeAllDeliveredNotifications();
+            } catch (e) {
+                console.error('[authAPI.logout][Push]', e);
             }
         }
 
@@ -998,6 +1029,22 @@ const paymentsAPI = {
     }
 };
 
+// Phase 4c-III: device-token registration for iOS push notifications.
+// Called by the push 'registration' listener in capacitor-init.js.
+const deviceTokensAPI = {
+    register: async (token, platform, appVersion, osVersion) => {
+        return await apiRequest('/device-tokens', {
+            method: 'POST',
+            body: JSON.stringify({
+                token,
+                platform,
+                app_version: appVersion,
+                os_version: osVersion
+            })
+        });
+    }
+};
+
 // Unified API object for convenience
 const settingsAPI = {
     getSwitchProfileInfo: async () => apiRequest('/settings/switch-profile/info'),
@@ -1038,6 +1085,7 @@ const API = {
     aiRep: aiRepAPI,
     settings: settingsAPI,
     payments: paymentsAPI,
+    deviceTokens: deviceTokensAPI,
 
     // Auth helpers
     getUser,

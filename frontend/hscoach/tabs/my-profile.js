@@ -1824,7 +1824,20 @@ function setupUI() {
         if (isOwnProfile) {
             changePhotoBtn.classList.add('show-button');
             changePhotoBtn.style.display = 'flex';
-            changePhotoBtn.addEventListener('click', function() {
+            changePhotoBtn.addEventListener('click', async function() {
+                // Phase 4b-I: iOS native picker instead of web <input>
+                if (API.isIOSApp && API.isIOSApp() && window.NativeCamera) {
+                    const result = await window.NativeCamera.pickProfilePhoto();
+                    if (result.cancelled) return;
+                    if (result.error) {
+                        showToast('Photo picker failed: ' + result.error, 'error');
+                        return;
+                    }
+                    window.imageCropper.open(result.file, async function(croppedFile) {
+                        await uploadCroppedImage(croppedFile);
+                    });
+                    return;
+                }
                 photoUploadInput.click();
             });
 

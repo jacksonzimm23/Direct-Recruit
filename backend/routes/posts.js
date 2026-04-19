@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Post = require('../models/Post');
 const Notification = require('../models/Notification');
+const { notifyUser } = require('../utils/notifications');
 const PlayerProfile = require('../models/PlayerProfile');
 const CoachProfile = require('../models/CoachProfile');
 const OtherProfile = require('../models/OtherProfile');
@@ -379,13 +380,14 @@ router.post('/comments/:commentId/like', authMiddleware, validateUUID('commentId
           const comment = commentResult.rows[0];
           if (comment.user_id !== req.userId) {
             const likerName = await getUserName(req.userId);
-            await Notification.createCommentLikeNotification(
+            const notif = await Notification.createCommentLikeNotification(
               comment.user_id,
               req.userId,
               likerName,
               req.params.commentId,
               comment.post_id
             );
+            if (notif) notifyUser(req.app.get('io'), notif);
           }
         }
       } catch (notifError) {
@@ -569,7 +571,8 @@ router.post('/:postId/like', authMiddleware, validateUUID('postId'), async (req,
         const post = await Post.getById(req.params.postId, req.userId);
         if (post && post.user_id !== req.userId) {
           const likerName = await getUserName(req.userId);
-          await Notification.createLikeNotification(post.user_id, req.userId, likerName, req.params.postId);
+          const notif = await Notification.createLikeNotification(post.user_id, req.userId, likerName, req.params.postId);
+          if (notif) notifyUser(req.app.get('io'), notif);
         }
       } catch (notifError) {
         logger.error('Failed to create like notification:', notifError);
@@ -655,7 +658,8 @@ router.post('/:postId/comments', authMiddleware, validateUUID('postId'), sanitiz
       const post = await Post.getById(req.params.postId, req.userId);
       if (post && post.user_id !== req.userId) {
         const commenterName = await getUserName(req.userId);
-        await Notification.createCommentNotification(post.user_id, req.userId, commenterName, req.params.postId, req.body.content);
+        const notif = await Notification.createCommentNotification(post.user_id, req.userId, commenterName, req.params.postId, req.body.content);
+        if (notif) notifyUser(req.app.get('io'), notif);
       }
     } catch (notifError) {
       logger.error('Failed to create comment notification:', notifError);
@@ -672,13 +676,14 @@ router.post('/:postId/comments', authMiddleware, validateUUID('postId'), sanitiz
           const parentCommentOwnerId = parentCommentResult.rows[0].user_id;
           if (parentCommentOwnerId !== req.userId) {
             const replierName = await getUserName(req.userId);
-            await Notification.createCommentReplyNotification(
+            const notif = await Notification.createCommentReplyNotification(
               parentCommentOwnerId,
               req.userId,
               replierName,
               req.params.postId,
               req.body.content
             );
+            if (notif) notifyUser(req.app.get('io'), notif);
           }
         }
       } catch (notifError) {
@@ -797,13 +802,14 @@ router.post('/:postId/share', authMiddleware, validateUUID('postId'), [
       const post = await Post.getById(req.params.postId, req.userId);
       if (post && post.user_id !== req.userId) {
         const sharerName = await getUserName(req.userId);
-        await Notification.createShareNotification(
+        const notif = await Notification.createShareNotification(
           post.user_id,
           req.userId,
           sharerName,
           req.params.postId,
           share_type
         );
+        if (notif) notifyUser(req.app.get('io'), notif);
       }
     } catch (notifError) {
       logger.error('Failed to create share notification:', notifError);
@@ -874,7 +880,8 @@ router.post('/share/:shareId/like', authMiddleware, validateUUID('shareId'), asy
         if (share && share.quoter_user_id !== req.userId) {
           const likerName = await getUserName(req.userId);
           // Create notification for the quoter (share owner)
-          await Notification.createShareLikeNotification(share.quoter_user_id, req.userId, likerName, req.params.shareId);
+          const notif = await Notification.createShareLikeNotification(share.quoter_user_id, req.userId, likerName, req.params.shareId);
+          if (notif) notifyUser(req.app.get('io'), notif);
         }
       } catch (notifError) {
         logger.error('Failed to create share like notification:', notifError);
@@ -960,7 +967,8 @@ router.post('/share/:shareId/comments', authMiddleware, validateUUID('shareId'),
       const share = await Post.getShareById(req.params.shareId, req.userId);
       if (share && share.quoter_user_id !== req.userId) {
         const commenterName = await getUserName(req.userId);
-        await Notification.createShareCommentNotification(share.quoter_user_id, req.userId, commenterName, req.params.shareId);
+        const notif = await Notification.createShareCommentNotification(share.quoter_user_id, req.userId, commenterName, req.params.shareId);
+        if (notif) notifyUser(req.app.get('io'), notif);
       }
     } catch (notifError) {
       logger.error('Failed to create share comment notification:', notifError);
