@@ -49,6 +49,15 @@ frontend/admin/
 /ios/
 /android/
 
+# ...but track hand-edited iOS config files (Info.plist, entitlements, AppDelegate)
+# so they survive cross-machine builds (Windows dev → Mac archive).
+!ios/
+!ios/App/
+!ios/App/App/
+!ios/App/App/Info.plist
+!ios/App/App/App.entitlements
+!ios/App/App/AppDelegate.swift
+
 # PowerShell scripts (temporary/local)
 *.ps1
 
