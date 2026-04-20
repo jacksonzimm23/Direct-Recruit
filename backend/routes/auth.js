@@ -381,9 +381,7 @@ router.get('/me', authMiddleware, async (req, res) => {
         is_college_coach: isCollegeCoach,
         is_transfer_player: isTransferPlayer,
         subscription_status: subInfo?.subscription_status || 'none',
-        subscription_tier: subInfo?.subscription_tier || null,
-        enterprise_id: req.user.enterprise_id || null,
-        enterprise_seat_id: req.user.enterprise_seat_id || null
+        subscription_tier: subInfo?.subscription_tier || null
       },
       profile
     });
