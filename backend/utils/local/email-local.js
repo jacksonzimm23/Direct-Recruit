@@ -77,40 +77,6 @@ async function sendCoachRejection(toEmail, firstName) {
   return { success: true, messageId: 'local-dev-' + Date.now() };
 }
 
-async function sendEnterpriseInquiryNotification(toEmail, data) {
-  console.log('\n[LOCAL EMAIL] Enterprise Inquiry Notification');
-  console.log(`  To: ${toEmail}`);
-  console.log('  Type: 🏫 NEW ENTERPRISE INQUIRY');
-  console.log(`  Name: ${data.first_name} ${data.last_name}`);
-  console.log(`  School: ${data.school}`);
-  console.log(`  Phone: ${data.phone}`);
-  console.log(`  Personal Email: ${data.personal_email}`);
-  console.log(`  Notes: ${data.notes || '(none)'}`);
-  console.log('  (Review in admin dashboard at /frontend/admin/coach-verification.html → Enterprise Requests tab)\n');
-  return { success: true, messageId: 'local-dev-' + Date.now() };
-}
-
-async function sendEnterpriseApproval(toEmail, data) {
-  console.log('\n[LOCAL EMAIL] Enterprise Inquiry — APPROVED');
-  console.log(`  To: ${toEmail}`);
-  console.log(`  Name: ${data.first_name} ${data.last_name}`);
-  console.log(`  School: ${data.school}`);
-  console.log('  Status: ✅ APPROVED');
-  console.log('  (Status update logged for Jackson; no outbound email to inquirer yet.)\n');
-  return { success: true, messageId: 'local-dev-' + Date.now() };
-}
-
-async function sendEnterpriseRejection(toEmail, data) {
-  console.log('\n[LOCAL EMAIL] Enterprise Inquiry — REJECTED');
-  console.log(`  To: ${toEmail}`);
-  console.log(`  Name: ${data.first_name} ${data.last_name}`);
-  console.log(`  School: ${data.school}`);
-  console.log('  Status: ❌ REJECTED');
-  console.log(`  Reason (internal): ${data.reason || '(none)'}`);
-  console.log('  (Status update logged for Jackson; no outbound email to inquirer yet.)\n');
-  return { success: true, messageId: 'local-dev-' + Date.now() };
-}
-
 module.exports = {
   sendEmailChangeVerification,
   sendEmailChangeConfirmation,
@@ -119,8 +85,5 @@ module.exports = {
   sendAccountDeletionConfirmation,
   sendCoachRequestNotification,
   sendCoachInvite,
-  sendCoachRejection,
-  sendEnterpriseInquiryNotification,
-  sendEnterpriseApproval,
-  sendEnterpriseRejection
+  sendCoachRejection
 };

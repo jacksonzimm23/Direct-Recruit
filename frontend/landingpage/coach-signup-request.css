@@ -23,34 +23,21 @@
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
-    color: var(--cerulean);
+    color: rgba(254, 252, 251, 0.7);
     text-decoration: none;
-    font-weight: 600;
-    font-size: 0.95rem;
-    margin-bottom: 2rem;
-    transition: all 0.3s ease;
-    padding: 0.75rem 1.25rem;
-    border-radius: 8px;
-    background: rgba(18, 130, 162, 0.1);
-    -webkit-tap-highlight-color: transparent;
+    font-size: 0.9rem;
+    font-weight: 500;
+    margin-bottom: 1.5rem;
+    transition: color 0.2s ease;
 }
 
-.back-button:hover,
-.back-button:active {
-    background: rgba(18, 130, 162, 0.2);
-    transform: translateX(-5px);
+.back-button:hover {
+    color: var(--white);
 }
 
 .back-button svg {
-    width: 20px;
-    height: 20px;
-}
-
-@media (max-width: 520px) {
-    .back-button {
-        padding: 0.6rem 1rem;
-        font-size: 0.9rem;
-    }
+    width: 18px;
+    height: 18px;
 }
 
 .request-header {

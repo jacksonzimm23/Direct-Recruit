@@ -118,23 +118,6 @@ const coachRequestLimiter = rateLimit({
   }
 });
 
-// Enterprise inquiry limiter — public contact form for teams/athletic depts
-const enterpriseRequestLimiter = rateLimit({
-  ...getRedisStore('rl:entreq:'),
-  windowMs: 60 * 60 * 1000, // 1 hour
-  max: isDevelopment ? 10000 : 3, // 3 inquiries per hour per IP
-  keyGenerator: (req) => req.ip,
-  message: 'Too many inquiries. Please try again later.',
-  standardHeaders: true,
-  legacyHeaders: false,
-  skip: (req) => isDevelopment,
-  handler: (req, res) => {
-    res.status(429).json({
-      error: 'Too many inquiries. Please try again later.'
-    });
-  }
-});
-
 module.exports = {
   apiLimiter,
   authLimiter,
@@ -142,6 +125,5 @@ module.exports = {
   messageLimiter,
   passwordResetLimiter,
   availabilityLimiter,
-  coachRequestLimiter,
-  enterpriseRequestLimiter
+  coachRequestLimiter
 };

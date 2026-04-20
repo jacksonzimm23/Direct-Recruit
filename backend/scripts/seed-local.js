@@ -61,8 +61,7 @@ const MIGRATIONS = [
   'add-switch-invite-audit.sql',
   'add-subscription-source.sql',
   'add-device-tokens.sql',
-  'add-message-attachments.sql',
-  'add-enterprise-inquiries.sql'
+  'add-message-attachments.sql'
 ];
 
 async function applyManualFixes() {
