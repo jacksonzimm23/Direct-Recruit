@@ -16,7 +16,14 @@ class User {
   }
 
   static async findById(id) {
-    const result = await pool.query('SELECT id, email, username, role, created_at, email_verified, profile_completed, is_active, last_profile_switch_at, subscription_status, subscription_tier FROM users WHERE id = $1', [id]);
+    const result = await pool.query(
+      `SELECT id, email, username, role, created_at, email_verified,
+              profile_completed, is_active, last_profile_switch_at,
+              subscription_status, subscription_tier,
+              enterprise_id, enterprise_seat_id
+         FROM users WHERE id = $1`,
+      [id]
+    );
     return result.rows[0];
   }
 
@@ -136,6 +143,42 @@ class User {
       [userId]
     );
     return result.rows[0] || null;
+  }
+
+  // ─── Enterprise Linkage ────────────────────────────────────────────────────
+
+  static async setEnterprise(userId, enterpriseId, enterpriseSeatId) {
+    const result = await pool.query(
+      `UPDATE users
+          SET enterprise_id = $1,
+              enterprise_seat_id = $2,
+              updated_at = CURRENT_TIMESTAMP
+        WHERE id = $3
+      RETURNING id, enterprise_id, enterprise_seat_id`,
+      [enterpriseId, enterpriseSeatId, userId]
+    );
+    return result.rows[0] || null;
+  }
+
+  static async clearEnterprise(userId) {
+    const result = await pool.query(
+      `UPDATE users
+          SET enterprise_id = NULL,
+              enterprise_seat_id = NULL,
+              updated_at = CURRENT_TIMESTAMP
+        WHERE id = $1
+      RETURNING id`,
+      [userId]
+    );
+    return result.rows[0] || null;
+  }
+
+  static async isEnterpriseAdmin(userId) {
+    const result = await pool.query(
+      'SELECT role FROM users WHERE id = $1',
+      [userId]
+    );
+    return result.rows[0]?.role === 'enterprise_admin';
   }
 
   // Delete user and all associated data

@@ -62,7 +62,9 @@ const MIGRATIONS = [
   'add-subscription-source.sql',
   'add-device-tokens.sql',
   'add-message-attachments.sql',
-  'add-enterprise-inquiries.sql'
+  'add-enterprise-inquiries.sql',
+  'add-enterprise-admin-role.sql',
+  'add-enterprise-billing.sql'
 ];
 
 async function applyManualFixes() {
