@@ -904,12 +904,280 @@
 
 ---
 
+## Switching TO College Coach is Invite-Gated
+
+86. **Profile-type switches TO `collegecoach` go through the SAME invite verification as brand-new signups (lessons 76-83), reusing the existing admin dashboard, lock flow, token tables, and email templates.** Without this gate, any user with a free `hsplayer`/`hscoach`/`other`/`collegeplayer` account could go to **Settings → Profile Type → College Coach**, fill out the form, and bypass verification entirely. Now switches to collegecoach are blocked at `POST /api/settings/switch-profile` with 403 unless the body includes a valid `inviteToken`. Switching FROM collegecoach to any other type stays unrestricted; if a coach wants to come back, they go through the full invite flow again. Profile switches never re-verify email — switches touch only profile rows, never `users.email_verified`.
+
+    **The end-to-end switch flow:**
+    1. User clicks **Settings → Profile Type → College Coach card**. `frontend/shared/settings.js` `goToStep2()` intercepts when `selectedTargetType === 'collegecoach'` and shows a "Verification Required" splash via `showCollegeCoachSwitchVerificationSplash()` instead of the standard switch form. Splash CTA links to `/frontend/landingpage/coach-signup-request.html?switch=1`.
+    2. Contact form in **switch mode** (`?switch=1`) is auth-gated (redirect to signin with `?next=` if logged out), pre-fills + locks first/last name + personal email from `/auth/me` with `.switch-locked` styling, and submits with `is_switch: true`.
+    3. Backend `POST /api/coach-signup/request` uses a new `optionalAuthMiddleware` (in `backend/middleware/auth.js`) — soft-auth that populates `req.user` if a JWT cookie exists but never 401s. Server only trusts `is_switch: true` when the user is actually authenticated (anti-spoof), and OVERRIDES `personal_email` to `req.user.email` regardless of what the frontend sent.
+    4. Request row stores `is_switch=true` + `existing_user_id=req.user.id` (FK to `users` with `ON DELETE SET NULL`). Admin notification email subject says `[Profile-Type Switch]` instead of `[New Signup]`. Local dev mock prints `🔄 SWITCH from existing account` to the terminal.
+    5. Admin dashboard renders a **🔄 SWITCH** orange badge next to the name (with tooltip showing the user's existing role + email).
+    6. Admin locks school + division + approves — same flow as new signups, no new admin endpoints. The `is_switch` flag is copied from the request row into the new `coach_invites.is_switch` on approve.
+    7. Invite email goes to the .edu address. The link points to the SAME `create-coach-profile.html` page as new signups — one page, two modes. Originally planned as a separate `complete-switch.html` page but consolidating reduced DOM/CSS duplication and removed two-page sync drift. `buildInviteLink()` in `admin-coach-verification.js` always points to `create-coach-profile.html`; the page self-routes via the validate-token response.
+    8. Coach (still authenticated) clicks the URL. `coach-profile-form.js` validates the token, sees `validateData.is_switch === true`, sets `isSwitchMode = true`, and adapts:
+       - **Hides** the email + password + confirmPassword form-groups (and removes their `required` attributes)
+       - **Pre-fills + locks** the username from `me.profile.username || me.user.username`, with a 🔒 hint: "Locked from your existing account — you can change your username later from My Profile."
+       - **Page header** swaps to "Complete Your College Coach Switch", submit button to "Confirm Switch"
+       - **Skips** the `isUsernameAvailable` / `isEmailAvailable` / password-meets-requirements / passwords-match validations and the `authAPI.register()` call (user already owns all this)
+    9. On submit, `coach-profile-form.js` calls `API.settings.switchProfile('collegecoach', profileData, true, validatedInviteToken)` instead of `API.profile.createCoachProfile()`. The 4th `inviteToken` arg was added to `frontend/shared/api.js`.
+    10. Backend `POST /api/settings/switch-profile` runs the existing switch transaction with three additional steps when `target_type === 'collegecoach'`:
+        - **Require + validate the invite**: `SELECT i.id, i.school, i.division, r.personal_email FROM coach_invites i JOIN coach_signup_requests r ON r.id = i.request_id WHERE i.token = $1 AND i.used_at IS NULL AND i.revoked_at IS NULL AND i.expires_at > NOW() FOR UPDATE OF i`. Note the JOIN — `personal_email` lives on `coach_signup_requests`, not `coach_invites`. Forgetting this caused a "column personal_email does not exist" 500 during testing.
+        - **Email match check (anti-cross-user-redemption)**: 403 "This invite is for a different account" if `inv.personal_email.toLowerCase() !== req.user.email.toLowerCase()`.
+        - **Server-side override of `team_name` + `college_division`** from the invite record before the validation block runs. DevTools tampering on the form is harmless — backend always wins.
+    11. `profile_switch_history` insert now includes `invite_token` + `source` ('signup' or 'switch') for the audit trail (migration `020_add_switch_invite_audit.sql`).
+    12. `coach_invites.used_at = NOW()` set inside the transaction AFTER profile insert succeeds. Resilient to bails: if Stripe fails or user closes tab between steps, token stays valid for retry.
+    13. Existing Stripe transition logic returns `requires_payment: true` for free→paid (or paid→paid different price). Frontend redirects to the existing tier picker. `pendingProfileData` is flagged with `_isSwitch: true` so `payment-success.js` knows NOT to call `createCoachProfile` again (the switch already created the profile pre-Stripe). Without this flag, a duplicate `coach_profiles` row gets created and the user lands on a 404 — the bug we found during testing.
+
+---
+
+## iOS App (Capacitor) — Phases 0-5 (shipped 2026-04-18)
+
+87. Direct Recruit iOS app = Capacitor WebView wrapper of existing `frontend/` directory. Bundled mode (HTML/CSS/JS ships in the `.ipa`, API calls still hit `https://directrecruit.net`). Capacitor v8 uses Swift Package Manager — no CocoaPods — so `npx cap sync ios` runs fully on Windows. Mac is only needed for Xcode archive + App Store upload.
+
+### Phase 0 — Key locked decisions
+- **Wrapper = Capacitor** (not React Native, not Swift).
+- **Pricing tiers diverge by platform** — iOS uses Apple Small Business Program prices ($11.99 / $24.99 / $59.99 / $119.99), web keeps ($10 / $20 / $50 / $100). Anti-steering rule: iOS app never shows web prices.
+- **Mobile web redirects to App Store** (iOS) or "Coming soon" (Android). Exemption: all `frontend/landingpage/*.html` stay on mobile web. Detection via `window.Capacitor.isNativePlatform()` — NOT user-agent sniffing.
+
+### Phase 1 — Mobile-web redirect
+- IIFE at top of `frontend/shared/api.js` + inline `<script>` in `frontend/landingpage/index.html` (index doesn't load api.js).
+- Use `window.location.replace()` NOT `.href =` — prevents back-button redirect loop.
+- Path-prefix handling: `/frontend` prepended dynamically for Live Server, stripped on EC2.
+
+### Phase 2 — Capacitor shell + `.ios-app` CSS scoping
+- **Bundled mode:** removed `server.url` from `capacitor.config.ts`. Frontend change = new iOS submission (~24h review). Backend changes still deploy via `git pull`.
+- **Root `frontend/index.html`** required by Capacitor as entry point — keep the 15-line redirect stub.
+- `frontend/shared/capacitor-init.js` adds `.ios-app` class to `<html>` when Capacitor native. `frontend/shared/ios-app-overrides.css` contains all iOS-only styles scoped under `.ios-app`.
+- **Load order critical:** `capacitor-init.js` → `sw-register.js` → `api.js` → role scripts. capacitor-init must be first so `.ios-app` exists before anything else runs.
+- **New HTML files MUST get 3 insertions:** `viewport-fit=cover` on viewport meta, `<link>` to `ios-app-overrides.css` (last stylesheet), `<script>` to `capacitor-init.js` (before sw-register). Relative prefix: `../shared/` from `landingpage/` and `{role}/`, `../../shared/` from `{role}/tabs/`.
+- **9 skip files** never get the pattern: `index.html`, `404.html`, `500.html`, both admin pages, canary `hsplayer/mainpage-player.html`, `get-the-app.html`, `coming-soon-android.html`, `pricing.html` (anti-steering).
+- `npx cap sync ios` re-runs after every frontend-relevant change — ~2 seconds on Windows. Copies `frontend/` → `ios/App/App/public/`.
+
+### Phase 3 — Stripe → Apple IAP via RevenueCat
+- **Backend schema:** `users.subscription_source VARCHAR(20)` = `'stripe'` | `'apple_iap'` | NULL. **Disambiguation rule:** `stripe_subscription_id` column now holds EITHER a Stripe ID OR a RevenueCat `original_transaction_id` — ALWAYS pair reads with `subscription_source`. `/subscription-status` must skip the Stripe API call when source is `'apple_iap'` or it crashes.
+- **Dual webhooks, single source of truth:** `POST /api/payments/revenuecat-webhook` + existing Stripe webhook both write the same columns. Cross-platform sign-in just works — DB reflects whichever source last wrote.
+- **`API.isIOSApp()` is THE branching helper** — returns `document.documentElement.classList.contains('ios-app')`. Every Stripe vs IAP branch in the codebase uses it.
+- **Grace-period pattern for optimistic UI:** on IAP success, set `localStorage.iap_pending_activation = {at, userId}` before reload. Paywall IIFE honors the key for 60s (covers RevenueCat webhook P99). userId-scoped to prevent cross-user bleed.
+- **Settings "Manage subscription" on iOS deep-links to `https://apps.apple.com/account/subscriptions`** — Apple's "no in-app cancel" rule.
+- **Known v1 limit:** Settings > Subscribe button fails for coaches who've never subscribed (no `subscription_tier` to map to a product). New subs MUST go through signup tier modal.
+
+### Phase 4 — Native capabilities
+- **Account-delete flow on iOS:** `settings.js` calls `Purchases.logOut()` BEFORE `clearAuth()` — otherwise next user on a shared device inherits RC identity. Backend-delete cancels Stripe sub for `source='stripe'` only, skips `'apple_iap'` (Apple-managed).
+- **`window.NativeCamera.*` (`frontend/shared/native-camera.js`)** wraps `@capacitor/camera` and returns File objects via `base64ToFile()` / `webPathToFile()` shims — existing FormData/cropper/preview/upload code stays identical, only the picker source changes.
+- **Post-media bottom-sheet:** Capacitor can't mixed-pick images+videos, so `showPostMediaSheet()` gives Photos / Video / Cancel. Users can still combine (3 photos + 1 video) by picking twice.
+- **Backend `notifyUser(io, notif, opts)` in `backend/utils/notifications.js`** — fire-and-forget wrapper around Socket.IO emit + APNs fan-out. All 23 notification call sites across 6 route files wrapped. Auto-deletes stale tokens on `BadDeviceToken` / `Unregistered` / `DeviceTokenNotForTopic`.
+- **Env-switcher + local mock pattern** (Stripe, RevenueCat, APNs all identical): `backend/utils/<svc>.js` checks env vars, loads `backend/utils/local/<svc>-local.js` mock if unset. Keeps dev credential-free.
+- **Capacitor plugin init shape:** async IIFE inside `capacitor-init.js`, listeners armed at page load, per-user logic (`logIn` / `register`) triggered from `authAPI.login()` / `authAPI.logout()` hooks. Used for RevenueCat AND Push.
+- **Push tap deep-link routing:** backend sends relative `deep_link_path` in APNs payload. Client resolves `role` folder from `window.location.pathname`, prepends `/frontend/{role}/tabs`, auto-appends `.html`. `/shared/` paths skip the role prefix.
+
+### Phase 5 — Polish
+- **`allowsLinkPreview: false`** in `capacitor.config.ts` — kills Safari-style long-press preview card.
+- **Badge count on iOS app icon:** `notifyUser()` calls `Notification.getUnreadCount(user_id)` (lazy-required to avoid circular) and passes as `badge` in APNs payload. `opts.badge` still overrides. Try/catch — if count query fails, push sends with no badge.
+- **Page-transition spinner:** `.ios-app`-gated IIFE in `capacitor-init.js`. Capture-phase click listener walks up to nearest `<a>`, shows fullscreen dark overlay with cerulean spinner. Skips: `target="_blank"`, `download`, cross-origin, same-page hash, meta/ctrl/shift. 2-second safety timer + `pageshow` hook clean up lingering overlays.
+- **Legal card (Apple Guideline 5.3.2):** inserted above Danger Zone in all 6 `{role}/tabs/settings.html`. Shared CSS `.legal-row` in `shared/settings.css`, HTML duplicated across role files (Pattern 1 style).
+
+### Gotchas worth remembering
+- **Lesson 10 trap keeps recurring:** run backend from `backend/` dir, NOT project root — `.env` only exists there. Symptom = "server does not support SSL connections" on login.
+- **`@revenuecat/purchases-capacitor` has no Package.swift** → SPM warning on `cap sync`. Safe to ignore on Windows; Xcode runs `pod install` for it on Mac.
+- **Service worker auto-disables in Capacitor WebView** because `sw-register.js` short-circuits on `hostname === 'localhost'` and Capacitor uses `capacitor://localhost`. Accepted.
+
+---
+
+## Stripe Enterprise — Seat-Based Billing for Teams / Rosters (Planned, Not Yet Built)
+
+88. **Enterprise billing is a planned feature for selling bulk seats to teams/orgs** (high schools, colleges, clubs, conferences). A single buyer — typically an AD, head coach, or ops manager — purchases N seats at a per-user monthly rate, then distributes those seats to their roster (hsplayer) and/or staff (collegecoach). The enterprise pays centrally; individual players/coaches never see a Stripe charge. This section captures the full plan so work can resume across chat sessions.
+
+### High-level flow (agreed with user)
+
+    1. Prospective buyer submits enterprise inquiry via existing contact form → lands in `enterprise_signup_requests` table → visible in admin dashboard (same pattern as coach verification flow, Lessons 76-83).
+    2. Jackson reaches out, negotiates pricing/seat count, closes the deal.
+    3. Jackson creates a Stripe Invoice manually in Stripe Dashboard (supports card, ACH, check via net-30 — schools need all three). Stripe invoice ID is recorded for reconciliation.
+    4. Buyer pays via the Stripe-hosted invoice page.
+    5. Jackson clicks "Approve" on the enterprise request in the admin dashboard. A modal asks for: `player_seats_paid`, `coach_seats_paid`, `stripe_invoice_id`, `stripe_subscription_id`, `stripe_customer_id`, `monthly_price_per_player`, `monthly_price_per_coach`, `billing_email` (pre-filled from request).
+    6. On approve: `enterprises` row is created, a single-use magic-link token is generated, and an activation email is sent to the billing contact.
+    7. Buyer clicks the magic link → lands on `/frontend/enterprise/activate.html` → chooses their password. (Skip 2FA for v1 — not industry-required at sub-$5k deal size. Roadmap Q3 answer if asked.)
+    8. Buyer logs in → lands on `/frontend/enterprise/dashboard.html` → sees "52 seats • 0 used • 52 available" → bulk-pastes or types in emails → clicks "Send Invites."
+    9. Each invitee gets a unique, email-bound, single-use token link → `/landingpage/enterprise-join.html?token=abc`. Email is pre-filled and LOCKED on the signup form so they can't redirect the seat to someone else.
+    10. Invitee completes the hsplayer or collegecoach create-profile form, but the Stripe checkout step is SKIPPED because their seat is already paid for. Token is consumed ONLY after profile creation succeeds (resilient to mid-signup bails).
+    11. Paywall IIFE in `frontend/shared/api.js` adds a new branch: if `user.enterprise_id` and the parent enterprise subscription is active, treat as paid. Individual `subscription_status` is bypassed for enterprise-linked users.
+    12. Admin can revoke an unclaimed invite (seat frees up), revoke an active user (seat frees up, user loses access), resend invite, bulk add more.
+
+### Architectural decisions already locked in
+
+- **Seat-based licensing is the industry standard pattern** (Slack, Notion, Linear, Vercel, Figma, Hudl). Stripe's `subscription.items[].quantity` field is built for this. When seat count changes mid-cycle, call `stripe.subscriptions.update(id, { items: [{ id, quantity: N }] })` — Stripe auto-prorates.
+- **Admin tool ↔ Stripe are NOT auto-connected for v1.** Jackson IS the webhook — verifies payment in Stripe Dashboard before clicking Approve, manually enters seat count. This is "concierge MVP" — standard for first 10-20 enterprise deals. Automate with Stripe metadata + webhook on `invoice.paid` once deal volume justifies it.
+- **Invoice-first, not Checkout-link-first.** Schools pay via PO/ACH/check, not credit card. Stripe Invoice supports all methods; Stripe Payment Link is card-only. Invoices are the right primary path.
+- **Enterprise admin is a NEW role type (`enterprise_admin`), NOT one of the 6 existing profile types.** They don't have a player/coach profile — just a lightweight account with a management dashboard. Separate auth surface. Option to later add a "dual role" flag (coach who is also team admin) but v1 is standalone.
+- **Seat cap is enforced server-side at invite-send AND at claim time.** Token generation blocked when `seats_used >= seats_paid`. Race condition on the last seat is handled by a transactional check on claim.
+- **Token is email-bound.** Server checks submitted email matches token-issued email to prevent forwarding the link.
+- **Billing data flow:** `enterprises.stripe_subscription_id` stores the parent sub. `users.enterprise_id` FK links individual seat-holders. The enterprise's subscription is the source of truth; individual `users.subscription_status` is irrelevant for enterprise-linked accounts.
+
+### The 7 phases (agreed split — do not do this in one go)
+
+**Phase 1 — Database schema + backend foundations**
+- New tables: `enterprises`, `enterprise_seats`, `enterprise_invites`
+- Add `enterprise_id UUID` FK + `enterprise_seat_id UUID` FK to `users` (both nullable, `ON DELETE SET NULL`)
+- Extend `coach_signup_requests` (or create `enterprise_signup_requests` sibling) with: `request_type` (coach|enterprise), `org_name`, `seats_requested`, `stripe_invoice_id`, `stripe_subscription_id`, `stripe_customer_id`, `player_seats_paid`, `coach_seats_paid`, `monthly_price_per_player`, `monthly_price_per_coach`
+- Dual migrations: `backend/scripts/add-enterprise-billing.sql` (local) + `backend/migrations/0XX_add_enterprise_billing.sql` (prod, sequential number TBD at build time)
+- User model helpers: `User.getEnterprise(userId)`, `User.isEnterpriseAdmin(userId)`, `Enterprise.getSeatUsage(enterpriseId)`, `Enterprise.canAddSeat(enterpriseId, seatType)`
+- No user-visible changes — foundational only.
+- Verify: run `npm run seed`, query tables in psql, confirm schema.
+
+**Phase 2 — Admin approval flow**
+- Extend `/frontend/admin/coach-verification.html` (gitignored) with an "Enterprise Requests" tab OR treat as a filter on existing requests table.
+- "Approve" button opens modal with the 7 fields listed above (seats, prices, Stripe IDs, billing email).
+- Backend endpoint: `POST /api/admin/enterprise/approve` → creates `enterprises` row + generates token + inserts into `enterprise_invites` (admin-activation flavor) + sends email.
+- New email template: `sendEnterpriseAdminActivation()` in `backend/utils/email.js` + console mock in `backend/utils/local/email-local.js` (print activation URL for dev).
+- Verify: submit test enterprise request locally, approve with fake seat counts, confirm activation URL prints to terminal, confirm DB rows correct.
+
+**Phase 3 — Enterprise admin activation + login**
+- New landing page: `/frontend/enterprise/activate.html` — validates token, form to set password, calls Cognito `signUp` + `confirmSignUp` (local: bcrypt hash).
+- `users` row for the enterprise admin has `role = 'enterprise_admin'` (may require extending role enum — check existing enum before adding).
+- Backend: `POST /api/enterprise/activate` (sets password + marks token `used_at`), `GET /api/enterprise/validate-token` (4-state response: invalid/expired/used/revoked, matching coach invite pattern in Lesson 78).
+- `/auth/me` extended to return `enterprise` object when `role === 'enterprise_admin'` with `{ id, org_name, player_seats_paid, coach_seats_paid, seats_used, subscription_status }`.
+- Paywall IIFE in `api.js` (Lesson 43): skip redirect for `enterprise_admin` role AND for users with `enterprise_id` when parent enterprise sub is active.
+- Verify: click magic link, set password, log in, land on blank `/frontend/enterprise/dashboard.html`.
+
+**Phase 4 — Enterprise dashboard UI**
+- `/frontend/enterprise/dashboard.html` + `dashboard.js` + `dashboard.css` — seat usage widget (used/paid/available), invite list table, bulk email textarea, "Send Invites" button.
+- Invite endpoints:
+    - `POST /api/enterprise/invites` (single or bulk — accepts `emails: string[]` and `seat_type: 'hsplayer'|'collegecoach'`)
+    - `DELETE /api/enterprise/invites/:id` (revoke unclaimed)
+    - `POST /api/enterprise/invites/:id/resend` (regenerate token, resend email)
+    - `GET /api/enterprise/invites` (list all, filter by status)
+    - `DELETE /api/enterprise/seats/:userId` (revoke active user — frees seat, decrements Stripe qty in Phase 6)
+- Server-side seat cap: reject invite creation if `seats_used + pending_invites >= seats_paid`.
+- Invite email: `sendEnterpriseSeatInvite(email, token, orgName, seatType)` — link to `/landingpage/enterprise-join.html?token=abc`.
+- **Invite list table with live status per row.** Every seat/invite row shows one of four states, derived entirely from Phase 1 schema columns (no new columns needed):
+    - **Claimed** ✅ — `enterprise_seats.user_id IS NOT NULL` AND `claimed_at IS NOT NULL` AND `revoked_at IS NULL`. Display: "Claimed <N> days ago" (from `claimed_at`). No action buttons (use seat-revoke to remove the user).
+    - **Pending** ⏳ — invite sent, not yet clicked. `enterprise_invites.used_at IS NULL AND revoked_at IS NULL AND expires_at > NOW()`. Display: "Invite sent <N> days ago" (from `created_at`). Actions: [Resend] [Revoke].
+    - **Expired** ⚠️ — never clicked, past expiry. `used_at IS NULL AND revoked_at IS NULL AND expires_at < NOW()`. Display: "Expired <N> days ago" (from `expires_at`). Actions: [Resend] [Revoke]. Resend generates a new token with fresh `expires_at`.
+    - **Revoked** — audit trail only; hidden by default, shown under a "Show revoked" toggle. Display: "Revoked <N> days ago" (from `revoked_at`).
+- **Resend behavior (`POST /api/enterprise/invites/:id/resend`):** marks the existing invite row as `revoked_at = NOW()`, inserts a new `enterprise_invites` row with fresh token + fresh `expires_at = NOW() + 30 days`, keeps the same `seat_id` + `invited_email` + `seat_type`, re-sends the `sendEnterpriseSeatInvite` email. The underlying `enterprise_seats` row is untouched so seat accounting stays consistent (still counts as pending). Prior tokens are invalidated — clicking the old link returns "revoked" from validate-token.
+- **Optional Phase 4 schema add** (only if the UX needs it): `last_resent_at TIMESTAMP` on `enterprise_invites` to show "Reminder sent <N> hours ago" under the Resend button. Lightweight — one migration (027) if we decide to build it. Default NO unless the dashboard design asks for it.
+- Backend endpoint `GET /api/enterprise/invites` must JOIN `enterprise_seats` with `enterprise_invites` and compute the status discriminator server-side so the frontend renders a flat list without state-derivation logic. Sort by status group (Pending first, then Expired, then Claimed), then by `created_at DESC` within each group.
+- Verify: add 3 emails (mix of hsplayer + collegecoach), confirm seat count decrements, confirm email bodies print with correct links, click Resend on one invite and confirm a new token is generated while the old token's validate-token endpoint returns "revoked", confirm the dashboard re-renders showing the new sent time.
+
+**Phase 5 — Player/coach claim flow (touches EXISTING signup — highest risk phase)**
+- New page: `/frontend/landingpage/enterprise-join.html?token=abc` — validates token, shows team name + role being granted, "Continue" button → redirects to the right `create-profile.html` for the seat type (hsplayer or collegecoach) with `?enterpriseToken=abc` appended.
+- Modify `hsplayer/profile-form.js` AND `collegecoach/coach-profile-form.js`: detect `?enterpriseToken=`, validate it, LOCK the email field (pre-filled from token's invited email), SKIP Stripe tier modal, SKIP checkout redirect. On `authAPI.register()` success + `createPlayerProfile()` / `createCoachProfile()` success, call `POST /api/enterprise/invites/claim` with the token → sets `users.enterprise_id` + `enterprise_seat_id`, marks invite `claimed_at`.
+- Cross-role concern (CLAUDE.md Pattern/verification rule): MUST verify in BOTH `hsplayer` and `collegecoach` folders. Transfer player NOT in v1 — enterprises don't typically pay for transfer players; if a team wants to, do `hsplayer` seats and let them use the existing profile-switching flow (Lesson 36-38) to become transferplayer later. Confirm this with user before building.
+- Paywall IIFE: user with `enterprise_id` + active parent sub = full access, regardless of their own `subscription_status`.
+- Backend safety: `createPlayerProfile` / `createCoachProfile` endpoints check for `enterpriseToken` in body; if present, validate token, override any Stripe-related fields. Server is the security boundary (Lesson 79 pattern — DevTools tampering harmless).
+- Verify (both folders): click hsplayer invite → complete profile → no Stripe screen → land on mainpage with full access. Repeat for collegecoach.
+
+**Phase 6 — Seat lifecycle + Stripe quantity sync**
+- Admin revokes an active user → user's `enterprise_id` cleared, their access removed, seat returned to pool.
+- When seats are added/removed, call `stripe.subscriptions.update()` to sync quantity. Decide: immediate proration vs. end-of-cycle. Proration is standard but schools sometimes prefer predictable billing — make it a config flag per enterprise (`prorate_on_seat_change BOOLEAN DEFAULT true`).
+- Webhook: extend `backend/routes/payments.js` webhook handler to recognize enterprise subscriptions (via Stripe `metadata.enterprise_id`):
+    - `customer.subscription.updated` → sync seat count if quantity changed externally
+    - `customer.subscription.deleted` → mark enterprise `subscription_status = 'cancelled'` → cascade lock all seat-holders
+    - `invoice.payment_failed` → set enterprise `subscription_status = 'past_due'` (grace period, no immediate lockout — matches Lesson 43 `past_due` behavior)
+- Admin dashboard shows subscription status and next billing date.
+- Verify with real Stripe test-mode keys: create test subscription, update quantity, confirm DB reflects, cancel, confirm all seat-holders locked out.
+
+**Phase 7 — Polish & edge cases**
+- Invite expiration (30 days default — match coach invite pattern in Lesson 78)
+- Resend invite generates new token (old one revoked)
+- Audit log: `enterprise_audit_log` table — every admin action (invite sent, invite revoked, seat assigned, seat revoked, bulk upload) with timestamp + actor
+- Enterprise settings page: update billing email, view past invoices (Stripe hosted invoice URLs), update org name
+- Mobile responsive dashboard (the dashboard is desktop-first but admins may check seat usage on phones)
+- CSV upload for bulk invites (drag & drop a spreadsheet with emails + seat types)
+- iOS app consideration: the enterprise admin dashboard does NOT need to be accessible from the iOS app (admins manage from desktop). Skip path in `shared/api.js` IIFE if needed.
+
+### Critical gotchas surfaced during planning
+
+- **Database migrations dual-path rule (Lesson 18):** every schema change needs BOTH `backend/scripts/*.sql` (for local seed) AND `backend/migrations/NNN_*.sql` (for prod tracked migrations). Check next available number at build time — currently 009+ for popularity indexes, 018/019 for coach signup, 020 for switch audit. Enterprise migrations will likely be 021+.
+- **CSP rule (Lesson 84):** enterprise dashboard + activation page served by node backend will break with inline scripts. Extract to external `.js` files from day one.
+- **School logo system (Lessons 47-52):** enterprise dashboard showing org names may want school logos. Follow the `ensureSchoolLogosLoaded` + `getSchoolLogoHTML` + `typeof` guard pattern.
+- **Admin dashboard is gitignored:** `frontend/admin/coach-verification.html` and `frontend/admin/ai-dashboard.html` are both gitignored (Lessons 25, 83). If enterprise admin UI is combined into the same admin dashboard, it stays gitignored. Prod deploys via `scp` not `git pull`.
+- **`getProfileFolder` bug (Lesson 69):** when reading enterprise admin data from `/auth/me`, don't pass `me.user` alone to `getProfileFolder` — but this shouldn't apply since enterprise admins aren't one of the 6 folder roles. Still, worth flagging as the kind of bug that recurs.
+- **Paywall IIFE location (Lesson 43):** the `frontend/shared/api.js` IIFE that redirects unpaid users needs the new enterprise branch. Test that enterprise admins don't get redirected to subscription-required.html, and that enterprise-linked players don't either.
+- **Cognito role enum:** if adding `enterprise_admin` to `users.role`, check the enum type definition in the Postgres schema — may need `ALTER TYPE ... ADD VALUE` in a migration. This is Postgres-specific and must be in a separate transaction from the rest of the migration (Postgres limitation on enum alters in txns).
+- **iOS app considerations (Lessons 85-86):** mobile-web redirect IIFE in `api.js` (Phase 1 of iOS) redirects non-landing pages to App Store on mobile web. Enterprise admin pages should probably also be exempt (like landing pages) since admins may use mobile browsers. Add `/enterprise/` to the exemption list.
+- **Email mocks print to console:** all new email templates (activation, seat invite) need both real SES template and local mock (standard pattern per `email-local.js`). Prefix with emoji like `📧 ENTERPRISE INVITE:` for easy scrolling in terminal output.
+- **Seat count reconciliation:** if Jackson manually adjusts seats in Stripe Dashboard (discount, comp seats, etc.), the webhook will pick it up on next `customer.subscription.updated` event. Make sure the webhook handler is idempotent and updates the local `enterprises.player_seats_paid` / `coach_seats_paid` on any quantity change.
+- **Free-tier leak risk:** if an enterprise sub is cancelled but the seat-holders still have profile data, they should be LOCKED (paywall), not deleted. Their profile lives on, but access requires re-subscribing OR being re-invited by another enterprise. Match the existing `past_due`/`cancelled` lockout pattern exactly.
+
+### Testing plan per phase
+
+Per CLAUDE.md verification rules, each phase has at least one verification step:
+
+- **Phase 1:** Run `npm run seed`, query new tables in psql, confirm columns/FKs/indexes exist.
+- **Phase 2:** Submit test request via existing contact form, approve in admin dashboard, confirm email URL prints, confirm DB rows populated with seat counts.
+- **Phase 3:** Click magic link in browser, set password, log in, confirm `/auth/me` returns enterprise object, confirm NOT redirected to subscription-required.
+- **Phase 4:** Log in as enterprise admin, bulk-paste 5 emails, click Send Invites, confirm seat count drops by 5, confirm 5 invite emails print to terminal with working token URLs.
+- **Phase 5:** Click hsplayer invite URL, complete profile, confirm NO Stripe screen appears, confirm landed on mainpage with full feature access. REPEAT in collegecoach folder (cross-role rule).
+- **Phase 6:** Use real Stripe test keys. Create test subscription with quantity 10, update to 15 via admin UI, confirm Stripe Dashboard reflects. Cancel subscription, confirm all seat-holders get paywall redirect on next page load.
+- **Phase 7:** Resend expired invite (should generate new token, old token returns "expired" from validate endpoint), check audit log has timestamped entries for every action.
+
+### Files likely to be touched (reference during implementation)
+
+- **New backend:** `backend/routes/enterprise.js`, `backend/routes/admin-enterprise.js`, `backend/models/Enterprise.js`, `backend/models/EnterpriseSeat.js`, `backend/models/EnterpriseInvite.js`
+- **Modified backend:** `backend/routes/payments.js` (webhook), `backend/routes/profile.js` (claim token), `backend/routes/auth.js` (login routing for enterprise_admin), `backend/models/User.js` (helpers), `backend/utils/email.js` (+ local mock), `backend/server.js` (mount new routes)
+- **New frontend:** `frontend/enterprise/dashboard.html/js/css`, `frontend/enterprise/activate.html/js/css`, `frontend/landingpage/enterprise-join.html/js`
+- **Modified frontend:** `frontend/shared/api.js` (paywall IIFE + new `API.enterprise` sub-API), `frontend/hsplayer/profile-form.js`, `frontend/collegecoach/coach-profile-form.js`, `frontend/admin/coach-verification.html` (approval modal)
+- **Migrations:** `backend/scripts/add-enterprise-billing.sql`, `backend/migrations/0XX_add_enterprise_billing.sql` (and possibly separate enum-alter migration)
+
+---
+
+## iOS App — What's still TODO before App Store submission
+Important: Xcode wiring step (the last-mile manual bit)
+Creating App.entitlements isn't enough — Xcode needs to know to USE it. When you're on the Mac:
+
+Xcode → open the project → App target → Build Settings tab
+Search for "Code Signing Entitlements"
+Set the value to App/App.entitlements (for both Debug and Release)
+Xcode → Signing & Capabilities tab → click + Capability → Push Notifications
+2. **Mac / Apple Developer portal setup** (Phase 6):
+   - Apple Developer Program membership ($99/yr — first real $ spend).
+   - Generate `.p8` APNs Auth Key. Note Key ID (10 chars) + Team ID.
+   - Portal → Identifiers → `net.directrecruit.app` → enable Push Notifications capability.
+   - Xcode → App target → Signing & Capabilities → + Push Notifications.
+3. **EC2 env vars** (Phase 6): `APNS_KEY_ID`, `APNS_TEAM_ID`, `APNS_P8_CONTENT` (base64 of .p8), `APNS_BUNDLE_ID=net.directrecruit.app`, `APNS_ENVIRONMENT=production`. Then `pm2 restart all`.
+4. **RevenueCat + App Store Connect IAP products** — create 4 products matching `IAP_PRODUCT_*` env vars, build RC offerings, set `REVENUECAT_IOS_API_KEY` + `REVENUECAT_WEBHOOK_AUTH_HEADER` on EC2.
+5. **Tier B iOS Simulator verification** — most phases only have Tier A (Windows) verified:
+   - Phase 2: safe-area padding under notch, tap highlights killed, no pull-to-refresh bounce.
+   - Phase 3: Apple IAP sheet appears on tier tap, sandbox purchase → profile created → verify-email loads, RC webhook round-trip <10s.
+   - Phase 4b: native camera sheets for profile / post / highlight flows all upload correctly.
+   - Phase 4c: push registration succeeds, foreground + tap notifications route correctly.
+   - Phase 5: long-press no preview, nav spinner fades smoothly, badge shows number not dot, Legal links stay in-WebView.
+6. **App Store Connect listing:** screenshots (required sizes), app description, keywords, privacy nutrition labels, review notes, support URL, privacy policy URL.
+7. **Apply for Apple Small Business Program** on day 1 of App Store Connect (15% cut vs 30%).
+8. **Post-launch considerations:** External Link Entitlement (post-*Epic v. Apple*) and Apple Sign In (Guideline 4.8) — not needed for v1.
+
+---
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ## TODOs
-**TODO: Settings switch profile, college coach request form
+
+App Store ID placeholder in frontend/landingpage/get-the-app.html:66 — has idPLACEHOLDER instead of your real App Store ID. Need the real ID from App Store Connect (you create the app listing first, Apple assigns an ID like id1234567890, then I drop it in).
+
+RevenueCat product IDs — the mapping in frontend/shared/iap-products.js assumes product keys player, coach_starter, coach_pro, coach_elite. Whatever product IDs you create in App Store Connect must match. Not a code fix — a dashboard-side coordination check.
+
 **TODO: Rotate all creds (Stripe is good)
+
+net stop postgresql-x64-18
 
 docker-compose stop
 
 docker-compose start
 
 DO NOT run seed
+
+
+
