@@ -111,6 +111,18 @@ async function sendEnterpriseRejection(toEmail, data) {
   return { success: true, messageId: 'local-dev-' + Date.now() };
 }
 
+async function sendEnterpriseAdminActivation(toEmail, data, link) {
+  console.log('\n[LOCAL EMAIL] 🏢 Enterprise Admin Activation');
+  console.log(`  To: ${toEmail}`);
+  console.log(`  Org: ${data.org_name}`);
+  console.log(`  Admin name: ${data.first_name}`);
+  console.log(`  Seats: ${data.player_seats_paid} player(s) + ${data.coach_seats_paid} coach(es)`);
+  console.log(`  Expires: ${data.expires_at || '30 days from now'}`);
+  console.log(`  ACTIVATION URL: ${link}`);
+  console.log('  (Copy the URL above to test the enterprise activation flow)\n');
+  return { success: true, messageId: 'local-dev-' + Date.now() };
+}
+
 module.exports = {
   sendEmailChangeVerification,
   sendEmailChangeConfirmation,
@@ -122,5 +134,6 @@ module.exports = {
   sendCoachRejection,
   sendEnterpriseInquiryNotification,
   sendEnterpriseApproval,
-  sendEnterpriseRejection
+  sendEnterpriseRejection,
+  sendEnterpriseAdminActivation
 };
