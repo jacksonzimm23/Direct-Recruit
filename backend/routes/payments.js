@@ -23,6 +23,26 @@ const TIER_MAP = {
   collegecoach_elite: 'elite'
 };
 
+// Allowed origins for Stripe redirect URLs (security audit #8).
+// Anything outside this list falls back to a hardcoded directrecruit.net URL.
+// Localhost is dev-only — strips the open-redirect vector in production
+// while keeping the local Live Server (5500) + backend-served (5000) flows working.
+const ALLOWED_ORIGINS = ['https://directrecruit.net', 'https://www.directrecruit.net'];
+if (process.env.NODE_ENV !== 'production') {
+  ALLOWED_ORIGINS.push('http://localhost:5000', 'http://localhost:5500');
+}
+
+function validateRedirectUrl(url, fallback) {
+  if (!url) return fallback;
+  try {
+    const parsed = new URL(url);
+    if (ALLOWED_ORIGINS.includes(parsed.origin)) return url;
+  } catch (e) {
+    // malformed URL — fall through to fallback
+  }
+  return fallback;
+}
+
 // ─── Create Checkout Session ─────────────────────────────────────────────────
 // POST /api/payments/create-checkout-session
 router.post('/create-checkout-session', authMiddleware, async (req, res) => {
@@ -74,8 +94,8 @@ router.post('/create-checkout-session', authMiddleware, async (req, res) => {
       profileType,
       tier: resolvedTier,
       context: context || 'signup',
-      successUrl: successUrl || `${req.headers.origin}/frontend/shared/payment-success.html?session_id={CHECKOUT_SESSION_ID}`,
-      cancelUrl: cancelUrl || `${req.headers.origin}/frontend/landingpage/pricing.html`
+      successUrl: validateRedirectUrl(successUrl, 'https://directrecruit.net/frontend/shared/payment-success.html?session_id={CHECKOUT_SESSION_ID}'),
+      cancelUrl: validateRedirectUrl(cancelUrl, 'https://directrecruit.net/frontend/landingpage/pricing.html')
     });
 
     res.json({ url: session.url, sessionId: session.id });
