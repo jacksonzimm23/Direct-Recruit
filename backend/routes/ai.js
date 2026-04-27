@@ -17,6 +17,7 @@ const Notification = require('../models/Notification');
 const { notifyUser } = require('../utils/notifications');
 const User = require('../models/User');
 const logger = require('../utils/logger');
+const { RateLimiterMemory } = require('rate-limiter-flexible');
 
 // Check if coach has active subscription before AI usage
 async function requireActiveSubscription(req, res) {
@@ -65,6 +66,33 @@ async function addSignedUrlsToProfiles(players) {
 
 // All routes require authenticated coach
 router.use(authMiddleware, requireRole('coach'));
+
+// Per-coach AI rate limit (security audit finding #6).
+// In-memory limiter — resets per process. Do NOT enable pm2 cluster mode
+// without switching to RateLimiterRedis (would multiply effective limit by worker count).
+const aiRateLimiter = new RateLimiterMemory({ points: 15, duration: 60 }); // 15 req / 60s
+
+// Reject AI message requests when the coach is over their tier's monthly token cap.
+// Returns true if the request should proceed; false if a 429 was already sent.
+async function checkTokenCap(req, res) {
+  try {
+    const usage = await AiAnalytics.getUsageByCoach(req.userId);
+    if (usage.tokenCap > 0 && (usage.inputTokens + usage.outputTokens) >= usage.tokenCap) {
+      res.status(429).json({
+        error: 'Monthly AI usage limit reached for your plan',
+        plan: usage.plan,
+        used: usage.inputTokens + usage.outputTokens,
+        cap: usage.tokenCap,
+        periodEnd: usage.periodEnd
+      });
+      return false;
+    }
+    return true;
+  } catch (err) {
+    logger.error('Token cap check failed, allowing request:', err);
+    return true; // Fail-open on infra error — never block a paying coach over a Stripe blip.
+  }
+}
 
 // ============ USAGE ENDPOINT ============
 
@@ -232,6 +260,14 @@ router.post('/pi-search', async (req, res) => {
 router.post('/chats/:chatId/message', validateUUID('chatId'), async (req, res) => {
   try {
     if (!(await requireActiveSubscription(req, res))) return;
+
+    try {
+      await aiRateLimiter.consume(req.userId);
+    } catch (e) {
+      return res.status(429).json({ error: 'Too many AI requests. Please wait a moment.' });
+    }
+
+    if (!(await checkTokenCap(req, res))) return;
 
     const { message, baselines } = req.body;
     const chatId = req.params.chatId;
@@ -457,6 +493,14 @@ router.post('/chats/:chatId/message', validateUUID('chatId'), async (req, res) =
 router.post('/chats/:chatId/pi-message', validateUUID('chatId'), async (req, res) => {
   try {
     if (!(await requireActiveSubscription(req, res))) return;
+
+    try {
+      await aiRateLimiter.consume(req.userId);
+    } catch (e) {
+      return res.status(429).json({ error: 'Too many AI requests. Please wait a moment.' });
+    }
+
+    if (!(await checkTokenCap(req, res))) return;
 
     const { message } = req.body;
     const chatId = req.params.chatId;
