@@ -1,6 +1,11 @@
 // Use local mock unless a real Stripe key is present.
 // This lets you test real Stripe checkout in development without switching NODE_ENV
 // (which would break CORS, Redis, Cognito, etc.).
+// In production, a missing or malformed key MUST crash startup — silently falling
+// back to the mock would auto-approve payments and leak revenue.
+if (process.env.NODE_ENV === 'production' && !process.env.STRIPE_SECRET_KEY?.startsWith('sk_')) {
+  throw new Error('FATAL: STRIPE_SECRET_KEY is required in production');
+}
 const hasRealStripeKey = process.env.STRIPE_SECRET_KEY && process.env.STRIPE_SECRET_KEY.startsWith('sk_');
 if (!hasRealStripeKey) { module.exports = require('./local/stripe-local'); return; }
 
