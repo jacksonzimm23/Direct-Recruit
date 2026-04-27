@@ -4,7 +4,6 @@ const RecruitingBoard = require('../models/RecruitingBoard');
 const Notification = require('../models/Notification');
 const { notifyUser } = require('../utils/notifications');
 const { authMiddleware, requireRole, validateUUID } = require('../middleware/auth');
-const { sanitizeBody } = require('../middleware/validation');
 const pool = require('../config/database');
 const { getSignedS3Url } = require('../utils/s3');
 const logger = require('../utils/logger');
@@ -145,7 +144,7 @@ router.put('/personal/:classYear/players/:playerId/position', authMiddleware, re
 // ==================== Shared Board Routes ====================
 
 // Create a new shared board
-router.post('/shared', authMiddleware, requireRole('coach'), sanitizeBody, async (req, res) => {
+router.post('/shared', authMiddleware, requireRole('coach'), async (req, res) => {
   try {
     const { boardName } = req.body;
 
@@ -209,7 +208,7 @@ router.get('/shared/:boardId', authMiddleware, requireRole('coach'), validateUUI
 });
 
 // Update shared board name
-router.put('/shared/:boardId/name', authMiddleware, requireRole('coach'), validateUUID('boardId'), sanitizeBody, async (req, res) => {
+router.put('/shared/:boardId/name', authMiddleware, requireRole('coach'), validateUUID('boardId'), async (req, res) => {
   try {
     const { boardId } = req.params;
     const { boardName } = req.body;

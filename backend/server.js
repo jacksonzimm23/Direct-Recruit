@@ -29,6 +29,7 @@ const coachSignupRoutes = require('./routes/coach-signup');
 const adminCoachVerificationRoutes = require('./routes/admin-coach-verification');
 const initializeSocket = require('./socket');
 const { apiLimiter } = require('./middleware/rateLimit');
+const { sanitizeBody } = require('./middleware/validation');
 const logger = require('./utils/logger');
 
 const app = express();
@@ -54,6 +55,12 @@ app.post('/api/payments/webhook', express.raw({ type: 'application/json' }), pay
 app.post('/api/payments/revenuecat-webhook', express.raw({ type: 'application/json' }), paymentsRoutes.revenueCatWebhookHandler);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Recursively strip HTML from all parsed request bodies. Mounted AFTER the
+// raw-body webhook routes above (Stripe + RevenueCat) so those receive the
+// Buffer they need for signature verification — those use app.post with
+// express.raw, not app.use, so they short-circuit before this runs.
+app.use(sanitizeBody);
 
 // Assign a unique request ID to every request for log tracing
 app.use((req, res, next) => {

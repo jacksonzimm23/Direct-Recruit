@@ -4,7 +4,6 @@ const PlayerOffer = require('../models/PlayerOffer');
 const PlayerProfile = require('../models/PlayerProfile');
 const Follow = require('../models/Follow');
 const { authMiddleware } = require('../middleware/auth');
-const { sanitizeBody } = require('../middleware/validation');
 const logger = require('../utils/logger');
 
 // Get all offers for the logged-in player
@@ -48,7 +47,7 @@ router.get('/player/:username', authMiddleware, async (req, res) => {
 });
 
 // Add a new offer
-router.post('/', authMiddleware, sanitizeBody, async (req, res) => {
+router.post('/', authMiddleware, async (req, res) => {
   try {
     const { collegeName, division } = req.body;
 
@@ -78,7 +77,7 @@ router.post('/', authMiddleware, sanitizeBody, async (req, res) => {
 });
 
 // Update an offer by index
-router.put('/:offerIndex', authMiddleware, sanitizeBody, async (req, res) => {
+router.put('/:offerIndex', authMiddleware, async (req, res) => {
   try {
     const offerIndex = parseInt(req.params.offerIndex);
     const { collegeName, division } = req.body;

@@ -33,6 +33,7 @@
     "pg": "^8.11.3",
     "rate-limit-redis": "^4.2.0",
     "redis": "^4.6.11",
+    "sanitize-html": "^2.17.3",
     "socket.io": "^4.6.2",
     "stripe": "^22.0.0",
     "uuid": "^13.0.0",

@@ -5,7 +5,6 @@ const pool = require('../config/database');
 const { authMiddleware, validateUUID } = require('../middleware/auth');
 const { uploadToS3, getSignedVideoUrl, deleteFromS3, generateHighlightVideoKey } = require('../utils/s3');
 const Follow = require('../models/Follow');
-const { sanitizeBody } = require('../middleware/validation');
 const logger = require('../utils/logger');
 
 // Configure multer for video uploads
@@ -149,7 +148,7 @@ router.get('/:userId', authMiddleware, validateUUID('userId'), async (req, res) 
 });
 
 // Add a new highlight
-router.post('/', authMiddleware, sanitizeBody, async (req, res) => {
+router.post('/', authMiddleware, async (req, res) => {
   try {
     const { highlight_type, title, hudl_link } = req.body;
 
@@ -187,7 +186,7 @@ router.post('/', authMiddleware, sanitizeBody, async (req, res) => {
 });
 
 // Update a highlight
-router.put('/:highlightId', authMiddleware, validateUUID('highlightId'), sanitizeBody, async (req, res) => {
+router.put('/:highlightId', authMiddleware, validateUUID('highlightId'), async (req, res) => {
   try {
     const { highlightId } = req.params;
     const { title, hudl_link } = req.body;

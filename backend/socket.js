@@ -3,6 +3,7 @@ const jwt = require('jsonwebtoken');
 const cookie = require('cookie');
 const Message = require('./models/Message');
 const logger = require('./utils/logger');
+const { stripHtml } = require('./middleware/validation');
 
 // Redis-backed rate limiter for socket events (falls back to in-memory in dev)
 function createSocketRateLimiter(maxEvents, windowMs) {
@@ -137,7 +138,7 @@ function initializeSocket(server) {
           return;
         }
 
-        const trimmedContent = content ? String(content).trim() : '';
+        const trimmedContent = content ? stripHtml(String(content)).trim() : '';
         const mediaUrl = media_url || null;
         const mediaType = media_type || null;
 

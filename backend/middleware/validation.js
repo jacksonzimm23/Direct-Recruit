@@ -1,20 +1,62 @@
 const { body, validationResult } = require('express-validator');
 const logger = require('../utils/logger');
+const sanitizeHtmlLib = require('sanitize-html');
 
-// Strip HTML tags from a string (prevents stored XSS)
+// Strip ALL HTML tags. Plain text only — every frontend render path uses
+// escapeHtml() or textContent, so no markup is intentionally preserved.
+// allowedTags:[] tokenizes input and emits text nodes verbatim, preserving
+// newlines and whitespace. Closes the regex bypass that missed unclosed tags.
+const SANITIZE_OPTS = {
+  allowedTags: [],
+  allowedAttributes: {},
+  disallowedTagsMode: 'discard',
+  allowedSchemes: [],
+  parseStyleAttributes: false,
+};
+
 function stripHtml(str) {
   if (typeof str !== 'string') return str;
-  return str.replace(/<[^>]*>/g, '');
+  if (str.length === 0) return str;
+  return sanitizeHtmlLib(str, SANITIZE_OPTS);
 }
 
-// Middleware: strip HTML tags from all string fields in req.body
-const sanitizeBody = (req, res, next) => {
-  if (req.body && typeof req.body === 'object') {
-    for (const key of Object.keys(req.body)) {
-      if (typeof req.body[key] === 'string') {
-        req.body[key] = stripHtml(req.body[key]);
-      }
+// Recursive walker. Mutates input in place to preserve req.body identity.
+// WeakSet cycle guard + depth cap of 10 (legitimate req.body never exceeds ~4).
+function deepStripHtml(value, seen = new WeakSet(), depth = 0) {
+  if (depth > 10) return value;
+  if (value === null || value === undefined) return value;
+
+  if (typeof value === 'string') return stripHtml(value);
+
+  if (Array.isArray(value)) {
+    if (seen.has(value)) return value;
+    seen.add(value);
+    for (let i = 0; i < value.length; i++) {
+      value[i] = deepStripHtml(value[i], seen, depth + 1);
     }
+    return value;
+  }
+
+  if (typeof value === 'object') {
+    if (seen.has(value)) return value;
+    if (value.constructor && value.constructor !== Object) return value;
+    seen.add(value);
+    for (const key of Object.keys(value)) {
+      value[key] = deepStripHtml(value[key], seen, depth + 1);
+    }
+    return value;
+  }
+
+  return value;
+}
+
+const sanitizeBody = (req, res, next) => {
+  try {
+    if (req.body && typeof req.body === 'object') {
+      deepStripHtml(req.body);
+    }
+  } catch (err) {
+    logger.error('sanitizeBody error', { error: err.message, requestId: req.requestId });
   }
   next();
 };
@@ -175,5 +217,6 @@ module.exports = {
   validateCoachProfileUpdate,
   validateOtherProfileUpdate,
   handleValidationErrors,
-  sanitizeBody
+  sanitizeBody,
+  stripHtml
 };

@@ -10,7 +10,6 @@ const pool = require('../config/database');
 const { authMiddleware, validateUUID } = require('../middleware/auth');
 const { body, validationResult } = require('express-validator');
 const { messageLimiter } = require('../middleware/rateLimit');
-const { sanitizeBody } = require('../middleware/validation');
 const { getSignedS3Url } = require('../utils/s3');
 const AiEngagement = require('../models/AiEngagement');
 const logger = require('../utils/logger');
@@ -128,7 +127,7 @@ router.get('/conversations/:conversationId', authMiddleware, validateUUID('conve
 });
 
 // Send message
-router.post('/conversations/:conversationId/messages', authMiddleware, validateUUID('conversationId'), messageLimiter, sanitizeBody, [
+router.post('/conversations/:conversationId/messages', authMiddleware, validateUUID('conversationId'), messageLimiter, [
   body('content').optional({ checkFalsy: true }).isString().isLength({ max: 5000 }).withMessage('Message must be 5000 characters or less'),
   body('media_url').optional({ checkFalsy: true }).isString().isLength({ max: 500 }),
   body('media_type').optional({ checkFalsy: true }).isIn(['image', 'video']).withMessage('media_type must be image or video')
