@@ -1,13 +1,20 @@
 const express = require('express');
+const crypto = require('crypto');
 const router = express.Router();
 const pool = require('../config/database');
 const logger = require('../utils/logger');
 
-// Admin key authentication middleware
+// Admin key authentication middleware (timing-safe)
 function adminAuth(req, res, next) {
   const key = req.headers['x-admin-key'];
-  if (!key || key !== process.env.ADMIN_ANALYTICS_KEY) {
-    return res.status(403).json({ error: 'Unauthorized' });
+  const expected = process.env.ADMIN_ANALYTICS_KEY;
+  if (!key || !expected) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+  const keyBuf = Buffer.from(key, 'utf8');
+  const expectedBuf = Buffer.from(expected, 'utf8');
+  if (keyBuf.length !== expectedBuf.length || !crypto.timingSafeEqual(keyBuf, expectedBuf)) {
+    return res.status(401).json({ error: 'Unauthorized' });
   }
   next();
 }

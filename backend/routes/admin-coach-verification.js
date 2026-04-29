@@ -8,11 +8,17 @@ const { sendCoachInvite, sendCoachRejection } = require('../utils/email');
 const INVITE_EXPIRY_DAYS = 7;
 const VALID_DIVISIONS = ['D1 FBS', 'D1 FCS', 'D2', 'D3', 'NAIA', 'NJCAA'];
 
-// Admin key auth — reuses ADMIN_ANALYTICS_KEY so Jackson uses one key for all admin tools
+// Admin key auth (timing-safe) — reuses ADMIN_ANALYTICS_KEY so Jackson uses one key for all admin tools
 function adminAuth(req, res, next) {
   const key = req.headers['x-admin-key'];
-  if (!key || key !== process.env.ADMIN_ANALYTICS_KEY) {
-    return res.status(403).json({ error: 'Unauthorized' });
+  const expected = process.env.ADMIN_ANALYTICS_KEY;
+  if (!key || !expected) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+  const keyBuf = Buffer.from(key, 'utf8');
+  const expectedBuf = Buffer.from(expected, 'utf8');
+  if (keyBuf.length !== expectedBuf.length || !crypto.timingSafeEqual(keyBuf, expectedBuf)) {
+    return res.status(401).json({ error: 'Unauthorized' });
   }
   next();
 }
