@@ -142,7 +142,7 @@ class SearchComponent {
                 const isInTabsFolder = currentPath.includes('/tabs/');
                 const prefix = isInTabsFolder ? '../../' : '../';
 
-                window.location.href = `${prefix}${folder}/tabs/my-profile.html?username=${username}&from=search`;
+                window.location.href = `${prefix}${folder}/tabs/my-profile.html?username=${encodeURIComponent(username)}&from=search`;
             });
         });
     }
@@ -160,10 +160,10 @@ class SearchComponent {
         if (role === 'player') {
             if (isTransfer) {
                 // Transfer Player: Position • Height • Weight • YOE
-                if (result.position) subtitle.push(result.position);
+                if (result.position) subtitle.push(escapeHtml(result.position));
                 if (result.height) {
                     if (typeof result.height === 'string' && (result.height.includes("'") || result.height.includes('"'))) {
-                        subtitle.push(result.height);
+                        subtitle.push(escapeHtml(result.height));
                     } else {
                         const totalInches = parseInt(result.height);
                         const feet = Math.floor(totalInches / 12);
@@ -178,17 +178,17 @@ class SearchComponent {
                 }
             } else if (isCollege) {
                 // College Player: Position • School Name • Division
-                if (result.position) subtitle.push(result.position);
-                if (result.team_name) subtitle.push(result.team_name);
+                if (result.position) subtitle.push(escapeHtml(result.position));
+                if (result.team_name) subtitle.push(escapeHtml(result.team_name));
                 if (result.college_division) {
-                    subtitle.push(formatDivisionDisplay(result.college_division));
+                    subtitle.push(escapeHtml(formatDivisionDisplay(result.college_division)));
                 }
             } else {
                 // HS Player: Position • Height • Weight • Graduation Year
-                if (result.position) subtitle.push(result.position);
+                if (result.position) subtitle.push(escapeHtml(result.position));
                 if (result.height) {
                     if (typeof result.height === 'string' && (result.height.includes("'") || result.height.includes('"'))) {
-                        subtitle.push(result.height);
+                        subtitle.push(escapeHtml(result.height));
                     } else {
                         const totalInches = parseInt(result.height);
                         const feet = Math.floor(totalInches / 12);
@@ -197,30 +197,30 @@ class SearchComponent {
                     }
                 }
                 if (result.weight) subtitle.push(`${result.weight} lbs`);
-                if (result.graduation_year) subtitle.push(result.graduation_year);
+                if (result.graduation_year) subtitle.push(escapeHtml(result.graduation_year));
             }
         } else if (role === 'coach') {
             if (isCollege) {
                 // College Coach: Team Name, State • Division
                 if (result.team_name && result.state) {
-                    subtitle.push(`${result.team_name}, ${result.state}`);
+                    subtitle.push(`${escapeHtml(result.team_name)}, ${escapeHtml(result.state)}`);
                 } else if (result.team_name) {
-                    subtitle.push(result.team_name);
+                    subtitle.push(escapeHtml(result.team_name));
                 } else if (result.state) {
-                    subtitle.push(result.state);
+                    subtitle.push(escapeHtml(result.state));
                 }
                 if (result.college_division) {
-                    subtitle.push(formatDivisionDisplay(result.college_division));
+                    subtitle.push(escapeHtml(formatDivisionDisplay(result.college_division)));
                 }
             } else {
                 // HS Coach: Position Title • Team Name • State
-                if (result.position_title) subtitle.push(result.position_title);
-                if (result.team_name) subtitle.push(result.team_name);
-                if (result.state) subtitle.push(result.state);
+                if (result.position_title) subtitle.push(escapeHtml(result.position_title));
+                if (result.team_name) subtitle.push(escapeHtml(result.team_name));
+                if (result.state) subtitle.push(escapeHtml(result.state));
             }
         } else if (role === 'other') {
             // Other: Subheader only
-            if (result.subheader) subtitle.push(result.subheader);
+            if (result.subheader) subtitle.push(escapeHtml(result.subheader));
         }
 
         // Role-specific meta class for colored, bold subheader (matches feed post pattern)
@@ -228,11 +228,15 @@ class SearchComponent {
 
         const hasImage = result.profile_image_url || result.profile_picture_url;
 
+        const safeFirstName = escapeHtml(result.first_name || '');
+        const safeLastName = escapeHtml(result.last_name || '');
+        const safeUsername = escapeHtml(result.username || '');
+        const safeCollegeDivision = escapeHtml(result.college_division || '');
         return `
-            <div class="search-result-item" data-username="${result.username || ''}" data-role="${role}" data-is-college="${isCollege}" data-is-transfer="${isTransfer}" data-college-division="${result.college_division || ''}">
+            <div class="search-result-item" data-username="${safeUsername}" data-role="${escapeHtml(role)}" data-is-college="${isCollege}" data-is-transfer="${isTransfer}" data-college-division="${safeCollegeDivision}">
                 <div class="result-avatar" style="border: 2px solid ${getRoleBorderColor(role, isTransfer, result.college_division)}; color: ${getRoleBorderColor(role, isTransfer, result.college_division)}; background: ${getRoleAvatarBg(role, isTransfer, result.college_division)}">
                     ${hasImage ?
-                        `<img src="${imageUrl}" alt="${result.first_name} ${result.last_name}">` :
+                        `<img src="${imageUrl}" alt="${safeFirstName} ${safeLastName}">` :
                         `<svg viewBox="0 0 24 24" fill="currentColor">
                             <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
                             <circle cx="12" cy="7" r="4"></circle>
@@ -241,8 +245,8 @@ class SearchComponent {
                 </div>
                 <div class="result-info">
                     <div class="result-name-row">
-                        <span class="result-name">${result.first_name} ${result.last_name}${typeof getSchoolLogoHTML === 'function' && result.college_division ? getSchoolLogoHTML(result.team_name, (window.location.pathname.includes('/tabs/') ? '../../assets' : '../assets'), 16) : ''}</span>
-                        <span class="result-username">@${result.username || 'no-username'}</span>
+                        <span class="result-name">${safeFirstName} ${safeLastName}${typeof getSchoolLogoHTML === 'function' && result.college_division ? getSchoolLogoHTML(result.team_name, (window.location.pathname.includes('/tabs/') ? '../../assets' : '../assets'), 16) : ''}</span>
+                        <span class="result-username">@${safeUsername || 'no-username'}</span>
                     </div>
                     ${subtitle.length > 0 ? `<div class="result-subtitle ${metaClass}">${subtitle.join(' • ')}</div>` : ''}
                 </div>

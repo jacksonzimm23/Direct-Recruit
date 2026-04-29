@@ -284,6 +284,38 @@ window.addEventListener('unhandledrejection', function(event) {
     event.preventDefault();
 });
 
+// ==================== XSS Defense Helpers ====================
+// escapeHtml is for HTML body / attribute context: `<span>${name}</span>` or
+// `data-x="${val}"`. The textContent->innerHTML round-trip neutralizes
+// `<`, `>`, `&`, and `"`.
+//
+// escapeJsAttr is for JS string literals embedded inside HTML attribute
+// handlers: `onclick="goToProfile('${username}')"`. escapeHtml does NOT
+// neutralize the apostrophe that breaks out of the JS string literal there.
+//
+// They are NOT interchangeable. Pick the one that matches the sink context.
+function escapeHtml(text) {
+    if (text === null || text === undefined || text === '') return '';
+    const div = document.createElement('div');
+    div.textContent = String(text);
+    return div.innerHTML;
+}
+
+function escapeJsAttr(text) {
+    if (text === null || text === undefined || text === '') return '';
+    return String(text)
+        .replace(/\\/g, '\\\\')
+        .replace(/'/g, "\\'")
+        .replace(/"/g, '\\"')
+        .replace(/</g, '\\x3C')
+        .replace(/>/g, '\\x3E')
+        .replace(/\n/g, '\\n')
+        .replace(/\r/g, '\\r');
+}
+
+window.escapeHtml = escapeHtml;
+window.escapeJsAttr = escapeJsAttr;
+
 // ==================== API Configuration ====================
 
 // In local dev, use the same hostname as the frontend for proper cookie handling
@@ -869,44 +901,44 @@ function buildCommentSubheader(role, data) {
     const parts = [];
     if (role === 'player') {
         if (data.transfer === 'y') {
-            if (data.position) parts.push(data.position);
+            if (data.position) parts.push(escapeHtml(data.position));
             if (data.height) {
                 const h = String(data.height);
-                if (h.includes("'")) { parts.push(h); } else { const t = parseInt(h); if (!isNaN(t) && t > 0) parts.push(`${Math.floor(t/12)}'${t%12}"`); }
+                if (h.includes("'")) { parts.push(escapeHtml(h)); } else { const t = parseInt(h); if (!isNaN(t) && t > 0) parts.push(`${Math.floor(t/12)}'${t%12}"`); }
             }
             if (data.weight) parts.push(`${data.weight} lbs`);
             if (data.eligibility) { const yt = data.eligibility === 1 ? 'year' : 'years'; parts.push(`YOE: ${data.eligibility} ${yt}`); }
             return parts.length ? `<span style="color:#ef4444;font-size:11px;">${parts.join(' \u2022 ')}</span>` : '';
         } else if (data.division) {
-            if (data.position) parts.push(data.position);
-            if (data.school) parts.push(data.school);
-            if (data.division) parts.push(formatDivisionDisplay(data.division));
+            if (data.position) parts.push(escapeHtml(data.position));
+            if (data.school) parts.push(escapeHtml(data.school));
+            if (data.division) parts.push(escapeHtml(formatDivisionDisplay(data.division)));
             return parts.length ? `<span style="color:#1282a2;font-size:11px;">${parts.join(' \u2022 ')}</span>` : '';
         } else {
             // HS Player: Position • Height • Weight • GradYear
-            if (data.position) parts.push(data.position);
+            if (data.position) parts.push(escapeHtml(data.position));
             if (data.height) {
                 const h = String(data.height);
-                if (h.includes("'")) { parts.push(h); } else { const t = parseInt(h); if (!isNaN(t) && t > 0) parts.push(`${Math.floor(t/12)}'${t%12}"`); }
+                if (h.includes("'")) { parts.push(escapeHtml(h)); } else { const t = parseInt(h); if (!isNaN(t) && t > 0) parts.push(`${Math.floor(t/12)}'${t%12}"`); }
             }
             if (data.weight) parts.push(`${data.weight} lbs`);
-            if (data.grad_year) parts.push(data.grad_year);
+            if (data.grad_year) parts.push(escapeHtml(data.grad_year));
             return parts.length ? `<span style="color:#1282a2;font-size:11px;">${parts.join(' \u2022 ')}</span>` : '';
         }
     } else if (role === 'coach') {
         if (data.division) {
-            if (data.school && data.state) parts.push(`${data.school}, ${data.state}`);
-            else if (data.school) parts.push(data.school);
-            else if (data.state) parts.push(data.state);
-            if (data.division) parts.push(formatDivisionDisplay(data.division));
+            if (data.school && data.state) parts.push(`${escapeHtml(data.school)}, ${escapeHtml(data.state)}`);
+            else if (data.school) parts.push(escapeHtml(data.school));
+            else if (data.state) parts.push(escapeHtml(data.state));
+            if (data.division) parts.push(escapeHtml(formatDivisionDisplay(data.division)));
             return parts.length ? `<span style="color:#ff6b35;font-size:11px;">${parts.join(' \u2022 ')}</span>` : '';
         } else {
-            if (data.school) parts.push(data.school);
-            if (data.state) parts.push(data.state);
+            if (data.school) parts.push(escapeHtml(data.school));
+            if (data.state) parts.push(escapeHtml(data.state));
             return parts.length ? `<span style="color:#ff6b35;font-size:11px;">${parts.join(', ')}</span>` : '';
         }
     } else if (role === 'other') {
-        return data.subheader ? `<span style="color:#d4a017;font-size:11px;">${data.subheader}</span>` : '';
+        return data.subheader ? `<span style="color:#d4a017;font-size:11px;">${escapeHtml(data.subheader)}</span>` : '';
     }
     return '';
 }

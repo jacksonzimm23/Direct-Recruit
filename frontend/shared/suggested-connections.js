@@ -162,13 +162,14 @@ class SuggestedConnectionsWidget {
 
     createWidgetItemHTML(connection) {
         const fullName = `${connection.first_name} ${connection.last_name}`.trim() || 'Unknown User';
+        const safeFullName = this.escapeHTML(fullName);
         const profileType = connection.profile_type || 'unknown';
         const roleColor = this.getRoleColor(connection);
         const roleBg = this.getRoleBg(connection);
         const sub = this.buildSubheader(connection);
 
         const avatarHTML = connection.profile_image_url
-            ? `<img src="${connection.profile_image_url}" alt="${fullName}" class="follow-avatar-img" style="border: 2px solid ${roleColor}; border-radius: 50%;">`
+            ? `<img src="${connection.profile_image_url}" alt="${safeFullName}" class="follow-avatar-img" style="border: 2px solid ${roleColor}; border-radius: 50%;">`
             : `<div class="follow-avatar-circle" style="border: 2px solid ${roleColor}; color: ${roleColor}; background: ${roleBg};">
                 <svg viewBox="0 0 24 24" fill="currentColor">
                     <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
@@ -177,10 +178,10 @@ class SuggestedConnectionsWidget {
                </div>`;
 
         return `
-            <div class="follow-item" data-user-id="${connection.user_id}" data-username="${connection.username || ''}" data-profile-type="${profileType}" data-role="${connection.role}">
+            <div class="follow-item" data-user-id="${this.escapeHTML(connection.user_id)}" data-username="${this.escapeHTML(connection.username || '')}" data-profile-type="${this.escapeHTML(profileType)}" data-role="${this.escapeHTML(connection.role)}">
                 ${avatarHTML}
                 <div class="follow-info">
-                    <div class="follow-name">${this.escapeHTML(fullName)}${typeof getSchoolLogoHTML === 'function' && connection.college_division ? getSchoolLogoHTML(connection.team_name, (window.location.pathname.includes('/tabs/') ? '../../assets' : '../assets'), 14) : ''}</div>
+                    <div class="follow-name">${safeFullName}${typeof getSchoolLogoHTML === 'function' && connection.college_division ? getSchoolLogoHTML(connection.team_name, (window.location.pathname.includes('/tabs/') ? '../../assets' : '../assets'), 14) : ''}</div>
                     ${sub.text ? `<div class="follow-subheader" style="color: ${sub.color}; font-weight: 700;">${this.escapeHTML(sub.text)}</div>` : ''}
                 </div>
             </div>
@@ -238,13 +239,14 @@ class SuggestedConnectionsWidget {
 
     createModalItemHTML(connection) {
         const fullName = `${connection.first_name} ${connection.last_name}`.trim() || 'Unknown User';
+        const safeFullName = this.escapeHTML(fullName);
         const profileType = connection.profile_type || 'unknown';
         const roleColor = this.getRoleColor(connection);
         const roleBg = this.getRoleBg(connection);
         const sub = this.buildSubheader(connection);
 
         const avatarHTML = connection.profile_image_url
-            ? `<img src="${connection.profile_image_url}" alt="${fullName}" class="connection-modal-avatar" style="border: 2px solid ${roleColor}; border-radius: 50%;">`
+            ? `<img src="${connection.profile_image_url}" alt="${safeFullName}" class="connection-modal-avatar" style="border: 2px solid ${roleColor}; border-radius: 50%;">`
             : `<div class="connection-modal-avatar-circle" style="border: 2px solid ${roleColor}; color: ${roleColor}; background: ${roleBg};">
                 <svg viewBox="0 0 24 24" fill="currentColor">
                     <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
@@ -252,14 +254,15 @@ class SuggestedConnectionsWidget {
                 </svg>
                </div>`;
 
+        const safeUserId = this.escapeHTML(connection.user_id);
         return `
-            <div class="connection-modal-item" data-user-id="${connection.user_id}" data-username="${connection.username || ''}" data-profile-type="${profileType}" data-role="${connection.role}">
+            <div class="connection-modal-item" data-user-id="${safeUserId}" data-username="${this.escapeHTML(connection.username || '')}" data-profile-type="${this.escapeHTML(profileType)}" data-role="${this.escapeHTML(connection.role)}">
                 ${avatarHTML}
                 <div class="connection-modal-info">
-                    <div class="connection-modal-name">${this.escapeHTML(fullName)}${typeof getSchoolLogoHTML === 'function' && connection.college_division ? getSchoolLogoHTML(connection.team_name, (window.location.pathname.includes('/tabs/') ? '../../assets' : '../assets'), 14) : ''}</div>
+                    <div class="connection-modal-name">${safeFullName}${typeof getSchoolLogoHTML === 'function' && connection.college_division ? getSchoolLogoHTML(connection.team_name, (window.location.pathname.includes('/tabs/') ? '../../assets' : '../assets'), 14) : ''}</div>
                     ${sub.text ? `<div class="connection-modal-subheader" style="color: ${sub.color}; font-weight: 700;">${this.escapeHTML(sub.text)}</div>` : ''}
                 </div>
-                <button class="connection-modal-btn-follow" data-user-id="${connection.user_id}">Follow</button>
+                <button class="connection-modal-btn-follow" data-user-id="${safeUserId}">Follow</button>
             </div>
         `;
     }

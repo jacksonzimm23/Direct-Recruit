@@ -184,15 +184,17 @@ function renderConversationsList() {
                           senderIsDifferent &&
                           (!lastReadTime || lastMsgTime > lastReadTime);
 
+        const safeFirst = escapeHtml(participant.first_name || 'Unknown');
+        const safeLast = escapeHtml(participant.last_name || '');
         return `
             <div class="conversation-item ${isActive ? 'active' : ''} ${hasUnread ? 'unread' : ''}"
-                 data-conversation-id="${conv.id}"
-                 data-participant-id="${participant.id || ''}">
+                 data-conversation-id="${escapeHtml(conv.id)}"
+                 data-participant-id="${escapeHtml(participant.id || '')}">
                 <div class="unread-indicator"></div>
                 <div class="conversation-avatar">
                     <div class="avatar-circle" style="border: 2px solid ${getRoleBorderColor(participant.role, participant.transfer === 'y', participant.college_division)}; color: ${getRoleBorderColor(participant.role, participant.transfer === 'y', participant.college_division)}; background: ${getRoleAvatarBg(participant.role, participant.transfer === 'y', participant.college_division)}">
                         ${participant.profile_image
-                            ? `<img src="${participant.profile_image}" alt="${participant.first_name}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`
+                            ? `<img src="${participant.profile_image}" alt="${safeFirst}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`
                             : `<svg viewBox="0 0 24 24" fill="currentColor">
                                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
                                 <circle cx="12" cy="7" r="4"></circle>
@@ -202,11 +204,11 @@ function renderConversationsList() {
                 </div>
                 <div class="conversation-info">
                     <div class="conversation-top">
-                        <div class="conversation-name">${participant.first_name || 'Unknown'} ${participant.last_name || ''}${typeof getSchoolLogoHTML === 'function' ? getSchoolLogoHTML(participant.team_name, '../../assets', 14) : ''}</div>
+                        <div class="conversation-name">${safeFirst} ${safeLast}${typeof getSchoolLogoHTML === 'function' ? getSchoolLogoHTML(participant.team_name, '../../assets', 14) : ''}</div>
                         <div class="conversation-time">${formatTimeAgo(conv.last_message_time)}</div>
                     </div>
                     <div class="conversation-preview">
-                        <span class="preview-text">${getConversationPreview(conv)}</span>
+                        <span class="preview-text">${escapeHtml(getConversationPreview(conv))}</span>
                     </div>
                 </div>
             </div>
@@ -337,7 +339,7 @@ function updateThreadHeader(participant) {
 
     if (threadUserName) {
         const _thLogo = typeof getSchoolLogoHTML === 'function' ? getSchoolLogoHTML(participant.team_name, '../../assets', 16) : '';
-        threadUserName.innerHTML = `${participant.first_name || 'Unknown'} ${participant.last_name || ''}${_thLogo}`;
+        threadUserName.innerHTML = `${escapeHtml(participant.first_name || 'Unknown')} ${escapeHtml(participant.last_name || '')}${_thLogo}`;
     }
 
     if (threadUserRole) {
@@ -356,7 +358,7 @@ function updateThreadHeader(participant) {
                     starsPrefix = `<span style="color: #ffd700; font-weight: 600;">${participant.star_rating}★</span> `;
                 }
 
-                if (participant.position) parts.push(participant.position);
+                if (participant.position) parts.push(escapeHtml(participant.position));
 
                 if (participant.height) {
                     const totalInches = parseInt(participant.height);
@@ -380,9 +382,9 @@ function updateThreadHeader(participant) {
                 threadUserRole.style.color = '#b91c1c'; // Transfer player red
             } else if (participant.college_division && ['D1 FBS', 'D1 FCS', 'D2', 'D3', 'NAIA', 'NJCAA', 'FBS', 'FCS', '3C2A'].includes(participant.college_division)) {
                 // College Player: Position • College • Division
-                if (participant.position) parts.push(participant.position);
-                if (participant.team_name) parts.push(participant.team_name);
-                if (participant.college_division) parts.push(formatDivisionDisplay(participant.college_division));
+                if (participant.position) parts.push(escapeHtml(participant.position));
+                if (participant.team_name) parts.push(escapeHtml(participant.team_name));
+                if (participant.college_division) parts.push(escapeHtml(formatDivisionDisplay(participant.college_division)));
                 roleText = parts.join(' • ') || 'Player';
                 threadUserRole.style.color = '';
             } else {
@@ -392,9 +394,9 @@ function updateThreadHeader(participant) {
                     starsPrefix = `<span style="color: #ffd700; font-weight: 600;">${participant.star_rating}★</span> `;
                 }
 
-                if (participant.position) parts.push(participant.position);
-                if (participant.team_name) parts.push(participant.team_name);
-                if (participant.graduation_year) parts.push(`Class of ${participant.graduation_year}`);
+                if (participant.position) parts.push(escapeHtml(participant.position));
+                if (participant.team_name) parts.push(escapeHtml(participant.team_name));
+                if (participant.graduation_year) parts.push(`Class of ${escapeHtml(participant.graduation_year)}`);
                 roleText = parts.join(' • ') || 'Player';
                 threadUserRole.style.color = '';
             }
@@ -405,26 +407,26 @@ function updateThreadHeader(participant) {
                 // College Coach: College, State • Division
                 const parts = [];
                 if (participant.team_name && participant.state) {
-                    parts.push(`${participant.team_name}, ${participant.state}`);
+                    parts.push(`${escapeHtml(participant.team_name)}, ${escapeHtml(participant.state)}`);
                 } else if (participant.team_name) {
-                    parts.push(participant.team_name);
+                    parts.push(escapeHtml(participant.team_name));
                 } else if (participant.state) {
-                    parts.push(participant.state);
+                    parts.push(escapeHtml(participant.state));
                 }
-                if (participant.college_division) parts.push(formatDivisionDisplay(participant.college_division));
+                if (participant.college_division) parts.push(escapeHtml(formatDivisionDisplay(participant.college_division)));
                 roleText = parts.join(' • ') || 'Coach';
             } else {
                 // HS Coach: School, State (comma-separated like sidebar)
                 const parts = [];
-                if (participant.team_name) parts.push(participant.team_name);
-                if (participant.state) parts.push(participant.state);
+                if (participant.team_name) parts.push(escapeHtml(participant.team_name));
+                if (participant.state) parts.push(escapeHtml(participant.state));
                 roleText = parts.join(', ') || 'HS Coach';
             }
             threadUserRole.classList.add('coach');
             threadUserRole.style.color = '';
         } else if (participant.role === 'other') {
             // Other profile: display subheader in yellow
-            roleText = participant.subheader || '';
+            roleText = escapeHtml(participant.subheader || '');
             threadUserRole.style.color = '#d4a017'; // Yellow color for other profile
             threadUserRole.classList.remove('coach');
         }

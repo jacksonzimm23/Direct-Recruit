@@ -596,7 +596,7 @@ class FeedManager {
         const isSaved = post.user_saved || false;
         const isReposted = post.user_reposted || false;
         const isOwnPost = post.user_id === this.currentUserId;
-        const authorName = `${post.author_first_name || ''} ${post.author_last_name || ''}`.trim() || 'Unknown User';
+        const authorName = this.escapeHtml(`${post.author_first_name || ''} ${post.author_last_name || ''}`.trim() || 'Unknown User');
 
         // Repost indicator HTML
         const repostIndicator = showRepostIndicator ? `
@@ -631,7 +631,7 @@ class FeedManager {
             // Check if transfer player (transfer = 'y')
             if (post.author_transfer === 'y') {
                 // Transfer Player: Position • Height • Weight • YOE
-                if (post.author_position) parts.push(post.author_position);
+                if (post.author_position) parts.push(this.escapeHtml(post.author_position));
 
                 if (post.author_height) {
                     // Handle height as either total inches (number) or formatted string ("6'1"")
@@ -660,12 +660,12 @@ class FeedManager {
                 }
             } else if (post.author_division) {
                 // College Player: Position • College • Division
-                if (post.author_position) parts.push(post.author_position);
-                if (post.author_school) parts.push(post.author_school);
-                if (post.author_division) parts.push(formatDivisionDisplay(post.author_division));
+                if (post.author_position) parts.push(this.escapeHtml(post.author_position));
+                if (post.author_school) parts.push(this.escapeHtml(post.author_school));
+                if (post.author_division) parts.push(this.escapeHtml(formatDivisionDisplay(post.author_division)));
             } else {
                 // HS Player: Position • Height • Weight • GradYear
-                if (post.author_position) parts.push(post.author_position);
+                if (post.author_position) parts.push(this.escapeHtml(post.author_position));
                 if (post.author_height) {
                     const heightStr = String(post.author_height);
                     if (heightStr.includes("'")) {
@@ -680,14 +680,14 @@ class FeedManager {
                     }
                 }
                 if (post.author_weight) parts.push(`${post.author_weight} lbs`);
-                if (post.author_grad_year) parts.push(post.author_grad_year);
+                if (post.author_grad_year) parts.push(this.escapeHtml(post.author_grad_year));
             }
 
             metaInfo = starsHtml + parts.join(' • ');
         } else if (post.author_role === 'other') {
             // Other profile: entire meta info in yellow
             if (post.author_subheader) {
-                metaInfo = `<span style="color: #d4a017;">${post.author_subheader}</span>`;
+                metaInfo = `<span style="color: #d4a017;">${this.escapeHtml(post.author_subheader)}</span>`;
             } else {
                 metaInfo = '';
             }
@@ -699,18 +699,18 @@ class FeedManager {
             if (post.author_division) {
                 // College Coach: College, State • Division
                 if (post.author_school && post.author_state) {
-                    parts.push(`${post.author_school}, ${post.author_state}`);
+                    parts.push(`${this.escapeHtml(post.author_school)}, ${this.escapeHtml(post.author_state)}`);
                 } else if (post.author_school) {
-                    parts.push(post.author_school);
+                    parts.push(this.escapeHtml(post.author_school));
                 } else if (post.author_state) {
-                    parts.push(post.author_state);
+                    parts.push(this.escapeHtml(post.author_state));
                 }
-                if (post.author_division) parts.push(formatDivisionDisplay(post.author_division));
+                if (post.author_division) parts.push(this.escapeHtml(formatDivisionDisplay(post.author_division)));
                 metaInfo = parts.join(' • ');
             } else {
                 // HS Coach: School, State (comma-separated like sidebar)
-                if (post.author_school) parts.push(post.author_school);
-                if (post.author_state) parts.push(post.author_state);
+                if (post.author_school) parts.push(this.escapeHtml(post.author_school));
+                if (post.author_state) parts.push(this.escapeHtml(post.author_state));
                 metaInfo = parts.join(', ');
             }
         }
@@ -772,10 +772,14 @@ class FeedManager {
             `;
         }
 
+        const profileNavTarget = this.escapeJsAttr(post.author_username || post.user_id);
+        const profileNavRole = this.escapeJsAttr(post.author_role || '');
+        const profileNavDivision = this.escapeJsAttr(post.author_division || '');
+        const profileNavUserId = this.escapeJsAttr(post.user_id || '');
         article.innerHTML = `
             ${repostIndicator}
             <div class="post-header">
-                <a href="#" class="post-avatar-link" onclick="feedManager.goToProfile('${post.author_username || post.user_id}', '${post.author_role}', '${post.author_division || ''}', '${post.user_id}', ${post.author_transfer === 'y'}); return false;">
+                <a href="#" class="post-avatar-link" onclick="feedManager.goToProfile('${profileNavTarget}', '${profileNavRole}', '${profileNavDivision}', '${profileNavUserId}', ${post.author_transfer === 'y'}); return false;">
                     <div class="post-avatar-circle" style="border: 2px solid ${getRoleBorderColor(post.author_role, post.author_transfer === 'y', post.author_division)}; color: ${getRoleBorderColor(post.author_role, post.author_transfer === 'y', post.author_division)}; background: ${getRoleAvatarBg(post.author_role, post.author_transfer === 'y', post.author_division)}">
                         ${post.author_image ?
                             `<img src="${post.author_image}" alt="${authorName}">` :
@@ -788,7 +792,7 @@ class FeedManager {
                 </a>
                 <div class="post-user-info">
                     <div class="post-user-name-row">
-                        <a href="#" class="post-user-name" onclick="feedManager.goToProfile('${post.author_username || post.user_id}', '${post.author_role}', '${post.author_division || ''}', '${post.user_id}', ${post.author_transfer === 'y'}); return false;">
+                        <a href="#" class="post-user-name" onclick="feedManager.goToProfile('${profileNavTarget}', '${profileNavRole}', '${profileNavDivision}', '${profileNavUserId}', ${post.author_transfer === 'y'}); return false;">
                             ${authorName}${typeof getSchoolLogoHTML === 'function' ? getSchoolLogoHTML(post.author_school, _feedAssetsPath, 16) : ''}
                             ${post.author_verified ? `
                                 <svg class="verified-badge" viewBox="0 0 24 24" fill="#1DA1F2">
@@ -796,7 +800,7 @@ class FeedManager {
                                 </svg>
                             ` : ''}
                         </a>
-                        ${post.author_username ? `<span class="post-user-handle">@${post.author_username}</span>` : ''}
+                        ${post.author_username ? `<span class="post-user-handle">@${this.escapeHtml(post.author_username)}</span>` : ''}
                         <span class="post-timestamp">${timeAgo}</span>
                         <button class="post-more-btn" onclick="feedManager.showPostMenu('${postId}', ${isOwnPost}, event)">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -873,7 +877,7 @@ class FeedManager {
         article.dataset.shareId = post.share_id;
         article.dataset.userReposted = post.user_reposted ? 'true' : 'false';
 
-        const reposterName = `${post.reposter_first_name || ''} ${post.reposter_last_name || ''}`.trim() || 'Someone';
+        const reposterName = this.escapeHtml(`${post.reposter_first_name || ''} ${post.reposter_last_name || ''}`.trim() || 'Someone');
         const isOwnRepost = post.reposter_user_id === this.currentUserId;
         const timeAgo = this.getTimeAgo(post.original_created_at || post.created_at);
         const repostTimeAgo = this.getTimeAgo(post.sort_date);
@@ -881,7 +885,7 @@ class FeedManager {
         const isSaved = post.user_saved || false;
         const isReposted = post.user_reposted || false;
         const isOwnPost = post.user_id === this.currentUserId;
-        const authorName = `${post.author_first_name || ''} ${post.author_last_name || ''}`.trim() || 'Unknown User';
+        const authorName = this.escapeHtml(`${post.author_first_name || ''} ${post.author_last_name || ''}`.trim() || 'Unknown User');
 
         // Build meta info for original author
         let metaInfo = this.buildAuthorMetaInfo(post);
@@ -901,7 +905,7 @@ class FeedManager {
                 <span class="repost-time">${repostTimeAgo}</span>
             </div>
             <div class="post-header">
-                <a href="#" class="post-avatar-link" onclick="feedManager.goToProfile('${post.author_username || post.user_id}', '${post.author_role}', '${post.author_division || ''}', '${post.user_id}', ${post.author_transfer === 'y'}); return false;">
+                <a href="#" class="post-avatar-link" onclick="feedManager.goToProfile('${this.escapeJsAttr(post.author_username || post.user_id)}', '${this.escapeJsAttr(post.author_role)}', '${this.escapeJsAttr(post.author_division || '')}', '${this.escapeJsAttr(post.user_id)}', ${post.author_transfer === 'y'}); return false;">
                     <div class="post-avatar-circle" style="border: 2px solid ${getRoleBorderColor(post.author_role, post.author_transfer === 'y', post.author_division)}; color: ${getRoleBorderColor(post.author_role, post.author_transfer === 'y', post.author_division)}; background: ${getRoleAvatarBg(post.author_role, post.author_transfer === 'y', post.author_division)}">
                         ${post.author_image ?
                             `<img src="${post.author_image}" alt="${authorName}">` :
@@ -914,7 +918,7 @@ class FeedManager {
                 </a>
                 <div class="post-user-info">
                     <div class="post-user-name-row">
-                        <a href="#" class="post-user-name" onclick="feedManager.goToProfile('${post.author_username || post.user_id}', '${post.author_role}', '${post.author_division || ''}', '${post.user_id}', ${post.author_transfer === 'y'}); return false;">
+                        <a href="#" class="post-user-name" onclick="feedManager.goToProfile('${this.escapeJsAttr(post.author_username || post.user_id)}', '${this.escapeJsAttr(post.author_role)}', '${this.escapeJsAttr(post.author_division || '')}', '${this.escapeJsAttr(post.user_id)}', ${post.author_transfer === 'y'}); return false;">
                             ${authorName}${typeof getSchoolLogoHTML === 'function' ? getSchoolLogoHTML(post.author_school, _feedAssetsPath, 16) : ''}
                             ${post.author_verified ? `
                                 <svg class="verified-badge" viewBox="0 0 24 24" fill="#1DA1F2">
@@ -922,7 +926,7 @@ class FeedManager {
                                 </svg>
                             ` : ''}
                         </a>
-                        ${post.author_username ? `<span class="post-user-handle">@${post.author_username}</span>` : ''}
+                        ${post.author_username ? `<span class="post-user-handle">@${this.escapeHtml(post.author_username)}</span>` : ''}
                         <span class="post-timestamp">${timeAgo}</span>
                         <button class="post-more-btn" onclick="feedManager.showPostMenu('${postId}', ${isOwnPost}, event)">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -995,9 +999,9 @@ class FeedManager {
         article.dataset.postId = postId;
         article.dataset.shareId = post.share_id;
 
-        const reposterName = `${post.reposter_first_name || ''} ${post.reposter_last_name || ''}`.trim() || 'Someone';
+        const reposterName = this.escapeHtml(`${post.reposter_first_name || ''} ${post.reposter_last_name || ''}`.trim() || 'Someone');
         const repostTimeAgo = this.getTimeAgo(post.sort_date);
-        const originalAuthorName = `${post.author_first_name || ''} ${post.author_last_name || ''}`.trim() || 'Unknown User';
+        const originalAuthorName = this.escapeHtml(`${post.author_first_name || ''} ${post.author_last_name || ''}`.trim() || 'Unknown User');
         const originalTimeAgo = this.getTimeAgo(post.original_created_at || post.created_at);
         const isLiked = post.user_liked || false;
         const isSaved = post.user_saved || false;
@@ -1017,7 +1021,7 @@ class FeedManager {
 
         article.innerHTML = `
             <div class="post-header">
-                <a href="#" class="post-avatar-link" onclick="feedManager.goToProfile('${post.reposter_username || post.reposter_user_id}', '${post.reposter_role}', '${post.reposter_division || ''}', '${post.reposter_user_id}', ${post.reposter_transfer === 'y'}); return false;">
+                <a href="#" class="post-avatar-link" onclick="feedManager.goToProfile('${this.escapeJsAttr(post.reposter_username || post.reposter_user_id)}', '${this.escapeJsAttr(post.reposter_role)}', '${this.escapeJsAttr(post.reposter_division || '')}', '${this.escapeJsAttr(post.reposter_user_id)}', ${post.reposter_transfer === 'y'}); return false;">
                     <div class="post-avatar-circle" style="border: 2px solid ${getRoleBorderColor(post.reposter_role, post.reposter_transfer === 'y', post.reposter_division)}; color: ${getRoleBorderColor(post.reposter_role, post.reposter_transfer === 'y', post.reposter_division)}; background: ${getRoleAvatarBg(post.reposter_role, post.reposter_transfer === 'y', post.reposter_division)}">
                         ${post.reposter_image ?
                             `<img src="${post.reposter_image}" alt="${reposterName}">` :
@@ -1030,10 +1034,10 @@ class FeedManager {
                 </a>
                 <div class="post-user-info">
                     <div class="post-user-name-row">
-                        <a href="#" class="post-user-name" onclick="event.stopPropagation(); feedManager.goToProfile('${post.reposter_username || post.reposter_user_id}', '${post.reposter_role}', '${post.reposter_division || ''}', '${post.reposter_user_id}', ${post.reposter_transfer === 'y'}); return false;">
+                        <a href="#" class="post-user-name" onclick="event.stopPropagation(); feedManager.goToProfile('${this.escapeJsAttr(post.reposter_username || post.reposter_user_id)}', '${this.escapeJsAttr(post.reposter_role)}', '${this.escapeJsAttr(post.reposter_division || '')}', '${this.escapeJsAttr(post.reposter_user_id)}', ${post.reposter_transfer === 'y'}); return false;">
                             ${reposterName}${typeof getSchoolLogoHTML === 'function' ? getSchoolLogoHTML(post.reposter_school, _feedAssetsPath, 16) : ''}
                         </a>
-                        ${post.reposter_username ? `<span class="post-user-handle">@${post.reposter_username}</span>` : ''}
+                        ${post.reposter_username ? `<span class="post-user-handle">@${this.escapeHtml(post.reposter_username)}</span>` : ''}
                         <span class="post-timestamp">${repostTimeAgo}</span>
                         <button class="post-more-btn" onclick="event.stopPropagation(); feedManager.showQuotePostMenu('${post.share_id}', ${isOwnQuote}, event)">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1127,10 +1131,10 @@ class FeedManager {
         article.dataset.postId = postId;
         article.dataset.shareId = share.share_id;
 
-        const quoterName = `${share.quoter_first_name || ''} ${share.quoter_last_name || ''}`.trim() || 'Someone';
+        const quoterName = this.escapeHtml(`${share.quoter_first_name || ''} ${share.quoter_last_name || ''}`.trim() || 'Someone');
         const isOwnQuote = share.quoter_user_id === this.currentUserId;
         const quoteTimeAgo = this.getTimeAgo(share.share_created_at || share.sort_date);
-        const originalAuthorName = `${share.author_first_name || ''} ${share.author_last_name || ''}`.trim() || 'Unknown User';
+        const originalAuthorName = this.escapeHtml(`${share.author_first_name || ''} ${share.author_last_name || ''}`.trim() || 'Unknown User');
         const originalTimeAgo = this.getTimeAgo(share.original_created_at);
         // Use share-specific engagement status for quote posts
         const isLiked = share.user_liked_share || false;
@@ -1152,7 +1156,7 @@ class FeedManager {
 
         article.innerHTML = `
             <div class="post-header">
-                <a href="#" class="post-avatar-link" onclick="feedManager.goToProfile('${share.quoter_username || share.quoter_user_id}', '${share.quoter_role}', '${share.quoter_division || ''}', '${share.quoter_user_id}', ${share.quoter_transfer === 'y'}); return false;">
+                <a href="#" class="post-avatar-link" onclick="feedManager.goToProfile('${this.escapeJsAttr(share.quoter_username || share.quoter_user_id)}', '${this.escapeJsAttr(share.quoter_role)}', '${this.escapeJsAttr(share.quoter_division || '')}', '${this.escapeJsAttr(share.quoter_user_id)}', ${share.quoter_transfer === 'y'}); return false;">
                     <div class="post-avatar-circle" style="border: 2px solid ${getRoleBorderColor(share.quoter_role, share.quoter_transfer === 'y', share.quoter_division)}; color: ${getRoleBorderColor(share.quoter_role, share.quoter_transfer === 'y', share.quoter_division)}; background: ${getRoleAvatarBg(share.quoter_role, share.quoter_transfer === 'y', share.quoter_division)}">
                         ${share.quoter_image ?
                             `<img src="${share.quoter_image}" alt="${quoterName}">` :
@@ -1165,10 +1169,10 @@ class FeedManager {
                 </a>
                 <div class="post-user-info">
                     <div class="post-user-name-row">
-                        <a href="#" class="post-user-name" onclick="feedManager.goToProfile('${share.quoter_username || share.quoter_user_id}', '${share.quoter_role}', '${share.quoter_division || ''}', '${share.quoter_user_id}', ${share.quoter_transfer === 'y'}); return false;">
+                        <a href="#" class="post-user-name" onclick="feedManager.goToProfile('${this.escapeJsAttr(share.quoter_username || share.quoter_user_id)}', '${this.escapeJsAttr(share.quoter_role)}', '${this.escapeJsAttr(share.quoter_division || '')}', '${this.escapeJsAttr(share.quoter_user_id)}', ${share.quoter_transfer === 'y'}); return false;">
                             ${quoterName}${typeof getSchoolLogoHTML === 'function' ? getSchoolLogoHTML(share.quoter_school, _feedAssetsPath, 16) : ''}
                         </a>
-                        ${share.quoter_username ? `<span class="post-user-handle">@${share.quoter_username}</span>` : ''}
+                        ${share.quoter_username ? `<span class="post-user-handle">@${this.escapeHtml(share.quoter_username)}</span>` : ''}
                         <span class="post-timestamp">${quoteTimeAgo}</span>
                         <button class="post-more-btn" onclick="feedManager.showQuotePostMenu('${share.share_id}', ${isOwnQuote}, event)">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1189,7 +1193,7 @@ class FeedManager {
             <div onclick="event.stopPropagation();">${quoteMediaHtml}</div>
             <div class="quoted-post-embed" onclick="feedManager.navigateToPostView('${postId}', event)" style="cursor: pointer;">
                 <div class="quoted-post-header">
-                    <a href="#" onclick="feedManager.goToProfile('${share.author_username || share.author_user_id}', '${share.author_role}', '${share.author_division || ''}', '${share.author_user_id}', ${share.author_transfer === 'y'}); event.stopPropagation(); return false;">
+                    <a href="#" onclick="feedManager.goToProfile('${this.escapeJsAttr(share.author_username || share.author_user_id)}', '${this.escapeJsAttr(share.author_role)}', '${this.escapeJsAttr(share.author_division || '')}', '${this.escapeJsAttr(share.author_user_id)}', ${share.author_transfer === 'y'}); event.stopPropagation(); return false;">
                         <div class="quoted-post-avatar" style="border: 2px solid ${getRoleBorderColor(share.author_role, share.author_transfer === 'y', share.author_division)}; color: ${getRoleBorderColor(share.author_role, share.author_transfer === 'y', share.author_division)}; background: ${getRoleAvatarBg(share.author_role, share.author_transfer === 'y', share.author_division)}">
                             ${share.author_image ?
                                 `<img src="${share.author_image}" alt="${originalAuthorName}">` :
@@ -1272,11 +1276,11 @@ class FeedManager {
         if (share.quoter_role === 'player') {
             const parts = [];
             if (share.quoter_transfer === 'y') {
-                if (share.quoter_position) parts.push(share.quoter_position);
+                if (share.quoter_position) parts.push(this.escapeHtml(share.quoter_position));
                 if (share.quoter_height) {
                     const heightStr = String(share.quoter_height);
                     if (heightStr.includes("'")) {
-                        parts.push(heightStr);
+                        parts.push(this.escapeHtml(heightStr));
                     } else {
                         const totalInches = parseInt(heightStr);
                         if (!isNaN(totalInches) && totalInches > 0) {
@@ -1292,23 +1296,23 @@ class FeedManager {
                     parts.push(`YOE: ${share.quoter_eligibility} ${yearText}`);
                 }
             } else if (share.quoter_division) {
-                if (share.quoter_position) parts.push(share.quoter_position);
-                if (share.quoter_school) parts.push(share.quoter_school);
-                if (share.quoter_division) parts.push(formatDivisionDisplay(share.quoter_division));
+                if (share.quoter_position) parts.push(this.escapeHtml(share.quoter_position));
+                if (share.quoter_school) parts.push(this.escapeHtml(share.quoter_school));
+                if (share.quoter_division) parts.push(this.escapeHtml(formatDivisionDisplay(share.quoter_division)));
             } else {
-                if (share.quoter_position) parts.push(share.quoter_position);
+                if (share.quoter_position) parts.push(this.escapeHtml(share.quoter_position));
                 if (share.quoter_height) {
                     const h = String(share.quoter_height);
-                    if (h.includes("'")) { parts.push(h); }
+                    if (h.includes("'")) { parts.push(this.escapeHtml(h)); }
                     else { const t = parseInt(h); if (!isNaN(t) && t > 0) parts.push(`${Math.floor(t/12)}'${t%12}"`); }
                 }
                 if (share.quoter_weight) parts.push(`${share.quoter_weight} lbs`);
-                if (share.quoter_grad_year) parts.push(share.quoter_grad_year);
+                if (share.quoter_grad_year) parts.push(this.escapeHtml(share.quoter_grad_year));
             }
             metaInfo = starsHtml + parts.join(' • ');
         } else if (share.quoter_role === 'other') {
             if (share.quoter_subheader) {
-                metaInfo = `<span style="color: #d4a017;">${share.quoter_subheader}</span>`;
+                metaInfo = `<span style="color: #d4a017;">${this.escapeHtml(share.quoter_subheader)}</span>`;
             } else {
                 metaInfo = '';
             }
@@ -1316,17 +1320,17 @@ class FeedManager {
             const parts = [];
             if (share.quoter_division) {
                 if (share.quoter_school && share.quoter_state) {
-                    parts.push(`${share.quoter_school}, ${share.quoter_state}`);
+                    parts.push(`${this.escapeHtml(share.quoter_school)}, ${this.escapeHtml(share.quoter_state)}`);
                 } else if (share.quoter_school) {
-                    parts.push(share.quoter_school);
+                    parts.push(this.escapeHtml(share.quoter_school));
                 } else if (share.quoter_state) {
-                    parts.push(share.quoter_state);
+                    parts.push(this.escapeHtml(share.quoter_state));
                 }
-                if (share.quoter_division) parts.push(formatDivisionDisplay(share.quoter_division));
+                if (share.quoter_division) parts.push(this.escapeHtml(formatDivisionDisplay(share.quoter_division)));
                 metaInfo = parts.join(' • ');
             } else {
-                if (share.quoter_school) parts.push(share.quoter_school);
-                if (share.quoter_state) parts.push(share.quoter_state);
+                if (share.quoter_school) parts.push(this.escapeHtml(share.quoter_school));
+                if (share.quoter_state) parts.push(this.escapeHtml(share.quoter_state));
                 metaInfo = parts.join(', ');
             }
         } else {
@@ -1352,11 +1356,11 @@ class FeedManager {
         if (post.author_role === 'player') {
             const parts = [];
             if (post.author_transfer === 'y') {
-                if (post.author_position) parts.push(post.author_position);
+                if (post.author_position) parts.push(this.escapeHtml(post.author_position));
                 if (post.author_height) {
                     const heightStr = String(post.author_height);
                     if (heightStr.includes("'")) {
-                        parts.push(heightStr);
+                        parts.push(this.escapeHtml(heightStr));
                     } else {
                         const totalInches = parseInt(heightStr);
                         if (!isNaN(totalInches) && totalInches > 0) {
@@ -1372,24 +1376,24 @@ class FeedManager {
                     parts.push(`YOE: ${post.author_eligibility} ${yearText}`);
                 }
             } else if (post.author_division) {
-                if (post.author_position) parts.push(post.author_position);
-                if (post.author_school) parts.push(post.author_school);
-                if (post.author_division) parts.push(formatDivisionDisplay(post.author_division));
+                if (post.author_position) parts.push(this.escapeHtml(post.author_position));
+                if (post.author_school) parts.push(this.escapeHtml(post.author_school));
+                if (post.author_division) parts.push(this.escapeHtml(formatDivisionDisplay(post.author_division)));
             } else {
                 // HS Player: Position • Height • Weight • GradYear
-                if (post.author_position) parts.push(post.author_position);
+                if (post.author_position) parts.push(this.escapeHtml(post.author_position));
                 if (post.author_height) {
                     const heightStr = String(post.author_height);
-                    if (heightStr.includes("'")) { parts.push(heightStr); }
+                    if (heightStr.includes("'")) { parts.push(this.escapeHtml(heightStr)); }
                     else { const t = parseInt(heightStr); if (!isNaN(t) && t > 0) parts.push(`${Math.floor(t/12)}'${t%12}"`); }
                 }
                 if (post.author_weight) parts.push(`${post.author_weight} lbs`);
-                if (post.author_grad_year) parts.push(post.author_grad_year);
+                if (post.author_grad_year) parts.push(this.escapeHtml(post.author_grad_year));
             }
             metaInfo = starsHtml + parts.join(' • ');
         } else if (post.author_role === 'other') {
             if (post.author_subheader) {
-                metaInfo = `<span style="color: #d4a017;">${post.author_subheader}</span>`;
+                metaInfo = `<span style="color: #d4a017;">${this.escapeHtml(post.author_subheader)}</span>`;
             } else {
                 metaInfo = '';
             }
@@ -1397,17 +1401,17 @@ class FeedManager {
             const parts = [];
             if (post.author_division) {
                 if (post.author_school && post.author_state) {
-                    parts.push(`${post.author_school}, ${post.author_state}`);
+                    parts.push(`${this.escapeHtml(post.author_school)}, ${this.escapeHtml(post.author_state)}`);
                 } else if (post.author_school) {
-                    parts.push(post.author_school);
+                    parts.push(this.escapeHtml(post.author_school));
                 } else if (post.author_state) {
-                    parts.push(post.author_state);
+                    parts.push(this.escapeHtml(post.author_state));
                 }
-                if (post.author_division) parts.push(formatDivisionDisplay(post.author_division));
+                if (post.author_division) parts.push(this.escapeHtml(formatDivisionDisplay(post.author_division)));
                 metaInfo = parts.join(' • ');
             } else {
-                if (post.author_school) parts.push(post.author_school);
-                if (post.author_state) parts.push(post.author_state);
+                if (post.author_school) parts.push(this.escapeHtml(post.author_school));
+                if (post.author_state) parts.push(this.escapeHtml(post.author_state));
                 metaInfo = parts.join(', ');
             }
         } else {
@@ -1591,8 +1595,8 @@ class FeedManager {
         article.dataset.originalPostId = post.original_post_id;
 
         const timeAgo = this.getTimeAgo(post.reposted_at || post.created_at);
-        const quoterName = `${post.quoter_first_name || ''} ${post.quoter_last_name || ''}`.trim() || 'You';
-        const originalAuthorName = `${post.author_first_name || ''} ${post.author_last_name || ''}`.trim() || 'Unknown User';
+        const quoterName = this.escapeHtml(`${post.quoter_first_name || ''} ${post.quoter_last_name || ''}`.trim() || 'You');
+        const originalAuthorName = this.escapeHtml(`${post.author_first_name || ''} ${post.author_last_name || ''}`.trim() || 'Unknown User');
         const originalTimeAgo = this.getTimeAgo(post.original_created_at);
 
         // Check if current user owns this quote post
@@ -1618,7 +1622,7 @@ class FeedManager {
 
         article.innerHTML = `
             <div class="post-header">
-                <a href="#" class="post-avatar-link" onclick="event.stopPropagation(); feedManager.goToProfile('${post.quoter_username || post.quoter_user_id}', '${post.quoter_role || 'player'}', '${post.quoter_division || ''}', '${post.quoter_user_id}', ${post.quoter_transfer === 'y'}); return false;">
+                <a href="#" class="post-avatar-link" onclick="event.stopPropagation(); feedManager.goToProfile('${this.escapeJsAttr(post.quoter_username || post.quoter_user_id)}', '${this.escapeJsAttr(post.quoter_role || 'player')}', '${this.escapeJsAttr(post.quoter_division || '')}', '${this.escapeJsAttr(post.quoter_user_id)}', ${post.quoter_transfer === 'y'}); return false;">
                     <div class="post-avatar-circle" style="border: 2px solid ${getRoleBorderColor(post.quoter_role || 'player', post.quoter_transfer === 'y', post.quoter_division)}; color: ${getRoleBorderColor(post.quoter_role || 'player', post.quoter_transfer === 'y', post.quoter_division)}; background: ${getRoleAvatarBg(post.quoter_role || 'player', post.quoter_transfer === 'y', post.quoter_division)}">
                         ${post.quoter_image ?
                             `<img src="${post.quoter_image}" alt="${quoterName}">` :
@@ -1631,10 +1635,10 @@ class FeedManager {
                 </a>
                 <div class="post-user-info">
                     <div class="post-user-name-row">
-                        <a href="#" class="post-user-name" onclick="event.stopPropagation(); feedManager.goToProfile('${post.quoter_username || post.quoter_user_id}', '${post.quoter_role || 'player'}', '${post.quoter_division || ''}', '${post.quoter_user_id}', ${post.quoter_transfer === 'y'}); return false;">
+                        <a href="#" class="post-user-name" onclick="event.stopPropagation(); feedManager.goToProfile('${this.escapeJsAttr(post.quoter_username || post.quoter_user_id)}', '${this.escapeJsAttr(post.quoter_role || 'player')}', '${this.escapeJsAttr(post.quoter_division || '')}', '${this.escapeJsAttr(post.quoter_user_id)}', ${post.quoter_transfer === 'y'}); return false;">
                             ${quoterName}${typeof getSchoolLogoHTML === 'function' ? getSchoolLogoHTML(post.quoter_school, _feedAssetsPath, 16) : ''}
                         </a>
-                        ${post.quoter_username ? `<span class="post-user-handle">@${post.quoter_username}</span>` : ''}
+                        ${post.quoter_username ? `<span class="post-user-handle">@${this.escapeHtml(post.quoter_username)}</span>` : ''}
                         <span class="post-timestamp">${timeAgo}</span>
                         <button class="post-more-btn" onclick="event.stopPropagation(); feedManager.showQuotePostMenu('${post.id}', ${isOwnQuote}, event)">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1653,7 +1657,7 @@ class FeedManager {
             <div onclick="event.stopPropagation();">${quoteMediaHtml}</div>
             <div class="quoted-post-embed" onclick="event.stopPropagation(); feedManager.navigateToPostView('${post.original_post_id}', event)" style="cursor: pointer;">
                 <div class="quoted-post-header">
-                    <a href="#" onclick="feedManager.goToProfile('${post.author_username || post.author_user_id}', '${post.author_role || 'player'}', '${post.author_division || ''}', '${post.author_user_id}', ${post.author_transfer === 'y'}); event.stopPropagation(); return false;">
+                    <a href="#" onclick="feedManager.goToProfile('${this.escapeJsAttr(post.author_username || post.author_user_id)}', '${this.escapeJsAttr(post.author_role || 'player')}', '${this.escapeJsAttr(post.author_division || '')}', '${this.escapeJsAttr(post.author_user_id)}', ${post.author_transfer === 'y'}); event.stopPropagation(); return false;">
                         <div class="quoted-post-avatar" style="border: 2px solid ${getRoleBorderColor(post.author_role || 'player', post.author_transfer === 'y', post.author_division)}; color: ${getRoleBorderColor(post.author_role || 'player', post.author_transfer === 'y', post.author_division)}; background: ${getRoleAvatarBg(post.author_role || 'player', post.author_transfer === 'y', post.author_division)}">
                             ${post.author_image ?
                                 `<img src="${post.author_image}" alt="${originalAuthorName}">` :
@@ -2393,9 +2397,16 @@ class FeedManager {
                     const commentTimeAgo = this.getTimeAgo(comment.created_at);
                     // commentSub is the role-colored subheader (no timeAgo)
                     let commentMetaLine = commentSub || '';
+                    const cNavTarget = this.escapeJsAttr(comment.author_username || comment.user_id);
+                    const cNavRole = this.escapeJsAttr(comment.author_role || 'player');
+                    const cNavDivision = this.escapeJsAttr(comment.author_division || '');
+                    const cNavUserId = this.escapeJsAttr(comment.user_id || '');
+                    const cAuthorFirst = this.escapeHtml(comment.author_first_name || '');
+                    const cAuthorLast = this.escapeHtml(comment.author_last_name || '');
+                    const cAuthorUsername = this.escapeHtml(comment.author_username || '');
                     return `
                     <div class="comment" data-comment-id="${comment.id}">
-                        <div class="comment-avatar clickable-profile" onclick="feedManager.goToProfile('${comment.author_username || comment.user_id}', '${comment.author_role || 'player'}', '${comment.author_division || ''}', '${comment.user_id}', ${comment.author_transfer === 'y'})" style="border: 2px solid ${getRoleBorderColor(comment.author_role || 'player', comment.author_transfer === 'y', comment.author_division)}; color: ${getRoleBorderColor(comment.author_role || 'player', comment.author_transfer === 'y', comment.author_division)}; background: ${getRoleAvatarBg(comment.author_role || 'player', comment.author_transfer === 'y', comment.author_division)}">
+                        <div class="comment-avatar clickable-profile" onclick="feedManager.goToProfile('${cNavTarget}', '${cNavRole}', '${cNavDivision}', '${cNavUserId}', ${comment.author_transfer === 'y'})" style="border: 2px solid ${getRoleBorderColor(comment.author_role || 'player', comment.author_transfer === 'y', comment.author_division)}; color: ${getRoleBorderColor(comment.author_role || 'player', comment.author_transfer === 'y', comment.author_division)}; background: ${getRoleAvatarBg(comment.author_role || 'player', comment.author_transfer === 'y', comment.author_division)}">
                             ${comment.author_image ?
                                 `<img src="${comment.author_image}" alt="">` :
                                 `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>`
@@ -2403,8 +2414,8 @@ class FeedManager {
                         </div>
                         <div class="comment-body">
                             <div class="comment-header">
-                                <span class="comment-author clickable-profile" onclick="feedManager.goToProfile('${comment.author_username || comment.user_id}', '${comment.author_role || 'player'}', '${comment.author_division || ''}', '${comment.user_id}', ${comment.author_transfer === 'y'})">${comment.author_first_name || ''} ${comment.author_last_name || ''}${typeof getSchoolLogoHTML === 'function' ? getSchoolLogoHTML(comment.author_school, _feedAssetsPath, 14) : ''}</span>
-                                ${comment.author_username ? `<span class="comment-username">@${comment.author_username}</span>` : ''}
+                                <span class="comment-author clickable-profile" onclick="feedManager.goToProfile('${cNavTarget}', '${cNavRole}', '${cNavDivision}', '${cNavUserId}', ${comment.author_transfer === 'y'})">${cAuthorFirst} ${cAuthorLast}${typeof getSchoolLogoHTML === 'function' ? getSchoolLogoHTML(comment.author_school, _feedAssetsPath, 14) : ''}</span>
+                                ${comment.author_username ? `<span class="comment-username">@${cAuthorUsername}</span>` : ''}
                                 <span class="comment-timestamp">${commentTimeAgo}</span>
                             </div>
                             <div class="comment-subheader">${commentMetaLine}</div>
@@ -3984,10 +3995,10 @@ class FeedManager {
             const shareTypeLabel = share.share_type === 'quote' ? 'Quote' : 'Repost';
             const shareLogoHtml = (typeof getSchoolLogoHTML === 'function' && share.division) ? getSchoolLogoHTML(share.school, _feedAssetsPath, 14) : '';
             return `
-            <div class="share-item" onclick="feedManager.goToProfile('${share.username || share.user_id}', '${share.role}', '${share.division || ''}', '${share.user_id}', ${share.transfer === 'y'}); feedManager.closeModal('shares-modal');">
+            <div class="share-item" onclick="feedManager.goToProfile('${this.escapeJsAttr(share.username || share.user_id)}', '${this.escapeJsAttr(share.role)}', '${this.escapeJsAttr(share.division || '')}', '${this.escapeJsAttr(share.user_id)}', ${share.transfer === 'y'}); feedManager.closeModal('shares-modal');">
                 <div class="share-item-avatar" style="border: 2px solid ${getRoleBorderColor(share.role, share.transfer === 'y', share.division)}; color: ${getRoleBorderColor(share.role, share.transfer === 'y', share.division)}; background: ${getRoleAvatarBg(share.role, share.transfer === 'y', share.division)}">
                     ${share.profile_image_url ?
-                        `<img src="${share.profile_image_url}" alt="${share.first_name}">` :
+                        `<img src="${share.profile_image_url}" alt="${this.escapeHtml(share.first_name)}">` :
                         `<svg viewBox="0 0 24 24" fill="currentColor">
                             <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
                             <circle cx="12" cy="7" r="4"></circle>
@@ -3995,7 +4006,7 @@ class FeedManager {
                     }
                 </div>
                 <div class="share-item-info">
-                    <div class="share-item-name">${share.first_name || ''} ${share.last_name || ''}${shareLogoHtml} ${share.username ? `<span style="color: rgba(254,252,251,0.5); font-weight: 400;">@${share.username}</span>` : ''}</div>
+                    <div class="share-item-name">${this.escapeHtml(share.first_name || '')} ${this.escapeHtml(share.last_name || '')}${shareLogoHtml} ${share.username ? `<span style="color: rgba(254,252,251,0.5); font-weight: 400;">@${this.escapeHtml(share.username)}</span>` : ''}</div>
                     <div class="share-item-meta">${shareSub || ''} <span style="opacity:0.5;">• ${shareTypeLabel}</span></div>
                     ${share.share_type === 'quote' && share.quote_content ? `
                         <div class="share-item-quote">"${this.escapeHtml(share.quote_content.substring(0, 100))}${share.quote_content.length > 100 ? '...' : ''}"</div>

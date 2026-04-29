@@ -98,7 +98,7 @@
             month: 'short', day: 'numeric', year: 'numeric'
         });
         const tags = match.matched_on.map(label =>
-            `<span class="ai-rep-tag-match">${label}</span>`
+            `<span class="ai-rep-tag-match">${escapeHtml(label)}</span>`
         ).join('');
         const matchedOnHTML = tags
             ? `<div class="ai-rep-match-body">
@@ -111,8 +111,8 @@
         <div class="ai-rep-match-card ai-rep-animate-in">
             <div class="ai-rep-match-card-header">
                 <div class="ai-rep-match-headline">
-                    <span class="ai-rep-division-badge">${match.coach_division}</span>
-                    <span class="ai-rep-match-text">A ${match.coach_division} coach matched with your profile</span>
+                    <span class="ai-rep-division-badge">${escapeHtml(match.coach_division)}</span>
+                    <span class="ai-rep-match-text">A ${escapeHtml(match.coach_division)} coach matched with your profile</span>
                 </div>
                 <span class="ai-rep-match-date">${date}</span>
             </div>

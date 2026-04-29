@@ -196,16 +196,17 @@ function renderNotificationCard(notification) {
 // Format notification message with clickable name link
 // Uses current profile data (fetched via JOIN) rather than stored message to handle profile changes
 function formatNotificationMessage(notification) {
-    const name = notification.related_user_first_name && notification.related_user_last_name
+    const rawName = notification.related_user_first_name && notification.related_user_last_name
         ? `${notification.related_user_first_name} ${notification.related_user_last_name}`
         : 'Someone';
+    const name = escapeHtml(rawName);
 
     // Create a clickable link if we have a username
     // Navigate to the appropriate profile folder based on user type
     let nameHtml;
     if (notification.related_user_username) {
         const folder = getNotificationProfileFolder(notification);
-        nameHtml = `<a href="../../${folder}/tabs/my-profile.html?username=${notification.related_user_username}&from=notifications" class="notification-user-link">${name}</a>`;
+        nameHtml = `<a href="../../${folder}/tabs/my-profile.html?username=${encodeURIComponent(notification.related_user_username)}&from=notifications" class="notification-user-link">${name}</a>`;
     } else {
         nameHtml = `<strong>${name}</strong>`;
     }
@@ -216,7 +217,7 @@ function formatNotificationMessage(notification) {
 
     switch (title) {
         case 'Profile View':
-            const schoolText = notification.related_user_school ? ` from ${notification.related_user_school}` : '';
+            const schoolText = notification.related_user_school ? ` from ${escapeHtml(notification.related_user_school)}` : '';
             return `${nameHtml}${schoolText} viewed your profile`;
         case 'New Follower':
             return `${nameHtml} started following you`;
@@ -233,7 +234,7 @@ function formatNotificationMessage(notification) {
         case 'New Comment':
             // Extract the comment preview from the original message if available
             const commentMatch = notification.message?.match(/: "(.+)"$/);
-            const commentPreview = commentMatch ? `: "${commentMatch[1]}"` : '';
+            const commentPreview = commentMatch ? `: "${escapeHtml(commentMatch[1])}"` : '';
             return `${nameHtml} commented on your post${commentPreview}`;
         case 'Post Shared':
             const isQuote = notification.message?.includes('quoted');
@@ -241,7 +242,7 @@ function formatNotificationMessage(notification) {
         case 'New Reply':
             // Extract the reply preview from the original message if available
             const replyMatch = notification.message?.match(/: "(.+)"$/);
-            const replyPreview = replyMatch ? `: "${replyMatch[1]}"` : '';
+            const replyPreview = replyMatch ? `: "${escapeHtml(replyMatch[1])}"` : '';
             return `${nameHtml} replied to your comment${replyPreview}`;
         case 'Portal Entry':
             return `${nameHtml} has entered the transfer portal`;
