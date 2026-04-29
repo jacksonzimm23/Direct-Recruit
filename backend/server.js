@@ -8,6 +8,40 @@ const { v4: uuidv4 } = require('uuid');
 const path = require('path');
 require('dotenv').config();
 
+// Fail-fast on missing required env vars (security audit #12).
+// Always-required secrets crash the boot in any environment; prod-only
+// secrets crash only when NODE_ENV=production. pm2 surfaces the FATAL
+// line in `pm2 logs` so misconfig is visible within seconds instead of
+// failing on the first auth/payment request hours later.
+const REQUIRED_SECRETS = [
+  'JWT_SECRET',
+  'DB_HOST',
+  'DB_PORT',
+  'DB_NAME',
+  'DB_USER',
+  'DB_PASSWORD'
+];
+if (process.env.NODE_ENV === 'production') {
+  REQUIRED_SECRETS.push(
+    'STRIPE_SECRET_KEY',
+    'STRIPE_WEBHOOK_SECRET',
+    'STRIPE_PLAYER_PRICE_ID',
+    'STRIPE_COACH_STARTER_PRICE_ID',
+    'STRIPE_COACH_PRO_PRICE_ID',
+    'STRIPE_COACH_ELITE_PRICE_ID',
+    'ADMIN_ANALYTICS_KEY',
+    'AWS_COGNITO_USER_POOL_ID',
+    'AWS_COGNITO_CLIENT_ID',
+    'AWS_COGNITO_CLIENT_SECRET'
+  );
+}
+for (const secret of REQUIRED_SECRETS) {
+  if (!process.env[secret]) {
+    console.error(`FATAL: Missing required env var: ${secret}`);
+    process.exit(1);
+  }
+}
+
 const authRoutes = require('./routes/auth');
 const profileRoutes = require('./routes/profile');
 const followRoutes = require('./routes/follow');
