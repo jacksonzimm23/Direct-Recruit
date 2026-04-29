@@ -77,4 +77,4 @@ const optionalAuthMiddleware = async (req, res, next) => {
   next();
 };
 
-module.exports = { authMiddleware, optionalAuthMiddleware, requireRole, validateUUID };
+module.exports = { authMiddleware, optionalAuthMiddleware, requireRole, validateUUID, UUID_REGEX };

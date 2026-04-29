@@ -1,9 +1,11 @@
+const crypto = require('crypto');
 const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
-const { authMiddleware } = require('../middleware/auth');
+const { authMiddleware, UUID_REGEX } = require('../middleware/auth');
 const stripe = require('../utils/stripe');
 const logger = require('../utils/logger');
+const redisClient = require('../config/redis');
 
 // Map profile types to their Stripe Price IDs
 const PRICE_MAP = {
@@ -308,7 +310,8 @@ function mapRevenueCatProductToTier(productId) {
 }
 
 // POST /api/payments/revenuecat-webhook
-// Auth: custom Authorization header matching REVENUECAT_WEBHOOK_AUTH_HEADER env var.
+// Auth: timing-safe Authorization header match against REVENUECAT_WEBHOOK_AUTH_HEADER.
+// Idempotency: Redis SET NX with 7d TTL on event.id (RevenueCat retries up to ~72h).
 // Mounted with express.raw() in server.js — req.body is a Buffer.
 async function revenueCatWebhookHandler(req, res) {
   try {
@@ -317,19 +320,55 @@ async function revenueCatWebhookHandler(req, res) {
       logger.error('[RevenueCat webhook] REVENUECAT_WEBHOOK_AUTH_HEADER not set');
       return res.status(500).send('webhook not configured');
     }
-    if (req.headers['authorization'] !== expectedAuth) {
+
+    // 1. Timing-safe auth header compare
+    const provided = req.headers['authorization'] || '';
+    const expectedBuf = Buffer.from(expectedAuth, 'utf8');
+    const providedBuf = Buffer.from(provided, 'utf8');
+    if (
+      providedBuf.length !== expectedBuf.length ||
+      !crypto.timingSafeEqual(providedBuf, expectedBuf)
+    ) {
       return res.status(401).send('unauthorized');
     }
 
+    // 2. Parse body
     const event = JSON.parse(req.body.toString('utf8'));
+    const eventId = event.id;
     const payload = event.event || {};
     const { type, app_user_id, product_id, original_transaction_id } = payload;
 
-    // app_user_id = our Direct Recruit users.id (set by iOS app via
-    // Purchases.logIn(userId) in Phase 3b). Must exist.
+    // 3. Require event.id (RevenueCat always sends one — guard anyway)
+    if (!eventId) {
+      logger.warn('[RevenueCat webhook] missing event.id — acking');
+      return res.sendStatus(200);
+    }
+
+    // 4. Idempotency via Redis (skip in dev where redis is a no-op stub)
+    if (redisClient.isReady) {
+      const dedupeKey = `revenuecat:event:${eventId}`;
+      const setResult = await redisClient.set(dedupeKey, '1', { NX: true, EX: 604800 });
+      if (setResult === null) {
+        logger.info(`[RevenueCat webhook] duplicate event ${eventId} — skipping`);
+        return res.sendStatus(200);
+      }
+    }
+
+    // 5. UUID validation on app_user_id
     if (!app_user_id) {
-      logger.error('[RevenueCat webhook] missing app_user_id');
-      return res.sendStatus(200); // ack anyway so RevenueCat doesn't retry
+      logger.warn(`[RevenueCat webhook] missing app_user_id (event ${eventId})`);
+      return res.sendStatus(200);
+    }
+    if (!UUID_REGEX.test(app_user_id)) {
+      logger.warn(`[RevenueCat webhook] malformed app_user_id: ${app_user_id}`);
+      return res.status(400).send('invalid app_user_id');
+    }
+
+    // 6. Verify user exists — silent 200 on miss to prevent enumeration
+    const user = await User.findById(app_user_id);
+    if (!user) {
+      logger.warn(`[RevenueCat webhook] unknown app_user_id: ${app_user_id}`);
+      return res.sendStatus(200);
     }
 
     const tier = mapRevenueCatProductToTier(product_id);
