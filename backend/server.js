@@ -41,7 +41,7 @@ app.set('io', io);
 
 // CORS configuration
 const allowedOrigins = process.env.NODE_ENV === 'production'
-  ? ['https://directrecruit.net', 'https://www.directrecruit.net', 'http://localhost:5500']
+  ? ['https://directrecruit.net', 'https://www.directrecruit.net']
   : true; // Allow all origins in development
 
 app.use(cors({
