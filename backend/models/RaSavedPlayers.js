@@ -12,22 +12,58 @@ class RaSavedPlayers {
     return parseInt(result.rows[0].count);
   }
 
-  // Add a player to the coach's saved list
+  // Add a player to the coach's saved list.
+  // Security #19: race-free cap enforcement. The original implementation read
+  // the count and inserted in separate queries, allowing two concurrent saves
+  // to both pass a count<50 check and both insert (TOCTOU). The fix:
+  //   1. Per-coach pg_advisory_xact_lock — serializes concurrent saves for
+  //      the same coach; saves for different coaches stay parallel.
+  //   2. Atomic CTE that gates the INSERT on the count INSIDE a single SQL
+  //      statement and returns both the pre-count and whether the insert
+  //      actually happened (so we can distinguish cap-reached from duplicate
+  //      from fresh-insert).
   static async addPlayer(coachUserId, playerUserId) {
-    const count = await this.getCount(coachUserId);
-    if (count >= MAX_SAVED) {
-      return { success: false, error: 'Saved list full — maximum 50 players', count };
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+
+      await client.query(
+        'SELECT pg_advisory_xact_lock(hashtext($1))',
+        [`ra_saved:${coachUserId}`]
+      );
+
+      const result = await client.query(
+        `WITH current_count AS (
+           SELECT COUNT(*)::int AS cnt FROM ra_saved_players WHERE coach_user_id = $1
+         ),
+         inserted AS (
+           INSERT INTO ra_saved_players (coach_user_id, player_user_id)
+           SELECT $1, $2 FROM current_count WHERE cnt < ${MAX_SAVED}
+           ON CONFLICT (coach_user_id, player_user_id) DO NOTHING
+           RETURNING id
+         )
+         SELECT cc.cnt AS pre_count,
+                EXISTS(SELECT 1 FROM inserted) AS did_insert
+         FROM current_count cc`,
+        [coachUserId, playerUserId]
+      );
+
+      await client.query('COMMIT');
+
+      const { pre_count, did_insert } = result.rows[0];
+
+      if (pre_count >= MAX_SAVED && !did_insert) {
+        return { success: false, error: 'Saved list full — maximum 50 players', count: pre_count };
+      }
+      // Either fresh insert (count + 1) or duplicate (count unchanged); both
+      // are idempotent successes from the caller's perspective.
+      return { success: true, count: did_insert ? pre_count + 1 : pre_count };
+    } catch (err) {
+      await client.query('ROLLBACK');
+      throw err;
+    } finally {
+      client.release();
     }
-
-    await pool.query(
-      `INSERT INTO ra_saved_players (coach_user_id, player_user_id)
-       VALUES ($1, $2)
-       ON CONFLICT (coach_user_id, player_user_id) DO NOTHING`,
-      [coachUserId, playerUserId]
-    );
-
-    const newCount = await this.getCount(coachUserId);
-    return { success: true, count: newCount };
   }
 
   // Remove a player from the coach's saved list
