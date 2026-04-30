@@ -936,6 +936,17 @@ async function displayProfile(profile, type, accessLevel = 'full', hasPendingReq
 
     // Check if this is a restricted (private) profile view
     const isRestrictedView = accessLevel === 'limited';
+    window.viewedProfileIsPrivate = isRestrictedView;
+
+    // Security #14: short-circuit on private view BEFORE rendering any
+    // metadata. The trimmed response has only name + avatar + private flag,
+    // so role-specific render functions would emit empty placeholders.
+    if (isRestrictedView) {
+        renderLockedProfileView(profile);
+        updateProfileActions(hasPendingRequest);
+        updateActiveNavItem();
+        return;
+    }
 
     // Determine if viewed profile is HS player or transfer player
     if (type === 'player') {
@@ -1006,7 +1017,7 @@ async function displayProfile(profile, type, accessLevel = 'full', hasPendingReq
     }
 
     // Update profile actions based on ownership
-    updateProfileActions();
+    updateProfileActions(hasPendingRequest);
 
     // Update active nav item
     updateActiveNavItem();
@@ -1059,11 +1070,8 @@ async function displayProfile(profile, type, accessLevel = 'full', hasPendingReq
     // Load follower/following counts from database
     loadFollowCounts(profile.user_id);
 
-    // If this is a private profile view (restricted), add overlay on tabs section
-    if (isRestrictedView) {
-        addPrivateProfileOverlay();
-        disableFollowLinksForPrivateProfile();
-    }
+    // Security #14: private-profile branch is handled at the top of
+    // displayProfile via renderLockedProfileView() — no overlay needed.
 }
 
 // Remove sensitive DOM elements when viewing another user's profile
@@ -1140,6 +1148,98 @@ function disableFollowLinksForPrivateProfile() {
         followingLink.style.cursor = 'default';
         followingLink.style.opacity = '0.6';
         followingLink.removeAttribute('href');
+    }
+}
+
+// Security #14: Replace the entire profile body with a locked card when the
+// viewer can't see the private profile. The trimmed `profile` object has only
+// { user_id, first_name, last_name, private, profile_image_url|profile_picture_url }.
+function renderLockedProfileView(profile) {
+    // Avatar + name (the only fields we have).
+    const nameElement = document.querySelector('.profile-name');
+    if (nameElement) {
+        nameElement.innerHTML = `${profile.first_name || ''} ${profile.last_name || ''}`.trim();
+    }
+    const avatarElement = document.querySelector('.profile-avatar-large');
+    if (avatarElement) {
+        const avatarUrl = profile.profile_image_url || profile.profile_picture_url;
+        if (avatarUrl) {
+            avatarElement.innerHTML = `<img src="${avatarUrl}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
+            avatarElement.style.backgroundColor = 'transparent';
+        } else {
+            avatarElement.style.backgroundColor = '#1f2937';
+        }
+        avatarElement.style.border = '3px solid #6b7280';
+        avatarElement.style.color = '#6b7280';
+    }
+    const profileHeader = document.querySelector('.profile-header-simple');
+    if (profileHeader) {
+        profileHeader.classList.remove('player-profile', 'coach-profile', 'portal-profile', 'other-profile');
+    }
+
+    // Hide every metadata container the regular renderers would have populated
+    // (followers/following counts stay visible).
+    const elementsToHide = [
+        '.profile-info-row',
+        '.profile-meta',
+        '.profile-position',
+        '.profile-username',
+        '#profileStatsWidget'
+    ];
+    elementsToHide.forEach(sel => {
+        document.querySelectorAll(sel).forEach(el => { el.style.display = 'none'; });
+    });
+
+    // Populate followers/following counts from the dedicated endpoint.
+    if (profile.user_id && typeof loadFollowCounts === 'function') {
+        loadFollowCounts(profile.user_id);
+    }
+
+    // Show the profile shell so the locked card is visible.
+    const profileContent = document.querySelector('.profile-content');
+    if (profileContent) profileContent.classList.add('profile-loaded');
+    const dashboardContainer = document.getElementById('dashboardContainer');
+    if (dashboardContainer) dashboardContainer.classList.add('profile-loaded');
+
+    // Replace the tabs section with the locked card.
+    const tabContent = document.querySelector('.profile-tab-content');
+    if (tabContent) tabContent.remove();
+    const tabsContainer = document.querySelector('.profile-tabs-container');
+    if (tabsContainer) {
+        tabsContainer.innerHTML = `
+            <div class="locked-profile-card">
+                <svg class="lock-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="2" width="56" height="56">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                </svg>
+                <h3>This profile is private</h3>
+                <p>Follow to see their posts and stats.</p>
+            </div>
+        `;
+    }
+
+    if (!document.getElementById('lockedProfileStyles')) {
+        const style = document.createElement('style');
+        style.id = 'lockedProfileStyles';
+        style.textContent = `
+            .locked-profile-card {
+                display: flex; flex-direction: column; align-items: center;
+                justify-content: center; padding: 60px 40px; min-height: 300px;
+                background: #0a1128; border-radius: 12px; color: white; text-align: center;
+            }
+            .locked-profile-card .lock-icon { color: white; opacity: 0.9; margin-bottom: 16px; }
+            .locked-profile-card h3 { margin: 0 0 8px; font-size: 22px; font-weight: 600; }
+            .locked-profile-card p  { margin: 0; opacity: 0.75; font-size: 15px; }
+        `;
+        document.head.appendChild(style);
+    }
+
+    if (typeof removeSensitiveElementsForOtherProfile === 'function') {
+        removeSensitiveElementsForOtherProfile();
+    }
+    if (typeof disableFollowLinksForPrivateProfile === 'function') {
+        disableFollowLinksForPrivateProfile();
     }
 }
 
@@ -2242,10 +2342,13 @@ async function setupFollowButton() {
 
     // Check follow status and if they follow us
     try {
-        const [followResponse, followsMeResponse] = await Promise.all([
-            API.get(`/follow/${viewingUserId}/check`),
-            API.get(`/follow/${viewingUserId}/follows-me`)
-        ]);
+        // Security #14: skip follows-me lookup on private profiles to avoid
+        // leaking the relational signal (and the "Follow back" wording).
+        const isPrivateView = window.viewedProfileIsPrivate === true;
+        const followResponse = await API.get(`/follow/${viewingUserId}/check`);
+        const followsMeResponse = isPrivateView
+            ? { followsMe: false }
+            : await API.get(`/follow/${viewingUserId}/follows-me`);
         const isFollowing = followResponse.isFollowing;
         const theyFollowMe = followsMeResponse.followsMe;
 
@@ -2256,6 +2359,7 @@ async function setupFollowButton() {
         const getButtonText = (following, pending) => {
             if (following) return 'Following';
             if (pending) return 'Requested';
+            if (isPrivateView) return 'Follow';
             return theyFollowMe ? 'Follow back' : 'Follow';
         };
 

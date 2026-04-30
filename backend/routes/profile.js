@@ -52,65 +52,26 @@ async function addSignedUrlsToProfiles(profiles) {
   return await Promise.all(profiles.map(profile => addSignedUrlToProfile(profile)));
 }
 
-// Helper function to filter profile data for private profiles
-// Returns only header-level information (profile picture, name, username, basic info)
-// Excludes detailed content like bio, stats, academics, social links, etc.
+// Helper function to filter profile data for private profiles (security #14).
+// Returns the locked-card display set: name + avatar + follower/following
+// counts + a `private: true` sentinel. Drops all athletic and recruiting
+// metadata (position, height, weight, state, city, graduation_year, team_name,
+// player_status, eligibility, position_title, school_name, coach_type,
+// subheader, bio, contact info, etc.).
 function getPrivateProfileData(profile, profileType) {
   if (!profile) return null;
-
-  // Common fields visible for all private profiles (header section only)
-  const baseFields = {
+  const base = {
     user_id: profile.user_id,
     first_name: profile.first_name,
     last_name: profile.last_name,
-    username: profile.username,
-    profile_visibility: profile.profile_visibility,
     followers_count: profile.followers_count,
     following_count: profile.following_count,
-    created_at: profile.created_at,
-    // Mark this as a private profile response
-    is_private_view: true
+    private: true
   };
-
-  if (profileType === 'player') {
-    return {
-      ...baseFields,
-      profile_image_url: profile.profile_image_url,
-      position: profile.position,
-      team_name: profile.team_name,
-      city: profile.city,
-      state: profile.state,
-      graduation_year: profile.graduation_year,
-      college_division: profile.college_division,
-      transfer: profile.transfer,
-      player_status: profile.player_status,
-      // Include height/weight for header display (Row 1: Position • Height • Weight • Class)
-      height: profile.height,
-      weight: profile.weight,
-      // Include eligibility for transfer player header display
-      eligibility: profile.eligibility
-    };
-  } else if (profileType === 'coach') {
-    return {
-      ...baseFields,
-      profile_image_url: profile.profile_image_url,
-      position_title: profile.position_title,
-      team_name: profile.team_name,
-      school_name: profile.school_name,
-      city: profile.city,
-      state: profile.state,
-      college_division: profile.college_division,
-      coach_type: profile.coach_type
-    };
-  } else if (profileType === 'other') {
-    return {
-      ...baseFields,
-      profile_picture_url: profile.profile_picture_url,
-      subheader: profile.subheader
-    };
+  if (profileType === 'other') {
+    return { ...base, profile_picture_url: profile.profile_picture_url };
   }
-
-  return baseFields;
+  return { ...base, profile_image_url: profile.profile_image_url };
 }
 
 // Helper function to check if viewer can see full profile

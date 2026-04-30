@@ -552,6 +552,17 @@ class Follow {
       return { canMessage: false, reason: 'cannot_message_self' };
     }
 
+    // Security #14 follow-up: private profiles can only be messaged by their
+    // followers. This check wins regardless of `message_permissions` —
+    // privacy mode shouldn't be bypassable by setting `everyone` permissions.
+    const isPrivate = await this.isPrivateProfile(recipientId);
+    if (isPrivate) {
+      const isFollowing = await this.isFollowing(senderId, recipientId);
+      if (!isFollowing) {
+        return { canMessage: false, reason: 'private_profile' };
+      }
+    }
+
     // Get recipient's message permissions
     const messagePermissions = await this.getMessagePermissions(recipientId);
 

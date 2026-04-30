@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Message = require('../models/Message');
+const Follow = require('../models/Follow');
 const Notification = require('../models/Notification');
 const { notifyUser } = require('../utils/notifications');
 const PlayerProfile = require('../models/PlayerProfile');
@@ -88,6 +89,15 @@ router.post('/conversations', authMiddleware, [
 
     if (otherUserId === req.userId) {
       return res.status(400).json({ error: 'Cannot create conversation with yourself' });
+    }
+
+    // Security #14 follow-up: enforce message permissions at conversation
+    // creation. Blocks DMs to private profiles by non-followers and to users
+    // with restrictive `message_permissions`. The frontend's GET
+    // /follow/can-message check is advisory only — this is the boundary.
+    const permission = await Follow.canMessage(req.userId, otherUserId);
+    if (!permission.canMessage) {
+      return res.status(403).json({ error: 'You cannot message this user', reason: permission.reason });
     }
 
     const conversation = await Message.getOrCreateConversation(req.userId, otherUserId);
