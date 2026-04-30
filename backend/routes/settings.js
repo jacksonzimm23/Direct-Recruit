@@ -987,6 +987,72 @@ router.post('/switch-profile', authMiddleware, async (req, res) => {
       message_permissions: oldProfile.message_permissions || 'everyone'
     };
 
+    // Compute paid/free transition booleans (used here for Stripe ops AND
+    // below for the response shape).
+    const isCurrentPaid = User.PAID_TYPES.includes(currentSubtype);
+    const isTargetPaid = User.PAID_TYPES.includes(target_type);
+    const isSamePricePair = ['hsplayer', 'transferplayer'].includes(currentSubtype) &&
+                            ['hsplayer', 'transferplayer'].includes(target_type);
+
+    // Security #17: handle Stripe subscription transitions INSIDE the
+    // transaction so a failed Stripe call rolls back the entire profile
+    // switch instead of leaving the user with a free profile + an active
+    // subscription. Apple IAP users (subscription_source='apple_iap') are
+    // skipped because we cannot cancel via Stripe — the column stores a
+    // RevenueCat transaction id. Apple users have to cancel via iOS Settings;
+    // the RevenueCat webhook will reconcile.
+    //
+    // FOLLOW-UP (out of scope for #17): an Apple IAP user switching from a
+    // paid coach profile to a free profile keeps paying for an unused sub.
+    // Need a frontend "cancel via iOS Settings first" gate or a server-side
+    // check that warns them.
+    const isStripeSub = user.subscription_source === 'stripe' && user.stripe_subscription_id;
+
+    // Stripe path: cancel sub and clear our DB columns. Both ops are inside
+    // the transaction so a Stripe failure rolls back the whole switch.
+    //
+    // Apple IAP path: do nothing. We can't cancel via Stripe (the column
+    // stores a RevenueCat txid). Leaving the DB row untouched means the user
+    // keeps subscription_status='active' / source='apple_iap' until they
+    // cancel via iOS Settings — at which point the RevenueCat webhook fires
+    // CANCELLATION and reconciles. Trade-off: if they don't cancel via iOS,
+    // they keep paying for an unused sub. Surfacing this to the user before
+    // the switch is a frontend UX follow-up, out of scope for #17.
+    if (isStripeSub && isCurrentPaid && !isTargetPaid) {
+      // Paid → Free: cancel Stripe subscription + clear DB columns
+      try {
+        await stripe.cancelSubscription(user.stripe_subscription_id);
+      } catch (stripeErr) {
+        logger.error(`Stripe cancel failed during profile switch: ${stripeErr.message}`);
+        const e = new Error('Subscription cancellation failed. Please try again or contact support.');
+        e.code = 'STRIPE_CANCEL_FAILED';
+        throw e;
+      }
+      await User.updateSubscription(req.userId, {
+        subscriptionId: null,
+        status: 'cancelled',
+        tier: null
+      }, client);
+    } else if (isStripeSub && isTargetPaid && isCurrentPaid && !isSamePricePair) {
+      // Paid → different Paid: cancel old Stripe sub, frontend will start a new one
+      try {
+        await stripe.cancelSubscription(user.stripe_subscription_id);
+      } catch (stripeErr) {
+        logger.error(`Stripe cancel failed during profile switch: ${stripeErr.message}`);
+        const e = new Error('Subscription cancellation failed. Please try again or contact support.');
+        e.code = 'STRIPE_CANCEL_FAILED';
+        throw e;
+      }
+      await User.updateSubscription(req.userId, {
+        subscriptionId: null,
+        status: 'none',
+        tier: null
+      }, client);
+    }
+    // hsplayer ↔ transferplayer (same $10 price): keep subscription, no action.
+    // Free → Paid: no current sub to cancel; frontend redirects to checkout.
+    // Apple IAP user switching anywhere: DB columns untouched, webhook reconciles.
+
     // Delete old profile row (CASCADE handles player_games/player_game_stats)
     if (user.role === 'player') {
       await client.query('DELETE FROM player_profiles WHERE user_id = $1', [req.userId]);
@@ -1134,48 +1200,12 @@ router.post('/switch-profile', authMiddleware, async (req, res) => {
       ? `mainpage-${target_type.replace('hs', 'hs').replace('college', 'college')}.html`
       : `mainpage-${target_type === 'other' ? 'other' : target_type.replace('player', 'player')}.html`;
 
-    const isCurrentPaid = User.PAID_TYPES.includes(currentSubtype);
-    const isTargetPaid = User.PAID_TYPES.includes(target_type);
-
-    // Determine if payment is needed and handle subscription changes
-    let requiresPayment = false;
-    const isSamePricePair = ['hsplayer', 'transferplayer'].includes(currentSubtype) &&
-                            ['hsplayer', 'transferplayer'].includes(target_type);
-
-    if (isCurrentPaid && !isTargetPaid) {
-      // Paid → Free: cancel the subscription
-      if (user.stripe_subscription_id) {
-        try {
-          await stripe.cancelSubscription(user.stripe_subscription_id);
-        } catch (err) {
-          logger.warn(`Failed to cancel Stripe subscription during switch: ${err.message}`);
-        }
-      }
-      await User.updateSubscription(req.userId, {
-        subscriptionId: null,
-        status: 'cancelled',
-        tier: null
-      });
-    } else if (isTargetPaid && isSamePricePair) {
-      // hsplayer ↔ transferplayer: keep subscription, no payment needed
-      requiresPayment = false;
-    } else if (isTargetPaid) {
-      // Free → Paid OR Paid → different Paid: need new subscription
-      if (isCurrentPaid && user.stripe_subscription_id) {
-        // Cancel old subscription first
-        try {
-          await stripe.cancelSubscription(user.stripe_subscription_id);
-        } catch (err) {
-          logger.warn(`Failed to cancel old Stripe subscription during switch: ${err.message}`);
-        }
-        await User.updateSubscription(req.userId, {
-          subscriptionId: null,
-          status: 'none',
-          tier: null
-        });
-      }
-      requiresPayment = true;
-    }
+    // Subscription transitions already handled atomically inside the
+    // transaction (security #17). All that's left is to compute the response
+    // shape — `requires_payment` controls whether the frontend redirects to
+    // Stripe Checkout next. `isCurrentPaid`, `isTargetPaid`, `isSamePricePair`
+    // were declared in the transaction block above and are still in scope.
+    const requiresPayment = isTargetPaid && !isSamePricePair;
 
     res.json({
       success: true,
@@ -1192,6 +1222,12 @@ router.post('/switch-profile', authMiddleware, async (req, res) => {
   } catch (error) {
     await client.query('ROLLBACK');
     logger.error('Switch profile error:', error);
+    // Security #17: surface Stripe-cancel failures distinctly so the user
+    // knows their subscription wasn't cancelled (rather than the generic
+    // "switch failed" message).
+    if (error.code === 'STRIPE_CANCEL_FAILED') {
+      return res.status(502).json({ error: error.message });
+    }
     res.status(500).json({ error: 'Failed to switch profile type' });
   } finally {
     client.release();

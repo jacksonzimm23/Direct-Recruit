@@ -125,7 +125,12 @@ class User {
   // RevenueCat's original_transaction_id, NOT a Stripe sub id. The column
   // name is historical — it now holds "external payment processor sub id"
   // regardless of processor. Always pair with `source` to interpret correctly.
-  static async updateSubscription(userId, { subscriptionId, status, tier, source }) {
+  //
+  // Security #17: optional `client` parameter so callers inside a transaction
+  // (e.g. profile-switch) can pass their pg.Client and have this UPDATE
+  // participate in the same atomic unit. Defaults to the pool for autocommit
+  // behavior — all existing callers (webhooks, etc.) work unchanged.
+  static async updateSubscription(userId, { subscriptionId, status, tier, source }, client = pool) {
     const fields = [];
     const values = [];
     let idx = 1;
@@ -150,7 +155,7 @@ class User {
     if (fields.length === 0) return;
 
     values.push(userId);
-    await pool.query(
+    await client.query(
       `UPDATE users SET ${fields.join(', ')} WHERE id = $${idx}`,
       values
     );
