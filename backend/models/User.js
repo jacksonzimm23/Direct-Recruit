@@ -10,8 +10,18 @@ class User {
     return result.rows[0];
   }
 
+  // Security #15: explicit projection. Excludes sensitive columns
+  // (cognito_sub, password_hash, stripe_customer_id, stripe_subscription_id,
+  // subscription_source) that callers may inadvertently spread into responses.
+  // Matches findById() so user-lookup return shape is canonical.
   static async findByEmail(email) {
-    const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+    const result = await pool.query(
+      `SELECT id, email, username, role, profile_completed, is_active,
+              email_verified, subscription_status, subscription_tier,
+              last_profile_switch_at
+       FROM users WHERE email = $1`,
+      [email]
+    );
     return result.rows[0];
   }
 
@@ -20,13 +30,29 @@ class User {
     return result.rows[0];
   }
 
+  // Security #15: same canonical projection as findByEmail. Currently no
+  // callers in the backend, but tightened preemptively so any future Cognito
+  // flow wired up to this method doesn't leak sensitive columns.
   static async findByCognitoSub(cognitoSub) {
-    const result = await pool.query('SELECT * FROM users WHERE cognito_sub = $1', [cognitoSub]);
+    const result = await pool.query(
+      `SELECT id, email, username, role, profile_completed, is_active,
+              email_verified, subscription_status, subscription_tier,
+              last_profile_switch_at
+       FROM users WHERE cognito_sub = $1`,
+      [cognitoSub]
+    );
     return result.rows[0];
   }
 
+  // Security #15: only caller (username-availability check) needs existence
+  // truthiness. Project to `id` only — any future caller that wants more
+  // columns has to make a deliberate choice rather than implicitly inherit
+  // SELECT *.
   static async findByUsername(username) {
-    const result = await pool.query('SELECT * FROM users WHERE username = $1', [username]);
+    const result = await pool.query(
+      'SELECT id FROM users WHERE username = $1',
+      [username]
+    );
     return result.rows[0];
   }
 
