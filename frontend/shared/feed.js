@@ -3310,6 +3310,17 @@ class FeedManager {
         return div.innerHTML;
     }
 
+    escapeJsAttr(text) {
+        if (text === null || text === undefined) return '';
+        return String(text)
+            .replace(/\\/g, '\\\\')
+            .replace(/'/g, "\\'")
+            .replace(/"/g, '\\"')
+            .replace(/\n/g, '\\n')
+            .replace(/\r/g, '\\r')
+            .replace(/</g, '\\x3C');
+    }
+
     openMediaViewer(url) {
         // Legacy single image viewer - redirect to slideshow
         this.openMediaSlideshow([url], 0);
