@@ -724,6 +724,13 @@ router.get('/username/:username', authMiddleware, async (req, res) => {
 // Record a profile view (all profile types, 2-day cooldown per viewer)
 router.post('/view/:userId', authMiddleware, validateUUID('userId'), async (req, res) => {
   try {
+    // Security #18: anti-Sybil gate. Only viewers with a completed profile
+    // can record views. Spam accounts that just registered get a silent
+    // no-op response, raising the cost of multi-account view inflation.
+    if (!req.user || !req.user.profile_completed) {
+      return res.json({ success: true, recorded: false, isNewView: false });
+    }
+
     const viewedUserId = req.params.userId;
     const viewerId = req.userId;
 
@@ -759,6 +766,11 @@ router.post('/view/:userId', authMiddleware, validateUUID('userId'), async (req,
 // Record a coach profile view (for Portal Intelligence signal tracking)
 router.post('/coach-view/:userId', authMiddleware, validateUUID('userId'), async (req, res) => {
   try {
+    // Security #18: anti-Sybil gate. Same rationale as /view/:userId.
+    if (!req.user || !req.user.profile_completed) {
+      return res.json({ success: true, recorded: false });
+    }
+
     const viewedCoachId = req.params.userId;
     const viewerId = req.userId;
 
