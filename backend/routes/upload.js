@@ -7,11 +7,32 @@ const CoachProfile = require('../models/CoachProfile');
 const OtherProfile = require('../models/OtherProfile');
 const path = require('path');
 const multer = require('multer');
+const fs = require('fs');
+const os = require('os');
+const crypto = require('crypto');
 const { uploadToS3, getSignedS3Url, getSignedVideoUrl, generateProfileImageKey, generatePostMediaKey, generateMessageMediaKey, deleteFromS3 } = require('../utils/s3');
 const logger = require('../utils/logger');
 
-// Memory storage for S3 uploads (keeps file in buffer instead of disk)
+// Memory storage for small profile-image uploads (5MB max — buffer is fine).
 const memoryStorage = multer.memoryStorage();
+
+// Security #16: disk storage for large video uploads. Multer writes the
+// multipart body straight to disk so we don't pin 200-500MB in Node's heap
+// for the duration of the upload. Routes read the temp file into a Buffer
+// just before the S3 PUT and unlink it in finally.
+const TMP_UPLOAD_DIR = path.join(os.tmpdir(), 'dr-uploads');
+if (!fs.existsSync(TMP_UPLOAD_DIR)) {
+  fs.mkdirSync(TMP_UPLOAD_DIR, { recursive: true });
+}
+
+const videoDiskStorage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, TMP_UPLOAD_DIR),
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname);
+    const stamp = Date.now() + '-' + crypto.randomBytes(8).toString('hex');
+    cb(null, `${stamp}${ext}`);
+  }
+});
 
 // Multer config for profile images (images only, 5MB max)
 const s3Upload = multer({
@@ -33,7 +54,7 @@ const s3Upload = multer({
 
 // Multer config for message media (images and videos, same limits as post media)
 const messageMediaUpload = multer({
-  storage: memoryStorage,
+  storage: videoDiskStorage,
   fileFilter: (req, file, cb) => {
     const allowedImageTypes = /jpeg|jpg|png|gif|webp/;
     const allowedVideoTypes = /mp4|mov|avi|webm|mkv|m4v/;
@@ -55,7 +76,7 @@ const messageMediaUpload = multer({
 
 // Multer config for post media (images and videos, 200MB max for videos up to ~5 min)
 const postMediaUpload = multer({
-  storage: memoryStorage,
+  storage: videoDiskStorage,
   fileFilter: (req, file, cb) => {
     const allowedImageTypes = /jpeg|jpg|png|gif|webp/;
     const allowedVideoTypes = /mp4|mov|avi|webm|mkv/;
@@ -154,55 +175,63 @@ router.post('/post-media', authMiddleware, postMediaUpload.array('media', 4), as
     let hasVideo = false;
     let hasImage = false;
 
-    // Upload each file to S3
-    for (const file of req.files) {
-      const isVideo = file.mimetype.startsWith('video/');
-      const mediaType = isVideo ? 'video' : 'image';
+    try {
+      // Upload each file to S3
+      for (const file of req.files) {
+        const isVideo = file.mimetype.startsWith('video/');
+        const mediaType = isVideo ? 'video' : 'image';
 
-      if (isVideo) hasVideo = true;
-      else hasImage = true;
+        if (isVideo) hasVideo = true;
+        else hasImage = true;
 
-      // Generate S3 key
-      const s3Key = generatePostMediaKey(req.userId, file.originalname, mediaType);
+        const s3Key = generatePostMediaKey(req.userId, file.originalname, mediaType);
 
-      // Upload to S3
-      await uploadToS3(file.buffer, s3Key, file.mimetype);
+        const fileBuffer = await fs.promises.readFile(file.path);
+        await uploadToS3(fileBuffer, s3Key, file.mimetype);
 
-      // Generate signed URL for immediate display
-      const signedUrl = await getSignedS3Url(s3Key);
+        const signedUrl = await getSignedS3Url(s3Key);
 
-      uploadedMedia.push({
-        s3Key: s3Key,
-        url: signedUrl,
-        media_type: mediaType,
-        size: file.size,
-        originalName: file.originalname
+        uploadedMedia.push({
+          s3Key: s3Key,
+          url: signedUrl,
+          media_type: mediaType,
+          size: file.size,
+          originalName: file.originalname
+        });
+
+        logger.info('Post media uploaded to S3:', {
+          key: s3Key,
+          contentType: file.mimetype,
+          size: file.size
+        });
+      }
+
+      // Determine overall media type
+      if (hasVideo && hasImage) {
+        overallMediaType = 'mixed';
+      } else if (hasVideo) {
+        overallMediaType = 'video';
+      } else {
+        overallMediaType = 'image';
+      }
+
+      res.json({
+        message: 'Media uploaded successfully',
+        media: uploadedMedia,
+        media_type: overallMediaType,
+        // For backwards compatibility with single file uploads
+        url: uploadedMedia[0]?.url,
+        s3Key: uploadedMedia[0]?.s3Key
       });
-
-      logger.info('Post media uploaded to S3:', {
-        key: s3Key,
-        contentType: file.mimetype,
-        size: file.size
-      });
+    } finally {
+      // Security #16: best-effort cleanup of ALL temp files, including any
+      // that weren't yet uploaded (in case the for-loop threw partway through).
+      await Promise.all(req.files.map(f =>
+        fs.promises.unlink(f.path).catch(err => {
+          logger.warn('Failed to delete temp upload:', f.path, err.message);
+        })
+      ));
     }
-
-    // Determine overall media type
-    if (hasVideo && hasImage) {
-      overallMediaType = 'mixed';
-    } else if (hasVideo) {
-      overallMediaType = 'video';
-    } else {
-      overallMediaType = 'image';
-    }
-
-    res.json({
-      message: 'Media uploaded successfully',
-      media: uploadedMedia,
-      media_type: overallMediaType,
-      // For backwards compatibility with single file uploads
-      url: uploadedMedia[0]?.url,
-      s3Key: uploadedMedia[0]?.s3Key
-    });
   } catch (error) {
     logger.error('Upload post media error:', error);
     if (error.message && error.message.includes('Only image files')) {
@@ -221,27 +250,34 @@ router.post('/message-media', authMiddleware, messageMediaUpload.single('media')
 
     const isVideo = req.file.mimetype.startsWith('video/');
     const mediaType = isVideo ? 'video' : 'image';
-
     const s3Key = generateMessageMediaKey(req.userId, req.file.originalname, mediaType);
 
-    await uploadToS3(req.file.buffer, s3Key, req.file.mimetype);
+    try {
+      const fileBuffer = await fs.promises.readFile(req.file.path);
+      await uploadToS3(fileBuffer, s3Key, req.file.mimetype);
 
-    const signedUrl = isVideo ? await getSignedVideoUrl(s3Key) : await getSignedS3Url(s3Key);
+      const signedUrl = isVideo ? await getSignedVideoUrl(s3Key) : await getSignedS3Url(s3Key);
 
-    logger.info('Message media uploaded to S3:', {
-      key: s3Key,
-      contentType: req.file.mimetype,
-      size: req.file.size
-    });
+      logger.info('Message media uploaded to S3:', {
+        key: s3Key,
+        contentType: req.file.mimetype,
+        size: req.file.size
+      });
 
-    res.json({
-      message: 'Media uploaded successfully',
-      s3Key: s3Key,
-      url: signedUrl,
-      media_type: mediaType,
-      size: req.file.size,
-      originalName: req.file.originalname
-    });
+      res.json({
+        message: 'Media uploaded successfully',
+        s3Key: s3Key,
+        url: signedUrl,
+        media_type: mediaType,
+        size: req.file.size,
+        originalName: req.file.originalname
+      });
+    } finally {
+      // Security #16: best-effort temp-file cleanup, runs on success and error.
+      fs.promises.unlink(req.file.path).catch(err => {
+        logger.warn('Failed to delete temp upload:', req.file.path, err.message);
+      });
+    }
   } catch (error) {
     logger.error('Upload message media error:', error);
     if (error.message && (error.message.includes('Only image files') || error.message.includes('File too large'))) {

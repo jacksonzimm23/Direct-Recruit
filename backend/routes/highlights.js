@@ -1,14 +1,34 @@
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
+const fs = require('fs');
+const os = require('os');
+const path = require('path');
+const crypto = require('crypto');
 const pool = require('../config/database');
 const { authMiddleware, validateUUID } = require('../middleware/auth');
 const { uploadToS3, getSignedVideoUrl, deleteFromS3, generateHighlightVideoKey } = require('../utils/s3');
 const Follow = require('../models/Follow');
 const logger = require('../utils/logger');
 
-// Configure multer for video uploads
-const storage = multer.memoryStorage();
+// Security #16: disk storage for 500MB highlight videos. Multer writes the
+// upload straight to disk so we don't pin half a gigabyte in Node's heap
+// while the request body streams in. Route reads the file into a Buffer
+// just before the S3 PUT and unlinks it in finally.
+const TMP_UPLOAD_DIR = path.join(os.tmpdir(), 'dr-uploads');
+if (!fs.existsSync(TMP_UPLOAD_DIR)) {
+  fs.mkdirSync(TMP_UPLOAD_DIR, { recursive: true });
+}
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, TMP_UPLOAD_DIR),
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname);
+    const stamp = Date.now() + '-' + crypto.randomBytes(8).toString('hex');
+    cb(null, `${stamp}${ext}`);
+  }
+});
+
 const upload = multer({
   storage: storage,
   limits: {
@@ -63,33 +83,43 @@ router.post('/upload', authMiddleware, upload.single('video_file'), async (req, 
 
     let videoS3Key = null;
 
-    // Upload video to S3 if provided
-    if (videoFile) {
-      const s3Key = generateHighlightVideoKey(req.userId, videoFile.originalname);
-      await uploadToS3(videoFile.buffer, s3Key, videoFile.mimetype);
-      videoS3Key = s3Key;
+    try {
+      // Upload video to S3 if provided
+      if (videoFile) {
+        const s3Key = generateHighlightVideoKey(req.userId, videoFile.originalname);
+        const fileBuffer = await fs.promises.readFile(videoFile.path);
+        await uploadToS3(fileBuffer, s3Key, videoFile.mimetype);
+        videoS3Key = s3Key;
+      }
+
+      // Insert into database
+      const result = await pool.query(
+        `INSERT INTO player_highlights (user_id, highlight_type, title, hudl_link, video_url)
+         VALUES ($1, $2, $3, $4, $5)
+         RETURNING id, highlight_type, title, hudl_link, video_url, created_at`,
+        [req.userId, highlight_type, title, hudl_link || null, videoS3Key]
+      );
+
+      const highlight = result.rows[0];
+
+      // Generate signed URL for the video if uploaded
+      if (highlight.video_url) {
+        highlight.video_signed_url = await getSignedVideoUrl(highlight.video_url);
+      }
+
+      res.status(201).json({
+        success: true,
+        message: 'Highlight added successfully',
+        highlight: highlight
+      });
+    } finally {
+      // Security #16: best-effort temp-file cleanup, runs on success and error.
+      if (videoFile) {
+        fs.promises.unlink(videoFile.path).catch(err => {
+          logger.warn('Failed to delete temp upload:', videoFile.path, err.message);
+        });
+      }
     }
-
-    // Insert into database
-    const result = await pool.query(
-      `INSERT INTO player_highlights (user_id, highlight_type, title, hudl_link, video_url)
-       VALUES ($1, $2, $3, $4, $5)
-       RETURNING id, highlight_type, title, hudl_link, video_url, created_at`,
-      [req.userId, highlight_type, title, hudl_link || null, videoS3Key]
-    );
-
-    const highlight = result.rows[0];
-
-    // Generate signed URL for the video if uploaded
-    if (highlight.video_url) {
-      highlight.video_signed_url = await getSignedVideoUrl(highlight.video_url);
-    }
-
-    res.status(201).json({
-      success: true,
-      message: 'Highlight added successfully',
-      highlight: highlight
-    });
   } catch (error) {
     logger.error('Upload highlight error:', error);
 
