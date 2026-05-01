@@ -21,6 +21,9 @@ class CoachProfileView {
 
   // Get all coach profiles a specific player viewed in the last N days
   // Joined with coach_profiles to get team_name for same-team filtering
+  // NOTE: no LIMIT — only called internally by getPlayersViewingExternalCoaches
+  // (PI signal). If ever exposed via a public route, paginate using the same
+  // pattern as ProfileView.getViewers() (security #21).
   static async getViewsByPlayer(viewerUserId, days = 14) {
     const result = await pool.query(
       `SELECT cpv.viewed_coach_id, cpv.created_at,
