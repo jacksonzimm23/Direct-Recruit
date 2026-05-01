@@ -813,7 +813,7 @@ router.get('/views/:userId', authMiddleware, validateUUID('userId'), async (req,
   }
 });
 
-// Get list of viewers for a player's profile
+// Get list of viewers for a player's profile (paginated)
 router.get('/viewers/:userId', authMiddleware, validateUUID('userId'), async (req, res) => {
   try {
     const playerId = req.params.userId;
@@ -823,11 +823,16 @@ router.get('/viewers/:userId', authMiddleware, validateUUID('userId'), async (re
       return res.status(403).json({ error: 'Not authorized to view this information' });
     }
 
-    let viewers = await ProfileView.getViewers(playerId);
-    // Add signed URLs to viewer profile images
-    viewers = await addSignedUrlsToProfiles(viewers);
+    // Clamp: default 50, min 1, max 100. Outer Math.max prevents negative limits
+    // from reaching Postgres (which would 500 with a syntax error).
+    const limit = Math.min(Math.max(parseInt(req.query.limit) || 50, 1), 100);
+    const offset = Math.max(parseInt(req.query.offset) || 0, 0);
 
-    res.json({ viewers });
+    const { viewers: rawViewers, hasMore } = await ProfileView.getViewers(playerId, limit, offset);
+    // Add signed URLs to viewer profile images
+    const viewers = await addSignedUrlsToProfiles(rawViewers);
+
+    res.json({ viewers, hasMore });
   } catch (error) {
     logger.error('Get viewers error:', error);
     res.status(500).json({ error: 'Failed to get viewers' });

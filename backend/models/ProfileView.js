@@ -46,8 +46,10 @@ class ProfileView {
     return result.rows[0]?.view_count || 0;
   }
 
-  // Get list of viewers with their profile info (same fields as followers/following)
-  static async getViewers(userId) {
+  // Get list of viewers with their profile info (same fields as followers/following).
+  // Paginated: defaults to the 50 most-recent viewers. Fetches limit+1 to detect
+  // whether more rows exist beyond this page. Returns { viewers, hasMore }.
+  static async getViewers(userId, limit = 50, offset = 0) {
     const result = await pool.query(
       `SELECT
         pv.id,
@@ -78,10 +80,13 @@ class ProfileView {
       LEFT JOIN coach_profiles cp ON u.id = cp.user_id AND u.role = 'coach'
       LEFT JOIN other_profiles op ON u.id = op.user_id AND u.role = 'other'
       WHERE pv.viewed_user_id = $1
-      ORDER BY pv.created_at DESC`,
-      [userId]
+      ORDER BY pv.created_at DESC
+      LIMIT $2 OFFSET $3`,
+      [userId, limit + 1, offset]
     );
-    return result.rows;
+    const viewers = result.rows.slice(0, limit);
+    const hasMore = result.rows.length > limit;
+    return { viewers, hasMore };
   }
 }
 
