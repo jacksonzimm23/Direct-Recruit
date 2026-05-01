@@ -4,6 +4,7 @@ const cookie = require('cookie');
 const Message = require('./models/Message');
 const logger = require('./utils/logger');
 const { stripHtml } = require('./middleware/validation');
+const { isTokenRevoked } = require('./utils/tokenRevocation');
 
 // Redis-backed rate limiter for socket events (falls back to in-memory in dev)
 function createSocketRateLimiter(maxEvents, windowMs) {
@@ -77,6 +78,12 @@ function initializeSocket(server) {
       }
 
       const decoded = jwt.verify(token, process.env.JWT_SECRET, { algorithms: ['HS256'] });
+
+      // Reject revoked tokens at handshake time. Security #24.
+      if (await isTokenRevoked(decoded.userId, decoded.iat)) {
+        return next(new Error('Invalid authentication'));
+      }
+
       socket.userId = decoded.userId;
       socket.userRole = decoded.role;
       next();

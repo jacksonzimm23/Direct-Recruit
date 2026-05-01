@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const logger = require('../utils/logger');
+const { isTokenRevoked } = require('../utils/tokenRevocation');
 
 // UUID validation regex
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -31,6 +32,13 @@ const authMiddleware = async (req, res, next) => {
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET, { algorithms: ['HS256'] });
+
+    // Reject tokens issued before the user's most recent revocation event
+    // (logout / password change / password reset). Security #24.
+    if (await isTokenRevoked(decoded.userId, decoded.iat)) {
+      return res.status(401).json({ error: 'Invalid authentication' });
+    }
+
     const user = await User.findById(decoded.userId);
 
     if (!user || !user.is_active) {
@@ -66,6 +74,13 @@ const optionalAuthMiddleware = async (req, res, next) => {
     const token = req.cookies?.token || req.header('Authorization')?.replace('Bearer ', '');
     if (!token) return next();
     const decoded = jwt.verify(token, process.env.JWT_SECRET, { algorithms: ['HS256'] });
+
+    // Revoked token → silently treat as anonymous (matches optional-auth's
+    // existing "bad token" behavior — never 401 here). Security #24.
+    if (await isTokenRevoked(decoded.userId, decoded.iat)) {
+      return next();
+    }
+
     const user = await User.findById(decoded.userId);
     if (user && user.is_active) {
       req.user = user;

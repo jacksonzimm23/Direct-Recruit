@@ -12,6 +12,7 @@ const cognito = require('../utils/cognito');
 const email = require('../utils/email');
 const { deleteFromS3 } = require('../utils/s3');
 const { generateToken } = require('../utils/jwt');
+const { bumpRevokeCutoff } = require('../utils/tokenRevocation');
 const pool = require('../config/database');
 const logger = require('../utils/logger');
 const stripe = require('../utils/stripe');
@@ -416,6 +417,14 @@ router.post('/password/change', authMiddleware, async (req, res) => {
       throw cognitoError;
     }
 
+    // Revoke every existing session for this user (other devices, stolen
+    // tokens, etc.), then re-issue a fresh cookie so the CURRENT tab keeps
+    // working. The new token's iat is strictly after the cutoff we just wrote,
+    // so it survives. Security #24.
+    await bumpRevokeCutoff(req.userId);
+    const newToken = generateToken(req.userId, currentUser.role);
+    res.cookie('token', newToken, COOKIE_OPTIONS);
+
     // Send confirmation email (non-blocking)
     email.sendPasswordChangeConfirmation(currentUser.email)
       .catch(err => logger.error('Failed to send password change confirmation email:', err.name));
@@ -589,6 +598,12 @@ router.post('/password/forgot/set', authMiddleware, async (req, res) => {
 
     // Delete the pending reset record
     await PendingPasswordReset.delete(req.userId);
+
+    // Revoke every existing session for this user, then re-issue a fresh
+    // cookie so the CURRENT tab keeps working. Security #24.
+    await bumpRevokeCutoff(req.userId);
+    const newToken = generateToken(req.userId, req.user.role);
+    res.cookie('token', newToken, COOKIE_OPTIONS);
 
     // Send confirmation email (non-blocking)
     email.sendPasswordChangeConfirmation(pendingReset.email)

@@ -4,12 +4,14 @@ const User = require('../models/User');
 const PlayerProfile = require('../models/PlayerProfile');
 const CoachProfile = require('../models/CoachProfile');
 const OtherProfile = require('../models/OtherProfile');
+const jwt = require('jsonwebtoken');
 const { generateToken } = require('../utils/jwt');
 const { validateRegistration, validatePlayerProfile, validateCoachProfile, handleValidationErrors } = require('../middleware/validation');
 const { authMiddleware } = require('../middleware/auth');
 const { authLimiter, passwordResetLimiter } = require('../middleware/rateLimit');
 const { getSignedS3Url } = require('../utils/s3');
 const cognito = require('../utils/cognito');
+const { bumpRevokeCutoff } = require('../utils/tokenRevocation');
 const logger = require('../utils/logger');
 
 // Cookie configuration
@@ -253,8 +255,23 @@ router.post('/login', authLimiter, async (req, res) => {
   }
 });
 
-// Logout - clear auth cookie
-router.post('/logout', (req, res) => {
+// Logout - clear auth cookie + revoke all sessions for this user (security #24).
+// Uses jwt.decode (no signature check) so a stale/garbage cookie still gets a
+// clean 200 response — bumping the cutoff is opportunistic, clearing the cookie
+// is mandatory.
+router.post('/logout', async (req, res) => {
+  try {
+    const token = req.cookies?.token;
+    if (token) {
+      const decoded = jwt.decode(token);
+      if (decoded?.userId) {
+        await bumpRevokeCutoff(decoded.userId);
+      }
+    }
+  } catch (err) {
+    logger.error('Logout cutoff bump failed', { error: err.message });
+    // fall through and still clear the cookie
+  }
   res.clearCookie('token', {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
@@ -315,6 +332,15 @@ router.post('/reset-password', authLimiter, async (req, res) => {
     }
 
     await cognito.confirmForgotPassword(email, code, newPassword);
+
+    // Revoke all existing sessions for this user — they reset because they
+    // were locked out (or compromised). Belt-and-suspenders. Security #24.
+    try {
+      const user = await User.findByEmail(email);
+      if (user?.id) await bumpRevokeCutoff(user.id);
+    } catch (revokeErr) {
+      logger.error('Reset-password cutoff bump failed', { error: revokeErr.message });
+    }
 
     res.json({ message: 'Password reset successfully' });
   } catch (error) {
