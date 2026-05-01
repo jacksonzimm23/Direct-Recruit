@@ -18,6 +18,7 @@ const { notifyUser } = require('../utils/notifications');
 const User = require('../models/User');
 const logger = require('../utils/logger');
 const { RateLimiterMemory } = require('rate-limiter-flexible');
+const { stripHtml } = require('../middleware/validation');
 
 // Check if coach has active subscription before AI usage
 async function requireActiveSubscription(req, res) {
@@ -359,7 +360,7 @@ router.post('/chats/:chatId/message', validateUUID('chatId'), async (req, res) =
     if (!aiResponse.filters) {
       const responseText = aiResponse.message || "I'm not sure how to help with that. Try describing the type of player you're looking for!";
 
-      await AiChat.addMessage(chatId, req.userId, 'assistant', responseText);
+      await AiChat.addMessage(chatId, req.userId, 'assistant', stripHtml(responseText));
 
       return res.json({
         response: responseText,
@@ -429,7 +430,7 @@ router.post('/chats/:chatId/message', validateUUID('chatId'), async (req, res) =
       return summary;
     }));
 
-    await AiChat.addMessage(chatId, req.userId, 'assistant', responseText, {
+    await AiChat.addMessage(chatId, req.userId, 'assistant', stripHtml(responseText), {
       filters: aiResponse.filters,
       players: playerSummaries,
       playerCount: playerCount,
@@ -602,7 +603,7 @@ router.post('/chats/:chatId/pi-message', validateUUID('chatId'), async (req, res
     if (!aiResponse.signal_filters) {
       const responseText = aiResponse.message || "I focus on detecting portal signals from player behavior. Try asking about which players are showing transfer activity.";
 
-      await AiChat.addMessage(chatId, req.userId, 'assistant', responseText);
+      await AiChat.addMessage(chatId, req.userId, 'assistant', stripHtml(responseText));
 
       return res.json({
         response: responseText,
@@ -655,7 +656,7 @@ router.post('/chats/:chatId/pi-message', validateUUID('chatId'), async (req, res
       profile_image_key: playerImageKeys[p.user_id] || null
     }));
 
-    await AiChat.addMessage(chatId, req.userId, 'assistant', responseText, {
+    await AiChat.addMessage(chatId, req.userId, 'assistant', stripHtml(responseText), {
       signal_filters: aiResponse.signal_filters,
       players: playerSummaries,
       playerCount: playerCount,
@@ -808,7 +809,7 @@ router.post('/chats/:chatId/show-more', validateUUID('chatId'), async (req, res)
     }
 
     // Save assistant response
-    await AiChat.addMessage(chatId, req.userId, 'assistant', responseText, metadata);
+    await AiChat.addMessage(chatId, req.userId, 'assistant', stripHtml(responseText), metadata);
 
     return res.json({
       response: responseText,
