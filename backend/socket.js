@@ -76,7 +76,7 @@ function initializeSocket(server) {
         return next(new Error('Authentication required'));
       }
 
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      const decoded = jwt.verify(token, process.env.JWT_SECRET, { algorithms: ['HS256'] });
       socket.userId = decoded.userId;
       socket.userRole = decoded.role;
       next();

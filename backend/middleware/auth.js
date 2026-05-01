@@ -30,7 +30,7 @@ const authMiddleware = async (req, res, next) => {
       return res.status(401).json({ error: 'Authentication required' });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET, { algorithms: ['HS256'] });
     const user = await User.findById(decoded.userId);
 
     if (!user || !user.is_active) {
@@ -65,7 +65,7 @@ const optionalAuthMiddleware = async (req, res, next) => {
   try {
     const token = req.cookies?.token || req.header('Authorization')?.replace('Bearer ', '');
     if (!token) return next();
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET, { algorithms: ['HS256'] });
     const user = await User.findById(decoded.userId);
     if (user && user.is_active) {
       req.user = user;
