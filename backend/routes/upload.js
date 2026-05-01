@@ -141,14 +141,18 @@ router.post('/profile-image', authMiddleware, s3Upload.single('profile_image'), 
     // Generate signed URL for immediate display
     const signedUrl = await getSignedS3Url(s3Key);
 
-    // Update user profile with S3 key (not the full URL)
+    // Update user profile with S3 key (not the full URL).
+    // Uses dedicated updateProfileImage() — does NOT go through allowedColumns,
+    // so an authenticated user cannot inject another user's S3 key via PUT
+    // /api/profile (security #22). The s3Key here is generated server-side
+    // via generateProfileImageKey(req.userId, ...) which roots the key in the
+    // authenticated user's own folder.
     if (req.user.role === 'player') {
-      await PlayerProfile.update(req.userId, { profile_image_url: s3Key });
+      await PlayerProfile.updateProfileImage(req.userId, s3Key);
     } else if (req.user.role === 'coach') {
-      await CoachProfile.update(req.userId, { profile_image_url: s3Key });
+      await CoachProfile.updateProfileImage(req.userId, s3Key);
     } else if (req.user.role === 'other') {
-      // Other profiles use profile_picture_url column
-      await OtherProfile.update(req.userId, { profile_picture_url: s3Key });
+      await OtherProfile.updateProfileImage(req.userId, s3Key);
     }
 
     res.json({

@@ -32,8 +32,9 @@ class OtherProfile {
 
   static async update(userId, profileData) {
     const allowedColumns = new Set([
-      'first_name', 'last_name', 'username', 'subheader',
-      'profile_image_url', 'profile_picture_url', 'bio'
+      'first_name', 'last_name', 'username', 'subheader', 'bio'
+      // profile_image_url + profile_picture_url removed — set via
+      // updateProfileImage() only (security #22)
     ]);
 
     const fields = [];
@@ -55,6 +56,18 @@ class OtherProfile {
     values.push(userId);
     const query = `UPDATE other_profiles SET ${fields.join(', ')}, updated_at = CURRENT_TIMESTAMP WHERE user_id = $${paramCount} RETURNING *`;
     const result = await pool.query(query, values);
+    return result.rows[0];
+  }
+
+  // Dedicated avatar update — bypasses the allowedColumns filter on update().
+  // "Other" profiles use profile_picture_url instead of profile_image_url.
+  // MUST only be called from the upload route, which generates the S3 key
+  // from req.userId and never accepts a key from req.body. Security #22.
+  static async updateProfileImage(userId, s3Key) {
+    const result = await pool.query(
+      `UPDATE other_profiles SET profile_picture_url = $1, updated_at = CURRENT_TIMESTAMP WHERE user_id = $2 RETURNING *`,
+      [s3Key, userId]
+    );
     return result.rows[0];
   }
 

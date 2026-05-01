@@ -27,8 +27,8 @@ class CoachProfile {
   static async update(userId, profileData) {
     const allowedColumns = new Set([
       'first_name', 'last_name', 'username', 'team_name', 'college_division',
-      'position_title', 'city', 'state', 'phone', 'bio', 'conference',
-      'profile_image_url'
+      'position_title', 'city', 'state', 'phone', 'bio', 'conference'
+      // profile_image_url removed — set via updateProfileImage() only (security #22)
     ]);
 
     const fields = [];
@@ -46,6 +46,17 @@ class CoachProfile {
     values.push(userId);
     const query = `UPDATE coach_profiles SET ${fields.join(', ')} WHERE user_id = $${paramCount} RETURNING *`;
     const result = await pool.query(query, values);
+    return result.rows[0];
+  }
+
+  // Dedicated avatar update — bypasses the allowedColumns filter on update().
+  // MUST only be called from the upload route, which generates the S3 key
+  // from req.userId and never accepts a key from req.body. Security #22.
+  static async updateProfileImage(userId, s3Key) {
+    const result = await pool.query(
+      `UPDATE coach_profiles SET profile_image_url = $1 WHERE user_id = $2 RETURNING *`,
+      [s3Key, userId]
+    );
     return result.rows[0];
   }
 
