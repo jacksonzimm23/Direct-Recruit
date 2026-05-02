@@ -36,11 +36,13 @@ async function addSignedUrlsToNotifications(notifications) {
 router.get('/', authMiddleware, async (req, res) => {
   try {
     const { type, limit = 50, offset = 0 } = req.query;
+    const safeLimit = Math.min(Math.max(parseInt(limit) || 50, 1), 100);
+    const safeOffset = Math.max(parseInt(offset) || 0, 0);
 
     let notifications = await Notification.getForUser(req.userId, {
       type: type || null,
-      limit: parseInt(limit),
-      offset: parseInt(offset)
+      limit: safeLimit,
+      offset: safeOffset
     });
 
     notifications = await addSignedUrlsToNotifications(notifications);
