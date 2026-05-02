@@ -4,6 +4,7 @@ const RecruitingBoard = require('../models/RecruitingBoard');
 const Notification = require('../models/Notification');
 const { notifyUser } = require('../utils/notifications');
 const { authMiddleware, requireRole, validateUUID } = require('../middleware/auth');
+const { escapeLikePattern } = require('../middleware/validation');
 const pool = require('../config/database');
 const { getSignedS3Url } = require('../utils/s3');
 const logger = require('../utils/logger');
@@ -405,7 +406,7 @@ router.get('/search-coaches', authMiddleware, requireRole('coach'), async (req, 
          )
        ORDER BY GREATEST(similarity(cp.first_name || ' ' || cp.last_name, $2), similarity(cp.username, $2)) DESC, cp.last_name, cp.first_name
        LIMIT 10`,
-      [excludeIds, query, `%${query}%`]
+      [excludeIds, query, `%${escapeLikePattern(query)}%`]
     );
 
     res.json({ coaches: result.rows });

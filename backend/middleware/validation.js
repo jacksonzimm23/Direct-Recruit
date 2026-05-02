@@ -20,6 +20,16 @@ function stripHtml(str) {
   return sanitizeHtmlLib(str, SANITIZE_OPTS);
 }
 
+// Escape Postgres LIKE/ILIKE pattern metacharacters so user input is matched
+// literally as a substring instead of as a wildcard pattern. `%` matches any
+// run of characters and `_` matches one character; backslash escapes the
+// escape character itself. Caller still wraps the result in `%...%` for the
+// substring search.
+function escapeLikePattern(str) {
+  if (typeof str !== 'string') return str;
+  return str.replace(/\\/g, '\\\\').replace(/%/g, '\\%').replace(/_/g, '\\_');
+}
+
 // Recursive walker. Mutates input in place to preserve req.body identity.
 // WeakSet cycle guard + depth cap of 10 (legitimate req.body never exceeds ~4).
 function deepStripHtml(value, seen = new WeakSet(), depth = 0) {
@@ -218,5 +228,6 @@ module.exports = {
   validateOtherProfileUpdate,
   handleValidationErrors,
   sanitizeBody,
-  stripHtml
+  stripHtml,
+  escapeLikePattern
 };
