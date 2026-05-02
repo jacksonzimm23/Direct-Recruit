@@ -1,5 +1,6 @@
 const pool = require('../config/database');
 const { otherPopularityExpr } = require('../utils/popularity-score');
+const { escapeLikePattern } = require('../middleware/validation');
 
 class OtherProfile {
   static async create(userId, profileData) {
@@ -78,7 +79,7 @@ class OtherProfile {
 
     if (filters.searchTerm) {
       query += ` AND (similarity(op.first_name, $${paramCount}) > 0.2 OR similarity(op.last_name, $${paramCount}) > 0.2 OR similarity(op.username, $${paramCount}) > 0.2 OR similarity(COALESCE(op.subheader, ''), $${paramCount}) > 0.2 OR op.first_name ILIKE $${paramCount + 1} OR op.last_name ILIKE $${paramCount + 1} OR op.username ILIKE $${paramCount + 1} OR op.subheader ILIKE $${paramCount + 1})`;
-      values.push(filters.searchTerm, `%${filters.searchTerm}%`);
+      values.push(filters.searchTerm, `%${escapeLikePattern(filters.searchTerm)}%`);
       paramCount += 2;
     }
 
@@ -114,7 +115,7 @@ class OtherProfile {
     // Search term filter — fuzzy + ILIKE fallback
     if (filters.searchTerm) {
       query += ` AND (similarity(op.first_name, $${paramCount}) > 0.2 OR similarity(op.last_name, $${paramCount}) > 0.2 OR similarity(op.username, $${paramCount}) > 0.2 OR similarity(COALESCE(op.subheader, ''), $${paramCount}) > 0.2 OR op.first_name ILIKE $${paramCount + 1} OR op.last_name ILIKE $${paramCount + 1} OR op.username ILIKE $${paramCount + 1} OR op.subheader ILIKE $${paramCount + 1})`;
-      values.push(filters.searchTerm, `%${filters.searchTerm}%`);
+      values.push(filters.searchTerm, `%${escapeLikePattern(filters.searchTerm)}%`);
       paramCount += 2;
     }
 

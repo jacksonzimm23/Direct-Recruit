@@ -1,4 +1,5 @@
 const pool = require('../config/database');
+const { escapeLikePattern } = require('../middleware/validation');
 
 class CoachProfile {
   static async create(userId, profileData) {
@@ -77,7 +78,7 @@ class CoachProfile {
     }
     if (filters.searchTerm) {
       query += ` AND (similarity(cp.first_name, $${paramCount}) > 0.2 OR similarity(cp.last_name, $${paramCount}) > 0.2 OR similarity(cp.username, $${paramCount}) > 0.2 OR similarity(cp.team_name, $${paramCount}) > 0.2 OR cp.first_name ILIKE $${paramCount + 1} OR cp.last_name ILIKE $${paramCount + 1} OR cp.username ILIKE $${paramCount + 1} OR cp.team_name ILIKE $${paramCount + 1})`;
-      values.push(filters.searchTerm, `%${filters.searchTerm}%`);
+      values.push(filters.searchTerm, `%${escapeLikePattern(filters.searchTerm)}%`);
       paramCount += 2;
     }
 

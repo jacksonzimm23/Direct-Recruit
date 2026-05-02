@@ -1,5 +1,6 @@
 const pool = require('../config/database');
 const { playerPopularityExpr } = require('../utils/popularity-score');
+const { escapeLikePattern } = require('../middleware/validation');
 
 // Composite stat keys that sum multiple JSONB fields (e.g., "total_tds" = pass_tds + rush_tds + rec_tds)
 const COMPOSITE_STAT_KEYS = {
@@ -246,7 +247,7 @@ class PlayerProfile {
     }
     if (filters.searchTerm) {
       query += ` AND (similarity(pp.first_name, $${paramCount}) > 0.2 OR similarity(pp.last_name, $${paramCount}) > 0.2 OR similarity(pp.username, $${paramCount}) > 0.2 OR pp.first_name ILIKE $${paramCount + 1} OR pp.last_name ILIKE $${paramCount + 1} OR pp.username ILIKE $${paramCount + 1})`;
-      values.push(filters.searchTerm, `%${filters.searchTerm}%`);
+      values.push(filters.searchTerm, `%${escapeLikePattern(filters.searchTerm)}%`);
       paramCount += 2;
     }
 
@@ -325,7 +326,7 @@ class PlayerProfile {
     }
     if (filters.searchTerm) {
       query += ` AND (similarity(pp.first_name, $${paramCount}) > 0.2 OR similarity(pp.last_name, $${paramCount}) > 0.2 OR similarity(pp.username, $${paramCount}) > 0.2 OR pp.first_name ILIKE $${paramCount + 1} OR pp.last_name ILIKE $${paramCount + 1} OR pp.username ILIKE $${paramCount + 1})`;
-      values.push(filters.searchTerm, `%${filters.searchTerm}%`);
+      values.push(filters.searchTerm, `%${escapeLikePattern(filters.searchTerm)}%`);
       paramCount += 2;
     }
 
@@ -380,7 +381,7 @@ class PlayerProfile {
     }
     if (filters.searchTerm) {
       query += ` AND (similarity(pp.first_name, $${paramCount}) > 0.2 OR similarity(pp.last_name, $${paramCount}) > 0.2 OR similarity(pp.username, $${paramCount}) > 0.2 OR pp.first_name ILIKE $${paramCount + 1} OR pp.last_name ILIKE $${paramCount + 1} OR pp.username ILIKE $${paramCount + 1})`;
-      values.push(filters.searchTerm, `%${filters.searchTerm}%`);
+      values.push(filters.searchTerm, `%${escapeLikePattern(filters.searchTerm)}%`);
       paramCount += 2;
     }
 
@@ -460,7 +461,7 @@ class PlayerProfile {
     }
     if (filters.searchTerm) {
       query += ` AND (similarity(pp.first_name, $${paramCount}) > 0.2 OR similarity(pp.last_name, $${paramCount}) > 0.2 OR similarity(pp.username, $${paramCount}) > 0.2 OR pp.first_name ILIKE $${paramCount + 1} OR pp.last_name ILIKE $${paramCount + 1} OR pp.username ILIKE $${paramCount + 1})`;
-      values.push(filters.searchTerm, `%${filters.searchTerm}%`);
+      values.push(filters.searchTerm, `%${escapeLikePattern(filters.searchTerm)}%`);
       paramCount += 2;
     }
 
@@ -715,7 +716,7 @@ class PlayerProfile {
     // Search term (name/username) — fuzzy + ILIKE fallback
     if (filters.searchTerm) {
       whereClauses.push(`(similarity(pp.first_name, $${paramCount}) > 0.2 OR similarity(pp.last_name, $${paramCount}) > 0.2 OR similarity(pp.username, $${paramCount}) > 0.2 OR pp.first_name ILIKE $${paramCount + 1} OR pp.last_name ILIKE $${paramCount + 1} OR pp.username ILIKE $${paramCount + 1})`);
-      values.push(filters.searchTerm, `%${filters.searchTerm}%`);
+      values.push(filters.searchTerm, `%${escapeLikePattern(filters.searchTerm)}%`);
       paramCount += 2;
     }
 
