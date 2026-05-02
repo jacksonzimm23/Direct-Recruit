@@ -108,8 +108,13 @@ app.use(morgan(':method :url :status :response-time ms', {
   stream: { write: (msg) => logger.info(msg.trim()) },
   skip: (req) => req.url === '/health',
 }));
-// Serve static uploads BEFORE helmet to avoid security headers blocking images
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+// Serve static uploads BEFORE helmet to avoid security headers blocking images.
+// Add X-Content-Type-Options: nosniff so browsers honor the declared Content-Type
+// and don't MIME-sniff uploaded files (e.g., a .jpg containing HTML won't render as HTML).
+app.use('/uploads', (req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  next();
+}, express.static(path.join(__dirname, 'uploads')));
 app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" },
   contentSecurityPolicy: {
