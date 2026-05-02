@@ -62,7 +62,7 @@ class CoachProfile {
   }
 
   static async search(filters) {
-    let query = 'SELECT cp.*, u.email FROM coach_profiles cp JOIN users u ON cp.user_id = u.id WHERE u.is_active = true';
+    let query = 'SELECT cp.* FROM coach_profiles cp JOIN users u ON cp.user_id = u.id WHERE u.is_active = true';
     const values = [];
     let paramCount = 1;
 
@@ -94,7 +94,7 @@ class CoachProfile {
   }
 
   static async findByUsername(username) {
-    const result = await pool.query('SELECT cp.*, u.email, u.role FROM coach_profiles cp JOIN users u ON cp.user_id = u.id WHERE cp.username = $1', [username]);
+    const result = await pool.query('SELECT cp.*, u.role FROM coach_profiles cp JOIN users u ON cp.user_id = u.id WHERE cp.username = $1', [username]);
     return result.rows[0];
   }
 

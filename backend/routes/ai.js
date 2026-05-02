@@ -61,6 +61,9 @@ async function addSignedUrlsToProfiles(players) {
     if (player.profile_image_url) {
       player.profile_image_url = await getSignedS3Url(player.profile_image_url);
     }
+    // Strip email — never leak to coaches via AI search/watchlist/saved-players results.
+    // The vestigial player_profiles.email column comes through any pp.* SELECT. (Security #32.)
+    delete player.email;
     return player;
   }));
 }

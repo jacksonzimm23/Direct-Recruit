@@ -198,7 +198,7 @@ class Follow {
   static async getIncomingFollowRequests(userId, limit = 50, offset = 0) {
     const result = await pool.query(
       `SELECT fr.*,
-              u.email, u.role,
+              u.role,
               COALESCE(pp.first_name, cp.first_name, op.first_name) as first_name,
               COALESCE(pp.last_name, cp.last_name, op.last_name) as last_name,
               COALESCE(pp.username, cp.username, op.username) as username,
@@ -222,7 +222,7 @@ class Follow {
   static async getOutgoingFollowRequests(userId, limit = 50, offset = 0) {
     const result = await pool.query(
       `SELECT fr.*,
-              u.email, u.role,
+              u.role,
               COALESCE(pp.first_name, cp.first_name, op.first_name) as first_name,
               COALESCE(pp.last_name, cp.last_name, op.last_name) as last_name,
               COALESCE(pp.username, cp.username, op.username) as username,
@@ -368,7 +368,7 @@ class Follow {
 
   static async getFollowers(userId, limit = 50, offset = 0) {
     const result = await pool.query(
-      `SELECT u.id, u.email, u.role,
+      `SELECT u.id, u.role,
               COALESCE(pp.first_name, cp.first_name, op.first_name) as first_name,
               COALESCE(pp.last_name, cp.last_name, op.last_name) as last_name,
               COALESCE(pp.username, cp.username, op.username) as username,
@@ -403,7 +403,7 @@ class Follow {
 
   static async getFollowing(userId, limit = 50, offset = 0) {
     const result = await pool.query(
-      `SELECT u.id, u.email, u.role,
+      `SELECT u.id, u.role,
               COALESCE(pp.first_name, cp.first_name, op.first_name) as first_name,
               COALESCE(pp.last_name, cp.last_name, op.last_name) as last_name,
               COALESCE(pp.username, cp.username, op.username) as username,

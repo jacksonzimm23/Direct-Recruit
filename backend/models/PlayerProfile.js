@@ -226,7 +226,7 @@ class PlayerProfile {
   }
 
   static async search(filters) {
-    let query = 'SELECT pp.*, u.email FROM player_profiles pp JOIN users u ON pp.user_id = u.id WHERE u.is_active = true';
+    let query = 'SELECT pp.* FROM player_profiles pp JOIN users u ON pp.user_id = u.id WHERE u.is_active = true';
     const values = [];
     let paramCount = 1;
 
@@ -263,13 +263,13 @@ class PlayerProfile {
   }
 
   static async findByUsername(username) {
-    const result = await pool.query('SELECT pp.*, u.email, u.role FROM player_profiles pp JOIN users u ON pp.user_id = u.id WHERE pp.username = $1', [username]);
+    const result = await pool.query('SELECT pp.*, u.role FROM player_profiles pp JOIN users u ON pp.user_id = u.id WHERE pp.username = $1', [username]);
     return result.rows[0];
   }
 
   // Search HS Players only (those without college_division)
   static async searchHSPlayers(filters, limit = 9, offset = 0) {
-    let query = `SELECT pp.*, u.email FROM player_profiles pp
+    let query = `SELECT pp.* FROM player_profiles pp
                  JOIN users u ON pp.user_id = u.id
                  WHERE u.is_active = true
                  AND (pp.college_division IS NULL OR pp.college_division = '')`;
@@ -350,7 +350,7 @@ class PlayerProfile {
 
   // Search College Players only (those WITH college_division)
   static async searchCollegePlayers(filters, limit = 9, offset = 0) {
-    let query = `SELECT pp.*, u.email FROM player_profiles pp
+    let query = `SELECT pp.* FROM player_profiles pp
                  JOIN users u ON pp.user_id = u.id
                  WHERE u.is_active = true
                  AND pp.college_division IS NOT NULL AND pp.college_division != ''`;
@@ -405,7 +405,7 @@ class PlayerProfile {
 
   // Search Transfer Players only (those WITH transfer = 'y')
   static async searchTransferPlayers(filters, limit = 9, offset = 0) {
-    let query = `SELECT pp.*, u.email FROM player_profiles pp
+    let query = `SELECT pp.* FROM player_profiles pp
                  JOIN users u ON pp.user_id = u.id
                  WHERE u.is_active = true
                  AND pp.transfer = 'y'`;
@@ -543,7 +543,7 @@ class PlayerProfile {
     const scoreResult = buildRelevanceScoreExpr(filters, heightCaseExpr, VALID_STAT_KEYS, values, paramCount);
     paramCount = scoreResult.paramCount;
 
-    let selectCols = `pp.*, u.email, ${scoreResult.expr} AS relevance_score`;
+    let selectCols = `pp.*, ${scoreResult.expr} AS relevance_score`;
     let fromClause = `FROM player_profiles pp JOIN users u ON pp.user_id = u.id`;
     let whereClauses = [`u.is_active = true`];
 

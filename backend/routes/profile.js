@@ -42,6 +42,12 @@ async function addSignedUrlToProfile(profile) {
     }
   }
 
+  // Strip email field — never leak to non-owner viewers via search/discover/by-id/by-username.
+  // player_profiles and coach_profiles have their own (vestigial) email column populated by
+  // earlier registration paths, so removing `u.email` from SELECTs alone wasn't sufficient.
+  // Owner-fetch routes use User.findById() and bypass this helper. (Security #32.)
+  delete profile.email;
+
   return profile;
 }
 

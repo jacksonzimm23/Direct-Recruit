@@ -25,7 +25,7 @@ class OtherProfile {
 
   static async findByUsername(username) {
     const result = await pool.query(
-      'SELECT op.*, u.email, u.role FROM other_profiles op JOIN users u ON op.user_id = u.id WHERE op.username = $1',
+      'SELECT op.*, u.role FROM other_profiles op JOIN users u ON op.user_id = u.id WHERE op.username = $1',
       [username]
     );
     return result.rows[0];
@@ -73,7 +73,7 @@ class OtherProfile {
   }
 
   static async search(filters) {
-    let query = 'SELECT op.*, u.email FROM other_profiles op JOIN users u ON op.user_id = u.id WHERE u.is_active = true';
+    let query = 'SELECT op.* FROM other_profiles op JOIN users u ON op.user_id = u.id WHERE u.is_active = true';
     const values = [];
     let paramCount = 1;
 
@@ -97,7 +97,7 @@ class OtherProfile {
   // Discover other profiles with pagination
   static async discover(filters = {}, limit = 12, offset = 0) {
     let query = `
-      SELECT op.*, u.email
+      SELECT op.*
       FROM other_profiles op
       JOIN users u ON op.user_id = u.id
       WHERE u.is_active = true
@@ -120,7 +120,7 @@ class OtherProfile {
     }
 
     // Count total for hasMore check
-    const countQuery = query.replace('SELECT op.*, u.email', 'SELECT COUNT(*) as total');
+    const countQuery = query.replace('SELECT op.*', 'SELECT COUNT(*) as total');
     const countResult = await pool.query(countQuery, values);
     const total = parseInt(countResult.rows[0].total);
 

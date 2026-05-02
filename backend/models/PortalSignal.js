@@ -114,7 +114,6 @@ class PortalSignal {
     const query = `
       SELECT
         pp.*,
-        u.email,
         ${signalSelects.join(',\n        ')}
       FROM player_profiles pp
       JOIN users u ON pp.user_id = u.id

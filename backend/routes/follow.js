@@ -24,6 +24,9 @@ async function addSignedUrlsToProfiles(profiles) {
         profile.profile_image_url = null;
       }
     }
+    // Strip email — never leak to non-owner viewers via followers/following/follow-requests
+    // lists. (Security #32.)
+    delete profile.email;
     return profile;
   }));
 }
