@@ -120,14 +120,31 @@ function initializeSocket(server) {
       socket.leave(conversationId);
     });
 
-    // Typing indicator (rate limited)
+    // Typing indicator (rate limited + participant-gated). Without the
+    // isParticipant check, any authenticated socket could spam typing events
+    // into arbitrary conversation rooms or use the broadcast as an oracle to
+    // confirm conversation existence. Mirrors the gate already on send_message.
     socket.on('typing_start', async (conversationId) => {
       if (!(await typingRateLimit(socket.id))) return;
+      try {
+        const isParticipant = await Message.isParticipant(conversationId, socket.userId);
+        if (!isParticipant) return;
+      } catch (error) {
+        logger.error('Typing start participant check failed:', error);
+        return;
+      }
       socket.to(conversationId).emit('user_typing', { userId: socket.userId, conversationId });
     });
 
     socket.on('typing_stop', async (conversationId) => {
       if (!(await typingRateLimit(socket.id))) return;
+      try {
+        const isParticipant = await Message.isParticipant(conversationId, socket.userId);
+        if (!isParticipant) return;
+      } catch (error) {
+        logger.error('Typing stop participant check failed:', error);
+        return;
+      }
       socket.to(conversationId).emit('user_stopped_typing', { userId: socket.userId, conversationId });
     });
 
