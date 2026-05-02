@@ -1,4 +1,5 @@
 const rateLimit = require('express-rate-limit');
+const logger = require('../utils/logger');
 
 // Skip rate limiting in development for localhost
 const isDevelopment = process.env.NODE_ENV !== 'production';
@@ -75,16 +76,34 @@ const passwordResetLimiter = rateLimit({
   }
 });
 
-// Availability check rate limiter — stricter to prevent user enumeration
+// Availability check rate limiter — short window, prevents bursts
 const availabilityLimiter = rateLimit({
   ...getRedisStore('rl:avail:'),
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: isDevelopment ? 10000 : 30, // 30 checks per 15 minutes per IP
+  max: isDevelopment ? 10000 : 10, // 10 checks per 15 minutes per IP
   message: 'Too many requests, please try again later',
   standardHeaders: true,
   legacyHeaders: false,
   skip: (req) => isDevelopment,
   handler: (req, res) => {
+    logger.warn('Availability check short-window limit hit', { ip: req.ip, route: 'check-availability' });
+    res.status(429).json({
+      error: 'Too many requests, please try again later'
+    });
+  }
+});
+
+// Availability check daily soft-cap — prevents sustained enumeration from a single IP
+const availabilityDailyLimiter = rateLimit({
+  ...getRedisStore('rl:availday:'),
+  windowMs: 24 * 60 * 60 * 1000, // 24 hours
+  max: isDevelopment ? 10000 : 100, // 100 checks per day per IP
+  message: 'Too many requests, please try again later',
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: (req) => isDevelopment,
+  handler: (req, res) => {
+    logger.warn('Availability check daily cap hit', { ip: req.ip, route: 'check-availability' });
     res.status(429).json({
       error: 'Too many requests, please try again later'
     });
@@ -125,5 +144,6 @@ module.exports = {
   messageLimiter,
   passwordResetLimiter,
   availabilityLimiter,
+  availabilityDailyLimiter,
   coachRequestLimiter
 };

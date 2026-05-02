@@ -14,7 +14,7 @@ const { authMiddleware, requireRole, validateUUID } = require('../middleware/aut
 const { validationResult } = require('express-validator');
 const { validatePlayerProfile, validateCoachProfile, validateOtherProfile, validatePlayerProfileUpdate, validateCoachProfileUpdate, validateOtherProfileUpdate, handleValidationErrors } = require('../middleware/validation');
 const { getSignedS3Url } = require('../utils/s3');
-const { apiLimiter, availabilityLimiter } = require('../middleware/rateLimit');
+const { apiLimiter, availabilityLimiter, availabilityDailyLimiter } = require('../middleware/rateLimit');
 const AiEngagement = require('../models/AiEngagement');
 const logger = require('../utils/logger');
 
@@ -572,7 +572,7 @@ router.get('/search', authMiddleware, async (req, res) => {
 });
 
 // Check username availability
-router.get('/check-username/:username', availabilityLimiter, async (req, res) => {
+router.get('/check-username/:username', availabilityLimiter, availabilityDailyLimiter, async (req, res) => {
   try {
     const { username } = req.params;
 
@@ -591,7 +591,7 @@ router.get('/check-username/:username', availabilityLimiter, async (req, res) =>
 });
 
 // Check email availability
-router.get('/check-email/:email', availabilityLimiter, async (req, res) => {
+router.get('/check-email/:email', availabilityLimiter, availabilityDailyLimiter, async (req, res) => {
   try {
     const { email } = req.params;
 
