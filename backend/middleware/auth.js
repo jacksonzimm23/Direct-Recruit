@@ -26,7 +26,10 @@ const authMiddleware = async (req, res, next) => {
 
     if (!token) {
       if (process.env.NODE_ENV !== 'production') {
-        logger.info('[AUTH DEBUG] No token found. Cookies:', JSON.stringify(req.cookies), 'Origin:', req.headers.origin);
+        // Log presence + cookie names only — never the JWT value (could leak via
+        // shared terminal output / screenshots / log aggregation).
+        const cookieNames = Object.keys(req.cookies || {}).join(',') || '(none)';
+        logger.info(`[AUTH DEBUG] No token found. hasTokenCookie=${!!req.cookies?.token} cookieNames=[${cookieNames}] origin=${req.headers.origin || '(none)'}`);
       }
       return res.status(401).json({ error: 'Authentication required' });
     }
