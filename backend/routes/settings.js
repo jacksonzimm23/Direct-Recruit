@@ -562,7 +562,9 @@ router.post('/password/forgot/set', authMiddleware, async (req, res) => {
           return res.status(429).json({ error: 'Too many attempts. Please try again later.' });
         }
 
-        return res.status(400).json({ error: cognitoError.message || 'Failed to initiate password reset' });
+        // Don't echo Cognito's raw message — log it server-side and return a generic string.
+        logger.error('Forgot-password initiate failed:', { name: cognitoError.name, message: cognitoError.message });
+        return res.status(400).json({ error: 'Failed to initiate password reset' });
       }
     }
 
@@ -593,7 +595,9 @@ router.post('/password/forgot/set', authMiddleware, async (req, res) => {
         return res.status(429).json({ error: 'Too many attempts. Please try again later.' });
       }
 
-      return res.status(400).json({ error: cognitoError.message || 'Failed to reset password' });
+      // Don't echo Cognito's raw message — log it server-side and return a generic string.
+      logger.error('Forgot-password confirm failed:', { name: cognitoError.name, message: cognitoError.message });
+      return res.status(400).json({ error: 'Failed to reset password' });
     }
 
     // Delete the pending reset record
