@@ -845,89 +845,50 @@ router.get('/viewers/:userId', authMiddleware, validateUUID('userId'), async (re
   }
 });
 
-// Get random suggested connections (excludes current user)
+// Get suggested connections from materialized view (refreshed every 15 min — security #33)
 router.get('/suggested-connections', authMiddleware, async (req, res) => {
   try {
     const limit = Math.min(parseInt(req.query.limit) || 5, 100);
     const offset = Math.max(parseInt(req.query.offset) || 0, 0);
     const currentUserId = req.userId;
 
-    // Query to get suggested connections ranked by engagement + relevance signals
     const pool = require('../config/database');
 
     const result = await pool.query(`
+      WITH viewer_state AS (
+        SELECT COALESCE(pp2.state, cp2.state, '') AS state
+        FROM users u2
+        LEFT JOIN player_profiles pp2 ON u2.id = pp2.user_id
+        LEFT JOIN coach_profiles  cp2 ON u2.id = cp2.user_id
+        WHERE u2.id = $1
+      ),
+      mutuals AS (
+        SELECT f2.following_id AS user_id, COUNT(*) AS mutual_count
+        FROM follows f1
+        JOIN follows f2 ON f1.following_id = f2.follower_id
+        WHERE f1.follower_id = $1
+          AND f2.following_id != $1
+        GROUP BY f2.following_id
+      )
       SELECT
-        u.id as user_id,
-        u.role,
-        COALESCE(pp.first_name, cp.first_name, op.first_name, '') as first_name,
-        COALESCE(pp.last_name, cp.last_name, op.last_name, '') as last_name,
-        COALESCE(pp.username, cp.username, op.username, '') as username,
-        COALESCE(pp.profile_image_url, cp.profile_image_url, op.profile_picture_url) as profile_image_url,
-        COALESCE(pp.position, '') as player_position,
-        COALESCE(pp.team_name, cp.team_name, '') as team_name,
-        COALESCE(pp.state, cp.state, '') as state,
-        pp.height as player_height,
-        pp.weight as player_weight,
-        pp.graduation_year as graduation_year,
-        COALESCE(pp.college_division, cp.college_division, '') as college_division,
-        pp.eligibility as eligibility,
-        COALESCE(pp.transfer, '') as transfer,
-        COALESCE(cp.position_title, '') as coach_position_title,
-        COALESCE(op.subheader, '') as other_subheader,
-        CASE
-          WHEN u.role = 'player' THEN
-            CASE
-              WHEN pp.transfer = 'y' THEN 'transfer'
-              WHEN pp.college_division IS NOT NULL AND pp.college_division != '' THEN 'college'
-              ELSE 'hs'
-            END
-          WHEN u.role = 'coach' THEN
-            CASE
-              WHEN cp.college_division IS NOT NULL AND cp.college_division != '' THEN 'college'
-              ELSE 'hs'
-            END
-          WHEN u.role = 'other' THEN 'other'
-          ELSE 'unknown'
-        END as profile_type
-      FROM users u
-      LEFT JOIN player_profiles pp ON u.id = pp.user_id
-      LEFT JOIN coach_profiles cp ON u.id = cp.user_id
-      LEFT JOIN other_profiles op ON u.id = op.user_id
-      WHERE u.id != $1
-        AND u.profile_completed = true
-        AND u.is_active = true
-        AND (pp.user_id IS NOT NULL OR cp.user_id IS NOT NULL OR op.user_id IS NOT NULL)
-        AND u.id NOT IN (SELECT following_id FROM follows WHERE follower_id = $1)
+        mv.user_id, mv.role, mv.first_name, mv.last_name, mv.username,
+        mv.profile_image_url, mv.player_position, mv.team_name, mv.state,
+        mv.player_height, mv.player_weight, mv.graduation_year,
+        mv.college_division, mv.eligibility, mv.transfer,
+        mv.coach_position_title, mv.other_subheader, mv.profile_type
+      FROM suggested_connections_mv mv
+      CROSS JOIN viewer_state vs
+      LEFT JOIN mutuals m ON m.user_id = mv.user_id
+      WHERE mv.user_id != $1
+        AND NOT EXISTS (
+          SELECT 1 FROM follows f
+          WHERE f.follower_id = $1 AND f.following_id = mv.user_id
+        )
       ORDER BY (
-        -- Base engagement: followers + profile views + post engagement
-        (COALESCE(pp.followers_count, cp.followers_count, op.followers_count, 0) * 3.0)
-        + (COALESCE(pp.cc_views, 0) * 1.0)
-        + COALESCE((
-            SELECT SUM(COALESCE(p.engagement_score, 0))
-            FROM posts p
-            WHERE p.user_id = u.id
-              AND p.created_at > NOW() - INTERVAL '30 days'
-              AND (p.is_deleted = false OR p.is_deleted IS NULL)
-          ), 0) * 2.0
-        -- Same-state bonus
-        + CASE WHEN COALESCE(pp.state, cp.state, '') = (
-            SELECT COALESCE(pp2.state, cp2.state, '')
-            FROM users u2
-            LEFT JOIN player_profiles pp2 ON u2.id = pp2.user_id
-            LEFT JOIN coach_profiles cp2 ON u2.id = cp2.user_id
-            WHERE u2.id = $1
-          ) AND COALESCE(pp.state, cp.state, '') != '' THEN 10.0 ELSE 0 END
-        -- Mutual connections bonus (friends of friends)
-        + COALESCE((
-            SELECT COUNT(*) * 5.0
-            FROM follows f1
-            JOIN follows f2 ON f1.following_id = f2.follower_id
-            WHERE f1.follower_id = $1
-              AND f2.following_id = u.id
-              AND f2.following_id != $1
-          ), 0)
-        -- Small random factor to add variety
-        + (RANDOM() * 2.0)
+        mv.base_popularity_score
+        + CASE WHEN mv.state = vs.state AND mv.state != '' THEN 10.0 ELSE 0 END
+        + COALESCE(m.mutual_count, 0) * 5.0
+        + mv.random_seed * 2.0
       ) DESC NULLS LAST
       LIMIT $2 OFFSET $3
     `, [currentUserId, limit + 1, offset]);

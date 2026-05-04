@@ -256,6 +256,34 @@ setInterval(async () => {
   }
 }, 15 * 60 * 1000);
 
+// Refresh suggested-connections materialized view every 15 minutes.
+// Pre-computes the viewer-independent portion of the suggested-connections
+// ranking, replacing the per-request ORDER BY RANDOM() correlated-subquery
+// query at backend/routes/profile.js (security audit fix #33).
+{
+  const dbPool = require('./config/database');
+
+  // Bootstrap: non-concurrent refresh ~30s after boot so the MV reflects
+  // any rows added between migration time and server start. Brief
+  // AccessExclusiveLock is acceptable during warmup.
+  setTimeout(async () => {
+    try {
+      await dbPool.query('REFRESH MATERIALIZED VIEW suggested_connections_mv');
+      logger.info('Suggested-connections MV bootstrap refresh complete');
+    } catch (err) {
+      logger.error('Suggested-connections MV bootstrap refresh failed:', err.message);
+    }
+  }, 30 * 1000);
+
+  setInterval(async () => {
+    try {
+      await dbPool.query('REFRESH MATERIALIZED VIEW CONCURRENTLY suggested_connections_mv');
+    } catch (err) {
+      logger.error('Suggested-connections MV refresh failed:', err.message);
+    }
+  }, 15 * 60 * 1000);
+}
+
 // Graceful shutdown — drain connections before exiting
 function gracefulShutdown(signal) {
   logger.info(`${signal} received, shutting down gracefully...`);

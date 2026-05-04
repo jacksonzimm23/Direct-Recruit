@@ -63,7 +63,8 @@ const MIGRATIONS = [
   'add-device-tokens.sql',
   'add-message-attachments.sql',
   'add-profile-views-popularity-index.sql',
-  'drop-vestigial-email-columns.sql'
+  'drop-vestigial-email-columns.sql',
+  'add-suggested-connections-mv.sql'
 ];
 
 async function applyManualFixes() {
