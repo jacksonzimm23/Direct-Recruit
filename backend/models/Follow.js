@@ -74,15 +74,20 @@ class Follow {
   }
 
   // Send a follow request (for private accounts)
+  // Security #35: returns { inserted, row }. `xmax = 0` is the documented
+  // Postgres signal that the row was newly INSERTed (vs. updated by ON
+  // CONFLICT). Caller uses `inserted` to gate notification creation so a
+  // double-click resend doesn't spam the target with a second request notif.
   static async sendFollowRequest(requesterId, targetId) {
     const result = await pool.query(
       `INSERT INTO follow_requests (requester_id, target_id, status)
        VALUES ($1, $2, 'pending')
        ON CONFLICT (requester_id, target_id) DO UPDATE SET status = 'pending', updated_at = CURRENT_TIMESTAMP
-       RETURNING *`,
+       RETURNING *, (xmax = 0) AS inserted`,
       [requesterId, targetId]
     );
-    return result.rows[0];
+    const row = result.rows[0];
+    return { inserted: !!row.inserted, row };
   }
 
   // Check if there's a pending follow request
@@ -267,6 +272,13 @@ class Follow {
     return result.rows[0];
   }
 
+  // Security #35: returns { inserted, row }. `inserted=true` means a fresh
+  // follow row was created in this transaction; `false` means the row already
+  // existed (concurrent dupe attempt hit ON CONFLICT). Caller uses `inserted`
+  // to gate side effects (notifications, AI-engagement) so a double-click
+  // doesn't fan out duplicates. Count updates are gated on `inserted` to
+  // prevent double-incrementing followers_count / following_count under the
+  // same race.
   static async follow(followerId, followingId) {
     const client = await pool.connect();
     try {
@@ -277,36 +289,21 @@ class Follow {
         [followerId, followingId]
       );
 
-      // Update following_count for the follower (in player, coach, and other profiles)
-      await client.query(
-        'UPDATE player_profiles SET following_count = following_count + 1 WHERE user_id = $1',
-        [followerId]
-      );
-      await client.query(
-        'UPDATE coach_profiles SET following_count = following_count + 1 WHERE user_id = $1',
-        [followerId]
-      );
-      await client.query(
-        'UPDATE other_profiles SET following_count = following_count + 1 WHERE user_id = $1',
-        [followerId]
-      );
+      const inserted = result.rows.length > 0;
+      if (inserted) {
+        // Update following_count for the follower (in player, coach, and other profiles)
+        await client.query('UPDATE player_profiles SET following_count = following_count + 1 WHERE user_id = $1', [followerId]);
+        await client.query('UPDATE coach_profiles  SET following_count = following_count + 1 WHERE user_id = $1', [followerId]);
+        await client.query('UPDATE other_profiles  SET following_count = following_count + 1 WHERE user_id = $1', [followerId]);
 
-      // Update followers_count for the user being followed (in player, coach, and other profiles)
-      await client.query(
-        'UPDATE player_profiles SET followers_count = followers_count + 1 WHERE user_id = $1',
-        [followingId]
-      );
-      await client.query(
-        'UPDATE coach_profiles SET followers_count = followers_count + 1 WHERE user_id = $1',
-        [followingId]
-      );
-      await client.query(
-        'UPDATE other_profiles SET followers_count = followers_count + 1 WHERE user_id = $1',
-        [followingId]
-      );
+        // Update followers_count for the user being followed
+        await client.query('UPDATE player_profiles SET followers_count = followers_count + 1 WHERE user_id = $1', [followingId]);
+        await client.query('UPDATE coach_profiles  SET followers_count = followers_count + 1 WHERE user_id = $1', [followingId]);
+        await client.query('UPDATE other_profiles  SET followers_count = followers_count + 1 WHERE user_id = $1', [followingId]);
+      }
 
       await client.query('COMMIT');
-      return result.rows[0];
+      return { inserted, row: result.rows[0] || null };
     } catch (error) {
       await client.query('ROLLBACK');
       throw error;

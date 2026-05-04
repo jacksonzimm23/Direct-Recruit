@@ -71,39 +71,47 @@ router.post('/:userId', authMiddleware, validateUUID('userId'), async (req, res)
         return res.status(400).json({ error: 'Follow request already pending' });
       }
 
-      // Send follow request instead of instant follow
-      await Follow.sendFollowRequest(req.userId, userId);
+      // Security #35: only fire notification + AI-engagement when the request
+      // row was actually INSERTed (vs. ON CONFLICT-updated under a dupe-click
+      // race). xmax-based detection in sendFollowRequest reports `inserted`.
+      const { inserted } = await Follow.sendFollowRequest(req.userId, userId);
 
-      // Create notification for follow request
-      try {
-        const requesterName = await getUserName(req.userId);
-        const notif = await Notification.createFollowRequestNotification(userId, req.userId, requesterName);
-        if (notif) notifyUser(req.app.get('io'), notif);
-      } catch (notifError) {
-        logger.error('Failed to create follow request notification:', notifError);
+      if (inserted) {
+        try {
+          const requesterName = await getUserName(req.userId);
+          const notif = await Notification.createFollowRequestNotification(userId, req.userId, requesterName);
+          if (notif) notifyUser(req.app.get('io'), notif);
+        } catch (notifError) {
+          logger.error('Failed to create follow request notification:', notifError);
+        }
+
+        AiEngagement.trackIfAiDriven(req.userId, userId, 'follow')
+          .catch(err => logger.error('Engagement track error:', err.message));
       }
 
-      // Track AI engagement (fire-and-forget)
-      AiEngagement.trackIfAiDriven(req.userId, userId, 'follow')
-        .catch(err => logger.error('Engagement track error:', err.message));
       res.json({ message: 'Follow request sent', requestPending: true });
     } else {
-      // Public profile - instant follow
-      await Follow.follow(req.userId, userId);
+      // Public profile - instant follow.
+      // Security #35: only fire notification + AI-engagement when the follow
+      // row was actually INSERTed (concurrent dupe attempts hit ON CONFLICT
+      // DO NOTHING and return inserted=false; gating prevents duplicate
+      // "X started following you" notifications + push fan-out).
+      const { inserted } = await Follow.follow(req.userId, userId);
 
-      // Create notification for the followed user
-      try {
-        const followerName = await getUserName(req.userId);
-        const notif = await Notification.createFollowNotification(userId, req.userId, followerName);
-        if (notif) notifyUser(req.app.get('io'), notif);
-      } catch (notifError) {
-        logger.error('Failed to create follow notification:', notifError);
-        // Don't fail the follow action if notification fails
+      if (inserted) {
+        try {
+          const followerName = await getUserName(req.userId);
+          const notif = await Notification.createFollowNotification(userId, req.userId, followerName);
+          if (notif) notifyUser(req.app.get('io'), notif);
+        } catch (notifError) {
+          logger.error('Failed to create follow notification:', notifError);
+          // Don't fail the follow action if notification fails
+        }
+
+        AiEngagement.trackIfAiDriven(req.userId, userId, 'follow')
+          .catch(err => logger.error('Engagement track error:', err.message));
       }
 
-      // Track AI engagement (fire-and-forget)
-      AiEngagement.trackIfAiDriven(req.userId, userId, 'follow')
-        .catch(err => logger.error('Engagement track error:', err.message));
       res.json({ message: 'Successfully followed user', requestPending: false });
     }
   } catch (error) {

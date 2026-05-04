@@ -256,21 +256,11 @@ class Notification {
     // Don't notify if requesting to follow self (shouldn't happen but safety check)
     if (targetUserId === requesterUserId) return null;
 
-    // Check if a follow request notification already exists from this user (prevent spam)
-    const existingNotification = await pool.query(
-      `SELECT id FROM notifications
-       WHERE user_id = $1
-         AND related_user_id = $2
-         AND title = 'Follow Request'
-       LIMIT 1`,
-      [targetUserId, requesterUserId]
-    );
-
-    if (existingNotification.rows.length > 0) {
-      // Notification already exists, don't create a duplicate
-      return null;
-    }
-
+    // Security #35: dedup is enforced at the call site by the route, which
+    // only invokes this method when sendFollowRequest reports a fresh INSERT
+    // (vs. an ON CONFLICT UPDATE on a dupe-click resend). The previous
+    // SELECT-then-INSERT pre-check ran outside any transaction and didn't
+    // actually close the race.
     return this.create({
       userId: targetUserId,
       type: 'follow',
