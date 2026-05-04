@@ -61,7 +61,10 @@ class CoachProfile {
     return result.rows[0];
   }
 
-  static async search(filters) {
+  // Security #34: parameterized LIMIT/OFFSET so route can clamp + paginate.
+  // Caller passes (filters, limit, offset); we fetch limit+1 rows and return
+  // {coaches, hasMore} so route can pass hasMore through to frontend.
+  static async search(filters, limit = 50, offset = 0) {
     let query = 'SELECT cp.* FROM coach_profiles cp JOIN users u ON cp.user_id = u.id WHERE u.is_active = true';
     const values = [];
     let paramCount = 1;
@@ -83,14 +86,16 @@ class CoachProfile {
     }
 
     if (filters.searchTerm) {
-      query += ` ORDER BY GREATEST(similarity(cp.first_name, $${paramCount}), similarity(cp.last_name, $${paramCount}), similarity(cp.username, $${paramCount}), similarity(cp.team_name, $${paramCount})) DESC, cp.verified DESC, cp.created_at DESC LIMIT 50`;
-      values.push(filters.searchTerm);
-      paramCount++;
+      query += ` ORDER BY GREATEST(similarity(cp.first_name, $${paramCount}), similarity(cp.last_name, $${paramCount}), similarity(cp.username, $${paramCount}), similarity(cp.team_name, $${paramCount})) DESC, cp.verified DESC, cp.created_at DESC LIMIT $${paramCount + 1} OFFSET $${paramCount + 2}`;
+      values.push(filters.searchTerm, limit + 1, offset);
     } else {
-      query += ' ORDER BY cp.verified DESC, COALESCE(cp.followers_count, 0) DESC, cp.created_at DESC LIMIT 50';
+      query += ` ORDER BY cp.verified DESC, COALESCE(cp.followers_count, 0) DESC, cp.created_at DESC LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
+      values.push(limit + 1, offset);
     }
     const result = await pool.query(query, values);
-    return result.rows;
+    const coaches = result.rows.slice(0, limit);
+    const hasMore = result.rows.length > limit;
+    return { coaches, hasMore };
   }
 
   static async findByUsername(username) {

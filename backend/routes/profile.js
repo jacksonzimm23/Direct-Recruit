@@ -415,7 +415,7 @@ router.get('/coach/:userId', authMiddleware, validateUUID('userId'), async (req,
   }
 });
 
-// Search Players
+// Search Players (security #34: clamped pagination, default 50, max 100)
 router.get('/search/players', authMiddleware, async (req, res) => {
   try {
     const filters = {
@@ -424,9 +424,12 @@ router.get('/search/players', authMiddleware, async (req, res) => {
       state: req.query.state,
       searchTerm: req.query.q
     };
-    let players = await PlayerProfile.search(filters);
-    players = await addSignedUrlsToProfiles(players);
-    res.json({ players });
+    const limit = Math.min(Math.max(parseInt(req.query.limit) || 50, 1), 100);
+    const offset = Math.max(parseInt(req.query.offset) || 0, 0);
+
+    const result = await PlayerProfile.search(filters, limit, offset);
+    result.players = await addSignedUrlsToProfiles(result.players);
+    res.json({ players: result.players, hasMore: result.hasMore });
   } catch (error) {
     logger.error('Search players error:', error);
     res.status(500).json({ error: 'Search failed' });
@@ -524,7 +527,7 @@ router.get('/discover/other', authMiddleware, async (req, res) => {
   }
 });
 
-// Search Coaches
+// Search Coaches (security #34: clamped pagination, default 50, max 100)
 router.get('/search/coaches', authMiddleware, async (req, res) => {
   try {
     const filters = {
@@ -532,45 +535,61 @@ router.get('/search/coaches', authMiddleware, async (req, res) => {
       state: req.query.state,
       searchTerm: req.query.q
     };
-    let coaches = await CoachProfile.search(filters);
-    coaches = await addSignedUrlsToProfiles(coaches);
-    res.json({ coaches });
+    const limit = Math.min(Math.max(parseInt(req.query.limit) || 50, 1), 100);
+    const offset = Math.max(parseInt(req.query.offset) || 0, 0);
+
+    const result = await CoachProfile.search(filters, limit, offset);
+    result.coaches = await addSignedUrlsToProfiles(result.coaches);
+    res.json({ coaches: result.coaches, hasMore: result.hasMore });
   } catch (error) {
     logger.error('Search coaches error:', error);
     res.status(500).json({ error: 'Search failed' });
   }
 });
 
-// Universal search (players, coaches, and other profiles)
+// Universal search across players, coaches, and other profiles.
+// Security #34: each source capped at `limit` (default 50, max 100); combined
+// fan-out is sliced to `limit` total so worst-case payload is 100 rows, not 150.
 router.get('/search', authMiddleware, async (req, res) => {
   try {
     const searchTerm = req.query.q;
 
     if (!searchTerm) {
-      return res.json({ results: [] });
+      return res.json({ results: [], hasMore: false });
     }
 
-    let [players, coaches, others] = await Promise.all([
-      PlayerProfile.search({ searchTerm }),
-      CoachProfile.search({ searchTerm }),
-      OtherProfile.search({ searchTerm })
+    const limit = Math.min(Math.max(parseInt(req.query.limit) || 50, 1), 100);
+    const offset = Math.max(parseInt(req.query.offset) || 0, 0);
+
+    // Each source pulls up to (limit+offset) rows from offset 0 so the combined
+    // array has enough material to slice for the requested offset. Per-source
+    // hard cap at 100 still applies via the model-layer clamp. The combined
+    // offset is applied AFTER concatenation so pagination stays consistent
+    // even when one source has fewer rows than another.
+    const fanOut = Math.min(limit + offset, 100);
+    const [playerRes, coachRes, otherRes] = await Promise.all([
+      PlayerProfile.search({ searchTerm }, fanOut, 0),
+      CoachProfile.search({ searchTerm }, fanOut, 0),
+      OtherProfile.search({ searchTerm }, fanOut, 0)
     ]);
 
-    // Add signed URLs to profile images
-    [players, coaches, others] = await Promise.all([
-      addSignedUrlsToProfiles(players),
-      addSignedUrlsToProfiles(coaches),
-      addSignedUrlsToProfiles(others)
+    [playerRes.players, coachRes.coaches, otherRes.others] = await Promise.all([
+      addSignedUrlsToProfiles(playerRes.players),
+      addSignedUrlsToProfiles(coachRes.coaches),
+      addSignedUrlsToProfiles(otherRes.others)
     ]);
 
-    // Combine all results into a single array with role indicator
-    const results = [
-      ...players.map(p => ({ ...p, role: 'player' })),
-      ...coaches.map(c => ({ ...c, role: 'coach' })),
-      ...others.map(o => ({ ...o, role: 'other' }))
+    const combined = [
+      ...playerRes.players.map(p => ({ ...p, role: 'player' })),
+      ...coachRes.coaches.map(c => ({ ...c, role: 'coach' })),
+      ...otherRes.others.map(o => ({ ...o, role: 'other' }))
     ];
 
-    res.json({ results });
+    const results = combined.slice(offset, offset + limit);
+    const hasMore = combined.length > offset + limit
+      || playerRes.hasMore || coachRes.hasMore || otherRes.hasMore;
+
+    res.json({ results, hasMore });
   } catch (error) {
     logger.error('Universal search error:', error);
     res.status(500).json({ error: 'Search failed' });

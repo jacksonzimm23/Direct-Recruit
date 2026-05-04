@@ -225,7 +225,10 @@ class PlayerProfile {
     return result.rows[0];
   }
 
-  static async search(filters) {
+  // Security #34: parameterized LIMIT/OFFSET so route can clamp + paginate.
+  // Caller passes (filters, limit, offset); we fetch limit+1 rows and return
+  // {players, hasMore} so route can pass hasMore through to frontend.
+  static async search(filters, limit = 50, offset = 0) {
     let query = 'SELECT pp.* FROM player_profiles pp JOIN users u ON pp.user_id = u.id WHERE u.is_active = true';
     const values = [];
     let paramCount = 1;
@@ -252,14 +255,16 @@ class PlayerProfile {
     }
 
     if (filters.searchTerm) {
-      query += ` ORDER BY GREATEST(similarity(pp.first_name, $${paramCount}), similarity(pp.last_name, $${paramCount}), similarity(pp.username, $${paramCount})) DESC, pp.created_at DESC LIMIT 50`;
-      values.push(filters.searchTerm);
-      paramCount++;
+      query += ` ORDER BY GREATEST(similarity(pp.first_name, $${paramCount}), similarity(pp.last_name, $${paramCount}), similarity(pp.username, $${paramCount})) DESC, pp.created_at DESC LIMIT $${paramCount + 1} OFFSET $${paramCount + 2}`;
+      values.push(filters.searchTerm, limit + 1, offset);
     } else {
-      query += ' ORDER BY pp.created_at DESC LIMIT 50';
+      query += ` ORDER BY pp.created_at DESC LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
+      values.push(limit + 1, offset);
     }
     const result = await pool.query(query, values);
-    return result.rows;
+    const players = result.rows.slice(0, limit);
+    const hasMore = result.rows.length > limit;
+    return { players, hasMore };
   }
 
   static async findByUsername(username) {

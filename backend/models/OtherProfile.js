@@ -72,7 +72,10 @@ class OtherProfile {
     return result.rows[0];
   }
 
-  static async search(filters) {
+  // Security #34: parameterized LIMIT/OFFSET so route can clamp + paginate.
+  // Caller passes (filters, limit, offset); we fetch limit+1 rows and return
+  // {others, hasMore} so route can pass hasMore through to frontend.
+  static async search(filters, limit = 50, offset = 0) {
     let query = 'SELECT op.* FROM other_profiles op JOIN users u ON op.user_id = u.id WHERE u.is_active = true';
     const values = [];
     let paramCount = 1;
@@ -84,14 +87,16 @@ class OtherProfile {
     }
 
     if (filters.searchTerm) {
-      query += ` ORDER BY GREATEST(similarity(op.first_name, $${paramCount}), similarity(op.last_name, $${paramCount}), similarity(op.username, $${paramCount}), COALESCE(similarity(op.subheader, $${paramCount}), 0)) DESC, op.created_at DESC LIMIT 50`;
-      values.push(filters.searchTerm);
-      paramCount++;
+      query += ` ORDER BY GREATEST(similarity(op.first_name, $${paramCount}), similarity(op.last_name, $${paramCount}), similarity(op.username, $${paramCount}), COALESCE(similarity(op.subheader, $${paramCount}), 0)) DESC, op.created_at DESC LIMIT $${paramCount + 1} OFFSET $${paramCount + 2}`;
+      values.push(filters.searchTerm, limit + 1, offset);
     } else {
-      query += ' ORDER BY op.created_at DESC LIMIT 50';
+      query += ` ORDER BY op.created_at DESC LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
+      values.push(limit + 1, offset);
     }
     const result = await pool.query(query, values);
-    return result.rows;
+    const others = result.rows.slice(0, limit);
+    const hasMore = result.rows.length > limit;
+    return { others, hasMore };
   }
 
   // Discover other profiles with pagination
