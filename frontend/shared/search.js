@@ -3,6 +3,12 @@ class SearchComponent {
         this.container = document.getElementById(containerId);
         this.searchResults = [];
         this.currentUserRole = null;
+        // Pagination state — security #34 plumbed `hasMore` through the API; UI consumes it here.
+        this.PAGE_SIZE = 8;
+        this.currentQuery = '';
+        this.currentOffset = 0;
+        this.hasMore = false;
+        this.isLoadingMore = false;
         this.init();
     }
 
@@ -92,16 +98,45 @@ class SearchComponent {
             return;
         }
 
+        // New query → reset pagination state.
+        this.currentQuery = query;
+        this.currentOffset = 0;
+        this.searchResults = [];
+        this.hasMore = false;
+
         try {
-            const response = await API.get(`/profile/search?q=${encodeURIComponent(query)}`);
-
-            // Handle new unified results format
+            const response = await API.get(`/profile/search?q=${encodeURIComponent(query)}&limit=${this.PAGE_SIZE}&offset=0`);
             this.searchResults = response.results || [];
-
-
+            this.hasMore = !!response.hasMore;
+            this.currentOffset = this.searchResults.length;
             this.displayResults();
         } catch (error) {
             this.displayError('Failed to search. Please try again.');
+        }
+    }
+
+    async loadMoreResults() {
+        if (this.isLoadingMore || !this.hasMore || !this.currentQuery) return;
+        this.isLoadingMore = true;
+
+        // Mark the button as loading so a double-click can't fire two requests.
+        const moreBtn = document.querySelector('.search-show-more');
+        if (moreBtn) {
+            moreBtn.disabled = true;
+            moreBtn.textContent = 'Loading...';
+        }
+
+        try {
+            const response = await API.get(`/profile/search?q=${encodeURIComponent(this.currentQuery)}&limit=${this.PAGE_SIZE}&offset=${this.currentOffset}`);
+            const nextBatch = response.results || [];
+            this.searchResults = this.searchResults.concat(nextBatch);
+            this.hasMore = !!response.hasMore;
+            this.currentOffset += nextBatch.length;
+            this.displayResults();
+        } catch (error) {
+            this.displayError('Failed to load more results. Please try again.');
+        } finally {
+            this.isLoadingMore = false;
         }
     }
 
@@ -125,6 +160,11 @@ class SearchComponent {
             html += this.renderResult(result);
         });
 
+        // Append "Show more" button when the backend signals more results exist.
+        if (this.hasMore) {
+            html += `<button type="button" class="search-show-more">Show more</button>`;
+        }
+
         resultsContainer.innerHTML = html;
         this.showResults();
 
@@ -145,6 +185,14 @@ class SearchComponent {
                 window.location.href = `${prefix}${folder}/tabs/my-profile.html?username=${encodeURIComponent(username)}&from=search`;
             });
         });
+
+        const showMoreBtn = resultsContainer.querySelector('.search-show-more');
+        if (showMoreBtn) {
+            showMoreBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.loadMoreResults();
+            });
+        }
     }
 
     renderResult(result) {
