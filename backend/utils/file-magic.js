@@ -6,12 +6,21 @@
 // multer will accept it. This module inspects actual file bytes after
 // multer accepts the upload but before it reaches S3.
 //
-// Uses the `file-type` package (v16.x — the last CommonJS-compatible line;
-// v17+ is ESM-only and would force the whole backend to ESM). Both
-// `fromBuffer` (for memory-storage uploads) and `fromFile` (for disk-
-// storage uploads) are available.
+// Uses the `file-type` package (v21.3.1+, the version that patches the ASF
+// infinite-loop CVE per Dependabot). v17+ is ESM-only, so we load it via
+// dynamic `import()` and cache the resolved module — keeps the rest of the
+// backend on CommonJS. The cached promise is awaited inside the (already
+// async) validators, so the cost is one import on first call and zero
+// thereafter. v17+ renamed the API: fromBuffer/fromFile → fileTypeFromBuffer/
+// fileTypeFromFile. Return shape ({ext, mime}) is unchanged.
 
-const FileType = require('file-type');
+let _fileTypePromise = null;
+function loadFileType() {
+  if (!_fileTypePromise) {
+    _fileTypePromise = import('file-type');
+  }
+  return _fileTypePromise;
+}
 
 // Allowed MIME types per upload kind. These are the values `file-type`
 // emits for each format we accept — kept in sync with the per-route multer
@@ -57,7 +66,8 @@ async function validateBufferMagic(buffer, kind) {
   }
   let detected;
   try {
-    detected = await FileType.fromBuffer(buffer);
+    const { fileTypeFromBuffer } = await loadFileType();
+    detected = await fileTypeFromBuffer(buffer);
   } catch (err) {
     return { ok: false, detected: null, error: `Magic-byte detection failed: ${err.message}` };
   }
@@ -87,7 +97,8 @@ async function validateFileMagic(filePath, kind) {
   }
   let detected;
   try {
-    detected = await FileType.fromFile(filePath);
+    const { fileTypeFromFile } = await loadFileType();
+    detected = await fileTypeFromFile(filePath);
   } catch (err) {
     return { ok: false, detected: null, error: `Magic-byte detection failed: ${err.message}` };
   }
