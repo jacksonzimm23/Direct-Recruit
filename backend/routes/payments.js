@@ -183,6 +183,18 @@ async function webhookHandler(req, res) {
     return res.status(400).json({ error: 'Webhook signature verification failed' });
   }
 
+  // Idempotency via Redis (skip in dev where redis is a no-op stub).
+  // Mirrors the RevenueCat dedup pattern from security #9. Placed AFTER
+  // signature verification so attackers can't poison Redis with forged IDs.
+  if (redisClient.isReady && event.id) {
+    const dedupeKey = `stripe:event:${event.id}`;
+    const setResult = await redisClient.set(dedupeKey, '1', { NX: true, EX: 604800 });
+    if (setResult === null) {
+      logger.info(`[Stripe webhook] duplicate event ${event.id} — skipping`);
+      return res.json({ received: true });
+    }
+  }
+
   try {
     switch (event.type) {
       case 'checkout.session.completed': {
