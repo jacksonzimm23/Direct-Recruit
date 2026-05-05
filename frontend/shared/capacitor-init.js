@@ -104,11 +104,43 @@
 
                 // User tapped push from lock screen / notification center.
                 // Resolve role folder from current URL + navigate WebView.
+                //
+                // Security #36: deep_link_path arrives in the APNs payload and is
+                // therefore attacker-influenceable in the worst case (compromised
+                // APNs key, server bug, replay). Validate against an allowlist of
+                // known backend-emitted shapes before navigating. The backend
+                // emitter lives at backend/utils/notifications.js → buildDeepLinkPath.
+                const UUID_RE = '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}';
+                const DEEP_LINK_ALLOWLIST = [
+                    new RegExp('^/messages(?:\\?conversation_id=' + UUID_RE + ')?$', 'i'),
+                    new RegExp('^/post-view\\.html\\?(?:post_id|share_id)=' + UUID_RE + '$', 'i'),
+                    new RegExp('^/recruiting-board\\.html(?:\\?board_id=' + UUID_RE + ')?$', 'i'),
+                    /^\/notifications$/,
+                    new RegExp('^/shared/view-profile\\.html\\?user_id=' + UUID_RE + '$', 'i')
+                ];
+                function isAllowedDeepLinkPath(p) {
+                    if (typeof p !== 'string') return false;
+                    if (p.length > 256) return false;
+                    // Reject control chars (CR/LF/null/tab) outright
+                    if (/[\x00-\x1f\x7f]/.test(p)) return false;
+                    // Reject anything that could escape relative-path semantics
+                    // or smuggle a foreign origin
+                    if (p.indexOf('//') !== -1) return false;
+                    if (p.indexOf('..') !== -1) return false;
+                    if (p.indexOf('\\') !== -1) return false;
+                    return DEEP_LINK_ALLOWLIST.some((re) => re.test(p));
+                }
+
                 Push.addListener('pushNotificationActionPerformed', (action) => {
                     try {
                         const data = action && action.notification && action.notification.data;
                         const deepLinkPath = data && data.deep_link_path;
                         if (!deepLinkPath) return;
+
+                        if (!isAllowedDeepLinkPath(deepLinkPath)) {
+                            console.warn('[push] rejected deep link (not in allowlist)');
+                            return;
+                        }
 
                         const currentPath = window.location.pathname || '';
                         const roleMatch = currentPath.match(/\/frontend\/([^\/]+)/);
