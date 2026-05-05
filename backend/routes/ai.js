@@ -129,8 +129,11 @@ router.get('/chats', async (req, res) => {
 router.post('/chats', async (req, res) => {
   try {
     const { chat_type = 'recruit_assistant', title } = req.body;
-    const chat = await AiChat.createChat(req.userId, chat_type, title);
-    res.json({ chat });
+    const result = await AiChat.createChat(req.userId, chat_type, title);
+    if (!result.success) {
+      return res.status(400).json({ error: result.error, count: result.count });
+    }
+    res.json({ chat: result.chat, count: result.count });
   } catch (error) {
     logger.error('Create AI chat error:', error);
     res.status(500).json({ error: 'Failed to create chat' });

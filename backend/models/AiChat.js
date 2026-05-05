@@ -1,5 +1,7 @@
 const pool = require('../config/database');
 
+const MAX_CHATS = 50;
+
 class AiChat {
   // Get all chats for a coach (newest first)
   static async getChatsByCoach(coachUserId, chatType = 'recruit_assistant') {
@@ -13,15 +15,50 @@ class AiChat {
     return result.rows;
   }
 
-  // Create a new chat
+  // Create a new chat.
+  // Security #39: race-free 50-chat cap mirroring the RaSavedPlayers
+  // pattern from security #19 — pg_advisory_xact_lock serializes concurrent
+  // creates for the same coach, atomic CTE gates the INSERT on the count
+  // inside a single SQL statement. Returns {success, chat, error, count}.
   static async createChat(coachUserId, chatType = 'recruit_assistant', title = 'New Chat') {
-    const result = await pool.query(
-      `INSERT INTO ai_chats (coach_user_id, chat_type, title)
-       VALUES ($1, $2, $3)
-       RETURNING *`,
-      [coachUserId, chatType, title]
-    );
-    return result.rows[0];
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+
+      await client.query(
+        'SELECT pg_advisory_xact_lock(hashtext($1))',
+        [`ai_chat:${coachUserId}`]
+      );
+
+      const result = await client.query(
+        `WITH current_count AS (
+           SELECT COUNT(*)::int AS cnt FROM ai_chats WHERE coach_user_id = $1
+         ),
+         inserted AS (
+           INSERT INTO ai_chats (coach_user_id, chat_type, title)
+           SELECT $1, $2, $3 FROM current_count WHERE cnt < ${MAX_CHATS}
+           RETURNING *
+         )
+         SELECT cc.cnt AS pre_count,
+                (SELECT row_to_json(i.*) FROM inserted i) AS chat
+         FROM current_count cc`,
+        [coachUserId, chatType, title]
+      );
+
+      await client.query('COMMIT');
+
+      const { pre_count, chat } = result.rows[0];
+
+      if (pre_count >= MAX_CHATS && !chat) {
+        return { success: false, error: `Chat limit reached — maximum ${MAX_CHATS} active chats. Delete an old chat to create a new one.`, count: pre_count };
+      }
+      return { success: true, chat, count: pre_count + 1 };
+    } catch (err) {
+      await client.query('ROLLBACK');
+      throw err;
+    } finally {
+      client.release();
+    }
   }
 
   // Get a single chat with all messages (verifies ownership)
