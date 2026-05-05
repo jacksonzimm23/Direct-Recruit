@@ -8,6 +8,7 @@ const crypto = require('crypto');
 const pool = require('../config/database');
 const { authMiddleware, validateUUID } = require('../middleware/auth');
 const { uploadToS3, getSignedVideoUrl, deleteFromS3, generateHighlightVideoKey } = require('../utils/s3');
+const { validateFileMagic } = require('../utils/file-magic');
 const Follow = require('../models/Follow');
 const logger = require('../utils/logger');
 
@@ -82,6 +83,17 @@ router.post('/upload', authMiddleware, upload.single('video_file'), async (req, 
     }
 
     let videoS3Key = null;
+
+    // Security #38: magic-byte validation BEFORE S3 PUT.
+    if (videoFile) {
+      const magic = await validateFileMagic(videoFile.path, 'highlight_video');
+      if (!magic.ok) {
+        logger.warn(`[highlights] upload rejected by magic check: ${magic.error}`);
+        await fs.promises.unlink(videoFile.path).catch(() => {});
+        return res.status(400).json({ error: 'Uploaded file is not a valid video' });
+      }
+      videoFile.mimetype = magic.detected;
+    }
 
     try {
       // Upload video to S3 if provided

@@ -11,6 +11,7 @@ const fs = require('fs');
 const os = require('os');
 const crypto = require('crypto');
 const { uploadToS3, getSignedS3Url, getSignedVideoUrl, generateProfileImageKey, generatePostMediaKey, generateMessageMediaKey, deleteFromS3 } = require('../utils/s3');
+const { validateBufferMagic, validateFileMagic } = require('../utils/file-magic');
 const logger = require('../utils/logger');
 
 // Memory storage for small profile-image uploads (5MB max — buffer is fine).
@@ -103,6 +104,18 @@ router.post('/profile-image', authMiddleware, s3Upload.single('profile_image'), 
       return res.status(400).json({ error: 'No file uploaded' });
     }
 
+    // Security #38: validate magic bytes before any DB/S3 work. The multer
+    // fileFilter only checks client-supplied mimetype + extension, both of
+    // which an attacker controls.
+    const magic = await validateBufferMagic(req.file.buffer, 'profile_image');
+    if (!magic.ok) {
+      logger.warn(`[upload] profile-image rejected by magic check: ${magic.error}`);
+      return res.status(400).json({ error: 'Uploaded file is not a valid image' });
+    }
+    // Override the mimetype with the detected one so S3 receives the truth,
+    // not the client's claim.
+    req.file.mimetype = magic.detected;
+
     // Get current profile to check for existing image
     let existingProfile = null;
     if (req.user.role === 'player') {
@@ -172,6 +185,22 @@ router.post('/post-media', authMiddleware, postMediaUpload.array('media', 4), as
   try {
     if (!req.files || req.files.length === 0) {
       return res.status(400).json({ error: 'No files uploaded' });
+    }
+
+    // Security #38: magic-byte validation per file BEFORE any S3 PUT.
+    // If any file fails, reject the whole batch — temp-file cleanup runs
+    // in the outer finally below either way.
+    for (const file of req.files) {
+      const magic = await validateFileMagic(file.path, 'post_media');
+      if (!magic.ok) {
+        logger.warn(`[upload] post-media rejected by magic check: ${magic.error}`);
+        // Clean up temp files now since we're returning before the outer try.
+        await Promise.all(req.files.map(f =>
+          fs.promises.unlink(f.path).catch(() => {})
+        ));
+        return res.status(400).json({ error: 'One or more files are not valid images or videos' });
+      }
+      file.mimetype = magic.detected;
     }
 
     const uploadedMedia = [];
@@ -251,6 +280,15 @@ router.post('/message-media', authMiddleware, messageMediaUpload.single('media')
     if (!req.file) {
       return res.status(400).json({ error: 'No file uploaded' });
     }
+
+    // Security #38: magic-byte validation BEFORE S3 PUT.
+    const magic = await validateFileMagic(req.file.path, 'message_media');
+    if (!magic.ok) {
+      logger.warn(`[upload] message-media rejected by magic check: ${magic.error}`);
+      await fs.promises.unlink(req.file.path).catch(() => {});
+      return res.status(400).json({ error: 'Uploaded file is not a valid image or video' });
+    }
+    req.file.mimetype = magic.detected;
 
     const isVideo = req.file.mimetype.startsWith('video/');
     const mediaType = isVideo ? 'video' : 'image';
