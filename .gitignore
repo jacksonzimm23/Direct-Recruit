@@ -37,11 +37,8 @@ uploads/
 
 # Sensitive business docs
 cost-model.html
-PI.md
 DEPLOYMENT-GUIDE.md
-applesteps.md
 testing.md
-SECURITY-AUDIT-REPORT.md
 
 # Local cookie/test auth jars — never commit (contain real JWTs)
 cookies.txt
