@@ -25,6 +25,16 @@
         });
     }
 
+    // Live personal-email availability check — mirrors the pattern in the
+    // create-profile forms (hsplayer/profile-form.js etc.). Skipped in switch
+    // mode since the personal_email is server-trusted to be the authenticated
+    // user's existing email, so it will always come back "taken".
+    const personalEmailInput = document.getElementById('personalEmail');
+    const personalEmailError = document.getElementById('personalEmailError');
+    const personalEmailHint = document.getElementById('personalEmailHint');
+    let personalEmailCheckTimeout;
+    let isPersonalEmailAvailable = true;
+
     // Use the same API_BASE_URL pattern as shared/api.js — works on both
     // Live Server (:5500) and the node server (:5000) without CORS issues
     function getApiBase() {
@@ -32,6 +42,44 @@
         const host = window.location.hostname;
         if (host === 'localhost' || host === '127.0.0.1') return `http://${host}:5000/api`;
         return `${window.location.origin}/api`;
+    }
+
+    // Wire the debounced availability check (only for new signups, not switches)
+    if (!isSwitch && personalEmailInput && personalEmailError) {
+        personalEmailInput.addEventListener('input', function () {
+            const email = this.value.trim();
+            clearTimeout(personalEmailCheckTimeout);
+
+            personalEmailError.style.display = 'none';
+            if (personalEmailHint) personalEmailHint.style.display = 'block';
+            personalEmailInput.classList.remove('input-error', 'input-success');
+            isPersonalEmailAvailable = true;
+
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (email.length > 0 && emailRegex.test(email)) {
+                personalEmailCheckTimeout = setTimeout(async () => {
+                    try {
+                        const response = await fetch(getApiBase() + '/profile/check-email/' + encodeURIComponent(email));
+                        const data = await response.json();
+                        if (!data.available) {
+                            personalEmailError.style.display = 'block';
+                            if (personalEmailHint) personalEmailHint.style.display = 'none';
+                            personalEmailInput.classList.add('input-error');
+                            personalEmailInput.classList.remove('input-success');
+                            isPersonalEmailAvailable = false;
+                        } else {
+                            personalEmailInput.classList.add('input-success');
+                            personalEmailInput.classList.remove('input-error');
+                            isPersonalEmailAvailable = true;
+                        }
+                    } catch (err) {
+                        // Network/rate-limit error — let the form submit proceed; the
+                        // server-side guard at registration time will still catch dupes.
+                        isPersonalEmailAvailable = true;
+                    }
+                }, 500);
+            }
+        });
     }
 
     // ─── Switch mode bootstrap ──────────────────────────────────────────────────
@@ -127,6 +175,11 @@
         }
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(personalEmail)) {
             showError('Please enter a valid personal email address.');
+            return;
+        }
+        if (!isSwitch && !isPersonalEmailAvailable) {
+            showError('An account with this personal email already exists. Please sign in instead, or use a different email.');
+            personalEmailInput.focus();
             return;
         }
 

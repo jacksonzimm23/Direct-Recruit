@@ -151,6 +151,24 @@
     margin-top: 0.35rem;
 }
 
+.coach-request-form .form-error {
+    display: block;
+    font-size: 0.85rem;
+    color: #ff6b6b;
+    margin-top: 0.35rem;
+    font-weight: 500;
+}
+
+.coach-request-form input.input-error {
+    border-color: #ff6b6b !important;
+    box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.1) !important;
+}
+
+.coach-request-form input.input-success {
+    border-color: #4caf50 !important;
+    box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1) !important;
+}
+
 .coach-request-form textarea {
     resize: vertical;
     min-height: 80px;
