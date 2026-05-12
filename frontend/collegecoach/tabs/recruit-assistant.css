@@ -194,6 +194,24 @@
     opacity: 0.4;
 }
 
+.ra-history-empty-new-chat {
+    margin-top: 1rem;
+    padding: 0.6rem 1.5rem;
+    background: rgba(255, 107, 53, 0.15);
+    border: 1px solid rgba(255, 107, 53, 0.3);
+    border-radius: 10px;
+    color: #ff6b35;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.ra-history-empty-new-chat:hover {
+    background: rgba(255, 107, 53, 0.25);
+    border-color: rgba(255, 107, 53, 0.5);
+}
+
 /* ========================
    CHAT AREA
    ======================== */

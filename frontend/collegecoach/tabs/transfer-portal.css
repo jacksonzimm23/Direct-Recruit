@@ -1140,6 +1140,24 @@
     opacity: 0.4;
 }
 
+.pi-history-empty-new-chat {
+    margin-top: 1rem;
+    padding: 0.6rem 1.5rem;
+    background: rgba(220, 38, 38, 0.15);
+    border: 1px solid rgba(220, 38, 38, 0.3);
+    border-radius: 10px;
+    color: #dc2626;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.pi-history-empty-new-chat:hover {
+    background: rgba(220, 38, 38, 0.25);
+    border-color: rgba(220, 38, 38, 0.5);
+}
+
 /* ==============================
    PI — CHAT AREA
    ============================== */
