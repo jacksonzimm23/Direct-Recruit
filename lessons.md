@@ -159,13 +159,12 @@
 
     **Admin Dashboard:** A private standalone HTML file at `frontend/admin/ai-dashboard.html` (gitignored, never committed) that visualizes all analytics data in real-time. Uses Chart.js for charts. Protected by `ADMIN_ANALYTICS_KEY` in `.env` — the dashboard sends this key as an `x-admin-key` header to the admin API routes at `/api/admin/analytics/*`. Auto-refreshes every 30 seconds. Displays: overview cards (total searches, engagements, conversion rate, tokens, latency), search activity (daily trends, by division, by position, by filter type), engagement funnel (search -> save -> view -> follow -> message with drop-off %), and performance metrics (latency over time, token usage, breakdown by AI type). Backend routes: `backend/routes/admin-analytics.js` (4 endpoints: overview, searches, funnel, performance + 2 DELETE endpoints for clearing data). Each section has a "Clear Data" button with an "Are you sure?" confirmation modal.
 
-    **PRODUCTION SETUP REMINDER:** To get the dashboard working on prod:
-    1. SSH into EC2 and add `ADMIN_ANALYTICS_KEY=your-secret-key` to the production `~/direct-recruit/backend/.env`
-    2. Restart the backend: `pm2 restart all`
-    3. Copy `frontend/admin/ai-dashboard.html` to the EC2 instance (it's gitignored so `git pull` won't bring it — use `scp` or create it manually)
-    4. In the prod copy of the dashboard HTML, change `API_BASE` from `http://localhost:5000` to `http://98.82.239.221:5000` (or your domain)
-    5. Make sure `ADMIN_KEY` in the dashboard HTML matches the key in the prod `.env`
-    6. Run `cd ~/direct-recruit/backend && npm run migrate:prod` to create the `ai_analytics`, `ra_saved_players`, and `ai_engagement_events` tables on prod
+    **PRODUCTION SETUP:** The dashboard HTML is local-only (gitignored, NOT copied to EC2). It runs from Live Server at `localhost:5500` against the prod API via `API_BASE = 'https://directrecruit.net'`. Only the backend admin routes live on prod, authenticated by the `ADMIN_ANALYTICS_KEY` header. Setup steps:
+    1. SSH into EC2 and add `ADMIN_ANALYTICS_KEY=<random-string>` to `~/direct-recruit/backend/.env`
+    2. Restart with env reload: `pm2 restart direct-recruit --update-env` (plain `pm2 restart` caches old env vars)
+    3. Apply DB migrations on prod: `cd ~/direct-recruit/backend && npm run migrate:prod`
+    4. Locally, open `http://localhost:5500/frontend/admin/ai-dashboard.html`. The page prompts for the admin key on first load and caches it in localStorage as `aiDashboardKey`. On 401 it clears the cached key and re-prompts — so key rotation requires zero file edits, just paste the new value when prompted.
+    5. **Do NOT `scp` the admin HTML to EC2.** Earlier guidance to do so was wrong; the dashboard is intentionally localhost-only so the key never sits in a publicly-served HTML file.
 
 
 
@@ -892,10 +891,10 @@
 
 83. **Production setup checklist for this feature.**
     - Run `cd backend && npm run migrate:prod` to apply migrations 018 + 019 (coach_signup_requests, coach_invites, plus division/locked_school columns).
-    - `scp` `frontend/admin/coach-verification.html` to EC2 (gitignored, won't come down with `git pull`).
+    - **Do NOT `scp` `frontend/admin/coach-verification.html` to EC2.** Same as the AI analytics dashboard (lesson 25), this HTML is local-only — run it via Live Server at `http://localhost:5500/frontend/admin/coach-verification.html`. It already targets prod via `API_BASE` and prompts for the admin key on first load (cached in localStorage as `coachVerificationKey`).
     - Set in prod `.env`: `APP_URL=https://directrecruit.net`, `FRONTEND_PATH_PREFIX=` (empty), `ADMIN_NOTIFY_EMAIL=jackson@directrecruit.net`. Admin auth reuses the existing AI analytics dashboard env var — no new key needed.
     - Confirm SES is out of sandbox mode in AWS Console → SES → Account dashboard. Sandbox mode only allows sending to verified addresses, which would block emails to arbitrary .edu addresses.
-    - `pm2 restart all` after pulling.
+    - `pm2 restart direct-recruit --update-env` after pulling (the `--update-env` flag forces pm2 to re-read `.env` instead of using its cached copy).
     - Send yourself a real test request → approve → confirm the invite email actually arrives in a real .edu inbox.
 
 84. **CSP ('script-src \'self\'') breaks any inline `<script>` on pages served by the node backend.** `payment-success.html` (collegecoach, hsplayer, transferplayer) and `payment-success-switch.html` were originally written with inline scripts, which silently fail with a console error — coach gets stuck on "Setting up your profile..." forever because the profile-creation code never runs. Fix: extract to external `payment-success.js` files. This was hidden during local dev because Live Server (port 5500) doesn't enforce CSP, only the node backend does. Test all post-Stripe pages on `:5000` to catch this category of bug, not just `:5500`.
@@ -904,12 +903,23 @@
 
 ---
 
-## TODOs
-**TODO: Settings switch profile, college coach request form
-**TODO: Rotate all creds (Stripe is good)
-
 docker-compose stop
 
 docker-compose start
 
 DO NOT run seed
+
+---
+
+## Credential Rotation Log
+
+> Record every rotation of a prod secret here. Values stay in Bitwarden — this is just an audit trail of *when* something was rotated.
+
+| Date | Credential | Notes |
+|---|---|---|
+| 2026-05-12 | `ADMIN_ANALYTICS_KEY` | Initial rotation. Also refactored `frontend/admin/ai-dashboard.html` to prompt+localStorage pattern (no more hardcoded key). |
+| 2026-05-12 | `AWS_ACCESS_KEY_ID` + `AWS_SECRET_ACCESS_KEY` | Rotated together. Old key deactivated in IAM same day; delete after 24h+ of confirmed prod operation. |
+| 2026-05-12 | `AWS_COGNITO_CLIENT_SECRET` | Verified by signing in fresh. |
+| 2026-05-12 | `DB_PASSWORD` | RDS master password for `direct-recruit-db`. Modified via RDS console with Apply Immediately. |
+| 2026-05-12 | `JWT_SECRET` | Logged out all existing sessions (expected). Verified by signing in fresh. |
+
