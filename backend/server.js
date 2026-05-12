@@ -74,8 +74,13 @@ const PORT = process.env.PORT || 5000;
 app.set('io', io);
 
 // CORS configuration
+// In prod we allow http://localhost:5500 so the local-only admin dashboards
+// (frontend/admin/ai-dashboard.html, frontend/admin/coach-verification.html —
+// both gitignored, never deployed) can call the prod admin API from Live Server.
+// The admin endpoints are independently protected by the x-admin-key header,
+// so opening CORS to localhost doesn't reduce security.
 const allowedOrigins = process.env.NODE_ENV === 'production'
-  ? ['https://directrecruit.net', 'https://www.directrecruit.net']
+  ? ['https://directrecruit.net', 'https://www.directrecruit.net', 'http://localhost:5500']
   : true; // Allow all origins in development
 
 app.use(cors({
