@@ -73,6 +73,14 @@ const PORT = process.env.PORT || 5000;
 
 app.set('io', io);
 
+// Trust the first hop's X-Forwarded-For header so express-rate-limit keys off
+// the real client IP, not the Nginx/ALB IP. Required on prod where node sits
+// behind a reverse proxy. '1' = trust exactly one proxy in front of us; do not
+// use 'true' which trusts ALL forwarded headers and lets clients spoof IPs.
+if (process.env.NODE_ENV === 'production') {
+  app.set('trust proxy', 1);
+}
+
 // CORS configuration
 // In prod we allow http://localhost:5500 so the local-only admin dashboards
 // (frontend/admin/ai-dashboard.html, frontend/admin/coach-verification.html —
