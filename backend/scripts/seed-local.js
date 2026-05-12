@@ -65,7 +65,8 @@ const MIGRATIONS = [
   'add-profile-views-popularity-index.sql',
   'drop-vestigial-email-columns.sql',
   'add-suggested-connections-mv.sql',
-  'fix-player-height-type.sql'
+  'fix-player-height-type.sql',
+  'fix-user-fk-cascades.sql'
 ];
 
 async function applyManualFixes() {
