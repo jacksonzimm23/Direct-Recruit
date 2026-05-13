@@ -1078,8 +1078,6 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('piUsageNumbers').textContent = piFormatTokenCount(totalUsed) + ' / ' + piFormatTokenCount(usage.tokenCap);
         document.getElementById('piUsagePercent').textContent = percent.toFixed(1) + '% used';
         document.getElementById('piUsageRemaining').textContent = piFormatTokenCount(remaining) + ' tokens remaining';
-        document.getElementById('piUsageInput').textContent = totalUsed === 0 ? '—' : usage.inputTokens.toLocaleString();
-        document.getElementById('piUsageOutput').textContent = totalUsed === 0 ? '—' : usage.outputTokens.toLocaleString();
         document.getElementById('piUsageRequests').textContent = usage.totalRequests.toLocaleString();
 
         const barFill = document.getElementById('piUsageBarFill');

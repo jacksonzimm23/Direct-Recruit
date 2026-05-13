@@ -1070,8 +1070,6 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('raUsageNumbers').textContent = formatTokenCount(totalUsed) + ' / ' + formatTokenCount(usage.tokenCap);
         document.getElementById('raUsagePercent').textContent = percent.toFixed(1) + '% used';
         document.getElementById('raUsageRemaining').textContent = formatTokenCount(remaining) + ' tokens remaining';
-        document.getElementById('raUsageInput').textContent = totalUsed === 0 ? '—' : usage.inputTokens.toLocaleString();
-        document.getElementById('raUsageOutput').textContent = totalUsed === 0 ? '—' : usage.outputTokens.toLocaleString();
         document.getElementById('raUsageRequests').textContent = usage.totalRequests.toLocaleString();
 
         const barFill = document.getElementById('raUsageBarFill');
