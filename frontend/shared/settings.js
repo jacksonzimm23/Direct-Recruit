@@ -3038,7 +3038,13 @@ function renderSubscriptionUI(container, sub, profileFolder) {
             html += '<button class="btn-danger-outline" id="subCancelBtn">Cancel Subscription</button>';
         }
     } else if (isActive && sub.cancelAtPeriodEnd) {
-        html += '<p class="sub-cancel-note">Your subscription will end at the end of the current billing period. You can resubscribe anytime.</p>';
+        if (isIOS) {
+            html += '<p class="sub-cancel-note">Your subscription will end at the end of the current billing period. You can resubscribe anytime through Apple.</p>';
+            html += '<button class="btn-primary" id="subManageAppleBtn">Manage in Apple Subscriptions</button>';
+        } else {
+            html += '<p class="sub-cancel-note">Your subscription will end at the end of the current billing period. Reactivate to stay on the monthly billing schedule — no new charge, your next billing date stays the same.</p>';
+            html += '<button class="btn-primary" id="subReactivateBtn">Reactivate Subscription</button>';
+        }
     } else {
         html += `<button class="btn-primary" id="subSubscribeBtn">${isCancelled ? 'Resubscribe' : 'Subscribe'}</button>`;
     }
@@ -3062,6 +3068,9 @@ function renderSubscriptionUI(container, sub, profileFolder) {
 
     const changePlanBtn = document.getElementById('subChangePlanBtn');
     if (changePlanBtn) changePlanBtn.addEventListener('click', () => handleChangePlan());
+
+    const reactivateBtn = document.getElementById('subReactivateBtn');
+    if (reactivateBtn) reactivateBtn.addEventListener('click', () => handleReactivate());
 }
 
 function showCancelSubscriptionModal(sub) {
@@ -3154,6 +3163,31 @@ async function handleSubscribe(profileFolder) {
 async function handleChangePlan() {
     localStorage.setItem('switchRedirectUrl', window.location.href);
     showSwitchTierModal();
+}
+
+async function handleReactivate() {
+    const btn = document.getElementById('subReactivateBtn');
+    if (!btn) return;
+    const originalText = btn.textContent;
+    btn.textContent = 'Reactivating…';
+    btn.disabled = true;
+    try {
+        const result = await API.payments.reactivateSubscription();
+        const nextBilling = result.currentPeriodEnd
+            ? new Date(result.currentPeriodEnd * 1000).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+            : null;
+        showToast(
+            nextBilling
+                ? `Subscription reactivated. Next billing: ${nextBilling}.`
+                : 'Subscription reactivated.',
+            'success'
+        );
+        await initializeSubscriptionSection();
+    } catch (error) {
+        showToast('Reactivation failed: ' + (error.message || 'Try again later.'), 'error');
+        btn.textContent = originalText;
+        btn.disabled = false;
+    }
 }
 
 function escapeHTML(str) {

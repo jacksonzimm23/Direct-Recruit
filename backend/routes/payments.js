@@ -170,6 +170,40 @@ router.post('/cancel', authMiddleware, async (req, res) => {
   }
 });
 
+// POST /api/payments/reactivate — un-cancel a subscription that's pending
+// cancellation (cancel_at_period_end=true). Stripe stops planning to cancel
+// and the next billing date stays exactly where it was — no new charge.
+router.post('/reactivate', authMiddleware, async (req, res) => {
+  try {
+    const info = await User.getSubscriptionInfo(req.userId);
+    if (!info || !info.stripe_subscription_id) {
+      return res.status(400).json({ error: 'No subscription to reactivate' });
+    }
+    if (info.subscription_source === 'apple_iap') {
+      return res.status(400).json({ error: 'Apple subscriptions are managed in iOS Settings' });
+    }
+    if (info.subscription_status !== 'active') {
+      return res.status(400).json({ error: 'Subscription is not active. Subscribe again to restart.' });
+    }
+
+    // Confirm with Stripe that the sub is actually pending cancellation before
+    // claiming we "reactivated" it. Avoids confusing UX if state desyncs.
+    const current = await stripe.getSubscription(info.stripe_subscription_id);
+    if (!current.cancel_at_period_end) {
+      return res.status(400).json({ error: 'Subscription is not pending cancellation' });
+    }
+
+    const subscription = await stripe.reactivateSubscription(info.stripe_subscription_id);
+    res.json({
+      message: 'Subscription reactivated',
+      currentPeriodEnd: subscription.current_period_end
+    });
+  } catch (error) {
+    logger.error('Reactivate subscription error:', error);
+    res.status(500).json({ error: 'Failed to reactivate subscription' });
+  }
+});
+
 // ─── Webhook Handler ─────────────────────────────────────────────────────────
 // This is exported separately and mounted with express.raw() in server.js
 async function webhookHandler(req, res) {

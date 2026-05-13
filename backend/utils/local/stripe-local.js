@@ -20,6 +20,16 @@ const MOCK_TIER_MAP = {
   collegecoach_elite: 'elite'
 };
 
+// In-memory state for the mock so cancel → getSubscription → reactivate
+// reflects an actual lifecycle in local dev. Server restart resets it.
+const _mockSubState = new Map();
+function _getMockState(subscriptionId) {
+  if (!_mockSubState.has(subscriptionId)) {
+    _mockSubState.set(subscriptionId, { cancel_at_period_end: false });
+  }
+  return _mockSubState.get(subscriptionId);
+}
+
 /**
  * Create a mock Stripe customer.
  */
@@ -68,6 +78,7 @@ async function createCheckoutSession({ customerId, priceId, userId, profileType,
  * Mock cancel subscription.
  */
 async function cancelSubscription(subscriptionId) {
+  _getMockState(subscriptionId).cancel_at_period_end = true;
   console.log(`[Stripe Mock] Subscription ${subscriptionId} set to cancel at period end`);
   return {
     id: subscriptionId,
@@ -78,13 +89,29 @@ async function cancelSubscription(subscriptionId) {
 }
 
 /**
- * Mock get subscription.
+ * Mock reactivate subscription — clears cancel_at_period_end.
+ */
+async function reactivateSubscription(subscriptionId) {
+  _getMockState(subscriptionId).cancel_at_period_end = false;
+  console.log(`[Stripe Mock] Subscription ${subscriptionId} reactivated (cancel_at_period_end cleared)`);
+  return {
+    id: subscriptionId,
+    status: 'active',
+    cancel_at_period_end: false,
+    current_period_end: Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60
+  };
+}
+
+/**
+ * Mock get subscription. Reads cancel_at_period_end from in-memory state so
+ * the cancel → reactivate flow can be tested locally without real Stripe.
  */
 async function getSubscription(subscriptionId) {
+  const state = _getMockState(subscriptionId);
   return {
     id: subscriptionId || mockId('sub'),
     status: 'active',
-    cancel_at_period_end: false,
+    cancel_at_period_end: state.cancel_at_period_end,
     current_period_start: Math.floor(Date.now() / 1000),
     current_period_end: Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60,
     items: {
@@ -105,6 +132,7 @@ module.exports = {
   createCustomer,
   createCheckoutSession,
   cancelSubscription,
+  reactivateSubscription,
   getSubscription,
   constructWebhookEvent
 };

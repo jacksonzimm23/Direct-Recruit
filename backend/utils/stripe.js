@@ -58,6 +58,19 @@ async function cancelSubscription(subscriptionId) {
 }
 
 /**
+ * Reactivate a Stripe subscription that's pending cancellation
+ * (cancel_at_period_end was set to true). No new charge is created — Stripe
+ * just unschedules the cancellation, and the next billing date stays put.
+ */
+async function reactivateSubscription(subscriptionId) {
+  const subscription = await stripe.subscriptions.update(subscriptionId, {
+    cancel_at_period_end: false
+  });
+  logger.info(`Subscription ${subscriptionId} reactivated (cancel_at_period_end cleared)`);
+  return subscription;
+}
+
+/**
  * Retrieve a Stripe subscription.
  */
 async function getSubscription(subscriptionId) {
@@ -79,6 +92,7 @@ module.exports = {
   createCustomer,
   createCheckoutSession,
   cancelSubscription,
+  reactivateSubscription,
   getSubscription,
   constructWebhookEvent
 };

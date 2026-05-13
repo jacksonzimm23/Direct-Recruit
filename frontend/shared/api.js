@@ -1076,6 +1076,9 @@ const paymentsAPI = {
     },
     cancelSubscription: async () => {
         return await apiRequest('/payments/cancel', { method: 'POST' });
+    },
+    reactivateSubscription: async () => {
+        return await apiRequest('/payments/reactivate', { method: 'POST' });
     }
 };
 
