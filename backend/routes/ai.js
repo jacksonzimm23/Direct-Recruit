@@ -870,6 +870,11 @@ router.post('/watchlist/:playerUserId', async (req, res) => {
     if (!result.success) {
       return res.status(400).json({ error: result.error, count: result.count });
     }
+    // Track engagement (fire-and-forget). PI flags are bucketed under 'save' on the
+    // admin dashboard funnel — same column as RA saves, so the dashboard reflects
+    // total "coach committed to a player via AI" actions across both products.
+    AiEngagement.trackIfAiDriven(req.userId, playerUserId, 'save')
+      .catch(err => logger.error('Engagement track error:', err.message));
     res.json({ success: true, count: result.count });
   } catch (error) {
     logger.error('Add to watchlist error:', error);
