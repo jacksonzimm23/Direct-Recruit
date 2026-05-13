@@ -72,21 +72,37 @@ class AiAnalytics {
 
     // Determine billing period from Stripe or fall back to calendar month
     let periodStart, periodEnd;
+    const calendarMonthFallback = () => {
+      const now = new Date();
+      return [
+        new Date(now.getFullYear(), now.getMonth(), 1),
+        new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999)
+      ];
+    };
     if (subId && (subStatus === 'active' || subStatus === 'past_due')) {
       try {
         const sub = await stripe.getSubscription(subId);
-        periodStart = new Date(sub.current_period_start * 1000);
-        periodEnd = new Date(sub.current_period_end * 1000);
+        // Stripe moved per-period fields onto subscription items in newer API
+        // versions; fall back to the legacy top-level fields if items aren't present.
+        // Either path can yield undefined for subs in 'trialing' / 'incomplete'
+        // states, so we validate that we ended up with real Date objects below.
+        const itemPeriodStart = sub.items?.data?.[0]?.current_period_start;
+        const itemPeriodEnd   = sub.items?.data?.[0]?.current_period_end;
+        const startUnix = itemPeriodStart ?? sub.current_period_start;
+        const endUnix   = itemPeriodEnd   ?? sub.current_period_end;
+        periodStart = startUnix ? new Date(startUnix * 1000) : null;
+        periodEnd   = endUnix   ? new Date(endUnix   * 1000) : null;
+        if (!periodStart || isNaN(periodStart.getTime()) ||
+            !periodEnd   || isNaN(periodEnd.getTime())) {
+          logger.warn(`Stripe subscription ${subId} has no usable period fields; falling back to calendar month`);
+          [periodStart, periodEnd] = calendarMonthFallback();
+        }
       } catch (err) {
         logger.warn(`Failed to fetch Stripe subscription for billing period: ${err.message}`);
-        const now = new Date();
-        periodStart = new Date(now.getFullYear(), now.getMonth(), 1);
-        periodEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+        [periodStart, periodEnd] = calendarMonthFallback();
       }
     } else {
-      const now = new Date();
-      periodStart = new Date(now.getFullYear(), now.getMonth(), 1);
-      periodEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+      [periodStart, periodEnd] = calendarMonthFallback();
     }
 
     const result = await pool.query(
