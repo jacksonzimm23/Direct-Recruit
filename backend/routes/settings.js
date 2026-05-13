@@ -800,6 +800,35 @@ router.delete('/account/delete', authMiddleware, async (req, res) => {
       logger.warn(`Failed to cancel subscription during deletion of user ${req.userId}: ${cancelErr.message}`);
     }
 
+    // Archive any coach_signup_requests tied to this user's personal email so
+    // the admin dashboard hides them and the partial UNIQUE on edu_email
+    // (deleted_at IS NULL) lets the same person request access again later
+    // with a fresh row. Also revokes any unused coach_invites tied to those
+    // requests. Match is case-insensitive on personal_email since the request
+    // form does not normalize that column at insert time.
+    try {
+      const archived = await pool.query(
+        `UPDATE coach_signup_requests
+            SET deleted_at = NOW()
+          WHERE LOWER(personal_email) = LOWER($1)
+            AND deleted_at IS NULL
+          RETURNING id`,
+        [userEmail]
+      );
+      if (archived.rows.length > 0) {
+        await pool.query(
+          `UPDATE coach_invites
+              SET revoked_at = NOW()
+            WHERE request_id = ANY($1::uuid[])
+              AND used_at IS NULL AND revoked_at IS NULL`,
+          [archived.rows.map(r => r.id)]
+        );
+        logger.info(`Archived ${archived.rows.length} coach_signup_request(s) for deleted account ${req.userId}`);
+      }
+    } catch (archiveErr) {
+      logger.warn(`Failed to archive coach_signup_requests during account deletion: ${archiveErr.message}`);
+    }
+
     // Delete from PostgreSQL (cascades to all related tables)
     await User.delete(req.userId);
 
@@ -1071,6 +1100,32 @@ router.post('/switch-profile', authMiddleware, async (req, res) => {
     // hsplayer ↔ transferplayer (same $10 price): keep subscription, no action.
     // Free → Paid: no current sub to cancel; frontend redirects to checkout.
     // Apple IAP user switching anywhere: DB columns untouched, webhook reconciles.
+
+    // Archive coach_signup_requests when switching AWAY from collegecoach so
+    // the approval row is hidden from the admin dashboard and the user can
+    // request collegecoach access again later via a fresh row. Match by
+    // existing_user_id (switch-originated requests) OR by personal_email
+    // (covers requests created before the user row existed, then later linked).
+    if (currentSubtype === 'collegecoach' && target_type !== 'collegecoach') {
+      const archived = await client.query(
+        `UPDATE coach_signup_requests
+            SET deleted_at = NOW()
+          WHERE deleted_at IS NULL
+            AND (existing_user_id = $1 OR LOWER(personal_email) = LOWER($2))
+          RETURNING id`,
+        [req.userId, user.email]
+      );
+      if (archived.rows.length > 0) {
+        await client.query(
+          `UPDATE coach_invites
+              SET revoked_at = NOW()
+            WHERE request_id = ANY($1::uuid[])
+              AND used_at IS NULL AND revoked_at IS NULL`,
+          [archived.rows.map(r => r.id)]
+        );
+        logger.info(`Archived ${archived.rows.length} coach_signup_request(s) during switch-away from collegecoach for user ${req.userId}`);
+      }
+    }
 
     // Delete old profile row (CASCADE handles player_games/player_game_stats)
     if (user.role === 'player') {

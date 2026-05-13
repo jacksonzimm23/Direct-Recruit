@@ -73,9 +73,13 @@ router.post('/request', coachRequestLimiter, optionalAuthMiddleware, async (req,
     const normalizedEdu = edu_email.trim().toLowerCase();
     const ip = (req.ip || req.connection?.remoteAddress || '').slice(0, 45);
 
-    // Check if a request for this edu_email already exists
+    // Check if a NON-ARCHIVED request for this edu_email already exists.
+    // Archived rows (deleted_at IS NOT NULL) are left behind when a coach
+    // deletes their account or switches profile type away from collegecoach —
+    // they should NOT block a fresh resubmission from the same .edu address.
     const existing = await pool.query(
-      `SELECT id, status, created_at FROM coach_signup_requests WHERE edu_email = $1`,
+      `SELECT id, status, created_at FROM coach_signup_requests
+         WHERE edu_email = $1 AND deleted_at IS NULL`,
       [normalizedEdu]
     );
 

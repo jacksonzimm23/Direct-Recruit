@@ -46,7 +46,14 @@ router.get('/requests', async (req, res) => {
       return res.status(400).json({ error: 'Invalid status filter' });
     }
 
-    const whereClause = status === 'all' ? '' : 'WHERE r.status = $1';
+    // Archived rows (deleted_at IS NOT NULL) are hidden from every tab — they
+    // represent coaches who deleted their account or switched profile type
+    // away from collegecoach, so the admin shouldn't see them in pending/
+    // approved/rejected queues. They stay in the DB for audit purposes.
+    const archivedFilter = 'r.deleted_at IS NULL';
+    const whereClause = status === 'all'
+      ? `WHERE ${archivedFilter}`
+      : `WHERE r.status = $1 AND ${archivedFilter}`;
     const params = status === 'all' ? [] : [status];
 
     const requestsQuery = `
@@ -80,6 +87,7 @@ router.get('/requests', async (req, res) => {
     const countsQuery = `
       SELECT status, COUNT(*) AS cnt
       FROM coach_signup_requests
+      WHERE deleted_at IS NULL
       GROUP BY status
     `;
 

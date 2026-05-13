@@ -66,7 +66,8 @@ const MIGRATIONS = [
   'drop-vestigial-email-columns.sql',
   'add-suggested-connections-mv.sql',
   'fix-player-height-type.sql',
-  'fix-user-fk-cascades.sql'
+  'fix-user-fk-cascades.sql',
+  'add-coach-signup-request-archival.sql'
 ];
 
 async function applyManualFixes() {
