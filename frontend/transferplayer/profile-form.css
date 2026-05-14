@@ -482,6 +482,31 @@ input[style*="border-color: #4caf50"] {
     color: var(--white);
 }
 
+/* Radio Row (Yes/No-style toggles) */
+.radio-row {
+    display: flex;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    margin-top: 0.5rem;
+}
+
+.radio-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    font-weight: 500;
+    padding: 0.5rem 0;
+    color: var(--white);
+}
+
+.radio-label input[type="radio"] {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--cerulean);
+    cursor: pointer;
+}
+
 /* Multi-Select Checkboxes */
 .multi-select-container {
     display: grid;

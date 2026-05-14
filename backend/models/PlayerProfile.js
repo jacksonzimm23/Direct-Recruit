@@ -159,7 +159,8 @@ class PlayerProfile {
       city, state, position, height, weight, gpa, sat_score, act_score,
       highlight_video_url, bio, hudl_profile, twitter_handle, instagram_handle, player_status,
       college_division, conference, number, eligibility, transfer,
-      lastseasonstat1, lastseasonstat2, lastseasonstat3, careerstat1, careerstat2, careerstat3
+      lastseasonstat1, lastseasonstat2, lastseasonstat3, careerstat1, careerstat2, careerstat3,
+      other_sports, track_100m, track_200m
     } = profileData;
 
     const result = await pool.query(
@@ -168,14 +169,16 @@ class PlayerProfile {
        city, state, position, height, weight, gpa, sat_score, act_score,
        highlight_video_url, bio, hudl_profile, twitter_handle, instagram_handle, player_status,
        college_division, conference, number, eligibility, transfer,
-       lastseasonstat1, lastseasonstat2, lastseasonstat3, careerstat1, careerstat2, careerstat3)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32)
+       lastseasonstat1, lastseasonstat2, lastseasonstat3, careerstat1, careerstat2, careerstat3,
+       other_sports, track_100m, track_200m)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35)
       RETURNING *`,
       [userId, first_name, last_name, username, date_of_birth, team_name, graduation_year,
        city, state, position, height, weight, gpa, sat_score, act_score,
        highlight_video_url, bio, hudl_profile, twitter_handle, instagram_handle, player_status,
        college_division, conference, number, eligibility, transfer,
-       lastseasonstat1, lastseasonstat2, lastseasonstat3, careerstat1, careerstat2, careerstat3]
+       lastseasonstat1, lastseasonstat2, lastseasonstat3, careerstat1, careerstat2, careerstat3,
+       other_sports, track_100m, track_200m]
     );
     return result.rows[0];
   }
@@ -193,7 +196,8 @@ class PlayerProfile {
       'college_division', 'conference', 'number', 'eligibility', 'transfer',
       'years_of_eligibility', 'phone', 'email', 'is_transfer_player',
       'lastseasonstat1', 'lastseasonstat2', 'lastseasonstat3',
-      'careerstat1', 'careerstat2', 'careerstat3'
+      'careerstat1', 'careerstat2', 'careerstat3',
+      'other_sports', 'track_100m', 'track_200m'
     ]);
 
     const fields = [];

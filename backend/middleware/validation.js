@@ -150,6 +150,10 @@ const validatePlayerProfile = [
   body('gpa').optional({ nullable: true }).custom(validateGpa),
   body('sat_score').optional({ nullable: true }).custom(validateSatScore),
   body('act_score').optional({ nullable: true }).custom(validateActScore),
+  body('other_sports').optional({ nullable: true }).isArray().withMessage('other_sports must be an array'),
+  body('other_sports.*').optional().isString().isLength({ max: 100 }).withMessage('Each sport must be 100 characters or less'),
+  body('track_100m').optional({ nullable: true }).isNumeric().withMessage('track_100m must be numeric'),
+  body('track_200m').optional({ nullable: true }).isNumeric().withMessage('track_200m must be numeric'),
 ];
 
 const validateCoachProfile = [
@@ -183,6 +187,10 @@ const validatePlayerProfileUpdate = [
   body('gpa').optional({ nullable: true }).custom(validateGpa),
   body('sat_score').optional({ nullable: true }).custom(validateSatScore),
   body('act_score').optional({ nullable: true }).custom(validateActScore),
+  body('other_sports').optional({ nullable: true }).isArray().withMessage('other_sports must be an array'),
+  body('other_sports.*').optional().isString().isLength({ max: 100 }).withMessage('Each sport must be 100 characters or less'),
+  body('track_100m').optional({ nullable: true }).isNumeric().withMessage('track_100m must be numeric'),
+  body('track_200m').optional({ nullable: true }).isNumeric().withMessage('track_200m must be numeric'),
 ];
 
 const validateCoachProfileUpdate = [

@@ -2553,6 +2553,11 @@ function setupUI() {
         if (typeof updateAcademicsDisplay === 'function') {
             updateAcademicsDisplay(currentProfile);
         }
+
+        // Update athletics display with profile data
+        if (typeof updateAthleticsDisplay === 'function') {
+            updateAthleticsDisplay(currentProfile);
+        }
     }
 
     tabs.forEach(tab => {
@@ -3162,6 +3167,11 @@ async function saveProfileChanges() {
             // Update academics display if GPA was changed
             if (typeof updateAcademicsDisplay === 'function') {
                 updateAcademicsDisplay(currentProfile);
+            }
+
+            // Update athletics display
+            if (typeof updateAthleticsDisplay === 'function') {
+                updateAthleticsDisplay(currentProfile);
             }
 
             // Update sidebar footer with fresh data from database
@@ -7563,6 +7573,239 @@ document.addEventListener('DOMContentLoaded', () => {
         // Update academics display with current profile data
         if (currentProfile) {
             updateAcademicsDisplay(currentProfile);
+        }
+    }, 500);
+});
+
+
+// ============================================
+// ATHLETICS TAB FUNCTIONALITY
+// ============================================
+
+let editAthleticsSelectedSports = [];
+
+function escapeAthleticsHtml(str) {
+    return String(str).replace(/[&<>"']/g, c => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[c]));
+}
+
+function updateAthleticsDisplay(profile) {
+    const chipsEl = document.getElementById('athleticsSportsChips');
+    if (!chipsEl) return;
+
+    const rawSports = Array.isArray(profile && profile.other_sports) ? profile.other_sports : [];
+    const sports = rawSports.map(s => (typeof s === 'string' && s.startsWith('other:')) ? s.slice(6) : s);
+
+    if (sports.length === 0) {
+        chipsEl.innerHTML = '<span class="empty-state-inline">Football only</span>';
+    } else {
+        chipsEl.innerHTML = sports.map(s => `<span class="sport-chip">${escapeAthleticsHtml(s)}</span>`).join('');
+    }
+
+    const has100 = profile && profile.track_100m !== null && profile.track_100m !== undefined && profile.track_100m !== '';
+    const has200 = profile && profile.track_200m !== null && profile.track_200m !== undefined && profile.track_200m !== '';
+    const trackRow = document.getElementById('athleticsTrackRow');
+    const t100Item = document.getElementById('athleticsTrack100Item');
+    const t200Item = document.getElementById('athleticsTrack200Item');
+
+    if (!has100 && !has200) {
+        if (trackRow) trackRow.style.display = 'none';
+    } else if (trackRow) {
+        trackRow.style.display = '';
+        if (t100Item) t100Item.style.display = has100 ? '' : 'none';
+        if (t200Item) t200Item.style.display = has200 ? '' : 'none';
+        if (has100) document.getElementById('athleticsTrack100').textContent = `${parseFloat(profile.track_100m).toFixed(2)}s`;
+        if (has200) document.getElementById('athleticsTrack200').textContent = `${parseFloat(profile.track_200m).toFixed(2)}s`;
+    }
+
+    const editBtn = document.getElementById('editAthleticsBtn');
+    if (editBtn) {
+        if (isOwnProfile) editBtn.classList.add('show-button');
+        else editBtn.classList.remove('show-button');
+    }
+}
+
+function updateEditAthleticsSelectedChips() {
+    const container = document.getElementById('editSelectedSports');
+    if (!container) return;
+    container.innerHTML = '';
+    editAthleticsSelectedSports.forEach(sport => {
+        const pill = document.createElement('div');
+        pill.className = 'selected-item';
+        pill.innerHTML = `${escapeAthleticsHtml(sport)} <button type="button" class="remove-edit-sport-item" data-sport="${escapeAthleticsHtml(sport)}">&times;</button>`;
+        container.appendChild(pill);
+    });
+    container.querySelectorAll('.remove-edit-sport-item').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const sport = this.dataset.sport;
+            editAthleticsSelectedSports = editAthleticsSelectedSports.filter(s => s !== sport);
+            const cb = document.querySelector(`.edit-sport-checkbox[value="${sport}"]`);
+            if (cb) cb.checked = false;
+            applyEditAthleticsVisibility();
+            updateEditAthleticsSelectedChips();
+        });
+    });
+}
+
+function applyEditAthleticsVisibility() {
+    const trackBlock = document.getElementById('editTrackTimesBlock');
+    const otherGroup = document.getElementById('editOtherSportTextGroup');
+    if (trackBlock) trackBlock.style.display = editAthleticsSelectedSports.includes('Track and Field') ? '' : 'none';
+    if (otherGroup) otherGroup.style.display = editAthleticsSelectedSports.includes('Other') ? '' : 'none';
+    if (!editAthleticsSelectedSports.includes('Track and Field')) {
+        const t1 = document.getElementById('editTrack100m');
+        const t2 = document.getElementById('editTrack200m');
+        if (t1) t1.value = '';
+        if (t2) t2.value = '';
+    }
+    if (!editAthleticsSelectedSports.includes('Other')) {
+        const ost = document.getElementById('editOtherSportText');
+        if (ost) ost.value = '';
+    }
+}
+
+function showEditAthleticsModal() {
+    const modal = document.getElementById('editAthleticsModal');
+    if (!modal || !currentProfile) return;
+
+    // Reset modal state
+    editAthleticsSelectedSports = [];
+    document.querySelectorAll('.edit-sport-checkbox').forEach(c => { c.checked = false; });
+    document.querySelector('input[name="edit_plays_other_sports"][value="no"]').checked = true;
+    document.getElementById('editOtherSportsBlock').style.display = 'none';
+    document.getElementById('editOtherSportTextGroup').style.display = 'none';
+    document.getElementById('editTrackTimesBlock').style.display = 'none';
+    document.getElementById('editOtherSportText').value = '';
+    document.getElementById('editTrack100m').value = '';
+    document.getElementById('editTrack200m').value = '';
+
+    // Prefill from currentProfile
+    const rawSports = Array.isArray(currentProfile.other_sports) ? currentProfile.other_sports : [];
+    if (rawSports.length > 0) {
+        document.querySelector('input[name="edit_plays_other_sports"][value="yes"]').checked = true;
+        document.getElementById('editOtherSportsBlock').style.display = '';
+
+        const otherEntry = rawSports.find(s => typeof s === 'string' && s.startsWith('other:'));
+        const standardSports = rawSports.filter(s => typeof s === 'string' && !s.startsWith('other:'));
+
+        editAthleticsSelectedSports = standardSports.slice();
+        standardSports.forEach(sport => {
+            const cb = document.querySelector(`.edit-sport-checkbox[value="${sport}"]`);
+            if (cb) cb.checked = true;
+        });
+        if (otherEntry) {
+            editAthleticsSelectedSports.push('Other');
+            const otherCb = document.querySelector('.edit-sport-checkbox[value="Other"]');
+            if (otherCb) otherCb.checked = true;
+            document.getElementById('editOtherSportText').value = otherEntry.slice(6);
+        }
+        applyEditAthleticsVisibility();
+        updateEditAthleticsSelectedChips();
+
+        if (editAthleticsSelectedSports.includes('Track and Field')) {
+            if (currentProfile.track_100m != null) document.getElementById('editTrack100m').value = currentProfile.track_100m;
+            if (currentProfile.track_200m != null) document.getElementById('editTrack200m').value = currentProfile.track_200m;
+        }
+    }
+
+    modal.classList.add('active');
+    document.body.style.overflow = 'hidden';
+}
+
+function hideEditAthleticsModal() {
+    const modal = document.getElementById('editAthleticsModal');
+    if (modal) {
+        modal.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+}
+
+async function saveAthleticsChanges() {
+    const playsOther = document.querySelector('input[name="edit_plays_other_sports"]:checked').value === 'yes';
+    let otherSportsPayload = null;
+    if (playsOther && editAthleticsSelectedSports.length) {
+        otherSportsPayload = editAthleticsSelectedSports.filter(s => s !== 'Other');
+        if (editAthleticsSelectedSports.includes('Other')) {
+            const otherText = (document.getElementById('editOtherSportText').value || '').trim();
+            if (otherText) otherSportsPayload.push(`other:${otherText}`);
+        }
+        if (otherSportsPayload.length === 0) otherSportsPayload = null;
+    }
+
+    const t100 = (playsOther && editAthleticsSelectedSports.includes('Track and Field'))
+        ? (parseFloat(document.getElementById('editTrack100m').value) || null) : null;
+    const t200 = (playsOther && editAthleticsSelectedSports.includes('Track and Field'))
+        ? (parseFloat(document.getElementById('editTrack200m').value) || null) : null;
+
+    const payload = { other_sports: otherSportsPayload, track_100m: t100, track_200m: t200 };
+
+    try {
+        const response = await API.put('/profile', payload);
+        if (response.success || response.profile) {
+            currentProfile.other_sports = otherSportsPayload;
+            currentProfile.track_100m = t100;
+            currentProfile.track_200m = t200;
+            updateAthleticsDisplay(currentProfile);
+            hideEditAthleticsModal();
+            if (typeof showToast === 'function') showToast('Athletics info saved', 'success');
+        } else {
+            showToast(response.message || 'Failed to save athletics information', 'error');
+        }
+    } catch (error) {
+        console.error('Error saving athletics:', error);
+        showToast('Failed to save athletics information. Please try again.', 'error');
+    }
+}
+
+function setupAthleticsModal() {
+    const editBtn = document.getElementById('editAthleticsBtn');
+    const overlay = document.getElementById('editAthleticsModalOverlay');
+    const closeBtn = document.getElementById('editAthleticsModalClose');
+    const cancelBtn = document.getElementById('btnEditAthleticsCancel');
+    const saveBtn = document.getElementById('btnEditAthleticsSave');
+
+    if (editBtn && isOwnProfile) {
+        editBtn.classList.add('show-button');
+        editBtn.addEventListener('click', showEditAthleticsModal);
+    }
+
+    if (overlay) overlay.addEventListener('click', hideEditAthleticsModal);
+    if (closeBtn) closeBtn.addEventListener('click', hideEditAthleticsModal);
+    if (cancelBtn) cancelBtn.addEventListener('click', hideEditAthleticsModal);
+    if (saveBtn) saveBtn.addEventListener('click', saveAthleticsChanges);
+
+    // Wire modal Yes/No toggle
+    document.querySelectorAll('input[name="edit_plays_other_sports"]').forEach(radio => {
+        radio.addEventListener('change', function() {
+            const show = this.value === 'yes';
+            const block = document.getElementById('editOtherSportsBlock');
+            if (block) block.style.display = show ? '' : 'none';
+            if (!show) {
+                editAthleticsSelectedSports = [];
+                document.querySelectorAll('.edit-sport-checkbox:checked').forEach(c => { c.checked = false; });
+                applyEditAthleticsVisibility();
+                updateEditAthleticsSelectedChips();
+            }
+        });
+    });
+
+    // Wire modal sport checkboxes
+    document.querySelectorAll('.edit-sport-checkbox').forEach(cb => {
+        cb.addEventListener('change', function() {
+            editAthleticsSelectedSports = Array.from(document.querySelectorAll('.edit-sport-checkbox:checked')).map(c => c.value);
+            applyEditAthleticsVisibility();
+            updateEditAthleticsSelectedChips();
+        });
+    });
+}
+
+// Initialize athletics when DOM is loaded
+document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(() => {
+        setupAthleticsModal();
+        if (currentProfile) {
+            updateAthleticsDisplay(currentProfile);
         }
     }, 500);
 });

@@ -12,6 +12,11 @@ document.addEventListener('DOMContentLoaded', async function() {
     const selectedPositionsContainer = document.getElementById('selectedPositions');
     let selectedPositions = [];
 
+    // Athletics — other sports
+    const sportCheckboxes = document.querySelectorAll('.sport-checkbox');
+    const selectedSportsContainer = document.getElementById('selectedSports');
+    let selectedSports = [];
+
     // Password validation elements
     const passwordInput = document.getElementById('password');
     const confirmPasswordInput = document.getElementById('confirmPassword');
@@ -263,6 +268,79 @@ document.addEventListener('DOMContentLoaded', async function() {
         });
     }
 
+    // Athletics — Yes/No toggle reveals sports block
+    document.querySelectorAll('input[name="plays_other_sports"]').forEach(radio => {
+        radio.addEventListener('change', function() {
+            const show = this.value === 'yes';
+            const block = document.getElementById('otherSportsBlock');
+            if (block) block.style.display = show ? '' : 'none';
+            if (!show) {
+                selectedSports = [];
+                document.querySelectorAll('.sport-checkbox:checked').forEach(c => { c.checked = false; });
+                const otg = document.getElementById('otherSportTextGroup');
+                const ttb = document.getElementById('trackTimesBlock');
+                const ost = document.getElementById('otherSportText');
+                const t1 = document.getElementById('track100m');
+                const t2 = document.getElementById('track200m');
+                if (otg) otg.style.display = 'none';
+                if (ttb) ttb.style.display = 'none';
+                if (ost) ost.value = '';
+                if (t1) t1.value = '';
+                if (t2) t2.value = '';
+                updateSelectedSports();
+            }
+        });
+    });
+
+    // Athletics — sport checkbox changes
+    sportCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            selectedSports = Array.from(document.querySelectorAll('.sport-checkbox:checked')).map(c => c.value);
+            updateSelectedSports();
+            const trackBlock = document.getElementById('trackTimesBlock');
+            const otherGroup = document.getElementById('otherSportTextGroup');
+            if (trackBlock) trackBlock.style.display = selectedSports.includes('Track and Field') ? '' : 'none';
+            if (otherGroup) otherGroup.style.display = selectedSports.includes('Other') ? '' : 'none';
+            if (!selectedSports.includes('Track and Field')) {
+                const t1 = document.getElementById('track100m');
+                const t2 = document.getElementById('track200m');
+                if (t1) t1.value = '';
+                if (t2) t2.value = '';
+            }
+            if (!selectedSports.includes('Other')) {
+                const ost = document.getElementById('otherSportText');
+                if (ost) ost.value = '';
+            }
+        });
+    });
+
+    function updateSelectedSports() {
+        if (!selectedSportsContainer) return;
+        selectedSportsContainer.innerHTML = '';
+        selectedSports.forEach(sport => {
+            const pill = document.createElement('div');
+            pill.className = 'selected-item';
+            pill.innerHTML = `
+                ${sport}
+                <button type="button" class="remove-sport-item" data-sport="${sport}">&times;</button>
+            `;
+            selectedSportsContainer.appendChild(pill);
+        });
+        document.querySelectorAll('.remove-sport-item').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const sport = this.dataset.sport;
+                selectedSports = selectedSports.filter(s => s !== sport);
+                const cb = document.querySelector(`.sport-checkbox[value="${sport}"]`);
+                if (cb) cb.checked = false;
+                const trackBlock = document.getElementById('trackTimesBlock');
+                const otherGroup = document.getElementById('otherSportTextGroup');
+                if (trackBlock) trackBlock.style.display = selectedSports.includes('Track and Field') ? '' : 'none';
+                if (otherGroup) otherGroup.style.display = selectedSports.includes('Other') ? '' : 'none';
+                updateSelectedSports();
+            });
+        });
+    }
+
     // Handle form submission
     profileForm.addEventListener('submit', async function(e) {
         e.preventDefault();
@@ -357,6 +435,24 @@ document.addEventListener('DOMContentLoaded', async function() {
             profileData.gpa = parseFloat(document.getElementById('gpa').value) || null;
             // HS players have no division
             profileData.college_division = null;
+
+            // Athletics
+            const playsOtherEl = document.querySelector('input[name="plays_other_sports"]:checked');
+            const playsOther = playsOtherEl && playsOtherEl.value === 'yes';
+            let otherSportsPayload = null;
+            if (playsOther && selectedSports.length) {
+                otherSportsPayload = selectedSports.filter(s => s !== 'Other');
+                if (selectedSports.includes('Other')) {
+                    const otherText = (document.getElementById('otherSportText').value || '').trim();
+                    if (otherText) otherSportsPayload.push(`other:${otherText}`);
+                }
+                if (otherSportsPayload.length === 0) otherSportsPayload = null;
+            }
+            profileData.other_sports = otherSportsPayload;
+            profileData.track_100m = (playsOther && selectedSports.includes('Track and Field'))
+                ? (parseFloat(document.getElementById('track100m').value) || null) : null;
+            profileData.track_200m = (playsOther && selectedSports.includes('Track and Field'))
+                ? (parseFloat(document.getElementById('track200m').value) || null) : null;
 
             if (isUpdating) {
                 // Updates: create/update profile directly, no payment
@@ -454,6 +550,39 @@ async function loadExistingProfile() {
                 }
                 if (profile.gpa) {
                     document.getElementById('gpa').value = profile.gpa;
+                }
+
+                // Athletics prefill
+                if (Array.isArray(profile.other_sports) && profile.other_sports.length) {
+                    const yesRadio = document.querySelector('input[name="plays_other_sports"][value="yes"]');
+                    if (yesRadio) {
+                        yesRadio.checked = true;
+                        yesRadio.dispatchEvent(new Event('change'));
+                    }
+                    const otherEntry = profile.other_sports.find(s => typeof s === 'string' && s.startsWith('other:'));
+                    const standardSports = profile.other_sports.filter(s => typeof s === 'string' && !s.startsWith('other:'));
+                    standardSports.forEach(sport => {
+                        const cb = document.querySelector(`.sport-checkbox[value="${sport}"]`);
+                        if (cb) {
+                            cb.checked = true;
+                            cb.dispatchEvent(new Event('change'));
+                        }
+                    });
+                    if (otherEntry) {
+                        const otherCb = document.querySelector('.sport-checkbox[value="Other"]');
+                        if (otherCb) {
+                            otherCb.checked = true;
+                            otherCb.dispatchEvent(new Event('change'));
+                        }
+                        const ost = document.getElementById('otherSportText');
+                        if (ost) ost.value = otherEntry.slice(6);
+                    }
+                    if (profile.track_100m != null && document.getElementById('track100m')) {
+                        document.getElementById('track100m').value = profile.track_100m;
+                    }
+                    if (profile.track_200m != null && document.getElementById('track200m')) {
+                        document.getElementById('track200m').value = profile.track_200m;
+                    }
                 }
 
                 // Hide password fields when editing AND remove required attribute to prevent validation errors

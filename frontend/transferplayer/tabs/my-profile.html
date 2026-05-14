@@ -270,6 +270,7 @@
                     <button class="profile-tab" data-tab="offers">Offers</button>
                     <button class="profile-tab" data-tab="stats">Stats</button>
                     <button class="profile-tab" data-tab="highlights">Highlights</button>
+                    <button class="profile-tab" data-tab="athletics">Athletics</button>
                     <button class="profile-tab" data-tab="academics">Academics</button>
                 </div>
                 <button class="tabs-scroll-arrow tabs-scroll-arrow-right" id="tabsScrollRight" aria-label="Scroll tabs right">
@@ -439,6 +440,41 @@
                         <div class="highlights-grid" id="gameHighlightsGrid">
                             <div class="no-highlights-message">
                                 <p>No single game highlight reels added yet.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Athletics Tab -->
+                <div class="tab-pane" id="athletics">
+                    <div class="athletics-section">
+                        <div class="athletics-header">
+                            <h2 class="section-title">Athletics</h2>
+                            <button class="btn-edit-athletics" id="editAthleticsBtn">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                </svg>
+                                Edit
+                            </button>
+                        </div>
+                        <div class="info-card">
+                            <div class="athletics-other-sports">
+                                <div class="info-label">Other Sports</div>
+                                <div class="sport-chips" id="athleticsSportsChips"></div>
+                            </div>
+                            <div class="athletics-track" id="athleticsTrackRow" style="display: none;">
+                                <div class="info-label">Track Times</div>
+                                <div class="info-grid track-times-grid">
+                                    <div class="info-item" id="athleticsTrack100Item">
+                                        <div class="info-label">100m</div>
+                                        <div class="info-value" id="athleticsTrack100">--</div>
+                                    </div>
+                                    <div class="info-item" id="athleticsTrack200Item">
+                                        <div class="info-label">200m</div>
+                                        <div class="info-value" id="athleticsTrack200">--</div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -1232,6 +1268,85 @@
             <div class="edit-academics-modal-footer">
                 <button class="btn-modal-cancel" id="btnEditAcademicsCancel">Cancel</button>
                 <button class="btn-modal-save" id="btnEditAcademicsSave">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Athletics Modal -->
+    <div class="edit-athletics-modal" id="editAthleticsModal">
+        <div class="edit-athletics-modal-overlay" id="editAthleticsModalOverlay"></div>
+        <div class="edit-athletics-modal-content">
+            <div class="edit-athletics-modal-header">
+                <h2>Edit Athletics</h2>
+                <button class="edit-athletics-modal-close" id="editAthleticsModalClose">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="edit-athletics-modal-body">
+                <form id="editAthleticsForm">
+                    <div class="form-group">
+                        <label>Do you (or did you) play other sports?</label>
+                        <div class="radio-row">
+                            <label class="radio-label">
+                                <input type="radio" name="edit_plays_other_sports" value="no" checked>
+                                <span>No</span>
+                            </label>
+                            <label class="radio-label">
+                                <input type="radio" name="edit_plays_other_sports" value="yes">
+                                <span>Yes</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div id="editOtherSportsBlock" style="display: none;">
+                        <div class="form-group">
+                            <label>Sports you currently play or have played</label>
+                            <div class="multi-select-container" id="editSportsContainer">
+                                <div class="multi-select-group">
+                                    <label class="checkbox-label"><input type="checkbox" value="Basketball" class="edit-sport-checkbox"><span>Basketball</span></label>
+                                    <label class="checkbox-label"><input type="checkbox" value="Baseball" class="edit-sport-checkbox"><span>Baseball</span></label>
+                                    <label class="checkbox-label"><input type="checkbox" value="Track and Field" class="edit-sport-checkbox"><span>Track and Field</span></label>
+                                    <label class="checkbox-label"><input type="checkbox" value="Wrestling" class="edit-sport-checkbox"><span>Wrestling</span></label>
+                                    <label class="checkbox-label"><input type="checkbox" value="Soccer" class="edit-sport-checkbox"><span>Soccer</span></label>
+                                    <label class="checkbox-label"><input type="checkbox" value="Lacrosse" class="edit-sport-checkbox"><span>Lacrosse</span></label>
+                                    <label class="checkbox-label"><input type="checkbox" value="Hockey" class="edit-sport-checkbox"><span>Hockey</span></label>
+                                    <label class="checkbox-label"><input type="checkbox" value="Volleyball" class="edit-sport-checkbox"><span>Volleyball</span></label>
+                                    <label class="checkbox-label"><input type="checkbox" value="Tennis" class="edit-sport-checkbox"><span>Tennis</span></label>
+                                    <label class="checkbox-label"><input type="checkbox" value="Golf" class="edit-sport-checkbox"><span>Golf</span></label>
+                                    <label class="checkbox-label"><input type="checkbox" value="Swimming" class="edit-sport-checkbox"><span>Swimming</span></label>
+                                    <label class="checkbox-label"><input type="checkbox" value="Rugby" class="edit-sport-checkbox"><span>Rugby</span></label>
+                                    <label class="checkbox-label"><input type="checkbox" value="Other" class="edit-sport-checkbox"><span>Other</span></label>
+                                </div>
+                            </div>
+                            <div class="selected-items" id="editSelectedSports"></div>
+                        </div>
+
+                        <div class="form-group" id="editOtherSportTextGroup" style="display: none;">
+                            <label for="editOtherSportText">Specify other sport(s)</label>
+                            <input type="text" id="editOtherSportText" maxlength="100" placeholder="e.g. Fencing">
+                        </div>
+
+                        <div id="editTrackTimesBlock" style="display: none;">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="editTrack100m">Current or past 100m time (seconds)</label>
+                                    <input type="number" step="0.01" id="editTrack100m" placeholder="e.g. 11.25">
+                                </div>
+                                <div class="form-group">
+                                    <label for="editTrack200m">Current or past 200m time (seconds)</label>
+                                    <input type="number" step="0.01" id="editTrack200m" placeholder="e.g. 22.80">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="edit-athletics-modal-footer">
+                <button class="btn-modal-cancel" id="btnEditAthleticsCancel">Cancel</button>
+                <button class="btn-modal-save" id="btnEditAthleticsSave">Save Changes</button>
             </div>
         </div>
     </div>

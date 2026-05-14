@@ -408,6 +408,107 @@
 
                 </div>
 
+                <!-- Athletics Section -->
+                <div class="form-section">
+                    <h2 class="section-title">Athletics</h2>
+
+                    <div class="form-group">
+                        <label>Do you play other sports?</label>
+                        <div class="radio-row">
+                            <label class="radio-label">
+                                <input type="radio" name="plays_other_sports" value="no" checked>
+                                <span>No</span>
+                            </label>
+                            <label class="radio-label">
+                                <input type="radio" name="plays_other_sports" value="yes">
+                                <span>Yes</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div id="otherSportsBlock" style="display: none;">
+                        <div class="form-group">
+                            <label>Sports You Play</label>
+                            <p class="form-hint" style="margin-bottom: 0.75rem;">Select all sports you participate in</p>
+                            <div class="multi-select-container" id="sportsContainer">
+                                <div class="multi-select-group">
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" name="other_sport" value="Basketball" class="sport-checkbox">
+                                        <span>Basketball</span>
+                                    </label>
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" name="other_sport" value="Baseball" class="sport-checkbox">
+                                        <span>Baseball</span>
+                                    </label>
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" name="other_sport" value="Track and Field" class="sport-checkbox">
+                                        <span>Track and Field</span>
+                                    </label>
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" name="other_sport" value="Wrestling" class="sport-checkbox">
+                                        <span>Wrestling</span>
+                                    </label>
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" name="other_sport" value="Soccer" class="sport-checkbox">
+                                        <span>Soccer</span>
+                                    </label>
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" name="other_sport" value="Lacrosse" class="sport-checkbox">
+                                        <span>Lacrosse</span>
+                                    </label>
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" name="other_sport" value="Hockey" class="sport-checkbox">
+                                        <span>Hockey</span>
+                                    </label>
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" name="other_sport" value="Volleyball" class="sport-checkbox">
+                                        <span>Volleyball</span>
+                                    </label>
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" name="other_sport" value="Tennis" class="sport-checkbox">
+                                        <span>Tennis</span>
+                                    </label>
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" name="other_sport" value="Golf" class="sport-checkbox">
+                                        <span>Golf</span>
+                                    </label>
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" name="other_sport" value="Swimming" class="sport-checkbox">
+                                        <span>Swimming</span>
+                                    </label>
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" name="other_sport" value="Rugby" class="sport-checkbox">
+                                        <span>Rugby</span>
+                                    </label>
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" name="other_sport" value="Other" class="sport-checkbox">
+                                        <span>Other</span>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="selected-items" id="selectedSports"></div>
+                        </div>
+
+                        <div class="form-group" id="otherSportTextGroup" style="display: none;">
+                            <label for="otherSportText">Specify other sport(s)</label>
+                            <input type="text" id="otherSportText" name="otherSportText" maxlength="100" placeholder="e.g. Fencing">
+                        </div>
+
+                        <div id="trackTimesBlock" style="display: none;">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="track100m">100m time (seconds)</label>
+                                    <input type="number" step="0.01" id="track100m" name="track100m" placeholder="e.g. 11.25">
+                                </div>
+                                <div class="form-group">
+                                    <label for="track200m">200m time (seconds)</label>
+                                    <input type="number" step="0.01" id="track200m" name="track200m" placeholder="e.g. 22.80">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Submit Button -->
                 <div class="form-actions">
                     <button type="submit" class="btn-submit">
