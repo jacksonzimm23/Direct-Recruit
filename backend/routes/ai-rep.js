@@ -24,7 +24,11 @@ const FILTER_LABEL_MAP = {
   eligibility: 'Eligibility',
   has_highlights: 'Highlights/Film',
   offer_filters: 'Offers',
-  stat_filters: 'Stats'
+  stat_filters: 'Stats',
+  other_sports: 'Other Sports',
+  plays_other_sports: 'Other Sports',
+  track_100m_max: 'Track Times',
+  track_200m_max: 'Track Times'
 };
 
 // Filters to exclude from display

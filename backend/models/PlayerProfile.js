@@ -58,6 +58,22 @@ function buildRelevanceScoreExpr(filters, heightCaseExpr, validStatKeys, values,
     paramCount++;
   }
 
+  // Track 100m: reward sub-threshold times. Faster (lower) = higher score.
+  // (threshold - actual) * 5.0 capped at 10. 0.5s under threshold = +2.5,
+  // 2s under = +10. Same +10 ceiling as height/GPA/SAT/ACT scoring.
+  if (filters.track_100m_max) {
+    scoreParts.push(`CASE WHEN pp.track_100m IS NOT NULL AND pp.track_100m < $${paramCount} THEN LEAST(($${paramCount} - pp.track_100m) * 5.0, 10.0) ELSE 0 END`);
+    values.push(filters.track_100m_max);
+    paramCount++;
+  }
+
+  // Track 200m: same shape, factor 2.5 (200m gaps are roughly 2x bigger).
+  if (filters.track_200m_max) {
+    scoreParts.push(`CASE WHEN pp.track_200m IS NOT NULL AND pp.track_200m < $${paramCount} THEN LEAST(($${paramCount} - pp.track_200m) * 2.5, 10.0) ELSE 0 END`);
+    values.push(filters.track_200m_max);
+    paramCount++;
+  }
+
   // Stat performance scoring: for each stat filter, reward exceeding the threshold
   if (filters.stat_filters && filters.stat_filters.length > 0) {
     filters.stat_filters.forEach((sf, index) => {
@@ -682,6 +698,35 @@ class PlayerProfile {
         EXISTS (SELECT 1 FROM player_highlights ph WHERE ph.user_id = pp.user_id LIMIT 1)
         OR (pp.hudl_profile IS NOT NULL AND pp.hudl_profile != '')
       )`);
+    }
+
+    // Other sports — array containment (AND semantics: player has ALL listed sports)
+    if (filters.other_sports && Array.isArray(filters.other_sports) && filters.other_sports.length > 0) {
+      const placeholders = filters.other_sports.map(() => {
+        const p = `$${paramCount}`;
+        paramCount++;
+        return p;
+      });
+      whereClauses.push(`pp.other_sports @> ARRAY[${placeholders.join(', ')}]::text[]`);
+      filters.other_sports.forEach(s => values.push(s));
+    } else if (filters.plays_other_sports === true) {
+      // Boolean shortcut — any multi-sport athlete (only fires when other_sports is empty)
+      whereClauses.push(`(pp.other_sports IS NOT NULL AND array_length(pp.other_sports, 1) > 0)`);
+    }
+
+    // Track 100m max (faster = lower number, so <= threshold). NOT NULL guard
+    // ensures players without track times don't pass through.
+    if (filters.track_100m_max) {
+      whereClauses.push(`(pp.track_100m IS NOT NULL AND pp.track_100m <= $${paramCount})`);
+      values.push(filters.track_100m_max);
+      paramCount++;
+    }
+
+    // Track 200m max
+    if (filters.track_200m_max) {
+      whereClauses.push(`(pp.track_200m IS NOT NULL AND pp.track_200m <= $${paramCount})`);
+      values.push(filters.track_200m_max);
+      paramCount++;
     }
 
     // Offer filters (count and/or division)

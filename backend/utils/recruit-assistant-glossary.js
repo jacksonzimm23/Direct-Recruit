@@ -33,7 +33,10 @@ const RA_GLOSSARY = {
         offers:           { type: 'TEXT',         note: 'Pipe-delimited: "Ohio State|FBS|Alabama|FBS"' },
         bio:              { type: 'TEXT',         note: 'Player bio' },
         cc_views:         { type: 'INTEGER',      note: 'College coach profile view count' },
-        profile_visibility: { type: 'VARCHAR(20)', note: "'everyone' or 'private'" }
+        profile_visibility: { type: 'VARCHAR(20)', note: "'everyone' or 'private'" },
+        other_sports:     { type: 'TEXT[]',       note: "Array of additional sports. Values: 'Basketball','Baseball','Track and Field','Wrestling','Soccer','Lacrosse','Hockey','Volleyball','Tennis','Golf','Swimming','Rugby','other:<freetext>'. NULL/empty = football only. NOTE: 'Track and Field' uses 'and' not '&' (sanitizer encodes &)." },
+        track_100m:       { type: 'NUMERIC(5,2)', note: '100m sprint time in seconds (lower = faster), e.g. 11.25' },
+        track_200m:       { type: 'NUMERIC(5,2)', note: '200m sprint time in seconds (lower = faster), e.g. 22.80' }
     },
 
     // ========================================================
@@ -438,7 +441,77 @@ const RA_GLOSSARY = {
         '{value}+ = >=',
         '{min} to {max} = range',
         'between {min} and {max} = range'
-    ]
+    ],
+
+    // ========================================================
+    // 16. MULTI-SPORT TERMS — natural language → other_sports filter
+    // ========================================================
+    // Use TWO filter keys:
+    //   - other_sports: ['Basketball', 'Wrestling']  (AND-semantics, array containment)
+    //   - plays_other_sports: true                   (any multi-sport athlete)
+    // If a specific sport is named, prefer other_sports. Use plays_other_sports
+    // ONLY for generic phrases ("two-sport athlete", "multi-sport guys").
+    // Canonical sport names match the dropdown values exactly. CRITICAL:
+    // 'Track and Field' is stored with 'and' (not '&') because the sanitize-html
+    // middleware encodes '&' as '&amp;'.
+    // NOTE: "burner"/"speedy" are intentionally NOT mapped here — they continue
+    // to adjust weight via speedTerms only (see section 7). Most players don't
+    // have track times on file; firing track filters on vague speed words would
+    // zero out search results.
+    multiSportTerms: {
+        generic: {
+            'two-sport athlete':   { plays_other_sports: true },
+            'two sport athlete':   { plays_other_sports: true },
+            'multi-sport':         { plays_other_sports: true },
+            'multi sport':         { plays_other_sports: true },
+            'plays other sports':  { plays_other_sports: true },
+            'plays another sport': { plays_other_sports: true },
+            'other sports':        { plays_other_sports: true }
+        },
+        sportNames: {
+            'basketball':       'Basketball',
+            'hoops':             'Basketball',
+            'baseball':          'Baseball',
+            'track':             'Track and Field',
+            'runs track':        'Track and Field',
+            'track and field':   'Track and Field',
+            'sprinter':          'Track and Field',
+            'wrestling':         'Wrestling',
+            'wrestles':          'Wrestling',
+            'wrestler':          'Wrestling',
+            'soccer':            'Soccer',
+            'lacrosse':          'Lacrosse',
+            'lax':               'Lacrosse',
+            'hockey':            'Hockey',
+            'volleyball':        'Volleyball',
+            'tennis':            'Tennis',
+            'golf':              'Golf',
+            'swimming':          'Swimming',
+            'swimmer':           'Swimming',
+            'rugby':             'Rugby'
+        }
+    },
+
+    // ========================================================
+    // 17. TRACK TIME TERMS — natural language → track_*_max
+    // ========================================================
+    // Two scalar filter keys (both nullable, _max = upper bound since faster
+    // is a LOWER number):
+    //   - track_100m_max: 11.0
+    //   - track_200m_max: 22.5
+    // Fire ONLY on EXPLICIT time phrases. Do NOT fire on vague terms.
+    trackTerms: {
+        patterns: {
+            'sub-X 100':          { key: 'track_100m_max', note: 'sub-11 100m → 11.0' },
+            'under X in the 100': { key: 'track_100m_max' },
+            'X 100m':             { key: 'track_100m_max', note: '"10.8 100m" → 10.8' },
+            'X 100 dash':         { key: 'track_100m_max' },
+            'sub-X 200':          { key: 'track_200m_max', note: 'sub-22 200m → 22.0' },
+            'under X in the 200': { key: 'track_200m_max' },
+            'X 200m':             { key: 'track_200m_max' }
+        },
+        vagueDoNotFire: ['fast 100', 'good 100', 'fast 200', 'burner', 'speedy', 'quick']
+    }
 };
 
 module.exports = RA_GLOSSARY;

@@ -49,6 +49,10 @@ function extractActiveFilters(filters) {
   if (filters.offer_filters) active.push('offer_filters');
   if (filters.stat_filters?.length) active.push('stat_filters');
   if (filters.searchTerm) active.push('searchTerm');
+  if (filters.other_sports?.length) active.push('other_sports');
+  if (filters.plays_other_sports === true) active.push('plays_other_sports');
+  if (filters.track_100m_max) active.push('track_100m_max');
+  if (filters.track_200m_max) active.push('track_200m_max');
   // Portal Intelligence specific
   if (filters.signal_types?.length) active.push('signal_types');
   if (filters.days) active.push('days');

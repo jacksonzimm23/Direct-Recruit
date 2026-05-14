@@ -40,6 +40,9 @@ const RA_GLOSSARY = {
     // bio                 | TEXT           | Player bio text
     // cc_views            | INTEGER        | Number of college coach profile views
     // profile_visibility  | VARCHAR(20)    | 'everyone' or 'private'
+    // other_sports        | TEXT[]         | Additional sports the player plays. Values: 'Basketball','Baseball','Track and Field','Wrestling','Soccer','Lacrosse','Hockey','Volleyball','Tennis','Golf','Swimming','Rugby','other:<freetext>'. NULL/empty = football only. NOTE: 'Track and Field' uses 'and' not '&' (sanitizer encodes &).
+    // track_100m          | NUMERIC(5,2)   | 100m sprint time in seconds (lower = faster), e.g. 11.25
+    // track_200m          | NUMERIC(5,2)   | 200m sprint time in seconds (lower = faster), e.g. 22.80
 
     // ========================================================
     // 2. POSITIONS — Full list of selectable positions
@@ -834,6 +837,93 @@ const RA_GLOSSARY = {
         const ft = Math.floor(inches / 12);
         const ins = inches % 12;
         return `${ft}'${ins}`;
+    },
+
+    // ========================================================
+    // 15. MULTI-SPORT TERMS — natural language → other_sports filter
+    // ========================================================
+    // Used by the AI Recruiting Assistant to interpret coach queries that
+    // reference sports other than football. Two filter keys are produced:
+    //
+    //   - other_sports: ['Basketball', 'Wrestling']
+    //       AND-semantics. Player must have ALL listed sports on their profile.
+    //       SQL uses array containment: pp.other_sports @> ARRAY[...]::text[].
+    //
+    //   - plays_other_sports: true
+    //       Boolean shortcut for "any multi-sport athlete" — used ONLY for
+    //       generic phrases like "two-sport athlete" or "multi-sport guys".
+    //       If a specific sport is named, other_sports takes precedence and
+    //       plays_other_sports stays null.
+    //
+    // CRITICAL: The canonical sport name is 'Track and Field' (with 'and',
+    // not '&'). The platform's sanitize-html middleware encodes every '&' as
+    // '&amp;', so the create-profile dropdown stores 'Track and Field'
+    // verbatim. The AI must emit the same spelling on the filter side.
+    //
+    // NOTE: "burner"/"speedy" are intentionally NOT mapped here — they
+    // continue to adjust weight via speedTerms only. Most players don't have
+    // track times on file; firing track filters on vague speed words would
+    // zero out search results.
+
+    multiSportTerms: {
+        generic: {
+            'two-sport athlete':   { plays_other_sports: true },
+            'two sport athlete':   { plays_other_sports: true },
+            'multi-sport':         { plays_other_sports: true },
+            'multi sport':         { plays_other_sports: true },
+            'plays other sports':  { plays_other_sports: true },
+            'plays another sport': { plays_other_sports: true },
+            'other sports':        { plays_other_sports: true }
+        },
+        sportNames: {
+            'basketball':       'Basketball',
+            'hoops':             'Basketball',
+            'baseball':          'Baseball',
+            'track':             'Track and Field',
+            'runs track':        'Track and Field',
+            'track and field':   'Track and Field',
+            'sprinter':          'Track and Field',
+            'wrestling':         'Wrestling',
+            'wrestles':          'Wrestling',
+            'wrestler':          'Wrestling',
+            'soccer':            'Soccer',
+            'lacrosse':          'Lacrosse',
+            'lax':               'Lacrosse',
+            'hockey':            'Hockey',
+            'volleyball':        'Volleyball',
+            'tennis':            'Tennis',
+            'golf':              'Golf',
+            'swimming':          'Swimming',
+            'swimmer':           'Swimming',
+            'rugby':             'Rugby'
+        }
+    },
+
+    // ========================================================
+    // 16. TRACK TIME TERMS — natural language → track_*_max
+    // ========================================================
+    // Two scalar filter keys (both nullable). Faster = lower number, so
+    // both keys are _max (upper bounds):
+    //
+    //   - track_100m_max: 11.0   means player.track_100m <= 11.0
+    //   - track_200m_max: 22.5   means player.track_200m <= 22.5
+    //
+    // The AI fires these filters ONLY on EXPLICIT time phrases — never on
+    // vague terms. "Burner" / "speedy" / "fast" are deliberately excluded
+    // because most players don't have track times on file; firing on these
+    // would exclude almost everyone from search results.
+
+    trackTerms: {
+        patterns: {
+            'sub-X 100':          { key: 'track_100m_max', note: 'sub-11 100m → 11.0' },
+            'under X in the 100': { key: 'track_100m_max' },
+            'X 100m':             { key: 'track_100m_max', note: '"10.8 100m" → 10.8' },
+            'X 100 dash':         { key: 'track_100m_max' },
+            'sub-X 200':          { key: 'track_200m_max', note: 'sub-22 200m → 22.0' },
+            'under X in the 200': { key: 'track_200m_max' },
+            'X 200m':             { key: 'track_200m_max' }
+        },
+        vagueDoNotFire: ['fast 100', 'good 100', 'fast 200', 'burner', 'speedy', 'quick']
     },
 
     // ========================================================

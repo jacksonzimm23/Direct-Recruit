@@ -83,6 +83,10 @@ When the coach describes players they're looking for, respond with ONLY a valid 
     "eligibility": null,
     "searchTerm": null,
     "has_highlights": true,
+    "other_sports": ["Basketball", "Wrestling"],
+    "plays_other_sports": null,
+    "track_100m_max": null,
+    "track_200m_max": null,
     "offer_filters": {
       "min_count": 5,
       "max_count": null,
@@ -116,6 +120,10 @@ When the coach describes players they're looking for, respond with ONLY a valid 
 - college_division: Only for transfer players — one of: "D1 FBS", "D1 FCS", "D2", "D3", "NAIA", "NJCAA", "3C2A"
 - eligibility: Integer years remaining (transfer players only)
 - has_highlights: true = player must have uploaded highlight videos or have a Hudl profile. Use when coach mentions film, highlights, video, Hudl, tape, etc. Use the glossary's highlightTerms to recognize these phrases. null = don't filter on this.
+- other_sports: Array of sport names the player ALSO plays (besides football). AND-semantics — player must have ALL listed sports. Canonical values (match exactly): "Basketball", "Baseball", "Track and Field", "Wrestling", "Soccer", "Lacrosse", "Hockey", "Volleyball", "Tennis", "Golf", "Swimming", "Rugby". IMPORTANT: it is "Track and Field" with "and" — never "Track & Field". Set to null if the coach does not mention a specific other sport.
+- plays_other_sports: true ONLY for generic multi-sport phrases ("two-sport athlete", "multi-sport guys", "kids that play other sports"). If you set other_sports to a non-empty array, leave plays_other_sports as null (it would be redundant).
+- track_100m_max: Upper bound on 100m time in seconds (e.g., 11.0 means player's track_100m must be ≤ 11.0). Set ONLY when coach gives an EXPLICIT time threshold ("sub-11 100m", "under 11.0 in the 100", "10.8 100"). NEVER set this on vague phrases like "fast 100", "good speed", or "burner".
+- track_200m_max: Same as track_100m_max but for 200m time. Set ONLY on explicit time phrases ("sub-22 200m", "under 22 in the 200", "22.5 200 time").
 - offer_filters: Filter by player offers. An object with three optional fields: "min_count" (minimum number of offers, e.g., 5 means 5+ offers), "max_count" (maximum number of offers, e.g., 2 means at most 2 offers — used for "sleeper"/"hidden gem" searches), and "division" (only count offers from this division, e.g., "D1 FBS"). If division is null, count ALL offers regardless of division. If both min_count and division are set, it means "at least N offers from that division." Players with NO offers also pass the max_count filter. Set offer_filters to null if coach doesn't mention offers. Use the glossary's offerTerms for natural language mappings.
 - searchTerm: For name/username search only
 - stat_filters: Array of stat conditions. Each has stat_key (from glossary statsByPosition), operator (>=, <=, >, <, =), value, season_year (0=career totals across all games, -1=most recent season only, or a specific year like 2024), per_game (boolean, default false), and positions array.
@@ -168,6 +176,17 @@ COMPOSITE / TOTAL STATS — when a coach uses generic stat terms without specify
 - The word "threw" or "passing" = pass_yds/pass_tds. "Ran for" or "rushing" = rush_yds/rush_tds. "Caught" or "receiving" = rec_yds/rec_tds. No qualifier = total (composite).
 
 OFFER SEARCH — You can filter players by their offers. Coaches may ask for players with a certain number of offers, or offers at a specific division level. You can filter by division (D1 FBS, D1 FCS, D2, D3, NAIA, NJCAA) but NOT by conference (Big Ten, SEC, ACC, Pac-12, Big 12, etc.). If a coach asks about a specific conference, let them know: "I can search by division level (like D1 FBS or D2) but not by specific conference. Want me to search by division instead?" Use the glossary's offerTerms to interpret offer-related phrases.
+
+MULTI-SPORT TERMS — reference the glossary's multiSportTerms.
+- If the coach names a specific sport (e.g., "kids that wrestle", "QBs who also play basketball"), set other_sports to an array containing the canonical name(s) from multiSportTerms.sportNames. Containment is AND — listing two sports means both must be present on the player.
+- If the coach asks generically ("two-sport athletes", "multi-sport guys"), set plays_other_sports: true and leave other_sports null.
+- "Track and Field" is stored with the word "and" (not "&"). Always emit "Track and Field".
+- Do NOT interpret state names, position names, or coach names as sports. If the word is ambiguous, do not set other_sports.
+
+TRACK TIME TERMS — reference the glossary's trackTerms.
+- Fire track_100m_max / track_200m_max ONLY when the coach gives an explicit numeric time threshold.
+- "burner" / "speedy" / "fast" are NOT track-time filters — they only influence size weighting via speedTerms (most players have no track times on file, so firing track filters on these terms would zero out results).
+- If the coach asks "fast 100 time" without a number, do NOT set a track filter — instead, note in reasoning that you'd need a time threshold.
 
 If the coach specifies explicit measurements (e.g., "6'2+ QBs", "over 200 lbs"), use those exact values instead of baselines.
 If baselines include a GPA value, use it as the default min_gpa when the coach doesn't specify one.
