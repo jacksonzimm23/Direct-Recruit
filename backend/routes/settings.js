@@ -898,6 +898,17 @@ router.get('/switch-profile/info', authMiddleware, async (req, res) => {
       username: profile.username || user.username
     };
 
+    // Athletics prefill — only when current profile is hsplayer or transferplayer.
+    // Lets the user carry other_sports/track times across an hsplayer<->transferplayer switch.
+    let currentAthletics = null;
+    if (user.role === 'player' && ['hsplayer', 'transferplayer'].includes(currentSubtype)) {
+      currentAthletics = {
+        other_sports: Array.isArray(profile.other_sports) ? profile.other_sports : null,
+        track_100m: profile.track_100m != null ? Number(profile.track_100m) : null,
+        track_200m: profile.track_200m != null ? Number(profile.track_200m) : null
+      };
+    }
+
     res.json({
       current_type: currentSubtype,
       current_label: PROFILE_TYPE_LABELS[currentSubtype],
@@ -905,7 +916,8 @@ router.get('/switch-profile/info', authMiddleware, async (req, res) => {
       can_switch: canSwitch,
       cooldown_remaining_hours: cooldownRemainingHours,
       targets,
-      shared_fields: sharedFields
+      shared_fields: sharedFields,
+      current_athletics: currentAthletics
     });
   } catch (error) {
     logger.error('Get switch profile info error:', error);
@@ -1162,13 +1174,34 @@ router.post('/switch-profile', authMiddleware, async (req, res) => {
         ? (profile_data.college_division || null) : null;
       const transfer = target_type === 'transferplayer' ? 'y' : null;
 
+      // Athletics — only persisted for hsplayer + transferplayer (collegeplayer
+      // has no Athletics fields on its form). Inline-validate here since this
+      // endpoint uses validateProfileDataForType() instead of express-validator.
+      const isAthleticsTarget = ['hsplayer', 'transferplayer'].includes(target_type);
+      const otherSports = (isAthleticsTarget
+          && Array.isArray(profile_data.other_sports)
+          && profile_data.other_sports.length)
+        ? profile_data.other_sports
+            .filter(s => typeof s === 'string' && s.length > 0 && s.length <= 100)
+            .slice(0, 20)
+        : null;
+      const parseTrack = (v) => {
+        if (v === null || v === undefined || v === '') return null;
+        const n = Number(v);
+        if (!Number.isFinite(n) || n <= 0 || n >= 100) return null;
+        return Math.round(n * 100) / 100;
+      };
+      const track100 = isAthleticsTarget ? parseTrack(profile_data.track_100m) : null;
+      const track200 = isAthleticsTarget ? parseTrack(profile_data.track_200m) : null;
+
       await client.query(
         `INSERT INTO player_profiles
         (user_id, first_name, last_name, username, team_name, state, graduation_year,
          position, height, weight, gpa, college_division, conference, number, eligibility,
          transfer, bio, profile_image_url, followers_count, following_count,
-         profile_visibility, message_permissions)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)`,
+         profile_visibility, message_permissions,
+         other_sports, track_100m, track_200m)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25)`,
         [
           req.userId,
           preservedData.first_name,
@@ -1191,7 +1224,10 @@ router.post('/switch-profile', authMiddleware, async (req, res) => {
           preservedData.followers_count,
           preservedData.following_count,
           preservedData.profile_visibility,
-          preservedData.message_permissions
+          preservedData.message_permissions,
+          otherSports,
+          track100,
+          track200
         ]
       );
     } else if (targetRole === 'coach') {

@@ -2433,6 +2433,58 @@ function renderStep2() {
                 </div>
             `;
         }
+
+        // Athletics — hsplayer + transferplayer only. Canonical sport names must
+        // match the dropdown values used elsewhere (e.g. "Track and Field" with
+        // the word "and", not "&" — sanitize-html re-encodes "&" to "&amp;").
+        if (['hsplayer', 'transferplayer'].includes(selectedTargetType)) {
+            const SPORTS = ['Basketball','Baseball','Track and Field','Wrestling','Soccer','Lacrosse','Hockey','Volleyball','Tennis','Golf','Swimming','Rugby','Other'];
+            fieldsHTML += `
+                <div class="switch-form-group">
+                    <label>Do you play other sports?</label>
+                    <div class="switch-radio-row">
+                        <label class="switch-radio-label">
+                            <input type="radio" name="switchPlaysOtherSports" value="no" checked>
+                            <span>No</span>
+                        </label>
+                        <label class="switch-radio-label">
+                            <input type="radio" name="switchPlaysOtherSports" value="yes">
+                            <span>Yes</span>
+                        </label>
+                    </div>
+                </div>
+                <div id="switchOtherSportsBlock" style="display:none;">
+                    <div class="switch-form-group">
+                        <label>Sports You Play</label>
+                        <p class="form-hint" style="margin-bottom: 0.5rem;">Select all sports you participate in</p>
+                        <div class="switch-sport-grid" id="switchSportCheckboxes">
+                            ${SPORTS.map(s => `
+                                <label class="switch-pos-checkbox">
+                                    <input type="checkbox" name="switchOtherSport" value="${s}" class="switch-sport-checkbox">
+                                    <span>${s}</span>
+                                </label>`).join('')}
+                        </div>
+                        <div class="switch-selected-positions" id="switchSelectedSports"></div>
+                    </div>
+                    <div class="switch-form-group" id="switchOtherSportTextGroup" style="display:none;">
+                        <label for="switchOtherSportText">Specify other sport(s)</label>
+                        <input type="text" id="switchOtherSportText" maxlength="100" class="form-input" placeholder="e.g. Fencing">
+                    </div>
+                    <div id="switchTrackTimesBlock" style="display:none;">
+                        <div class="switch-form-row">
+                            <div class="switch-form-group">
+                                <label for="switchTrack100m">100m time (seconds)</label>
+                                <input type="number" step="0.01" id="switchTrack100m" class="form-input" placeholder="e.g. 11.25">
+                            </div>
+                            <div class="switch-form-group">
+                                <label for="switchTrack200m">200m time (seconds)</label>
+                                <input type="number" step="0.01" id="switchTrack200m" class="form-input" placeholder="e.g. 22.80">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
     } else if (targetRole === 'coach') {
         const isCollege = selectedTargetType === 'collegecoach';
         fieldsHTML += `
@@ -2555,6 +2607,55 @@ function attachStep2Listeners() {
         cb.addEventListener('change', updateSelectedCoachPositionsDisplay);
     });
 
+    // Athletics — only present for hsplayer + transferplayer targets
+    const athleticsRadios = document.querySelectorAll('input[name="switchPlaysOtherSports"]');
+    if (athleticsRadios.length) {
+        athleticsRadios.forEach(r => r.addEventListener('change', function () {
+            const show = this.value === 'yes';
+            const block = document.getElementById('switchOtherSportsBlock');
+            if (block) block.style.display = show ? '' : 'none';
+            if (!show) {
+                // Reset everything so a "No" submit always produces NULLs server-side
+                document.querySelectorAll('.switch-sport-checkbox:checked').forEach(c => { c.checked = false; });
+                const tg = document.getElementById('switchOtherSportTextGroup');
+                const tb = document.getElementById('switchTrackTimesBlock');
+                const ot = document.getElementById('switchOtherSportText');
+                const t1 = document.getElementById('switchTrack100m');
+                const t2 = document.getElementById('switchTrack200m');
+                if (tg) tg.style.display = 'none';
+                if (tb) tb.style.display = 'none';
+                if (ot) ot.value = '';
+                if (t1) t1.value = '';
+                if (t2) t2.value = '';
+                updateSelectedSportsDisplay();
+            }
+        }));
+
+        document.querySelectorAll('.switch-sport-checkbox').forEach(cb => {
+            cb.addEventListener('change', () => {
+                const sel = getSelectedSports();
+                const tb = document.getElementById('switchTrackTimesBlock');
+                const og = document.getElementById('switchOtherSportTextGroup');
+                if (tb) tb.style.display = sel.includes('Track and Field') ? '' : 'none';
+                if (og) og.style.display = sel.includes('Other') ? '' : 'none';
+                if (!sel.includes('Track and Field')) {
+                    const t1 = document.getElementById('switchTrack100m');
+                    const t2 = document.getElementById('switchTrack200m');
+                    if (t1) t1.value = '';
+                    if (t2) t2.value = '';
+                }
+                if (!sel.includes('Other')) {
+                    const ot = document.getElementById('switchOtherSportText');
+                    if (ot) ot.value = '';
+                }
+                updateSelectedSportsDisplay();
+            });
+        });
+
+        // Carry over existing Athletics data when switching between hs/transfer player
+        applyAthleticsPrefill();
+    }
+
     document.getElementById('switchNextBtn2').addEventListener('click', () => {
         const error = validateStep2();
         if (error) {
@@ -2622,6 +2723,25 @@ function collectStep2Data() {
         }
         if (selectedTargetType === 'transferplayer') {
             data.eligibility = parseInt(document.getElementById('switchEligibility')?.value) || null;
+        }
+
+        // Athletics — hsplayer + transferplayer only (mirrors profile-form.js)
+        if (['hsplayer', 'transferplayer'].includes(selectedTargetType)) {
+            const playsYes = document.querySelector('input[name="switchPlaysOtherSports"]:checked')?.value === 'yes';
+            const selectedSports = getSelectedSports();
+            let otherSportsPayload = null;
+            if (playsYes && selectedSports.length) {
+                otherSportsPayload = selectedSports.filter(s => s !== 'Other');
+                if (selectedSports.includes('Other')) {
+                    const txt = (document.getElementById('switchOtherSportText')?.value || '').trim();
+                    if (txt) otherSportsPayload.push(`other:${txt}`);
+                }
+                if (otherSportsPayload.length === 0) otherSportsPayload = null;
+            }
+            data.other_sports = otherSportsPayload;
+            const hasTrack = playsYes && selectedSports.includes('Track and Field');
+            data.track_100m = hasTrack ? (parseFloat(document.getElementById('switchTrack100m')?.value) || null) : null;
+            data.track_200m = hasTrack ? (parseFloat(document.getElementById('switchTrack200m')?.value) || null) : null;
         }
     } else if (targetRole === 'coach') {
         data.team_name = document.getElementById('switchTeamName')?.value?.trim();
@@ -2943,6 +3063,87 @@ function updateSelectedCoachPositionsDisplay() {
             updateSelectedCoachPositionsDisplay();
         });
     });
+}
+
+// ─── Athletics helpers (used by hsplayer + transferplayer switch targets) ────
+function getSelectedSports() {
+    return Array.from(document.querySelectorAll('.switch-sport-checkbox:checked')).map(cb => cb.value);
+}
+
+function updateSelectedSportsDisplay() {
+    const container = document.getElementById('switchSelectedSports');
+    if (!container) return;
+    const sports = getSelectedSports();
+    if (sports.length === 0) {
+        container.innerHTML = '';
+        return;
+    }
+    container.innerHTML = sports.map(s =>
+        `<span class="switch-pos-pill">${s}<button type="button" data-sport="${s}">&times;</button></span>`
+    ).join('');
+    container.querySelectorAll('button[data-sport]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const cb = document.querySelector(`.switch-sport-checkbox[value="${btn.dataset.sport}"]`);
+            if (cb) {
+                cb.checked = false;
+                cb.dispatchEvent(new Event('change'));
+            }
+        });
+    });
+}
+
+function applyAthleticsPrefill() {
+    const a = switchProfileInfo && switchProfileInfo.current_athletics;
+    if (!a) return;
+    const sports = Array.isArray(a.other_sports) ? a.other_sports : [];
+    if (sports.length === 0 && a.track_100m == null && a.track_200m == null) return;
+
+    // Split "other:<text>" entries from canonical sport names
+    const namedSports = [];
+    let otherText = '';
+    sports.forEach(s => {
+        if (typeof s === 'string' && s.startsWith('other:')) {
+            otherText = s.slice('other:'.length);
+        } else if (typeof s === 'string') {
+            namedSports.push(s);
+        }
+    });
+    const wantOther = otherText.length > 0;
+
+    // Flip the Yes radio so the conditional block reveals
+    const yesRadio = document.querySelector('input[name="switchPlaysOtherSports"][value="yes"]');
+    if (yesRadio) {
+        yesRadio.checked = true;
+        yesRadio.dispatchEvent(new Event('change'));
+    }
+
+    // Check the canonical sport boxes (+ Other if applicable)
+    namedSports.forEach(s => {
+        const cb = document.querySelector(`.switch-sport-checkbox[value="${s}"]`);
+        if (cb) cb.checked = true;
+    });
+    if (wantOther) {
+        const cb = document.querySelector('.switch-sport-checkbox[value="Other"]');
+        if (cb) cb.checked = true;
+    }
+
+    // Fire one synthetic change to reveal Track Times / Other Sport text blocks
+    const anyCb = document.querySelector('.switch-sport-checkbox');
+    if (anyCb) anyCb.dispatchEvent(new Event('change'));
+
+    // Fill values
+    if (otherText) {
+        const ot = document.getElementById('switchOtherSportText');
+        if (ot) ot.value = otherText;
+    }
+    if (a.track_100m != null) {
+        const t1 = document.getElementById('switchTrack100m');
+        if (t1) t1.value = a.track_100m;
+    }
+    if (a.track_200m != null) {
+        const t2 = document.getElementById('switchTrack200m');
+        if (t2) t2.value = a.track_200m;
+    }
 }
 
 // ─── Subscription Section ────────────────────────────────────────────────────

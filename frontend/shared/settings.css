@@ -2510,6 +2510,47 @@
     opacity: 1;
 }
 
+/* Athletics — radio row */
+.switch-radio-row {
+    display: flex;
+    gap: 1.25rem;
+    padding: 0.4rem 0.2rem;
+}
+
+.switch-radio-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    color: #8892b0;
+    font-size: 0.85rem;
+    cursor: pointer;
+}
+
+.switch-radio-label input[type="radio"] {
+    accent-color: #1282a2;
+    width: 14px;
+    height: 14px;
+    cursor: pointer;
+}
+
+.switch-radio-label input[type="radio"]:checked + span {
+    color: #ccd6f6;
+    font-weight: 500;
+}
+
+/* Athletics — sport multi-select grid (mirrors .switch-position-grid) */
+.switch-sport-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.4rem 0.75rem;
+    background: rgba(10, 17, 40, 0.4);
+    border: 1px solid rgba(100, 116, 152, 0.2);
+    border-radius: 8px;
+    padding: 0.75rem;
+    max-height: 220px;
+    overflow-y: auto;
+}
+
 /* Mobile responsive */
 @media (max-width: 768px) {
     .switch-profile-modal {
@@ -2534,6 +2575,10 @@
     }
 
     .switch-position-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .switch-sport-grid {
         grid-template-columns: 1fr;
     }
 }
