@@ -108,6 +108,13 @@ class PortalSignal {
       paramCount++;
     }
 
+    // PFF grade minimum — exclude ungraded players when set
+    if (filters.pff_grade_min) {
+      whereClauses.push(`pp.pff_grade IS NOT NULL AND pp.pff_grade >= $${paramCount}`);
+      values.push(filters.pff_grade_min);
+      paramCount++;
+    }
+
     // Build the query — select players with signal flags, then filter to only those with at least one signal
     const havingCondition = signalConditions.map(s => s).join(' OR ');
 

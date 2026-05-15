@@ -50,6 +50,7 @@ When the coach asks about portal predictions or player signals, respond with ONL
     "signal_types": ["bio_and_film", "portal_keywords", "browsing_coaches"],
     "position": ["QB", "WR"],
     "college_division": "D1 FBS",
+    "pff_grade_min": null,
     "days": 14
   },
   "summary": "A one-sentence summary of what you're looking for",
@@ -60,6 +61,7 @@ When the coach asks about portal predictions or player signals, respond with ONL
 - signal_types: Array of signal types to query. Valid values: "bio_and_film", "portal_keywords", "browsing_coaches". Use all three by default unless the coach specifically asks about a particular signal type.
 - position: Array of position codes to filter by. Valid positions: QB, RB, FB, WR, TE, OT, OG, C, DE, DT, NT, ILB, OLB, MLB, CB, FS, SS, S, K, P, LS, ATH. Set to null for all positions.
 - college_division: Filter by the player's current division. Valid: "D1 FBS", "D1 FCS", "D2", "D3", "NAIA", "NJCAA". Set to null for all divisions. Note: "D1" should map to both D1 FBS and D1 FCS.
+- pff_grade_min: Lower bound on PFF grade (0-100, higher = better). Fire on explicit numbers ("70+ PFF", "PFF above 80") OR on vague tier terms via pffGradeTerms.vagueTerms in the football glossary ("good PFF" → 70, "high PFF" → 75, "great PFF" → 80, "elite PFF" → 85, "average PFF" → 60). Explicit numbers override vague mappings. DO NOT fire on ceiling-style terms ("backup PFF", "low PFF", "below average PFF") — those imply an upper bound the schema can't express; note this in reasoning. Players with no grade on file are excluded when the filter is set. Set to null when not mentioned. Do not emit 0 — use null.
 - days: Lookback window in days. Default 14. The coach might say "last week" (7), "last month" (30), "last 2 weeks" (14), etc.
 - Set any unused filter to null
 
@@ -73,7 +75,8 @@ ${JSON.stringify({
   speedTerms: RA_GLOSSARY.speedTerms,
   positionSpecificTerms: RA_GLOSSARY.positionSpecificTerms,
   divisionAliases: RA_GLOSSARY.divisionAliases,
-  stateAliases: RA_GLOSSARY.stateAliases
+  stateAliases: RA_GLOSSARY.stateAliases,
+  pffGradeTerms: RA_GLOSSARY.pffGradeTerms
 }, null, 2)}
 
 ## Division Aliases (Quick Reference)

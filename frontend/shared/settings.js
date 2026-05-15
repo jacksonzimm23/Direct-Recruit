@@ -2485,6 +2485,31 @@ function renderStep2() {
                 </div>
             `;
         }
+
+        // PFF Grade — collegeplayer + transferplayer only. NULL = no grade.
+        if (['collegeplayer', 'transferplayer'].includes(selectedTargetType)) {
+            fieldsHTML += `
+                <div class="switch-form-group">
+                    <label>Do you have a PFF Grade?</label>
+                    <div class="switch-radio-row">
+                        <label class="switch-radio-label">
+                            <input type="radio" name="switchHasPffGrade" value="no" checked>
+                            <span>No</span>
+                        </label>
+                        <label class="switch-radio-label">
+                            <input type="radio" name="switchHasPffGrade" value="yes">
+                            <span>Yes</span>
+                        </label>
+                    </div>
+                </div>
+                <div id="switchPffGradeBlock" style="display:none;">
+                    <div class="switch-form-group">
+                        <label for="switchPffGrade">PFF Grade (0.0 – 100.0)</label>
+                        <input type="number" id="switchPffGrade" min="0" max="100" step="0.1" class="form-input" placeholder="e.g. 80.5">
+                    </div>
+                </div>
+            `;
+        }
     } else if (targetRole === 'coach') {
         const isCollege = selectedTargetType === 'collegecoach';
         fieldsHTML += `
@@ -2656,6 +2681,22 @@ function attachStep2Listeners() {
         applyAthleticsPrefill();
     }
 
+    // PFF Grade — collegeplayer + transferplayer targets
+    const pffRadios = document.querySelectorAll('input[name="switchHasPffGrade"]');
+    if (pffRadios.length) {
+        pffRadios.forEach(r => r.addEventListener('change', function () {
+            const show = this.value === 'yes';
+            const block = document.getElementById('switchPffGradeBlock');
+            if (block) block.style.display = show ? '' : 'none';
+            if (!show) {
+                const input = document.getElementById('switchPffGrade');
+                if (input) input.value = '';
+            }
+        }));
+        // Carry over existing PFF grade when switching between collegeplayer<->transferplayer
+        applyPffGradePrefill();
+    }
+
     document.getElementById('switchNextBtn2').addEventListener('click', () => {
         const error = validateStep2();
         if (error) {
@@ -2742,6 +2783,14 @@ function collectStep2Data() {
             const hasTrack = playsYes && selectedSports.includes('Track and Field');
             data.track_100m = hasTrack ? (parseFloat(document.getElementById('switchTrack100m')?.value) || null) : null;
             data.track_200m = hasTrack ? (parseFloat(document.getElementById('switchTrack200m')?.value) || null) : null;
+        }
+
+        // PFF Grade — collegeplayer + transferplayer only. NULL = no grade reported.
+        if (['collegeplayer', 'transferplayer'].includes(selectedTargetType)) {
+            const hasPff = document.querySelector('input[name="switchHasPffGrade"]:checked')?.value === 'yes';
+            data.pff_grade = hasPff
+                ? (parseFloat(document.getElementById('switchPffGrade')?.value) || null)
+                : null;
         }
     } else if (targetRole === 'coach') {
         data.team_name = document.getElementById('switchTeamName')?.value?.trim();
@@ -3144,6 +3193,20 @@ function applyAthleticsPrefill() {
         const t2 = document.getElementById('switchTrack200m');
         if (t2) t2.value = a.track_200m;
     }
+}
+
+// PFF Grade prefill — carries existing grade across collegeplayer<->transferplayer switches.
+// hsplayer has no PFF column so this never fires when switching from hs.
+function applyPffGradePrefill() {
+    const v = switchProfileInfo && switchProfileInfo.current_pff_grade;
+    if (v == null) return;
+    const yesRadio = document.querySelector('input[name="switchHasPffGrade"][value="yes"]');
+    if (yesRadio) {
+        yesRadio.checked = true;
+        yesRadio.dispatchEvent(new Event('change'));
+    }
+    const input = document.getElementById('switchPffGrade');
+    if (input) input.value = v;
 }
 
 // ─── Subscription Section ────────────────────────────────────────────────────

@@ -40,6 +40,7 @@ async function getPortalIntelligence(messages, coachState, coachDivision) {
       signal_types: ['bio_and_film', 'portal_keywords', 'browsing_coaches'],
       position: null,
       college_division: coachDivision || null,
+      pff_grade_min: null,
       days: 14
     },
     summary: '[LOCAL DEV] Sample search: All signal types, last 14 days',

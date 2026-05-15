@@ -1037,6 +1037,9 @@ async function displayProfile(profile, type, accessLevel = 'full', hasPendingReq
     // Update Contact Info section between header and tabs
     updateContactInfoSection(profile);
 
+    // Update PFF Grade row between About/Contact and tabs (hidden when no value)
+    updatePffGradeSection(profile);
+
     // Update profile image and role-colored border/background
     const avatarElement = document.querySelector('.profile-avatar-large');
     if (avatarElement) {
@@ -1507,6 +1510,23 @@ function updateContactInfo(profile) {
     } else {
         contactInfoCard.innerHTML = '<p>No contact information provided.</p>';
     }
+}
+
+// PFF Grade row — hidden unless a value exists. NULL/empty means "no grade reported".
+function updatePffGradeSection(profile) {
+    const row = document.getElementById('pffGradeRow');
+    const valueEl = document.getElementById('pffGradeValue');
+    if (!row || !valueEl) return;
+    const raw = profile && profile.pff_grade;
+    if (raw !== null && raw !== undefined && raw !== '') {
+        const n = parseFloat(raw);
+        if (Number.isFinite(n)) {
+            valueEl.textContent = n.toFixed(1);
+            row.style.display = '';
+            return;
+        }
+    }
+    row.style.display = 'none';
 }
 
 // Update the Contact Info section between header and tabs
@@ -2883,6 +2903,12 @@ function populateEditForm() {
     document.getElementById('editGraduationYear').value = currentProfile.graduation_year || '';
     document.getElementById('editGPA').value = currentProfile.gpa || '';
 
+    // PFF Grade prefill — empty input means "no grade reported"
+    const editPffInput = document.getElementById('editPffGrade');
+    if (editPffInput) {
+        editPffInput.value = (currentProfile.pff_grade != null) ? currentProfile.pff_grade : '';
+    }
+
     // Determine if this is a college or high school player based on college_division
     const isCollegePlayer = currentProfile.college_division && currentProfile.college_division.trim() !== '';
 
@@ -3126,6 +3152,9 @@ async function saveProfileChanges() {
             formData.college_division = null; // Clear college division for HS players
         }
 
+        // PFF Grade — blank input means NULL (clears any existing grade)
+        const pffRaw = document.getElementById('editPffGrade').value;
+        formData.pff_grade = pffRaw === '' ? null : (parseFloat(pffRaw) || null);
 
         // Add social media links
         const hudlLink = document.getElementById('editHudlLink');

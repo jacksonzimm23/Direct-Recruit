@@ -909,6 +909,13 @@ router.get('/switch-profile/info', authMiddleware, async (req, res) => {
       };
     }
 
+    // PFF Grade prefill — only when current profile is collegeplayer or transferplayer.
+    // hsplayer has no PFF grade so the column is always NULL for them; never prefill.
+    let currentPffGrade = null;
+    if (user.role === 'player' && ['collegeplayer', 'transferplayer'].includes(currentSubtype)) {
+      currentPffGrade = profile.pff_grade != null ? Number(profile.pff_grade) : null;
+    }
+
     res.json({
       current_type: currentSubtype,
       current_label: PROFILE_TYPE_LABELS[currentSubtype],
@@ -917,7 +924,8 @@ router.get('/switch-profile/info', authMiddleware, async (req, res) => {
       cooldown_remaining_hours: cooldownRemainingHours,
       targets,
       shared_fields: sharedFields,
-      current_athletics: currentAthletics
+      current_athletics: currentAthletics,
+      current_pff_grade: currentPffGrade
     });
   } catch (error) {
     logger.error('Get switch profile info error:', error);
@@ -1194,14 +1202,25 @@ router.post('/switch-profile', authMiddleware, async (req, res) => {
       const track100 = isAthleticsTarget ? parseTrack(profile_data.track_100m) : null;
       const track200 = isAthleticsTarget ? parseTrack(profile_data.track_200m) : null;
 
+      // PFF Grade — collegeplayer + transferplayer only (hsplayer has no PFF).
+      // NULL = not reported. Reject any value outside 0-100 or with > 1 decimal.
+      const isPffTarget = ['collegeplayer', 'transferplayer'].includes(target_type);
+      const parsePffGrade = (v) => {
+        if (v === null || v === undefined || v === '') return null;
+        const n = Number(v);
+        if (!Number.isFinite(n) || n < 0 || n > 100) return null;
+        return Math.round(n * 10) / 10;
+      };
+      const pffGrade = isPffTarget ? parsePffGrade(profile_data.pff_grade) : null;
+
       await client.query(
         `INSERT INTO player_profiles
         (user_id, first_name, last_name, username, team_name, state, graduation_year,
          position, height, weight, gpa, college_division, conference, number, eligibility,
          transfer, bio, profile_image_url, followers_count, following_count,
          profile_visibility, message_permissions,
-         other_sports, track_100m, track_200m)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25)`,
+         other_sports, track_100m, track_200m, pff_grade)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26)`,
         [
           req.userId,
           preservedData.first_name,
@@ -1227,7 +1246,8 @@ router.post('/switch-profile', authMiddleware, async (req, res) => {
           preservedData.message_permissions,
           otherSports,
           track100,
-          track200
+          track200,
+          pffGrade
         ]
       );
     } else if (targetRole === 'coach') {

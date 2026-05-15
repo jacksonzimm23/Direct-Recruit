@@ -160,6 +160,28 @@
     padding: 0 2rem;
 }
 
+/* PFF Grade — full-width row below About/Contact (only shown when value exists) */
+.profile-pff-row {
+    margin-bottom: 2rem;
+    padding: 0 2rem;
+}
+
+.profile-pff-row .section-title {
+    margin-top: 0;
+    text-align: center;
+}
+
+.profile-pff-row .info-card {
+    text-align: center;
+}
+
+.profile-pff-row .info-value {
+    font-size: 2rem;
+    color: #1282a2;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+}
+
 .profile-info-column {
     display: flex;
     flex-direction: column;

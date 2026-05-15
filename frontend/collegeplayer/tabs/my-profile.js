@@ -1018,6 +1018,9 @@ async function displayProfile(profile, type, accessLevel = 'full', hasPendingReq
     // Update Contact Info section between header and tabs
     updateContactInfoSection(profile);
 
+    // Update PFF Grade row between About/Contact and tabs (hidden when no value)
+    updatePffGradeSection(profile);
+
     // Update Current Team Info section in Overview tab
     updateCurrentTeamInfo(profile);
 
@@ -1446,6 +1449,23 @@ function updateInfoItem(label, value) {
             }
         }
     });
+}
+
+// PFF Grade row — hidden unless a value exists. NULL/empty means "no grade reported".
+function updatePffGradeSection(profile) {
+    const row = document.getElementById('pffGradeRow');
+    const valueEl = document.getElementById('pffGradeValue');
+    if (!row || !valueEl) return;
+    const raw = profile && profile.pff_grade;
+    if (raw !== null && raw !== undefined && raw !== '') {
+        const n = parseFloat(raw);
+        if (Number.isFinite(n)) {
+            valueEl.textContent = n.toFixed(1);
+            row.style.display = '';
+            return;
+        }
+    }
+    row.style.display = 'none';
 }
 
 // Update the Contact Info section between header and tabs
@@ -2304,6 +2324,12 @@ function populateEditForm() {
     document.getElementById('editGraduationYear').value = currentProfile.graduation_year || '';
     document.getElementById('editGPA').value = currentProfile.gpa || '';
 
+    // PFF Grade prefill — empty input means "no grade reported"
+    const editPffInput = document.getElementById('editPffGrade');
+    if (editPffInput) {
+        editPffInput.value = (currentProfile.pff_grade != null) ? currentProfile.pff_grade : '';
+    }
+
     // Populate college player fields (no toggle — use Settings to switch profile type)
     const collegeName = document.getElementById('editCollegeName');
     const collegeState = document.getElementById('editCollegeState');
@@ -2532,6 +2558,10 @@ async function saveProfileChanges() {
         formData.conference = document.getElementById('editConference').value || null;
         formData.number = document.getElementById('editJerseyNumber').value ? parseInt(document.getElementById('editJerseyNumber').value) : null;
         formData.eligibility = document.getElementById('editEligibility').value ? parseInt(document.getElementById('editEligibility').value) : null;
+
+        // PFF Grade — blank input means NULL (clears any existing grade)
+        const pffRaw = document.getElementById('editPffGrade').value;
+        formData.pff_grade = pffRaw === '' ? null : (parseFloat(pffRaw) || null);
 
         // Send update request
         const response = await API.put('/profile', formData);

@@ -927,6 +927,63 @@ const RA_GLOSSARY = {
     },
 
     // ========================================================
+    // 17. PFF GRADE TERMS — natural language → pff_grade_min
+    // ========================================================
+    // Single scalar filter key (nullable, lower bound):
+    //   - pff_grade_min: 70   (player's pff_grade must be NOT NULL AND >= 70)
+    //
+    // PFF grades are stored in player_profiles.pff_grade (NUMERIC(4,1), 0-100,
+    // NULL = no grade on file). Most cluster 60-90.
+    //
+    // SCOPE: PFF only exists on collegeplayer + transferplayer profiles.
+    //   - RA fires this filter only on TRANSFER searches.
+    //   - PI fires it on collegeplayer signal searches.
+    //   - Never set when player_type='hs'.
+    //
+    // FIRING RULES:
+    //   - Explicit number → use it directly.
+    //   - Vague tier term → use the mapped default from vagueTerms below.
+    //   - Explicit number ALWAYS overrides vague mapping if both are present.
+    pffGradeTerms: {
+        patterns: {
+            'X+ PFF':              { key: 'pff_grade_min', note: '"70+ PFF" → 70' },
+            'above X PFF':         { key: 'pff_grade_min', note: '"above 80 PFF" → 80' },
+            'PFF above X':         { key: 'pff_grade_min' },
+            'PFF over X':          { key: 'pff_grade_min', note: '"PFF over 85" → 85' },
+            'over X PFF':          { key: 'pff_grade_min' },
+            'PFF of X or better':  { key: 'pff_grade_min' },
+            'PFF of X or higher':  { key: 'pff_grade_min' },
+            'PFF >= X':            { key: 'pff_grade_min' },
+            'PFF grade above X':   { key: 'pff_grade_min' },
+            'graded X or better':  { key: 'pff_grade_min', note: 'Only when PFF context is unambiguous' }
+        },
+        vagueTerms: {
+            'average PFF':         60,
+            'decent PFF':          60,
+            'okay PFF':            60,
+            'good PFF':            70,
+            'well graded':         70,
+            'above average PFF':   70,
+            'high PFF':            75,
+            'highly graded':       75,
+            'high-graded':         75,
+            'great PFF':           80,
+            'strong PFF':          80,
+            'top PFF guys':        80,
+            'elite PFF':           85,
+            'elite grades':        85,
+            'top-graded':          85
+        },
+        ceilingTermsDoNotFire: [
+            'backup PFF', 'backup-level PFF',
+            'low PFF', 'weak PFF',
+            'below average PFF', 'poor PFF', 'bad PFF'
+        ],
+        rangeHandling: 'If coach says "PFF 70-80", set pff_grade_min=70 and note in reasoning that upper-bound is not supported.',
+        databaseColumn: 'pff_grade'
+    },
+
+    // ========================================================
     // 14. SEARCH ENDPOINTS REFERENCE
     // ========================================================
     // These are the backend API endpoints available for player search.

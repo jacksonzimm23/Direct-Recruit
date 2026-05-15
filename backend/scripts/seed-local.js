@@ -68,7 +68,8 @@ const MIGRATIONS = [
   'fix-player-height-type.sql',
   'fix-user-fk-cascades.sql',
   'add-coach-signup-request-archival.sql',
-  'add-player-athletics.sql'
+  'add-player-athletics.sql',
+  'add-pff-grade.sql'
 ];
 
 async function applyManualFixes() {

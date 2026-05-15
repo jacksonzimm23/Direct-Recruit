@@ -255,6 +255,14 @@
                 </div>
             </div>
 
+            <!-- PFF Grade (only displayed when player has a value) -->
+            <div class="profile-pff-row" id="pffGradeRow" style="display: none;">
+                <h2 class="section-title">PFF Grade</h2>
+                <div class="info-card">
+                    <div class="info-value" id="pffGradeValue">--</div>
+                </div>
+            </div>
+
             <!-- Profile Tabs -->
             <div class="profile-tabs-container">
                 <button class="tabs-scroll-arrow tabs-scroll-arrow-left" id="tabsScrollLeft" aria-label="Scroll tabs left">
@@ -767,6 +775,12 @@
                                 <option value="WI">Wisconsin</option>
                                 <option value="WY">Wyoming</option>
                             </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="editPffGrade">PFF Grade (optional, 0.0 – 100.0)</label>
+                            <input type="number" id="editPffGrade" name="pff_grade" min="0" max="100" step="0.1" placeholder="e.g. 80.5">
+                            <small class="form-hint">Leave blank if you don't have a PFF grade.</small>
                         </div>
 
                         <div class="form-group">

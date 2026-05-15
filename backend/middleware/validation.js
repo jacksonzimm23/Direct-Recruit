@@ -129,6 +129,17 @@ const validateActScore = (value) => {
   return true;
 };
 
+const validatePffGrade = (value) => {
+  if (value === null || value === undefined || value === '') return true;
+  const grade = Number(value);
+  if (!Number.isFinite(grade)) throw new Error('PFF Grade must be numeric');
+  if (grade < 0 || grade > 100) throw new Error('PFF Grade must be between 0 and 100');
+  if (Math.round(grade * 10) / 10 !== grade) {
+    throw new Error('PFF Grade must have at most 1 decimal place');
+  }
+  return true;
+};
+
 // --- Registration validation ---
 
 const validateRegistration = [
@@ -154,6 +165,7 @@ const validatePlayerProfile = [
   body('other_sports.*').optional().isString().isLength({ max: 100 }).withMessage('Each sport must be 100 characters or less'),
   body('track_100m').optional({ nullable: true }).isNumeric().withMessage('track_100m must be numeric'),
   body('track_200m').optional({ nullable: true }).isNumeric().withMessage('track_200m must be numeric'),
+  body('pff_grade').optional({ nullable: true }).custom(validatePffGrade),
 ];
 
 const validateCoachProfile = [
@@ -191,6 +203,7 @@ const validatePlayerProfileUpdate = [
   body('other_sports.*').optional().isString().isLength({ max: 100 }).withMessage('Each sport must be 100 characters or less'),
   body('track_100m').optional({ nullable: true }).isNumeric().withMessage('track_100m must be numeric'),
   body('track_200m').optional({ nullable: true }).isNumeric().withMessage('track_200m must be numeric'),
+  body('pff_grade').optional({ nullable: true }).custom(validatePffGrade),
 ];
 
 const validateCoachProfileUpdate = [

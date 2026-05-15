@@ -87,6 +87,7 @@ When the coach describes players they're looking for, respond with ONLY a valid 
     "plays_other_sports": null,
     "track_100m_max": null,
     "track_200m_max": null,
+    "pff_grade_min": null,
     "offer_filters": {
       "min_count": 5,
       "max_count": null,
@@ -124,6 +125,7 @@ When the coach describes players they're looking for, respond with ONLY a valid 
 - plays_other_sports: true ONLY for generic multi-sport phrases ("two-sport athlete", "multi-sport guys", "kids that play other sports"). If you set other_sports to a non-empty array, leave plays_other_sports as null (it would be redundant).
 - track_100m_max: Upper bound on 100m time in seconds (e.g., 11.0 means player's track_100m must be ≤ 11.0). Set ONLY when coach gives an EXPLICIT time threshold ("sub-11 100m", "under 11.0 in the 100", "10.8 100"). NEVER set this on vague phrases like "fast 100", "good speed", or "burner".
 - track_200m_max: Same as track_100m_max but for 200m time. Set ONLY on explicit time phrases ("sub-22 200m", "under 22 in the 200", "22.5 200 time").
+- pff_grade_min: Lower bound on PFF grade (0-100, higher = better). PFF only exists for TRANSFER PORTAL players — leave null if player_type is "hs" and note in reasoning that HS players have no PFF. Set by either: (a) an explicit number in the query ("70+ PFF", "PFF above 80"), OR (b) a vague tier term from pffGradeTerms.vagueTerms ("good PFF" → 70, "high PFF" → 75, "great PFF" → 80, "elite PFF" → 85, "average PFF" → 60). Explicit numbers always override vague mappings. DO NOT fire on ceiling-style terms in pffGradeTerms.ceilingTermsDoNotFire ("backup PFF", "low PFF", "below average PFF") — those imply an upper bound, which the schema can't express; note this limitation in reasoning. For range queries ("PFF 70-80"), set pff_grade_min to the lower bound and note upper-bound filtering isn't supported. Do not emit 0 — use null.
 - offer_filters: Filter by player offers. An object with three optional fields: "min_count" (minimum number of offers, e.g., 5 means 5+ offers), "max_count" (maximum number of offers, e.g., 2 means at most 2 offers — used for "sleeper"/"hidden gem" searches), and "division" (only count offers from this division, e.g., "D1 FBS"). If division is null, count ALL offers regardless of division. If both min_count and division are set, it means "at least N offers from that division." Players with NO offers also pass the max_count filter. Set offer_filters to null if coach doesn't mention offers. Use the glossary's offerTerms for natural language mappings.
 - searchTerm: For name/username search only
 - stat_filters: Array of stat conditions. Each has stat_key (from glossary statsByPosition), operator (>=, <=, >, <, =), value, season_year (0=career totals across all games, -1=most recent season only, or a specific year like 2024), per_game (boolean, default false), and positions array.
@@ -187,6 +189,11 @@ TRACK TIME TERMS — reference the glossary's trackTerms.
 - Fire track_100m_max / track_200m_max ONLY when the coach gives an explicit numeric time threshold.
 - "burner" / "speedy" / "fast" are NOT track-time filters — they only influence size weighting via speedTerms (most players have no track times on file, so firing track filters on these terms would zero out results).
 - If the coach asks "fast 100 time" without a number, do NOT set a track filter — instead, note in reasoning that you'd need a time threshold.
+
+PFF GRADE TERMS — reference the glossary's pffGradeTerms.
+- Fire pff_grade_min when the coach gives an explicit number OR a vague tier term ("average"/"good"/"high"/"great"/"elite"). Use pffGradeTerms.vagueTerms for the mapping. Explicit number always wins on conflict.
+- DO NOT fire on ceiling-style terms from pffGradeTerms.ceilingTermsDoNotFire ("backup PFF", "low PFF", "weak PFF", "below average PFF"). The schema has no pff_grade_max, so those queries cannot be expressed as a min-only filter. Note this limitation in reasoning so the coach knows why their query returned the full set.
+- PFF only exists on TRANSFER PORTAL players. If player_type is "hs", leave pff_grade_min null and remind the coach in reasoning that HS players have no PFF grades.
 
 If the coach specifies explicit measurements (e.g., "6'2+ QBs", "over 200 lbs"), use those exact values instead of baselines.
 If baselines include a GPA value, use it as the default min_gpa when the coach doesn't specify one.

@@ -53,6 +53,7 @@ function extractActiveFilters(filters) {
   if (filters.plays_other_sports === true) active.push('plays_other_sports');
   if (filters.track_100m_max) active.push('track_100m_max');
   if (filters.track_200m_max) active.push('track_200m_max');
+  if (filters.pff_grade_min) active.push('pff_grade_min');
   // Portal Intelligence specific
   if (filters.signal_types?.length) active.push('signal_types');
   if (filters.days) active.push('days');

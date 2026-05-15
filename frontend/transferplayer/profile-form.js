@@ -273,6 +273,19 @@ document.addEventListener('DOMContentLoaded', async function() {
         });
     }
 
+    // PFF Grade — yes/no toggle reveals the numeric input
+    document.querySelectorAll('input[name="has_pff_grade"]').forEach(radio => {
+        radio.addEventListener('change', function () {
+            const show = this.value === 'yes';
+            const block = document.getElementById('pffGradeBlock');
+            if (block) block.style.display = show ? '' : 'none';
+            if (!show) {
+                const input = document.getElementById('pffGrade');
+                if (input) input.value = '';
+            }
+        });
+    });
+
     // Athletics — Yes/No toggle reveals sports block
     document.querySelectorAll('input[name="plays_other_sports"]').forEach(radio => {
         radio.addEventListener('change', function() {
@@ -444,6 +457,13 @@ document.addEventListener('DOMContentLoaded', async function() {
             // Mark as transfer player — this is what makes the system classify them as transferplayer
             profileData.transfer = 'y';
 
+            // PFF Grade — only included when user selected "Yes". NULL = no grade reported.
+            const hasPffEl = document.querySelector('input[name="has_pff_grade"]:checked');
+            const hasPff = hasPffEl && hasPffEl.value === 'yes';
+            profileData.pff_grade = hasPff
+                ? (parseFloat(document.getElementById('pffGrade').value) || null)
+                : null;
+
             // Athletics
             const playsOtherEl = document.querySelector('input[name="plays_other_sports"]:checked');
             const playsOther = playsOtherEl && playsOtherEl.value === 'yes';
@@ -570,6 +590,17 @@ async function loadExistingProfile() {
                 }
                 if (profile.gpa) {
                     document.getElementById('gpa').value = profile.gpa;
+                }
+
+                // PFF Grade prefill
+                if (profile.pff_grade != null) {
+                    const yesRadio = document.querySelector('input[name="has_pff_grade"][value="yes"]');
+                    if (yesRadio) {
+                        yesRadio.checked = true;
+                        yesRadio.dispatchEvent(new Event('change'));
+                    }
+                    const pffInput = document.getElementById('pffGrade');
+                    if (pffInput) pffInput.value = profile.pff_grade;
                 }
 
                 // Athletics prefill

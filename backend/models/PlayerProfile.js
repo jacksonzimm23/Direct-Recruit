@@ -74,6 +74,15 @@ function buildRelevanceScoreExpr(filters, heightCaseExpr, validStatKeys, values,
     paramCount++;
   }
 
+  // PFF grade excess: reward grades above the threshold. Factor 0.5 → player
+  // 20+ points over threshold hits the +10 cap (e.g. threshold 70, player at
+  // 90 → (90-70)*0.5 = +10). NULL-guarded so ungraded players score 0.
+  if (filters.pff_grade_min) {
+    scoreParts.push(`CASE WHEN pp.pff_grade IS NOT NULL AND pp.pff_grade >= $${paramCount} THEN LEAST((pp.pff_grade - $${paramCount}) * 0.5, 10.0) ELSE 0 END`);
+    values.push(filters.pff_grade_min);
+    paramCount++;
+  }
+
   // Stat performance scoring: for each stat filter, reward exceeding the threshold
   if (filters.stat_filters && filters.stat_filters.length > 0) {
     filters.stat_filters.forEach((sf, index) => {
@@ -176,7 +185,7 @@ class PlayerProfile {
       highlight_video_url, bio, hudl_profile, twitter_handle, instagram_handle, player_status,
       college_division, conference, number, eligibility, transfer,
       lastseasonstat1, lastseasonstat2, lastseasonstat3, careerstat1, careerstat2, careerstat3,
-      other_sports, track_100m, track_200m
+      other_sports, track_100m, track_200m, pff_grade
     } = profileData;
 
     const result = await pool.query(
@@ -186,15 +195,15 @@ class PlayerProfile {
        highlight_video_url, bio, hudl_profile, twitter_handle, instagram_handle, player_status,
        college_division, conference, number, eligibility, transfer,
        lastseasonstat1, lastseasonstat2, lastseasonstat3, careerstat1, careerstat2, careerstat3,
-       other_sports, track_100m, track_200m)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35)
+       other_sports, track_100m, track_200m, pff_grade)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36)
       RETURNING *`,
       [userId, first_name, last_name, username, date_of_birth, team_name, graduation_year,
        city, state, position, height, weight, gpa, sat_score, act_score,
        highlight_video_url, bio, hudl_profile, twitter_handle, instagram_handle, player_status,
        college_division, conference, number, eligibility, transfer,
        lastseasonstat1, lastseasonstat2, lastseasonstat3, careerstat1, careerstat2, careerstat3,
-       other_sports, track_100m, track_200m]
+       other_sports, track_100m, track_200m, pff_grade ?? null]
     );
     return result.rows[0];
   }
@@ -213,7 +222,7 @@ class PlayerProfile {
       'years_of_eligibility', 'phone', 'email', 'is_transfer_player',
       'lastseasonstat1', 'lastseasonstat2', 'lastseasonstat3',
       'careerstat1', 'careerstat2', 'careerstat3',
-      'other_sports', 'track_100m', 'track_200m'
+      'other_sports', 'track_100m', 'track_200m', 'pff_grade'
     ]);
 
     const fields = [];
@@ -726,6 +735,13 @@ class PlayerProfile {
     if (filters.track_200m_max) {
       whereClauses.push(`(pp.track_200m IS NOT NULL AND pp.track_200m <= $${paramCount})`);
       values.push(filters.track_200m_max);
+      paramCount++;
+    }
+
+    // PFF grade minimum — transfer-only. NOT NULL guard excludes ungraded players.
+    if (filters.pff_grade_min) {
+      whereClauses.push(`(pp.pff_grade IS NOT NULL AND pp.pff_grade >= $${paramCount})`);
+      values.push(filters.pff_grade_min);
       paramCount++;
     }
 
