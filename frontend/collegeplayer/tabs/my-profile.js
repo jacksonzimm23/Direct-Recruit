@@ -1451,21 +1451,25 @@ function updateInfoItem(label, value) {
     });
 }
 
-// PFF Grade row — hidden unless a value exists. NULL/empty means "no grade reported".
+// PFF Grade column — sits between About and Contact Info. Hidden when no grade
+// on file (column display:none + .pff-hidden on row reverts grid to 2-col).
 function updatePffGradeSection(profile) {
-    const row = document.getElementById('pffGradeRow');
+    const row = document.getElementById('profileInfoRow');
+    const col = document.getElementById('pffGradeColumn');
     const valueEl = document.getElementById('pffGradeValue');
-    if (!row || !valueEl) return;
+    if (!row || !col || !valueEl) return;
     const raw = profile && profile.pff_grade;
     if (raw !== null && raw !== undefined && raw !== '') {
         const n = parseFloat(raw);
         if (Number.isFinite(n)) {
             valueEl.textContent = n.toFixed(1);
-            row.style.display = '';
+            col.style.display = '';
+            row.classList.remove('pff-hidden');
             return;
         }
     }
-    row.style.display = 'none';
+    col.style.display = 'none';
+    row.classList.add('pff-hidden');
 }
 
 // Update the Contact Info section between header and tabs

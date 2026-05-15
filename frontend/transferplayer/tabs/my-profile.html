@@ -239,12 +239,18 @@
                 </div>
             </div>
 
-            <!-- About and Contact Info Section (between header and tabs) -->
-            <div class="profile-info-row">
+            <!-- About / PFF / Contact Info row (PFF column only visible when player has a grade) -->
+            <div class="profile-info-row pff-hidden" id="profileInfoRow">
                 <div class="profile-info-column">
                     <h2 class="section-title">About</h2>
                     <div class="info-card">
                         <p class="bio-text empty-state">No bio provided yet.</p>
+                    </div>
+                </div>
+                <div class="profile-info-column profile-pff-column" id="pffGradeColumn" style="display: none;">
+                    <h2 class="section-title">PFF Grade</h2>
+                    <div class="info-card">
+                        <div class="info-value" id="pffGradeValue">--</div>
                     </div>
                 </div>
                 <div class="profile-info-column">
@@ -252,14 +258,6 @@
                     <div class="info-card" id="contactInfoCard">
                         <p class="empty-state">No contact information provided.</p>
                     </div>
-                </div>
-            </div>
-
-            <!-- PFF Grade (only displayed when player has a value) -->
-            <div class="profile-pff-row" id="pffGradeRow" style="display: none;">
-                <h2 class="section-title">PFF Grade</h2>
-                <div class="info-card">
-                    <div class="info-value" id="pffGradeValue">--</div>
                 </div>
             </div>
 
