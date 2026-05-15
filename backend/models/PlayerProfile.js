@@ -8,6 +8,17 @@ const COMPOSITE_STAT_KEYS = {
   'total_yds': ['pass_yds', 'rush_yds', 'rec_yds']
 };
 
+// Allowlist of stat keys accepted from Claude (matches the keys the seed-scripts
+// emit + composite keys). Used by searchByAiFilters AND PortalSignal so that
+// stat-range filtering works identically for AI RA and AI PI.
+const VALID_STAT_KEYS = new Set([
+  'rush_yds', 'rush_tds', 'pass_yds', 'pass_tds', 'ints', 'comp_%',
+  'rec', 'rec_yds', 'rec_tds', 'tackles', 'tfls', 'sacks', 'pbu',
+  'ff', 'int', 'att', 'm', 'blk', 'long', 'pats', 'avg', 'tb',
+  'fc', 'i20', '50+',
+  'total_tds', 'total_yds'
+]);
+
 // Build a dynamic SQL scoring expression based on which filters are active.
 // Returns { expr: string, paramCount: number }.
 // Scoring is query-adaptive: factors are weighted based on what the coach asked for.
@@ -547,13 +558,7 @@ class PlayerProfile {
   // AI-powered search — searches HS players and transfer players only (never college)
   // Supports full filter set including game stat filters via JSONB
   static async searchByAiFilters(filters, excludeUserId, limit = 20, offset = 0) {
-    const VALID_STAT_KEYS = new Set([
-      'rush_yds', 'rush_tds', 'pass_yds', 'pass_tds', 'ints', 'comp_%',
-      'rec', 'rec_yds', 'rec_tds', 'tackles', 'tfls', 'sacks', 'pbu',
-      'ff', 'int', 'att', 'm', 'blk', 'long', 'pats', 'avg', 'tb',
-      'fc', 'i20', '50+',
-      'total_tds', 'total_yds'
-    ]);
+    // VALID_STAT_KEYS + COMPOSITE_STAT_KEYS are module-level (also used by PortalSignal).
 
     const values = [];
     let paramCount = 1;
@@ -937,3 +942,5 @@ class PlayerProfile {
 }
 
 module.exports = PlayerProfile;
+module.exports.VALID_STAT_KEYS = VALID_STAT_KEYS;
+module.exports.COMPOSITE_STAT_KEYS = COMPOSITE_STAT_KEYS;

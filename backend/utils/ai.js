@@ -138,6 +138,7 @@ When the coach describes players they're looking for, respond with ONLY a valid 
   - Default to season_year: 0 (career) and per_game: false unless the coach specifies otherwise
   - per_game: false (default) = AGGREGATE/SUM the stat across all matching games. Use for career totals, season totals, or general stat searches (e.g., "over 2 picks", "3000+ passing yards")
   - per_game: true = check if ANY SINGLE GAME meets the threshold. Use ONLY when the coach explicitly says "in a game", "in a single game", "per game", "game with 300+ yards", etc.
+  - RANGE QUERIES — when the coach gives a numeric RANGE for a stat ("2500-3500 passing yards", "between 1000 and 2000 rushing yards", "pass tds 20 to 30"), emit TWO entries in stat_filters with the SAME stat_key/season_year/per_game/positions but different operators: one entry with operator ">=" and the lower bound, one entry with operator "<=" and the upper bound. Example for "QBs with 2500-3500 pass yds": stat_filters: [{stat_key:"pass_yds", operator:">=", value:2500, season_year:0, per_game:false, positions:["QB"]}, {stat_key:"pass_yds", operator:"<=", value:3500, season_year:0, per_game:false, positions:["QB"]}]. NEVER silently drop the upper bound — that's the common stat-range bug. Both entries are ANDed at query time, returning only players in the range.
 - Set any unused filter to null
 - summary: Brief human-readable description of the search
 
@@ -203,6 +204,7 @@ RANGE QUERIES — when a coach gives a numeric RANGE for any field, emit BOTH bo
 - "SAT 1100-1300" → min_sat_score: 1100, max_sat_score: 1300
 - "class of 2026 through 2028" → graduation_year: 2026, max_graduation_year: 2028
 - "2-4 years of eligibility" → eligibility: 2, max_eligibility: 4
+- "2500-3500 pass yds" → TWO stat_filters entries: one >= 2500, one <= 3500 (same stat_key, season_year, per_game, positions)
 NEVER silently drop the upper bound of a range — that's the common bug. If the coach gives a range, set both. If they give a single number with "above"/"under" phrasing, set only the relevant bound.
 
 PFF GRADE TERMS — reference the glossary's pffGradeTerms (minPatterns, maxPatterns, rangePatterns, vagueMinTerms, vagueMaxTerms).

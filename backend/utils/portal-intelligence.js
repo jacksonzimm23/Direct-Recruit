@@ -69,6 +69,7 @@ When the coach asks about portal predictions or player signals, respond with ONL
     "track_200m_max": null,
     "pff_grade_min": null,
     "pff_grade_max": null,
+    "stat_filters": [],
     "days": 14
   },
   "summary": "A one-sentence summary of what you're looking for",
@@ -89,9 +90,10 @@ When the coach asks about portal predictions or player signals, respond with ONL
 - eligibility / max_eligibility: Integer years remaining. Exact count → only eligibility. Range → both bounds.
 - track_100m_max / track_200m_max: Upper bound in seconds (faster = lower = more elite). Fire ONLY on explicit numeric thresholds ("sub-11 100m"). Never on vague terms ("burner", "fast").
 - pff_grade_min / pff_grade_max: Lower and upper bounds on PFF grade (0-100). BOTH nullable and independent. Fire pff_grade_min on FLOOR phrasing ("70+ PFF", "PFF above 80") or vagueMinTerms ("good"→70, "elite"→85). Fire pff_grade_max on CEILING phrasing ("below 70 PFF", "under 60", "at most 65") or vagueMaxTerms ("backup"→65, "below average"→60, "weak"→55, "poor"→55, "bad"→50). For RANGE queries ("PFF 50-60", "between 70 and 80"), set BOTH bounds — this is critical. Explicit numbers override vague mappings. Players with no grade on file are excluded when either filter is set. Do not emit 0 — use null.
+- stat_filters: Array of stat conditions on college game stats. Each entry has stat_key (from glossary statsByPosition / statAliases — e.g. "pass_yds", "tackles", "total_tds"), operator (">=", "<=", ">", "<", "="), value, season_year (0=career totals, -1=most recent season, or specific year like 2024), per_game (boolean, default false — true ONLY when coach says "in a game" / "per game"), and positions array. Default to season_year: 0 and per_game: false. For RANGE queries on stats ("2500-3500 pass yds", "tackles between 50 and 80"), emit TWO entries with the SAME stat_key/season_year/per_game/positions but operator ">=" and "<=" with the respective bounds. Never silently drop the upper bound. Set to [] when no stat filtering is requested.
 - days: Lookback window in days. Default 14. The coach might say "last week" (7), "last month" (30), "last 2 weeks" (14), etc.
 
-RANGE QUERIES — when a coach gives a numeric RANGE for any field (height, weight, GPA, SAT, ACT, grad year, eligibility, PFF), emit BOTH bounds. Never silently drop the upper bound. Example: "QBs at D1 FBS with GPA 3.0-3.5 showing signals" → min_gpa: 3.0, max_gpa: 3.5.
+RANGE QUERIES — when a coach gives a numeric RANGE for any field (height, weight, GPA, SAT, ACT, grad year, eligibility, PFF, stats), emit BOTH bounds. For most fields this means setting both min_ and max_. For stat_filters it means emitting two array entries (one >=, one <=). Never silently drop the upper bound. Example: "D1 FBS QBs with 2500-3500 pass yds showing signals" → stat_filters: [{stat_key:"pass_yds", operator:">=", value:2500, season_year:0, per_game:false, positions:["QB"]}, {stat_key:"pass_yds", operator:"<=", value:3500, season_year:0, per_game:false, positions:["QB"]}].
 - Set any unused filter to null
 
 ## Football Glossary Reference
@@ -105,7 +107,9 @@ ${JSON.stringify({
   positionSpecificTerms: RA_GLOSSARY.positionSpecificTerms,
   divisionAliases: RA_GLOSSARY.divisionAliases,
   stateAliases: RA_GLOSSARY.stateAliases,
-  pffGradeTerms: RA_GLOSSARY.pffGradeTerms
+  pffGradeTerms: RA_GLOSSARY.pffGradeTerms,
+  statsByPosition: RA_GLOSSARY.statsByPosition,
+  statAliases: RA_GLOSSARY.statAliases
 }, null, 2)}
 
 ## Division Aliases (Quick Reference)

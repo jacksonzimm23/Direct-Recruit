@@ -1,5 +1,7 @@
 const pool = require('../config/database');
 const { PORTAL_KEYWORDS } = require('../utils/portal-intelligence');
+// Reuse stat allowlists from PlayerProfile so RA and PI accept identical stat keys.
+const { VALID_STAT_KEYS, COMPOSITE_STAT_KEYS } = require('./PlayerProfile');
 
 class PortalSignal {
   /**
@@ -241,6 +243,66 @@ class PortalSignal {
       whereClauses.push(`pp.pff_grade IS NOT NULL AND pp.pff_grade <= $${paramCount}`);
       values.push(filters.pff_grade_max);
       paramCount++;
+    }
+
+    // Stat filters — EXISTS subquery into player_games + player_game_stats.
+    // Mirrors the logic in PlayerProfile.searchByAiFilters so RA and PI behave
+    // identically for stat queries. Each filter becomes its own EXISTS clause,
+    // so range queries (two filters with same stat_key but >= and <=) AND together.
+    if (filters.stat_filters && filters.stat_filters.length > 0) {
+      filters.stat_filters.forEach((sf, index) => {
+        if (!VALID_STAT_KEYS.has(sf.stat_key)) return;
+
+        // Suffix with random to avoid alias collisions across calls
+        const alias = `sf_pi_${index}`;
+        const gameAlias = `sg_pi_${index}`;
+
+        let statSubquery = `
+          EXISTS (
+            SELECT 1 FROM player_games ${gameAlias}
+            JOIN player_game_stats ${alias} ON ${gameAlias}.id = ${alias}.game_id
+            JOIN player_profiles pp_stat ON ${gameAlias}.player_id = pp_stat.id
+            WHERE pp_stat.user_id = pp.user_id`;
+
+        if (sf.season_year === -1) {
+          statSubquery += ` AND ${gameAlias}.season_year = (
+            SELECT MAX(sg_inner.season_year) FROM player_games sg_inner
+            JOIN player_profiles pp_inner ON sg_inner.player_id = pp_inner.id
+            WHERE pp_inner.user_id = pp.user_id AND sg_inner.season_year > 0
+          )`;
+        } else if (sf.season_year && sf.season_year > 0) {
+          statSubquery += ` AND ${gameAlias}.season_year = $${paramCount}`;
+          values.push(sf.season_year);
+          paramCount++;
+        }
+
+        if (sf.positions && sf.positions.length > 0) {
+          const posList = sf.positions.map(p => {
+            const param = `$${paramCount}`;
+            values.push(p);
+            paramCount++;
+            return param;
+          });
+          statSubquery += ` AND ${alias}.position IN (${posList.join(', ')})`;
+        }
+
+        const op = sf.operator || '>=';
+        const compositeKeys = COMPOSITE_STAT_KEYS[sf.stat_key];
+        const statExpr = compositeKeys
+          ? compositeKeys.map(k => `COALESCE(CAST(${alias}.stats->>'${k}' AS NUMERIC), 0)`).join(' + ')
+          : `COALESCE(CAST(${alias}.stats->>'${sf.stat_key}' AS NUMERIC), 0)`;
+
+        if (sf.per_game) {
+          statSubquery += ` AND (${statExpr}) ${op} $${paramCount}`;
+        } else {
+          statSubquery += ` GROUP BY pp_stat.user_id
+            HAVING SUM(${statExpr}) ${op} $${paramCount}`;
+        }
+        values.push(sf.value);
+        paramCount++;
+        statSubquery += `)`;
+        whereClauses.push(statSubquery);
+      });
     }
 
     // Build the query — select players with signal flags, then filter to only those with at least one signal

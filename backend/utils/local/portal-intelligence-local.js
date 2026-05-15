@@ -59,6 +59,7 @@ async function getPortalIntelligence(messages, coachState, coachDivision) {
       track_200m_max: null,
       pff_grade_min: null,
       pff_grade_max: null,
+      stat_filters: [],
       days: 14
     },
     summary: '[LOCAL DEV] Sample search: All signal types, last 14 days',
