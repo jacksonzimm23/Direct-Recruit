@@ -108,6 +108,127 @@ class PortalSignal {
       paramCount++;
     }
 
+    // State filter
+    if (filters.state) {
+      whereClauses.push(`pp.state = $${paramCount}`);
+      values.push(filters.state);
+      paramCount++;
+    }
+
+    // Height range
+    if (filters.min_height) {
+      whereClauses.push(`pp.height >= $${paramCount}`);
+      values.push(filters.min_height);
+      paramCount++;
+    }
+    if (filters.max_height) {
+      whereClauses.push(`pp.height <= $${paramCount}`);
+      values.push(filters.max_height);
+      paramCount++;
+    }
+
+    // Weight range
+    if (filters.min_weight) {
+      whereClauses.push(`pp.weight >= $${paramCount}`);
+      values.push(filters.min_weight);
+      paramCount++;
+    }
+    if (filters.max_weight) {
+      whereClauses.push(`pp.weight <= $${paramCount}`);
+      values.push(filters.max_weight);
+      paramCount++;
+    }
+
+    // GPA range
+    if (filters.min_gpa) {
+      whereClauses.push(`pp.gpa >= $${paramCount}`);
+      values.push(filters.min_gpa);
+      paramCount++;
+    }
+    if (filters.max_gpa) {
+      whereClauses.push(`pp.gpa <= $${paramCount}`);
+      values.push(filters.max_gpa);
+      paramCount++;
+    }
+
+    // SAT score range
+    if (filters.min_sat_score) {
+      whereClauses.push(`pp.sat_score >= $${paramCount}`);
+      values.push(filters.min_sat_score);
+      paramCount++;
+    }
+    if (filters.max_sat_score) {
+      whereClauses.push(`pp.sat_score <= $${paramCount}`);
+      values.push(filters.max_sat_score);
+      paramCount++;
+    }
+
+    // ACT score range
+    if (filters.min_act_score) {
+      whereClauses.push(`pp.act_score >= $${paramCount}`);
+      values.push(filters.min_act_score);
+      paramCount++;
+    }
+    if (filters.max_act_score) {
+      whereClauses.push(`pp.act_score <= $${paramCount}`);
+      values.push(filters.max_act_score);
+      paramCount++;
+    }
+
+    // Graduation year — exact match when only graduation_year is set;
+    // range when max_graduation_year is also set; ceiling-only otherwise.
+    if (filters.graduation_year) {
+      if (filters.max_graduation_year) {
+        whereClauses.push(`pp.graduation_year >= $${paramCount}`);
+        values.push(filters.graduation_year);
+        paramCount++;
+        whereClauses.push(`pp.graduation_year <= $${paramCount}`);
+        values.push(filters.max_graduation_year);
+        paramCount++;
+      } else {
+        whereClauses.push(`pp.graduation_year = $${paramCount}`);
+        values.push(filters.graduation_year);
+        paramCount++;
+      }
+    } else if (filters.max_graduation_year) {
+      whereClauses.push(`pp.graduation_year <= $${paramCount}`);
+      values.push(filters.max_graduation_year);
+      paramCount++;
+    }
+
+    // Eligibility — same exact/range/ceiling pattern as graduation_year.
+    if (filters.eligibility) {
+      if (filters.max_eligibility) {
+        whereClauses.push(`pp.eligibility >= $${paramCount}`);
+        values.push(filters.eligibility);
+        paramCount++;
+        whereClauses.push(`pp.eligibility <= $${paramCount}`);
+        values.push(filters.max_eligibility);
+        paramCount++;
+      } else {
+        whereClauses.push(`pp.eligibility = $${paramCount}`);
+        values.push(filters.eligibility);
+        paramCount++;
+      }
+    } else if (filters.max_eligibility) {
+      whereClauses.push(`pp.eligibility <= $${paramCount}`);
+      values.push(filters.max_eligibility);
+      paramCount++;
+    }
+
+    // Track times — upper bounds only (faster = lower). NOT NULL guard required
+    // since most players have no track times.
+    if (filters.track_100m_max) {
+      whereClauses.push(`pp.track_100m IS NOT NULL AND pp.track_100m <= $${paramCount}`);
+      values.push(filters.track_100m_max);
+      paramCount++;
+    }
+    if (filters.track_200m_max) {
+      whereClauses.push(`pp.track_200m IS NOT NULL AND pp.track_200m <= $${paramCount}`);
+      values.push(filters.track_200m_max);
+      paramCount++;
+    }
+
     // PFF grade minimum — exclude ungraded players when set
     if (filters.pff_grade_min) {
       whereClauses.push(`pp.pff_grade IS NOT NULL AND pp.pff_grade >= $${paramCount}`);

@@ -40,11 +40,16 @@ function extractActiveFilters(filters) {
   if (filters.min_weight) active.push('min_weight');
   if (filters.max_weight) active.push('max_weight');
   if (filters.min_gpa) active.push('min_gpa');
+  if (filters.max_gpa) active.push('max_gpa');
   if (filters.min_sat_score) active.push('min_sat_score');
+  if (filters.max_sat_score) active.push('max_sat_score');
   if (filters.min_act_score) active.push('min_act_score');
+  if (filters.max_act_score) active.push('max_act_score');
   if (filters.graduation_year) active.push('graduation_year');
+  if (filters.max_graduation_year) active.push('max_graduation_year');
   if (filters.college_division) active.push('college_division');
   if (filters.eligibility) active.push('eligibility');
+  if (filters.max_eligibility) active.push('max_eligibility');
   if (filters.has_highlights === true) active.push('has_highlights');
   if (filters.offer_filters) active.push('offer_filters');
   if (filters.stat_filters?.length) active.push('stat_filters');

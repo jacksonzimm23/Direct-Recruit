@@ -49,7 +49,24 @@ When the coach asks about portal predictions or player signals, respond with ONL
   "signal_filters": {
     "signal_types": ["bio_and_film", "portal_keywords", "browsing_coaches"],
     "position": ["QB", "WR"],
+    "state": null,
     "college_division": "D1 FBS",
+    "min_height": null,
+    "max_height": null,
+    "min_weight": null,
+    "max_weight": null,
+    "min_gpa": null,
+    "max_gpa": null,
+    "min_sat_score": null,
+    "max_sat_score": null,
+    "min_act_score": null,
+    "max_act_score": null,
+    "graduation_year": null,
+    "max_graduation_year": null,
+    "eligibility": null,
+    "max_eligibility": null,
+    "track_100m_max": null,
+    "track_200m_max": null,
     "pff_grade_min": null,
     "pff_grade_max": null,
     "days": 14
@@ -61,9 +78,20 @@ When the coach asks about portal predictions or player signals, respond with ONL
 ## Signal Filter Fields
 - signal_types: Array of signal types to query. Valid values: "bio_and_film", "portal_keywords", "browsing_coaches". Use all three by default unless the coach specifically asks about a particular signal type.
 - position: Array of position codes to filter by. Valid positions: QB, RB, FB, WR, TE, OT, OG, C, DE, DT, NT, ILB, OLB, MLB, CB, FS, SS, S, K, P, LS, ATH. Set to null for all positions.
+- state: Full state name (e.g., "Texas" not "TX") — use the stateAliases from the glossary.
 - college_division: Filter by the player's current division. Valid: "D1 FBS", "D1 FCS", "D2", "D3", "NAIA", "NJCAA". Set to null for all divisions. Note: "D1" should map to both D1 FBS and D1 FCS.
+- min_height / max_height: In INCHES (feet * 12 + inches: 6'0"=72, 6'1"=73, 6'2"=74, 5'10"=70, 5'11"=71). Range: emit both. Ceiling phrasing ("under 6'2"): only max. Floor phrasing ("6'2"+"): only min.
+- min_weight / max_weight: In POUNDS. Same range/ceiling/floor logic as height.
+- min_gpa / max_gpa: Decimal 0.00-4.00. Range: emit both ("GPA 3.0-3.5"). Single number with "above" → min only. With "below" → max only.
+- min_sat_score / max_sat_score: Integer 400-1600. Same range/ceiling/floor logic.
+- min_act_score / max_act_score: Integer 1-36. Same range/ceiling/floor logic.
+- graduation_year / max_graduation_year: Integer year. Single class ("class of 2026") → only graduation_year. Range ("2026-2028") → graduation_year is LOWER bound, max_graduation_year is UPPER bound.
+- eligibility / max_eligibility: Integer years remaining. Exact count → only eligibility. Range → both bounds.
+- track_100m_max / track_200m_max: Upper bound in seconds (faster = lower = more elite). Fire ONLY on explicit numeric thresholds ("sub-11 100m"). Never on vague terms ("burner", "fast").
 - pff_grade_min / pff_grade_max: Lower and upper bounds on PFF grade (0-100). BOTH nullable and independent. Fire pff_grade_min on FLOOR phrasing ("70+ PFF", "PFF above 80") or vagueMinTerms ("good"→70, "elite"→85). Fire pff_grade_max on CEILING phrasing ("below 70 PFF", "under 60", "at most 65") or vagueMaxTerms ("backup"→65, "below average"→60, "weak"→55, "poor"→55, "bad"→50). For RANGE queries ("PFF 50-60", "between 70 and 80"), set BOTH bounds — this is critical. Explicit numbers override vague mappings. Players with no grade on file are excluded when either filter is set. Do not emit 0 — use null.
 - days: Lookback window in days. Default 14. The coach might say "last week" (7), "last month" (30), "last 2 weeks" (14), etc.
+
+RANGE QUERIES — when a coach gives a numeric RANGE for any field (height, weight, GPA, SAT, ACT, grad year, eligibility, PFF), emit BOTH bounds. Never silently drop the upper bound. Example: "QBs at D1 FBS with GPA 3.0-3.5 showing signals" → min_gpa: 3.0, max_gpa: 3.5.
 - Set any unused filter to null
 
 ## Football Glossary Reference

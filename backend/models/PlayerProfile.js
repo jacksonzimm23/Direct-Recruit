@@ -637,8 +637,24 @@ class PlayerProfile {
 
     // Graduation year
     if (filters.graduation_year) {
-      whereClauses.push(`pp.graduation_year = $${paramCount}`);
-      values.push(filters.graduation_year);
+      // If max_graduation_year is set, treat graduation_year as the LOWER bound (range).
+      // Otherwise preserve legacy exact-match behavior.
+      if (filters.max_graduation_year) {
+        whereClauses.push(`pp.graduation_year >= $${paramCount}`);
+        values.push(filters.graduation_year);
+        paramCount++;
+        whereClauses.push(`pp.graduation_year <= $${paramCount}`);
+        values.push(filters.max_graduation_year);
+        paramCount++;
+      } else {
+        whereClauses.push(`pp.graduation_year = $${paramCount}`);
+        values.push(filters.graduation_year);
+        paramCount++;
+      }
+    } else if (filters.max_graduation_year) {
+      // Coach gave only an upper bound (rare — e.g. "class of 2027 or earlier")
+      whereClauses.push(`pp.graduation_year <= $${paramCount}`);
+      values.push(filters.max_graduation_year);
       paramCount++;
     }
 
@@ -666,24 +682,39 @@ class PlayerProfile {
       paramCount++;
     }
 
-    // GPA filter
+    // GPA filter — supports min, max, or range
     if (filters.min_gpa) {
       whereClauses.push(`pp.gpa >= $${paramCount}`);
       values.push(filters.min_gpa);
       paramCount++;
     }
+    if (filters.max_gpa) {
+      whereClauses.push(`pp.gpa <= $${paramCount}`);
+      values.push(filters.max_gpa);
+      paramCount++;
+    }
 
-    // SAT score filter
+    // SAT score filter — supports min, max, or range
     if (filters.min_sat_score) {
       whereClauses.push(`pp.sat_score >= $${paramCount}`);
       values.push(filters.min_sat_score);
       paramCount++;
     }
+    if (filters.max_sat_score) {
+      whereClauses.push(`pp.sat_score <= $${paramCount}`);
+      values.push(filters.max_sat_score);
+      paramCount++;
+    }
 
-    // ACT score filter
+    // ACT score filter — supports min, max, or range
     if (filters.min_act_score) {
       whereClauses.push(`pp.act_score >= $${paramCount}`);
       values.push(filters.min_act_score);
+      paramCount++;
+    }
+    if (filters.max_act_score) {
+      whereClauses.push(`pp.act_score <= $${paramCount}`);
+      values.push(filters.max_act_score);
       paramCount++;
     }
 
@@ -694,10 +725,24 @@ class PlayerProfile {
       paramCount++;
     }
 
-    // Eligibility (transfer players)
+    // Eligibility (transfer players) — exact match when only `eligibility` is set;
+    // range when both bounds present; ceiling-only when just max_eligibility.
     if (filters.eligibility) {
-      whereClauses.push(`pp.eligibility = $${paramCount}`);
-      values.push(filters.eligibility);
+      if (filters.max_eligibility) {
+        whereClauses.push(`pp.eligibility >= $${paramCount}`);
+        values.push(filters.eligibility);
+        paramCount++;
+        whereClauses.push(`pp.eligibility <= $${paramCount}`);
+        values.push(filters.max_eligibility);
+        paramCount++;
+      } else {
+        whereClauses.push(`pp.eligibility = $${paramCount}`);
+        values.push(filters.eligibility);
+        paramCount++;
+      }
+    } else if (filters.max_eligibility) {
+      whereClauses.push(`pp.eligibility <= $${paramCount}`);
+      values.push(filters.max_eligibility);
       paramCount++;
     }
 

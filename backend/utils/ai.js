@@ -72,15 +72,20 @@ When the coach describes players they're looking for, respond with ONLY a valid 
     "position": ["QB", "WR"],
     "state": "Texas",
     "graduation_year": 2026,
+    "max_graduation_year": null,
     "min_height": 74,
     "max_height": null,
     "min_weight": 200,
     "max_weight": null,
     "min_gpa": 3.5,
+    "max_gpa": null,
     "min_sat_score": 1200,
+    "max_sat_score": null,
     "min_act_score": 28,
+    "max_act_score": null,
     "college_division": null,
     "eligibility": null,
+    "max_eligibility": null,
     "searchTerm": null,
     "has_highlights": true,
     "other_sports": ["Basketball", "Wrestling"],
@@ -115,12 +120,12 @@ When the coach describes players they're looking for, respond with ONLY a valid 
 - state: Full state name (e.g., "Texas" not "TX") — use the stateAliases from the glossary
 - min_height / max_height: In INCHES (e.g., 74 = 6'2"). Convert feet/inches to total inches. Height conversion: feet * 12 + inches (6'0"=72, 6'1"=73, 6'2"=74, 5'10"=70, 5'11"=71)
 - min_weight / max_weight: In POUNDS
-- min_gpa: Decimal 0.00-4.00
-- min_sat_score: Integer 400-1600 (SAT score)
-- min_act_score: Integer 1-36 (ACT score)
-- graduation_year: Integer year (e.g., 2026)
+- min_gpa / max_gpa: Decimal 0.00-4.00. Set both for ranges ("GPA 3.0-3.5" → min=3.0, max=3.5). Set only max for ceiling phrasing ("GPA below 3.5"). Set only min for floor phrasing (single number, "above 3.0", "3.0+").
+- min_sat_score / max_sat_score: Integer 400-1600. Same range/ceiling/floor logic as GPA.
+- min_act_score / max_act_score: Integer 1-36. Same range/ceiling/floor logic as GPA.
+- graduation_year / max_graduation_year: Integer year (e.g., 2026). For a single class, set only graduation_year ("class of 2026" → 2026, max_graduation_year null). For a range, graduation_year is the LOWER bound and max_graduation_year is the UPPER bound ("class of 2026 through 2028" → graduation_year: 2026, max_graduation_year: 2028).
 - college_division: Only for transfer players — one of: "D1 FBS", "D1 FCS", "D2", "D3", "NAIA", "NJCAA", "3C2A"
-- eligibility: Integer years remaining (transfer players only)
+- eligibility / max_eligibility: Integer years remaining (transfer players only). For an exact count, set only eligibility ("3 years left" → 3). For a range, eligibility is the LOWER bound and max_eligibility is the UPPER bound ("2-4 years left" → eligibility: 2, max_eligibility: 4).
 - has_highlights: true = player must have uploaded highlight videos or have a Hudl profile. Use when coach mentions film, highlights, video, Hudl, tape, etc. Use the glossary's highlightTerms to recognize these phrases. null = don't filter on this.
 - other_sports: Array of sport names the player ALSO plays (besides football). AND-semantics — player must have ALL listed sports. Canonical values (match exactly): "Basketball", "Baseball", "Track and Field", "Wrestling", "Soccer", "Lacrosse", "Hockey", "Volleyball", "Tennis", "Golf", "Swimming", "Rugby". IMPORTANT: it is "Track and Field" with "and" — never "Track & Field". Set to null if the coach does not mention a specific other sport.
 - plays_other_sports: true ONLY for generic multi-sport phrases ("two-sport athlete", "multi-sport guys", "kids that play other sports"). If you set other_sports to a non-empty array, leave plays_other_sports as null (it would be redundant).
@@ -190,6 +195,15 @@ TRACK TIME TERMS — reference the glossary's trackTerms.
 - Fire track_100m_max / track_200m_max ONLY when the coach gives an explicit numeric time threshold.
 - "burner" / "speedy" / "fast" are NOT track-time filters — they only influence size weighting via speedTerms (most players have no track times on file, so firing track filters on these terms would zero out results).
 - If the coach asks "fast 100 time" without a number, do NOT set a track filter — instead, note in reasoning that you'd need a time threshold.
+
+RANGE QUERIES — when a coach gives a numeric RANGE for any field, emit BOTH bounds:
+- "height 72-75" → min_height: 72, max_height: 75
+- "weight between 200 and 230" → min_weight: 200, max_weight: 230
+- "GPA 3.0-3.5" → min_gpa: 3.0, max_gpa: 3.5
+- "SAT 1100-1300" → min_sat_score: 1100, max_sat_score: 1300
+- "class of 2026 through 2028" → graduation_year: 2026, max_graduation_year: 2028
+- "2-4 years of eligibility" → eligibility: 2, max_eligibility: 4
+NEVER silently drop the upper bound of a range — that's the common bug. If the coach gives a range, set both. If they give a single number with "above"/"under" phrasing, set only the relevant bound.
 
 PFF GRADE TERMS — reference the glossary's pffGradeTerms (minPatterns, maxPatterns, rangePatterns, vagueMinTerms, vagueMaxTerms).
 - Three ways to fire PFF filters:
