@@ -201,6 +201,14 @@
                             <span class="rpi-badge" id="rpiBadge"></span>
                             <span class="rpi-permissions" id="rpiPermissions"></span>
                         </div>
+                        <div class="rpi-eligibility-row" id="rpiEligibilityRow" style="display: none;">
+                            <span class="rpi-class-year" id="rpiClassYear"></span>
+                            <button type="button" class="rpi-eligibility-badge" id="rpiEligibilityBadge"></button>
+                            <span class="rpi-eligibility-hint" id="rpiEligibilityHint">Click for info</span>
+                        </div>
+                        <div class="rpi-transfer-disclaimer" id="rpiTransferDisclaimer" style="display: none;">
+                            <span>Confirm that this player has officially entered the <strong>NCAA Transfer Portal</strong> before initiating contact.</span>
+                        </div>
                     </div>
 
                     <div class="message-input-container" id="messageInputContainer" style="display: none;">
@@ -351,6 +359,9 @@
 
                 <!-- D1 FBS Tab -->
                 <div class="rc-tab-content" data-tab="d1-fbs">
+                    <div class="rc-disclaimer">
+                        <strong>Heads up:</strong> NCAA recruiting rules and calendar dates can change. Always verify the latest rules with your compliance office or on <a href="https://www.ncaa.org/sports/2021/2/10/recruiting-calendars-faq.aspx" target="_blank" rel="noopener noreferrer">ncaa.org</a> before acting on this information.
+                    </div>
                     <div class="rc-section">
                         <h3>D1 FBS — 2025-26 Recruiting Calendar</h3>
                         <p class="rc-subtitle">Aug 1, 2025 – July 31, 2026</p>
@@ -386,6 +397,9 @@
 
                 <!-- D1 FCS Tab -->
                 <div class="rc-tab-content" data-tab="d1-fcs">
+                    <div class="rc-disclaimer">
+                        <strong>Heads up:</strong> NCAA recruiting rules and calendar dates can change. Always verify the latest rules with your compliance office or on <a href="https://www.ncaa.org/sports/2021/2/10/recruiting-calendars-faq.aspx" target="_blank" rel="noopener noreferrer">ncaa.org</a> before acting on this information.
+                    </div>
                     <div class="rc-section">
                         <h3>D1 FCS — 2025-26 Recruiting Calendar</h3>
                         <p class="rc-subtitle">Aug 1, 2025 – July 31, 2026</p>
@@ -423,6 +437,9 @@
 
                 <!-- D2 Tab -->
                 <div class="rc-tab-content" data-tab="d2">
+                    <div class="rc-disclaimer">
+                        <strong>Heads up:</strong> NCAA recruiting rules and calendar dates can change. Always verify the latest rules with your compliance office or on <a href="https://www.ncaa.org/sports/2021/2/10/recruiting-calendars-faq.aspx" target="_blank" rel="noopener noreferrer">ncaa.org</a> before acting on this information.
+                    </div>
                     <div class="rc-section">
                         <h3>D2 — 2025-26 Recruiting Calendar</h3>
                         <p class="rc-subtitle">Contact period is nearly year-round. Only restricted during signing date dead periods.</p>
@@ -472,6 +489,9 @@
 
                 <!-- D3 Tab -->
                 <div class="rc-tab-content" data-tab="d3">
+                    <div class="rc-disclaimer">
+                        <strong>Heads up:</strong> NCAA recruiting rules and calendar dates can change. Always verify the latest rules with your compliance office or on <a href="https://www.ncaa.org/sports/2021/2/10/recruiting-calendars-faq.aspx" target="_blank" rel="noopener noreferrer">ncaa.org</a> before acting on this information.
+                    </div>
                     <div class="rc-section">
                         <h3>D3 — Recruiting Rules</h3>
                         <p class="rc-subtitle">D3 has no formal recruiting calendar periods. Rules are based on activity type.</p>
@@ -498,6 +518,9 @@
 
                 <!-- NJCAA Tab -->
                 <div class="rc-tab-content" data-tab="njcaa">
+                    <div class="rc-disclaimer">
+                        <strong>Heads up:</strong> NJCAA recruiting rules can change. Always verify the latest rules with your compliance office or on <a href="https://www.njcaa.org" target="_blank" rel="noopener noreferrer">njcaa.org</a> before acting on this information.
+                    </div>
                     <div class="rc-section">
                         <h3>NJCAA — Recruiting Rules</h3>
                         <p class="rc-subtitle">No regulated recruiting calendar. The most permissive of all divisions.</p>
@@ -520,6 +543,9 @@
                     </div>
                 </div>
                 <div class="rc-tab-content" data-tab="naia">
+                    <div class="rc-disclaimer">
+                        <strong>Heads up:</strong> NAIA recruiting rules can change. Always verify the latest rules with your compliance office or on <a href="https://www.naia.org" target="_blank" rel="noopener noreferrer">naia.org</a> before acting on this information.
+                    </div>
                     <div class="rc-section">
                         <h3>NAIA — Recruiting Rules</h3>
                         <p class="rc-subtitle">No recruiting calendar, dead periods, or quiet periods. Coaches may contact prospects at any time.</p>
@@ -544,6 +570,36 @@
                     </div>
                 </div>
 
+            </div>
+        </div>
+    </div>
+
+    <!-- Eligibility Info Modal -->
+    <div class="elig-overlay" id="eligOverlay">
+        <div class="elig-modal">
+            <div class="elig-header">
+                <h2>Recruiting Eligibility</h2>
+                <button class="elig-close" id="eligCloseBtn" aria-label="Close">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="elig-body">
+                <div class="elig-verdict" id="eligVerdict">
+                    <div class="elig-verdict-status" id="eligVerdictStatus"></div>
+                    <div class="elig-verdict-detail" id="eligVerdictDetail"></div>
+                    <ul class="elig-verdict-list" id="eligVerdictList"></ul>
+                </div>
+                <div class="elig-section">
+                    <h3 id="eligRulesTitle">Your Division Rules</h3>
+                    <table class="elig-table">
+                        <thead><tr><th>Activity</th><th>Rule</th></tr></thead>
+                        <tbody id="eligRulesBody"></tbody>
+                    </table>
+                </div>
+                <div class="elig-footnote" id="eligFootnote"></div>
             </div>
         </div>
     </div>

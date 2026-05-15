@@ -559,15 +559,15 @@
 /* Recruiting Period Indicator */
 .recruiting-period-indicator {
     display: flex;
-    align-items: center;
-    justify-content: space-between;
+    flex-direction: column;
+    align-items: stretch;
     padding: 0.4rem 1.5rem;
     border-top: 1px solid rgba(18, 130, 162, 0.12);
     background: rgba(254, 252, 251, 0.02);
     font-family: 'Inter', sans-serif;
     font-size: 0.75rem;
     color: rgba(254, 252, 251, 0.55);
-    gap: 0.75rem;
+    gap: 0.35rem;
     flex-shrink: 0;
 }
 
@@ -608,6 +608,195 @@
     overflow: hidden;
     text-overflow: ellipsis;
     font-size: 0.72rem;
+}
+
+/* Eligibility row (second row of the RPI) */
+.rpi-eligibility-row {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    min-width: 0;
+    padding-top: 0.35rem;
+    border-top: 1px dashed rgba(18, 130, 162, 0.10);
+}
+
+.rpi-class-year {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: rgba(254, 252, 251, 0.55);
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.rpi-eligibility-badge {
+    display: inline-block;
+    padding: 0.2rem 0.6rem;
+    border-radius: 5px;
+    font-weight: 700;
+    font-size: 0.68rem;
+    letter-spacing: 0.01em;
+    cursor: pointer;
+    font-family: inherit;
+    transition: filter 0.15s ease;
+}
+.rpi-eligibility-badge:hover { filter: brightness(1.15); }
+.rpi-eligibility-badge:focus-visible { outline: 2px solid rgba(255, 255, 255, 0.4); outline-offset: 1px; }
+.rpi-eligibility-badge.eligible { background: rgba(34, 197, 94, 0.12); color: #22c55e; border: 1px solid rgba(34, 197, 94, 0.25); }
+.rpi-eligibility-badge.not_yet  { background: rgba(239, 68, 68, 0.12); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.25); }
+
+.rpi-eligibility-hint {
+    font-size: 0.65rem;
+    color: rgba(254, 252, 251, 0.45);
+    font-style: italic;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+/* Transfer-player disclaimer (shown when a college coach messages a transfer player) */
+.rpi-transfer-disclaimer {
+    display: flex;
+    align-items: center;
+    padding: 0.1rem 0;
+    font-size: 0.72rem;
+    color: rgba(254, 252, 251, 0.7);
+    line-height: 1.4;
+}
+.rpi-transfer-disclaimer strong {
+    color: #ef4444;
+    font-weight: 700;
+}
+
+/* Eligibility info modal */
+.elig-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    background: rgba(10, 17, 40, 0.75);
+    backdrop-filter: blur(4px);
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+}
+.elig-overlay.active { display: flex; }
+
+.elig-modal {
+    background: #0a1128;
+    border: 1px solid rgba(18, 130, 162, 0.25);
+    border-radius: 12px;
+    max-width: 600px;
+    width: 100%;
+    max-height: 85vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+.elig-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid rgba(18, 130, 162, 0.2);
+}
+.elig-header h2 { margin: 0; font-size: 1.1rem; color: #fefcfb; font-weight: 700; }
+
+.elig-close {
+    background: transparent;
+    border: none;
+    color: rgba(254, 252, 251, 0.6);
+    cursor: pointer;
+    padding: 0.25rem;
+    width: 28px;
+    height: 28px;
+}
+.elig-close svg { width: 100%; height: 100%; }
+.elig-close:hover { color: #fefcfb; }
+
+.elig-body {
+    padding: 1.25rem 1.5rem;
+    overflow-y: auto;
+}
+
+.elig-verdict {
+    background: rgba(18, 130, 162, 0.08);
+    border: 1px solid rgba(18, 130, 162, 0.2);
+    border-radius: 8px;
+    padding: 0.85rem 1rem;
+    margin-bottom: 1rem;
+}
+.elig-verdict-status {
+    font-weight: 700;
+    font-size: 0.9rem;
+    margin-bottom: 0.25rem;
+}
+.elig-verdict-status.eligible { color: #22c55e; }
+.elig-verdict-status.not_yet  { color: #ef4444; }
+
+.elig-verdict-detail {
+    font-size: 0.8rem;
+    color: rgba(254, 252, 251, 0.7);
+    line-height: 1.4;
+}
+
+.elig-verdict-list {
+    list-style: none;
+    padding: 0.6rem 0 0 0;
+    margin: 0.6rem 0 0 0;
+    border-top: 1px solid rgba(18, 130, 162, 0.15);
+}
+.elig-verdict-list li {
+    font-size: 0.78rem;
+    padding: 0.25rem 0;
+    color: rgba(254, 252, 251, 0.8);
+    line-height: 1.4;
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+}
+.elig-dot { display: inline-block; font-size: 0.6rem; flex-shrink: 0; }
+.elig-dot.unlocked { color: #22c55e; }
+.elig-dot.locked   { color: #ef4444; }
+.elig-dot.unknown  { color: rgba(254, 252, 251, 0.4); }
+
+.elig-section h3 {
+    font-size: 0.95rem;
+    color: #fefcfb;
+    margin: 0 0 0.6rem 0;
+    font-weight: 600;
+}
+
+.elig-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8rem;
+}
+.elig-table th,
+.elig-table td {
+    text-align: left;
+    padding: 0.55rem 0.65rem;
+    border-bottom: 1px solid rgba(18, 130, 162, 0.12);
+}
+.elig-table th {
+    color: rgba(254, 252, 251, 0.5);
+    font-weight: 600;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+.elig-table td { color: rgba(254, 252, 251, 0.85); }
+.elig-table tr:last-child td { border-bottom: none; }
+
+.elig-footnote {
+    margin-top: 1rem;
+    padding: 0.75rem 0.9rem;
+    background: rgba(254, 252, 251, 0.03);
+    border-left: 3px solid rgba(18, 130, 162, 0.4);
+    border-radius: 4px;
+    font-size: 0.78rem;
+    color: rgba(254, 252, 251, 0.7);
+    line-height: 1.5;
 }
 
 
@@ -1034,6 +1223,29 @@
         flex-basis: 100%;
     }
 
+    .rpi-eligibility-row {
+        flex-wrap: wrap;
+        gap: 0.4rem;
+        padding-top: 0.3rem;
+    }
+    .rpi-class-year { font-size: 0.65rem; }
+    .rpi-eligibility-badge { font-size: 0.65rem; padding: 0.2rem 0.5rem; }
+
+    .rpi-transfer-disclaimer {
+        font-size: 0.65rem;
+        line-height: 1.35;
+    }
+
+    .elig-modal { max-height: 92vh; border-radius: 10px; }
+    .elig-header { padding: 0.8rem 1rem; }
+    .elig-header h2 { font-size: 1rem; }
+    .elig-body { padding: 1rem; }
+    .elig-verdict { padding: 0.7rem 0.8rem; }
+    .elig-verdict-list li { font-size: 0.72rem; }
+    .elig-table { font-size: 0.75rem; }
+    .elig-table th,
+    .elig-table td { padding: 0.5rem 0.5rem; }
+
     .message-input-container {
         padding: 0.5rem 0.75rem;
         gap: 0.5rem;
@@ -1379,6 +1591,30 @@
 }
 
 /* Sections */
+.rc-disclaimer {
+    margin-bottom: 1.25rem;
+    padding: 0.7rem 0.9rem;
+    background: rgba(234, 179, 8, 0.08);
+    border: 1px solid rgba(234, 179, 8, 0.25);
+    border-left: 3px solid #eab308;
+    border-radius: 4px;
+    font-size: 0.78rem;
+    color: rgba(254, 252, 251, 0.78);
+    line-height: 1.5;
+}
+.rc-disclaimer strong {
+    color: #eab308;
+    font-weight: 700;
+}
+.rc-disclaimer a {
+    color: #ff6b35;
+    text-decoration: none;
+    font-weight: 600;
+}
+.rc-disclaimer a:hover {
+    text-decoration: underline;
+}
+
 .rc-section {
     margin-bottom: 1.5rem;
 }

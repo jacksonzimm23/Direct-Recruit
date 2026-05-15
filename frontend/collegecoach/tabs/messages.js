@@ -29,6 +29,9 @@ document.addEventListener('DOMContentLoaded', async function() {
     // Recruiting Calendar modal
     initRecruitingCalendar();
 
+    // Eligibility info modal (opened from RPI second-row badge)
+    initEligibilityModal();
+
     // Load current user and initialize
     await loadCurrentUser();
     await loadConversations();
@@ -1240,9 +1243,191 @@ function isHSPlayer(participant) {
         && !participant.college_division;
 }
 
+// Normalize a college division string ('D1 FBS', 'FBS', 'd1fcs', etc.) -> canonical
+// internal form ('FBS' | 'FCS' | 'D2' | 'D3' | 'NJCAA' | 'NAIA' | '').
+function normalizeDivision(division) {
+    let div = (division || '').toUpperCase().replace(/\s+/g, '');
+    if (div.startsWith('D1')) div = div.slice(2);
+    return div;
+}
+
+// Derive class status from graduation_year + today. Uses NCAA-style
+// "Rising X" labels between June 15 and Aug 1 of each summer transition.
+function getClassYearFromGradYear(gradYear, today) {
+    const g = parseInt(gradYear, 10);
+    if (!g || isNaN(g)) return { classYear: 'unknown', label: '', g: null };
+
+    // After June 1 of grad year, treat as graduated HS.
+    const hsGradDate = new Date(g, 5, 1);
+    if (today >= hsGradDate) return { classYear: 'graduated', label: `Class of ${g} (Graduated)`, g };
+
+    const june15BeforeSenior = new Date(g - 1, 5, 15);
+    const aug1BeforeSenior   = new Date(g - 1, 7, 1);
+    const june15BeforeJunior = new Date(g - 2, 5, 15);
+    const aug1BeforeJunior   = new Date(g - 2, 7, 1);
+    const june15BeforeSoph   = new Date(g - 3, 5, 15);
+    const aug1BeforeSoph     = new Date(g - 3, 7, 1);
+    const june15BeforeFresh  = new Date(g - 4, 5, 15);
+    const aug1BeforeFresh    = new Date(g - 4, 7, 1);
+
+    if (today >= aug1BeforeSenior)   return { classYear: 'senior',        label: `Class of ${g} (Senior)`,           g };
+    if (today >= june15BeforeSenior) return { classYear: 'rising_senior', label: `Class of ${g} (Rising Senior)`,    g };
+    if (today >= aug1BeforeJunior)   return { classYear: 'junior',        label: `Class of ${g} (Junior)`,           g };
+    if (today >= june15BeforeJunior) return { classYear: 'rising_junior', label: `Class of ${g} (Rising Junior)`,    g };
+    if (today >= aug1BeforeSoph)     return { classYear: 'sophomore',     label: `Class of ${g} (Sophomore)`,        g };
+    if (today >= june15BeforeSoph)   return { classYear: 'rising_soph',   label: `Class of ${g} (Rising Sophomore)`, g };
+    if (today >= aug1BeforeFresh)    return { classYear: 'freshman',      label: `Class of ${g} (Freshman)`,         g };
+    if (today >= june15BeforeFresh)  return { classYear: 'rising_fresh',  label: `Class of ${g} (Rising Freshman)`,  g };
+    return { classYear: 'pre_hs', label: `Class of ${g} (Pre-HS)`, g };
+}
+
+// Decide the BADGE state. Only D1 FBS/FCS produce 'not_yet' (their messaging
+// gate is Sept 1 of junior year). All other divisions permit messaging at any
+// class year — they always render 'eligible'.
+function getContactEligibility(division, gradYear, today) {
+    const div = normalizeDivision(division);
+    if (!div) return { status: 'unknown' };
+    if (div !== 'FBS' && div !== 'FCS') return { status: 'eligible' };
+
+    const { classYear, g } = getClassYearFromGradYear(gradYear, today);
+    if (!g || classYear === 'unknown') return { status: 'eligible' };
+    if (classYear === 'graduated' || classYear === 'senior' || classYear === 'rising_senior') {
+        return { status: 'eligible' };
+    }
+    if (classYear === 'junior') return { status: 'eligible' };
+    if (classYear === 'rising_junior') {
+        const sept1Junior = new Date(g - 2, 8, 1);
+        return (today >= sept1Junior) ? { status: 'eligible' } : { status: 'not_yet' };
+    }
+    return { status: 'not_yet' };
+}
+
+// Build the data the eligibility modal renders: per-activity dynamic lines
+// (live unlock status against `today`), a static rules table, and a footnote.
+function getDivisionEligibilityData(division, gradYear, today) {
+    const div = normalizeDivision(division);
+    const cls = getClassYearFromGradYear(gradYear, today);
+    const elig = getContactEligibility(division, gradYear, today);
+    const g = cls.g;
+
+    const display = (div === 'FBS') ? 'D1 FBS'
+                  : (div === 'FCS') ? 'D1 FCS'
+                  : (div || 'Unknown');
+
+    const fmt = (d) => d.toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' });
+    const daysUntil = (d) => Math.ceil((d - today) / (1000 * 60 * 60 * 24));
+
+    const dynamicLines = [];
+    let rows = [];
+    let footnote = '';
+
+    if (g) {
+        if (div === 'FBS' || div === 'FCS') {
+            dynamicLines.push({ activity: 'Direct messaging (calls/texts/emails)', date: new Date(g - 2, 8, 1) });
+            dynamicLines.push({ activity: 'Official visits',                       date: new Date(g - 2, 7, 1) });
+            dynamicLines.push({ activity: 'Off-campus contact',                    date: new Date(g - 1, 5, 1) });
+        } else if (div === 'D2') {
+            const june15Jr = new Date(g - 2, 5, 15);
+            dynamicLines.push({ activity: 'Direct messaging',    alwaysUnlocked: true });
+            dynamicLines.push({ activity: 'Off-campus contact',  date: june15Jr });
+            dynamicLines.push({ activity: 'Official visits',     date: june15Jr });
+        } else if (div === 'D3') {
+            dynamicLines.push({ activity: 'Direct messaging',    alwaysUnlocked: true });
+            dynamicLines.push({ activity: 'Off-campus contact',  date: new Date(g - 2, 5, 1) });
+            dynamicLines.push({ activity: 'Official visits',     date: new Date(g - 1, 0, 1) });
+        } else if (div === 'NJCAA') {
+            dynamicLines.push({ activity: 'Direct messaging',     alwaysUnlocked: true });
+            dynamicLines.push({ activity: 'Off-campus contact',   alwaysUnlocked: true });
+            dynamicLines.push({ activity: 'Paid official visits', date: new Date(g - 1, 5, 1) });
+        } else if (div === 'NAIA') {
+            dynamicLines.push({ activity: 'Direct messaging',             alwaysUnlocked: true });
+            dynamicLines.push({ activity: 'Off-campus contact',           alwaysUnlocked: true });
+            dynamicLines.push({ activity: 'Official & unofficial visits', alwaysUnlocked: true });
+        }
+    }
+
+    const verdictItems = dynamicLines.map(l => {
+        if (l.alwaysUnlocked) {
+            return { activity: l.activity, status: 'unlocked', text: 'No timing restriction' };
+        }
+        if (!l.date) return { activity: l.activity, status: 'unknown', text: 'Unknown' };
+        if (today >= l.date) {
+            return { activity: l.activity, status: 'unlocked', text: `✓ Unlocked (since ${fmt(l.date)})` };
+        }
+        const days = daysUntil(l.date);
+        return { activity: l.activity, status: 'locked', text: `Unlocks ${fmt(l.date)} (in ${days} day${days === 1 ? '' : 's'})` };
+    });
+
+    if (div === 'FBS' || div === 'FCS') {
+        rows = [
+            { activity: 'Calls / Texts / Emails / Direct Messages', rule: 'Sept 1 of junior year onward' },
+            { activity: 'Off-Campus Contact',                       rule: 'After completion of junior year' },
+            { activity: 'Official Visits',                          rule: 'Starting Aug 1 before junior year' },
+            { activity: 'Unofficial Visits',                        rule: 'Aug 1 before junior year onward' },
+        ];
+        footnote = 'D1 football coaches may not direct-message a recruit before Sept 1 of their junior year.';
+    } else if (div === 'D2') {
+        rows = [
+            { activity: 'Calls / Texts / Emails / Direct Messages', rule: 'No restrictions on timing' },
+            { activity: 'Recruiting Materials',                     rule: 'May be sent at any time' },
+            { activity: 'Off-Campus Contact',                       rule: 'After June 15 immediately preceding junior year' },
+            { activity: 'Official Visits',                          rule: 'After June 15 immediately preceding junior year' },
+        ];
+        footnote = 'D2 messaging is unrestricted by class year. In-person off-campus contact and official visits are gated to June 15 before junior year.';
+    } else if (div === 'D3') {
+        rows = [
+            { activity: 'Calls / Texts / Emails / Direct Messages', rule: 'No restrictions on timing or frequency' },
+            { activity: 'Recruiting Materials',                     rule: 'May be sent at any time' },
+            { activity: 'Off-Campus Contact',                       rule: 'After sophomore year' },
+            { activity: 'Official Visits',                          rule: 'Starting Jan 1 of junior year (1 per school)' },
+            { activity: 'Unofficial Visits',                        rule: 'Unlimited, anytime' },
+        ];
+        footnote = 'D3 has no formal recruiting periods. Phone/text/email is unrestricted; off-campus and visit activities have class-year gates.';
+    } else if (div === 'NJCAA') {
+        rows = [
+            { activity: 'Calls / Texts / Emails / Direct Messages', rule: 'No restrictions on timing' },
+            { activity: 'Off-Campus Contact',                       rule: 'Allowed' },
+            { activity: 'Official Visits',                          rule: 'After completing junior year' },
+            { activity: 'Visit Duration',                           rule: 'Max 2 days / 2 nights, campus & local area' },
+        ];
+        footnote = 'NJCAA has no regulated calendar. Paid official visits are the only class-year-gated activity.';
+    } else if (div === 'NAIA') {
+        rows = [
+            { activity: 'Calls / Texts / Emails / Direct Messages', rule: 'Year-round, no restrictions' },
+            { activity: 'Off-Campus Contact',                       rule: 'No restrictions' },
+            { activity: 'Official & Unofficial Visits',             rule: 'Anytime' },
+            { activity: 'Tryouts',                                  rule: 'Max 2 days per institution (career limit)' },
+        ];
+        footnote = 'NAIA enforces no dead/quiet periods and no class-year gates on recruiting communication.';
+    }
+
+    return { display, rows, footnote, cls, elig, verdictItems };
+}
+
+function isTransferPlayer(participant) {
+    return participant.role === 'player' && participant.transfer === 'y';
+}
+
 function updateRecruitingPeriodIndicator(participant) {
     const indicator = document.getElementById('recruitingPeriodIndicator');
     if (!indicator) return;
+
+    const transferDisclaimer = document.getElementById('rpiTransferDisclaimer');
+    const rpiContent = indicator.querySelector('.rpi-content');
+    const eligRowEl  = document.getElementById('rpiEligibilityRow');
+
+    // Transfer-player branch: show a disclaimer-only strip, hide the period + eligibility rows.
+    if (isTransferPlayer(participant) && currentCoachDivision) {
+        if (rpiContent) rpiContent.style.display = 'none';
+        if (eligRowEl)  eligRowEl.style.display = 'none';
+        if (transferDisclaimer) transferDisclaimer.style.display = 'flex';
+        indicator.style.display = 'flex';
+        return;
+    }
+
+    // Default visibility for HS-player branch below.
+    if (rpiContent) rpiContent.style.display = '';
+    if (transferDisclaimer) transferDisclaimer.style.display = 'none';
 
     if (!isHSPlayer(participant) || !currentCoachDivision) {
         indicator.style.display = 'none';
@@ -1263,6 +1448,30 @@ function updateRecruitingPeriodIndicator(participant) {
     }
     if (permissions) {
         permissions.textContent = getPermissionSummary(period.type);
+    }
+
+    // Class-year eligibility row (second row, HS-player conversations only).
+    const eligRow   = document.getElementById('rpiEligibilityRow');
+    const classEl   = document.getElementById('rpiClassYear');
+    const eligBadge = document.getElementById('rpiEligibilityBadge');
+    const gradYear = participant.graduation_year;
+    if (eligRow && eligBadge) {
+        if (!gradYear) {
+            eligRow.style.display = 'none';
+        } else {
+            const today = new Date();
+            const cls  = getClassYearFromGradYear(gradYear, today);
+            const elig = getContactEligibility(currentCoachDivision, gradYear, today);
+
+            if (classEl) classEl.textContent = cls.label;
+
+            const badgeStatus = (elig.status === 'not_yet') ? 'not_yet' : 'eligible';
+            eligBadge.textContent = (badgeStatus === 'not_yet') ? 'Not Eligible' : 'Eligible';
+            eligBadge.className = 'rpi-eligibility-badge ' + badgeStatus;
+            eligBadge.onclick = () => openEligibilityModal(currentCoachDivision, gradYear, participant);
+
+            eligRow.style.display = 'flex';
+        }
     }
 
     indicator.style.display = 'flex';
@@ -1304,5 +1513,69 @@ function initRecruitingCalendar() {
             const content = document.querySelector(`.rc-tab-content[data-tab="${target}"]`);
             if (content) content.classList.add('active');
         });
+    });
+}
+
+// ========================
+// ELIGIBILITY INFO MODAL
+// ========================
+function openEligibilityModal(division, gradYear, participant) {
+    const overlay = document.getElementById('eligOverlay');
+    if (!overlay) return;
+
+    const today = new Date();
+    const data = getDivisionEligibilityData(division, gradYear, today);
+
+    const rulesTitle    = document.getElementById('eligRulesTitle');
+    const tbody         = document.getElementById('eligRulesBody');
+    const verdictStatus = document.getElementById('eligVerdictStatus');
+    const verdictDetail = document.getElementById('eligVerdictDetail');
+    const verdictList   = document.getElementById('eligVerdictList');
+    const footnoteEl    = document.getElementById('eligFootnote');
+
+    if (rulesTitle) rulesTitle.textContent = `${data.display} Recruiting Rules`;
+
+    if (tbody) {
+        tbody.innerHTML = data.rows.map(r =>
+            `<tr><td>${escapeHtml(r.activity)}</td><td>${escapeHtml(r.rule)}</td></tr>`
+        ).join('');
+    }
+
+    const playerName = `${participant.first_name || ''} ${participant.last_name || ''}`.trim() || 'this player';
+
+    if (verdictStatus && verdictDetail) {
+        if (data.elig.status === 'not_yet') {
+            const g = data.cls.g;
+            verdictStatus.textContent = 'Not yet eligible for direct contact';
+            verdictStatus.className = 'elig-verdict-status not_yet';
+            verdictDetail.textContent = `${playerName} is ${data.cls.label}. ${data.display} direct messaging opens Sept 1, ${g - 2}.`;
+        } else {
+            verdictStatus.textContent = 'Eligible to message';
+            verdictStatus.className = 'elig-verdict-status eligible';
+            verdictDetail.textContent = `${playerName} is ${data.cls.label || 'an HS player'}. ${data.display} permits direct messaging at this class year.`;
+        }
+    }
+
+    if (verdictList) {
+        verdictList.innerHTML = data.verdictItems.map(item => {
+            const dotClass = (item.status === 'unlocked') ? 'unlocked'
+                          : (item.status === 'locked')   ? 'locked'
+                          : 'unknown';
+            return `<li><span class="elig-dot ${dotClass}">●</span><strong>${escapeHtml(item.activity)}</strong>: ${escapeHtml(item.text)}</li>`;
+        }).join('');
+    }
+
+    if (footnoteEl) footnoteEl.textContent = data.footnote || '';
+
+    overlay.classList.add('active');
+}
+
+function initEligibilityModal() {
+    const overlay = document.getElementById('eligOverlay');
+    const closeBtn = document.getElementById('eligCloseBtn');
+    if (!overlay) return;
+    if (closeBtn) closeBtn.addEventListener('click', () => overlay.classList.remove('active'));
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) overlay.classList.remove('active');
     });
 }
