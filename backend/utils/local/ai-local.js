@@ -40,6 +40,7 @@ async function getRecruitingFilters(messages, coachBaselines, coachState, coachD
       track_100m_max: null,
       track_200m_max: null,
       pff_grade_min: null,
+      pff_grade_max: null,
       stat_filters: []
     },
     summary: '[LOCAL DEV] Sample search: HS QBs and WRs, class of 2027, 6\'0"+, 180+ lbs, 3.0+ GPA',

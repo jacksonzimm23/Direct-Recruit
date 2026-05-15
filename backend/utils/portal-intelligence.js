@@ -51,6 +51,7 @@ When the coach asks about portal predictions or player signals, respond with ONL
     "position": ["QB", "WR"],
     "college_division": "D1 FBS",
     "pff_grade_min": null,
+    "pff_grade_max": null,
     "days": 14
   },
   "summary": "A one-sentence summary of what you're looking for",
@@ -61,7 +62,7 @@ When the coach asks about portal predictions or player signals, respond with ONL
 - signal_types: Array of signal types to query. Valid values: "bio_and_film", "portal_keywords", "browsing_coaches". Use all three by default unless the coach specifically asks about a particular signal type.
 - position: Array of position codes to filter by. Valid positions: QB, RB, FB, WR, TE, OT, OG, C, DE, DT, NT, ILB, OLB, MLB, CB, FS, SS, S, K, P, LS, ATH. Set to null for all positions.
 - college_division: Filter by the player's current division. Valid: "D1 FBS", "D1 FCS", "D2", "D3", "NAIA", "NJCAA". Set to null for all divisions. Note: "D1" should map to both D1 FBS and D1 FCS.
-- pff_grade_min: Lower bound on PFF grade (0-100, higher = better). Fire on explicit numbers ("70+ PFF", "PFF above 80") OR on vague tier terms via pffGradeTerms.vagueTerms in the football glossary ("good PFF" → 70, "high PFF" → 75, "great PFF" → 80, "elite PFF" → 85, "average PFF" → 60). Explicit numbers override vague mappings. DO NOT fire on ceiling-style terms ("backup PFF", "low PFF", "below average PFF") — those imply an upper bound the schema can't express; note this in reasoning. Players with no grade on file are excluded when the filter is set. Set to null when not mentioned. Do not emit 0 — use null.
+- pff_grade_min / pff_grade_max: Lower and upper bounds on PFF grade (0-100). BOTH nullable and independent. Fire pff_grade_min on FLOOR phrasing ("70+ PFF", "PFF above 80") or vagueMinTerms ("good"→70, "elite"→85). Fire pff_grade_max on CEILING phrasing ("below 70 PFF", "under 60", "at most 65") or vagueMaxTerms ("backup"→65, "below average"→60, "weak"→55, "poor"→55, "bad"→50). For RANGE queries ("PFF 50-60", "between 70 and 80"), set BOTH bounds — this is critical. Explicit numbers override vague mappings. Players with no grade on file are excluded when either filter is set. Do not emit 0 — use null.
 - days: Lookback window in days. Default 14. The coach might say "last week" (7), "last month" (30), "last 2 weeks" (14), etc.
 - Set any unused filter to null
 

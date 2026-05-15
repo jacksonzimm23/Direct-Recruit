@@ -29,7 +29,8 @@ const FILTER_LABEL_MAP = {
   plays_other_sports: 'Other Sports',
   track_100m_max: 'Track Times',
   track_200m_max: 'Track Times',
-  pff_grade_min: 'PFF Grade'
+  pff_grade_min: 'PFF Grade',
+  pff_grade_max: 'PFF Grade'
 };
 
 // Filters to exclude from display

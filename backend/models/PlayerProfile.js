@@ -745,6 +745,13 @@ class PlayerProfile {
       paramCount++;
     }
 
+    // PFF grade maximum — transfer-only. NOT NULL guard also excludes ungraded.
+    if (filters.pff_grade_max) {
+      whereClauses.push(`(pp.pff_grade IS NOT NULL AND pp.pff_grade <= $${paramCount})`);
+      values.push(filters.pff_grade_max);
+      paramCount++;
+    }
+
     // Offer filters (count and/or division)
     if (filters.offer_filters) {
       const of = filters.offer_filters;

@@ -514,23 +514,30 @@ const RA_GLOSSARY = {
     },
 
     // ========================================================
-    // 18. PFF GRADE TERMS — natural language → pff_grade_min
+    // 18. PFF GRADE TERMS — natural language → pff_grade_min / pff_grade_max
     // ========================================================
-    // Single scalar filter key (nullable, lower bound):
+    // Two scalar filter keys (both nullable):
     //   - pff_grade_min: 70   (player's pp.pff_grade must be NOT NULL AND >= 70)
+    //   - pff_grade_max: 80   (player's pp.pff_grade must be NOT NULL AND <= 80)
+    // Both can fire together for range queries: "PFF 70-80" → min=70, max=80.
+    //
     // PFF grades are stored in player_profiles.pff_grade (NUMERIC(4,1), 0-100,
     // NULL = no grade on file). Most cluster 60-90.
+    //
     // SCOPE: PFF only exists on collegeplayer + transferplayer profiles.
-    //   - RA fires this filter only on TRANSFER searches (player_type='transfer'/'all').
-    //   - PI fires it on collegeplayer signal searches.
+    //   - RA fires these filters only on TRANSFER searches (player_type='transfer'/'all').
+    //   - PI fires them on collegeplayer signal searches.
     //   - Never set when player_type='hs'.
+    //
     // FIRING RULES:
     //   - Explicit number → use it directly (see patterns below).
-    //   - Vague term → use the mapped default from vagueTerms below.
+    //   - Vague term → use the mapped default (vagueMinTerms for floors,
+    //     vagueMaxTerms for ceilings).
     //   - Explicit number ALWAYS overrides vague mapping if both are present
-    //     (e.g. "elite PFF, at least 90" → 90, not 85).
+    //     (e.g. "elite PFF, at least 90" → min=90, not 85).
+    //   - Range: emit BOTH min and max (e.g. "PFF 50-60" → min=50, max=60).
     pffGradeTerms: {
-        patterns: {
+        minPatterns: {
             'X+ PFF':              { key: 'pff_grade_min', note: '"70+ PFF" → 70' },
             'above X PFF':         { key: 'pff_grade_min', note: '"above 80 PFF" → 80' },
             'PFF above X':         { key: 'pff_grade_min' },
@@ -540,41 +547,68 @@ const RA_GLOSSARY = {
             'PFF of X or higher':  { key: 'pff_grade_min' },
             'PFF >= X':            { key: 'pff_grade_min' },
             'PFF grade above X':   { key: 'pff_grade_min' },
-            'graded X or better':  { key: 'pff_grade_min', note: 'Only when PFF context is unambiguous' }
+            'graded X or better':  { key: 'pff_grade_min', note: 'Only when PFF context is unambiguous' },
+            'at least X PFF':      { key: 'pff_grade_min' }
         },
-        // Vague language → default threshold. Loose ranges since most grades
-        // cluster 60-90. Explicit number in the query overrides vague mapping.
-        vagueTerms: {
-            // Tier 1: average-ish (catches everyone above the median)
+        maxPatterns: {
+            'PFF below X':         { key: 'pff_grade_max', note: '"PFF below 70" → 70' },
+            'below X PFF':         { key: 'pff_grade_max' },
+            'under X PFF':         { key: 'pff_grade_max', note: '"under 70 PFF" → 70' },
+            'PFF under X':         { key: 'pff_grade_max' },
+            'PFF of X or less':    { key: 'pff_grade_max' },
+            'PFF of X or lower':   { key: 'pff_grade_max' },
+            'PFF <= X':            { key: 'pff_grade_max' },
+            'at most X PFF':       { key: 'pff_grade_max' },
+            'no higher than X':    { key: 'pff_grade_max', note: 'Only when PFF context is unambiguous' }
+        },
+        rangePatterns: {
+            'PFF X-Y':             { keys: ['pff_grade_min', 'pff_grade_max'], note: '"PFF 70-80" → min=70, max=80' },
+            'PFF X to Y':          { keys: ['pff_grade_min', 'pff_grade_max'] },
+            'PFF between X and Y': { keys: ['pff_grade_min', 'pff_grade_max'], note: '"PFF grade between 50-60" → min=50, max=60' },
+            'between X and Y PFF': { keys: ['pff_grade_min', 'pff_grade_max'] },
+            'PFF in the X-Y range':{ keys: ['pff_grade_min', 'pff_grade_max'] }
+        },
+        // Vague language → default FLOOR (pff_grade_min). Most grades cluster
+        // 60-90. Explicit number in the query overrides vague mapping.
+        vagueMinTerms: {
             'average PFF':         60,
             'decent PFF':          60,
             'okay PFF':            60,
-            // Tier 2: above-average
             'good PFF':            70,
             'well graded':         70,
             'above average PFF':   70,
-            // Tier 3: high
             'high PFF':            75,
             'highly graded':       75,
             'high-graded':         75,
-            // Tier 4: great
             'great PFF':           80,
             'strong PFF':          80,
             'top PFF guys':        80,
-            // Tier 5: elite
             'elite PFF':           85,
             'elite grades':        85,
             'top-graded':          85
         },
-        // Ceiling-style vague terms — Claude must leave pff_grade_min null and
-        // note that upper-bound PFF filtering isn't supported. These imply a
-        // MAX, not a MIN, and the schema has no pff_grade_max field yet.
-        ceilingTermsDoNotFire: [
-            'backup PFF', 'backup-level PFF',
-            'low PFF', 'weak PFF',
-            'below average PFF', 'poor PFF', 'bad PFF'
-        ],
-        rangeHandling: 'If coach says "PFF 70-80", set pff_grade_min=70 and note in reasoning that upper-bound is not supported.',
+        // Vague language → default CEILING (pff_grade_max). These imply a
+        // sub-average / underperforming player. Same rule: explicit number wins.
+        vagueMaxTerms: {
+            'backup PFF':            65,
+            'backup-level PFF':      65,
+            'below average PFF':     60,
+            'low PFF':               60,
+            'weak PFF':              55,
+            'poor PFF':              55,
+            'bad PFF':               50,
+            'underperforming':       60,
+            'struggling':            55
+        },
+        // Backwards-compatible alias kept for any older prompt text that still
+        // references vagueTerms (legacy floor-only mapping).
+        vagueTerms: {
+            'average PFF': 60, 'decent PFF': 60, 'okay PFF': 60,
+            'good PFF': 70, 'well graded': 70, 'above average PFF': 70,
+            'high PFF': 75, 'highly graded': 75, 'high-graded': 75,
+            'great PFF': 80, 'strong PFF': 80, 'top PFF guys': 80,
+            'elite PFF': 85, 'elite grades': 85, 'top-graded': 85
+        },
         databaseColumn: 'pff_grade'
     }
 };
