@@ -169,18 +169,21 @@ function renderNotifications() {
 function renderNotificationCard(notification) {
     const isUnread = !notification.is_read;
     const timeAgo = formatTimeAgo(notification.created_at);
-    // Check for all board-related notification types
+    // Check for all group-related notification types (Phase 2 — replaces legacy 'board_*' types)
     const boardNotificationTypes = [
-        'board_invite',
-        'board_invite_sent',
-        'board_invite_accepted',
-        'board_invite_declined',
-        'board_ownership_transfer',
-        'board_collaborator_left',
-        'board_collaborator_removed'
+        'group_invite',
+        'group_invite_editor',
+        'group_invite_sent',
+        'group_invite_accepted',
+        'group_invite_declined',
+        'group_ownership_transfer',
+        'group_member_left',
+        'group_member_removed'
     ];
     const isBoardNotification = boardNotificationTypes.includes(notification.related_entity_type);
-    const isBoardInvite = notification.related_entity_type === 'board_invite';
+    // Either viewer-tier or editor-tier invite needs Accept/Decline buttons
+    const isBoardInvite = notification.related_entity_type === 'group_invite' ||
+                          notification.related_entity_type === 'group_invite_editor';
 
     // Determine icon based on type and entity type
     let iconClass = 'interaction-icon';
@@ -911,12 +914,16 @@ async function confirmAcceptInvite() {
     try {
         await API.post('/recruiting-board/invite/accept', {
             notificationId: pendingInviteAction.notificationId,
-            boardId: pendingInviteAction.boardId
+            // related_entity_id is the group's ID for Phase 2 group invites; the
+            // older code base referred to it as boardId — we still pass it under
+            // the same property name for back-compat, but also send groupId.
+            boardId: pendingInviteAction.boardId,
+            groupId: pendingInviteAction.boardId
         });
 
         closeInviteAcceptModal();
         await loadNotifications();
-        showFeedback('Invite accepted! You can now access the recruiting board.');
+        showFeedback('Invite accepted! You can now access the shared group.');
     } catch (error) {
         console.error('Error accepting invite:', error);
         showFeedback(error.error || 'Failed to accept invite', 'error');
@@ -936,7 +943,8 @@ async function confirmDeclineInvite() {
     try {
         await API.post('/recruiting-board/invite/decline', {
             notificationId: pendingInviteAction.notificationId,
-            boardId: pendingInviteAction.boardId
+            boardId: pendingInviteAction.boardId,
+            groupId: pendingInviteAction.boardId
         });
 
         closeInviteDeclineModal();

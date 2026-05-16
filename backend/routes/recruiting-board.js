@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const RecruitingBoard = require('../models/RecruitingBoard');
+const BoardGroup = require('../models/BoardGroup');
 const Notification = require('../models/Notification');
 const { notifyUser } = require('../utils/notifications');
 const { authMiddleware, requireRole, validateUUID } = require('../middleware/auth');
@@ -26,7 +27,162 @@ async function addSignedUrlsToPlayers(players) {
   }));
 }
 
-// ==================== Personal Board Routes ====================
+// ==================== Named Personal Boards (multi-board) ====================
+// New API used by the redesigned Personal Boards UI. A coach can have up to
+// PERSONAL_BOARD_CAP named boards; each is keyed by its UUID, not by class year.
+// The legacy single-board endpoints below stay alive for the player-profile
+// "Add to Recruiting Board" call site, which will be migrated separately.
+
+// List all named personal boards for the current coach
+router.get('/personal', authMiddleware, requireRole('coach'), async (req, res) => {
+  try {
+    const boards = await RecruitingBoard.listPersonalBoards(req.userId);
+    res.json({ boards, cap: RecruitingBoard.PERSONAL_BOARD_CAP });
+  } catch (error) {
+    logger.error('Error listing personal boards:', error);
+    res.status(500).json({ error: 'Failed to list personal boards' });
+  }
+});
+
+// Create a new named personal board
+router.post('/personal', authMiddleware, requireRole('coach'), async (req, res) => {
+  try {
+    const { boardName } = req.body;
+    const board = await RecruitingBoard.createPersonalBoard(req.userId, boardName);
+    res.json({ board });
+  } catch (error) {
+    const msg = error.message || 'Failed to create personal board';
+    if (/required|characters|limit reached/i.test(msg)) {
+      return res.status(400).json({ error: msg });
+    }
+    logger.error('Error creating personal board:', error);
+    res.status(500).json({ error: 'Failed to create personal board' });
+  }
+});
+
+// Delete a named personal board
+router.delete('/personal/:boardId', authMiddleware, requireRole('coach'), validateUUID('boardId'), async (req, res) => {
+  try {
+    await RecruitingBoard.deletePersonalBoard(req.params.boardId, req.userId);
+    res.json({ success: true });
+  } catch (error) {
+    if (/not found/i.test(error.message)) return res.status(404).json({ error: error.message });
+    logger.error('Error deleting personal board:', error);
+    res.status(500).json({ error: 'Failed to delete personal board' });
+  }
+});
+
+// Rename a named personal board
+router.put('/personal/:boardId/name', authMiddleware, requireRole('coach'), validateUUID('boardId'), async (req, res) => {
+  try {
+    const { boardName } = req.body;
+    const board = await RecruitingBoard.renamePersonalBoard(req.params.boardId, req.userId, boardName);
+    res.json({ board });
+  } catch (error) {
+    const msg = error.message || 'Failed to rename personal board';
+    if (/required|characters/i.test(msg)) return res.status(400).json({ error: msg });
+    if (/not found/i.test(msg)) return res.status(404).json({ error: msg });
+    logger.error('Error renaming personal board:', error);
+    res.status(500).json({ error: 'Failed to rename personal board' });
+  }
+});
+
+// Get position config for a specific personal board
+router.get('/personal/:boardId/config', authMiddleware, requireRole('coach'), validateUUID('boardId'), async (req, res) => {
+  try {
+    const board = await RecruitingBoard.getPersonalBoardById(req.params.boardId, req.userId);
+    if (!board) return res.status(404).json({ error: 'Board not found' });
+    res.json({
+      offensePositions: board.offense_positions,
+      defensePositions: board.defense_positions
+    });
+  } catch (error) {
+    logger.error('Error fetching personal board config:', error);
+    res.status(500).json({ error: 'Failed to fetch position configuration' });
+  }
+});
+
+// Save position config for a specific personal board
+router.put('/personal/:boardId/config', authMiddleware, requireRole('coach'), validateUUID('boardId'), async (req, res) => {
+  try {
+    const { offensePositions, defensePositions } = req.body;
+    if (!offensePositions || !defensePositions) {
+      return res.status(400).json({ error: 'Both offense and defense positions are required' });
+    }
+    await RecruitingBoard.savePersonalBoardConfig(req.params.boardId, req.userId, offensePositions, defensePositions);
+    res.json({ message: 'Position configuration saved', offensePositions, defensePositions });
+  } catch (error) {
+    if (/not found/i.test(error.message)) return res.status(404).json({ error: error.message });
+    logger.error('Error saving personal board config:', error);
+    res.status(500).json({ error: 'Failed to save position configuration' });
+  }
+});
+
+// Get players for a specific personal board (no class-year filter)
+router.get('/personal/:boardId/players', authMiddleware, requireRole('coach'), validateUUID('boardId'), async (req, res) => {
+  try {
+    let players = await RecruitingBoard.getPlayersFromPersonalBoardById(req.params.boardId, req.userId);
+    players = await addSignedUrlsToPlayers(players);
+    res.json(players);
+  } catch (error) {
+    logger.error('Error fetching personal board players:', error);
+    res.status(500).json({ error: 'Failed to fetch players' });
+  }
+});
+
+// Add a player to a specific personal board
+router.post('/personal/:boardId/players', authMiddleware, requireRole('coach'), validateUUID('boardId'), async (req, res) => {
+  try {
+    const playerData = req.body;
+    if (!playerData.user_id || !playerData.position) {
+      return res.status(400).json({ error: 'Player user_id and position are required' });
+    }
+    await RecruitingBoard.addPlayerToPersonalBoardById(req.params.boardId, req.userId, playerData);
+    res.json({ message: 'Player added to recruiting board', player: playerData });
+  } catch (error) {
+    if (error.message === 'Player already on board for this position') {
+      return res.status(400).json({ error: error.message });
+    }
+    if (/not found/i.test(error.message)) return res.status(404).json({ error: error.message });
+    logger.error('Error adding player to personal board:', error);
+    res.status(500).json({ error: 'Failed to add player to recruiting board' });
+  }
+});
+
+// Remove a player from a specific personal board
+router.delete('/personal/:boardId/players/:playerId', authMiddleware, requireRole('coach'), validateUUID('boardId', 'playerId'), async (req, res) => {
+  try {
+    const { position } = req.query;
+    await RecruitingBoard.removePlayerFromPersonalBoardById(req.params.boardId, req.userId, req.params.playerId, position);
+    res.json({ message: 'Player removed from recruiting board' });
+  } catch (error) {
+    if (/not found/i.test(error.message)) return res.status(404).json({ error: error.message });
+    logger.error('Error removing player from personal board:', error);
+    res.status(500).json({ error: 'Failed to remove player from recruiting board' });
+  }
+});
+
+// Update a player's position on a specific personal board
+router.put('/personal/:boardId/players/:playerId/position', authMiddleware, requireRole('coach'), validateUUID('boardId', 'playerId'), async (req, res) => {
+  try {
+    const { oldPosition, newPosition } = req.body;
+    if (!oldPosition || !newPosition) {
+      return res.status(400).json({ error: 'Both oldPosition and newPosition are required' });
+    }
+    await RecruitingBoard.updatePlayerPositionOnPersonalBoardById(
+      req.params.boardId, req.userId, req.params.playerId, oldPosition, newPosition
+    );
+    res.json({ message: 'Player position updated' });
+  } catch (error) {
+    if (/not found/i.test(error.message)) return res.status(404).json({ error: error.message });
+    logger.error('Error updating player position:', error);
+    res.status(500).json({ error: 'Failed to update player position' });
+  }
+});
+
+// ==================== Personal Board Routes (LEGACY — class-year keyed) ====================
+// Kept for the player-profile "Add to Recruiting Board" button which still
+// targets the single per-coach board. Will be migrated when that flow is reworked.
 
 // Initialize/get personal board
 router.get('/personal/init', authMiddleware, requireRole('coach'), async (req, res) => {
@@ -142,257 +298,109 @@ router.put('/personal/:classYear/players/:playerId/position', authMiddleware, re
   }
 });
 
-// ==================== Shared Board Routes ====================
+// ==================== Shared Groups (Phase 2 — Google-Docs-style sharing) ====================
+// A "group" is a named collection of college coaches with viewer/editor permissions.
+// Inside a group, members collectively manage up to BOARDS_PER_GROUP_CAP named recruiting
+// boards. Permission gating is enforced via requireGroupAccess(level) middleware on every
+// /groups/* route — it loads the requester's permission row and 403s if insufficient.
+// This is the "immediate kick" enforcement: any request after removal returns 403.
 
-// Create a new shared board
-router.post('/shared', authMiddleware, requireRole('coach'), async (req, res) => {
-  try {
-    const { boardName } = req.body;
+// Middleware: load the requester's group permission and 403 if insufficient.
+//   level === 'any'    → must be a member (viewer or editor)
+//   level === 'editor' → must be editor or owner
+//   level === 'owner'  → must be the owner specifically
+function requireGroupAccess(level) {
+  return async function (req, res, next) {
+    try {
+      const groupId = req.params.groupId;
+      if (!groupId) return res.status(400).json({ error: 'groupId is required' });
 
-    if (!boardName || boardName.trim().length === 0) {
-      return res.status(400).json({ error: 'Board name is required' });
-    }
-    if (boardName.trim().length > 100) {
-      return res.status(400).json({ error: 'Board name must be 100 characters or less' });
-    }
+      const my = await BoardGroup.getMembership(groupId, req.userId);
+      if (!my) return res.status(403).json({ error: 'You are not a member of this group' });
 
-    const board = await RecruitingBoard.createSharedBoard(req.userId, boardName.trim());
-    res.json({ success: true, board });
-  } catch (error) {
-    logger.error('Error creating shared board:', error);
-    res.status(500).json({ error: 'Failed to create shared board' });
-  }
-});
-
-// Get all shared boards (owned + collaborator)
-router.get('/shared', authMiddleware, requireRole('coach'), async (req, res) => {
-  try {
-    const ownedBoards = await RecruitingBoard.getOwnedSharedBoards(req.userId);
-    const collaboratorBoards = await RecruitingBoard.getCollaboratorBoards(req.userId);
-
-    res.json({
-      ownedBoards,
-      collaboratorBoards
-    });
-  } catch (error) {
-    logger.error('Error getting shared boards:', error);
-    res.status(500).json({ error: 'Failed to get shared boards' });
-  }
-});
-
-// Get a specific shared board by ID
-router.get('/shared/:boardId', authMiddleware, requireRole('coach'), validateUUID('boardId'), async (req, res) => {
-  try {
-    const { boardId } = req.params;
-
-    // Check access
-    const accessInfo = await RecruitingBoard.hasAccessToBoard(req.userId, boardId);
-    if (!accessInfo.hasAccess) {
-      return res.status(403).json({ error: 'You do not have access to this board' });
-    }
-
-    const board = await RecruitingBoard.getSharedBoardById(boardId);
-    const config = await RecruitingBoard.getPositionConfig(null, boardId);
-    const collaborators = await RecruitingBoard.getCollaboratorsWithDetails(boardId);
-
-    res.json({
-      ...board,
-      offensePositions: config.offensePositions,
-      defensePositions: config.defensePositions,
-      collaborators,
-      userRole: accessInfo.role
-    });
-  } catch (error) {
-    logger.error('Error getting shared board:', error);
-    res.status(500).json({ error: 'Failed to get shared board' });
-  }
-});
-
-// Update shared board name
-router.put('/shared/:boardId/name', authMiddleware, requireRole('coach'), validateUUID('boardId'), async (req, res) => {
-  try {
-    const { boardId } = req.params;
-    const { boardName } = req.body;
-
-    if (!boardName || boardName.trim().length === 0) {
-      return res.status(400).json({ error: 'Board name is required' });
-    }
-    if (boardName.trim().length > 100) {
-      return res.status(400).json({ error: 'Board name must be 100 characters or less' });
-    }
-
-    const board = await RecruitingBoard.updateBoardName(boardId, req.userId, boardName.trim());
-
-    if (!board) {
-      return res.status(403).json({ error: 'Only the board owner can rename the board' });
-    }
-
-    res.json({ success: true, board });
-  } catch (error) {
-    logger.error('Error updating board name:', error);
-    res.status(500).json({ error: 'Failed to update board name' });
-  }
-});
-
-// Delete a shared board
-router.delete('/shared/:boardId', authMiddleware, requireRole('coach'), validateUUID('boardId'), async (req, res) => {
-  try {
-    const { boardId } = req.params;
-    await RecruitingBoard.deleteSharedBoard(boardId, req.userId);
-    res.json({ success: true, message: 'Board deleted' });
-  } catch (error) {
-    logger.error('Error deleting shared board:', error);
-    res.status(500).json({ error: 'Failed to delete board' });
-  }
-});
-
-// Save shared board config
-router.put('/shared/:boardId/config', authMiddleware, requireRole('coach'), validateUUID('boardId'), async (req, res) => {
-  try {
-    const { boardId } = req.params;
-    const { offensePositions, defensePositions } = req.body;
-
-    // Check access
-    const accessInfo = await RecruitingBoard.hasAccessToBoard(req.userId, boardId);
-    if (!accessInfo.hasAccess) {
-      return res.status(403).json({ error: 'You do not have access to this board' });
-    }
-
-    if (!offensePositions || !defensePositions) {
-      return res.status(400).json({ error: 'Both offense and defense positions are required' });
-    }
-
-    await RecruitingBoard.savePositionConfig(null, offensePositions, defensePositions, boardId);
-
-    res.json({
-      message: 'Position configuration saved',
-      offensePositions,
-      defensePositions
-    });
-  } catch (error) {
-    logger.error('Error saving shared board config:', error);
-    res.status(500).json({ error: 'Failed to save position configuration' });
-  }
-});
-
-// Get players for shared board by class year
-router.get('/shared/:boardId/:classYear/players', authMiddleware, requireRole('coach'), validateUUID('boardId'), async (req, res) => {
-  try {
-    const { boardId, classYear } = req.params;
-
-    // Check access
-    const accessInfo = await RecruitingBoard.hasAccessToBoard(req.userId, boardId);
-    if (!accessInfo.hasAccess) {
-      return res.status(403).json({ error: 'You do not have access to this board' });
-    }
-
-    let players = await RecruitingBoard.getPlayersFromSharedBoard(boardId, parseInt(classYear));
-    players = await addSignedUrlsToPlayers(players);
-    res.json(players);
-  } catch (error) {
-    logger.error('Error fetching shared board players:', error);
-    res.status(500).json({ error: 'Failed to fetch players' });
-  }
-});
-
-// Add player to shared board
-router.post('/shared/:boardId/:classYear/players', authMiddleware, requireRole('coach'), validateUUID('boardId'), async (req, res) => {
-  try {
-    const { boardId, classYear } = req.params;
-    const playerData = req.body;
-
-    // Check access
-    const accessInfo = await RecruitingBoard.hasAccessToBoard(req.userId, boardId);
-    if (!accessInfo.hasAccess) {
-      return res.status(403).json({ error: 'You do not have access to this board' });
-    }
-
-    if (!playerData.user_id || !playerData.position) {
-      return res.status(400).json({ error: 'Player user_id and position are required' });
-    }
-
-    await RecruitingBoard.addPlayerToSharedBoard(boardId, parseInt(classYear), playerData);
-
-    res.json({
-      message: 'Player added to recruiting board',
-      player: playerData
-    });
-  } catch (error) {
-    logger.error('Error adding player to shared board:', error);
-    if (error.message === 'Player already on board for this position') {
-      return res.status(400).json({ error: 'Player is already on the board for this position' });
-    }
-    res.status(500).json({ error: 'Failed to add player to recruiting board' });
-  }
-});
-
-// Remove player from shared board
-router.delete('/shared/:boardId/:classYear/players/:playerId', authMiddleware, requireRole('coach'), validateUUID('boardId', 'playerId'), async (req, res) => {
-  try {
-    const { boardId, classYear, playerId } = req.params;
-    const { position } = req.query;
-
-    // Check access
-    const accessInfo = await RecruitingBoard.hasAccessToBoard(req.userId, boardId);
-    if (!accessInfo.hasAccess) {
-      return res.status(403).json({ error: 'You do not have access to this board' });
-    }
-
-    await RecruitingBoard.removePlayerFromSharedBoard(boardId, parseInt(classYear), playerId, position);
-    res.json({ message: 'Player removed from recruiting board' });
-  } catch (error) {
-    logger.error('Error removing player from shared board:', error);
-    res.status(500).json({ error: 'Failed to remove player from recruiting board' });
-  }
-});
-
-// Update player position on shared board
-router.put('/shared/:boardId/:classYear/players/:playerId/position', authMiddleware, requireRole('coach'), validateUUID('boardId', 'playerId'), async (req, res) => {
-  try {
-    const { boardId, classYear, playerId } = req.params;
-    const { oldPosition, newPosition } = req.body;
-
-    // Check access
-    const accessInfo = await RecruitingBoard.hasAccessToBoard(req.userId, boardId);
-    if (!accessInfo.hasAccess) {
-      return res.status(403).json({ error: 'You do not have access to this board' });
-    }
-
-    if (!oldPosition || !newPosition) {
-      return res.status(400).json({ error: 'Both oldPosition and newPosition are required' });
-    }
-
-    await RecruitingBoard.updatePlayerPositionOnSharedBoard(boardId, parseInt(classYear), playerId, oldPosition, newPosition);
-    res.json({ message: 'Player position updated' });
-  } catch (error) {
-    logger.error('Error updating player position:', error);
-    res.status(500).json({ error: 'Failed to update player position' });
-  }
-});
-
-// ==================== Collaborator Routes ====================
-
-// Search for coaches (for inviting collaborators)
-router.get('/search-coaches', authMiddleware, requireRole('coach'), async (req, res) => {
-  try {
-    const { query, boardId } = req.query;
-
-    if (!query || query.length < 2) {
-      return res.json({ coaches: [] });
-    }
-
-    // Get current board collaborators to exclude them
-    let excludeIds = [req.userId];
-    if (boardId) {
-      const board = await RecruitingBoard.getSharedBoardById(boardId);
-      if (board && board.collab) {
-        excludeIds = [...excludeIds, ...board.collab];
+      if (level === 'editor' && my.permission !== 'editor') {
+        return res.status(403).json({ error: 'Editor access required' });
       }
+      if (level === 'owner' && !my.is_owner) {
+        return res.status(403).json({ error: 'Owner access required' });
+      }
+
+      req.groupPermission = my; // { permission, is_owner }
+      next();
+    } catch (err) {
+      logger.error('requireGroupAccess error:', err);
+      res.status(500).json({ error: 'Permission check failed' });
+    }
+  };
+}
+
+// Map model errors to HTTP status. Centralizes the duplication.
+function handleGroupError(error, res, fallbackMsg) {
+  const msg = error.message || fallbackMsg;
+  if (/required|characters|limit reached|cannot|must|permission|already/i.test(msg)) {
+    return res.status(400).json({ error: msg });
+  }
+  if (/not found|not a member/i.test(msg)) {
+    return res.status(404).json({ error: msg });
+  }
+  logger.error(fallbackMsg + ':', error);
+  return res.status(500).json({ error: fallbackMsg });
+}
+
+// ---------- Group lifecycle ----------
+
+// List all groups the current coach belongs to
+router.get('/groups', authMiddleware, requireRole('coach'), async (req, res) => {
+  try {
+    const groups = await BoardGroup.listGroupsForUser(req.userId);
+    res.json({ groups, cap: BoardGroup.GROUPS_PER_USER_CAP });
+  } catch (error) {
+    logger.error('Error listing groups:', error);
+    res.status(500).json({ error: 'Failed to list groups' });
+  }
+});
+
+// Create a new group
+router.post('/groups', authMiddleware, requireRole('coach'), async (req, res) => {
+  try {
+    const { groupName } = req.body;
+    const group = await BoardGroup.createGroup(req.userId, groupName);
+    res.json({ group });
+  } catch (error) {
+    return handleGroupError(error, res, 'Failed to create group');
+  }
+});
+
+// IMPORTANT: define static `/groups/search-coaches` BEFORE the parametric
+// `/groups/:groupId` route below — otherwise Express matches "search-coaches"
+// as a groupId and the validateUUID middleware rejects it.
+router.get('/groups/search-coaches', authMiddleware, requireRole('coach'), async (req, res) => {
+  try {
+    const { query, groupId } = req.query;
+    if (!query || query.length < 2) return res.json({ coaches: [] });
+
+    const excludeIds = [req.userId];
+    if (groupId) {
+      // Existing members
+      const existing = await pool.query(
+        `SELECT user_id FROM board_group_members WHERE group_id = $1`,
+        [groupId]
+      );
+      for (const r of existing.rows) excludeIds.push(r.user_id);
+
+      // Pending invites (either permission level)
+      const pending = await pool.query(
+        `SELECT user_id FROM notifications
+         WHERE related_entity_id = $1
+           AND related_entity_type IN ('group_invite', 'group_invite_editor')
+           AND is_read = FALSE`,
+        [groupId]
+      );
+      for (const r of pending.rows) excludeIds.push(r.user_id);
     }
 
-    // Search for college coaches by name or username (fuzzy + LIKE fallback)
     const result = await pool.query(
-      `SELECT cp.user_id, cp.first_name, cp.last_name, cp.username, cp.profile_image_url, cp.team_name
+      `SELECT cp.user_id, cp.first_name, cp.last_name, cp.username, cp.profile_image_url, cp.team_name, cp.college_division, cp.state
        FROM coach_profiles cp
        JOIN users u ON cp.user_id = u.id
        WHERE u.role = 'coach'
@@ -409,6 +417,14 @@ router.get('/search-coaches', authMiddleware, requireRole('coach'), async (req, 
       [excludeIds, query, `%${escapeLikePattern(query)}%`]
     );
 
+    // Sign avatars
+    for (const r of result.rows) {
+      if (r.profile_image_url && r.profile_image_url.startsWith('profiles/')) {
+        try { r.profile_image_url = await getSignedS3Url(r.profile_image_url); }
+        catch { r.profile_image_url = null; }
+      }
+    }
+
     res.json({ coaches: result.rows });
   } catch (error) {
     logger.error('Error searching coaches:', error);
@@ -416,159 +432,375 @@ router.get('/search-coaches', authMiddleware, requireRole('coach'), async (req, 
   }
 });
 
-// Get pending invites for a board
-router.get('/shared/:boardId/pending-invites', authMiddleware, requireRole('coach'), validateUUID('boardId'), async (req, res) => {
+// Get group details + members + my permission
+router.get('/groups/:groupId', authMiddleware, requireRole('coach'), validateUUID('groupId'), requireGroupAccess('any'), async (req, res) => {
   try {
-    const { boardId } = req.params;
+    const group = await BoardGroup.getGroupById(req.params.groupId, req.userId);
+    if (!group) return res.status(404).json({ error: 'Group not found' });
 
-    const pendingResult = await pool.query(
-      `SELECT n.id, n.related_user_id, n.created_at, n.is_read,
-              cp.first_name, cp.last_name, cp.profile_image_url, cp.username, cp.team_name
-       FROM notifications n
-       JOIN coach_profiles cp ON n.related_user_id = cp.user_id
-       WHERE n.user_id = $1
-         AND n.type = 'interaction'
-         AND n.related_entity_type = 'board_invite_sent'
-         AND n.related_entity_id = $2
-         AND n.is_read = FALSE`,
-      [req.userId, boardId]
-    );
-
-    res.json({ pendingInvites: pendingResult.rows });
+    // Sign avatars for members
+    for (const m of group.members) {
+      if (m.profile_image_url && m.profile_image_url.startsWith('profiles/')) {
+        try { m.profile_image_url = await getSignedS3Url(m.profile_image_url); }
+        catch { m.profile_image_url = null; }
+      }
+    }
+    res.json(group);
   } catch (error) {
-    logger.error('Error getting pending invites:', error);
-    res.status(500).json({ error: 'Failed to get pending invites' });
+    return handleGroupError(error, res, 'Failed to get group');
   }
 });
 
-// Send collaboration invite for a shared board
-router.post('/shared/:boardId/invite', authMiddleware, requireRole('coach'), validateUUID('boardId'), async (req, res) => {
+// Rename group (editor or owner)
+router.put('/groups/:groupId/name', authMiddleware, requireRole('coach'), validateUUID('groupId'), requireGroupAccess('editor'), async (req, res) => {
   try {
-    const { boardId } = req.params;
-    const { inviteeUserId } = req.body;
+    const group = await BoardGroup.renameGroup(req.params.groupId, req.userId, req.body.groupName);
+    res.json({ group });
+  } catch (error) {
+    return handleGroupError(error, res, 'Failed to rename group');
+  }
+});
 
-    if (!inviteeUserId) {
-      return res.status(400).json({ error: 'Invitee user ID is required' });
+// Delete group (editor or owner)
+router.delete('/groups/:groupId', authMiddleware, requireRole('coach'), validateUUID('groupId'), requireGroupAccess('editor'), async (req, res) => {
+  try {
+    await BoardGroup.deleteGroup(req.params.groupId, req.userId);
+    res.json({ success: true });
+  } catch (error) {
+    return handleGroupError(error, res, 'Failed to delete group');
+  }
+});
+
+// Leave group (any member). Auto-transfers ownership if owner is the leaver.
+router.post('/groups/:groupId/leave', authMiddleware, requireRole('coach'), validateUUID('groupId'), requireGroupAccess('any'), async (req, res) => {
+  try {
+    const groupId = req.params.groupId;
+    // Capture group name + the coach's name BEFORE leaving so we can notify.
+    const groupBefore = await pool.query(
+      `SELECT group_name, owner_user_id FROM board_groups WHERE id = $1`,
+      [groupId]
+    );
+    const groupName = groupBefore.rows[0] ? groupBefore.rows[0].group_name : 'a group';
+    const wasOwner = groupBefore.rows[0] && String(groupBefore.rows[0].owner_user_id) === String(req.userId);
+
+    const result = await BoardGroup.leaveGroup(groupId, req.userId);
+
+    // Notify remaining members (best effort).
+    if (!result.deleted) {
+      const leaverResult = await pool.query(
+        `SELECT cp.first_name, cp.last_name FROM coach_profiles cp WHERE cp.user_id = $1`,
+        [req.userId]
+      );
+      const leaver = leaverResult.rows[0];
+      const leaverName = leaver ? `${leaver.first_name} ${leaver.last_name}` : 'A member';
+
+      // Notify everyone else in the group
+      const remaining = await pool.query(
+        `SELECT user_id FROM board_group_members WHERE group_id = $1 AND user_id != $2`,
+        [groupId, req.userId]
+      );
+      for (const m of remaining.rows) {
+        const notif = await Notification.create({
+          userId: m.user_id,
+          type: 'interaction',
+          title: 'Member Left Group',
+          message: `${leaverName} has left "${groupName}"`,
+          relatedUserId: req.userId,
+          relatedEntityId: groupId,
+          relatedEntityType: 'group_member_left'
+        });
+        if (notif) notifyUser(req.app.get('io'), notif);
+      }
+
+      // If ownership auto-transferred, send the new owner a heads-up
+      if (wasOwner && result.transferred_to) {
+        const newOwnerNotif = await Notification.create({
+          userId: result.transferred_to,
+          type: 'interaction',
+          title: 'Group Ownership Transferred',
+          message: `You are now the owner of "${groupName}" — the previous owner left the group`,
+          relatedUserId: req.userId,
+          relatedEntityId: groupId,
+          relatedEntityType: 'group_ownership_transfer'
+        });
+        if (newOwnerNotif) notifyUser(req.app.get('io'), newOwnerNotif);
+      }
     }
 
-    // Verify sender owns the board
-    const board = await RecruitingBoard.getSharedBoardById(boardId);
-    if (!board) {
-      return res.status(404).json({ error: 'Board not found' });
-    }
+    res.json(result);
+  } catch (error) {
+    return handleGroupError(error, res, 'Failed to leave group');
+  }
+});
 
-    if (String(board.owner_user_id) !== String(req.userId)) {
-      return res.status(403).json({ error: 'Only the board owner can invite collaborators' });
-    }
+// Transfer ownership (owner only)
+router.post('/groups/:groupId/transfer-ownership', authMiddleware, requireRole('coach'), validateUUID('groupId'), requireGroupAccess('owner'), async (req, res) => {
+  try {
+    const { newOwnerUserId } = req.body;
+    if (!newOwnerUserId) return res.status(400).json({ error: 'newOwnerUserId is required' });
 
-    // Check if already a collaborator
-    if (board.collab && board.collab.some(id => String(id) === String(inviteeUserId))) {
-      return res.status(400).json({ error: 'User is already a collaborator' });
-    }
+    await BoardGroup.transferOwnership(req.params.groupId, req.userId, newOwnerUserId);
 
-    // Check if invite already pending
-    const existingInvite = await pool.query(
-      `SELECT id FROM notifications
-       WHERE user_id = $1
-         AND related_user_id = $2
-         AND type = 'interaction'
-         AND related_entity_type = 'board_invite'
-         AND related_entity_id = $3
-         AND is_read = FALSE`,
-      [inviteeUserId, req.userId, boardId]
+    // Notify the new owner
+    const groupResult = await pool.query(
+      `SELECT group_name FROM board_groups WHERE id = $1`,
+      [req.params.groupId]
+    );
+    const groupName = groupResult.rows[0] ? groupResult.rows[0].group_name : 'a group';
+    const transfererResult = await pool.query(
+      `SELECT cp.first_name, cp.last_name FROM coach_profiles cp WHERE cp.user_id = $1`,
+      [req.userId]
+    );
+    const transferer = transfererResult.rows[0];
+    const transfererName = transferer ? `${transferer.first_name} ${transferer.last_name}` : 'The previous owner';
+
+    const notif = await Notification.create({
+      userId: newOwnerUserId,
+      type: 'interaction',
+      title: 'Group Ownership Transferred',
+      message: `${transfererName} has transferred ownership of "${groupName}" to you`,
+      relatedUserId: req.userId,
+      relatedEntityId: req.params.groupId,
+      relatedEntityType: 'group_ownership_transfer'
+    });
+    if (notif) notifyUser(req.app.get('io'), notif);
+
+    res.json({ success: true });
+  } catch (error) {
+    return handleGroupError(error, res, 'Failed to transfer ownership');
+  }
+});
+
+// ---------- Member management ----------
+// (Note: GET /groups/search-coaches is defined earlier in the file, before the
+// parametric /groups/:groupId routes, to prevent Express from misrouting it.)
+
+// List pending invites for a group
+router.get('/groups/:groupId/pending-invites', authMiddleware, requireRole('coach'), validateUUID('groupId'), requireGroupAccess('any'), async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT n.id, n.user_id AS invitee_user_id, n.created_at, n.related_entity_type,
+              cp.first_name, cp.last_name, cp.username, cp.profile_image_url, cp.team_name, cp.state, cp.college_division
+       FROM notifications n
+       JOIN coach_profiles cp ON cp.user_id = n.user_id
+       WHERE n.related_entity_id = $1
+         AND n.related_entity_type IN ('group_invite', 'group_invite_editor')
+         AND n.is_read = FALSE`,
+      [req.params.groupId]
     );
 
-    if (existingInvite.rows.length > 0) {
-      return res.status(400).json({ error: 'An invite is already pending for this user' });
+    // Annotate each row with the proposed permission so the UI can show "as editor" / "as viewer"
+    for (const r of result.rows) {
+      r.permission = r.related_entity_type === 'group_invite_editor' ? 'editor' : 'viewer';
     }
 
-    // Get sender info for notification
+    for (const r of result.rows) {
+      if (r.profile_image_url && r.profile_image_url.startsWith('profiles/')) {
+        try { r.profile_image_url = await getSignedS3Url(r.profile_image_url); }
+        catch { r.profile_image_url = null; }
+      }
+    }
+
+    res.json({ pendingInvites: result.rows });
+  } catch (error) {
+    logger.error('Error listing pending invites:', error);
+    res.status(500).json({ error: 'Failed to list pending invites' });
+  }
+});
+
+// Send a group invite (editor or owner). Body: { inviteeUserId, permission }
+router.post('/groups/:groupId/invite', authMiddleware, requireRole('coach'), validateUUID('groupId'), requireGroupAccess('editor'), async (req, res) => {
+  try {
+    const { inviteeUserId, permission } = req.body;
+    if (!inviteeUserId) return res.status(400).json({ error: 'inviteeUserId is required' });
+    if (permission && !['viewer', 'editor'].includes(permission)) {
+      return res.status(400).json({ error: 'permission must be "viewer" or "editor"' });
+    }
+    const perm = permission || 'viewer';
+
+    // Already a member?
+    const already = await BoardGroup.getMembership(req.params.groupId, inviteeUserId);
+    if (already) return res.status(400).json({ error: 'User is already a member of this group' });
+
+    // Already has a pending invite (either permission level)?
+    const pending = await pool.query(
+      `SELECT id FROM notifications
+       WHERE user_id = $1
+         AND related_entity_id = $2
+         AND related_entity_type IN ('group_invite', 'group_invite_editor')
+         AND is_read = FALSE`,
+      [inviteeUserId, req.params.groupId]
+    );
+    if (pending.rows[0]) return res.status(400).json({ error: 'An invite is already pending for this user' });
+
+    // Group + sender info for notification copy
+    const groupResult = await pool.query(
+      `SELECT group_name FROM board_groups WHERE id = $1`,
+      [req.params.groupId]
+    );
+    const groupName = groupResult.rows[0] ? groupResult.rows[0].group_name : 'a group';
+
     const senderResult = await pool.query(
-      `SELECT cp.first_name, cp.last_name, cp.team_name
-       FROM coach_profiles cp
-       WHERE cp.user_id = $1`,
+      `SELECT cp.first_name, cp.last_name FROM coach_profiles cp WHERE cp.user_id = $1`,
       [req.userId]
     );
     const sender = senderResult.rows[0];
-    const senderName = `${sender.first_name} ${sender.last_name}`;
+    const senderName = sender ? `${sender.first_name} ${sender.last_name}` : 'A coach';
 
-    // Get invitee info for sender's notification
+    // Notification for invitee. We encode the proposed permission in the entity type
+    // since the notifications schema has no metadata column — 'group_invite' = viewer
+    // (default), 'group_invite_editor' = editor.
+    const inviteEntityType = perm === 'editor' ? 'group_invite_editor' : 'group_invite';
+    const inviteeNotif = await Notification.create({
+      userId: inviteeUserId,
+      type: 'interaction',
+      title: 'Recruiting Group Invite',
+      message: `${senderName} has invited you to join "${groupName}" as a ${perm}`,
+      relatedUserId: req.userId,
+      relatedEntityId: req.params.groupId,
+      relatedEntityType: inviteEntityType
+    });
+    if (inviteeNotif) notifyUser(req.app.get('io'), inviteeNotif);
+
+    // Tracking notification for sender
     const inviteeResult = await pool.query(
-      `SELECT cp.first_name, cp.last_name
-       FROM coach_profiles cp
-       WHERE cp.user_id = $1`,
+      `SELECT cp.first_name, cp.last_name FROM coach_profiles cp WHERE cp.user_id = $1`,
       [inviteeUserId]
     );
     const invitee = inviteeResult.rows[0];
     const inviteeName = invitee ? `${invitee.first_name} ${invitee.last_name}` : 'a coach';
-
-    // Create notification for invitee
-    const inviteeNotif = await Notification.create({
-      userId: inviteeUserId,
-      type: 'interaction',
-      title: 'Recruiting Board Invite',
-      message: `${senderName} has invited you to collaborate on "${board.board_name}"`,
-      relatedUserId: req.userId,
-      relatedEntityId: boardId,
-      relatedEntityType: 'board_invite'
-    });
-    if (inviteeNotif) notifyUser(req.app.get('io'), inviteeNotif);
-
-    // Create tracking notification for sender
     const senderNotif = await Notification.create({
       userId: req.userId,
       type: 'interaction',
-      title: 'Recruiting Board Invite Sent',
-      message: `Invite sent to ${inviteeName} for "${board.board_name}"`,
+      title: 'Group Invite Sent',
+      message: `Invite sent to ${inviteeName} for "${groupName}"`,
       relatedUserId: inviteeUserId,
-      relatedEntityId: boardId,
-      relatedEntityType: 'board_invite_sent'
+      relatedEntityId: req.params.groupId,
+      relatedEntityType: 'group_invite_sent'
     });
     if (senderNotif) notifyUser(req.app.get('io'), senderNotif);
 
-    res.json({ success: true, message: 'Invite sent successfully' });
+    res.json({ success: true });
   } catch (error) {
-    logger.error('Error sending invite:', error);
-    res.status(500).json({ error: 'Failed to send invite' });
+    return handleGroupError(error, res, 'Failed to send invite');
   }
 });
 
-// Accept collaboration invite
+// Cancel a pending invite (editor or owner)
+router.delete('/groups/:groupId/invite/:inviteeId', authMiddleware, requireRole('coach'), validateUUID('groupId', 'inviteeId'), requireGroupAccess('editor'), async (req, res) => {
+  try {
+    // Delete the invitee's invite + the sender's tracking notification
+    await pool.query(
+      `DELETE FROM notifications
+       WHERE user_id = $1
+         AND related_entity_id = $2
+         AND related_entity_type IN ('group_invite', 'group_invite_editor')`,
+      [req.params.inviteeId, req.params.groupId]
+    );
+    await pool.query(
+      `DELETE FROM notifications
+       WHERE related_user_id = $1
+         AND related_entity_id = $2
+         AND related_entity_type = 'group_invite_sent'`,
+      [req.params.inviteeId, req.params.groupId]
+    );
+    res.json({ success: true });
+  } catch (error) {
+    logger.error('Error cancelling invite:', error);
+    res.status(500).json({ error: 'Failed to cancel invite' });
+  }
+});
+
+// Remove a member (editor or owner). Cannot target the owner.
+router.delete('/groups/:groupId/members/:userId', authMiddleware, requireRole('coach'), validateUUID('groupId', 'userId'), requireGroupAccess('editor'), async (req, res) => {
+  try {
+    const groupResult = await pool.query(
+      `SELECT group_name FROM board_groups WHERE id = $1`,
+      [req.params.groupId]
+    );
+    const groupName = groupResult.rows[0] ? groupResult.rows[0].group_name : 'a group';
+
+    await BoardGroup.removeMember(req.params.groupId, req.userId, req.params.userId);
+
+    // Notify removed coach
+    const removerResult = await pool.query(
+      `SELECT cp.first_name, cp.last_name FROM coach_profiles cp WHERE cp.user_id = $1`,
+      [req.userId]
+    );
+    const remover = removerResult.rows[0];
+    const removerName = remover ? `${remover.first_name} ${remover.last_name}` : 'A group editor';
+
+    const notif = await Notification.create({
+      userId: req.params.userId,
+      type: 'interaction',
+      title: 'Removed from Group',
+      message: `${removerName} has removed you from "${groupName}"`,
+      relatedUserId: req.userId,
+      relatedEntityId: req.params.groupId,
+      relatedEntityType: 'group_member_removed'
+    });
+    if (notif) notifyUser(req.app.get('io'), notif);
+
+    res.json({ success: true });
+  } catch (error) {
+    return handleGroupError(error, res, 'Failed to remove member');
+  }
+});
+
+// Change a member's permission (editor or owner). Cannot target the owner.
+router.put('/groups/:groupId/members/:userId/permission', authMiddleware, requireRole('coach'), validateUUID('groupId', 'userId'), requireGroupAccess('editor'), async (req, res) => {
+  try {
+    const { permission } = req.body;
+    const result = await BoardGroup.updatePermission(
+      req.params.groupId, req.userId, req.params.userId, permission
+    );
+    res.json(result);
+  } catch (error) {
+    return handleGroupError(error, res, 'Failed to update permission');
+  }
+});
+
+// ---------- Invite accept / decline (group-based) ----------
+
+// Accept a group invite. Body: { notificationId, groupId }
 router.post('/invite/accept', authMiddleware, requireRole('coach'), async (req, res) => {
   try {
-    const { notificationId, boardId } = req.body;
+    const { notificationId, groupId } = req.body;
+    if (!groupId) return res.status(400).json({ error: 'Group ID is required' });
 
-    if (!boardId) {
-      return res.status(400).json({ error: 'Board ID is required' });
-    }
-
-    const board = await RecruitingBoard.getSharedBoardById(boardId);
-
-    if (!board) {
-      return res.status(400).json({ error: 'Board not found' });
-    }
-
-    // Get current collaborators
-    let collab = board.collab || [];
-
-    // Check if already a collaborator
-    if (collab.some(id => String(id) === String(req.userId))) {
-      return res.status(400).json({ error: 'You are already a collaborator on this board' });
-    }
-
-    // Add the accepting user to collaborators
-    collab.push(req.userId);
-
-    await pool.query(
-      `UPDATE recruiting_boards
-       SET collab = $1, updated_at = CURRENT_TIMESTAMP
-       WHERE id = $2`,
-      [JSON.stringify(collab), boardId]
+    // Look up the invite notification to recover the proposed permission.
+    // Entity type is 'group_invite' (viewer) or 'group_invite_editor' (editor).
+    const inviteNotifResult = await pool.query(
+      `SELECT id, related_user_id, related_entity_type FROM notifications
+       WHERE user_id = $1
+         AND related_entity_id = $2
+         AND related_entity_type IN ('group_invite', 'group_invite_editor')
+         AND is_read = FALSE
+       LIMIT 1`,
+      [req.userId, groupId]
     );
+    if (!inviteNotifResult.rows[0]) {
+      return res.status(404).json({ error: 'Invite not found or already resolved' });
+    }
+    const inviteRow = inviteNotifResult.rows[0];
+    const senderId = inviteRow.related_user_id;
+    const perm = inviteRow.related_entity_type === 'group_invite_editor' ? 'editor' : 'viewer';
 
-    // Mark the invite notification as read
+    // Add the member (also enforces invitee's 5-group cap).
+    try {
+      await BoardGroup.addMember(groupId, req.userId, req.userId, perm);
+    } catch (err) {
+      if (/limit reached/i.test(err.message)) {
+        return res.status(400).json({ error: err.message });
+      }
+      throw err;
+    }
+
+    // Mark invite notification as read
     if (notificationId) {
       await Notification.markAsRead(notificationId, req.userId);
+    } else {
+      await Notification.markAsRead(inviteRow.id, req.userId);
     }
 
     // Delete the sender's tracking notification
@@ -577,248 +809,222 @@ router.post('/invite/accept', authMiddleware, requireRole('coach'), async (req, 
        WHERE user_id = $1
          AND related_user_id = $2
          AND related_entity_id = $3
-         AND related_entity_type = 'board_invite_sent'`,
-      [board.owner_user_id, req.userId, boardId]
+         AND related_entity_type = 'group_invite_sent'`,
+      [senderId, req.userId, groupId]
     );
 
-    // Get accepter info for notification
+    // Notify the sender that their invite was accepted
+    const groupResult = await pool.query(
+      `SELECT group_name FROM board_groups WHERE id = $1`,
+      [groupId]
+    );
+    const groupName = groupResult.rows[0] ? groupResult.rows[0].group_name : 'a group';
     const accepterResult = await pool.query(
-      `SELECT cp.first_name, cp.last_name
-       FROM coach_profiles cp
-       WHERE cp.user_id = $1`,
+      `SELECT cp.first_name, cp.last_name FROM coach_profiles cp WHERE cp.user_id = $1`,
       [req.userId]
     );
     const accepter = accepterResult.rows[0];
-    const accepterName = `${accepter.first_name} ${accepter.last_name}`;
+    const accepterName = accepter ? `${accepter.first_name} ${accepter.last_name}` : 'A coach';
 
-    // Notify owner that invite was accepted
     const acceptedNotif = await Notification.create({
-      userId: board.owner_user_id,
+      userId: senderId,
       type: 'interaction',
-      title: 'Invite Accepted',
-      message: `${accepterName} has accepted your invite to "${board.board_name}"`,
+      title: 'Group Invite Accepted',
+      message: `${accepterName} has accepted your invite to "${groupName}"`,
       relatedUserId: req.userId,
-      relatedEntityId: boardId,
-      relatedEntityType: 'board_invite_accepted'
+      relatedEntityId: groupId,
+      relatedEntityType: 'group_invite_accepted'
     });
     if (acceptedNotif) notifyUser(req.app.get('io'), acceptedNotif);
 
-    res.json({ success: true, message: 'Invite accepted' });
+    res.json({ success: true });
   } catch (error) {
-    logger.error('Error accepting invite:', error);
-    res.status(500).json({ error: 'Failed to accept invite' });
+    return handleGroupError(error, res, 'Failed to accept invite');
   }
 });
 
-// Decline collaboration invite
+// Decline a group invite. Body: { notificationId, groupId }
 router.post('/invite/decline', authMiddleware, requireRole('coach'), async (req, res) => {
   try {
-    const { notificationId, boardId } = req.body;
+    const { notificationId, groupId } = req.body;
 
-    // Mark the invite notification as read
     if (notificationId) {
       await Notification.markAsRead(notificationId, req.userId);
     }
 
-    if (boardId) {
-      const board = await RecruitingBoard.getSharedBoardById(boardId);
+    // Find the invite + delete the tracking notif on the sender's side
+    if (groupId) {
+      const inviteNotifResult = await pool.query(
+        `SELECT related_user_id FROM notifications
+         WHERE user_id = $1
+           AND related_entity_id = $2
+           AND related_entity_type IN ('group_invite', 'group_invite_editor')
+         LIMIT 1`,
+        [req.userId, groupId]
+      );
+      const senderId = inviteNotifResult.rows[0] ? inviteNotifResult.rows[0].related_user_id : null;
 
-      if (board) {
-        // Delete the sender's tracking notification
+      if (senderId) {
         await pool.query(
           `DELETE FROM notifications
            WHERE user_id = $1
              AND related_user_id = $2
              AND related_entity_id = $3
-             AND related_entity_type = 'board_invite_sent'`,
-          [board.owner_user_id, req.userId, boardId]
+             AND related_entity_type = 'group_invite_sent'`,
+          [senderId, req.userId, groupId]
         );
 
-        // Get decliner info for notification
+        const groupResult = await pool.query(
+          `SELECT group_name FROM board_groups WHERE id = $1`,
+          [groupId]
+        );
+        const groupName = groupResult.rows[0] ? groupResult.rows[0].group_name : 'a group';
         const declinerResult = await pool.query(
-          `SELECT cp.first_name, cp.last_name
-           FROM coach_profiles cp
-           WHERE cp.user_id = $1`,
+          `SELECT cp.first_name, cp.last_name FROM coach_profiles cp WHERE cp.user_id = $1`,
           [req.userId]
         );
         const decliner = declinerResult.rows[0];
-        const declinerName = `${decliner.first_name} ${decliner.last_name}`;
+        const declinerName = decliner ? `${decliner.first_name} ${decliner.last_name}` : 'A coach';
 
-        // Notify owner that invite was declined
         const declinedNotif = await Notification.create({
-          userId: board.owner_user_id,
+          userId: senderId,
           type: 'interaction',
-          title: 'Invite Declined',
-          message: `${declinerName} has declined your invite to "${board.board_name}"`,
+          title: 'Group Invite Declined',
+          message: `${declinerName} has declined your invite to "${groupName}"`,
           relatedUserId: req.userId,
-          relatedEntityId: boardId,
-          relatedEntityType: 'board_invite_declined'
+          relatedEntityId: groupId,
+          relatedEntityType: 'group_invite_declined'
         });
         if (declinedNotif) notifyUser(req.app.get('io'), declinedNotif);
       }
     }
 
-    res.json({ success: true, message: 'Invite declined' });
+    res.json({ success: true });
   } catch (error) {
     logger.error('Error declining invite:', error);
     res.status(500).json({ error: 'Failed to decline invite' });
   }
 });
 
-// Remove a collaborator from shared board
-router.delete('/shared/:boardId/collaborator/:collaboratorId', authMiddleware, requireRole('coach'), validateUUID('boardId', 'collaboratorId'), async (req, res) => {
+// ---------- Group boards ----------
+
+// List boards in a group (any member)
+router.get('/groups/:groupId/boards', authMiddleware, requireRole('coach'), validateUUID('groupId'), requireGroupAccess('any'), async (req, res) => {
   try {
-    const { boardId, collaboratorId } = req.params;
-
-    // Get board info before removal for notification
-    const board = await RecruitingBoard.getSharedBoardById(boardId);
-
-    await RecruitingBoard.removeCollaborator(boardId, req.userId, collaboratorId);
-
-    // Send notification to removed collaborator
-    if (board) {
-      // Get owner info for notification
-      const ownerResult = await pool.query(
-        `SELECT cp.first_name, cp.last_name
-         FROM coach_profiles cp
-         WHERE cp.user_id = $1`,
-        [req.userId]
-      );
-      const owner = ownerResult.rows[0];
-      const ownerName = owner ? `${owner.first_name} ${owner.last_name}` : 'The board owner';
-
-      const removedNotif = await Notification.create({
-        userId: collaboratorId,
-        type: 'interaction',
-        title: 'Removed from Recruiting Board',
-        message: `${ownerName} has removed you from "${board.board_name}"`,
-        relatedUserId: req.userId,
-        relatedEntityId: boardId,
-        relatedEntityType: 'board_collaborator_removed'
-      });
-      if (removedNotif) notifyUser(req.app.get('io'), removedNotif);
-    }
-
-    res.json({ success: true, message: 'Collaborator removed' });
+    const boards = await RecruitingBoard.listGroupBoards(req.params.groupId);
+    res.json({ boards, cap: RecruitingBoard.BOARDS_PER_GROUP_CAP });
   } catch (error) {
-    logger.error('Error removing collaborator:', error);
-    res.status(500).json({ error: 'Failed to remove collaborator' });
+    return handleGroupError(error, res, 'Failed to list group boards');
   }
 });
 
-// Leave a shared board
-router.post('/shared/:boardId/leave', authMiddleware, requireRole('coach'), validateUUID('boardId'), async (req, res) => {
+// Create a board in a group (editor only)
+router.post('/groups/:groupId/boards', authMiddleware, requireRole('coach'), validateUUID('groupId'), requireGroupAccess('editor'), async (req, res) => {
   try {
-    const { boardId } = req.params;
-
-    // Get board info before leaving for notification
-    const board = await RecruitingBoard.getSharedBoardById(boardId);
-
-    await RecruitingBoard.leaveBoard(boardId, req.userId);
-
-    // Send notification to board owner
-    if (board) {
-      // Get leaving user's info for notification
-      const leaverResult = await pool.query(
-        `SELECT cp.first_name, cp.last_name
-         FROM coach_profiles cp
-         WHERE cp.user_id = $1`,
-        [req.userId]
-      );
-      const leaver = leaverResult.rows[0];
-      const leaverName = leaver ? `${leaver.first_name} ${leaver.last_name}` : 'A collaborator';
-
-      const leftNotif = await Notification.create({
-        userId: board.owner_user_id,
-        type: 'interaction',
-        title: 'Collaborator Left Board',
-        message: `${leaverName} has left "${board.board_name}"`,
-        relatedUserId: req.userId,
-        relatedEntityId: boardId,
-        relatedEntityType: 'board_collaborator_left'
-      });
-      if (leftNotif) notifyUser(req.app.get('io'), leftNotif);
-    }
-
-    res.json({ success: true, message: 'Left board successfully' });
+    const board = await RecruitingBoard.createGroupBoard(req.params.groupId, req.body.boardName);
+    res.json({ board });
   } catch (error) {
-    logger.error('Error leaving board:', error);
-    res.status(500).json({ error: 'Failed to leave board' });
+    return handleGroupError(error, res, 'Failed to create group board');
   }
 });
 
-// Transfer ownership of shared board
-router.post('/shared/:boardId/transfer-ownership', authMiddleware, requireRole('coach'), validateUUID('boardId'), async (req, res) => {
+// Delete a board in a group (editor only)
+router.delete('/groups/:groupId/boards/:boardId', authMiddleware, requireRole('coach'), validateUUID('groupId', 'boardId'), requireGroupAccess('editor'), async (req, res) => {
   try {
-    const { boardId } = req.params;
-    const { newOwnerUserId } = req.body;
+    await RecruitingBoard.deleteGroupBoard(req.params.boardId, req.params.groupId);
+    res.json({ success: true });
+  } catch (error) {
+    return handleGroupError(error, res, 'Failed to delete board');
+  }
+});
 
-    if (!newOwnerUserId) {
-      return res.status(400).json({ error: 'New owner user ID is required' });
-    }
+// Rename a board in a group (editor only)
+router.put('/groups/:groupId/boards/:boardId/name', authMiddleware, requireRole('coach'), validateUUID('groupId', 'boardId'), requireGroupAccess('editor'), async (req, res) => {
+  try {
+    const board = await RecruitingBoard.renameGroupBoard(req.params.boardId, req.params.groupId, req.body.boardName);
+    res.json({ board });
+  } catch (error) {
+    return handleGroupError(error, res, 'Failed to rename board');
+  }
+});
 
-    const board = await RecruitingBoard.getSharedBoardById(boardId);
-
-    await RecruitingBoard.transferOwnership(boardId, req.userId, newOwnerUserId);
-
-    // Get transfer info for notifications
-    const transfererResult = await pool.query(
-      `SELECT cp.first_name, cp.last_name
-       FROM coach_profiles cp
-       WHERE cp.user_id = $1`,
-      [req.userId]
-    );
-    const transferer = transfererResult.rows[0];
-    const transfererName = `${transferer.first_name} ${transferer.last_name}`;
-
-    // Notify new owner
-    const ownerXferNotif = await Notification.create({
-      userId: newOwnerUserId,
-      type: 'interaction',
-      title: 'Board Ownership Transferred',
-      message: `${transfererName} has transferred ownership of "${board.board_name}" to you`,
-      relatedUserId: req.userId,
-      relatedEntityId: boardId,
-      relatedEntityType: 'board_ownership_transfer'
+// Get position config for a group board (any member)
+router.get('/groups/:groupId/boards/:boardId/config', authMiddleware, requireRole('coach'), validateUUID('groupId', 'boardId'), requireGroupAccess('any'), async (req, res) => {
+  try {
+    const board = await RecruitingBoard.getGroupBoardById(req.params.boardId, req.params.groupId);
+    if (!board) return res.status(404).json({ error: 'Board not found' });
+    res.json({
+      offensePositions: board.offense_positions,
+      defensePositions: board.defense_positions
     });
-    if (ownerXferNotif) notifyUser(req.app.get('io'), ownerXferNotif);
-
-    res.json({ success: true, message: 'Ownership transferred successfully' });
   } catch (error) {
-    logger.error('Error transferring ownership:', error);
-    res.status(500).json({ error: 'Failed to transfer ownership' });
+    return handleGroupError(error, res, 'Failed to fetch position configuration');
   }
 });
 
-// Cancel a pending invite
-router.delete('/shared/:boardId/invite/:inviteeId', authMiddleware, requireRole('coach'), validateUUID('boardId', 'inviteeId'), async (req, res) => {
+// Save position config (editor only)
+router.put('/groups/:groupId/boards/:boardId/config', authMiddleware, requireRole('coach'), validateUUID('groupId', 'boardId'), requireGroupAccess('editor'), async (req, res) => {
   try {
-    const { boardId, inviteeId } = req.params;
-
-    // Delete the invite notification sent to the invitee
-    await pool.query(
-      `DELETE FROM notifications
-       WHERE user_id = $1
-         AND related_user_id = $2
-         AND related_entity_id = $3
-         AND related_entity_type = 'board_invite'`,
-      [inviteeId, req.userId, boardId]
-    );
-
-    // Delete the sender's tracking notification
-    await pool.query(
-      `DELETE FROM notifications
-       WHERE user_id = $1
-         AND related_user_id = $2
-         AND related_entity_id = $3
-         AND related_entity_type = 'board_invite_sent'`,
-      [req.userId, inviteeId, boardId]
-    );
-
-    res.json({ success: true, message: 'Invite cancelled' });
+    const { offensePositions, defensePositions } = req.body;
+    if (!offensePositions || !defensePositions) {
+      return res.status(400).json({ error: 'Both offense and defense positions are required' });
+    }
+    await RecruitingBoard.saveGroupBoardConfig(req.params.boardId, req.params.groupId, offensePositions, defensePositions);
+    res.json({ message: 'Position configuration saved', offensePositions, defensePositions });
   } catch (error) {
-    logger.error('Error cancelling invite:', error);
-    res.status(500).json({ error: 'Failed to cancel invite' });
+    return handleGroupError(error, res, 'Failed to save position configuration');
+  }
+});
+
+// Get players for a group board (any member)
+router.get('/groups/:groupId/boards/:boardId/players', authMiddleware, requireRole('coach'), validateUUID('groupId', 'boardId'), requireGroupAccess('any'), async (req, res) => {
+  try {
+    let players = await RecruitingBoard.getPlayersFromGroupBoardById(req.params.boardId, req.params.groupId);
+    players = await addSignedUrlsToPlayers(players);
+    res.json(players);
+  } catch (error) {
+    return handleGroupError(error, res, 'Failed to fetch players');
+  }
+});
+
+// Add a player to a group board (editor only)
+router.post('/groups/:groupId/boards/:boardId/players', authMiddleware, requireRole('coach'), validateUUID('groupId', 'boardId'), requireGroupAccess('editor'), async (req, res) => {
+  try {
+    const playerData = req.body;
+    if (!playerData.user_id || !playerData.position) {
+      return res.status(400).json({ error: 'Player user_id and position are required' });
+    }
+    await RecruitingBoard.addPlayerToGroupBoardById(req.params.boardId, req.params.groupId, playerData);
+    res.json({ message: 'Player added', player: playerData });
+  } catch (error) {
+    return handleGroupError(error, res, 'Failed to add player');
+  }
+});
+
+// Remove a player from a group board (editor only)
+router.delete('/groups/:groupId/boards/:boardId/players/:playerId', authMiddleware, requireRole('coach'), validateUUID('groupId', 'boardId', 'playerId'), requireGroupAccess('editor'), async (req, res) => {
+  try {
+    const { position } = req.query;
+    await RecruitingBoard.removePlayerFromGroupBoardById(req.params.boardId, req.params.groupId, req.params.playerId, position);
+    res.json({ message: 'Player removed' });
+  } catch (error) {
+    return handleGroupError(error, res, 'Failed to remove player');
+  }
+});
+
+// Update a player's position on a group board (editor only)
+router.put('/groups/:groupId/boards/:boardId/players/:playerId/position', authMiddleware, requireRole('coach'), validateUUID('groupId', 'boardId', 'playerId'), requireGroupAccess('editor'), async (req, res) => {
+  try {
+    const { oldPosition, newPosition } = req.body;
+    if (!oldPosition || !newPosition) {
+      return res.status(400).json({ error: 'Both oldPosition and newPosition are required' });
+    }
+    await RecruitingBoard.updatePlayerPositionOnGroupBoardById(
+      req.params.boardId, req.params.groupId, req.params.playerId, oldPosition, newPosition
+    );
+    res.json({ message: 'Player position updated' });
+  } catch (error) {
+    return handleGroupError(error, res, 'Failed to update player position');
   }
 });
 

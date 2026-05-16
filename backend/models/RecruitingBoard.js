@@ -12,7 +12,10 @@ class RecruitingBoard {
     { group: 'secondary-group', positions: ['FS', 'SS', 'CB'] }
   ];
 
-  // ==================== Personal Board Methods ====================
+  // ==================== Personal Board Methods (legacy single-board API) ====================
+  // Kept for compatibility with the player-profile "Add to Recruiting Board" button which
+  // still hits the old class-year-keyed personal endpoints. Will be migrated when the
+  // player-profile add-to-board flow is reworked.
 
   // Get or create personal board for a coach
   static async getOrCreatePersonalBoard(userId) {
@@ -99,678 +102,414 @@ class RecruitingBoard {
     }
   }
 
-  // ==================== Shared Board Methods ====================
+  // ==================== Named Personal Boards (multi-board, no class year) ====================
+  // These methods power the redesigned Personal Boards UI where a coach can have up to
+  // PERSONAL_BOARD_CAP named boards. Each board is one row at class_year=0 with its own
+  // position config and players JSONB. The legacy single-board / per-class-year methods
+  // above still exist for any callers (e.g. the player-profile "Add to board" button)
+  // that haven't been migrated yet.
 
-  // Create a new shared board
-  static async createSharedBoard(ownerUserId, boardName, initialCollaborators = []) {
+  static PERSONAL_BOARD_CAP = 5;
+
+  // List a coach's named personal boards, oldest first.
+  static async listPersonalBoards(userId) {
     const result = await pool.query(
-      `INSERT INTO recruiting_boards (owner_user_id, class_year, board_name, offense_positions, defense_positions, players, is_personal, collab)
-       VALUES ($1, 0, $2, $3, $4, '[]'::jsonb, FALSE, $5)
-       RETURNING *`,
+      `SELECT id, board_name, offense_positions, defense_positions, created_at, updated_at
+       FROM recruiting_boards
+       WHERE owner_user_id = $1 AND is_personal = TRUE AND class_year = 0
+       ORDER BY created_at ASC`,
+      [userId]
+    );
+    return result.rows;
+  }
+
+  // Create a new named personal board. Caps at PERSONAL_BOARD_CAP per coach.
+  static async createPersonalBoard(userId, boardName) {
+    const trimmed = (boardName || '').trim();
+    if (!trimmed) throw new Error('Board name is required');
+    if (trimmed.length > 100) throw new Error('Board name must be 100 characters or less');
+
+    const countResult = await pool.query(
+      `SELECT COUNT(*)::int AS n FROM recruiting_boards
+       WHERE owner_user_id = $1 AND is_personal = TRUE AND class_year = 0`,
+      [userId]
+    );
+    if (countResult.rows[0].n >= this.PERSONAL_BOARD_CAP) {
+      throw new Error(`Personal board limit reached (max ${this.PERSONAL_BOARD_CAP})`);
+    }
+
+    const result = await pool.query(
+      `INSERT INTO recruiting_boards
+         (owner_user_id, class_year, board_name, offense_positions, defense_positions, players, is_personal, collab)
+       VALUES ($1, 0, $2, $3, $4, '[]'::jsonb, TRUE, '[]'::jsonb)
+       RETURNING id, board_name, offense_positions, defense_positions, created_at, updated_at`,
       [
-        ownerUserId,
-        boardName,
+        userId,
+        trimmed,
         JSON.stringify(this.DEFAULT_OFFENSE_POSITIONS),
-        JSON.stringify(this.DEFAULT_DEFENSE_POSITIONS),
-        JSON.stringify(initialCollaborators)
+        JSON.stringify(this.DEFAULT_DEFENSE_POSITIONS)
       ]
     );
     return result.rows[0];
   }
 
-  // Get all shared boards owned by a user
-  static async getOwnedSharedBoards(userId) {
+  // Delete a named personal board (asserts ownership).
+  static async deletePersonalBoard(boardId, userId) {
     const result = await pool.query(
-      `SELECT rb.*,
-              cp.first_name as owner_first_name,
-              cp.last_name as owner_last_name,
-              cp.profile_image_url as owner_profile_image,
-              cp.team_name as owner_college
-       FROM recruiting_boards rb
-       LEFT JOIN coach_profiles cp ON rb.owner_user_id = cp.user_id
-       WHERE rb.owner_user_id = $1 AND rb.is_personal = FALSE AND rb.class_year = 0
-       ORDER BY rb.created_at DESC`,
-      [userId]
+      `DELETE FROM recruiting_boards
+       WHERE id = $1 AND owner_user_id = $2 AND is_personal = TRUE AND class_year = 0
+       RETURNING id`,
+      [boardId, userId]
     );
-    return result.rows;
+    if (!result.rows[0]) throw new Error('Board not found or not owned by user');
+    return { success: true };
   }
 
-  // Get all shared boards where user is a collaborator
-  static async getCollaboratorBoards(userId) {
-    const result = await pool.query(
-      `SELECT rb.id, rb.owner_user_id, rb.board_name, rb.collab,
-              cp.first_name as owner_first_name,
-              cp.last_name as owner_last_name,
-              cp.profile_image_url as owner_profile_image,
-              cp.team_name as owner_college
-       FROM recruiting_boards rb
-       JOIN coach_profiles cp ON rb.owner_user_id = cp.user_id
-       WHERE rb.class_year = 0
-         AND rb.is_personal = FALSE
-         AND rb.collab::jsonb ? $1`,
-      [userId]
-    );
-    return result.rows;
-  }
+  // Rename a named personal board (asserts ownership).
+  static async renamePersonalBoard(boardId, userId, newName) {
+    const trimmed = (newName || '').trim();
+    if (!trimmed) throw new Error('Board name is required');
+    if (trimmed.length > 100) throw new Error('Board name must be 100 characters or less');
 
-  // Get shared board by ID with details
-  static async getSharedBoardById(boardId) {
-    const result = await pool.query(
-      `SELECT rb.*,
-              cp.first_name as owner_first_name,
-              cp.last_name as owner_last_name,
-              cp.profile_image_url as owner_profile_image,
-              cp.team_name as owner_college
-       FROM recruiting_boards rb
-       LEFT JOIN coach_profiles cp ON rb.owner_user_id = cp.user_id
-       WHERE rb.id = $1 AND rb.class_year = 0`,
-      [boardId]
-    );
-
-    if (!result.rows[0]) return null;
-
-    const row = result.rows[0];
-    let collab = row.collab || [];
-    if (typeof collab === 'string') {
-      collab = JSON.parse(collab);
-    }
-
-    return {
-      ...row,
-      collab
-    };
-  }
-
-  // Update shared board name
-  static async updateBoardName(boardId, ownerUserId, newName) {
     const result = await pool.query(
       `UPDATE recruiting_boards
        SET board_name = $1, updated_at = CURRENT_TIMESTAMP
-       WHERE id = $2 AND owner_user_id = $3 AND class_year = 0
-       RETURNING *`,
-      [newName, boardId, ownerUserId]
+       WHERE id = $2 AND owner_user_id = $3 AND is_personal = TRUE AND class_year = 0
+       RETURNING id, board_name`,
+      [trimmed, boardId, userId]
     );
+    if (!result.rows[0]) throw new Error('Board not found or not owned by user');
     return result.rows[0];
   }
 
-  // Delete a shared board
-  static async deleteSharedBoard(boardId, ownerUserId) {
-    // Delete all class year rows for this board first
-    await pool.query(
-      `DELETE FROM recruiting_boards
-       WHERE owner_user_id = $1 AND board_name = (
-         SELECT board_name FROM recruiting_boards WHERE id = $2
-       )`,
-      [ownerUserId, boardId]
-    );
-
-    return { success: true };
-  }
-
-  // ==================== Collaborator Methods ====================
-
-  // Add collaborator to a shared board
-  static async addCollaborator(boardId, ownerUserId, collaboratorUserId) {
-    const board = await this.getSharedBoardById(boardId);
-
-    if (!board) {
-      throw new Error('Board not found');
-    }
-
-    if (String(board.owner_user_id) !== String(ownerUserId)) {
-      throw new Error('Only the board owner can add collaborators');
-    }
-
-    let collab = board.collab || [];
-
-    if (collab.some(id => String(id) === String(collaboratorUserId))) {
-      throw new Error('User is already a collaborator');
-    }
-
-    collab.push(collaboratorUserId);
-
-    await pool.query(
-      `UPDATE recruiting_boards
-       SET collab = $1, updated_at = CURRENT_TIMESTAMP
-       WHERE id = $2`,
-      [JSON.stringify(collab), boardId]
-    );
-
-    return { success: true };
-  }
-
-  // Remove collaborator from a shared board
-  static async removeCollaborator(boardId, ownerUserId, collaboratorUserId) {
-    const board = await this.getSharedBoardById(boardId);
-
-    if (!board) {
-      throw new Error('Board not found');
-    }
-
-    if (String(board.owner_user_id) !== String(ownerUserId)) {
-      throw new Error('Only the board owner can remove collaborators');
-    }
-
-    let collab = board.collab || [];
-    collab = collab.filter(id => String(id) !== String(collaboratorUserId));
-
-    await pool.query(
-      `UPDATE recruiting_boards
-       SET collab = $1, updated_at = CURRENT_TIMESTAMP
-       WHERE id = $2`,
-      [JSON.stringify(collab), boardId]
-    );
-
-    return { success: true };
-  }
-
-  // Leave a shared board (for collaborators)
-  static async leaveBoard(boardId, collaboratorUserId) {
-    const board = await this.getSharedBoardById(boardId);
-
-    if (!board) {
-      throw new Error('Board not found');
-    }
-
-    let collab = board.collab || [];
-    collab = collab.filter(id => String(id) !== String(collaboratorUserId));
-
-    await pool.query(
-      `UPDATE recruiting_boards
-       SET collab = $1, updated_at = CURRENT_TIMESTAMP
-       WHERE id = $2`,
-      [JSON.stringify(collab), boardId]
-    );
-
-    return { success: true };
-  }
-
-  // Transfer ownership of a shared board
-  static async transferOwnership(boardId, currentOwnerUserId, newOwnerUserId) {
-    const board = await this.getSharedBoardById(boardId);
-
-    if (!board) {
-      throw new Error('Board not found');
-    }
-
-    if (String(board.owner_user_id) !== String(currentOwnerUserId)) {
-      throw new Error('Only the board owner can transfer ownership');
-    }
-
-    // Remove new owner from collaborators and add current owner
-    let collab = board.collab || [];
-    collab = collab.filter(id => String(id) !== String(newOwnerUserId));
-    collab.push(currentOwnerUserId);
-
-    await pool.query(
-      `UPDATE recruiting_boards
-       SET owner_user_id = $1, collab = $2, updated_at = CURRENT_TIMESTAMP
-       WHERE id = $3`,
-      [newOwnerUserId, JSON.stringify(collab), boardId]
-    );
-
-    return { success: true };
-  }
-
-  // Get collaborators with details for a board
-  static async getCollaboratorsWithDetails(boardId) {
-    const board = await this.getSharedBoardById(boardId);
-
-    if (!board || !board.collab || board.collab.length === 0) {
-      return [];
-    }
-
+  // Get a personal board by ID (asserts ownership).
+  static async getPersonalBoardById(boardId, userId) {
     const result = await pool.query(
-      `SELECT cp.user_id, cp.first_name, cp.last_name, cp.profile_image_url, cp.team_name, cp.username
-       FROM coach_profiles cp
-       WHERE cp.user_id = ANY($1::uuid[])`,
-      [board.collab]
+      `SELECT id, board_name, offense_positions, defense_positions, players, created_at, updated_at
+       FROM recruiting_boards
+       WHERE id = $1 AND owner_user_id = $2 AND is_personal = TRUE AND class_year = 0`,
+      [boardId, userId]
     );
-
-    return result.rows;
-  }
-
-  // Check if user has access to a board
-  static async hasAccessToBoard(userId, boardId) {
-    const board = await this.getSharedBoardById(boardId);
-
-    if (!board) {
-      return { hasAccess: false, role: null };
-    }
-
-    if (String(board.owner_user_id) === String(userId)) {
-      return { hasAccess: true, role: 'owner' };
-    }
-
-    const collab = board.collab || [];
-    if (collab.some(id => String(id) === String(userId))) {
-      return { hasAccess: true, role: 'collaborator' };
-    }
-
-    return { hasAccess: false, role: null };
-  }
-
-  // ==================== Player Methods ====================
-
-  // Get board by owner and year (for personal boards)
-  static async getPersonalBoardByYear(userId, classYear) {
-    // Always get the single personal board config row (class_year=0)
-    const result = await pool.query(
-      `SELECT * FROM recruiting_boards
-       WHERE owner_user_id = $1 AND is_personal = TRUE AND class_year = 0`,
-      [userId]
-    );
-
     if (!result.rows[0]) return null;
-
-    const board = result.rows[0];
-
-    // Filter players by class_year if classYear > 0
-    if (classYear > 0) {
-      let players = board.players || [];
-      if (typeof players === 'string') {
-        players = JSON.parse(players);
-      }
-      // Return a copy with filtered players for this class year
-      return {
-        ...board,
-        players: players.filter(p => p.class_year === classYear)
-      };
-    }
-
-    return board;
+    const row = result.rows[0];
+    if (typeof row.players === 'string') row.players = JSON.parse(row.players);
+    return row;
   }
 
-  // Get shared board by ID and year
-  static async getSharedBoardByYear(boardId, classYear) {
-    // First get the board name from the config row
-    const configResult = await pool.query(
-      `SELECT board_name, owner_user_id FROM recruiting_boards WHERE id = $1`,
-      [boardId]
-    );
-
-    if (!configResult.rows[0]) return null;
-
-    const { board_name, owner_user_id } = configResult.rows[0];
-
-    const result = await pool.query(
-      `SELECT * FROM recruiting_boards
-       WHERE owner_user_id = $1 AND board_name = $2 AND class_year = $3`,
-      [owner_user_id, board_name, classYear]
-    );
-    return result.rows[0];
-  }
-
-  // Add player to personal board
-  static async addPlayerToPersonalBoard(userId, classYear, playerData) {
-    // Always use the single config row (class_year=0)
-    let board = await this.getOrCreatePersonalBoard(userId);
-
-    // Get ALL players from the config row (not filtered by year)
-    let players = board.players || [];
-    if (typeof players === 'string') {
-      players = JSON.parse(players);
-    }
-
-    // Check if player already exists for this position AND class year
-    if (players.some(p => p.user_id === playerData.user_id && p.position === playerData.position && p.class_year === classYear)) {
-      throw new Error('Player already on board for this position');
-    }
-
-    // Store class_year in player data
-    playerData.class_year = classYear;
-    playerData.added_at = new Date().toISOString();
-    players.push(playerData);
-
+  // Save position config to a specific personal board.
+  static async savePersonalBoardConfig(boardId, userId, offensePositions, defensePositions) {
     const result = await pool.query(
       `UPDATE recruiting_boards
-       SET players = $1, updated_at = CURRENT_TIMESTAMP
-       WHERE owner_user_id = $2 AND is_personal = TRUE AND class_year = 0
-       RETURNING *`,
-      [JSON.stringify(players), userId]
+       SET offense_positions = $1, defense_positions = $2, updated_at = CURRENT_TIMESTAMP
+       WHERE id = $3 AND owner_user_id = $4 AND is_personal = TRUE AND class_year = 0
+       RETURNING id`,
+      [JSON.stringify(offensePositions), JSON.stringify(defensePositions), boardId, userId]
     );
-
-    return result.rows[0];
+    if (!result.rows[0]) throw new Error('Board not found or not owned by user');
+    return { success: true };
   }
 
-  // Add player to shared board
-  static async addPlayerToSharedBoard(boardId, classYear, playerData) {
-    // Get the board config to find owner and board_name
-    const configResult = await pool.query(
-      `SELECT board_name, owner_user_id FROM recruiting_boards WHERE id = $1`,
-      [boardId]
-    );
+  // Get players from a specific personal board (returns the entire roster, no class-year filter).
+  static async getPlayersFromPersonalBoardById(boardId, userId) {
+    const board = await this.getPersonalBoardById(boardId, userId);
+    if (!board) return [];
+    return board.players || [];
+  }
 
-    if (!configResult.rows[0]) {
-      throw new Error('Board not found');
-    }
+  // Add a player to a specific personal board.
+  static async addPlayerToPersonalBoardById(boardId, userId, playerData) {
+    const board = await this.getPersonalBoardById(boardId, userId);
+    if (!board) throw new Error('Board not found or not owned by user');
 
-    const { board_name, owner_user_id } = configResult.rows[0];
-
-    let board = await pool.query(
-      `SELECT * FROM recruiting_boards
-       WHERE owner_user_id = $1 AND board_name = $2 AND class_year = $3`,
-      [owner_user_id, board_name, classYear]
-    );
-
-    if (!board.rows[0]) {
-      // Create board for this class year
-      const result = await pool.query(
-        `INSERT INTO recruiting_boards (owner_user_id, class_year, board_name, offense_positions, defense_positions, players, is_personal, collab)
-         VALUES ($1, $2, $3, '[]'::jsonb, '[]'::jsonb, '[]'::jsonb, FALSE, '[]'::jsonb)
-         RETURNING *`,
-        [owner_user_id, classYear, board_name]
-      );
-      board = { rows: [result.rows[0]] };
-    }
-
-    let players = board.rows[0].players || [];
-    if (typeof players === 'string') {
-      players = JSON.parse(players);
-    }
-
+    const players = board.players || [];
     if (players.some(p => p.user_id === playerData.user_id && p.position === playerData.position)) {
       throw new Error('Player already on board for this position');
     }
 
-    playerData.added_at = new Date().toISOString();
-    players.push(playerData);
+    const toStore = { ...playerData, added_at: new Date().toISOString() };
+    delete toStore.class_year; // class_year is not used on the new flat boards
+    players.push(toStore);
 
-    const result = await pool.query(
+    await pool.query(
       `UPDATE recruiting_boards
        SET players = $1, updated_at = CURRENT_TIMESTAMP
-       WHERE owner_user_id = $2 AND board_name = $3 AND class_year = $4
-       RETURNING *`,
-      [JSON.stringify(players), owner_user_id, board_name, classYear]
+       WHERE id = $2 AND owner_user_id = $3 AND is_personal = TRUE AND class_year = 0`,
+      [JSON.stringify(players), boardId, userId]
     );
-
-    return result.rows[0];
+    return { success: true };
   }
 
-  // Get players from personal board
-  static async getPlayersFromPersonalBoard(userId, classYear) {
-    // Get the single config row (class_year=0)
-    const board = await this.getOrCreatePersonalBoard(userId);
-    if (!board || !board.players) return [];
+  // Remove a player from a specific personal board.
+  static async removePlayerFromPersonalBoardById(boardId, userId, playerId, position) {
+    const board = await this.getPersonalBoardById(boardId, userId);
+    if (!board) throw new Error('Board not found or not owned by user');
 
-    let players = board.players;
-    if (typeof players === 'string') {
-      players = JSON.parse(players);
-    }
-
-    // Filter by class_year
-    return players.filter(p => p.class_year === classYear);
-  }
-
-  // Get players from shared board
-  static async getPlayersFromSharedBoard(boardId, classYear) {
-    const configResult = await pool.query(
-      `SELECT board_name, owner_user_id FROM recruiting_boards WHERE id = $1`,
-      [boardId]
+    const players = board.players || [];
+    const updated = players.filter(
+      p => !(String(p.user_id) === String(playerId) && (!position || p.position === position))
     );
 
-    if (!configResult.rows[0]) return [];
-
-    const { board_name, owner_user_id } = configResult.rows[0];
-
-    const result = await pool.query(
-      `SELECT players FROM recruiting_boards
-       WHERE owner_user_id = $1 AND board_name = $2 AND class_year = $3`,
-      [owner_user_id, board_name, classYear]
-    );
-
-    if (!result.rows[0] || !result.rows[0].players) return [];
-
-    let players = result.rows[0].players;
-    if (typeof players === 'string') {
-      players = JSON.parse(players);
-    }
-    return players;
-  }
-
-  // Remove player from personal board
-  static async removePlayerFromPersonalBoard(userId, classYear, playerId, position) {
-    // Get the single config row (class_year=0)
-    const board = await this.getOrCreatePersonalBoard(userId);
-    if (!board) throw new Error('Board not found');
-
-    // Get ALL players from config row
-    let players = board.players || [];
-    if (typeof players === 'string') {
-      players = JSON.parse(players);
-    }
-
-    // Filter out the player, also matching class_year
-    const updatedPlayers = players.filter(
-      p => !(p.user_id === playerId && p.class_year === classYear && (!position || p.position === position))
-    );
-
-    const result = await pool.query(
+    await pool.query(
       `UPDATE recruiting_boards
        SET players = $1, updated_at = CURRENT_TIMESTAMP
-       WHERE owner_user_id = $2 AND is_personal = TRUE AND class_year = 0
-       RETURNING *`,
-      [JSON.stringify(updatedPlayers), userId]
+       WHERE id = $2 AND owner_user_id = $3 AND is_personal = TRUE AND class_year = 0`,
+      [JSON.stringify(updated), boardId, userId]
     );
-
-    return result.rows[0];
+    return { success: true };
   }
 
-  // Remove player from shared board
-  static async removePlayerFromSharedBoard(boardId, classYear, playerId, position) {
-    const configResult = await pool.query(
-      `SELECT board_name, owner_user_id FROM recruiting_boards WHERE id = $1`,
-      [boardId]
-    );
+  // Update a player's position on a specific personal board (drag/drop between columns).
+  static async updatePlayerPositionOnPersonalBoardById(boardId, userId, playerId, oldPosition, newPosition) {
+    const board = await this.getPersonalBoardById(boardId, userId);
+    if (!board) throw new Error('Board not found or not owned by user');
 
-    if (!configResult.rows[0]) throw new Error('Board not found');
-
-    const { board_name, owner_user_id } = configResult.rows[0];
-
-    const boardResult = await pool.query(
-      `SELECT players FROM recruiting_boards
-       WHERE owner_user_id = $1 AND board_name = $2 AND class_year = $3`,
-      [owner_user_id, board_name, classYear]
-    );
-
-    if (!boardResult.rows[0]) throw new Error('Board not found');
-
-    let players = boardResult.rows[0].players || [];
-    if (typeof players === 'string') {
-      players = JSON.parse(players);
-    }
-
-    const updatedPlayers = players.filter(
-      p => !(p.user_id === playerId && (!position || p.position === position))
-    );
-
-    const result = await pool.query(
-      `UPDATE recruiting_boards
-       SET players = $1, updated_at = CURRENT_TIMESTAMP
-       WHERE owner_user_id = $2 AND board_name = $3 AND class_year = $4
-       RETURNING *`,
-      [JSON.stringify(updatedPlayers), owner_user_id, board_name, classYear]
-    );
-
-    return result.rows[0];
-  }
-
-  // Update player position on personal board
-  static async updatePlayerPositionOnPersonalBoard(userId, classYear, playerId, oldPosition, newPosition) {
-    // Get the single config row (class_year=0)
-    const board = await this.getOrCreatePersonalBoard(userId);
-    if (!board) throw new Error('Board not found');
-
-    // Get ALL players from config row
-    let players = board.players || [];
-    if (typeof players === 'string') {
-      players = JSON.parse(players);
-    }
-
-    // Find the player, also matching class_year
-    const playerIndex = players.findIndex(
-      p => String(p.user_id) === String(playerId) && p.position === oldPosition && p.class_year === classYear
-    );
-
-    if (playerIndex === -1) throw new Error('Player not found in specified position');
-
-    players[playerIndex].position = newPosition;
-
-    const result = await pool.query(
-      `UPDATE recruiting_boards
-       SET players = $1, updated_at = CURRENT_TIMESTAMP
-       WHERE owner_user_id = $2 AND is_personal = TRUE AND class_year = 0
-       RETURNING *`,
-      [JSON.stringify(players), userId]
-    );
-
-    return result.rows[0];
-  }
-
-  // Update player position on shared board
-  static async updatePlayerPositionOnSharedBoard(boardId, classYear, playerId, oldPosition, newPosition) {
-    const configResult = await pool.query(
-      `SELECT board_name, owner_user_id FROM recruiting_boards WHERE id = $1`,
-      [boardId]
-    );
-
-    if (!configResult.rows[0]) throw new Error('Board not found');
-
-    const { board_name, owner_user_id } = configResult.rows[0];
-
-    const boardResult = await pool.query(
-      `SELECT players FROM recruiting_boards
-       WHERE owner_user_id = $1 AND board_name = $2 AND class_year = $3`,
-      [owner_user_id, board_name, classYear]
-    );
-
-    if (!boardResult.rows[0]) throw new Error('Board not found');
-
-    let players = boardResult.rows[0].players || [];
-    if (typeof players === 'string') {
-      players = JSON.parse(players);
-    }
-
-    const playerIndex = players.findIndex(
+    const players = board.players || [];
+    const idx = players.findIndex(
       p => String(p.user_id) === String(playerId) && p.position === oldPosition
     );
+    if (idx === -1) throw new Error('Player not found in specified position');
 
-    if (playerIndex === -1) throw new Error('Player not found in specified position');
+    players[idx].position = newPosition;
 
-    players[playerIndex].position = newPosition;
-
-    const result = await pool.query(
+    await pool.query(
       `UPDATE recruiting_boards
        SET players = $1, updated_at = CURRENT_TIMESTAMP
-       WHERE owner_user_id = $2 AND board_name = $3 AND class_year = $4
-       RETURNING *`,
-      [JSON.stringify(players), owner_user_id, board_name, classYear]
+       WHERE id = $2 AND owner_user_id = $3 AND is_personal = TRUE AND class_year = 0`,
+      [JSON.stringify(players), boardId, userId]
     );
+    return { success: true };
+  }
 
+  // ==================== Group Boards (Phase 2 — Google-Docs-style sharing) ====================
+  // Mirror of the personal-board API above, but the ownership predicate is
+  // `group_id = $X` instead of `owner_user_id = $X AND is_personal = TRUE`.
+  // Permission gating happens at the route layer via requireGroupAccess(), so the
+  // model methods are simple data-access primitives — they trust that the caller
+  // already verified the user is allowed to act on this group.
+
+  static BOARDS_PER_GROUP_CAP = 5;
+
+  // List all boards in a group, oldest first.
+  static async listGroupBoards(groupId) {
+    const result = await pool.query(
+      `SELECT id, board_name, offense_positions, defense_positions, created_at, updated_at
+       FROM recruiting_boards
+       WHERE group_id = $1 AND is_personal = FALSE AND class_year = 0
+       ORDER BY created_at ASC`,
+      [groupId]
+    );
+    return result.rows;
+  }
+
+  // Create a new board inside a group. Caps at BOARDS_PER_GROUP_CAP.
+  static async createGroupBoard(groupId, boardName) {
+    const trimmed = (boardName || '').trim();
+    if (!trimmed) throw new Error('Board name is required');
+    if (trimmed.length > 100) throw new Error('Board name must be 100 characters or less');
+
+    const countResult = await pool.query(
+      `SELECT COUNT(*)::int AS n FROM recruiting_boards
+       WHERE group_id = $1 AND is_personal = FALSE AND class_year = 0`,
+      [groupId]
+    );
+    if (countResult.rows[0].n >= this.BOARDS_PER_GROUP_CAP) {
+      throw new Error(`Group board limit reached (max ${this.BOARDS_PER_GROUP_CAP})`);
+    }
+
+    const result = await pool.query(
+      `INSERT INTO recruiting_boards
+         (group_id, class_year, board_name, offense_positions, defense_positions, players, is_personal, collab)
+       VALUES ($1, 0, $2, $3, $4, '[]'::jsonb, FALSE, '[]'::jsonb)
+       RETURNING id, board_name, offense_positions, defense_positions, created_at, updated_at`,
+      [
+        groupId,
+        trimmed,
+        JSON.stringify(this.DEFAULT_OFFENSE_POSITIONS),
+        JSON.stringify(this.DEFAULT_DEFENSE_POSITIONS)
+      ]
+    );
     return result.rows[0];
   }
 
-  // Check if a player is on any of the coach's boards (personal, owned shared, or collaborator boards)
+  // Delete a board (asserts the board belongs to the given group).
+  static async deleteGroupBoard(boardId, groupId) {
+    const result = await pool.query(
+      `DELETE FROM recruiting_boards
+       WHERE id = $1 AND group_id = $2 AND is_personal = FALSE AND class_year = 0
+       RETURNING id`,
+      [boardId, groupId]
+    );
+    if (!result.rows[0]) throw new Error('Board not found in this group');
+    return { success: true };
+  }
+
+  // Rename a board (asserts membership in the given group).
+  static async renameGroupBoard(boardId, groupId, newName) {
+    const trimmed = (newName || '').trim();
+    if (!trimmed) throw new Error('Board name is required');
+    if (trimmed.length > 100) throw new Error('Board name must be 100 characters or less');
+
+    const result = await pool.query(
+      `UPDATE recruiting_boards
+       SET board_name = $1, updated_at = CURRENT_TIMESTAMP
+       WHERE id = $2 AND group_id = $3 AND is_personal = FALSE AND class_year = 0
+       RETURNING id, board_name`,
+      [trimmed, boardId, groupId]
+    );
+    if (!result.rows[0]) throw new Error('Board not found in this group');
+    return result.rows[0];
+  }
+
+  // Get a single board (with config + players) inside a group.
+  static async getGroupBoardById(boardId, groupId) {
+    const result = await pool.query(
+      `SELECT id, board_name, offense_positions, defense_positions, players, created_at, updated_at
+       FROM recruiting_boards
+       WHERE id = $1 AND group_id = $2 AND is_personal = FALSE AND class_year = 0`,
+      [boardId, groupId]
+    );
+    if (!result.rows[0]) return null;
+    const row = result.rows[0];
+    if (typeof row.players === 'string') row.players = JSON.parse(row.players);
+    return row;
+  }
+
+  // Save position config for a group board.
+  static async saveGroupBoardConfig(boardId, groupId, offensePositions, defensePositions) {
+    const result = await pool.query(
+      `UPDATE recruiting_boards
+       SET offense_positions = $1, defense_positions = $2, updated_at = CURRENT_TIMESTAMP
+       WHERE id = $3 AND group_id = $4 AND is_personal = FALSE AND class_year = 0
+       RETURNING id`,
+      [JSON.stringify(offensePositions), JSON.stringify(defensePositions), boardId, groupId]
+    );
+    if (!result.rows[0]) throw new Error('Board not found in this group');
+    return { success: true };
+  }
+
+  // Get players from a group board.
+  static async getPlayersFromGroupBoardById(boardId, groupId) {
+    const board = await this.getGroupBoardById(boardId, groupId);
+    if (!board) return [];
+    return board.players || [];
+  }
+
+  // Add a player to a group board.
+  static async addPlayerToGroupBoardById(boardId, groupId, playerData) {
+    const board = await this.getGroupBoardById(boardId, groupId);
+    if (!board) throw new Error('Board not found in this group');
+
+    const players = board.players || [];
+    if (players.some(p => p.user_id === playerData.user_id && p.position === playerData.position)) {
+      throw new Error('Player already on board for this position');
+    }
+
+    const toStore = { ...playerData, added_at: new Date().toISOString() };
+    delete toStore.class_year;
+    players.push(toStore);
+
+    await pool.query(
+      `UPDATE recruiting_boards
+       SET players = $1, updated_at = CURRENT_TIMESTAMP
+       WHERE id = $2 AND group_id = $3 AND is_personal = FALSE AND class_year = 0`,
+      [JSON.stringify(players), boardId, groupId]
+    );
+    return { success: true };
+  }
+
+  // Remove a player from a group board.
+  static async removePlayerFromGroupBoardById(boardId, groupId, playerId, position) {
+    const board = await this.getGroupBoardById(boardId, groupId);
+    if (!board) throw new Error('Board not found in this group');
+
+    const players = board.players || [];
+    const updated = players.filter(
+      p => !(String(p.user_id) === String(playerId) && (!position || p.position === position))
+    );
+
+    await pool.query(
+      `UPDATE recruiting_boards
+       SET players = $1, updated_at = CURRENT_TIMESTAMP
+       WHERE id = $2 AND group_id = $3 AND is_personal = FALSE AND class_year = 0`,
+      [JSON.stringify(updated), boardId, groupId]
+    );
+    return { success: true };
+  }
+
+  // Update a player's position on a group board (drag/drop).
+  static async updatePlayerPositionOnGroupBoardById(boardId, groupId, playerId, oldPosition, newPosition) {
+    const board = await this.getGroupBoardById(boardId, groupId);
+    if (!board) throw new Error('Board not found in this group');
+
+    const players = board.players || [];
+    const idx = players.findIndex(
+      p => String(p.user_id) === String(playerId) && p.position === oldPosition
+    );
+    if (idx === -1) throw new Error('Player not found in specified position');
+
+    players[idx].position = newPosition;
+
+    await pool.query(
+      `UPDATE recruiting_boards
+       SET players = $1, updated_at = CURRENT_TIMESTAMP
+       WHERE id = $2 AND group_id = $3 AND is_personal = FALSE AND class_year = 0`,
+      [JSON.stringify(players), boardId, groupId]
+    );
+    return { success: true };
+  }
+
+  // ==================== Cross-board lookups ====================
+
+  // Check if a player is on any of the coach's boards: personal boards + every
+  // group board in every group the coach belongs to. Used by the player-profile
+  // "Add to Recruiting Board" button to show which boards a player is already on.
   static async checkPlayerOnBoards(userId, playerId) {
     const entries = [];
 
-    // Check personal board - now stored in single config row (class_year=0)
+    // Personal boards (multi-named or legacy single — both keyed by owner_user_id).
     const personalResult = await pool.query(
-      `SELECT id, players FROM recruiting_boards
+      `SELECT id, board_name, players FROM recruiting_boards
        WHERE owner_user_id = $1 AND is_personal = TRUE AND class_year = 0`,
       [userId]
     );
 
-    if (personalResult.rows[0]) {
-      let players = personalResult.rows[0].players || [];
-      if (typeof players === 'string') {
-        players = JSON.parse(players);
-      }
-
-      const playerEntries = players.filter(p => String(p.user_id) === String(playerId));
-      for (const entry of playerEntries) {
+    for (const row of personalResult.rows) {
+      let players = row.players || [];
+      if (typeof players === 'string') players = JSON.parse(players);
+      const matches = players.filter(p => String(p.user_id) === String(playerId));
+      for (const entry of matches) {
         entries.push({
-          class_year: entry.class_year, // Now stored in player object
           position: entry.position,
           board_type: 'personal',
-          board_id: null,
-          board_name: 'Personal Board'
+          board_id: row.id,
+          board_name: row.board_name || 'Personal Board'
         });
       }
     }
 
-    // Check owned shared boards - first get the config rows (class_year=0), then look up player rows
-    const ownedBoardsConfig = await pool.query(
-      `SELECT id, board_name, owner_user_id FROM recruiting_boards
-       WHERE owner_user_id = $1 AND is_personal = FALSE AND class_year = 0`,
-      [userId]
-    );
-
-    for (const config of ownedBoardsConfig.rows) {
-      // Get player rows for this board (same owner_user_id and board_name, class_year > 0)
-      const playerRowsResult = await pool.query(
-        `SELECT class_year, players FROM recruiting_boards
-         WHERE owner_user_id = $1 AND board_name = $2 AND is_personal = FALSE AND class_year > 0`,
-        [config.owner_user_id, config.board_name]
-      );
-
-      for (const row of playerRowsResult.rows) {
-        let players = row.players || [];
-        if (typeof players === 'string') {
-          players = JSON.parse(players);
-        }
-
-        const playerEntries = players.filter(p => String(p.user_id) === String(playerId));
-        for (const entry of playerEntries) {
-          entries.push({
-            class_year: row.class_year,
-            position: entry.position,
-            board_type: 'shared',
-            board_id: config.id, // Use the config row's ID
-            board_name: config.board_name
-          });
-        }
-      }
-    }
-
-    // Check collaborator boards - first get config rows where user is collaborator
-    const collaboratorBoardsConfig = await pool.query(
-      `SELECT rb.id, rb.board_name, rb.owner_user_id, cp.first_name, cp.last_name
+    // Group boards: every board in every group the coach is a member of.
+    const groupBoardsResult = await pool.query(
+      `SELECT rb.id, rb.board_name, rb.players, rb.group_id, g.group_name, m.permission
        FROM recruiting_boards rb
-       LEFT JOIN coach_profiles cp ON rb.owner_user_id = cp.user_id
-       WHERE rb.is_personal = FALSE
-         AND rb.class_year = 0
-         AND rb.collab::jsonb ? $1`,
+       JOIN board_group_members m ON m.group_id = rb.group_id AND m.user_id = $1
+       JOIN board_groups g ON g.id = rb.group_id
+       WHERE rb.is_personal = FALSE AND rb.class_year = 0`,
       [userId]
     );
 
-    for (const config of collaboratorBoardsConfig.rows) {
-      // Get player rows for this board
-      const playerRowsResult = await pool.query(
-        `SELECT class_year, players FROM recruiting_boards
-         WHERE owner_user_id = $1 AND board_name = $2 AND is_personal = FALSE AND class_year > 0`,
-        [config.owner_user_id, config.board_name]
-      );
-
-      for (const row of playerRowsResult.rows) {
-        let players = row.players || [];
-        if (typeof players === 'string') {
-          players = JSON.parse(players);
-        }
-
-        const playerEntries = players.filter(p => String(p.user_id) === String(playerId));
-        for (const entry of playerEntries) {
-          const ownerName = config.first_name && config.last_name
-            ? `${config.first_name} ${config.last_name}`
-            : 'Unknown';
-          entries.push({
-            class_year: row.class_year,
-            position: entry.position,
-            board_type: 'shared',
-            board_id: config.id, // Use the config row's ID
-            board_name: `${config.board_name} (${ownerName})`
-          });
-        }
+    for (const row of groupBoardsResult.rows) {
+      let players = row.players || [];
+      if (typeof players === 'string') players = JSON.parse(players);
+      const matches = players.filter(p => String(p.user_id) === String(playerId));
+      for (const entry of matches) {
+        entries.push({
+          position: entry.position,
+          board_type: 'group',
+          board_id: row.id,
+          group_id: row.group_id,
+          board_name: `${row.board_name} (${row.group_name})`,
+          my_permission: row.permission
+        });
       }
     }
 

@@ -69,7 +69,9 @@ const MIGRATIONS = [
   'fix-user-fk-cascades.sql',
   'add-coach-signup-request-archival.sql',
   'add-player-athletics.sql',
-  'add-pff-grade.sql'
+  'add-pff-grade.sql',
+  'add-named-personal-boards.sql',
+  'add-board-groups.sql'
 ];
 
 async function applyManualFixes() {

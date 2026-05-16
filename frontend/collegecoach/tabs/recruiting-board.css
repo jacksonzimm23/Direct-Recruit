@@ -764,6 +764,15 @@ body.touch-dragging {
     display: block;
 }
 
+/* These modals fire WHILE the create-group / group-info modal is already open,
+   so they must sit above the underlying modal in the stacking order. */
+#sgSameSchoolModal,
+#deleteSharedGroupModal,
+#sgRemoveMemberModal,
+#sgTransferConfirmModal {
+    z-index: 1100;
+}
+
 .recruiting-board-modal-overlay {
     position: absolute;
     top: 0;
@@ -2023,4 +2032,1333 @@ body.touch-dragging {
     .position-slot {
         min-width: 140px;
     }
+}
+
+/* ==============================
+   SUBTAB NAVIGATION (matches Discover Players / Transfer Portal pattern)
+   ============================== */
+.recruiting-board-main .rb-subtabs {
+    display: flex;
+    gap: 0.5rem;
+    margin: 0 2rem 0.75rem;
+    background: rgba(254, 252, 251, 0.03);
+    border: 1px solid rgba(255, 107, 53, 0.15);
+    border-radius: 12px;
+    padding: 0.35rem;
+}
+
+.rb-subtab {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.7rem 1rem;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 9px;
+    color: rgba(254, 252, 251, 0.5);
+    font-size: 0.9rem;
+    font-weight: 600;
+    font-family: 'Inter', sans-serif;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.rb-subtab:hover {
+    color: rgba(254, 252, 251, 0.75);
+    background: rgba(254, 252, 251, 0.04);
+}
+
+.rb-subtab svg {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+}
+
+.rb-subtab.active {
+    background: rgba(255, 107, 53, 0.1);
+    border-color: rgba(255, 107, 53, 0.35);
+    color: #ff6b35;
+}
+
+.rb-tab-content {
+    display: none;
+}
+
+.rb-tab-content.active {
+    display: block;
+}
+
+/* When the Pipeline tab is active, hide the shared board controls + field
+   (they live outside .rb-tab-content as page-level siblings). */
+body.rb-tab-pipeline .recruiting-board-main .board-controls,
+body.rb-tab-pipeline .recruiting-board-main .remove-mode-indicator,
+body.rb-tab-pipeline .recruiting-board-main .football-field-container {
+    display: none !important;
+}
+
+/* When personal tab is active and there are no boards, hide the controls/field too. */
+body.rb-personal-empty .recruiting-board-main .board-controls,
+body.rb-personal-empty .recruiting-board-main .remove-mode-indicator,
+body.rb-personal-empty .recruiting-board-main .football-field-container {
+    display: none !important;
+}
+
+/* When shared tab is active and the coach has zero groups, hide the controls/field. */
+body.rb-shared-empty .recruiting-board-main .board-controls,
+body.rb-shared-empty .recruiting-board-main .remove-mode-indicator,
+body.rb-shared-empty .recruiting-board-main .football-field-container {
+    display: none !important;
+}
+
+/* When shared tab is active, the coach is in a group, but the group has zero boards yet. */
+body.rb-shared-no-boards .recruiting-board-main .board-controls,
+body.rb-shared-no-boards .recruiting-board-main .remove-mode-indicator,
+body.rb-shared-no-boards .recruiting-board-main .football-field-container {
+    display: none !important;
+}
+
+/* ==============================
+   PERSONAL BOARDS — SELECTOR ROW
+   ============================== */
+.pb-board-selector-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin: 0 2rem 1.5rem;
+    flex-wrap: wrap;
+}
+
+.pb-board-dropdown {
+    position: relative;
+    min-width: 220px;
+}
+
+.pb-board-select {
+    width: 100%;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background: rgba(18, 130, 162, 0.08);
+    border: 1px solid rgba(18, 130, 162, 0.3);
+    color: var(--white);
+    padding: 0.6rem 2.25rem 0.6rem 0.85rem;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    font-family: 'Inter', sans-serif;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.pb-board-select:hover {
+    border-color: var(--cerulean);
+    background: rgba(18, 130, 162, 0.15);
+}
+
+.pb-board-select:focus {
+    outline: none;
+    border-color: var(--cerulean);
+    background: rgba(18, 130, 162, 0.15);
+}
+
+.pb-board-select option {
+    background: var(--penn-blue);
+    color: var(--white);
+}
+
+.pb-board-dropdown .dropdown-arrow {
+    position: absolute;
+    right: 0.65rem;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 16px;
+    height: 16px;
+    color: rgba(254, 252, 251, 0.6);
+    pointer-events: none;
+}
+
+.pb-board-action-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: 'Inter', sans-serif;
+    flex-shrink: 0;
+}
+
+.pb-board-action-btn svg {
+    width: 16px;
+    height: 16px;
+}
+
+.pb-board-action-btn.pb-add {
+    background: rgba(18, 130, 162, 0.15);
+    border: 1px solid rgba(18, 130, 162, 0.3);
+    color: var(--cerulean);
+}
+
+.pb-board-action-btn.pb-add:hover:not(:disabled) {
+    background: rgba(18, 130, 162, 0.25);
+    border-color: var(--cerulean);
+}
+
+.pb-board-action-btn.pb-delete {
+    background: rgba(220, 38, 38, 0.1);
+    border: 1px solid rgba(220, 38, 38, 0.3);
+    color: #ef4444;
+}
+
+.pb-board-action-btn.pb-delete:hover:not(:disabled) {
+    background: rgba(220, 38, 38, 0.2);
+    border-color: #ef4444;
+}
+
+.pb-board-action-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.pb-board-selector-row .board-instructions {
+    flex: 1;
+    min-width: 240px;
+    color: rgba(254, 252, 251, 0.55);
+    font-size: 0.8rem;
+    line-height: 1.4;
+}
+
+/* ==============================
+   PERSONAL BOARDS — EMPTY STATE
+   ============================== */
+.pb-empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    margin: 3rem 2rem;
+    padding: 3rem 2rem;
+    background: rgba(254, 252, 251, 0.02);
+    border: 1px dashed rgba(18, 130, 162, 0.3);
+    border-radius: 12px;
+}
+
+.pb-empty-state svg {
+    width: 64px;
+    height: 64px;
+    color: rgba(18, 130, 162, 0.5);
+    margin-bottom: 1.25rem;
+}
+
+.pb-empty-state h2 {
+    margin: 0 0 0.5rem;
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: var(--white);
+}
+
+.pb-empty-state p {
+    margin: 0 0 1.5rem;
+    color: rgba(254, 252, 251, 0.6);
+    font-size: 0.95rem;
+}
+
+.pb-empty-cta {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.75rem 1.75rem;
+    background: var(--cerulean);
+    border: 1px solid var(--cerulean);
+    color: var(--white);
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    font-family: 'Inter', sans-serif;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.pb-empty-cta:hover {
+    background: rgba(18, 130, 162, 0.85);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(18, 130, 162, 0.3);
+}
+
+/* ==============================
+   PIPELINE PLACEHOLDER
+   ============================== */
+.rb-pipeline-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    margin: 3rem 2rem;
+    padding: 3rem 2rem;
+    background: rgba(254, 252, 251, 0.02);
+    border: 1px dashed rgba(255, 107, 53, 0.25);
+    border-radius: 12px;
+}
+
+.rb-pipeline-placeholder svg {
+    width: 64px;
+    height: 64px;
+    color: rgba(255, 107, 53, 0.5);
+    margin-bottom: 1.25rem;
+}
+
+.rb-pipeline-placeholder h2 {
+    margin: 0 0 0.5rem;
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: var(--white);
+}
+
+.rb-pipeline-placeholder p {
+    margin: 0;
+    color: rgba(254, 252, 251, 0.6);
+    font-size: 0.95rem;
+}
+
+@media (max-width: 768px) {
+    .recruiting-board-main .rb-subtabs {
+        margin: 0 1rem 0.75rem;
+    }
+    .pb-board-selector-row {
+        margin: 0 1rem 1.25rem;
+    }
+    .pb-empty-state,
+    .rb-pipeline-placeholder {
+        margin: 2rem 1rem;
+        padding: 2rem 1rem;
+    }
+    .pb-board-dropdown {
+        min-width: 0;
+        flex: 1 1 100%;
+    }
+}
+
+/* ==============================
+   SHARED GROUPS (Phase 2) — selectors mirror .pb-* but support a permission chip
+   ============================== */
+.sg-empty-state,
+.sg-no-boards-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    margin: 3rem 2rem;
+    padding: 3rem 2rem;
+    background: rgba(254, 252, 251, 0.02);
+    border: 1px dashed rgba(255, 107, 53, 0.3);
+    border-radius: 12px;
+}
+
+.sg-empty-state svg,
+.sg-no-boards-state svg {
+    width: 64px;
+    height: 64px;
+    color: rgba(255, 107, 53, 0.5);
+    margin-bottom: 1.25rem;
+}
+
+.sg-empty-state h2,
+.sg-no-boards-state h2 {
+    margin: 0 0 0.5rem;
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: var(--white);
+}
+
+.sg-empty-state p,
+.sg-no-boards-state p {
+    margin: 0 0 1.5rem;
+    color: rgba(254, 252, 251, 0.6);
+    font-size: 0.95rem;
+}
+
+.sg-empty-cta {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.75rem 1.75rem;
+    background: var(--accent-orange);
+    border: 1px solid var(--accent-orange);
+    color: var(--white);
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    font-family: 'Inter', sans-serif;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.sg-empty-cta:hover {
+    background: rgba(255, 107, 53, 0.85);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3);
+}
+
+.sg-group-selector-row,
+.sg-board-selector-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin: 0 2rem 1rem;
+    flex-wrap: wrap;
+}
+
+.sg-board-selector-row {
+    margin-bottom: 1.5rem;
+}
+
+/* Horizontal divider between the GROUP row and the RECRUITING BOARD row.
+   Provides clear visual separation so coaches don't conflate "group-level"
+   actions (info / leave) with "board-level" actions (rename / add / delete). */
+.sg-section-divider {
+    border: none;
+    border-top: 1px solid rgba(255, 107, 53, 0.2);
+    margin: 1.25rem 2rem;
+    height: 0;
+}
+
+.sg-group-dropdown,
+.sg-board-dropdown {
+    position: relative;
+    min-width: 220px;
+}
+
+.sg-group-select,
+.sg-board-select {
+    width: 100%;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background: rgba(255, 107, 53, 0.08);
+    border: 1px solid rgba(255, 107, 53, 0.3);
+    color: var(--white);
+    padding: 0.6rem 2.25rem 0.6rem 0.85rem;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    font-family: 'Inter', sans-serif;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.sg-group-select:hover,
+.sg-board-select:hover {
+    border-color: var(--accent-orange);
+    background: rgba(255, 107, 53, 0.15);
+}
+
+.sg-group-select:focus,
+.sg-board-select:focus {
+    outline: none;
+    border-color: var(--accent-orange);
+    background: rgba(255, 107, 53, 0.15);
+}
+
+.sg-group-select option,
+.sg-board-select option {
+    background: var(--penn-blue);
+    color: var(--white);
+}
+
+.sg-group-dropdown .dropdown-arrow,
+.sg-board-dropdown .dropdown-arrow {
+    position: absolute;
+    right: 0.65rem;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 16px;
+    height: 16px;
+    color: rgba(254, 252, 251, 0.6);
+    pointer-events: none;
+}
+
+.sg-action-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: 'Inter', sans-serif;
+    flex-shrink: 0;
+}
+
+.sg-action-btn svg {
+    width: 16px;
+    height: 16px;
+}
+
+.sg-action-btn.sg-add {
+    background: rgba(255, 107, 53, 0.15);
+    border: 1px solid rgba(255, 107, 53, 0.3);
+    color: var(--accent-orange);
+}
+
+.sg-action-btn.sg-add:hover:not(:disabled) {
+    background: rgba(255, 107, 53, 0.25);
+    border-color: var(--accent-orange);
+}
+
+.sg-action-btn.sg-info {
+    background: rgba(18, 130, 162, 0.15);
+    border: 1px solid rgba(18, 130, 162, 0.3);
+    color: var(--cerulean);
+}
+
+.sg-action-btn.sg-info:hover {
+    background: rgba(18, 130, 162, 0.25);
+    border-color: var(--cerulean);
+}
+
+.sg-action-btn.sg-leave,
+.sg-action-btn.sg-delete {
+    background: rgba(220, 38, 38, 0.1);
+    border: 1px solid rgba(220, 38, 38, 0.3);
+    color: #ef4444;
+}
+
+.sg-action-btn.sg-leave:hover:not(:disabled),
+.sg-action-btn.sg-delete:hover:not(:disabled) {
+    background: rgba(220, 38, 38, 0.2);
+    border-color: #ef4444;
+}
+
+.sg-action-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+/* Text variant of the action buttons — used for Group Info / Leave Group in
+   the selector row (icon-only didn't make their purpose obvious). */
+.sg-action-btn-text {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+    height: 38px;
+    padding: 0 0.85rem;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 600;
+    flex-shrink: 0;
+}
+
+.sg-action-btn-text svg {
+    width: 14px;
+    height: 14px;
+}
+
+.sg-action-btn-text.sg-info {
+    background: rgba(18, 130, 162, 0.15);
+    border: 1px solid rgba(18, 130, 162, 0.3);
+    color: var(--cerulean);
+}
+
+.sg-action-btn-text.sg-info:hover {
+    background: rgba(18, 130, 162, 0.25);
+    border-color: var(--cerulean);
+}
+
+.sg-action-btn-text.sg-leave {
+    background: rgba(220, 38, 38, 0.1);
+    border: 1px solid rgba(220, 38, 38, 0.3);
+    color: #ef4444;
+}
+
+.sg-action-btn-text.sg-leave:hover {
+    background: rgba(220, 38, 38, 0.2);
+    border-color: #ef4444;
+}
+
+/* Pushes the trailing buttons to the right edge of the selector row. */
+.sg-row-spacer {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+/* ------------ Inline rename: group + board name display + input ------------ */
+/* The group name lives as a static label here (no dropdown — cap of 1 group).
+   The permission chip is grouped inside so it reads as part of the group's
+   identity rather than floating mid-row. */
+.sg-name-display {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 220px;
+}
+
+/* Slightly more breathing room between the pencil button and the chip. */
+.sg-name-display .sg-permission-chip {
+    margin-left: 0.5rem;
+}
+
+.sg-name-label {
+    color: var(--white);
+    font-size: 1rem;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.sg-name-input {
+    background: rgba(255, 107, 53, 0.08);
+    border: 1px solid rgba(255, 107, 53, 0.3);
+    color: var(--white);
+    padding: 0.5rem 0.75rem;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    font-family: 'Inter', sans-serif;
+    min-width: 220px;
+}
+
+.sg-name-input:focus {
+    outline: none;
+    border-color: var(--accent-orange);
+    background: rgba(255, 107, 53, 0.15);
+}
+
+.sg-name-edit-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    padding: 0;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    color: rgba(254, 252, 251, 0.55);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.sg-name-edit-btn:hover {
+    color: var(--accent-orange);
+    background: rgba(255, 107, 53, 0.1);
+    border-color: rgba(255, 107, 53, 0.3);
+}
+
+.sg-name-edit-btn svg {
+    width: 14px;
+    height: 14px;
+}
+
+/* Inline rename input that replaces a board <select> while editing. Sized to
+   visually match the select so the row layout doesn't jump. */
+.pb-board-rename-input,
+.sg-board-rename-input {
+    width: 100%;
+    background: rgba(18, 130, 162, 0.15);
+    border: 1px solid var(--cerulean);
+    color: var(--white);
+    padding: 0.6rem 0.85rem;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    font-family: 'Inter', sans-serif;
+}
+
+.sg-board-rename-input {
+    background: rgba(255, 107, 53, 0.15);
+    border-color: var(--accent-orange);
+}
+
+.pb-board-rename-input:focus,
+.sg-board-rename-input:focus {
+    outline: none;
+}
+
+/* Rename button next to the board dropdowns */
+.pb-board-action-btn.pb-rename {
+    background: rgba(254, 252, 251, 0.05);
+    border: 1px solid rgba(254, 252, 251, 0.15);
+    color: rgba(254, 252, 251, 0.7);
+}
+
+.pb-board-action-btn.pb-rename:hover:not(:disabled) {
+    background: rgba(18, 130, 162, 0.15);
+    border-color: var(--cerulean);
+    color: var(--cerulean);
+}
+
+.sg-action-btn.sg-rename {
+    background: rgba(254, 252, 251, 0.05);
+    border: 1px solid rgba(254, 252, 251, 0.15);
+    color: rgba(254, 252, 251, 0.7);
+}
+
+.sg-action-btn.sg-rename:hover:not(:disabled) {
+    background: rgba(255, 107, 53, 0.15);
+    border-color: var(--accent-orange);
+    color: var(--accent-orange);
+}
+
+.sg-permission-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.3rem 0.6rem;
+    border-radius: 50px;
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+.sg-permission-chip.sg-perm-owner {
+    background: rgba(212, 160, 23, 0.15);
+    border: 1px solid rgba(212, 160, 23, 0.4);
+    color: #d4a017;
+}
+
+.sg-permission-chip.sg-perm-editor {
+    background: rgba(18, 130, 162, 0.15);
+    border: 1px solid rgba(18, 130, 162, 0.4);
+    color: var(--cerulean);
+}
+
+.sg-permission-chip.sg-perm-viewer {
+    background: rgba(254, 252, 251, 0.06);
+    border: 1px solid rgba(254, 252, 251, 0.2);
+    color: rgba(254, 252, 251, 0.6);
+}
+
+.sg-board-selector-row .board-instructions {
+    flex: 1;
+    min-width: 240px;
+    color: rgba(254, 252, 251, 0.55);
+    font-size: 0.8rem;
+    line-height: 1.4;
+}
+
+/* ==============================
+   SHARED GROUPS — Modals (create, info, etc.)
+   ============================== */
+/* Higher-specificity selectors so we beat .collab-modal's 480px cap and the
+   confirm-modal's 400px cap that would otherwise win. */
+.recruiting-board-modal .sg-modal-content,
+.recruiting-board-modal.collab-modal .sg-modal-content,
+.recruiting-board-modal.confirm-modal .sg-modal-content {
+    max-width: 560px;
+    width: 92%;
+    /* Cap the modal at viewport height with a small buffer so it never spills off
+       the screen. Use flex column + overflow:hidden so the body can scroll
+       independently while the header/footer stay pinned. */
+    max-height: calc(100vh - 2rem);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* Header and footer stay fixed; body becomes the scrollable region. */
+.sg-modal-content .recruiting-board-modal-header {
+    flex-shrink: 0;
+}
+.sg-modal-content .recruiting-board-modal-footer {
+    flex-shrink: 0;
+}
+.sg-modal-content .recruiting-board-modal-body {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    min-height: 0; /* required so flex child can actually shrink + scroll */
+}
+
+.sg-member-add-section {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(254, 252, 251, 0.08);
+}
+
+.sg-member-add-section > label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: rgba(254, 252, 251, 0.55);
+    margin-bottom: 0.5rem;
+}
+
+/* Override the column-stacked header layout for the sg-modal — instead lay the
+   icon, title row, and close button in a single horizontal row so the dynamic
+   group name has room to breathe and isn't visually nested under the icon. */
+.sg-modal-content .recruiting-board-modal-header {
+    flex-direction: row !important;
+    align-items: center !important;
+    text-align: left !important;
+    gap: 0.85rem;
+    padding: 1.25rem 1.5rem;
+}
+
+/* Group Info modal: the <h3> title is the group name + an inline rename pencil
+   for editors/owners. Sits alongside the modal-close button in the header row. */
+.sg-info-title-row {
+    display: inline-flex !important;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0;
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+/* Inside the modal title row, the label IS the title — promote its font size
+   so it reads like an h3 (overrides the smaller .sg-name-label sizing used
+   elsewhere). */
+.sg-info-title-row .sg-name-label {
+    color: var(--white);
+    font-size: 1.25rem;
+    font-weight: 700;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.sg-info-title-row .sg-name-input {
+    /* Fills available space inside the title row so the rename UI feels
+       proportional to the modal width. */
+    flex: 1 1 auto;
+    min-width: 200px;
+    font-size: 1.05rem;
+}
+
+/* Shrink the giant centered icon down to a normal-sized header pill that
+   sits inline next to the title. */
+.sg-modal-content .collab-modal-icon,
+.sg-modal-content .confirm-modal-icon {
+    width: 40px !important;
+    height: 40px !important;
+    margin: 0 !important;
+    flex-shrink: 0;
+}
+
+.sg-modal-content .collab-modal-icon svg,
+.sg-modal-content .confirm-modal-icon svg {
+    width: 20px;
+    height: 20px;
+}
+
+/* Pin the close button to the right edge of the header row. */
+.sg-modal-content .modal-close-btn {
+    position: static !important;
+    margin-left: auto;
+    flex-shrink: 0;
+}
+
+.sg-search-wrapper {
+    position: relative;
+}
+
+.sg-search-wrapper .search-icon {
+    position: absolute;
+    left: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 16px;
+    height: 16px;
+    color: rgba(254, 252, 251, 0.5);
+    pointer-events: none;
+}
+
+.sg-search-input {
+    width: 100%;
+    padding: 0.55rem 0.75rem 0.55rem 2.25rem;
+    background: rgba(254, 252, 251, 0.04);
+    border: 1px solid rgba(254, 252, 251, 0.12);
+    border-radius: 8px;
+    color: var(--white);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.85rem;
+}
+
+.sg-search-input:focus {
+    outline: none;
+    border-color: var(--accent-orange);
+    background: rgba(254, 252, 251, 0.07);
+}
+
+.sg-search-results {
+    margin-top: 0.5rem;
+    max-height: 220px;
+    overflow-y: auto;
+}
+
+.sg-search-result-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.6rem;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.sg-search-result-item:hover {
+    background: rgba(254, 252, 251, 0.04);
+}
+
+.sg-search-result-info {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    min-width: 0;
+}
+
+.sg-search-result-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    overflow: hidden;
+    background: rgba(254, 252, 251, 0.1);
+    color: rgba(254, 252, 251, 0.7);
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.sg-search-result-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.sg-search-result-avatar svg {
+    width: 18px;
+    height: 18px;
+}
+
+.sg-search-result-details {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.sg-search-result-name {
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--white);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.sg-search-result-school {
+    font-size: 0.75rem;
+    color: rgba(254, 252, 251, 0.5);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.sg-search-add-btn {
+    padding: 0.4rem 0.75rem;
+    background: rgba(255, 107, 53, 0.15);
+    border: 1px solid rgba(255, 107, 53, 0.3);
+    color: var(--accent-orange);
+    border-radius: 6px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+}
+
+.sg-search-add-btn:hover {
+    background: rgba(255, 107, 53, 0.25);
+}
+
+.sg-staged-list-label {
+    margin-top: 1rem;
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: rgba(254, 252, 251, 0.55);
+}
+
+.sg-staged-count {
+    font-weight: 600;
+    color: rgba(254, 252, 251, 0.8);
+}
+
+.sg-staged-list {
+    margin-top: 0.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.sg-staged-empty {
+    margin: 0;
+    padding: 0.6rem;
+    color: rgba(254, 252, 251, 0.4);
+    font-size: 0.82rem;
+    font-style: italic;
+    text-align: center;
+}
+
+.sg-staged-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.45rem 0.6rem;
+    background: rgba(254, 252, 251, 0.03);
+    border: 1px solid rgba(254, 252, 251, 0.07);
+    border-radius: 8px;
+}
+
+.sg-staged-info {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 0;
+    flex: 1;
+}
+
+.sg-staged-name {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--white);
+}
+
+.sg-staged-school {
+    font-size: 0.72rem;
+    color: rgba(254, 252, 251, 0.5);
+}
+
+.sg-staged-perm-select {
+    background: rgba(254, 252, 251, 0.04);
+    border: 1px solid rgba(254, 252, 251, 0.12);
+    border-radius: 6px;
+    color: var(--white);
+    padding: 0.3rem 0.5rem;
+    font-size: 0.78rem;
+    cursor: pointer;
+}
+
+.sg-staged-perm-select option {
+    background: var(--penn-blue);
+    color: var(--white);
+}
+
+.sg-staged-remove {
+    background: transparent;
+    border: none;
+    color: rgba(254, 252, 251, 0.5);
+    cursor: pointer;
+    padding: 0.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.sg-staged-remove:hover {
+    color: #ef4444;
+}
+
+.sg-staged-remove svg {
+    width: 14px;
+    height: 14px;
+}
+
+.sg-save-members-btn {
+    margin-top: 1rem;
+    padding: 0.65rem 1.25rem;
+    background: var(--accent-orange);
+    border: 1px solid var(--accent-orange);
+    color: var(--white);
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    width: 100%;
+}
+
+.sg-save-members-btn:hover:not(:disabled) {
+    background: rgba(255, 107, 53, 0.85);
+}
+
+.sg-save-members-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+/* Members & pending lists in Group Info modal */
+.sg-members-section,
+.sg-pending-section {
+    margin-top: 1.25rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid rgba(254, 252, 251, 0.08);
+}
+
+.sg-members-section h4,
+.sg-pending-section h4,
+.sg-transfer-section h4 {
+    margin: 0 0 0.75rem;
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: rgba(254, 252, 251, 0.55);
+}
+
+.sg-members-list,
+.sg-pending-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.sg-member-row {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.5rem 0.65rem;
+    background: rgba(254, 252, 251, 0.03);
+    border: 1px solid rgba(254, 252, 251, 0.07);
+    border-radius: 8px;
+}
+
+.sg-member-info {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    flex: 1;
+    min-width: 0;
+}
+
+.sg-member-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    overflow: hidden;
+    background: rgba(254, 252, 251, 0.1);
+    color: rgba(254, 252, 251, 0.7);
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.sg-member-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.sg-member-avatar svg {
+    width: 18px;
+    height: 18px;
+}
+
+.sg-member-name {
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--white);
+}
+
+.sg-member-school {
+    font-size: 0.74rem;
+    color: rgba(254, 252, 251, 0.5);
+}
+
+.sg-member-perm-select {
+    background: rgba(254, 252, 251, 0.04);
+    border: 1px solid rgba(254, 252, 251, 0.12);
+    border-radius: 6px;
+    color: var(--white);
+    padding: 0.3rem 0.5rem;
+    font-size: 0.78rem;
+    cursor: pointer;
+}
+
+.sg-member-perm-select option {
+    background: var(--penn-blue);
+    color: var(--white);
+}
+
+.sg-member-remove {
+    background: transparent;
+    border: none;
+    color: rgba(254, 252, 251, 0.5);
+    cursor: pointer;
+    padding: 0.3rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.sg-member-remove:hover {
+    color: #ef4444;
+}
+
+.sg-member-remove svg {
+    width: 16px;
+    height: 16px;
+}
+
+.sg-pending-badge {
+    display: inline-flex;
+    padding: 0.18rem 0.45rem;
+    border-radius: 50px;
+    background: rgba(234, 179, 8, 0.15);
+    color: #eab308;
+    border: 1px solid rgba(234, 179, 8, 0.3);
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+/* Transfer ownership section */
+.sg-transfer-section {
+    margin-top: 1.25rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid rgba(254, 252, 251, 0.08);
+}
+
+.sg-transfer-description {
+    margin: 0 0 0.65rem;
+    font-size: 0.82rem;
+    color: rgba(254, 252, 251, 0.6);
+}
+
+.sg-transfer-select {
+    width: 100%;
+    padding: 0.55rem 0.75rem;
+    background: rgba(254, 252, 251, 0.04);
+    border: 1px solid rgba(254, 252, 251, 0.12);
+    border-radius: 8px;
+    color: var(--white);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.85rem;
+    cursor: pointer;
+}
+
+.sg-transfer-select option {
+    background: var(--penn-blue);
+    color: var(--white);
+}
+
+.sg-transfer-btn {
+    margin-top: 0.75rem;
+    padding: 0.65rem 1.25rem;
+    background: var(--accent-orange);
+    border: 1px solid var(--accent-orange);
+    color: var(--white);
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    width: 100%;
+}
+
+.sg-transfer-btn:hover:not(:disabled) {
+    background: rgba(255, 107, 53, 0.85);
+}
+
+.sg-transfer-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+/* Danger zone (delete entire group) */
+.sg-danger-section {
+    margin-top: 1.25rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid rgba(220, 38, 38, 0.2);
+}
+
+.sg-danger-btn {
+    width: 100%;
+    padding: 0.65rem 1.25rem;
+    background: rgba(220, 38, 38, 0.1);
+    border: 1px solid rgba(220, 38, 38, 0.4);
+    color: #ef4444;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.sg-danger-btn:hover {
+    background: rgba(220, 38, 38, 0.2);
+    border-color: #ef4444;
+}
+
+@media (max-width: 768px) {
+    .sg-empty-state,
+    .sg-no-boards-state {
+        margin: 2rem 1rem;
+        padding: 2rem 1rem;
+    }
+
+    .sg-group-selector-row,
+    .sg-board-selector-row {
+        margin: 0 1rem 1rem;
+    }
+
+    .sg-group-dropdown,
+    .sg-board-dropdown {
+        min-width: 0;
+        flex: 1 1 100%;
+    }
+}
+
+/* ==============================
+   SHARED GROUPS — College Coach avatar + subheader theming
+   Mirrors the platform-wide College Coach format: 40px avatar with orange
+   ring + tinted bg, "Team, State • Division" subheader in orange.
+   See lessons.md #2 (sidebar footer) and frontend/shared/api.js getRoleBorderColor().
+   ============================== */
+.sg-coach-avatar {
+    width: 40px;
+    height: 40px;
+    border: 2px solid var(--accent-orange);
+    background: rgba(255, 107, 53, 0.2);
+    color: var(--accent-orange);
+}
+
+.sg-coach-avatar svg {
+    width: 22px;
+    height: 22px;
+}
+
+.sg-coach-subheader {
+    color: var(--accent-orange) !important;
+    font-weight: 600;
+}
+
+/* The confirm-modal body uses text-align: center for confirm-text; force left
+   alignment for all the shared-group lists inside the modal so coach names
+   render flush-left next to their avatars. */
+.recruiting-board-modal .sg-search-results,
+.recruiting-board-modal .sg-staged-list,
+.recruiting-board-modal .sg-members-list,
+.recruiting-board-modal .sg-pending-list,
+.recruiting-board-modal .sg-search-result-item,
+.recruiting-board-modal .sg-staged-row,
+.recruiting-board-modal .sg-member-row,
+.recruiting-board-modal .sg-search-result-details {
+    text-align: left;
 }
