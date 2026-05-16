@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Football Recruiting Questionnaire - Direct Recruit</title>
+    <link rel="icon" type="image/png" href="https://res.cloudinary.com/dzmsj6nwv/image/upload/v1770078659/LOGO.PNG_i0uvv4.png">
+    <link rel="stylesheet" href="../landingpage/styles.css">
+    <link rel="stylesheet" href="./questionnaire.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+</head>
+<body class="q-body">
+
+    <div class="q-loading-state" id="qLoading">
+        <div class="q-spinner"></div>
+        <p>Loading questionnaire...</p>
+    </div>
+
+    <div class="q-error-state" id="qErrorState" style="display: none;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="64" height="64">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="12"></line>
+            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+        </svg>
+        <h1>This questionnaire link is invalid or has expired</h1>
+        <p>The link you used may be incorrect, or this team may have removed their questionnaire. Visit Direct Recruit to find programs recruiting players like you.</p>
+        <a href="../landingpage/index.html" class="q-error-cta">Go to Direct Recruit</a>
+    </div>
+
+    <main class="q-container" id="qContainer" style="display: none;">
+        <header class="q-header">
+            <div class="q-school-logo-wrap" id="qSchoolLogo"></div>
+            <h1 class="q-school-name" id="qSchoolName"></h1>
+            <p class="q-subtitle">Football Recruiting Questionnaire</p>
+            <p class="q-microcopy" id="qMicrocopy"></p>
+        </header>
+
+        <form id="qForm" class="q-form" novalidate>
+            <!-- Form sections injected by questionnaire.js -->
+            <div id="qFormBody"></div>
+
+            <div class="q-submit-row">
+                <button type="submit" class="q-submit-btn" id="qSubmitBtn">Submit Questionnaire</button>
+            </div>
+        </form>
+
+        <div class="q-thankyou-state" id="qThankYou" style="display: none;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="56" height="56" class="q-check-icon">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+            </svg>
+            <h1 id="qThankYouHeading">Thanks for submitting your questionnaire!</h1>
+            <p id="qThankYouMessage"></p>
+            <hr class="q-thankyou-divider">
+            <p class="q-thankyou-cta-line">Sign up for Direct Recruit to further enhance your recruiting journey.</p>
+            <a id="qSignupCta" class="q-thankyou-cta-btn" href="../landingpage/get-started.html">Create Your Free Profile →</a>
+        </div>
+
+        <footer class="q-footer">
+            <a href="../landingpage/index.html" class="q-footer-link">Direct Recruit</a>
+            <span>&middot;</span>
+            <span>Get Recruited the Right Way</span>
+        </footer>
+    </main>
+
+    <script src="../shared/api.js"></script>
+    <script src="../shared/school-search.js"></script>
+    <script src="./questionnaire.js"></script>
+</body>
+</html>

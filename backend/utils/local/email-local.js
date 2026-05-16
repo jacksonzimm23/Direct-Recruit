@@ -77,6 +77,15 @@ async function sendCoachRejection(toEmail, firstName) {
   return { success: true, messageId: 'local-dev-' + Date.now() };
 }
 
+async function sendQuestionnaireConfirmation(toEmail, data) {
+  console.log('\n[LOCAL EMAIL] Questionnaire Confirmation');
+  console.log(`  To: ${toEmail}`);
+  console.log(`  Name: ${data && data.firstName}`);
+  console.log(`  School: ${data && data.schoolName}`);
+  console.log(`  Signup CTA URL: ${data && data.signupUrl}\n`);
+  return { success: true, messageId: 'local-dev-' + Date.now() };
+}
+
 module.exports = {
   sendEmailChangeVerification,
   sendEmailChangeConfirmation,
@@ -85,5 +94,6 @@ module.exports = {
   sendAccountDeletionConfirmation,
   sendCoachRequestNotification,
   sendCoachInvite,
-  sendCoachRejection
+  sendCoachRejection,
+  sendQuestionnaireConfirmation
 };

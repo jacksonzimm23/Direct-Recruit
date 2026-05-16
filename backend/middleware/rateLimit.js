@@ -137,6 +137,34 @@ const coachRequestLimiter = rateLimit({
   }
 });
 
+// Public questionnaire GET — loose limit, just covers slug enumeration
+const questionnaireGetLimiter = rateLimit({
+  ...getRedisStore('rl:qget:'),
+  windowMs: 60 * 1000, // 1 minute
+  max: isDevelopment ? 10000 : 30,
+  keyGenerator: (req) => req.ip,
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: (req) => isDevelopment,
+  handler: (req, res) => {
+    res.status(429).json({ error: 'Too many requests. Please slow down.' });
+  }
+});
+
+// Public questionnaire submission — strict per-IP limit
+const questionnaireSubmitLimiter = rateLimit({
+  ...getRedisStore('rl:qsubmit:'),
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: isDevelopment ? 10000 : 5,
+  keyGenerator: (req) => req.ip,
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: (req) => isDevelopment,
+  handler: (req, res) => {
+    res.status(429).json({ error: 'Too many submissions. Please try again in an hour.' });
+  }
+});
+
 module.exports = {
   apiLimiter,
   authLimiter,
@@ -145,5 +173,7 @@ module.exports = {
   passwordResetLimiter,
   availabilityLimiter,
   availabilityDailyLimiter,
-  coachRequestLimiter
+  coachRequestLimiter,
+  questionnaireGetLimiter,
+  questionnaireSubmitLimiter
 };

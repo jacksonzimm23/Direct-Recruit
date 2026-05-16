@@ -203,14 +203,49 @@
                 </div>
             </div>
 
-            <!-- Pipeline Tab (placeholder) -->
+            <!-- Pipeline Tab — Plan 2 ships the Copy Questionnaire Link UI here.
+                 The grading/handoff pipeline UI itself ships in Plan 4. -->
             <div class="rb-tab-content" id="pipelineTab">
-                <div class="rb-pipeline-placeholder">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                        <path d="M3 12h4l3-9 4 18 3-9h4"></path>
+                <!-- State A: coach is in a group → show share UI -->
+                <div class="pipeline-share-state" id="pipelineShareState" style="display: none;">
+                    <h2 class="pipeline-share-title">Share your questionnaire</h2>
+                    <p class="pipeline-share-desc">Send this link to recruits so they can submit their info directly to your program. Every submission lands in your team's pool (coming in a future release).</p>
+                    <div class="pipeline-share-row">
+                        <button id="copyQuestionnaireLinkBtn" class="pipeline-copy-btn">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                            </svg>
+                            <span>Copy Questionnaire Link</span>
+                        </button>
+                        <a id="previewQuestionnaireLink" class="pipeline-preview-link" target="_blank" rel="noopener">
+                            <span>Preview</span>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                                <polyline points="15 3 21 3 21 9"></polyline>
+                                <line x1="10" y1="14" x2="21" y2="3"></line>
+                            </svg>
+                        </a>
+                    </div>
+                    <div class="pipeline-share-url-display" id="pipelineShareUrlDisplay"></div>
+                </div>
+
+                <!-- State B: coach is NOT in a group → guide them to Shared Boards -->
+                <div class="pipeline-nogroup-state" id="pipelineNoGroupState" style="display: none;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="56" height="56">
+                        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="9" cy="7" r="4"></circle>
+                        <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
                     </svg>
-                    <h2>Pipeline</h2>
-                    <p>Coming soon.</p>
+                    <h2>Create a shared group first</h2>
+                    <p>Your team's questionnaire link is tied to a shared group. Create or join one in the Shared Boards tab to start sharing your questionnaire with recruits.</p>
+                    <button class="pipeline-go-shared-btn" id="pipelineGoSharedBtn">Go to Shared Boards</button>
+                </div>
+
+                <!-- Loading -->
+                <div class="pipeline-loading-state" id="pipelineLoadingState">
+                    <p>Loading...</p>
                 </div>
             </div>
 

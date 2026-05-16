@@ -1111,6 +1111,38 @@ const settingsAPI = {
     }
 };
 
+// Public questionnaire API — NEVER sends auth cookie. The recruit submitting
+// the form is not authenticated; even if a logged-in coach previews their own
+// questionnaire URL we don't want to leak the auth cookie to a public route.
+const questionnaireAPI = {
+    get: async (slug) => {
+        const res = await fetch(`${API_BASE_URL}/questionnaire/${encodeURIComponent(slug)}`, {
+            credentials: 'omit'
+        });
+        if (!res.ok) {
+            const err = new Error('Failed to load questionnaire');
+            err.status = res.status;
+            throw err;
+        }
+        return res.json();
+    },
+    submit: async (slug, data) => {
+        const res = await fetch(`${API_BASE_URL}/questionnaire/${encodeURIComponent(slug)}/submit`, {
+            method: 'POST',
+            credentials: 'omit',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        if (!res.ok) {
+            const body = await res.json().catch(() => ({}));
+            const err = new Error(body.error || 'Submission failed');
+            err.status = res.status;
+            throw err;
+        }
+        return res.json();
+    }
+};
+
 const API = {
     // Direct access to apiRequest for custom endpoints
     get: async (endpoint) => await apiRequest(endpoint),
@@ -1139,6 +1171,7 @@ const API = {
     settings: settingsAPI,
     payments: paymentsAPI,
     deviceTokens: deviceTokensAPI,
+    questionnaire: questionnaireAPI,
 
     // Auth helpers
     getUser,

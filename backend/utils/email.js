@@ -870,6 +870,43 @@ If you believe this was a mistake or would like to provide additional verificati
   }
 }
 
+async function sendQuestionnaireConfirmation(toEmail, { firstName, schoolName, signupUrl }) {
+  const safeFirst = (firstName || 'there').toString();
+  const safeSchool = (schoolName || 'the team').toString();
+  const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"></head>
+<body style="font-family:Inter,Arial,sans-serif;background:#f5f5f5;margin:0;padding:24px;">
+  <div style="max-width:560px;margin:0 auto;background:#fff;border-radius:8px;padding:32px;border-top:4px solid #1282a2;">
+    <h1 style="color:#0a1128;margin:0 0 16px;font-size:22px;">Thanks for submitting, ${safeFirst}!</h1>
+    <p style="color:#333;line-height:1.5;">Your questionnaire has been received by <strong>${safeSchool}</strong>. The coaching staff will review your submission.</p>
+    <hr style="border:0;border-top:1px solid #e5e5e5;margin:24px 0;">
+    <p style="color:#333;line-height:1.5;margin-bottom:20px;"><strong>Sign up for Direct Recruit</strong> to further enhance your recruiting journey — see updates from coaches, message them directly, and reach more programs.</p>
+    <p style="text-align:center;margin:24px 0;"><a href="${signupUrl}" style="display:inline-block;background:#1282a2;color:#fff;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:600;">Create Your Free Profile →</a></p>
+    <p style="color:#888;font-size:12px;margin-top:24px;">If you didn't fill out this questionnaire, you can safely ignore this email.</p>
+  </div>
+</body></html>`;
+  const text = `Hi ${safeFirst}, thanks for submitting your questionnaire to ${safeSchool}.\n\nSign up for Direct Recruit to further enhance your recruiting journey: ${signupUrl}`;
+  const params = {
+    Source: FROM_EMAIL,
+    Destination: { ToAddresses: [toEmail] },
+    Message: {
+      Subject: { Data: `Thanks for submitting to ${safeSchool}`, Charset: 'UTF-8' },
+      Body: {
+        Html: { Data: html, Charset: 'UTF-8' },
+        Text: { Data: text, Charset: 'UTF-8' }
+      }
+    }
+  };
+  try {
+    const command = new SendEmailCommand(params);
+    const response = await sesClient.send(command);
+    logger.info('[Email] Questionnaire confirmation sent to:', toEmail, 'MessageId:', response.MessageId);
+    return { success: true, messageId: response.MessageId };
+  } catch (error) {
+    logger.error('[Email] Failed to send questionnaire confirmation:', error);
+    return { success: false, error: error.message };
+  }
+}
+
 module.exports = {
   sendEmailChangeVerification,
   sendEmailChangeConfirmation,
@@ -878,5 +915,6 @@ module.exports = {
   sendAccountDeletionConfirmation,
   sendCoachRequestNotification,
   sendCoachInvite,
-  sendCoachRejection
+  sendCoachRejection,
+  sendQuestionnaireConfirmation
 };

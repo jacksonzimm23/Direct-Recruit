@@ -13,6 +13,7 @@ const { getSignedS3Url } = require('../utils/s3');
 const cognito = require('../utils/cognito');
 const { bumpRevokeCutoff } = require('../utils/tokenRevocation');
 const logger = require('../utils/logger');
+const pool = require('../config/database');
 
 // Cookie configuration
 const COOKIE_OPTIONS = {
@@ -85,6 +86,27 @@ router.post('/register', authLimiter, validateRegistration, handleValidationErro
 
     // Create user in local database (without password)
     const user = await User.create({ email, role, cognitoSub: cognitoResult.userSub });
+
+    // Backlink: if this email previously submitted via the public questionnaire,
+    // tie all existing pool entries + submissions to this new account. Non-fatal —
+    // registration still succeeds if the backlink UPDATE fails.
+    try {
+      await pool.query(
+        `UPDATE pool_entries
+            SET linked_player_user_id = $1
+          WHERE LOWER(email) = LOWER($2) AND linked_player_user_id IS NULL`,
+        [user.id, user.email]
+      );
+      await pool.query(
+        `UPDATE questionnaire_submissions
+            SET linked_player_user_id = $1
+          WHERE LOWER(email) = LOWER($2) AND linked_player_user_id IS NULL`,
+        [user.id, user.email]
+      );
+    } catch (linkErr) {
+      logger.error('Questionnaire backlink failed during registration (non-fatal):', linkErr);
+    }
+
     const token = generateToken(user.id, user.role);
 
     setAuthCookie(res, token);

@@ -120,6 +120,75 @@ document.addEventListener('DOMContentLoaded', async function() {
         if (tabName === 'personal-boards' && currentPersonalBoardId && currentBoardMode !== 'personal') {
             await loadPersonalBoardById(currentPersonalBoardId);
         }
+        if (tabName === 'pipeline') {
+            await initializePipelineShareUI();
+        }
+    }
+
+    // Pipeline tab — Plan 2 ships only the Copy Questionnaire Link UI here.
+    // The grading/handoff pipeline UI itself ships in Plan 4.
+    let pipelineShareInitialized = false;
+    async function initializePipelineShareUI() {
+        const loadingEl = document.getElementById('pipelineLoadingState');
+        const shareEl = document.getElementById('pipelineShareState');
+        const nogroupEl = document.getElementById('pipelineNoGroupState');
+        if (!shareEl || !nogroupEl) return;
+
+        // Reset to loading state on every activation so stale state doesn't flash
+        if (loadingEl) loadingEl.style.display = 'block';
+        shareEl.style.display = 'none';
+        nogroupEl.style.display = 'none';
+
+        try {
+            // Reuse the cache from initializeSharedBoardsTab if available, otherwise fetch.
+            let myGroupId = currentSharedGroupId;
+            if (!myGroupId) {
+                if (!sharedTabInitialized) {
+                    const res = await API.get('/recruiting-board/groups');
+                    if (res.groups && res.groups.length > 0) {
+                        myGroupId = res.groups[0].id;
+                    }
+                }
+            }
+
+            if (!myGroupId) {
+                if (loadingEl) loadingEl.style.display = 'none';
+                nogroupEl.style.display = 'block';
+                return;
+            }
+
+            const data = await API.get(`/recruiting-board/groups/${myGroupId}/questionnaire`);
+            if (loadingEl) loadingEl.style.display = 'none';
+            shareEl.style.display = 'block';
+
+            const previewLink = document.getElementById('previewQuestionnaireLink');
+            const urlDisplay = document.getElementById('pipelineShareUrlDisplay');
+            const copyBtn = document.getElementById('copyQuestionnaireLinkBtn');
+            if (previewLink) previewLink.href = data.public_url;
+            if (urlDisplay) urlDisplay.textContent = data.public_url;
+
+            if (copyBtn && !pipelineShareInitialized) {
+                copyBtn.addEventListener('click', async () => {
+                    try {
+                        await navigator.clipboard.writeText(data.public_url);
+                        if (typeof showToast === 'function') showToast('Questionnaire link copied to clipboard', 'success');
+                    } catch (_) {
+                        if (typeof showToast === 'function') showToast('Could not copy. Select the URL manually.', 'error');
+                    }
+                });
+                pipelineShareInitialized = true;
+            }
+        } catch (err) {
+            if (loadingEl) loadingEl.style.display = 'none';
+            nogroupEl.style.display = 'block';
+        }
+
+        // Wire the "Go to Shared Boards" button once
+        const goBtn = document.getElementById('pipelineGoSharedBtn');
+        if (goBtn && !goBtn.dataset.wired) {
+            goBtn.addEventListener('click', () => activateSubtab('shared-boards'));
+            goBtn.dataset.wired = '1';
+        }
     }
 
     document.querySelectorAll('.rb-subtab').forEach(btn => {

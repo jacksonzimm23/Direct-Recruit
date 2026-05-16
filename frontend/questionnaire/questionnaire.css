@@ -1,0 +1,391 @@
+/* Public Recruiting Questionnaire — single-page scroll form, white theme. */
+
+:root {
+    --cerulean: #1282a2;
+    --cerulean-dark: #0e6b87;
+    --oxford-blue: #0a1128;
+    --penn-blue: #001f54;
+    --accent-orange: #ff6b35;
+    --err: #d32f2f;
+    --success: #16a34a;
+    --bg: #f5f6f8;
+    --surface: #ffffff;
+    --surface-alt: #fafbfc;
+    --border: #e5e7eb;
+    --border-strong: #d1d5db;
+    --text: #1f2937;
+    --text-muted: #6b7280;
+    --text-subtle: #9ca3af;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+
+body.q-body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+}
+
+/* Loading + error full-screen states */
+.q-loading-state, .q-error-state {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 24px;
+    color: var(--text);
+}
+.q-spinner {
+    width: 36px;
+    height: 36px;
+    border: 3px solid var(--border);
+    border-top-color: var(--cerulean);
+    border-radius: 50%;
+    animation: q-spin 0.8s linear infinite;
+    margin-bottom: 16px;
+}
+@keyframes q-spin { to { transform: rotate(360deg); } }
+.q-error-state svg { color: var(--err); margin-bottom: 16px; }
+.q-error-state h1 { font-size: 1.5rem; margin: 0 0 8px; color: var(--oxford-blue); }
+.q-error-state p { max-width: 480px; color: var(--text-muted); line-height: 1.5; }
+.q-error-cta {
+    margin-top: 24px;
+    display: inline-block;
+    background: var(--cerulean);
+    color: #fff;
+    text-decoration: none;
+    padding: 12px 28px;
+    border-radius: 8px;
+    font-weight: 600;
+    transition: transform 0.15s, background 0.15s;
+}
+.q-error-cta:hover { background: var(--cerulean-dark); transform: translateY(-2px); }
+
+/* Main container */
+.q-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 32px 20px 64px;
+}
+
+/* Header */
+.q-header {
+    text-align: center;
+    background: #ffffff;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 32px 24px;
+    margin-bottom: 24px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+.q-school-logo-wrap {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 16px;
+}
+.q-school-logo-wrap img {
+    width: 140px !important;
+    height: 140px !important;
+    object-fit: contain;
+    background: transparent !important;
+    border-radius: 0;
+    padding: 0;
+}
+.q-school-name {
+    font-size: 1.85rem;
+    margin: 0 0 4px;
+    color: var(--oxford-blue);
+    font-weight: 800;
+}
+.q-subtitle {
+    font-size: 1.05rem;
+    color: var(--cerulean);
+    margin: 4px 0 12px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+}
+.q-microcopy {
+    color: var(--text-muted);
+    font-size: 0.875rem;
+    margin: 0;
+    line-height: 1.4;
+}
+
+/* Form sections */
+.q-form {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+.q-section {
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 24px;
+    margin-bottom: 24px;
+}
+.q-section:last-of-type {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+.q-section-title {
+    font-size: 1.25rem;
+    color: var(--cerulean);
+    margin: 0 0 16px;
+    font-weight: 700;
+}
+.q-section-hint {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    margin: -8px 0 16px;
+}
+
+/* Form groups */
+.q-form-group { margin-bottom: 16px; }
+.q-form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-bottom: 16px;
+}
+.q-form-row.q-form-row-3 { grid-template-columns: 1fr 1fr 1fr; }
+.q-label {
+    display: block;
+    font-weight: 600;
+    font-size: 0.92rem;
+    margin-bottom: 6px;
+    color: var(--text);
+}
+.q-required { color: var(--err); margin-left: 2px; }
+
+/* Inputs */
+.q-input, .q-select, .q-textarea {
+    width: 100%;
+    padding: 0.7rem 0.85rem;
+    background: #ffffff;
+    border: 1px solid var(--border-strong);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: inherit;
+    font-size: 0.95rem;
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+.q-input::placeholder, .q-textarea::placeholder { color: var(--text-subtle); }
+.q-input:focus, .q-select:focus, .q-textarea:focus {
+    outline: none;
+    border-color: var(--cerulean);
+    box-shadow: 0 0 0 3px rgba(18, 130, 162, 0.15);
+}
+.q-textarea { resize: vertical; min-height: 80px; }
+.q-select option { background: #ffffff; color: var(--text); }
+.q-hint { color: var(--text-subtle); font-size: 0.78rem; margin-top: 4px; display: block; }
+
+/* Height ft/in */
+.q-height-row { display: flex; gap: 8px; align-items: center; }
+.q-height-cell { flex: 1; display: flex; align-items: center; gap: 6px; }
+.q-height-cell .q-input { flex: 1; }
+.q-height-unit { color: var(--text-muted); font-size: 0.85rem; }
+
+/* Radio buttons */
+.q-radio-row { display: flex; gap: 16px; margin-top: 4px; }
+.q-radio-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--text);
+    cursor: pointer;
+    font-size: 0.92rem;
+}
+
+/* Conditional reveal */
+.q-conditional { display: none; margin-top: 12px; }
+.q-conditional.q-show { display: block; }
+
+/* Position / sports multi-select */
+.q-multi-select {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+    padding: 14px;
+    background: var(--surface-alt);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+}
+.q-multi-group h4 {
+    color: var(--cerulean);
+    font-size: 0.78rem;
+    font-weight: 700;
+    margin: 0 0 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+.q-multi-group label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--text);
+    font-size: 0.88rem;
+    padding: 4px 0;
+    cursor: pointer;
+}
+.q-pills { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; min-height: 8px; }
+.q-pill {
+    background: var(--cerulean);
+    color: #ffffff;
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+.q-pill-x {
+    background: none;
+    border: none;
+    color: #ffffff;
+    cursor: pointer;
+    font-size: 1rem;
+    padding: 0;
+    line-height: 1;
+    opacity: 0.85;
+}
+.q-pill-x:hover { opacity: 1; }
+
+/* Parents repeating block */
+.q-parent-block {
+    background: var(--surface-alt);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 12px;
+    position: relative;
+}
+.q-parent-remove {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: var(--err);
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 0.78rem;
+    cursor: pointer;
+    font-weight: 600;
+}
+.q-parent-remove:hover { background: #fee2e2; }
+
+.q-add-btn {
+    background: #ffffff;
+    border: 1px dashed var(--cerulean);
+    color: var(--cerulean);
+    border-radius: 8px;
+    padding: 10px 16px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.9rem;
+    width: 100%;
+    transition: background 0.15s;
+}
+.q-add-btn:hover { background: rgba(18, 130, 162, 0.08); }
+.q-add-btn[disabled] { opacity: 0.45; cursor: not-allowed; }
+
+/* Video URL list */
+.q-url-row { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
+.q-url-row .q-input { flex: 1; }
+.q-url-remove {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: var(--err);
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    font-weight: 600;
+}
+.q-url-remove:hover { background: #fee2e2; }
+
+/* Submit */
+.q-submit-row {
+    margin-top: 24px;
+    text-align: center;
+}
+.q-submit-btn {
+    background: var(--cerulean);
+    color: #ffffff;
+    border: none;
+    border-radius: 10px;
+    padding: 14px 48px;
+    font-size: 1.05rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.15s, background 0.15s, box-shadow 0.15s;
+    box-shadow: 0 2px 6px rgba(18, 130, 162, 0.25);
+}
+.q-submit-btn:hover:not([disabled]) {
+    background: var(--cerulean-dark);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(18, 130, 162, 0.32);
+}
+.q-submit-btn[disabled] { opacity: 0.55; cursor: not-allowed; }
+
+/* Thank-you state */
+.q-thankyou-state {
+    text-align: center;
+    background: #ffffff;
+    border: 1px solid #bbf7d0;
+    border-radius: 12px;
+    padding: 40px 28px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+.q-check-icon { color: var(--success); margin-bottom: 12px; }
+.q-thankyou-state h1 { font-size: 1.5rem; margin: 0 0 8px; color: var(--oxford-blue); }
+.q-thankyou-state p { color: var(--text-muted); line-height: 1.5; margin: 8px 0; }
+.q-thankyou-divider { border: 0; border-top: 1px solid var(--border); margin: 24px 0; }
+.q-thankyou-cta-line { color: var(--text); font-size: 1rem; font-weight: 600; }
+.q-thankyou-cta-btn {
+    display: inline-block;
+    background: var(--cerulean);
+    color: #ffffff;
+    text-decoration: none;
+    padding: 14px 36px;
+    border-radius: 10px;
+    font-weight: 700;
+    margin-top: 12px;
+    transition: transform 0.15s, background 0.15s;
+}
+.q-thankyou-cta-btn:hover { background: var(--cerulean-dark); transform: translateY(-2px); }
+
+/* Footer */
+.q-footer {
+    text-align: center;
+    color: var(--text-subtle);
+    font-size: 0.82rem;
+    margin-top: 32px;
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    align-items: center;
+}
+.q-footer-link { color: var(--cerulean); text-decoration: none; font-weight: 600; }
+.q-footer-link:hover { text-decoration: underline; }
+
+/* Mobile */
+@media (max-width: 768px) {
+    .q-container { padding: 16px 12px 48px; }
+    .q-header { padding: 24px 18px; }
+    .q-school-name { font-size: 1.45rem; }
+    .q-school-logo-wrap img { width: 110px !important; height: 110px !important; }
+    .q-form { padding: 18px 14px; }
+    .q-form-row, .q-form-row.q-form-row-3 { grid-template-columns: 1fr; gap: 12px; }
+    .q-input, .q-select, .q-textarea { font-size: 16px; } /* iOS no-zoom */
+    .q-multi-select { grid-template-columns: 1fr; }
+    .q-submit-btn { width: 100%; }
+    .q-thankyou-cta-btn { width: 100%; }
+}
