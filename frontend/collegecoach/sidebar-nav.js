@@ -89,7 +89,8 @@
                    <line x1="3" y1="9" x2="21" y2="9"></line>
                    <line x1="3" y1="15" x2="21" y2="15"></line>`,
             label: 'Recruiting Board',
-            pages: ['recruiting-board']
+            pages: ['recruiting-board'],
+            hasBadge: true
         },
         {
             href: `${tabsPath}transfer-portal.html`,

@@ -818,6 +818,110 @@ router.put('/groups/:groupId/members/:userId/permission', authMiddleware, requir
   }
 });
 
+// ---------- Incoming invites (for the dedicated Invites modal) ----------
+
+// GET /api/recruiting-board/my-invites — list the requesting coach's INCOMING
+// group invites (any status — unseen or seen). Returns sender details + group
+// name so the modal can render full coach cards (avatar + orange subheader).
+// Invite rows stay in the table until the coach accepts or declines.
+router.get('/my-invites', authMiddleware, requireRole('coach'), async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT
+         n.id AS notification_id,
+         n.related_entity_id AS group_id,
+         n.related_entity_type,
+         n.is_read,
+         n.created_at,
+         n.related_user_id AS sender_id,
+         cp.first_name AS sender_first_name,
+         cp.last_name AS sender_last_name,
+         cp.team_name AS sender_team_name,
+         cp.state AS sender_state,
+         cp.college_division AS sender_college_division,
+         cp.profile_image_url AS sender_profile_image_url,
+         bg.group_name
+       FROM notifications n
+       LEFT JOIN coach_profiles cp ON cp.user_id = n.related_user_id
+       LEFT JOIN board_groups bg ON bg.id = n.related_entity_id
+       WHERE n.user_id = $1
+         AND n.related_entity_type IN ('group_invite', 'group_invite_editor')
+       ORDER BY n.created_at DESC`,
+      [req.userId]
+    );
+
+    for (const row of result.rows) {
+      if (row.sender_profile_image_url && row.sender_profile_image_url.startsWith('profiles/')) {
+        try { row.sender_profile_image_url = await getSignedS3Url(row.sender_profile_image_url); }
+        catch { row.sender_profile_image_url = null; }
+      }
+    }
+
+    res.json({
+      invites: result.rows.map(r => ({
+        notification_id: r.notification_id,
+        group_id: r.group_id,
+        group_name: r.group_name,
+        permission: r.related_entity_type === 'group_invite_editor' ? 'editor' : 'viewer',
+        is_read: r.is_read,
+        created_at: r.created_at,
+        sender: {
+          id: r.sender_id,
+          first_name: r.sender_first_name,
+          last_name: r.sender_last_name,
+          team_name: r.sender_team_name,
+          state: r.sender_state,
+          college_division: r.sender_college_division,
+          profile_image_url: r.sender_profile_image_url
+        }
+      }))
+    });
+  } catch (err) {
+    logger.error('List my invites error:', err);
+    res.status(500).json({ error: 'Failed to load invites' });
+  }
+});
+
+// GET /api/recruiting-board/my-invites/unread-count — drives the badge counter.
+// Counts only invites the coach hasn't seen yet (is_read = FALSE).
+router.get('/my-invites/unread-count', authMiddleware, requireRole('coach'), async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT COUNT(*)::int AS count
+         FROM notifications
+        WHERE user_id = $1
+          AND is_read = FALSE
+          AND related_entity_type IN ('group_invite', 'group_invite_editor')`,
+      [req.userId]
+    );
+    res.json({ count: result.rows[0].count || 0 });
+  } catch (err) {
+    logger.error('Invite unread-count error:', err);
+    res.status(500).json({ error: 'Failed to load count' });
+  }
+});
+
+// POST /api/recruiting-board/my-invites/mark-seen — fired when the coach
+// opens the Invites modal. Marks every unread invite as read so the badge
+// clears. Invite rows are NOT deleted — they remain visible in the modal
+// until accepted or declined.
+router.post('/my-invites/mark-seen', authMiddleware, requireRole('coach'), async (req, res) => {
+  try {
+    await pool.query(
+      `UPDATE notifications
+          SET is_read = TRUE
+        WHERE user_id = $1
+          AND is_read = FALSE
+          AND related_entity_type IN ('group_invite', 'group_invite_editor')`,
+      [req.userId]
+    );
+    res.json({ success: true });
+  } catch (err) {
+    logger.error('Mark invites seen error:', err);
+    res.status(500).json({ error: 'Failed to mark invites seen' });
+  }
+});
+
 // ---------- Invite accept / decline (group-based) ----------
 
 // Accept a group invite. Body: { notificationId, groupId }
@@ -828,12 +932,13 @@ router.post('/invite/accept', authMiddleware, requireRole('coach'), async (req, 
 
     // Look up the invite notification to recover the proposed permission.
     // Entity type is 'group_invite' (viewer) or 'group_invite_editor' (editor).
+    // NOTE: no is_read filter — the Invites modal marks invites read on open,
+    // so they may already be is_read = TRUE when the coach accepts/declines.
     const inviteNotifResult = await pool.query(
       `SELECT id, related_user_id, related_entity_type FROM notifications
        WHERE user_id = $1
          AND related_entity_id = $2
          AND related_entity_type IN ('group_invite', 'group_invite_editor')
-         AND is_read = FALSE
        LIMIT 1`,
       [req.userId, groupId]
     );
@@ -854,12 +959,12 @@ router.post('/invite/accept', authMiddleware, requireRole('coach'), async (req, 
       throw err;
     }
 
-    // Mark invite notification as read
-    if (notificationId) {
-      await Notification.markAsRead(notificationId, req.userId);
-    } else {
-      await Notification.markAsRead(inviteRow.id, req.userId);
-    }
+    // Delete the invite row entirely — it's been acted on. Sender's tracking
+    // notif is deleted below in the same flow.
+    await pool.query(
+      `DELETE FROM notifications WHERE id = $1 AND user_id = $2`,
+      [inviteRow.id, req.userId]
+    );
 
     // Delete the sender's tracking notification
     await pool.query(
@@ -906,21 +1011,28 @@ router.post('/invite/decline', authMiddleware, requireRole('coach'), async (req,
   try {
     const { notificationId, groupId } = req.body;
 
-    if (notificationId) {
-      await Notification.markAsRead(notificationId, req.userId);
-    }
-
-    // Find the invite + delete the tracking notif on the sender's side
+    // Find the invite row + delete it. is_read state is ignored — the Invites
+    // modal flips invites to read when it opens; the row itself only goes away
+    // when the coach actually acts on it.
     if (groupId) {
       const inviteNotifResult = await pool.query(
-        `SELECT related_user_id FROM notifications
+        `SELECT id, related_user_id FROM notifications
          WHERE user_id = $1
            AND related_entity_id = $2
            AND related_entity_type IN ('group_invite', 'group_invite_editor')
          LIMIT 1`,
         [req.userId, groupId]
       );
-      const senderId = inviteNotifResult.rows[0] ? inviteNotifResult.rows[0].related_user_id : null;
+      const inviteRowDecline = inviteNotifResult.rows[0];
+      const senderId = inviteRowDecline ? inviteRowDecline.related_user_id : null;
+
+      if (inviteRowDecline) {
+        // Delete the invite row — it's been declined.
+        await pool.query(
+          `DELETE FROM notifications WHERE id = $1 AND user_id = $2`,
+          [inviteRowDecline.id, req.userId]
+        );
+      }
 
       if (senderId) {
         await pool.query(

@@ -2946,6 +2946,172 @@ document.addEventListener('DOMContentLoaded', async function() {
         });
     }
 
+    // ==================== Invites Modal ====================
+    // Incoming group invites surface here instead of in the Notifications tab.
+    // Opening the modal clears the sidebar + subtab badge (mark-seen). Each
+    // invite stays visible until accepted or declined; on action it's deleted
+    // from the DB and removed from the modal.
+    async function openInvitesModal() {
+        const modal = document.getElementById('invitesModal');
+        const list = document.getElementById('invitesList');
+        const empty = document.getElementById('invitesEmpty');
+        if (!modal) return;
+
+        if (list) list.innerHTML = '<p class="sg-invites-loading">Loading...</p>';
+        if (empty) empty.style.display = 'none';
+        modal.classList.add('open');
+
+        // Fire-and-forget mark-seen so the badge clears even if the fetch is slow
+        API.post('/recruiting-board/my-invites/mark-seen', {}).catch(() => {});
+
+        // Optimistically clear the badges right now
+        const sidebarBadge = document.querySelector('.nav-item[href*="recruiting-board"] .notification-badge');
+        if (sidebarBadge) sidebarBadge.style.display = 'none';
+        const subtabBadge = document.querySelector('.rb-subtab[data-tab="shared-boards"] .rb-subtab-badge');
+        if (subtabBadge) subtabBadge.style.display = 'none';
+
+        try {
+            const res = await API.get('/recruiting-board/my-invites');
+            renderInvitesList(res.invites || []);
+        } catch (err) {
+            if (list) list.innerHTML = '<p class="sg-invites-error">Failed to load invites.</p>';
+        }
+    }
+
+    function closeInvitesModal() {
+        const modal = document.getElementById('invitesModal');
+        if (modal) modal.classList.remove('open');
+    }
+
+    function renderInvitesList(invites) {
+        const list = document.getElementById('invitesList');
+        const empty = document.getElementById('invitesEmpty');
+        const countPill = document.getElementById('invitesCountPill');
+        if (!list) return;
+
+        if (!invites || invites.length === 0) {
+            list.innerHTML = '';
+            if (empty) empty.style.display = 'flex';
+            if (countPill) countPill.textContent = '';
+            // Hide the Invites button too — no pending invites
+            const invitesBtn = document.getElementById('openInvitesModalBtn');
+            if (invitesBtn) invitesBtn.style.display = 'none';
+            return;
+        }
+
+        if (empty) empty.style.display = 'none';
+        if (countPill) countPill.textContent = `(${invites.length})`;
+        list.innerHTML = '';
+        for (const invite of invites) {
+            list.appendChild(buildInviteCard(invite));
+        }
+    }
+
+    function buildInviteCard(invite) {
+        const sender = invite.sender || {};
+        const fullName = `${sender.first_name || ''} ${sender.last_name || ''}`.trim() || 'A coach';
+
+        // Subheader format: "Team, State • Division" — matches lesson 108
+        const subheaderParts = [];
+        const teamLoc = [sender.team_name, sender.state].filter(Boolean).join(', ');
+        if (teamLoc) subheaderParts.push(teamLoc);
+        if (sender.college_division) subheaderParts.push(sender.college_division);
+        const subheader = subheaderParts.join(' • ') || 'College Coach';
+
+        // Avatar: <img> if we have a signed URL, otherwise initials fallback
+        let avatarInner;
+        if (sender.profile_image_url) {
+            avatarInner = `<img src="${escapeHtml(sender.profile_image_url)}" alt="" onerror="this.style.display='none';this.parentNode.innerHTML='${initials(fullName)}';">`;
+        } else {
+            avatarInner = `<span class="sg-coach-initials">${initials(fullName)}</span>`;
+        }
+
+        const card = document.createElement('div');
+        card.className = 'sg-invite-row';
+        card.dataset.notificationId = invite.notification_id;
+        card.dataset.groupId = invite.group_id;
+        card.innerHTML = `
+            <div class="sg-coach-avatar sg-invite-avatar">${avatarInner}</div>
+            <div class="sg-invite-details">
+                <span class="sg-coach-name sg-invite-name">${escapeHtml(fullName)}</span>
+                <span class="sg-coach-subheader sg-invite-subheader">${escapeHtml(subheader)}</span>
+                <span class="sg-invite-group-line">
+                    invited you to join <strong>${escapeHtml(invite.group_name || 'a group')}</strong>
+                    as <strong>${escapeHtml(invite.permission || 'viewer')}</strong>
+                </span>
+            </div>
+            <div class="sg-invite-actions">
+                <button class="sg-invite-accept-btn">Accept</button>
+                <button class="sg-invite-decline-btn">Decline</button>
+            </div>
+        `;
+
+        card.querySelector('.sg-invite-accept-btn').addEventListener('click', () => actOnInvite(card, 'accept'));
+        card.querySelector('.sg-invite-decline-btn').addEventListener('click', () => actOnInvite(card, 'decline'));
+        return card;
+    }
+
+    function initials(fullName) {
+        const parts = (fullName || '').trim().split(/\s+/);
+        const first = parts[0] ? parts[0][0] : '';
+        const last = parts.length > 1 ? parts[parts.length - 1][0] : '';
+        return (first + last).toUpperCase() || '?';
+    }
+
+    async function actOnInvite(card, action) {
+        const notificationId = card.dataset.notificationId;
+        const groupId = card.dataset.groupId;
+        const acceptBtn = card.querySelector('.sg-invite-accept-btn');
+        const declineBtn = card.querySelector('.sg-invite-decline-btn');
+        if (acceptBtn) acceptBtn.disabled = true;
+        if (declineBtn) declineBtn.disabled = true;
+
+        try {
+            await API.post(`/recruiting-board/invite/${action}`, { notificationId, groupId });
+            // Remove the card from the modal
+            card.remove();
+            const list = document.getElementById('invitesList');
+            const remaining = list ? list.querySelectorAll('.sg-invite-row').length : 0;
+            const countPill = document.getElementById('invitesCountPill');
+            if (countPill) countPill.textContent = remaining > 0 ? `(${remaining})` : '';
+
+            if (remaining === 0) {
+                const empty = document.getElementById('invitesEmpty');
+                if (empty) empty.style.display = 'flex';
+                const invitesBtn = document.getElementById('openInvitesModalBtn');
+                if (invitesBtn) invitesBtn.style.display = 'none';
+            }
+
+            // If accepted, the coach now has a new group — refresh the Shared
+            // Boards tab so the new group shows up (reuse existing init logic).
+            if (action === 'accept') {
+                sharedTabInitialized = false;
+                try { await initializeSharedBoardsTab(); } catch (_) {}
+            }
+
+            if (typeof showToast === 'function') {
+                showToast(action === 'accept' ? 'Invite accepted' : 'Invite declined', 'success');
+            }
+        } catch (err) {
+            if (acceptBtn) acceptBtn.disabled = false;
+            if (declineBtn) declineBtn.disabled = false;
+            const msg = (err && err.message) || `Failed to ${action} invite`;
+            if (typeof showToast === 'function') showToast(msg, 'error');
+        }
+    }
+
+    // Wire up modal open/close handlers once on init
+    (function wireInvitesModal() {
+        const openBtn = document.getElementById('openInvitesModalBtn');
+        const closeBtn = document.getElementById('invitesModalClose');
+        const footerCloseBtn = document.getElementById('invitesModalCloseBtn');
+        const overlay = document.getElementById('invitesModalOverlay');
+        if (openBtn) openBtn.addEventListener('click', openInvitesModal);
+        if (closeBtn) closeBtn.addEventListener('click', closeInvitesModal);
+        if (footerCloseBtn) footerCloseBtn.addEventListener('click', closeInvitesModal);
+        if (overlay) overlay.addEventListener('click', closeInvitesModal);
+    })();
+
     // ==================== Initialize ====================
     const initialSubtab = localStorage.getItem('lastViewedRecruitingBoardSubtab') || 'personal-boards';
     // Always boot the personal tab so currentPersonalBoardId is populated, then

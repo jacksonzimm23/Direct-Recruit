@@ -30,6 +30,10 @@ document.addEventListener('DOMContentLoaded', async function() {
     // Refresh notification count every 30 seconds
     setInterval(updateUnreadNotificationsBadge, 30000);
 
+    // Update unread group-invite badge (sidebar + subtab)
+    await updateUnreadInvitesBadge();
+    setInterval(updateUnreadInvitesBadge, 30000);
+
     // Show/hide recruiting-specific nav items for college coaches only
     await setupCollegeCoachNav();
 
@@ -386,6 +390,56 @@ async function updateUnreadNotificationsBadge() {
         }
     } catch (error) {
         console.error('Error updating unread notifications badge:', error);
+    }
+}
+
+// Update unread group-invite badge.
+// Drives two badges with the same count:
+//   1. Sidebar nav item for the Recruiting Board (visible on every coach page)
+//   2. Shared Boards subtab button inside the recruiting board page
+// The subtab badge is only present in the DOM when the coach is currently on
+// recruiting-board.html — we look it up the same way and silently no-op when
+// it's missing.
+async function updateUnreadInvitesBadge() {
+    try {
+        const response = await API.get('/recruiting-board/my-invites/unread-count');
+        const count = response && response.count ? response.count : 0;
+
+        const sidebarBadge = document.querySelector('.nav-item[href*="recruiting-board"] .notification-badge');
+        if (sidebarBadge) {
+            if (count > 0) {
+                sidebarBadge.textContent = count > 99 ? '99+' : count;
+                sidebarBadge.style.display = 'flex';
+            } else {
+                sidebarBadge.style.display = 'none';
+            }
+        }
+
+        const subtabBadge = document.querySelector('.rb-subtab[data-tab="shared-boards"] .rb-subtab-badge');
+        if (subtabBadge) {
+            if (count > 0) {
+                subtabBadge.textContent = count > 99 ? '99+' : count;
+                subtabBadge.style.display = 'flex';
+            } else {
+                subtabBadge.style.display = 'none';
+            }
+        }
+
+        // Also drive the inline "Invites" button visibility/count inside the
+        // Shared Boards tab body. Only present when on the recruiting-board page.
+        const invitesBtn = document.getElementById('openInvitesModalBtn');
+        const invitesBtnCount = document.getElementById('invitesBtnCount');
+        if (invitesBtn) {
+            if (count > 0) {
+                invitesBtn.style.display = 'inline-flex';
+                if (invitesBtnCount) invitesBtnCount.textContent = `(${count > 99 ? '99+' : count})`;
+            } else {
+                invitesBtn.style.display = 'none';
+                if (invitesBtnCount) invitesBtnCount.textContent = '';
+            }
+        }
+    } catch (error) {
+        // Non-fatal — silent
     }
 }
 

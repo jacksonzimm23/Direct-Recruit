@@ -150,6 +150,7 @@
                         <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
                     </svg>
                     <span>Shared Boards</span>
+                    <span class="rb-subtab-badge" style="display: none;"></span>
                 </button>
             </div>
 
@@ -249,6 +250,19 @@
 
             <!-- Shared Boards Tab (existing shared-board UI lives here unchanged) -->
             <div class="rb-tab-content" id="sharedBoardsTab">
+                <!-- Invites row — shown only when the coach has pending invites.
+                     Driven by updateUnreadInvitesBadge() in mainpage-coach.js. -->
+                <div class="sg-invites-row">
+                    <button class="sg-action-btn-text sg-invites-btn" id="openInvitesModalBtn" style="display: none;" title="View pending invites">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                            <polyline points="22,6 12,13 2,6"></polyline>
+                        </svg>
+                        <span>Invites</span>
+                        <span class="sg-invites-btn-count" id="invitesBtnCount"></span>
+                    </button>
+                </div>
+
                 <!-- Empty state (shown when the coach has zero groups) -->
                 <div class="sg-empty-state" id="sgEmptyState" style="display: none;">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
@@ -728,6 +742,40 @@
             <div class="recruiting-board-modal-footer">
                 <button class="btn-cancel" id="movePlayerCancelBtn">Cancel</button>
                 <button class="btn-submit btn-move" id="movePlayerSubmitBtn" disabled>Move Player</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Invites Modal — incoming group invites with inline Accept/Decline -->
+    <div class="recruiting-board-modal collab-modal sg-modal invites-modal" id="invitesModal">
+        <div class="recruiting-board-modal-overlay" id="invitesModalOverlay"></div>
+        <div class="recruiting-board-modal-content sg-modal-content">
+            <div class="recruiting-board-modal-header collab-header">
+                <h3 class="sg-info-title-row">
+                    <span>Group Invites</span>
+                    <span class="sg-invites-count-pill" id="invitesCountPill"></span>
+                </h3>
+                <button class="modal-close-btn" id="invitesModalClose">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="recruiting-board-modal-body">
+                <div class="sg-invites-list" id="invitesList">
+                    <p class="sg-invites-loading">Loading...</p>
+                </div>
+                <div class="sg-invites-empty" id="invitesEmpty" style="display: none;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                        <polyline points="22,6 12,13 2,6"></polyline>
+                    </svg>
+                    <p>No pending invites.</p>
+                </div>
+            </div>
+            <div class="recruiting-board-modal-footer">
+                <button class="btn-cancel" id="invitesModalCloseBtn">Close</button>
             </div>
         </div>
     </div>

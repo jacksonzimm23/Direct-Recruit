@@ -169,10 +169,11 @@ function renderNotifications() {
 function renderNotificationCard(notification) {
     const isUnread = !notification.is_read;
     const timeAgo = formatTimeAgo(notification.created_at);
-    // Check for all group-related notification types (Phase 2 — replaces legacy 'board_*' types)
+    // Group-related notification types still surface here as STATUS updates
+    // (accepted/declined/etc.). The two actionable invite types are filtered
+    // out at the backend (Notification.getForUser) and via the Invites modal
+    // on the recruiting board page — see lesson on invites modal.
     const boardNotificationTypes = [
-        'group_invite',
-        'group_invite_editor',
         'group_invite_sent',
         'group_invite_accepted',
         'group_invite_declined',
@@ -181,9 +182,10 @@ function renderNotificationCard(notification) {
         'group_member_removed'
     ];
     const isBoardNotification = boardNotificationTypes.includes(notification.related_entity_type);
-    // Either viewer-tier or editor-tier invite needs Accept/Decline buttons
-    const isBoardInvite = notification.related_entity_type === 'group_invite' ||
-                          notification.related_entity_type === 'group_invite_editor';
+    // Invites no longer appear in the Notifications tab — always false now.
+    // Kept as a named const so existing branches below render the standard
+    // card without inline Accept/Decline buttons.
+    const isBoardInvite = false;
 
     // Determine icon based on type and entity type
     let iconClass = 'interaction-icon';

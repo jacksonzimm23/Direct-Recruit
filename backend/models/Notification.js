@@ -63,6 +63,8 @@ class Notification {
       LEFT JOIN coach_profiles cp ON u.id = cp.user_id AND u.role = 'coach'
       LEFT JOIN other_profiles op ON u.id = op.user_id AND u.role = 'other'
       WHERE n.user_id = $1
+        AND (n.related_entity_type IS NULL
+             OR n.related_entity_type NOT IN ('group_invite', 'group_invite_editor'))
     `;
 
     const params = [userId];
@@ -79,9 +81,15 @@ class Notification {
     return result.rows;
   }
 
-  // Get unread count for a user
+  // Get unread count for a user.
+  // Excludes group_invite types — those are surfaced via a dedicated Invites
+  // modal + their own badge counter, NOT the standard Notifications badge.
   static async getUnreadCount(userId, type = null) {
-    let query = `SELECT COUNT(*) FROM notifications WHERE user_id = $1 AND is_read = FALSE`;
+    let query = `SELECT COUNT(*) FROM notifications
+                  WHERE user_id = $1
+                    AND is_read = FALSE
+                    AND (related_entity_type IS NULL
+                         OR related_entity_type NOT IN ('group_invite', 'group_invite_editor'))`;
     const params = [userId];
 
     if (type) {
