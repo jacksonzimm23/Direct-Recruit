@@ -33,26 +33,49 @@ router.get('/:slug', questionnaireGetLimiter, async (req, res) => {
     const slug = (req.params.slug || '').trim().toLowerCase();
     if (!slug) return res.status(404).json({ error: 'Questionnaire not found' });
 
-    const result = await pool.query(
-      `SELECT tq.slug, cp.team_name, cp.college_division, cp.state, cp.city
-         FROM team_questionnaires tq
-         JOIN board_groups bg ON bg.id = tq.group_id
-         JOIN coach_profiles cp ON cp.user_id = bg.owner_user_id
-        WHERE tq.slug = $1
+    // 1) Resolve the questionnaire row (school_key is the source of truth).
+    const qResult = await pool.query(
+      `SELECT slug, school_key
+         FROM team_questionnaires
+        WHERE slug = $1
         LIMIT 1`,
       [slug]
     );
+    if (!qResult.rows[0]) return res.status(404).json({ error: 'Questionnaire not found' });
+    const { slug: q_slug, school_key } = qResult.rows[0];
 
-    if (!result.rows[0]) return res.status(404).json({ error: 'Questionnaire not found' });
+    // 2) Find any current coach at this school to source the metadata
+    // (logo lookup uses team_name; division/state/city come from any matching
+    // coach_profile). If no coach currently matches the school_key (the
+    // historical case after every coach has left), fall back to the
+    // school_key itself.
+    let teamName = school_key;
+    let collegeDivision = null;
+    let state = null;
+    let city = null;
 
-    const row = result.rows[0];
+    const coachLookup = await pool.query(
+      `SELECT team_name, college_division, state, city
+         FROM coach_profiles
+        WHERE LOWER(TRIM(team_name)) = $1
+        ORDER BY updated_at DESC NULLS LAST
+        LIMIT 1`,
+      [school_key]
+    );
+    if (coachLookup.rows[0]) {
+      teamName = coachLookup.rows[0].team_name || teamName;
+      collegeDivision = coachLookup.rows[0].college_division;
+      state = coachLookup.rows[0].state;
+      city = coachLookup.rows[0].city;
+    }
+
     res.json({
-      slug: row.slug,
+      slug: q_slug,
       school: {
-        team_name: row.team_name,
-        college_division: row.college_division,
-        state: row.state,
-        city: row.city
+        team_name: teamName,
+        college_division: collegeDivision,
+        state,
+        city
       }
     });
   } catch (err) {
@@ -70,18 +93,27 @@ router.post('/:slug/submit', questionnaireSubmitLimiter, sanitizeBody, async (re
     const slug = (req.params.slug || '').trim().toLowerCase();
     if (!slug) return res.status(404).json({ error: 'Questionnaire not found' });
 
-    // Look up the questionnaire + the owner coach's team name (for the email)
+    // Look up the questionnaire by slug. school_key is the source of truth;
+    // we resolve a display-friendly team_name by matching any current coach
+    // at this school (preferred) or falling back to the school_key itself.
     const qLookup = await client.query(
-      `SELECT tq.id AS questionnaire_id, cp.team_name
-         FROM team_questionnaires tq
-         JOIN board_groups bg ON bg.id = tq.group_id
-         JOIN coach_profiles cp ON cp.user_id = bg.owner_user_id
-        WHERE tq.slug = $1
+      `SELECT id AS questionnaire_id, school_key
+         FROM team_questionnaires
+        WHERE slug = $1
         LIMIT 1`,
       [slug]
     );
     if (!qLookup.rows[0]) return res.status(404).json({ error: 'Questionnaire not found' });
-    const { questionnaire_id, team_name } = qLookup.rows[0];
+    const { questionnaire_id, school_key } = qLookup.rows[0];
+
+    const coachLookup = await client.query(
+      `SELECT team_name FROM coach_profiles
+        WHERE LOWER(TRIM(team_name)) = $1
+        ORDER BY updated_at DESC NULLS LAST
+        LIMIT 1`,
+      [school_key]
+    );
+    const team_name = (coachLookup.rows[0] && coachLookup.rows[0].team_name) || school_key;
 
     // Validate top-level shape
     const submissionData = req.body && req.body.submission_data;

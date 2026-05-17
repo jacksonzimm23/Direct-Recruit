@@ -71,7 +71,9 @@ const MIGRATIONS = [
   'add-player-athletics.sql',
   'add-pff-grade.sql',
   'add-named-personal-boards.sql',
-  'add-board-groups.sql'
+  'add-board-groups.sql',
+  'add-team-questionnaires.sql',
+  'refactor-questionnaire-to-per-school.sql'
 ];
 
 async function applyManualFixes() {

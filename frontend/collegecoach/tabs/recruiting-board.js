@@ -125,39 +125,24 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
     }
 
-    // Pipeline tab — Plan 2 ships only the Copy Questionnaire Link UI here.
+    // Pipeline tab — Plan 2 ships the Copy Questionnaire Link UI here.
     // The grading/handoff pipeline UI itself ships in Plan 4.
+    // Questionnaire is per-SCHOOL, not per-group, so the link is available to
+    // any college coach with a team_name set, regardless of shared-group state.
     let pipelineShareInitialized = false;
     async function initializePipelineShareUI() {
         const loadingEl = document.getElementById('pipelineLoadingState');
         const shareEl = document.getElementById('pipelineShareState');
-        const nogroupEl = document.getElementById('pipelineNoGroupState');
-        if (!shareEl || !nogroupEl) return;
+        const errorEl = document.getElementById('pipelineNoGroupState');
+        if (!shareEl) return;
 
         // Reset to loading state on every activation so stale state doesn't flash
         if (loadingEl) loadingEl.style.display = 'block';
         shareEl.style.display = 'none';
-        nogroupEl.style.display = 'none';
+        if (errorEl) errorEl.style.display = 'none';
 
         try {
-            // Reuse the cache from initializeSharedBoardsTab if available, otherwise fetch.
-            let myGroupId = currentSharedGroupId;
-            if (!myGroupId) {
-                if (!sharedTabInitialized) {
-                    const res = await API.get('/recruiting-board/groups');
-                    if (res.groups && res.groups.length > 0) {
-                        myGroupId = res.groups[0].id;
-                    }
-                }
-            }
-
-            if (!myGroupId) {
-                if (loadingEl) loadingEl.style.display = 'none';
-                nogroupEl.style.display = 'block';
-                return;
-            }
-
-            const data = await API.get(`/recruiting-board/groups/${myGroupId}/questionnaire`);
+            const data = await API.get('/recruiting-board/my-questionnaire');
             if (loadingEl) loadingEl.style.display = 'none';
             shareEl.style.display = 'block';
 
@@ -180,14 +165,9 @@ document.addEventListener('DOMContentLoaded', async function() {
             }
         } catch (err) {
             if (loadingEl) loadingEl.style.display = 'none';
-            nogroupEl.style.display = 'block';
-        }
-
-        // Wire the "Go to Shared Boards" button once
-        const goBtn = document.getElementById('pipelineGoSharedBtn');
-        if (goBtn && !goBtn.dataset.wired) {
-            goBtn.addEventListener('click', () => activateSubtab('shared-boards'));
-            goBtn.dataset.wired = '1';
+            // Only failure mode now is "coach has no team_name set" (400). Show
+            // the fallback panel pointing them to My Profile.
+            if (errorEl) errorEl.style.display = 'block';
         }
     }
 

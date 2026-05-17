@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const RecruitingBoard = require('../models/RecruitingBoard');
 const BoardGroup = require('../models/BoardGroup');
+const TeamQuestionnaire = require('../models/TeamQuestionnaire');
 const Notification = require('../models/Notification');
 const { notifyUser } = require('../utils/notifications');
 const { authMiddleware, requireRole, validateUUID } = require('../middleware/auth');
@@ -9,6 +10,18 @@ const { escapeLikePattern } = require('../middleware/validation');
 const pool = require('../config/database');
 const { getSignedS3Url } = require('../utils/s3');
 const logger = require('../utils/logger');
+
+// Build the public questionnaire URL from a slug. Mirrors the pattern used by
+// buildInviteLink in admin-coach-verification.js — APP_URL + FRONTEND_PATH_PREFIX
+// with env-var fallbacks per NODE_ENV. Dev origin is Live Server (5500).
+function buildQuestionnaireUrl(slug) {
+  const isProd = process.env.NODE_ENV === 'production';
+  const appUrl = process.env.APP_URL || (isProd ? 'https://directrecruit.net' : 'http://localhost:5500');
+  const prefix = process.env.FRONTEND_PATH_PREFIX !== undefined
+    ? process.env.FRONTEND_PATH_PREFIX
+    : (isProd ? '' : '/frontend');
+  return `${appUrl}${prefix}/questionnaire/index.html?slug=${encodeURIComponent(slug)}`;
+}
 
 // Helper function to add signed URLs to profiles/players
 async function addSignedUrlsToPlayers(players) {
@@ -449,6 +462,51 @@ router.get('/groups/:groupId', authMiddleware, requireRole('coach'), validateUUI
   } catch (error) {
     return handleGroupError(error, res, 'Failed to get group');
   }
+});
+
+// Helper: resolve a coach's per-school questionnaire and return the standard
+// response shape. Used by both /my-questionnaire (group-free) and the legacy
+// /groups/:groupId/questionnaire endpoint.
+async function resolveCoachQuestionnaire(req, res) {
+  try {
+    const coachProfile = await pool.query(
+      `SELECT team_name FROM coach_profiles WHERE user_id = $1 LIMIT 1`,
+      [req.userId]
+    );
+    const teamName = coachProfile.rows[0] && coachProfile.rows[0].team_name;
+    if (!teamName) {
+      return res.status(400).json({
+        error: 'Set your team name in My Profile before generating the questionnaire link.'
+      });
+    }
+
+    const q = await TeamQuestionnaire.getOrCreateForSchool(teamName);
+    res.json({
+      slug: q.slug,
+      public_url: buildQuestionnaireUrl(q.slug),
+      created_at: q.created_at
+    });
+  } catch (err) {
+    logger.error('Get/create team questionnaire error:', err);
+    res.status(500).json({ error: 'Failed to fetch team questionnaire' });
+  }
+}
+
+// Get (or implicitly create) the public questionnaire URL for the requesting
+// coach's CURRENT school. Group-agnostic — the questionnaire is keyed on the
+// coach's normalized team_name (school identity), not on any shared group
+// membership. This is the recommended endpoint for any UI that just needs
+// "what's my school's questionnaire link?".
+router.get('/my-questionnaire', authMiddleware, requireRole('coach'), async (req, res) => {
+  return resolveCoachQuestionnaire(req, res);
+});
+
+// Legacy alias for compatibility with existing UI code that passes a groupId.
+// Identical behavior to /my-questionnaire — the groupId is no longer consulted
+// for slug resolution; it only serves as a permission check via
+// requireGroupAccess('any').
+router.get('/groups/:groupId/questionnaire', authMiddleware, requireRole('coach'), validateUUID('groupId'), requireGroupAccess('any'), async (req, res) => {
+  return resolveCoachQuestionnaire(req, res);
 });
 
 // Rename group (editor or owner)

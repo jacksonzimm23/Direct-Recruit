@@ -230,17 +230,15 @@
                     <div class="pipeline-share-url-display" id="pipelineShareUrlDisplay"></div>
                 </div>
 
-                <!-- State B: coach is NOT in a group → guide them to Shared Boards -->
+                <!-- State B: coach has no team_name set in their profile -->
                 <div class="pipeline-nogroup-state" id="pipelineNoGroupState" style="display: none;">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="56" height="56">
-                        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
-                        <circle cx="9" cy="7" r="4"></circle>
-                        <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
-                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
                     </svg>
-                    <h2>Create a shared group first</h2>
-                    <p>Your team's questionnaire link is tied to a shared group. Create or join one in the Shared Boards tab to start sharing your questionnaire with recruits.</p>
-                    <button class="pipeline-go-shared-btn" id="pipelineGoSharedBtn">Go to Shared Boards</button>
+                    <h2>Add your team name first</h2>
+                    <p>Your questionnaire link is generated from your team's name. Set your team in My Profile to enable your team's recruiting questionnaire.</p>
+                    <a class="pipeline-go-shared-btn" href="my-profile.html">Go to My Profile</a>
                 </div>
 
                 <!-- Loading -->
