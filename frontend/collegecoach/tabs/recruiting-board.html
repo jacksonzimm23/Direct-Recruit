@@ -141,6 +141,7 @@
                         <path d="M3 12h4l3-9 4 18 3-9h4"></path>
                     </svg>
                     <span>Pipeline</span>
+                    <span class="rb-subtab-badge" style="display: none;"></span>
                 </button>
                 <button class="rb-subtab" data-tab="team-pool">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -213,11 +214,120 @@
                 </div>
             </div>
 
-            <!-- Pipeline Tab — Plan 4 fills the body. Copy Questionnaire Link
-                 button moved to Team Pool header in Plan 3.5. -->
+            <!-- Pipeline Tab — Plan 4 -->
             <div class="rb-tab-content" id="pipelineTab">
-                <div class="rb-pipeline-placeholder">
-                    <p>Pipeline coming in Plan 4.</p>
+                <!-- Plan 5B: 3-way view switcher replaces single-view header.
+                     Default view is "My Pipeline" (preserves Plan 4 behavior). -->
+                <div class="pipeline-view-switcher" id="pipelineViewSwitcher">
+                    <button class="pipeline-view-btn active" data-view="my-pipeline" type="button">My Pipeline</button>
+                    <button class="pipeline-view-btn" data-view="sent" type="button">Sent</button>
+                    <button class="pipeline-view-btn" data-view="received" type="button">
+                        <span>Received</span>
+                        <span class="pipeline-view-btn-badge" id="pipelineReceivedBadge" style="display: none;"></span>
+                    </button>
+                </div>
+
+                <!-- My Pipeline view (Plan 4 scaffolding + Plan 5B client-side filters) -->
+                <div class="pipeline-view" id="pipelineMyView">
+                    <div class="rb-pipeline-header">
+                        <div class="rb-pipeline-header-text">
+                            <h2 class="rb-pipeline-title">My Pipeline</h2>
+                            <p class="rb-pipeline-count" id="pipelineCount">0 recruits</p>
+                        </div>
+                    </div>
+
+                    <!-- Filter panel — reuses the .rb-pool-filters-* CSS for visual
+                         parity with the Team Pool tab. Filtering happens client-
+                         side over the already-fetched currentPipelineRecruits. -->
+                    <div class="rb-pool-filters-container" id="pipelineFilters">
+                        <div class="rb-pool-filters-header">
+                            <button class="rb-pool-filters-toggle" id="pipelineFiltersToggle" type="button" aria-expanded="true" title="Show/hide filters">
+                                <svg class="rb-pool-filters-toggle-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="6 9 12 15 18 9"></polyline>
+                                </svg>
+                                <h3 class="rb-pool-filters-title">Filter Recruits</h3>
+                            </button>
+                            <button class="rb-pool-filters-reset" id="pipelineFiltersReset">Reset All</button>
+                        </div>
+                        <div class="rb-pool-filters-grid">
+                            <div class="rb-pool-filter-group">
+                                <label for="pipelineFilterPosition">Position</label>
+                                <select class="rb-pool-filter-select" id="pipelineFilterPosition">
+                                    <option value="">All Positions</option>
+                                </select>
+                            </div>
+                            <div class="rb-pool-filter-group">
+                                <label for="pipelineFilterGradYear">Graduation Year</label>
+                                <select class="rb-pool-filter-select" id="pipelineFilterGradYear">
+                                    <option value="">All Years</option>
+                                </select>
+                            </div>
+                            <div class="rb-pool-filter-group">
+                                <label for="pipelineFilterState">State</label>
+                                <select class="rb-pool-filter-select" id="pipelineFilterState">
+                                    <option value="">All States</option>
+                                </select>
+                            </div>
+                            <div class="rb-pool-filter-group rb-pool-slider-group">
+                                <label>Height</label>
+                                <input type="range" class="rb-pool-filter-slider" id="pipelineFilterHeightSlider" min="60" max="84" value="60" step="1">
+                                <div class="rb-pool-slider-label">Min: <span id="pipelineFilterHeightValue">5'0"</span></div>
+                            </div>
+                            <div class="rb-pool-filter-group rb-pool-slider-group">
+                                <label>Weight (lbs)</label>
+                                <input type="range" class="rb-pool-filter-slider" id="pipelineFilterWeightSlider" min="100" max="400" value="100" step="5">
+                                <div class="rb-pool-slider-label">Min: <span id="pipelineFilterWeightValue">100</span> lbs</div>
+                            </div>
+                            <div class="rb-pool-filter-group rb-pool-slider-group">
+                                <label>GPA</label>
+                                <input type="range" class="rb-pool-filter-slider" id="pipelineFilterGpaSlider" min="0" max="40" value="0" step="1">
+                                <div class="rb-pool-slider-label">Min: <span id="pipelineFilterGpaValue">0.0</span></div>
+                            </div>
+                        </div>
+                        <div class="rb-pool-filters-actions">
+                            <button class="rb-pool-filters-apply" id="pipelineFiltersApply">Apply Filters</button>
+                            <div class="rb-pool-results-count">Showing <span id="pipelineFilterResultsCount">0</span> recruits</div>
+                        </div>
+                    </div>
+
+                    <div class="rb-pipeline-list" id="pipelineList" style="display: none;"></div>
+                    <div class="rb-pipeline-loading" id="pipelineLoading" style="display: none;">Loading…</div>
+                    <div class="rb-pipeline-empty" id="pipelineEmpty" style="display: none;">
+                        <p>Your pipeline is empty.</p>
+                        <p class="rb-pipeline-empty-hint">Add recruits from the Team Pool, or visit a player's profile and click "Add to Pipeline".</p>
+                    </div>
+                </div>
+
+                <!-- Sent view (Plan 5B: recruits I sent, awaiting recipient action) -->
+                <div class="pipeline-view" id="pipelineSentView" style="display: none;">
+                    <div class="rb-pipeline-header">
+                        <div class="rb-pipeline-header-text">
+                            <h2 class="rb-pipeline-title">Sent Hand-Offs</h2>
+                            <p class="rb-pipeline-count" id="pipelineSentCount">0 pending</p>
+                        </div>
+                    </div>
+                    <div class="handoff-sent-list" id="handoffSentList" style="display: none;"></div>
+                    <div class="rb-pipeline-loading" id="handoffSentLoading" style="display: none;">Loading…</div>
+                    <div class="rb-pipeline-empty" id="handoffSentEmpty" style="display: none;">
+                        <p>You haven't sent any recruits to other coaches.</p>
+                        <p class="rb-pipeline-empty-hint">Open a recruit in My Pipeline and click "Send to Coach".</p>
+                    </div>
+                </div>
+
+                <!-- Received view (Plan 5B: recruits sent to me, awaiting my response) -->
+                <div class="pipeline-view" id="pipelineReceivedView" style="display: none;">
+                    <div class="rb-pipeline-header">
+                        <div class="rb-pipeline-header-text">
+                            <h2 class="rb-pipeline-title">Received Hand-Offs</h2>
+                            <p class="rb-pipeline-count" id="pipelineReceivedCount">0 awaiting your response</p>
+                        </div>
+                    </div>
+                    <div class="handoff-received-list" id="handoffReceivedList" style="display: none;"></div>
+                    <div class="rb-pipeline-loading" id="handoffReceivedLoading" style="display: none;">Loading…</div>
+                    <div class="rb-pipeline-empty" id="handoffReceivedEmpty" style="display: none;">
+                        <p>No recruits have been sent to you.</p>
+                        <p class="rb-pipeline-empty-hint">When a teammate hands off a recruit, you'll see it here with their evaluation.</p>
+                    </div>
                 </div>
             </div>
 
@@ -357,7 +467,12 @@
                 <!-- Filters — Discover-style, compact (Plan 3.5) -->
                 <div class="rb-pool-filters-container" id="teamPoolFilters" style="display: none;">
                     <div class="rb-pool-filters-header">
-                        <h3 class="rb-pool-filters-title">Filter Recruits</h3>
+                        <button class="rb-pool-filters-toggle" id="poolFiltersToggle" type="button" aria-expanded="true" title="Show/hide filters">
+                            <svg class="rb-pool-filters-toggle-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="6 9 12 15 18 9"></polyline>
+                            </svg>
+                            <h3 class="rb-pool-filters-title">Filter Recruits</h3>
+                        </button>
                         <button class="rb-pool-filters-reset" id="poolFiltersReset">Reset All</button>
                     </div>
                     <div class="rb-pool-filters-grid">
@@ -698,34 +813,6 @@
     </div>
 
     <!-- Same-school disclaimer when staging an off-school coach -->
-    <div class="recruiting-board-modal confirm-modal" id="sgSameSchoolModal">
-        <div class="recruiting-board-modal-overlay" id="sgSameSchoolModalOverlay"></div>
-        <div class="recruiting-board-modal-content">
-            <div class="recruiting-board-modal-header confirm-header">
-                <div class="confirm-modal-icon" style="background: rgba(220, 38, 38, 0.15);">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: #ef4444;">
-                        <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
-                        <line x1="12" y1="9" x2="12" y2="13"></line>
-                        <line x1="12" y1="17" x2="12.01" y2="17"></line>
-                    </svg>
-                </div>
-                <h3>Different Program</h3>
-                <button class="modal-close-btn" id="sgSameSchoolModalClose">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>
-                    </svg>
-                </button>
-            </div>
-            <div class="recruiting-board-modal-body">
-                <p class="confirm-text" id="sgSameSchoolText">This coach is not part of your program. Add to group anyway?</p>
-            </div>
-            <div class="recruiting-board-modal-footer">
-                <button class="btn-cancel" id="sgSameSchoolCancelBtn">Cancel</button>
-                <button class="btn-submit" id="sgSameSchoolConfirmBtn" style="background: #ef4444;">Continue</button>
-            </div>
-        </div>
-    </div>
-
     <!-- Remove from Recruiting Board Modal -->
     <div class="recruiting-board-modal remove-modal" id="removeRecruitingBoardModal">
         <div class="recruiting-board-modal-overlay" id="removeRecruitingBoardModalOverlay"></div>
@@ -841,7 +928,181 @@
             </div>
             <div class="recruiting-board-modal-footer">
                 <button class="btn-cancel" id="poolDetailCloseBtn">Close</button>
-                <!-- Add to My Pipeline button intentionally omitted in Plan 3. Plan 4 wires it. -->
+                <button class="btn-submit" id="poolDetailAddPipelineBtn" style="display: none;">Add to Pipeline</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Evaluation Modal — Plan 4 -->
+    <div class="recruiting-board-modal collab-modal sg-modal eval-modal" id="evaluationModal">
+        <div class="recruiting-board-modal-overlay" id="evaluationModalOverlay"></div>
+        <div class="recruiting-board-modal-content sg-modal-content">
+            <div class="recruiting-board-modal-header collab-header eval-header">
+                <div class="eval-avatar" id="evalAvatar">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                </div>
+                <div class="eval-title">
+                    <div class="eval-name-row">
+                        <span id="evalName">Recruit</span>
+                        <span class="eval-badge dr" id="evalDrBadge" style="display: none;">DR</span>
+                        <span class="eval-badge source" id="evalPoolBadge" style="display: none;">Pool</span>
+                    </div>
+                    <div class="eval-subheader" id="evalSubheader"></div>
+                </div>
+                <button class="modal-close-btn" id="evaluationModalClose">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="recruiting-board-modal-body eval-body">
+                <!-- Tabs: Info | Evaluation | History. Info is the default tab
+                     and shows the recruit's DR profile link and/or
+                     questionnaire data. History is enabled dynamically by
+                     openEvaluationModal when the open recruit's
+                     evaluation_chain has at least one entry (Plan 5B). -->
+                <div class="eval-tabs">
+                    <button class="eval-tab active" data-eval-tab="info">Info</button>
+                    <button class="eval-tab" data-eval-tab="evaluation">Evaluation</button>
+                    <button class="eval-tab" data-eval-tab="history" disabled title="Available once another coach hands off this recruit">History</button>
+                </div>
+
+                <!-- Info tab content — populated by openEvaluationModal -->
+                <div class="eval-tab-content active" data-eval-tab-content="info">
+                    <div id="evalProfileSection" style="display: none;">
+                        <h4 class="eval-info-section-title">Direct Recruit Profile</h4>
+                        <a id="evalProfileLink" class="eval-profile-link" target="_blank" rel="noopener">View full profile in new tab →</a>
+                    </div>
+                    <div id="evalQuestionnaireSection" style="display: none;">
+                        <h4 class="eval-info-section-title">Questionnaire</h4>
+                        <div id="evalQuestionnaireBody"></div>
+                    </div>
+                    <p class="eval-info-empty" id="evalInfoEmpty" style="display: none;">No questionnaire or profile info available.</p>
+                </div>
+
+                <!-- Evaluation tab content -->
+                <div class="eval-tab-content" data-eval-tab-content="evaluation">
+                    <label class="eval-field-label" for="evalGradeSlider">Score</label>
+                    <div class="eval-grade-row">
+                        <input type="range" class="eval-grade-slider" id="evalGradeSlider" min="0" max="100" value="50" step="1">
+                        <span class="eval-grade-readout" id="evalGradeReadout">50</span>
+                    </div>
+
+                    <label class="eval-field-label">Color Tag</label>
+                    <div class="eval-color-row" id="evalColorRow" role="radiogroup" aria-label="Color tag">
+                        <button class="eval-color-swatch" data-color="dark_green" style="background:#15803d;" title="Dark Green — Best"></button>
+                        <button class="eval-color-swatch" data-color="light_green" style="background:#86efac;" title="Light Green — Strong interest"></button>
+                        <button class="eval-color-swatch" data-color="yellow" style="background:#facc15;" title="Yellow — Worth watching"></button>
+                        <button class="eval-color-swatch" data-color="orange" style="background:#f97316;" title="Orange — Concerns"></button>
+                        <button class="eval-color-swatch" data-color="red" style="background:#ef4444;" title="Red — Weak fit"></button>
+                        <button class="eval-color-swatch" data-color="dark_red" style="background:#7f1d1d;" title="Dark Red — Hard pass"></button>
+                        <button class="eval-color-swatch eval-color-clear" data-color="" title="Clear color">×</button>
+                    </div>
+
+                    <label class="eval-field-label" for="evalNotes">Notes</label>
+                    <textarea class="eval-notes" id="evalNotes" rows="6" placeholder="Free-form notes about this recruit…"></textarea>
+                </div>
+
+                <!-- History tab content (Plan 5B) — rendered timeline of all
+                     prior coaches who graded this recruit before it landed
+                     in mine, via renderEvaluationChainTimeline(). -->
+                <div class="eval-tab-content" data-eval-tab-content="history">
+                    <div id="evalHistoryContent"></div>
+                </div>
+            </div>
+            <div class="recruiting-board-modal-footer eval-footer">
+                <button class="btn-cancel" id="evalDeleteBtn">Remove from Pipeline</button>
+                <button class="btn-submit-secondary" id="evalAddBoardBtn">Add to Board</button>
+                <button class="btn-submit-secondary" id="evalHandoffBtn">Send to Coach</button>
+                <button class="btn-submit" id="evalSaveBtn">Save Grade</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add-to-Board Modal — Plan 4 (manual park; does NOT promote/remove from pipeline) -->
+    <div class="recruiting-board-modal collab-modal sg-modal addboard-modal" id="addBoardModal">
+        <div class="recruiting-board-modal-overlay" id="addBoardModalOverlay"></div>
+        <div class="recruiting-board-modal-content sg-modal-content">
+            <div class="recruiting-board-modal-header collab-header">
+                <h3 class="sg-info-title-row">
+                    <span>Add to Recruiting Board</span>
+                </h3>
+                <button class="modal-close-btn" id="addBoardModalClose">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="recruiting-board-modal-body">
+                <label class="eval-field-label">Board Type</label>
+                <div class="addboard-type-row">
+                    <label class="addboard-type-option">
+                        <input type="radio" name="addBoardType" value="personal" checked>
+                        <span>Personal Board</span>
+                    </label>
+                    <label class="addboard-type-option" id="addBoardSharedOption">
+                        <input type="radio" name="addBoardType" value="shared">
+                        <span>Shared Board</span>
+                    </label>
+                </div>
+
+                <div class="addboard-group-row" id="addBoardGroupRow" style="display: none;">
+                    <label class="eval-field-label" for="addBoardGroupSelect">Group</label>
+                    <select id="addBoardGroupSelect" class="addboard-select"></select>
+                </div>
+
+                <label class="eval-field-label" for="addBoardSelect">Board</label>
+                <select id="addBoardSelect" class="addboard-select"></select>
+
+                <label class="eval-field-label" for="addBoardPositionSelect">Position</label>
+                <select id="addBoardPositionSelect" class="addboard-select"></select>
+
+                <p class="addboard-warning" id="addBoardWarning" style="display: none;"></p>
+            </div>
+            <div class="recruiting-board-modal-footer">
+                <button class="btn-cancel" id="addBoardCancelBtn">Cancel</button>
+                <button class="btn-submit" id="addBoardConfirmBtn">Add to Board</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Send Hand-Off Modal — Plan 5B. Triggered by #evalHandoffBtn in the
+         Evaluation Modal. Picks one or more recipient coaches at the same
+         school, optionally attaches a message, and POSTs to
+         /api/pipeline/:recruitId/handoff. -->
+    <div class="recruiting-board-modal collab-modal sg-modal send-handoff-modal" id="sendHandoffModal">
+        <div class="recruiting-board-modal-overlay" id="sendHandoffOverlay"></div>
+        <div class="recruiting-board-modal-content sg-modal-content">
+            <div class="recruiting-board-modal-header collab-header">
+                <h3 class="sg-info-title-row">
+                    <span>Send <span id="sendHandoffRecruitName">recruit</span></span>
+                </h3>
+                <button class="modal-close-btn" id="sendHandoffClose">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="recruiting-board-modal-body">
+                <p class="send-handoff-instructions">Pick one or more coaches at your school. They'll see this recruit in their Received view.</p>
+                <div class="send-handoff-recipient-list" id="sendHandoffRecipientList">
+                    <p class="send-handoff-loading">Loading coaches…</p>
+                </div>
+                <div class="send-handoff-recipient-empty" id="sendHandoffRecipientEmpty" style="display: none;">
+                    No other coaches found at your school.
+                </div>
+                <label class="send-handoff-message-label" for="sendHandoffMessage">Optional message</label>
+                <textarea class="send-handoff-message" id="sendHandoffMessage" rows="3" placeholder="e.g., 'second look pls'"></textarea>
+            </div>
+            <div class="recruiting-board-modal-footer">
+                <button class="btn-cancel" id="sendHandoffCancel">Cancel</button>
+                <button class="btn-submit" id="sendHandoffSubmit" disabled>Send to 0 coach(es)</button>
             </div>
         </div>
     </div>

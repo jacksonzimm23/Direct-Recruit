@@ -114,12 +114,18 @@ document.addEventListener('DOMContentLoaded', async function() {
         if (tabName === 'shared-boards') {
             if (!sharedTabInitialized) {
                 await initializeSharedBoardsTab();
-            } else if (currentBoardMode !== 'group' && currentSharedBoardId && currentSharedGroupId) {
-                // Re-render the active group board after switching back from another tab
+            } else if (currentSharedBoardId && currentSharedGroupId) {
+                // Always re-render the active shared board on tab activation.
+                // The football field DOM is shared with personal-boards, so
+                // whoever rendered last wins — if we skip here we may leave
+                // the field showing the personal board's positions/players.
                 await loadSharedGroupBoard(currentSharedBoardId);
             }
         }
-        if (tabName === 'personal-boards' && currentPersonalBoardId && currentBoardMode !== 'personal') {
+        if (tabName === 'personal-boards' && currentPersonalBoardId) {
+            // Always re-render the active personal board on tab activation.
+            // Same reason as shared-boards above — the field DOM is shared,
+            // so the last tab's render lingers until we explicitly re-mount.
             await loadPersonalBoardById(currentPersonalBoardId);
         }
         if (tabName === 'team-pool') {
@@ -128,6 +134,9 @@ document.addEventListener('DOMContentLoaded', async function() {
             } else {
                 await refreshTeamPool();
             }
+        }
+        if (tabName === 'pipeline') {
+            await initializePipelineTab();
         }
     }
 
@@ -385,7 +394,6 @@ document.addEventListener('DOMContentLoaded', async function() {
     let currentSharedGroupName = null;
     let groupBoards = [];            // [{id, board_name, ...}]
     let currentSharedBoardId = null;
-    let currentUserTeamName = null;  // populated from /auth/me for the same-school check
     const SHARED_GROUP_CAP = 1;
     const SHARED_BOARD_PER_GROUP_CAP = 5;
 
@@ -405,12 +413,6 @@ document.addEventListener('DOMContentLoaded', async function() {
     async function initializeSharedBoardsTab() {
         if (sharedTabInitialized) return;
         sharedTabInitialized = true;
-
-        // Cache the current coach's team_name so we can detect off-school invites.
-        try {
-            const me = await API.get('/auth/me');
-            currentUserTeamName = (me.profile && me.profile.team_name) || null;
-        } catch (e) { /* non-fatal */ }
 
         try {
             const res = await API.get('/recruiting-board/groups');
@@ -822,8 +824,15 @@ document.addEventListener('DOMContentLoaded', async function() {
             btn.addEventListener('click', e => {
                 const idx = parseInt(e.currentTarget.dataset.idx, 10);
                 arr.splice(idx, 1);
-                if (listElId === 'createGroupStagedList') renderCreateGroupStagedList();
-                else renderInfoStagedList();
+                if (listElId === 'createGroupStagedList') {
+                    renderCreateGroupStagedList();
+                    // If the search dropdown is still showing this coach, flip
+                    // their button back to "Add" so they can be re-staged.
+                    if (_searchRenderers.create) _searchRenderers.create();
+                } else {
+                    renderInfoStagedList();
+                    if (_searchRenderers.info) _searchRenderers.info();
+                }
             });
         });
     }
@@ -832,8 +841,12 @@ document.addEventListener('DOMContentLoaded', async function() {
         return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     }
 
-    // ---------- Shared search-coaches with same-school disclaimer ----------
-    let _sgPendingPick = null; // { ctx: 'create' | 'info', coach } for the disclaimer modal
+    // ---------- Shared search-coaches (same-school only, enforced server-side) ----------
+
+    // Cache the most recent search results per context so stageCoach can
+    // re-render the dropdown after each Add (to flip the just-added row's
+    // button to "Added") WITHOUT clearing the search input or refetching.
+    const _lastSearchResults = { create: [], info: [] };
 
     function setupMemberSearch(inputId, resultsId, ctx, getStagedArr, getGroupId) {
         const input = document.getElementById(inputId);
@@ -845,34 +858,44 @@ document.addEventListener('DOMContentLoaded', async function() {
             timer = setTimeout(() => doSearch(input.value), 300);
         });
         async function doSearch(q) {
-            if (!q || q.length < 2) { results.innerHTML = ''; return; }
+            if (!q || q.length < 2) {
+                _lastSearchResults[ctx] = [];
+                results.innerHTML = '';
+                return;
+            }
             try {
                 const groupId = getGroupId ? getGroupId() : null;
                 const url = groupId
                     ? `/recruiting-board/groups/search-coaches?query=${encodeURIComponent(q)}&groupId=${groupId}`
                     : `/recruiting-board/groups/search-coaches?query=${encodeURIComponent(q)}`;
                 const res = await API.get(url);
-                renderResults(res.coaches || []);
+                _lastSearchResults[ctx] = res.coaches || [];
+                renderResults(_lastSearchResults[ctx]);
             } catch (e) {
                 results.innerHTML = '<p class="sg-staged-empty">Error searching coaches</p>';
             }
         }
         function renderResults(coaches) {
-            const stagedIds = new Set(getStagedArr().map(m => String(m.user_id)));
-            const filtered = coaches.filter(c => !stagedIds.has(String(c.user_id)));
-            if (filtered.length === 0) {
+            if (coaches.length === 0) {
                 results.innerHTML = '<p class="sg-staged-empty">No coaches found</p>';
                 return;
             }
-            results.innerHTML = filtered.map(c => {
+            const stagedIds = new Set(getStagedArr().map(m => String(m.user_id)));
+            // Keep already-staged rows visible — flip their button to "Added"
+            // (disabled) so the user sees what they already added without
+            // having to re-type the search.
+            results.innerHTML = coaches.map(c => {
                 const name = `${c.first_name || ''} ${c.last_name || ''}`.trim();
                 const avatarHtml = c.profile_image_url
                     ? `<img src="${c.profile_image_url}" alt="${name}">`
                     : `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>`;
-                // College Coach subheader format: "Team, State • Division" — orange.
                 const teamPart = [c.team_name, c.state].filter(Boolean).join(', ');
                 const subheader = [teamPart, c.college_division].filter(Boolean).join(' • ');
-                return `<div class="sg-search-result-item" data-uid="${c.user_id}">
+                const isStaged = stagedIds.has(String(c.user_id));
+                const btnHtml = isStaged
+                    ? '<button class="sg-search-add-btn sg-search-added-btn" disabled>Added</button>'
+                    : '<button class="sg-search-add-btn">Add</button>';
+                return `<div class="sg-search-result-item${isStaged ? ' sg-search-result-staged' : ''}" data-uid="${c.user_id}">
                     <div class="sg-search-result-info">
                         <div class="sg-search-result-avatar sg-coach-avatar">${avatarHtml}</div>
                         <div class="sg-search-result-details">
@@ -880,36 +903,32 @@ document.addEventListener('DOMContentLoaded', async function() {
                             <span class="sg-search-result-school sg-coach-subheader">${escapeHtml(subheader)}</span>
                         </div>
                     </div>
-                    <button class="sg-search-add-btn">Add</button>
+                    ${btnHtml}
                 </div>`;
             }).join('');
             results.querySelectorAll('.sg-search-result-item').forEach(item => {
-                item.querySelector('.sg-search-add-btn').addEventListener('click', e => {
+                const btn = item.querySelector('.sg-search-add-btn:not(:disabled)');
+                if (!btn) return;
+                btn.addEventListener('click', e => {
                     e.stopPropagation();
                     const uid = item.dataset.uid;
-                    const coach = filtered.find(c => String(c.user_id) === String(uid));
+                    const coach = coaches.find(c => String(c.user_id) === String(uid));
                     if (coach) handlePickCoach(coach, ctx);
                 });
             });
         }
+        // Expose renderResults so stageCoach can refresh the dropdown after
+        // each Add without a refetch.
+        _searchRenderers[ctx] = () => renderResults(_lastSearchResults[ctx]);
     }
+    // Per-context renderer hooks (filled by setupMemberSearch). stageCoach
+    // calls these to update the just-added row's button to "Added".
+    const _searchRenderers = { create: null, info: null };
 
+    // Server-side filter on /groups/search-coaches guarantees the picker only
+    // surfaces coaches at the requester's school, so we can stage unconditionally.
     function handlePickCoach(coach, ctx) {
-        const sameSchool = currentUserTeamName &&
-            String(coach.team_name || '').toLowerCase() === String(currentUserTeamName).toLowerCase();
-        if (sameSchool) {
-            stageCoach(coach, ctx);
-            return;
-        }
-        // Different school: show disclaimer
-        _sgPendingPick = { ctx, coach };
-        const text = document.getElementById('sgSameSchoolText');
-        if (text) {
-            const name = `${coach.first_name || ''} ${coach.last_name || ''}`.trim();
-            text.innerHTML = `<strong>${escapeHtml(name)}</strong> is from <strong>${escapeHtml(coach.team_name || 'another program')}</strong>, not <strong>${escapeHtml(currentUserTeamName || 'your program')}</strong>. Add them to the group anyway?`;
-        }
-        const modal = document.getElementById('sgSameSchoolModal');
-        if (modal) modal.classList.add('active');
+        stageCoach(coach, ctx);
     }
 
     function stageCoach(coach, ctx) {
@@ -927,33 +946,12 @@ document.addEventListener('DOMContentLoaded', async function() {
         });
         if (ctx === 'create') {
             renderCreateGroupStagedList();
-            const inp = document.getElementById('createGroupMemberSearchInput');
-            const res = document.getElementById('createGroupMemberSearchResults');
-            if (inp) inp.value = '';
-            if (res) res.innerHTML = '';
         } else {
             renderInfoStagedList();
-            const inp = document.getElementById('infoMemberSearchInput');
-            const res = document.getElementById('infoMemberSearchResults');
-            if (inp) inp.value = '';
-            if (res) res.innerHTML = '';
         }
-    }
-
-    document.getElementById('sgSameSchoolModalOverlay')?.addEventListener('click', closeSameSchoolModal);
-    document.getElementById('sgSameSchoolModalClose')?.addEventListener('click', closeSameSchoolModal);
-    document.getElementById('sgSameSchoolCancelBtn')?.addEventListener('click', closeSameSchoolModal);
-    document.getElementById('sgSameSchoolConfirmBtn')?.addEventListener('click', () => {
-        if (_sgPendingPick) {
-            stageCoach(_sgPendingPick.coach, _sgPendingPick.ctx);
-        }
-        closeSameSchoolModal();
-    });
-
-    function closeSameSchoolModal() {
-        const modal = document.getElementById('sgSameSchoolModal');
-        if (modal) modal.classList.remove('active');
-        _sgPendingPick = null;
+        // Refresh the dropdown so the just-added row flips to "Added" —
+        // search input + results stay in place so the user can add more.
+        if (_searchRenderers[ctx]) _searchRenderers[ctx]();
     }
 
     // Wire up the create-group modal's member search
@@ -1534,15 +1532,20 @@ document.addEventListener('DOMContentLoaded', async function() {
         const card = document.createElement('div');
         card.className = 'recruit-card';
         card.draggable = true;
-        card.dataset.playerId = player.user_id;
+        // Use user_id when present (DR-account recruit), fall back to
+        // pool_entry_id for questionnaire-only recruits. The remove + move
+        // routes accept either UUID and match against both fields.
+        card.dataset.playerId = player.user_id || player.pool_entry_id || '';
         card.dataset.playerType = player.player_type;
         card.dataset.position = player.position;
         card.dataset.username = player.username || '';
+        card.dataset.source = player.source || (player.user_id ? 'dr_profile' : 'questionnaire');
 
         // Determine styling based on player type
         const isTransfer = player.player_type === 'transfer';
         const cardClass = isTransfer ? 'transfer-player' : 'hs-player';
         card.classList.add(cardClass);
+        if (!player.user_id) card.classList.add('questionnaire-only');
 
         // Format height
         let heightDisplay = '';
@@ -1566,10 +1569,15 @@ document.addEventListener('DOMContentLoaded', async function() {
             locationLine = [player.team_name, player.state].filter(Boolean).join(', ');
         }
 
+        // Q badge marks questionnaire-only recruits (no DR account). Coaches
+        // see at-a-glance which players don't have a DR profile to click into.
+        const qBadgeHtml = !player.user_id
+            ? '<span class="recruit-q-badge" title="Questionnaire only — no DR account">Q</span>'
+            : '';
         card.innerHTML = `
             <div class="recruit-rank">1</div>
             <div class="recruit-info">
-                <div class="recruit-name">${nameLine}</div>
+                <div class="recruit-name">${nameLine}${qBadgeHtml}</div>
                 <div class="recruit-details">${physicalLine}</div>
                 <div class="recruit-school">${locationLine}</div>
             </div>
@@ -1602,14 +1610,19 @@ document.addEventListener('DOMContentLoaded', async function() {
 
         const menu = document.createElement('div');
         menu.className = 'player-context-menu';
-        menu.innerHTML = `
-            <button class="context-menu-item view-profile-btn">
+        // View Profile only renders when the player has a DR account
+        // (questionnaire-only entries have no profile to link to).
+        const viewProfileHtml = player.username
+            ? `<button class="context-menu-item view-profile-btn">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
                     <circle cx="12" cy="7" r="4"></circle>
                 </svg>
                 View Profile
-            </button>
+            </button>`
+            : '';
+        menu.innerHTML = `
+            ${viewProfileHtml}
             <button class="context-menu-item move-btn">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M5 12h14"></path>
@@ -1678,7 +1691,8 @@ document.addEventListener('DOMContentLoaded', async function() {
             container.addEventListener('scroll', handleScroll, { passive: true });
         });
 
-        menu.querySelector('.view-profile-btn').addEventListener('click', () => {
+        const viewProfileBtn = menu.querySelector('.view-profile-btn');
+        if (viewProfileBtn) viewProfileBtn.addEventListener('click', () => {
             menu.remove();
             scrollContainers.forEach(container => {
                 container.removeEventListener('scroll', handleScroll);
@@ -3105,6 +3119,13 @@ document.addEventListener('DOMContentLoaded', async function() {
             refreshTeamPool();
         });
 
+        // Filter panel collapse toggle — same UX as the Pipeline tab.
+        wireFilterPanelToggle({
+            containerId: 'teamPoolFilters',
+            toggleBtnId: 'poolFiltersToggle',
+            storageKey: 'poolFiltersHidden',
+        });
+
         teamPoolInitialized = true;
 
         // Reveal UI + first load
@@ -3162,10 +3183,10 @@ document.addEventListener('DOMContentLoaded', async function() {
 
         // Subheader = hsplayer format: Position • Height • Weight • GradYear
         const meta = [];
-        if (entry.positions) meta.push(entry.positions);
+        if (entry.positions && entry.positions.length) meta.push(entry.positions.join('/'));
         if (entry.height_inches) meta.push(inchesToHeight(entry.height_inches));
         if (entry.weight_lbs) meta.push(`${entry.weight_lbs} lbs`);
-        if (entry.graduation_year) meta.push(`Class of ${entry.graduation_year}`);
+        if (entry.graduation_year) meta.push(String(entry.graduation_year));
         const subheader = meta.join(' • ');
 
         // Avatar: only show a profile image when a DR account is linked
@@ -3178,14 +3199,22 @@ document.addEventListener('DOMContentLoaded', async function() {
                  <circle cx="12" cy="7" r="4"></circle>
                </svg>`;
 
-        // Badges (DR member, resubmitted) — same as before
+        // Badges (DR member, resubmitted, + Plan 4 cross-coach checkmark)
         const badges = [];
+        if (entry.is_in_any_pipeline_at_school) {
+            badges.push('<span class="rb-pool-row-check" title="Already in a coach’s pipeline at this school">✓</span>');
+        }
         if (hasAccount) {
             badges.push('<span class="rb-pool-row-badge dr">DR Member</span>');
         }
         if (entry.submission_count && entry.submission_count > 1) {
             badges.push(`<span class="rb-pool-row-badge resubmitted">Resubmitted ${entry.submission_count}x</span>`);
         }
+
+        // Plan 4 "Add to My Pipeline" action button (or disabled "In Your Pipeline")
+        const actionBtnHtml = entry.is_in_my_pipeline
+            ? '<button class="rb-pool-row-action in-pipeline" disabled>In Your Pipeline</button>'
+            : '<button class="rb-pool-row-action add-pipeline" type="button">Add to Pipeline</button>';
 
         const row = document.createElement('div');
         row.className = 'rb-pool-row';
@@ -3201,10 +3230,60 @@ document.addEventListener('DOMContentLoaded', async function() {
                 </div>
                 <div class="rb-pool-row-meta" style="color: ${accentColor};">${escapeHtml(subheader)}</div>
             </div>
+            <div class="rb-pool-row-actions">${actionBtnHtml}</div>
         `;
         row.addEventListener('click', () => openPoolDetailModal(entry.id));
+        const actionBtn = row.querySelector('.rb-pool-row-action.add-pipeline');
+        if (actionBtn) {
+            actionBtn.addEventListener('click', (ev) => {
+                ev.stopPropagation();
+                addPoolEntryToPipeline(entry.id, { rowEl: row });
+            });
+        }
         return row;
     }
+
+    // Plan 4 — Add a pool entry to the coach's pipeline, optimistically update
+    // the row's checkmark + button + (if the modal is open for this entry)
+    // the modal footer button too. Re-fetches pool data is not required; the
+    // local row mutation matches what the next refreshTeamPool would produce.
+    async function addPoolEntryToPipeline(entryId, { rowEl = null, modalBtn = null } = {}) {
+        try {
+            await API.pipeline.addFromPool(entryId);
+            if (typeof showToast === 'function') showToast('Added to your pipeline', 'success');
+
+            // Optimistic in-place update on the matching row (find it if not provided)
+            const targetRow = rowEl || document.querySelector(`.rb-pool-row[data-entry-id="${entryId}"]`);
+            if (targetRow) {
+                const nameEl = targetRow.querySelector('.rb-pool-row-name');
+                if (nameEl && !nameEl.querySelector('.rb-pool-row-check')) {
+                    nameEl.insertAdjacentHTML('afterbegin',
+                        '<span class="rb-pool-row-check" title="Already in a coach’s pipeline at this school">✓</span>');
+                }
+                const actionsEl = targetRow.querySelector('.rb-pool-row-actions');
+                if (actionsEl) {
+                    actionsEl.innerHTML = '<button class="rb-pool-row-action in-pipeline" disabled>In Your Pipeline</button>';
+                }
+            }
+            // Sync the modal footer button if it's open for this entry
+            const modalEntryEl = document.getElementById('poolDetailAddPipelineBtn');
+            if (modalEntryEl && currentPoolModalEntryId === entryId) {
+                modalEntryEl.outerHTML = '<button class="btn-submit" id="poolDetailAddPipelineBtn" disabled>In Your Pipeline</button>';
+            }
+        } catch (err) {
+            const status = err && err.status;
+            const msg = (err && err.message) || 'Failed to add to pipeline';
+            if (typeof showToast === 'function') {
+                showToast(msg, status === 409 ? 'warning' : 'error');
+            }
+        }
+    }
+
+    // Tracks which pool entry the detail modal currently has open — used by
+    // the modal-footer Add-to-Pipeline button + the optimistic sync inside
+    // addPoolEntryToPipeline so external triggers (pool card click) also
+    // update the modal button if it's showing the same entry.
+    let currentPoolModalEntryId = null;
 
     // ---------- Pool Entry Detail Modal ----------
     async function openPoolDetailModal(entryId) {
@@ -3217,7 +3296,9 @@ document.addEventListener('DOMContentLoaded', async function() {
         const qBody = document.getElementById('poolDetailQuestionnaire');
         const histBody = document.getElementById('poolDetailHistory');
         const drBody = document.getElementById('poolDetailDrProfile');
+        const addPipelineBtn = document.getElementById('poolDetailAddPipelineBtn');
         if (!modal) return;
+        currentPoolModalEntryId = entryId;
 
         const silhouetteSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>';
 
@@ -3237,7 +3318,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
 
         // Show modal + reset to first inner tab
-        modal.classList.add('open');
+        modal.classList.add('active');
         switchPoolDetailTab('questionnaire');
 
         try {
@@ -3277,6 +3358,24 @@ document.addEventListener('DOMContentLoaded', async function() {
             qBody.innerHTML = renderQuestionnaireView(latest);
             histBody.innerHTML = renderSubmissionHistory(submissions);
             drBody.innerHTML = dr ? renderDrProfile(dr) : '<p class="pool-detail-empty">No Direct Recruit profile linked.</p>';
+
+            // Plan 4 — modal footer "Add to Pipeline" button. Renders as
+            // disabled "In Your Pipeline" when this coach already has them.
+            // The button element is recreated rather than just disabled so
+            // the click listener attached below is always fresh.
+            const footer = document.querySelector('#poolDetailModal .recruiting-board-modal-footer');
+            const existingBtn = document.getElementById('poolDetailAddPipelineBtn');
+            if (footer && existingBtn) {
+                if (entry.is_in_my_pipeline) {
+                    existingBtn.outerHTML = '<button class="btn-submit" id="poolDetailAddPipelineBtn" disabled>In Your Pipeline</button>';
+                } else {
+                    existingBtn.outerHTML = '<button class="btn-submit" id="poolDetailAddPipelineBtn">Add to Pipeline</button>';
+                    const freshBtn = document.getElementById('poolDetailAddPipelineBtn');
+                    freshBtn.addEventListener('click', () => addPoolEntryToPipeline(entryId));
+                }
+                // Make sure it's visible (the HTML starts with display: none)
+                document.getElementById('poolDetailAddPipelineBtn').style.display = '';
+            }
         } catch (err) {
             qBody.innerHTML = `<p class="pool-detail-error">${escapeHtml((err && err.message) || 'Failed to load entry')}</p>`;
         }
@@ -3284,7 +3383,1437 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     function closePoolDetailModal() {
         const modal = document.getElementById('poolDetailModal');
-        if (modal) modal.classList.remove('open');
+        if (modal) modal.classList.remove('active');
+        currentPoolModalEntryId = null;
+    }
+
+    // ====================================================================
+    // PIPELINE TAB (Plan 4)
+    // ====================================================================
+
+    // Locked 6-color palette (Plan 4 Step 4.6). Tokens stored in DB; hex used
+    // only for rendering swatches.
+    const COLOR_HEX = {
+        dark_green: '#15803d',
+        light_green: '#86efac',
+        yellow: '#facc15',
+        orange: '#f97316',
+        red: '#ef4444',
+        dark_red: '#7f1d1d',
+    };
+
+    let pipelineInitialized = false;
+    let currentPipelineRecruits = [];
+    let currentEvalRecruit = null;       // The recruit currently open in the Eval Modal
+
+    // Plan 5B: view switcher state (My Pipeline / Sent / Received).
+    let currentPipelineView = 'my-pipeline';
+    let sentLoadedOnce = false;
+    let receivedLoadedOnce = false;
+    let currentSentHandoffs = [];        // Plan 5A listOut shape: one per recruit
+    let currentReceivedHandoffs = [];    // Plan 5A listIn shape: one per handoff
+
+    // Plan 5B: client-side filters for the My Pipeline view. Same filter set
+    // as the Team Pool tab, applied locally over currentPipelineRecruits so
+    // Apply/Reset feel instant and don't fight the optimistic-prepend logic
+    // used by the handoff accept path.
+    let pipelineFilters = {
+        position: '',
+        grad_year: '',
+        state: '',
+        min_height: null,
+        min_weight: null,
+        min_gpa: null,
+    };
+    let pipelineFiltersInitialized = false;
+
+    function applyPipelineFilters(recruits) {
+        const f = pipelineFilters;
+        const anyActive = f.position || f.grad_year || f.state
+            || f.min_height != null || f.min_weight != null || f.min_gpa != null;
+        if (!anyActive) return { list: recruits, active: false };
+        const filtered = recruits.filter(r => {
+            if (f.position) {
+                const positions = Array.isArray(r.positions) ? r.positions : (r.positions ? [r.positions] : []);
+                // Match if the recruit lists this position (case-insensitive, exact code match)
+                if (!positions.some(p => String(p).toUpperCase() === f.position.toUpperCase())) return false;
+            }
+            if (f.grad_year && String(r.graduation_year) !== String(f.grad_year)) return false;
+            if (f.state && String(r.state || '').toUpperCase() !== f.state.toUpperCase()) return false;
+            if (f.min_height != null && (!r.height_inches || r.height_inches < f.min_height)) return false;
+            if (f.min_weight != null && (!r.weight_lbs || r.weight_lbs < f.min_weight)) return false;
+            if (f.min_gpa != null && (r.gpa == null || Number(r.gpa) < f.min_gpa)) return false;
+            return true;
+        });
+        return { list: filtered, active: true };
+    }
+
+    async function initializePipelineTab() {
+        if (pipelineInitialized) {
+            await refreshPipeline();
+            return;
+        }
+        pipelineInitialized = true;
+        initializePipelineFilters();
+        await refreshPipeline();
+    }
+
+    // Wire up the filter panel inside #pipelineMyView. Runs once per page load.
+    // Filter dropdown options + slider event listeners + Apply/Reset handlers.
+    function initializePipelineFilters() {
+        if (pipelineFiltersInitialized) return;
+        pipelineFiltersInitialized = true;
+
+        const positionSel = document.getElementById('pipelineFilterPosition');
+        if (positionSel) {
+            POOL_POSITIONS.forEach(([code, label]) => {
+                const opt = document.createElement('option');
+                opt.value = code;
+                opt.textContent = `${label} (${code})`;
+                positionSel.appendChild(opt);
+            });
+        }
+
+        const yearSel = document.getElementById('pipelineFilterGradYear');
+        if (yearSel) {
+            for (let y = 2024; y <= 2032; y++) {
+                const opt = document.createElement('option');
+                opt.value = String(y); opt.textContent = String(y);
+                yearSel.appendChild(opt);
+            }
+        }
+
+        const stateSel = document.getElementById('pipelineFilterState');
+        if (stateSel) {
+            US_STATES.forEach(([abbr, name]) => {
+                const opt = document.createElement('option');
+                opt.value = abbr; opt.textContent = name;
+                stateSel.appendChild(opt);
+            });
+        }
+
+        const heightSlider = document.getElementById('pipelineFilterHeightSlider');
+        const heightValue = document.getElementById('pipelineFilterHeightValue');
+        if (heightSlider && heightValue) {
+            heightSlider.addEventListener('input', () => {
+                heightValue.textContent = inchesToHeight(Number(heightSlider.value));
+            });
+        }
+
+        const weightSlider = document.getElementById('pipelineFilterWeightSlider');
+        const weightValue = document.getElementById('pipelineFilterWeightValue');
+        if (weightSlider && weightValue) {
+            weightSlider.addEventListener('input', () => {
+                weightValue.textContent = weightSlider.value;
+            });
+        }
+
+        const gpaSlider = document.getElementById('pipelineFilterGpaSlider');
+        const gpaValue = document.getElementById('pipelineFilterGpaValue');
+        if (gpaSlider && gpaValue) {
+            gpaSlider.addEventListener('input', () => {
+                gpaValue.textContent = (Number(gpaSlider.value) / 10).toFixed(1);
+            });
+        }
+
+        const applyBtn = document.getElementById('pipelineFiltersApply');
+        if (applyBtn) {
+            applyBtn.addEventListener('click', () => {
+                const heightMin = heightSlider ? Number(heightSlider.value) : 0;
+                const weightMin = weightSlider ? Number(weightSlider.value) : 0;
+                const gpaMinTenths = gpaSlider ? Number(gpaSlider.value) : 0;
+                pipelineFilters = {
+                    position: (positionSel && positionSel.value) || '',
+                    grad_year: (yearSel && yearSel.value) || '',
+                    state: (stateSel && stateSel.value) || '',
+                    min_height: heightSlider && heightMin > Number(heightSlider.min) ? heightMin : null,
+                    min_weight: weightSlider && weightMin > Number(weightSlider.min) ? weightMin : null,
+                    min_gpa: gpaMinTenths > 0 ? (gpaMinTenths / 10) : null,
+                };
+                rerenderMyPipelineList();
+            });
+        }
+
+        const resetBtn = document.getElementById('pipelineFiltersReset');
+        if (resetBtn) {
+            resetBtn.addEventListener('click', () => {
+                if (positionSel) positionSel.value = '';
+                if (yearSel) yearSel.value = '';
+                if (stateSel) stateSel.value = '';
+                if (heightSlider) heightSlider.value = heightSlider.min;
+                if (weightSlider) weightSlider.value = weightSlider.min;
+                if (gpaSlider) gpaSlider.value = 0;
+                if (heightValue && heightSlider) heightValue.textContent = inchesToHeight(Number(heightSlider.min));
+                if (weightValue && weightSlider) weightValue.textContent = weightSlider.min;
+                if (gpaValue) gpaValue.textContent = '0.0';
+                pipelineFilters = {
+                    position: '', grad_year: '', state: '',
+                    min_height: null, min_weight: null, min_gpa: null,
+                };
+                rerenderMyPipelineList();
+            });
+        }
+
+        // Hide/show toggle. State persisted to localStorage so the user's
+        // collapsed preference survives reloads.
+        wireFilterPanelToggle({
+            containerId: 'pipelineFilters',
+            toggleBtnId: 'pipelineFiltersToggle',
+            storageKey: 'pipelineFiltersHidden',
+        });
+    }
+
+    /**
+     * Wire a filter panel's collapse toggle. Pattern shared by the Pipeline
+     * tab's filter panel and the Team Pool tab's filter panel — both call
+     * this helper with their own ids.
+     */
+    function wireFilterPanelToggle({ containerId, toggleBtnId, storageKey }) {
+        const container = document.getElementById(containerId);
+        const toggleBtn = document.getElementById(toggleBtnId);
+        if (!container || !toggleBtn) return;
+        const hidden = localStorage.getItem(storageKey) === 'true';
+        if (hidden) {
+            container.classList.add('rb-pool-filters-collapsed');
+            toggleBtn.setAttribute('aria-expanded', 'false');
+        }
+        toggleBtn.addEventListener('click', () => {
+            const isCollapsed = container.classList.toggle('rb-pool-filters-collapsed');
+            toggleBtn.setAttribute('aria-expanded', isCollapsed ? 'false' : 'true');
+            localStorage.setItem(storageKey, String(isCollapsed));
+        });
+    }
+
+    // Plan 5B: switch between My Pipeline / Sent / Received views inside
+    // the Pipeline subtab. Lazy-loads Sent + Received on first access.
+    // Switching to Received auto-fires markHandoffsSeen and clears all
+    // three badge surfaces.
+    async function switchPipelineView(view) {
+        if (view !== 'my-pipeline' && view !== 'sent' && view !== 'received') return;
+        currentPipelineView = view;
+
+        // Toggle active state on the segmented buttons
+        document.querySelectorAll('.pipeline-view-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.view === view);
+        });
+
+        // Show the matching view container, hide the others
+        const my = document.getElementById('pipelineMyView');
+        const sent = document.getElementById('pipelineSentView');
+        const recv = document.getElementById('pipelineReceivedView');
+        if (my) my.style.display = view === 'my-pipeline' ? 'block' : 'none';
+        if (sent) sent.style.display = view === 'sent' ? 'block' : 'none';
+        if (recv) recv.style.display = view === 'received' ? 'block' : 'none';
+
+        if (view === 'sent') {
+            if (!sentLoadedOnce) {
+                sentLoadedOnce = true;
+                await loadHandoffsSent();
+            } else {
+                await loadHandoffsSent(); // always refresh on switch — cheap
+            }
+        }
+        if (view === 'received') {
+            if (!receivedLoadedOnce) {
+                receivedLoadedOnce = true;
+                await loadHandoffsReceived();
+            } else {
+                await loadHandoffsReceived();
+            }
+            // Auto mark-seen on every Received view open. markHandoffsSeen is
+            // idempotent at count=0, so unconditional firing is safe.
+            try {
+                await API.pipeline.markHandoffsSeen();
+                // Optimistically clear the three badge surfaces. We re-fetch
+                // the unread count via mainpage-coach's poller on next interval
+                // but the user shouldn't have to wait 30s to see the badge drop.
+                clearHandoffBadgesOptimistically();
+            } catch { /* swallow — badges will sync on next 30s poll */ }
+        }
+    }
+
+    function clearHandoffBadgesOptimistically() {
+        // Pipeline subtab badge
+        const subBadge = document.querySelector('.rb-subtab[data-tab="pipeline"] .rb-subtab-badge');
+        if (subBadge) {
+            subBadge.style.display = 'none';
+            subBadge.textContent = '';
+        }
+        // Inline view-switcher Received badge
+        const inlineBadge = document.getElementById('pipelineReceivedBadge');
+        if (inlineBadge) {
+            inlineBadge.style.display = 'none';
+            inlineBadge.textContent = '';
+        }
+        // Sidebar nav badge — defer to mainpage-coach which owns the
+        // combined invites+handoffs count. window.updateUnreadHandoffsBadge
+        // re-syncs the sidebar via updateRecruitingBoardSidebarBadge.
+        if (typeof window.updateUnreadHandoffsBadge === 'function') {
+            window.updateUnreadHandoffsBadge();
+        }
+    }
+
+    async function refreshPipeline() {
+        const listEl = document.getElementById('pipelineList');
+        const loadingEl = document.getElementById('pipelineLoading');
+        const emptyEl = document.getElementById('pipelineEmpty');
+        if (!listEl) return;
+
+        loadingEl.style.display = 'block';
+        listEl.style.display = 'none';
+        emptyEl.style.display = 'none';
+
+        try {
+            const data = await API.pipeline.getMy();
+            currentPipelineRecruits = data.recruits || [];
+            loadingEl.style.display = 'none';
+            // Delegate rendering to rerenderMyPipelineList — it applies any
+            // active client-side filters AND updates the result-count badges.
+            rerenderMyPipelineList();
+        } catch (err) {
+            loadingEl.style.display = 'none';
+            if (typeof showToast === 'function') {
+                showToast(err && err.message ? err.message : 'Failed to load pipeline', 'error');
+            }
+        }
+    }
+
+    function buildPipelineRow(recruit) {
+        const hasAccount = !!recruit.linked_player_user_id;
+        const accentColor = hasAccount ? '#1282a2' : '#9ca3af';
+        const ringBg = hasAccount
+            ? 'rgba(18, 130, 162, 0.18)'
+            : 'rgba(156, 163, 175, 0.18)';
+
+        const fullName = `${recruit.first_name || ''} ${recruit.last_name || ''}`.trim() || 'Unknown';
+
+        const meta = [];
+        if (recruit.positions && recruit.positions.length) meta.push(recruit.positions.join('/'));
+        if (recruit.height_inches) meta.push(inchesToHeight(recruit.height_inches));
+        if (recruit.weight_lbs) meta.push(`${recruit.weight_lbs} lbs`);
+        if (recruit.graduation_year) meta.push(String(recruit.graduation_year));
+        const subheader = meta.join(' • ');
+
+        const avatarInner = (hasAccount && recruit.profile_image_url)
+            ? `<img src="${escapeHtml(recruit.profile_image_url)}" alt="" class="rb-pool-row-avatar-img">`
+            : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                 <circle cx="12" cy="7" r="4"></circle>
+               </svg>`;
+
+        const badges = [];
+        if (hasAccount) badges.push('<span class="pipeline-badge dr">DR</span>');
+        // Pool badge only when the recruit came in via the team pool. We don't
+        // emit a "Direct add" sibling badge — that source is implicit when DR
+        // is shown without Pool.
+        if (recruit.source === 'pool') badges.push('<span class="pipeline-badge source">Pool</span>');
+
+        // Grade pill — color-tinted when graded, neutral when not
+        const colorHex = COLOR_HEX[recruit.color_tag] || null;
+        let gradeHtml;
+        if (recruit.grade != null) {
+            const pillStyle = colorHex
+                ? `style="background:${colorHex}; color:${gradePillTextColor(colorHex)}; border-color:${colorHex};"`
+                : '';
+            gradeHtml = `<div class="pipeline-grade-pill has-grade" ${pillStyle}>
+                            <span class="pipeline-grade-number">${recruit.grade}</span>
+                            <span class="pipeline-grade-label">Grade</span>
+                         </div>`;
+        } else {
+            gradeHtml = `<div class="pipeline-grade-pill">
+                            <span class="pipeline-grade-number">—</span>
+                            <span class="pipeline-grade-label">Ungraded</span>
+                         </div>`;
+        }
+
+        // Vertical color stripe on the far left of the card (mirrors the
+        // promote-to-board visual planned in Plan 6: color swatch as primary
+        // visual anchor).
+        const stripeColor = colorHex || 'rgba(255, 255, 255, 0.08)';
+
+        const row = document.createElement('div');
+        row.className = 'pipeline-card';
+        row.dataset.recruitId = recruit.id;
+        row.innerHTML = `
+            <div class="pipeline-card-stripe" style="background:${stripeColor};"></div>
+            <div class="pipeline-card-avatar" style="border-color: ${accentColor}; background: ${ringBg}; color: ${accentColor};">
+                ${avatarInner}
+            </div>
+            <div class="pipeline-card-info">
+                <div class="pipeline-card-name-row">
+                    <span class="pipeline-card-name">${escapeHtml(fullName)}</span>
+                    ${badges.join('')}
+                </div>
+                <div class="pipeline-card-meta" style="color: ${accentColor};">${escapeHtml(subheader) || '<span class="pipeline-card-meta-empty">No details on file</span>'}</div>
+            </div>
+            ${gradeHtml}
+        `;
+        row.addEventListener('click', () => {
+            try {
+                openEvaluationModal(recruit);
+            } catch (e) {
+                console.error('[Pipeline Card] failed to open Evaluation Modal:', e, 'recruit:', recruit);
+                if (typeof showToast === 'function') showToast('Could not open recruit details', 'error');
+            }
+        });
+        return row;
+    }
+
+    // Pick black or white text for a grade pill based on the background's luminance.
+    // Light colors (yellow, light_green) need black text for legibility.
+    function gradePillTextColor(hex) {
+        const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+        if (!m) return '#ffffff';
+        const r = parseInt(m[1], 16), g = parseInt(m[2], 16), b = parseInt(m[3], 16);
+        // Relative luminance (per WCAG)
+        const L = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+        return L > 0.6 ? '#1a1a1a' : '#ffffff';
+    }
+
+    // ====================================================================
+    // HAND-OFFS — SENT + RECEIVED VIEWS + CHAIN TIMELINE (Plan 5B)
+    // ====================================================================
+
+    async function loadHandoffsSent() {
+        const listEl = document.getElementById('handoffSentList');
+        const loadingEl = document.getElementById('handoffSentLoading');
+        const emptyEl = document.getElementById('handoffSentEmpty');
+        const countEl = document.getElementById('pipelineSentCount');
+        if (!listEl) return;
+
+        loadingEl.style.display = 'block';
+        listEl.style.display = 'none';
+        emptyEl.style.display = 'none';
+
+        try {
+            const data = await API.pipeline.getHandoffsOut();
+            currentSentHandoffs = data.handoffs || [];
+            loadingEl.style.display = 'none';
+            if (countEl) countEl.textContent = `${currentSentHandoffs.length} pending`;
+
+            if (currentSentHandoffs.length === 0) {
+                emptyEl.style.display = 'flex';
+                listEl.innerHTML = '';
+                return;
+            }
+            listEl.style.display = 'flex';
+            listEl.innerHTML = '';
+            for (const item of currentSentHandoffs) {
+                listEl.appendChild(buildHandoffSentCard(item));
+            }
+        } catch (err) {
+            loadingEl.style.display = 'none';
+            if (typeof showToast === 'function') {
+                showToast((err && err.message) || 'Failed to load sent hand-offs', 'error');
+            }
+        }
+    }
+
+    // Plan 5A's listOut groups by recruit: { recruit, pending_recipients: [{handoff_id, recipient, message, created_at}], created_at }
+    function buildHandoffSentCard(item) {
+        const recruit = item.recruit;
+        const recipients = item.pending_recipients || [];
+        const fullName = `${recruit.first_name || ''} ${recruit.last_name || ''}`.trim() || 'Unknown';
+
+        const meta = [];
+        if (recruit.positions && recruit.positions.length) meta.push(recruit.positions.join('/'));
+        if (recruit.height_inches) meta.push(inchesToHeight(recruit.height_inches));
+        if (recruit.weight_lbs) meta.push(`${recruit.weight_lbs} lbs`);
+        if (recruit.graduation_year) meta.push(String(recruit.graduation_year));
+        const subheader = meta.join(' • ');
+
+        const hasAccount = !!recruit.linked_player_user_id;
+        const accentColor = hasAccount ? '#1282a2' : '#9ca3af';
+        const ringBg = hasAccount ? 'rgba(18, 130, 162, 0.18)' : 'rgba(156, 163, 175, 0.18)';
+        const avatarInner = (hasAccount && recruit.profile_image_url)
+            ? `<img src="${escapeHtml(recruit.profile_image_url)}" alt="" class="rb-pool-row-avatar-img">`
+            : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                 <circle cx="12" cy="7" r="4"></circle>
+               </svg>`;
+
+        const chipsHtml = recipients.map(r => {
+            const recip = r.recipient || {};
+            const name = `${recip.first_name || ''} ${recip.last_name || ''}`.trim() || 'Coach';
+            const initials = ((recip.first_name || '')[0] || '') + ((recip.last_name || '')[0] || '');
+            const av = recip.profile_image_url
+                ? `<img src="${escapeHtml(recip.profile_image_url)}" alt="" class="handoff-recipient-chip-img">`
+                : `<span class="handoff-recipient-chip-initials">${escapeHtml(initials.toUpperCase() || 'C')}</span>`;
+            return `
+                <span class="handoff-recipient-chip">
+                    <span class="handoff-recipient-chip-avatar">${av}</span>
+                    <span class="handoff-recipient-chip-name">${escapeHtml(name)}</span>
+                    <span class="handoff-pending-pill">pending</span>
+                </span>
+            `;
+        }).join('');
+
+        const messageHtml = (item.message && String(item.message).trim())
+            ? `<div class="handoff-sent-message">"${escapeHtml(item.message)}"</div>`
+            : '';
+
+        const card = document.createElement('div');
+        card.className = 'handoff-sent-card';
+        card.dataset.recruitId = recruit.id;
+        card.innerHTML = `
+            <div class="handoff-sent-card-recruit">
+                <div class="rb-pool-row-avatar" style="border-color: ${accentColor}; background: ${ringBg}; color: ${accentColor};">
+                    ${avatarInner}
+                </div>
+                <div class="rb-pool-row-info">
+                    <div class="rb-pool-row-name">${escapeHtml(fullName)}</div>
+                    <div class="rb-pool-row-meta" style="color: ${accentColor};">${escapeHtml(subheader) || '<span class="pipeline-card-meta-empty">No details on file</span>'}</div>
+                </div>
+            </div>
+            ${messageHtml}
+            <div class="handoff-recipient-chips">${chipsHtml}</div>
+        `;
+        return card;
+    }
+
+    async function loadHandoffsReceived() {
+        const listEl = document.getElementById('handoffReceivedList');
+        const loadingEl = document.getElementById('handoffReceivedLoading');
+        const emptyEl = document.getElementById('handoffReceivedEmpty');
+        const countEl = document.getElementById('pipelineReceivedCount');
+        if (!listEl) return;
+
+        loadingEl.style.display = 'block';
+        listEl.style.display = 'none';
+        emptyEl.style.display = 'none';
+
+        try {
+            const data = await API.pipeline.getHandoffsIn();
+            currentReceivedHandoffs = data.handoffs || [];
+            loadingEl.style.display = 'none';
+            if (countEl) countEl.textContent = `${currentReceivedHandoffs.length} awaiting your response`;
+
+            if (currentReceivedHandoffs.length === 0) {
+                emptyEl.style.display = 'flex';
+                listEl.innerHTML = '';
+                return;
+            }
+            listEl.style.display = 'flex';
+            listEl.innerHTML = '';
+            for (const item of currentReceivedHandoffs) {
+                listEl.appendChild(buildHandoffReceivedCard(item));
+            }
+        } catch (err) {
+            loadingEl.style.display = 'none';
+            if (typeof showToast === 'function') {
+                showToast((err && err.message) || 'Failed to load received hand-offs', 'error');
+            }
+        }
+    }
+
+    function buildHandoffReceivedCard(item) {
+        const sender = item.sender || {};
+        const recruit = item.recruit || {};
+        const eval_ = item.sender_evaluation || {};
+        const priorChain = item.prior_evaluation_chain || [];
+        const handoffId = item.handoff_id;
+
+        const senderName = `${sender.first_name || ''} ${sender.last_name || ''}`.trim() || 'Coach';
+        const senderSubheaderParts = [];
+        if (sender.team_name) senderSubheaderParts.push(sender.team_name);
+        if (sender.state) senderSubheaderParts[0] = `${senderSubheaderParts[0] || ''}, ${sender.state}`;
+        if (sender.college_division) senderSubheaderParts.push(sender.college_division);
+        const senderSubheader = senderSubheaderParts.filter(Boolean).join(' • ');
+        const senderInitials = ((sender.first_name || '')[0] || '') + ((sender.last_name || '')[0] || '');
+        const senderAvatar = sender.profile_image_url
+            ? `<img src="${escapeHtml(sender.profile_image_url)}" alt="" class="sg-coach-avatar-img">`
+            : `<span class="sg-coach-initials">${escapeHtml(senderInitials.toUpperCase() || 'C')}</span>`;
+
+        const recruitName = `${recruit.first_name || ''} ${recruit.last_name || ''}`.trim() || 'Unknown';
+        const meta = [];
+        if (recruit.positions && recruit.positions.length) meta.push(recruit.positions.join('/'));
+        if (recruit.height_inches) meta.push(inchesToHeight(recruit.height_inches));
+        if (recruit.weight_lbs) meta.push(`${recruit.weight_lbs} lbs`);
+        if (recruit.graduation_year) meta.push(String(recruit.graduation_year));
+        const recruitMeta = meta.join(' • ');
+        const hasAccount = !!recruit.linked_player_user_id;
+        const recruitAccent = hasAccount ? '#1282a2' : '#9ca3af';
+        const recruitRingBg = hasAccount ? 'rgba(18, 130, 162, 0.18)' : 'rgba(156, 163, 175, 0.18)';
+        const recruitAvatarInner = (hasAccount && recruit.profile_image_url)
+            ? `<img src="${escapeHtml(recruit.profile_image_url)}" alt="" class="rb-pool-row-avatar-img">`
+            : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                 <circle cx="12" cy="7" r="4"></circle>
+               </svg>`;
+
+        const messageHtml = (item.message && String(item.message).trim())
+            ? `<div class="handoff-received-message">"${escapeHtml(item.message)}"</div>`
+            : '';
+
+        // Sender's evaluation block
+        const evalColorHex = COLOR_HEX[eval_.color_tag] || null;
+        const evalGradeText = (eval_.grade != null) ? String(eval_.grade) : 'Not graded';
+        const evalSwatchHtml = evalColorHex
+            ? `<span class="handoff-eval-swatch" style="background:${evalColorHex};"></span>`
+            : '';
+        const evalNotesHtml = (eval_.notes && String(eval_.notes).trim())
+            ? `<div class="handoff-eval-notes">${escapeHtml(eval_.notes)}</div>`
+            : '';
+
+        // Prior evaluation chain (collapsible). Hidden entirely when length is 0.
+        const chainToggleHtml = priorChain.length > 0
+            ? `<button class="handoff-chain-toggle" type="button" aria-expanded="false">
+                   Show full grading history (${priorChain.length} prior coach${priorChain.length === 1 ? '' : 'es'})
+               </button>
+               <div class="handoff-chain-content" style="display: none;">${renderEvaluationChainTimeline(priorChain)}</div>`
+            : '';
+
+        const card = document.createElement('div');
+        card.className = 'handoff-received-card';
+        card.dataset.handoffId = handoffId;
+        card.innerHTML = `
+            <div class="handoff-sender-row">
+                <div class="sg-coach-avatar">${senderAvatar}</div>
+                <div class="handoff-sender-text">
+                    <div class="sg-coach-name">${escapeHtml(senderName)}</div>
+                    <div class="sg-coach-subheader">${escapeHtml(senderSubheader)}</div>
+                </div>
+            </div>
+            ${messageHtml}
+            <div class="handoff-received-recruit">
+                <div class="rb-pool-row-avatar" style="border-color: ${recruitAccent}; background: ${recruitRingBg}; color: ${recruitAccent};">
+                    ${recruitAvatarInner}
+                </div>
+                <div class="rb-pool-row-info">
+                    <div class="rb-pool-row-name">${escapeHtml(recruitName)}</div>
+                    <div class="rb-pool-row-meta" style="color: ${recruitAccent};">${escapeHtml(recruitMeta) || '<span class="pipeline-card-meta-empty">No details on file</span>'}</div>
+                </div>
+            </div>
+            <div class="handoff-eval-block">
+                <div class="handoff-eval-row">
+                    <span class="handoff-eval-label">${escapeHtml(senderName)}'s grade:</span>
+                    ${evalSwatchHtml}
+                    <span class="handoff-eval-grade">${escapeHtml(evalGradeText)}</span>
+                </div>
+                ${evalNotesHtml}
+            </div>
+            ${chainToggleHtml}
+            <div class="handoff-actions">
+                <button class="btn-cancel handoff-reject-btn" type="button">Reject</button>
+                <button class="btn-submit handoff-accept-btn" type="button">Accept</button>
+            </div>
+        `;
+
+        // Wire chain toggle
+        const toggleBtn = card.querySelector('.handoff-chain-toggle');
+        const chainContent = card.querySelector('.handoff-chain-content');
+        if (toggleBtn && chainContent) {
+            toggleBtn.addEventListener('click', () => {
+                const isOpen = chainContent.style.display !== 'none';
+                chainContent.style.display = isOpen ? 'none' : 'block';
+                toggleBtn.setAttribute('aria-expanded', isOpen ? 'false' : 'true');
+            });
+        }
+
+        // Wire accept / reject
+        const acceptBtn = card.querySelector('.handoff-accept-btn');
+        const rejectBtn = card.querySelector('.handoff-reject-btn');
+        acceptBtn.addEventListener('click', () => acceptHandoff(handoffId, card, acceptBtn, rejectBtn));
+        rejectBtn.addEventListener('click', () => rejectHandoff(handoffId, card, acceptBtn, rejectBtn));
+
+        return card;
+    }
+
+    async function acceptHandoff(handoffId, card, acceptBtn, rejectBtn) {
+        acceptBtn.disabled = true;
+        if (rejectBtn) rejectBtn.disabled = true;
+        try {
+            const result = await API.pipeline.acceptHandoff(handoffId);
+            if (typeof showToast === 'function') showToast('Added to your pipeline', 'success');
+
+            // Optimistic prepend to currentPipelineRecruits
+            if (result && result.recruit) {
+                // Remove any stale copy with the same id first (defensive)
+                currentPipelineRecruits = currentPipelineRecruits.filter(r => r.id !== result.recruit.id);
+                currentPipelineRecruits.unshift(result.recruit);
+                // If My Pipeline view is mounted, re-render it now
+                rerenderMyPipelineList();
+            }
+            // Remove the Received card optimistically
+            removeReceivedCard(card);
+            // Quiet re-fetch for consistency
+            refreshPipeline().catch(() => { /* noop — optimistic state is fine */ });
+        } catch (err) {
+            const status = err && err.status;
+            if (status === 404) {
+                if (typeof showToast === 'function') showToast('Hand-off already resolved', 'warning');
+                removeReceivedCard(card);
+            } else if (status === 403) {
+                if (typeof showToast === 'function') showToast((err && err.message) || 'No longer at this school', 'error');
+                removeReceivedCard(card);
+            } else if (status === 409) {
+                if (typeof showToast === 'function') showToast((err && err.message) || 'Already in your pipeline', 'warning');
+                removeReceivedCard(card);
+            } else {
+                if (typeof showToast === 'function') showToast((err && err.message) || 'Failed to accept', 'error');
+                acceptBtn.disabled = false;
+                if (rejectBtn) rejectBtn.disabled = false;
+            }
+        }
+    }
+
+    async function rejectHandoff(handoffId, card, acceptBtn, rejectBtn) {
+        const ok = await (typeof showConfirmModal === 'function'
+            ? showConfirmModal({
+                title: 'Reject hand-off',
+                message: 'This will return the recruit to the sender. They can hand off again if needed.',
+                confirmText: 'Reject',
+                cancelText: 'Cancel',
+                danger: true,
+            })
+            : Promise.resolve(window.confirm('Reject this hand-off?')));
+        if (!ok) return;
+
+        if (acceptBtn) acceptBtn.disabled = true;
+        rejectBtn.disabled = true;
+        try {
+            await API.pipeline.rejectHandoff(handoffId);
+            if (typeof showToast === 'function') showToast('Rejected', 'success');
+            removeReceivedCard(card);
+        } catch (err) {
+            const status = err && err.status;
+            if (status === 404) {
+                if (typeof showToast === 'function') showToast('Hand-off already resolved', 'warning');
+                removeReceivedCard(card);
+            } else {
+                if (typeof showToast === 'function') showToast((err && err.message) || 'Failed to reject', 'error');
+                if (acceptBtn) acceptBtn.disabled = false;
+                rejectBtn.disabled = false;
+            }
+        }
+    }
+
+    function removeReceivedCard(card) {
+        if (!card) return;
+        const handoffId = card.dataset.handoffId;
+        currentReceivedHandoffs = currentReceivedHandoffs.filter(h => h.handoff_id !== handoffId);
+        card.remove();
+
+        // Update Received view's count subtitle + empty state
+        const countEl = document.getElementById('pipelineReceivedCount');
+        if (countEl) countEl.textContent = `${currentReceivedHandoffs.length} awaiting your response`;
+        if (currentReceivedHandoffs.length === 0) {
+            const listEl = document.getElementById('handoffReceivedList');
+            const emptyEl = document.getElementById('handoffReceivedEmpty');
+            if (listEl) listEl.style.display = 'none';
+            if (emptyEl) emptyEl.style.display = 'flex';
+        }
+    }
+
+    function rerenderMyPipelineList() {
+        const listEl = document.getElementById('pipelineList');
+        const emptyEl = document.getElementById('pipelineEmpty');
+        const countEl = document.getElementById('pipelineCount');
+        const resultsCountEl = document.getElementById('pipelineFilterResultsCount');
+        if (!listEl) return;
+
+        const total = currentPipelineRecruits.length;
+        const { list: visible, active: filtersActive } = applyPipelineFilters(currentPipelineRecruits);
+
+        // Header count — total in the pipeline. Filter status (if any) sits in
+        // the filter footer's "Showing N recruits" badge.
+        if (countEl) countEl.textContent = `${total} recruit${total === 1 ? '' : 's'}`;
+        if (resultsCountEl) resultsCountEl.textContent = visible.length;
+
+        // Two empty states:
+        //   - True empty (no pipeline rows at all): show the dashed empty panel.
+        //   - Filtered to zero (pipeline has rows but none match): show a small
+        //     "No matches" inline message so the user knows to relax filters.
+        if (total === 0) {
+            listEl.style.display = 'none';
+            listEl.innerHTML = '';
+            if (emptyEl) {
+                emptyEl.style.display = 'flex';
+                // Make sure the empty panel content reflects the true-empty state
+                emptyEl.innerHTML = '<p>Your pipeline is empty.</p><p class="rb-pipeline-empty-hint">Add recruits from the Team Pool, or visit a player\'s profile and click "Add to Pipeline".</p>';
+            }
+            return;
+        }
+
+        if (visible.length === 0 && filtersActive) {
+            listEl.style.display = 'none';
+            listEl.innerHTML = '';
+            if (emptyEl) {
+                emptyEl.style.display = 'flex';
+                emptyEl.innerHTML = '<p>No recruits match your filters.</p><p class="rb-pipeline-empty-hint">Try Reset All to see your full pipeline.</p>';
+            }
+            return;
+        }
+
+        listEl.style.display = 'flex';
+        listEl.innerHTML = '';
+        for (const r of visible) listEl.appendChild(buildPipelineRow(r));
+        if (emptyEl) emptyEl.style.display = 'none';
+    }
+
+    // Shared renderer used by both the Received card's collapsible timeline
+    // AND the Evaluation Modal's History tab.
+    function renderEvaluationChainTimeline(chain) {
+        if (!Array.isArray(chain) || chain.length === 0) {
+            return '<p class="eval-chain-empty">No prior evaluations.</p>';
+        }
+        const formatDate = (iso) => {
+            if (!iso) return '';
+            const d = new Date(iso);
+            if (isNaN(d.getTime())) return '';
+            return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+        };
+        return `<ol class="eval-chain-timeline">
+            ${chain.map(entry => {
+                const colorHex = COLOR_HEX[entry.color_tag] || null;
+                const swatch = colorHex
+                    ? `<span class="eval-chain-swatch" style="background:${colorHex};"></span>`
+                    : '<span class="eval-chain-swatch eval-chain-swatch-empty"></span>';
+                const grade = (entry.grade != null) ? entry.grade : '—';
+                const name = escapeHtml(entry.coach_name || 'Coach');
+                const title = entry.coach_title ? `<span class="eval-chain-coach-title">${escapeHtml(entry.coach_title)}</span>` : '';
+                const date = formatDate(entry.evaluated_at);
+                const notes = entry.notes && String(entry.notes).trim()
+                    ? `<blockquote class="eval-chain-notes">${escapeHtml(entry.notes)}</blockquote>`
+                    : '';
+                return `
+                    <li class="eval-chain-entry">
+                        <div class="eval-chain-entry-header">
+                            ${swatch}
+                            <div class="eval-chain-coach">
+                                <span class="eval-chain-coach-name">${name}</span>
+                                ${title}
+                            </div>
+                            <span class="eval-chain-grade">${escapeHtml(String(grade))}</span>
+                            ${date ? `<span class="eval-chain-date">${escapeHtml(date)}</span>` : ''}
+                        </div>
+                        ${notes}
+                    </li>
+                `;
+            }).join('')}
+        </ol>`;
+    }
+
+    // ====================================================================
+    // SEND HAND-OFF MODAL (Plan 5B)
+    // ====================================================================
+
+    // Track which recipients are selected in the picker
+    let sendHandoffSelectedIds = new Set();
+    let sendHandoffCoaches = [];        // cached for "already has" badge cross-reference
+    let sendHandoffRecruitId = null;    // the recruit we're sending
+
+    async function openSendHandoffModal(recruit) {
+        const modal = document.getElementById('sendHandoffModal');
+        if (!modal || !recruit) return;
+        sendHandoffRecruitId = recruit.id;
+        sendHandoffSelectedIds = new Set();
+        sendHandoffCoaches = [];
+
+        // Header
+        const nameEl = document.getElementById('sendHandoffRecruitName');
+        if (nameEl) {
+            const fullName = `${recruit.first_name || ''} ${recruit.last_name || ''}`.trim() || 'this recruit';
+            nameEl.textContent = fullName;
+        }
+
+        // Reset body state
+        const msgEl = document.getElementById('sendHandoffMessage');
+        if (msgEl) msgEl.value = '';
+        updateSendHandoffSubmitState();
+
+        const listEl = document.getElementById('sendHandoffRecipientList');
+        const emptyEl = document.getElementById('sendHandoffRecipientEmpty');
+        if (listEl) listEl.innerHTML = '<p class="send-handoff-loading">Loading coaches…</p>';
+        if (emptyEl) emptyEl.style.display = 'none';
+
+        modal.classList.add('active');
+
+        try {
+            const data = await API.coaches.getAtMySchool();
+            sendHandoffCoaches = (data && data.coaches) || [];
+            renderRecipientPicker(recruit);
+        } catch (err) {
+            if (listEl) listEl.innerHTML = `<p class="send-handoff-error">${escapeHtml((err && err.message) || 'Failed to load coaches')}</p>`;
+        }
+    }
+
+    function renderRecipientPicker(recruit) {
+        const listEl = document.getElementById('sendHandoffRecipientList');
+        const emptyEl = document.getElementById('sendHandoffRecipientEmpty');
+        if (!listEl) return;
+        if (sendHandoffCoaches.length === 0) {
+            listEl.innerHTML = '';
+            if (emptyEl) emptyEl.style.display = 'block';
+            return;
+        }
+        if (emptyEl) emptyEl.style.display = 'none';
+
+        // Cross-reference: which coaches already have this recruit (DR-linked only)
+        const myCacheHasRecruit = new Set();
+        if (recruit && recruit.linked_player_user_id) {
+            // The sender's local cache doesn't include other coaches' pipelines,
+            // so we can only flag based on UI heuristics. For Plan 5B, we leave
+            // the "already has" badge as a future enhancement once we have a
+            // dedicated lookup. Keep the cross-reference set empty for now —
+            // the backend's accept path 409s cleanly if a duplicate slips through.
+            // This guard remains here as a hook for a future lookup endpoint.
+        }
+
+        listEl.innerHTML = '';
+        for (const coach of sendHandoffCoaches) {
+            const row = document.createElement('div');
+            row.className = 'send-handoff-recipient-row';
+            row.dataset.coachId = coach.user_id;
+            const name = `${coach.first_name || ''} ${coach.last_name || ''}`.trim() || 'Coach';
+            const subParts = [];
+            if (coach.team_name) subParts.push(coach.team_name);
+            if (coach.state) subParts[0] = `${subParts[0] || ''}, ${coach.state}`;
+            if (coach.college_division) subParts.push(coach.college_division);
+            const sub = subParts.filter(Boolean).join(' • ');
+            const initials = ((coach.first_name || '')[0] || '') + ((coach.last_name || '')[0] || '');
+            const avatar = coach.profile_image_url
+                ? `<img src="${escapeHtml(coach.profile_image_url)}" alt="" class="sg-coach-avatar-img">`
+                : `<span class="sg-coach-initials">${escapeHtml(initials.toUpperCase() || 'C')}</span>`;
+            const alreadyHasBadge = myCacheHasRecruit.has(coach.user_id)
+                ? '<span class="send-handoff-already-has-badge">Already in their pipeline</span>'
+                : '';
+            row.innerHTML = `
+                <div class="sg-coach-avatar">${avatar}</div>
+                <div class="send-handoff-recipient-text">
+                    <div class="sg-coach-name">${escapeHtml(name)} ${alreadyHasBadge}</div>
+                    <div class="sg-coach-subheader">${escapeHtml(sub)}</div>
+                </div>
+                <div class="send-handoff-recipient-check" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                </div>
+            `;
+            row.addEventListener('click', () => toggleRecipient(coach.user_id, row));
+            listEl.appendChild(row);
+        }
+    }
+
+    function toggleRecipient(coachId, row) {
+        if (sendHandoffSelectedIds.has(coachId)) {
+            sendHandoffSelectedIds.delete(coachId);
+            row.classList.remove('selected');
+        } else {
+            sendHandoffSelectedIds.add(coachId);
+            row.classList.add('selected');
+        }
+        updateSendHandoffSubmitState();
+    }
+
+    function updateSendHandoffSubmitState() {
+        const btn = document.getElementById('sendHandoffSubmit');
+        if (!btn) return;
+        const n = sendHandoffSelectedIds.size;
+        btn.disabled = n === 0;
+        btn.textContent = `Send to ${n} coach${n === 1 ? '' : 'es'}`;
+    }
+
+    function closeSendHandoffModal() {
+        const modal = document.getElementById('sendHandoffModal');
+        if (modal) modal.classList.remove('active');
+        sendHandoffSelectedIds = new Set();
+        sendHandoffCoaches = [];
+        sendHandoffRecruitId = null;
+    }
+
+    async function submitSendHandoff() {
+        const btn = document.getElementById('sendHandoffSubmit');
+        if (!btn || btn.disabled || !sendHandoffRecruitId) return;
+        const ids = Array.from(sendHandoffSelectedIds);
+        const msg = (document.getElementById('sendHandoffMessage') || {}).value || '';
+        btn.disabled = true;
+        try {
+            await API.pipeline.sendHandoff(sendHandoffRecruitId, { to_coach_ids: ids, message: msg });
+            if (typeof showToast === 'function') {
+                showToast(`Sent to ${ids.length} coach${ids.length === 1 ? '' : 'es'}`, 'success');
+            }
+            // Optimistic: remove the recruit from My Pipeline (status flipped to 'out')
+            currentPipelineRecruits = currentPipelineRecruits.filter(r => r.id !== sendHandoffRecruitId);
+            rerenderMyPipelineList();
+            closeSendHandoffModal();
+            closeEvaluationModal();
+            // Quiet re-fetch to reconcile
+            refreshPipeline().catch(() => { /* noop */ });
+        } catch (err) {
+            const status = err && err.status;
+            const msg = (err && err.message) || 'Failed to send';
+            if (typeof showToast === 'function') {
+                showToast(msg, status === 403 ? 'warning' : 'error');
+            }
+            btn.disabled = false;
+        }
+    }
+
+    // ====================================================================
+    // EVALUATION MODAL (Plan 4)
+    // ====================================================================
+
+    function openEvaluationModal(recruit) {
+        currentEvalRecruit = recruit;
+        const modal = document.getElementById('evaluationModal');
+        if (!modal) return;
+
+        const hasAccount = !!recruit.linked_player_user_id;
+        const accentColor = hasAccount ? '#1282a2' : '#9ca3af';
+        const ringBg = hasAccount
+            ? 'rgba(18, 130, 162, 0.18)'
+            : 'rgba(156, 163, 175, 0.18)';
+
+        const fullName = `${recruit.first_name || ''} ${recruit.last_name || ''}`.trim() || 'Unknown';
+
+        // Header — name on top with compact DR badge, subheader on the
+        // line below (positions • height • weight • grad year). Subheader
+        // renders for both DR-linked and questionnaire-only recruits; the
+        // color reflects DR-account presence (cerulean vs neutral gray).
+        document.getElementById('evalName').textContent = fullName;
+        const drBadge = document.getElementById('evalDrBadge');
+        drBadge.style.display = hasAccount ? 'inline-flex' : 'none';
+        // Pool badge fires only when the recruit was added via the team pool
+        // (questionnaire-sourced). DR-direct recruits show DR alone.
+        const poolBadge = document.getElementById('evalPoolBadge');
+        if (poolBadge) poolBadge.style.display = recruit.source === 'pool' ? 'inline-flex' : 'none';
+
+        const subParts = [];
+        if (recruit.positions && recruit.positions.length) subParts.push(recruit.positions.join('/'));
+        if (recruit.height_inches) subParts.push(inchesToHeight(recruit.height_inches));
+        if (recruit.weight_lbs) subParts.push(`${recruit.weight_lbs} lbs`);
+        if (recruit.graduation_year) subParts.push(String(recruit.graduation_year));
+        const subEl = document.getElementById('evalSubheader');
+        if (subEl) {
+            subEl.textContent = subParts.join(' • ');
+            subEl.style.color = accentColor;
+        }
+
+        const avatarEl = document.getElementById('evalAvatar');
+        avatarEl.style.borderColor = accentColor;
+        avatarEl.style.background = ringBg;
+        avatarEl.style.color = accentColor;
+        avatarEl.innerHTML = (hasAccount && recruit.profile_image_url)
+            ? `<img src="${escapeHtml(recruit.profile_image_url)}" alt="" class="eval-avatar-img">`
+            : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                 <circle cx="12" cy="7" r="4"></circle>
+               </svg>`;
+
+        // Info tab — shows the recruit's available data so the coach doesn't
+        // have to leave the modal. Two sections:
+        //   - DR Profile link (only if recruit has a DR account; opens the
+        //     full /shared/view-profile.html page in a new tab)
+        //   - Questionnaire (only if recruit has questionnaire data — pool-
+        //     sourced recruits)
+        // For questionnaire-only recruits, only the Questionnaire section
+        // renders. For DR-only recruits (added from a profile), only the
+        // link renders. For recruits with both, both render with the DR
+        // link above the questionnaire data.
+        const qSection = document.getElementById('evalQuestionnaireSection');
+        const pSection = document.getElementById('evalProfileSection');
+        const emptyMsg = document.getElementById('evalInfoEmpty');
+        const hasQuestionnaire = recruit.source === 'pool';
+
+        if (hasAccount) {
+            pSection.style.display = 'block';
+            const profileLink = document.getElementById('evalProfileLink');
+            profileLink.href = `../../shared/view-profile.html?userId=${encodeURIComponent(recruit.linked_player_user_id)}`;
+        } else {
+            pSection.style.display = 'none';
+        }
+
+        if (hasQuestionnaire) {
+            qSection.style.display = 'block';
+            // Render the full latest questionnaire submission — every field
+            // the recruit submitted (personal, address, parents, family,
+            // academic, athletic, film). The backend ships submission_data
+            // on the recruit shape so no extra fetch is needed here.
+            document.getElementById('evalQuestionnaireBody').innerHTML =
+                renderQuestionnaireView(recruit.submission_data || {});
+        } else {
+            qSection.style.display = 'none';
+        }
+
+        if (emptyMsg) {
+            emptyMsg.style.display = (hasAccount || hasQuestionnaire) ? 'none' : 'block';
+        }
+
+        // Evaluation fields
+        const slider = document.getElementById('evalGradeSlider');
+        const readout = document.getElementById('evalGradeReadout');
+        const initialGrade = (recruit.grade != null) ? recruit.grade : 50;
+        slider.value = initialGrade;
+        readout.textContent = (recruit.grade != null) ? String(recruit.grade) : '—';
+        slider.dataset.touched = (recruit.grade != null) ? '1' : '0';
+
+        // Color swatches — mark the selected one
+        document.querySelectorAll('#evalColorRow .eval-color-swatch').forEach(btn => {
+            btn.classList.toggle('selected', btn.dataset.color === (recruit.color_tag || ''));
+        });
+
+        // Notes
+        document.getElementById('evalNotes').value = recruit.notes || '';
+
+        // Add to Board — always enabled. Pool recruits without a DR account
+        // get added via their pool_entry_id (questionnaire-only board support
+        // pulled forward from Plan 6).
+        const addBoardBtn = document.getElementById('evalAddBoardBtn');
+        addBoardBtn.disabled = false;
+        addBoardBtn.title = '';
+
+        // Plan 5B: History tab — enable when this recruit has a non-empty
+        // evaluation_chain (i.e., they were handed off here). Render the
+        // chain into the History panel up front so tab switch is instant.
+        const historyTabBtn = document.querySelector('.eval-tab[data-eval-tab="history"]');
+        const historyContent = document.getElementById('evalHistoryContent');
+        const hasChain = Array.isArray(recruit.evaluation_chain) && recruit.evaluation_chain.length > 0;
+        if (historyTabBtn) {
+            if (hasChain) {
+                historyTabBtn.disabled = false;
+                historyTabBtn.removeAttribute('title');
+            } else {
+                historyTabBtn.disabled = true;
+                historyTabBtn.title = 'Available once another coach hands off this recruit';
+            }
+        }
+        if (historyContent) {
+            historyContent.innerHTML = hasChain ? renderEvaluationChainTimeline(recruit.evaluation_chain) : '';
+        }
+        // Always reset to the Info tab on open
+        switchEvalTab('info');
+
+        // Force a hard height ceiling + internal scroll on the modal body so
+        // the "Show questionnaire / profile info" panel can expand without
+        // pushing the modal off-screen. Setting via inline style guarantees
+        // we win over any cached/competing CSS — the rule lives in
+        // recruiting-board.css too but inline is the belt-and-suspenders.
+        const modalContent = modal.querySelector('.recruiting-board-modal-content');
+        const modalBody = modal.querySelector('.recruiting-board-modal-body');
+        if (modalContent) {
+            modalContent.style.maxHeight = '90vh';
+            modalContent.style.display = 'flex';
+            modalContent.style.flexDirection = 'column';
+            modalContent.style.overflow = 'hidden';
+        }
+        if (modalBody) {
+            modalBody.style.flex = '1 1 auto';
+            modalBody.style.minHeight = '0';
+            modalBody.style.maxHeight = 'calc(90vh - 180px)';
+            modalBody.style.overflowY = 'auto';
+        }
+
+        modal.classList.add('active');
+    }
+
+    // Plan 5B: switch between Evaluation and History tabs inside the Eval Modal.
+    function switchEvalTab(tabKey) {
+        // Don't allow switching to a disabled tab
+        const target = document.querySelector(`.eval-tab[data-eval-tab="${tabKey}"]`);
+        if (target && target.disabled) return;
+        document.querySelectorAll('.eval-tab').forEach(b => {
+            b.classList.toggle('active', b.dataset.evalTab === tabKey);
+        });
+        document.querySelectorAll('.eval-tab-content').forEach(c => {
+            c.classList.toggle('active', c.dataset.evalTabContent === tabKey);
+        });
+    }
+
+    function closeEvaluationModal() {
+        const modal = document.getElementById('evaluationModal');
+        if (modal) modal.classList.remove('active');
+        currentEvalRecruit = null;
+    }
+
+    async function saveEvaluation() {
+        if (!currentEvalRecruit) return;
+        const slider = document.getElementById('evalGradeSlider');
+        const notes = document.getElementById('evalNotes').value;
+        const selectedSwatch = document.querySelector('#evalColorRow .eval-color-swatch.selected');
+        const color_tag = selectedSwatch ? (selectedSwatch.dataset.color || null) : null;
+        // Only send a grade if user touched the slider OR there was a prior grade
+        const gradeTouched = slider.dataset.touched === '1';
+        const grade = gradeTouched ? parseInt(slider.value, 10) : null;
+
+        try {
+            const result = await API.pipeline.updateEvaluation(currentEvalRecruit.id, { grade, color_tag, notes });
+            if (typeof showToast === 'function') showToast('Saved', 'success');
+            // Update the in-memory copy + refresh just that row
+            const idx = currentPipelineRecruits.findIndex(r => r.id === result.recruit.id);
+            if (idx >= 0) currentPipelineRecruits[idx] = result.recruit;
+            currentEvalRecruit = result.recruit;
+            // Easiest refresh: re-render the whole list
+            const listEl = document.getElementById('pipelineList');
+            if (listEl) {
+                listEl.innerHTML = '';
+                for (const r of currentPipelineRecruits) listEl.appendChild(buildPipelineRow(r));
+            }
+            closeEvaluationModal();
+        } catch (err) {
+            if (typeof showToast === 'function') {
+                showToast(err && err.message ? err.message : 'Failed to save', 'error');
+            }
+        }
+    }
+
+    async function removeRecruitFromPipeline() {
+        if (!currentEvalRecruit) return;
+        const ok = await (typeof showConfirmModal === 'function'
+            ? showConfirmModal({
+                title: 'Remove from Pipeline',
+                message: "Remove this recruit from your pipeline? They'll stay in the team pool.",
+                confirmText: 'Remove',
+                cancelText: 'Cancel',
+                danger: true
+            })
+            : Promise.resolve(window.confirm('Remove this recruit from your pipeline?')));
+        if (!ok) return;
+
+        try {
+            const result = await API.pipeline.remove(currentEvalRecruit.id);
+            if (typeof showToast === 'function') showToast('Removed from pipeline', 'success');
+
+            // Remove from in-memory list + re-render
+            currentPipelineRecruits = currentPipelineRecruits.filter(r => r.id !== currentEvalRecruit.id);
+            const listEl = document.getElementById('pipelineList');
+            const emptyEl = document.getElementById('pipelineEmpty');
+            const countEl = document.getElementById('pipelineCount');
+            if (countEl) countEl.textContent = `${currentPipelineRecruits.length} recruit${currentPipelineRecruits.length === 1 ? '' : 's'}`;
+            if (listEl) {
+                listEl.innerHTML = '';
+                for (const r of currentPipelineRecruits) listEl.appendChild(buildPipelineRow(r));
+            }
+            if (currentPipelineRecruits.length === 0 && emptyEl) {
+                emptyEl.style.display = 'flex';
+                if (listEl) listEl.style.display = 'none';
+            }
+
+            // Sync the pool tab's matching row if it's mounted
+            if (result.pool_entry_id) {
+                const poolRow = document.querySelector(`.rb-pool-row[data-entry-id="${result.pool_entry_id}"]`);
+                if (poolRow) {
+                    // Always: I no longer have them → button flips back to "Add to Pipeline"
+                    const actionsEl = poolRow.querySelector('.rb-pool-row-actions');
+                    if (actionsEl) {
+                        actionsEl.innerHTML = '<button class="rb-pool-row-action add-pipeline" type="button">Add to Pipeline</button>';
+                        const newBtn = actionsEl.querySelector('.rb-pool-row-action.add-pipeline');
+                        if (newBtn) newBtn.addEventListener('click', (ev) => {
+                            ev.stopPropagation();
+                            addPoolEntryToPipeline(result.pool_entry_id, { rowEl: poolRow });
+                        });
+                    }
+                    // Cross-coach checkmark clears only if no one else at the school has them
+                    if (!result.still_in_any_pipeline_at_school) {
+                        const checkEl = poolRow.querySelector('.rb-pool-row-check');
+                        if (checkEl) checkEl.remove();
+                    }
+                }
+            }
+
+            closeEvaluationModal();
+        } catch (err) {
+            if (typeof showToast === 'function') {
+                showToast(err && err.message ? err.message : 'Failed to remove', 'error');
+            }
+        }
+    }
+
+    // ====================================================================
+    // ADD-TO-BOARD MODAL (Plan 4 Step 9)
+    // ====================================================================
+
+    let addBoardContext = null;  // { recruit, personalBoards: [], sharedGroups: [], positions: [] }
+
+    async function openAddBoardModal() {
+        if (!currentEvalRecruit) return;
+        // Questionnaire-only recruits (no DR account) are routed via
+        // pool_entry_id in confirmAddToBoard. Both paths reach the same
+        // backend route; the football field renders the right card variant.
+        const modal = document.getElementById('addBoardModal');
+        if (!modal) return;
+
+        // Load personal boards + groups in parallel
+        try {
+            const [personalRes, groupsRes] = await Promise.all([
+                API.get('/recruiting-board/personal'),  // existing route lists personal boards
+                API.get('/recruiting-board/groups')      // existing route lists groups
+            ]);
+            const personalBoards = (personalRes && personalRes.boards) || personalRes || [];
+            const sharedGroups = (groupsRes && groupsRes.groups) || groupsRes || [];
+
+            addBoardContext = {
+                recruit: currentEvalRecruit,
+                personalBoards,
+                sharedGroups,
+                // Positions: use the recruit's first position as the default if present;
+                // else a generic list. We populate via a fixed roster (same as the board UI).
+                positionsList: [
+                    'QB','RB','FB','WR','TE','OL','OT','OG','C',
+                    'DL','DE','DT','NT','LB','ILB','OLB','CB','S','FS','SS',
+                    'K','P','LS','ATH'
+                ]
+            };
+
+            // Reset radio to personal
+            const personalRadio = document.querySelector('input[name="addBoardType"][value="personal"]');
+            personalRadio.checked = true;
+            const sharedRadio = document.querySelector('input[name="addBoardType"][value="shared"]');
+            sharedRadio.checked = false;
+            // Disable Shared option if not in any group
+            const sharedOption = document.getElementById('addBoardSharedOption');
+            if (sharedGroups.length === 0) {
+                sharedOption.classList.add('disabled');
+                sharedRadio.disabled = true;
+                sharedOption.title = 'Join a shared group to add to a shared board.';
+            } else {
+                sharedOption.classList.remove('disabled');
+                sharedRadio.disabled = false;
+                sharedOption.title = '';
+            }
+
+            // Render positions dropdown (default = recruit's first position)
+            const posSelect = document.getElementById('addBoardPositionSelect');
+            posSelect.innerHTML = addBoardContext.positionsList.map(p =>
+                `<option value="${p}">${p}</option>`).join('');
+            const recruitFirstPos = (currentEvalRecruit.positions && currentEvalRecruit.positions[0]) || '';
+            if (recruitFirstPos && addBoardContext.positionsList.includes(recruitFirstPos)) {
+                posSelect.value = recruitFirstPos;
+            }
+
+            // Wire personal/shared change + initial population
+            handleAddBoardTypeChange();
+            modal.classList.add('active');
+        } catch (err) {
+            if (typeof showToast === 'function') {
+                showToast(err && err.message ? err.message : 'Failed to load boards', 'error');
+            }
+        }
+    }
+
+    function closeAddBoardModal() {
+        const modal = document.getElementById('addBoardModal');
+        if (modal) modal.classList.remove('active');
+        addBoardContext = null;
+    }
+
+    function handleAddBoardTypeChange() {
+        if (!addBoardContext) return;
+        const type = document.querySelector('input[name="addBoardType"]:checked').value;
+        const groupRow = document.getElementById('addBoardGroupRow');
+        const boardSelect = document.getElementById('addBoardSelect');
+        const warning = document.getElementById('addBoardWarning');
+        warning.style.display = 'none';
+        warning.textContent = '';
+
+        if (type === 'personal') {
+            groupRow.style.display = 'none';
+            const boards = addBoardContext.personalBoards;
+            if (boards.length === 0) {
+                boardSelect.innerHTML = '<option value="" disabled selected>No personal boards — create one first</option>';
+                warning.style.display = 'block';
+                warning.textContent = 'You don\'t have any personal boards yet. Create one from the Personal Boards tab.';
+            } else {
+                boardSelect.innerHTML = boards.map(b =>
+                    `<option value="${b.id}">${escapeHtml(b.board_name || 'My Board')}</option>`
+                ).join('');
+            }
+        } else {
+            groupRow.style.display = 'block';
+            // Populate groups dropdown
+            const groupSelect = document.getElementById('addBoardGroupSelect');
+            groupSelect.innerHTML = addBoardContext.sharedGroups.map(g =>
+                `<option value="${g.id}">${escapeHtml(g.group_name || 'Group')}</option>`
+            ).join('');
+            if (addBoardContext.sharedGroups.length > 0) {
+                handleAddBoardGroupChange();
+            }
+        }
+    }
+
+    async function handleAddBoardGroupChange() {
+        const groupSelect = document.getElementById('addBoardGroupSelect');
+        const boardSelect = document.getElementById('addBoardSelect');
+        const warning = document.getElementById('addBoardWarning');
+        const groupId = groupSelect.value;
+        if (!groupId) return;
+        try {
+            const res = await API.get(`/recruiting-board/groups/${groupId}/boards`);
+            const boards = (res && res.boards) || res || [];
+            if (boards.length === 0) {
+                boardSelect.innerHTML = '<option value="" disabled selected>No shared boards in this group</option>';
+                warning.style.display = 'block';
+                warning.textContent = 'This group has no shared boards yet. Create one from the Shared Boards tab.';
+            } else {
+                boardSelect.innerHTML = boards.map(b =>
+                    `<option value="${b.id}">${escapeHtml(b.board_name || 'Board')}</option>`
+                ).join('');
+                warning.style.display = 'none';
+                warning.textContent = '';
+            }
+        } catch (err) {
+            boardSelect.innerHTML = '<option value="">Failed to load boards</option>';
+        }
+    }
+
+    async function confirmAddToBoard() {
+        if (!addBoardContext) return;
+        const recruit = addBoardContext.recruit;
+        const type = document.querySelector('input[name="addBoardType"]:checked').value;
+        const boardId = document.getElementById('addBoardSelect').value;
+        const position = document.getElementById('addBoardPositionSelect').value;
+
+        if (!boardId) {
+            if (typeof showToast === 'function') showToast('Pick a board first', 'warning');
+            return;
+        }
+
+        // Build the playerData body matching the existing /personal/:boardId/players
+        // and /groups/:groupId/boards/:boardId/players shape. The football field
+        // routes the player to offense vs defense based on the chosen position,
+        // so no explicit `side` field is needed.
+        //
+        // Two paths:
+        //   - DR-account recruit → identified by user_id, football field renders
+        //     with profile link.
+        //   - Questionnaire-only → identified by pool_entry_id, football field
+        //     renders a no-profile-link card variant (pulled forward from Plan 6).
+        const playerData = {
+            username: recruit.username || '',
+            first_name: recruit.first_name || '',
+            last_name: recruit.last_name || '',
+            height: recruit.height_inches || null,
+            weight: recruit.weight_lbs || null,
+            team_name: recruit.team_name || '',
+            state: recruit.state || '',
+            college_division: recruit.college_division || null,
+            profile_image_url: recruit.profile_image_url || null,
+            player_type: recruit.is_transfer ? 'transfer' : 'hs',
+            position
+        };
+        if (recruit.linked_player_user_id) {
+            playerData.user_id = recruit.linked_player_user_id;
+        } else if (recruit.pool_entry_id) {
+            playerData.pool_entry_id = recruit.pool_entry_id;
+        } else {
+            if (typeof showToast === 'function') showToast('This recruit has no DR account or pool entry — cannot add to board.', 'error');
+            return;
+        }
+
+        try {
+            if (type === 'personal') {
+                await API.post(`/recruiting-board/personal/${boardId}/players`, playerData);
+            } else {
+                const groupId = document.getElementById('addBoardGroupSelect').value;
+                await API.post(`/recruiting-board/groups/${groupId}/boards/${boardId}/players`, playerData);
+            }
+            if (typeof showToast === 'function') showToast('Added to board', 'success');
+            closeAddBoardModal();
+        } catch (err) {
+            if (typeof showToast === 'function') {
+                showToast(err && err.message ? err.message : 'Failed to add to board', 'error');
+            }
+        }
     }
 
     function switchPoolDetailTab(tabKey) {
@@ -3481,6 +5010,92 @@ document.addEventListener('DOMContentLoaded', async function() {
         });
     })();
 
+    // Wire evaluation modal handlers once on init (Plan 4)
+    (function wireEvaluationModal() {
+        const closeBtn = document.getElementById('evaluationModalClose');
+        const overlay = document.getElementById('evaluationModalOverlay');
+        const saveBtn = document.getElementById('evalSaveBtn');
+        const deleteBtn = document.getElementById('evalDeleteBtn');
+        const addBoardBtn = document.getElementById('evalAddBoardBtn');
+        const handoffBtn = document.getElementById('evalHandoffBtn');
+        const slider = document.getElementById('evalGradeSlider');
+
+        if (closeBtn) closeBtn.addEventListener('click', closeEvaluationModal);
+        if (overlay) overlay.addEventListener('click', closeEvaluationModal);
+        if (saveBtn) saveBtn.addEventListener('click', saveEvaluation);
+        if (deleteBtn) deleteBtn.addEventListener('click', removeRecruitFromPipeline);
+        if (addBoardBtn) addBoardBtn.addEventListener('click', openAddBoardModal);
+        // Plan 5B: Send to Coach opens the Send Hand-Off modal
+        if (handoffBtn) handoffBtn.addEventListener('click', () => {
+            if (currentEvalRecruit) openSendHandoffModal(currentEvalRecruit);
+        });
+        // Plan 5B: tab switching (Evaluation / History)
+        document.querySelectorAll('.eval-tab').forEach(btn => {
+            btn.addEventListener('click', () => switchEvalTab(btn.dataset.evalTab));
+        });
+
+        if (slider) {
+            slider.addEventListener('input', () => {
+                slider.dataset.touched = '1';
+                document.getElementById('evalGradeReadout').textContent = slider.value;
+            });
+        }
+
+        // Color swatches — single-select, click again to deselect
+        document.querySelectorAll('#evalColorRow .eval-color-swatch').forEach(btn => {
+            btn.addEventListener('click', (ev) => {
+                ev.preventDefault();
+                const target = ev.currentTarget;
+                if (target.classList.contains('eval-color-clear')) {
+                    document.querySelectorAll('#evalColorRow .eval-color-swatch').forEach(b => b.classList.remove('selected'));
+                    return;
+                }
+                const wasSelected = target.classList.contains('selected');
+                document.querySelectorAll('#evalColorRow .eval-color-swatch').forEach(b => b.classList.remove('selected'));
+                if (!wasSelected) target.classList.add('selected');
+            });
+        });
+
+    })();
+
+    // Wire add-to-board modal handlers once on init (Plan 4)
+    (function wireAddBoardModal() {
+        const closeBtn = document.getElementById('addBoardModalClose');
+        const overlay = document.getElementById('addBoardModalOverlay');
+        const cancelBtn = document.getElementById('addBoardCancelBtn');
+        const confirmBtn = document.getElementById('addBoardConfirmBtn');
+        const groupSelect = document.getElementById('addBoardGroupSelect');
+
+        if (closeBtn) closeBtn.addEventListener('click', closeAddBoardModal);
+        if (overlay) overlay.addEventListener('click', closeAddBoardModal);
+        if (cancelBtn) cancelBtn.addEventListener('click', closeAddBoardModal);
+        if (confirmBtn) confirmBtn.addEventListener('click', confirmAddToBoard);
+        if (groupSelect) groupSelect.addEventListener('change', handleAddBoardGroupChange);
+
+        document.querySelectorAll('input[name="addBoardType"]').forEach(radio => {
+            radio.addEventListener('change', handleAddBoardTypeChange);
+        });
+    })();
+
+    // Plan 5B: wire the Pipeline view switcher buttons
+    (function wirePipelineViewSwitcher() {
+        document.querySelectorAll('.pipeline-view-btn').forEach(btn => {
+            btn.addEventListener('click', () => switchPipelineView(btn.dataset.view));
+        });
+    })();
+
+    // Plan 5B: wire the Send Hand-Off modal
+    (function wireSendHandoffModal() {
+        const closeBtn = document.getElementById('sendHandoffClose');
+        const overlay = document.getElementById('sendHandoffOverlay');
+        const cancelBtn = document.getElementById('sendHandoffCancel');
+        const submitBtn = document.getElementById('sendHandoffSubmit');
+        if (closeBtn) closeBtn.addEventListener('click', closeSendHandoffModal);
+        if (overlay) overlay.addEventListener('click', closeSendHandoffModal);
+        if (cancelBtn) cancelBtn.addEventListener('click', closeSendHandoffModal);
+        if (submitBtn) submitBtn.addEventListener('click', submitSendHandoff);
+    })();
+
 
     // Incoming group invites surface here instead of in the Notifications tab.
     // Opening the modal clears the sidebar + subtab badge (mark-seen). Each
@@ -3494,7 +5109,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 
         if (list) list.innerHTML = '<p class="sg-invites-loading">Loading...</p>';
         if (empty) empty.style.display = 'none';
-        modal.classList.add('open');
+        modal.classList.add('active');
 
         // Fire-and-forget mark-seen so the badge clears even if the fetch is slow
         API.post('/recruiting-board/my-invites/mark-seen', {}).catch(() => {});
@@ -3515,7 +5130,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     function closeInvitesModal() {
         const modal = document.getElementById('invitesModal');
-        if (modal) modal.classList.remove('open');
+        if (modal) modal.classList.remove('active');
     }
 
     function renderInvitesList(invites) {

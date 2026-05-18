@@ -453,6 +453,25 @@ body.touch-dragging {
     word-wrap: break-word;
     overflow-wrap: break-word;
 }
+/* Q badge — marks questionnaire-only recruits (pulled forward from Plan 6).
+   Sits inline with the recruit name on football-field cards. */
+.recruit-q-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    margin-left: 6px;
+    border-radius: 4px;
+    background: rgba(255, 107, 53, 0.18);
+    color: var(--accent-orange, #ff6b35);
+    border: 1px solid rgba(255, 107, 53, 0.45);
+    font-size: 0.6rem;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    line-height: 1;
+    vertical-align: middle;
+}
 
 .recruit-stats {
     font-weight: 500;
@@ -766,7 +785,6 @@ body.touch-dragging {
 
 /* These modals fire WHILE the create-group / group-info modal is already open,
    so they must sit above the underlying modal in the stacking order. */
-#sgSameSchoolModal,
 #deleteSharedGroupModal,
 #sgRemoveMemberModal,
 #sgTransferConfirmModal {
@@ -2989,6 +3007,24 @@ body.rb-shared-no-boards .recruiting-board-main .football-field-container {
     background: rgba(255, 107, 53, 0.25);
 }
 
+/* Disabled "Added" state — appears after the coach has been staged. Stays
+   visible in the dropdown so the user keeps their search context, but is
+   visually muted to make remaining "Add" buttons stand out. */
+.sg-search-added-btn,
+.sg-search-add-btn:disabled {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.15);
+    color: rgba(255, 255, 255, 0.5);
+    cursor: default;
+}
+.sg-search-added-btn:hover,
+.sg-search-add-btn:disabled:hover {
+    background: rgba(255, 255, 255, 0.06);
+}
+.sg-search-result-staged {
+    opacity: 0.65;
+}
+
 .sg-staged-list-label {
     margin-top: 1rem;
     font-size: 0.78rem;
@@ -3547,11 +3583,11 @@ body.rb-shared-no-boards .recruiting-board-main .football-field-container {
     font-weight: 700;
 }
 
-/* Modal — opens with .open class (matches existing modal pattern) */
+/* Modal — opens with .active class (matches recruiting-board modal convention) */
 .invites-modal {
     display: none;
 }
-.invites-modal.open {
+.invites-modal.active {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -3707,7 +3743,7 @@ body.rb-shared-no-boards .recruiting-board-main .football-field-container {
 }
 
 @media (max-width: 768px) {
-    .invites-modal.open .sg-modal-content {
+    .invites-modal.active .sg-modal-content {
         width: 100%;
         height: 100%;
         max-width: none;
@@ -3871,6 +3907,36 @@ body.rb-shared-no-boards .recruiting-board-main .football-field-container {
 .rb-pool-filters-reset:hover {
     background: rgba(255, 255, 255, 0.08);
     color: #fff;
+}
+/* Collapse toggle — chevron + title form a single clickable button. */
+.rb-pool-filters-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: transparent;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    color: inherit;
+}
+.rb-pool-filters-toggle-chevron {
+    width: 16px;
+    height: 16px;
+    color: rgba(255, 255, 255, 0.7);
+    transition: transform 0.2s ease;
+}
+/* Collapsed: rotate the chevron, hide the grid + actions rows, drop the
+   container's bottom margin so it sits tight above the list. */
+.rb-pool-filters-container.rb-pool-filters-collapsed .rb-pool-filters-toggle-chevron {
+    transform: rotate(-90deg);
+}
+.rb-pool-filters-container.rb-pool-filters-collapsed .rb-pool-filters-grid,
+.rb-pool-filters-container.rb-pool-filters-collapsed .rb-pool-filters-actions,
+.rb-pool-filters-container.rb-pool-filters-collapsed .rb-pool-filters-reset {
+    display: none;
+}
+.rb-pool-filters-container.rb-pool-filters-collapsed .rb-pool-filters-header {
+    margin-bottom: 0;
 }
 .rb-pool-filters-grid {
     display: grid;
@@ -4051,14 +4117,71 @@ body.rb-shared-no-boards .recruiting-board-main .football-field-container {
     letter-spacing: 0.03em;
 }
 .rb-pool-row-badge.dr {
-    background: rgba(34, 197, 94, 0.15);
-    color: #22c55e;
-    border: 1px solid rgba(34, 197, 94, 0.4);
+    background: rgba(18, 130, 162, 0.18);
+    color: #1282a2;
+    border: 1px solid rgba(18, 130, 162, 0.45);
 }
 .rb-pool-row-badge.resubmitted {
     background: rgba(255, 107, 53, 0.15);
     color: var(--accent-orange, #ff6b35);
     border: 1px solid rgba(255, 107, 53, 0.4);
+}
+
+/* Plan 4 — cross-coach pipeline checkmark (someone at this school has them) */
+.rb-pool-row-check {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: rgba(34, 197, 94, 0.18);
+    color: #22c55e;
+    font-size: 0.75rem;
+    font-weight: 800;
+    line-height: 1;
+    border: 1px solid rgba(34, 197, 94, 0.45);
+}
+
+/* Plan 4 — per-row action area + "Add to Pipeline" button */
+.rb-pool-row-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: auto;
+    flex-shrink: 0;
+}
+.rb-pool-row-action {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 600;
+    padding: 0.5rem 0.9rem;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 107, 53, 0.5);
+    background: rgba(255, 107, 53, 0.12);
+    color: var(--accent-orange, #ff6b35);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+.rb-pool-row-action:hover:not(:disabled) {
+    background: var(--accent-orange, #ff6b35);
+    color: var(--white, #ffffff);
+}
+.rb-pool-row-action.in-pipeline,
+.rb-pool-row-action:disabled {
+    background: rgba(255, 255, 255, 0.06);
+    color: rgba(255, 255, 255, 0.55);
+    border-color: rgba(255, 255, 255, 0.15);
+    cursor: default;
+}
+
+@media (max-width: 768px) {
+    .rb-pool-row-actions {
+        margin-left: 0;
+        width: 100%;
+        justify-content: flex-end;
+    }
 }
 
 /* Loading / empty */
@@ -4084,7 +4207,7 @@ body.rb-shared-no-boards .recruiting-board-main .football-field-container {
 .pool-detail-modal {
     display: none;
 }
-.pool-detail-modal.open {
+.pool-detail-modal.active {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -4359,7 +4482,7 @@ body.rb-shared-no-boards .recruiting-board-main .football-field-container {
         align-items: center;
         text-align: left;
     }
-    .pool-detail-modal.open .sg-modal-content {
+    .pool-detail-modal.active .sg-modal-content {
         width: 100%;
         height: 100%;
         max-width: none;
@@ -4377,5 +4500,1082 @@ body.rb-shared-no-boards .recruiting-board-main .football-field-container {
 @media (max-width: 520px) {
     .rb-pool-filters-grid {
         grid-template-columns: 1fr;
+    }
+}
+
+/* ====================================================================
+   Pipeline Tab (Plan 4)
+   ==================================================================== */
+
+/* Tab container — give it room to breathe inside the rb-tab-content area */
+#pipelineTab {
+    padding: 0 4px;
+}
+
+/* Header strip — title on the left, count on the right */
+.rb-pipeline-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 28px 4px 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    margin-bottom: 20px;
+}
+.rb-pipeline-header-text {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.rb-pipeline-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--white, #ffffff);
+    margin: 0;
+    letter-spacing: -0.01em;
+}
+.rb-pipeline-count {
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.55);
+    margin: 0;
+    font-weight: 500;
+}
+
+/* Card list */
+.rb-pipeline-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding-bottom: 32px;
+}
+.rb-pipeline-loading {
+    text-align: center;
+    padding: 48px 16px;
+    color: rgba(255, 255, 255, 0.55);
+    font-size: 0.95rem;
+}
+.rb-pipeline-empty {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 64px 24px;
+    color: rgba(255, 255, 255, 0.7);
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px dashed rgba(255, 255, 255, 0.12);
+    border-radius: 12px;
+    text-align: center;
+}
+.rb-pipeline-empty p {
+    margin: 0;
+}
+.rb-pipeline-empty-hint {
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.5);
+    max-width: 420px;
+}
+
+/* ---- Pipeline card ---- */
+.pipeline-card {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 18px 14px 14px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+    overflow: hidden;
+}
+.pipeline-card:hover {
+    background: rgba(255, 107, 53, 0.08);
+    border-color: rgba(255, 107, 53, 0.3);
+    transform: translateY(-1px);
+}
+/* Vertical color stripe — primary visual signal of where the recruit ranks */
+.pipeline-card-stripe {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 5px;
+}
+.pipeline-card-avatar {
+    flex-shrink: 0;
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    border: 2px solid #9ca3af;
+    background: rgba(156, 163, 175, 0.18);
+    color: #9ca3af;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    margin-left: 4px; /* clearance from stripe */
+}
+.pipeline-card-avatar svg {
+    width: 28px;
+    height: 28px;
+}
+.pipeline-card-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+.pipeline-card-info {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.pipeline-card-name-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+}
+.pipeline-card-name {
+    color: #fff;
+    font-weight: 700;
+    font-size: 1.02rem;
+    letter-spacing: -0.005em;
+}
+.pipeline-card-meta {
+    font-size: 0.85rem;
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.pipeline-card-meta-empty {
+    color: rgba(255, 255, 255, 0.35);
+    font-style: italic;
+    font-weight: 500;
+}
+
+/* Compact badges — DR + source */
+.pipeline-badge {
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    line-height: 1.4;
+}
+.pipeline-badge.dr {
+    background: rgba(18, 130, 162, 0.18);
+    color: #1282a2;
+    border: 1px solid rgba(18, 130, 162, 0.45);
+}
+.pipeline-badge.source {
+    background: rgba(255, 255, 255, 0.06);
+    color: rgba(255, 255, 255, 0.55);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+/* Grade pill on the right — color-tinted when graded, neutral when not */
+.pipeline-grade-pill {
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-width: 62px;
+    padding: 6px 12px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.5);
+}
+.pipeline-grade-pill.has-grade {
+    color: #fff;
+}
+.pipeline-grade-number {
+    font-size: 1.35rem;
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: -0.02em;
+}
+.pipeline-grade-label {
+    font-size: 0.6rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-top: 2px;
+    opacity: 0.85;
+}
+
+/* Mobile: stack the grade pill below the info on narrow screens so the
+   name and badges don't get squeezed. */
+@media (max-width: 520px) {
+    .pipeline-card {
+        flex-wrap: wrap;
+    }
+    .pipeline-card-info {
+        flex-basis: calc(100% - 80px);
+    }
+    .pipeline-grade-pill {
+        margin-left: 70px;
+    }
+}
+
+/* ====================================================================
+   Evaluation Modal (Plan 4)
+   ==================================================================== */
+.eval-header {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center;
+    gap: 12px;
+}
+.eval-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    border: 2px solid #9ca3af;
+    background: rgba(156, 163, 175, 0.18);
+    color: #9ca3af;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+.eval-avatar svg {
+    width: 24px;
+    height: 24px;
+}
+.eval-avatar-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+}
+.eval-title {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.eval-name-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #fff;
+    font-size: 1.1rem;
+    font-weight: 700;
+    line-height: 1.2;
+}
+.eval-subheader {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.7);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.eval-badge {
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+.eval-badge.dr {
+    background: rgba(18, 130, 162, 0.18);
+    color: #1282a2;
+    border: 1px solid rgba(18, 130, 162, 0.45);
+}
+.eval-badge.source {
+    background: rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.65);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+}
+/* Eval modal: force a hard body height ceiling so internal scroll works.
+   Higher-specificity selectors (#evaluationModal + the body classes) so we
+   beat both .collab-modal's body rule (line 1270) AND .sg-modal-content's
+   body rule (line 2798). The id selector contributes 0,1,0,0 which is
+   stronger than any pure class chain.
+
+   `max-height: 70vh` chosen empirically: on a 700px viewport that's a 490px
+   ceiling on the body, plus header (~96) + footer (~70) + borders/padding
+   (~32) = ~688px total modal — fits within the viewport with room. On a
+   1080p (1080px tall) viewport it's 756px body — generous. */
+#evaluationModal .recruiting-board-modal-body {
+    max-height: 70vh !important;
+    overflow-y: auto !important;
+    min-height: 0;
+}
+/* Also clamp the modal-content itself so it can't grow past viewport when
+   the body's grown content would otherwise blow past the framework caps. */
+#evaluationModal .recruiting-board-modal-content {
+    max-height: 90vh !important;
+}
+.eval-body {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+.eval-info-panel {
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    overflow: hidden;
+}
+.eval-info-toggle {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--white, #ffffff);
+    border: none;
+    padding: 10px 14px;
+    text-align: left;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.eval-info-content {
+    padding: 12px 14px;
+    background: rgba(0, 0, 0, 0.15);
+}
+.eval-info-section-title {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--accent-orange, #ff6b35);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin: 0 0 8px;
+}
+.eval-profile-link {
+    display: inline-block;
+    margin-top: 10px;
+    color: #1282a2;
+    text-decoration: underline;
+    font-weight: 600;
+    font-size: 0.88rem;
+}
+/* Inline DR profile summary grid (Eval Modal info panel) */
+.eval-info-fields {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 6px 14px;
+    margin-bottom: 4px;
+}
+.eval-info-field {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+.eval-info-field-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.5);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+.eval-info-field-value {
+    color: #fff;
+    font-size: 0.92rem;
+    font-weight: 600;
+}
+.eval-info-empty {
+    color: rgba(255, 255, 255, 0.5);
+    font-style: italic;
+    margin: 0;
+}
+.eval-tabs {
+    display: flex;
+    gap: 4px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+.eval-tab {
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.55);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    padding: 8px 14px;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+}
+.eval-tab.active {
+    color: var(--accent-orange, #ff6b35);
+    border-bottom-color: var(--accent-orange, #ff6b35);
+}
+.eval-tab:disabled {
+    color: rgba(255, 255, 255, 0.25);
+    cursor: not-allowed;
+}
+.eval-tab-content {
+    display: none;
+}
+.eval-tab-content.active {
+    display: block;
+}
+.eval-field-label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.7);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin: 12px 0 6px;
+}
+.eval-grade-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.eval-grade-slider {
+    flex: 1 1 auto;
+    accent-color: var(--accent-orange, #ff6b35);
+}
+.eval-grade-readout {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--accent-orange, #ff6b35);
+    min-width: 40px;
+    text-align: right;
+}
+.eval-color-row {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+.eval-color-swatch {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    cursor: pointer;
+    padding: 0;
+    position: relative;
+    transition: transform 0.1s ease, border-color 0.15s ease;
+}
+.eval-color-swatch:hover {
+    transform: scale(1.08);
+}
+.eval-color-swatch.selected {
+    border-color: var(--white, #ffffff);
+    box-shadow: 0 0 0 2px var(--accent-orange, #ff6b35);
+}
+.eval-color-clear {
+    background: rgba(255, 255, 255, 0.08) !important;
+    color: rgba(255, 255, 255, 0.55);
+    font-size: 1.1rem;
+    font-weight: 800;
+    line-height: 1;
+}
+.eval-notes {
+    width: 100%;
+    min-height: 110px;
+    background: rgba(0, 0, 0, 0.2);
+    color: var(--white, #ffffff);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.9rem;
+    resize: vertical;
+    box-sizing: border-box;
+}
+.eval-footer {
+    flex-wrap: wrap;
+    gap: 8px;
+}
+/* Save Grade spans the full footer width on its own row */
+.eval-footer #evalSaveBtn {
+    flex: 1 1 100%;
+    width: 100%;
+}
+.eval-footer .btn-cancel#evalDeleteBtn {
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+    border-color: rgba(239, 68, 68, 0.4);
+    margin-right: auto;  /* push to left edge */
+}
+.eval-footer .btn-cancel#evalDeleteBtn:hover {
+    background: rgba(239, 68, 68, 0.25);
+    border-color: rgba(239, 68, 68, 0.6);
+}
+.btn-submit-secondary {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--white, #ffffff);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    padding: 0.75rem 1.25rem;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    transition: all 0.15s ease;
+}
+.btn-submit-secondary:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.15);
+}
+.btn-submit-secondary:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+/* ====================================================================
+   Add-to-Board Modal (Plan 4)
+   ==================================================================== */
+.addboard-type-row,
+.addboard-side-row {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+.addboard-type-option,
+.addboard-side-option {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    color: var(--white, #ffffff);
+    font-size: 0.9rem;
+    font-weight: 600;
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.05);
+    flex: 1 1 calc(50% - 8px);
+    min-width: 140px;
+}
+.addboard-type-option.disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+.addboard-group-row {
+    margin-top: 12px;
+}
+.addboard-select {
+    width: 100%;
+    background: rgba(0, 0, 0, 0.55);
+    color: var(--white, #ffffff);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.9rem;
+    box-sizing: border-box;
+}
+/* Explicit option color — browsers (esp. Windows Chrome) render the open
+   dropdown panel with OS defaults regardless of the <select>'s color, so
+   the panel becomes white-on-white. Forcing a dark background + light text
+   on the options gives readable contrast when the panel pops open. */
+.addboard-select option {
+    background: #1a1a1a;
+    color: #ffffff;
+}
+/* Boost the addboard modal's overlay opacity + content depth so the modal
+   feels more solid against the busy recruiting board UI behind it. */
+.addboard-modal .recruiting-board-modal-overlay {
+    background: rgba(0, 0, 0, 0.88);
+    backdrop-filter: blur(6px);
+}
+.addboard-modal .recruiting-board-modal-content {
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
+}
+.addboard-warning {
+    color: #fbbf24;
+    font-size: 0.85rem;
+    margin: 8px 0 0;
+}
+
+/* Mobile: full-screen modals per lesson 75 */
+@media (max-width: 768px) {
+    .eval-modal.active .recruiting-board-modal-content,
+    .addboard-modal.active .recruiting-board-modal-content {
+        width: 100vw;
+        max-width: 100vw;
+        height: 100vh;
+        max-height: 100vh;
+        border-radius: 0;
+    }
+    .eval-footer {
+        flex-direction: column;
+    }
+    .eval-footer .btn-cancel#evalDeleteBtn {
+        margin-right: 0;
+        order: 99;  /* push delete to the bottom on mobile */
+    }
+}
+
+/* ====================================================================
+   Plan 5B — Pipeline view switcher + Sent/Received cards + Send Hand-Off modal
+   ==================================================================== */
+
+/* Segmented control — three buttons inside the Pipeline subtab body */
+.pipeline-view-switcher {
+    display: flex;
+    gap: 6px;
+    padding: 16px 4px 0;
+    margin-bottom: 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+.pipeline-view-btn {
+    position: relative;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.6);
+    border: none;
+    padding: 10px 18px;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: color 0.15s ease, border-color 0.15s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+.pipeline-view-btn:hover {
+    color: rgba(255, 255, 255, 0.9);
+}
+.pipeline-view-btn.active {
+    color: var(--accent-orange, #ff6b35);
+    border-bottom-color: var(--accent-orange, #ff6b35);
+}
+.pipeline-view-btn-badge {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 6px;
+    background: #ef4444;
+    color: #ffffff;
+    border-radius: 10px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    line-height: 1;
+}
+.pipeline-view {
+    /* Each view container — shown/hidden by switchPipelineView */
+}
+
+/* ---- Sent view cards ---- */
+.handoff-sent-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding-bottom: 32px;
+}
+.handoff-sent-card {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 14px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.handoff-sent-card-recruit {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+.handoff-sent-message {
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.7);
+    font-style: italic;
+    padding: 8px 12px;
+    background: rgba(0, 0, 0, 0.15);
+    border-left: 3px solid var(--accent-orange, #ff6b35);
+    border-radius: 4px;
+}
+.handoff-recipient-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+.handoff-recipient-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    padding: 4px 10px 4px 4px;
+    border-radius: 999px;
+    font-size: 0.85rem;
+    color: var(--white, #ffffff);
+}
+.handoff-recipient-chip-avatar {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: rgba(255, 107, 53, 0.18);
+    border: 1px solid var(--accent-orange, #ff6b35);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--accent-orange, #ff6b35);
+    overflow: hidden;
+}
+.handoff-recipient-chip-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+.handoff-recipient-chip-initials {
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+.handoff-pending-pill {
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    background: rgba(250, 204, 21, 0.18);
+    color: #facc15;
+    border: 1px solid rgba(250, 204, 21, 0.45);
+    padding: 2px 8px;
+    border-radius: 9px;
+    line-height: 1.4;
+}
+
+/* ---- Received view cards ---- */
+.handoff-received-list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding-bottom: 32px;
+}
+.handoff-received-card {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 16px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+.handoff-sender-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.handoff-sender-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+.handoff-received-message {
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.85);
+    font-style: italic;
+    padding: 10px 14px;
+    background: rgba(0, 0, 0, 0.18);
+    border-left: 3px solid var(--accent-orange, #ff6b35);
+    border-radius: 4px;
+}
+.handoff-received-recruit {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 10px 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+.handoff-eval-block {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.handoff-eval-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.85);
+}
+.handoff-eval-label {
+    font-weight: 600;
+}
+.handoff-eval-swatch {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    flex-shrink: 0;
+}
+.handoff-eval-grade {
+    font-weight: 700;
+    font-size: 1rem;
+    color: var(--accent-orange, #ff6b35);
+}
+.handoff-eval-notes {
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.7);
+    line-height: 1.4;
+    padding: 6px 10px;
+    background: rgba(0, 0, 0, 0.12);
+    border-radius: 4px;
+}
+.handoff-chain-toggle {
+    align-self: flex-start;
+    background: transparent;
+    border: none;
+    color: var(--accent-orange, #ff6b35);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 4px 0;
+    text-decoration: underline;
+}
+.handoff-chain-toggle:hover {
+    opacity: 0.85;
+}
+.handoff-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    padding-top: 4px;
+}
+.handoff-reject-btn,
+.handoff-accept-btn {
+    min-width: 100px;
+}
+.handoff-reject-btn {
+    background: rgba(239, 68, 68, 0.15) !important;
+    color: #ef4444 !important;
+    border-color: rgba(239, 68, 68, 0.4) !important;
+}
+.handoff-reject-btn:hover:not(:disabled) {
+    background: rgba(239, 68, 68, 0.25) !important;
+    border-color: rgba(239, 68, 68, 0.6) !important;
+}
+
+/* ---- Evaluation chain timeline (shared between Received card + Eval Modal History tab) ---- */
+.eval-chain-timeline {
+    list-style: none;
+    padding: 8px 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+.eval-chain-empty {
+    color: rgba(255, 255, 255, 0.5);
+    font-style: italic;
+    text-align: center;
+    padding: 20px;
+}
+.eval-chain-entry {
+    background: rgba(0, 0, 0, 0.18);
+    border-left: 3px solid var(--accent-orange, #ff6b35);
+    border-radius: 4px;
+    padding: 10px 14px;
+}
+.eval-chain-entry-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+.eval-chain-swatch {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    flex-shrink: 0;
+}
+.eval-chain-swatch-empty {
+    background: transparent;
+    border-style: dashed;
+}
+.eval-chain-coach {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    flex: 1 1 auto;
+    min-width: 0;
+}
+.eval-chain-coach-name {
+    color: var(--white, #ffffff);
+    font-weight: 600;
+    font-size: 0.92rem;
+}
+.eval-chain-coach-title {
+    color: rgba(255, 255, 255, 0.55);
+    font-size: 0.78rem;
+}
+.eval-chain-grade {
+    font-weight: 700;
+    color: var(--accent-orange, #ff6b35);
+    font-size: 1.05rem;
+}
+.eval-chain-date {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.78rem;
+}
+.eval-chain-notes {
+    margin: 8px 0 0;
+    padding: 6px 10px;
+    background: rgba(255, 255, 255, 0.04);
+    border-radius: 4px;
+    color: rgba(255, 255, 255, 0.78);
+    font-size: 0.86rem;
+    font-style: italic;
+    line-height: 1.45;
+    border-left: 2px solid rgba(255, 255, 255, 0.15);
+}
+
+/* ---- Send Hand-Off Modal ---- */
+.send-handoff-modal .recruiting-board-modal-content {
+    max-width: 560px;
+}
+.send-handoff-instructions {
+    margin: 0 0 14px;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.9rem;
+}
+.send-handoff-recipient-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 320px;
+    overflow-y: auto;
+    margin-bottom: 16px;
+    padding: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.18);
+}
+.send-handoff-recipient-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    background: transparent;
+    border: 1px solid transparent;
+    transition: background 0.12s ease, border-color 0.12s ease;
+}
+.send-handoff-recipient-row:hover {
+    background: rgba(255, 107, 53, 0.08);
+}
+.send-handoff-recipient-row.selected {
+    background: rgba(255, 107, 53, 0.16);
+    border-color: rgba(255, 107, 53, 0.4);
+}
+.send-handoff-recipient-text {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+.send-handoff-recipient-check {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    color: transparent;
+    transition: all 0.12s ease;
+}
+.send-handoff-recipient-check svg {
+    width: 14px;
+    height: 14px;
+}
+.send-handoff-recipient-row.selected .send-handoff-recipient-check {
+    border-color: var(--accent-orange, #ff6b35);
+    background: var(--accent-orange, #ff6b35);
+    color: var(--white, #ffffff);
+}
+.send-handoff-already-has-badge {
+    display: inline-block;
+    margin-left: 8px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    background: rgba(255, 107, 53, 0.15);
+    color: var(--accent-orange, #ff6b35);
+    border: 1px solid rgba(255, 107, 53, 0.4);
+    padding: 1px 6px;
+    border-radius: 8px;
+    vertical-align: middle;
+}
+.send-handoff-loading,
+.send-handoff-error,
+.send-handoff-recipient-empty {
+    text-align: center;
+    padding: 24px 12px;
+    color: rgba(255, 255, 255, 0.55);
+    font-size: 0.9rem;
+}
+.send-handoff-error {
+    color: #ef4444;
+}
+.send-handoff-message-label {
+    display: block;
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: rgba(255, 255, 255, 0.7);
+    margin-bottom: 6px;
+}
+.send-handoff-message {
+    width: 100%;
+    box-sizing: border-box;
+    background: rgba(0, 0, 0, 0.2);
+    color: var(--white, #ffffff);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.9rem;
+    resize: vertical;
+    min-height: 80px;
+}
+
+/* Mobile: full-screen for #sendHandoffModal per lesson 75 */
+@media (max-width: 768px) {
+    .send-handoff-modal.active .recruiting-board-modal-content {
+        width: 100vw;
+        max-width: 100vw;
+        height: 100vh;
+        max-height: 100vh;
+        border-radius: 0;
+    }
+    .pipeline-view-switcher {
+        flex-wrap: wrap;
+        gap: 4px;
+        padding: 12px 4px 0;
+    }
+    .pipeline-view-btn {
+        padding: 8px 12px;
+        font-size: 0.88rem;
+    }
+    .handoff-actions {
+        flex-direction: column-reverse;
+    }
+    .handoff-reject-btn,
+    .handoff-accept-btn {
+        width: 100%;
     }
 }

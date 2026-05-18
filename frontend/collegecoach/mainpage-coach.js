@@ -34,6 +34,10 @@ document.addEventListener('DOMContentLoaded', async function() {
     await updateUnreadInvitesBadge();
     setInterval(updateUnreadInvitesBadge, 30000);
 
+    // Plan 5B: hand-off unread badge (sidebar combined with invites + Pipeline subtab + inline Received)
+    await updateUnreadHandoffsBadge();
+    setInterval(updateUnreadHandoffsBadge, 30000);
+
     // Show/hide recruiting-specific nav items for college coaches only
     await setupCollegeCoachNav();
 
@@ -393,9 +397,30 @@ async function updateUnreadNotificationsBadge() {
     }
 }
 
+// Plan 5B: module-scope counts used by the combined sidebar badge wrapper.
+// Both pollers (invites + handoffs) write to these vars and then call
+// updateRecruitingBoardSidebarBadge() to write the SUM to the sidebar.
+let unreadInvitesCount = 0;
+let unreadHandoffsCount = 0;
+
+// Combined sidebar badge wrapper. The sidebar nav badge for the Recruiting
+// Board surfaces a single number = pending invites + pending hand-offs, so
+// coaches only need to glance once to know "something needs my attention".
+function updateRecruitingBoardSidebarBadge() {
+    const total = (unreadInvitesCount || 0) + (unreadHandoffsCount || 0);
+    const sidebarBadge = document.querySelector('.nav-item[href*="recruiting-board"] .notification-badge');
+    if (!sidebarBadge) return;
+    if (total > 0) {
+        sidebarBadge.textContent = total > 99 ? '99+' : total;
+        sidebarBadge.style.display = 'flex';
+    } else {
+        sidebarBadge.style.display = 'none';
+    }
+}
+
 // Update unread group-invite badge.
 // Drives two badges with the same count:
-//   1. Sidebar nav item for the Recruiting Board (visible on every coach page)
+//   1. Sidebar nav item for the Recruiting Board (combined with hand-offs — see wrapper)
 //   2. Shared Boards subtab button inside the recruiting board page
 // The subtab badge is only present in the DOM when the coach is currently on
 // recruiting-board.html — we look it up the same way and silently no-op when
@@ -404,17 +429,9 @@ async function updateUnreadInvitesBadge() {
     try {
         const response = await API.get('/recruiting-board/my-invites/unread-count');
         const count = response && response.count ? response.count : 0;
+        unreadInvitesCount = count;
 
-        const sidebarBadge = document.querySelector('.nav-item[href*="recruiting-board"] .notification-badge');
-        if (sidebarBadge) {
-            if (count > 0) {
-                sidebarBadge.textContent = count > 99 ? '99+' : count;
-                sidebarBadge.style.display = 'flex';
-            } else {
-                sidebarBadge.style.display = 'none';
-            }
-        }
-
+        // Subtab badge — invites-only (Shared Boards subtab)
         const subtabBadge = document.querySelector('.rb-subtab[data-tab="shared-boards"] .rb-subtab-badge');
         if (subtabBadge) {
             if (count > 0) {
@@ -438,10 +455,58 @@ async function updateUnreadInvitesBadge() {
                 if (invitesBtnCount) invitesBtnCount.textContent = '';
             }
         }
+
+        // Sync the combined sidebar badge
+        updateRecruitingBoardSidebarBadge();
     } catch (error) {
         // Non-fatal — silent
     }
 }
+
+// Plan 5B: hand-off unread counter. Drives:
+//   1. Sidebar nav item (combined with invites via the wrapper above)
+//   2. Pipeline subtab badge (handoffs-only)
+//   3. Inline view-switcher "Received" badge inside the Pipeline tab body
+// Polled every 30s alongside invites. Exposed on window so recruiting-board.js
+// can re-call it after markHandoffsSeen to drop badges without waiting for
+// the next poll.
+async function updateUnreadHandoffsBadge() {
+    try {
+        const response = await (window.API && window.API.pipeline && window.API.pipeline.getHandoffUnreadCount
+            ? window.API.pipeline.getHandoffUnreadCount()
+            : Promise.resolve({ count: 0 }));
+        const count = response && response.count ? response.count : 0;
+        unreadHandoffsCount = count;
+
+        // Pipeline subtab badge
+        const subtabBadge = document.querySelector('.rb-subtab[data-tab="pipeline"] .rb-subtab-badge');
+        if (subtabBadge) {
+            if (count > 0) {
+                subtabBadge.textContent = count > 99 ? '99+' : count;
+                subtabBadge.style.display = 'flex';
+            } else {
+                subtabBadge.style.display = 'none';
+            }
+        }
+
+        // Inline view-switcher Received badge
+        const inlineBadge = document.getElementById('pipelineReceivedBadge');
+        if (inlineBadge) {
+            if (count > 0) {
+                inlineBadge.textContent = count > 99 ? '99+' : count;
+                inlineBadge.style.display = 'inline-flex';
+            } else {
+                inlineBadge.style.display = 'none';
+            }
+        }
+
+        updateRecruitingBoardSidebarBadge();
+    } catch (error) {
+        // Non-fatal — silent
+    }
+}
+// Expose to recruiting-board.js for post-mark-seen optimistic re-sync
+window.updateUnreadHandoffsBadge = updateUnreadHandoffsBadge;
 
 // Helper function to populate sidebar footer from profile data
 // Populate sidebar footer with profile data using universal format logic

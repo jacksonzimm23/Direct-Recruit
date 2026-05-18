@@ -2,7 +2,8 @@ const express = require('express');
 const router = express.Router();
 const pool = require('../config/database');
 const { getSignedS3Url } = require('../utils/s3');
-const { authMiddleware } = require('../middleware/auth');
+const { authMiddleware, requireRole } = require('../middleware/auth');
+const TeamQuestionnaire = require('../models/TeamQuestionnaire');
 const logger = require('../utils/logger');
 const { coachPopularityExpr } = require('../utils/popularity-score');
 
@@ -112,6 +113,47 @@ router.get('/college-coach', authMiddleware, async (req, res) => {
     } catch (error) {
         logger.error('Error fetching college coach:', error);
         res.status(500).json({ error: 'Server error' });
+    }
+});
+
+// GET /at-my-school — Plan 5A. Returns coaches whose normalized team_name
+// matches the requester's normalized team_name, excluding self. Used by the
+// Plan 5B Send Hand-Off modal recipient picker. Returns an empty array (not
+// an error) if the requester's team_name is unset.
+router.get('/at-my-school', authMiddleware, requireRole('coach'), async (req, res) => {
+    try {
+        const me = await pool.query(
+            `SELECT team_name FROM coach_profiles WHERE user_id = $1 LIMIT 1`,
+            [req.userId]
+        );
+        const teamName = me.rows[0] && me.rows[0].team_name;
+        const schoolKey = TeamQuestionnaire.normalizeSchoolKey(teamName);
+        if (!schoolKey) return res.json({ coaches: [] });
+
+        const result = await pool.query(
+            `SELECT cp.user_id, cp.first_name, cp.last_name, cp.profile_image_url,
+                    cp.team_name, cp.state, cp.college_division, cp.position_title
+               FROM coach_profiles cp
+               JOIN users u ON u.id = cp.user_id
+              WHERE u.is_active = TRUE
+                AND u.id <> $1
+                AND LOWER(TRIM(cp.team_name)) = $2
+              ORDER BY cp.last_name ASC, cp.first_name ASC`,
+            [req.userId, schoolKey]
+        );
+
+        const coaches = await Promise.all(result.rows.map(async (c) => {
+            if (c.profile_image_url && c.profile_image_url.startsWith('profiles/')) {
+                try { c.profile_image_url = await getSignedS3Url(c.profile_image_url); }
+                catch { c.profile_image_url = null; }
+            }
+            return c;
+        }));
+
+        res.json({ coaches });
+    } catch (error) {
+        logger.error('Error fetching coaches at my school:', error);
+        res.status(500).json({ error: 'Failed to load coaches' });
     }
 });
 

@@ -73,7 +73,9 @@ const MIGRATIONS = [
   'add-named-personal-boards.sql',
   'add-board-groups.sql',
   'add-team-questionnaires.sql',
-  'refactor-questionnaire-to-per-school.sql'
+  'refactor-questionnaire-to-per-school.sql',
+  'add-recruit-pipeline.sql',
+  'add-pipeline-handoffs.sql'
 ];
 
 async function applyManualFixes() {

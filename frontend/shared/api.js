@@ -388,9 +388,13 @@ async function apiRequest(endpoint, options = {}) {
             if (data.errors && Array.isArray(data.errors)) {
                 const errorMessages = data.errors.map(e => e.msg).join(', ');
                 console.error('Validation errors:', data.errors);
-                throw new Error(errorMessages);
+                const ve = new Error(errorMessages);
+                ve.status = response.status;
+                ve.data = data;
+                throw ve;
             }
             const err = new Error(data.error || data.message || 'Request failed');
+            err.status = response.status;
             err.data = data;
             throw err;
         }
@@ -1143,6 +1147,65 @@ const questionnaireAPI = {
     }
 };
 
+// Team Pool API — authenticated, per-school. Coach sees their school's pool.
+const poolAPI = {
+    list: async (filters) => {
+        const params = new URLSearchParams();
+        Object.entries(filters || {}).forEach(([k, v]) => {
+            if (v == null || v === '') return;
+            if (Array.isArray(v)) v.forEach(item => params.append(k, item));
+            else params.append(k, v);
+        });
+        const qs = params.toString();
+        return await apiRequest(`/recruiting-board/my-pool${qs ? '?' + qs : ''}`);
+    },
+    getEntry: async (entryId) => await apiRequest(`/recruiting-board/my-pool/${entryId}`)
+};
+
+// Pipeline API (Plan 4) — per-coach recruit evaluation rows. School_key is
+// derived server-side from the coach's team_name; clients never send it.
+const pipelineAPI = {
+    getMy: async () => await apiRequest('/pipeline/my'),
+    // Lightweight "is this DR player in my pipeline?" check. Used by the
+    // player-profile "Add to Pipeline" button to render its initial state
+    // correctly when a coach navigates back to a player they already added.
+    contains: async (playerUserId) => await apiRequest(`/pipeline/contains?player_user_id=${encodeURIComponent(playerUserId)}`),
+    addFromPool: async (poolEntryId) => await apiRequest('/pipeline/from-pool', {
+        method: 'POST',
+        body: JSON.stringify({ pool_entry_id: poolEntryId })
+    }),
+    addFromProfile: async (playerUserId) => await apiRequest('/pipeline/from-profile', {
+        method: 'POST',
+        body: JSON.stringify({ player_user_id: playerUserId })
+    }),
+    updateEvaluation: async (recruitId, { grade, color_tag, notes }) => await apiRequest(`/pipeline/${recruitId}`, {
+        method: 'PUT',
+        body: JSON.stringify({ grade, color_tag, notes })
+    }),
+    remove: async (recruitId) => await apiRequest(`/pipeline/${recruitId}`, {
+        method: 'DELETE'
+    }),
+
+    // Plan 5A — Hand-off endpoints. DOM wiring lives in Plan 5B.
+    sendHandoff: async (recruitId, { to_coach_ids, message }) => await apiRequest(`/pipeline/${recruitId}/handoff`, {
+        method: 'POST',
+        body: JSON.stringify({ to_coach_ids, message: message || null })
+    }),
+    getHandoffsIn: async () => await apiRequest('/pipeline/handoffs/in'),
+    getHandoffsOut: async () => await apiRequest('/pipeline/handoffs/out'),
+    getHandoffUnreadCount: async () => await apiRequest('/pipeline/handoffs/unread-count'),
+    markHandoffsSeen: async () => await apiRequest('/pipeline/handoffs/mark-seen', { method: 'POST' }),
+    acceptHandoff: async (handoffId) => await apiRequest(`/pipeline/handoff/${handoffId}/accept`, { method: 'POST' }),
+    rejectHandoff: async (handoffId) => await apiRequest(`/pipeline/handoff/${handoffId}/reject`, { method: 'POST' })
+};
+
+// Plan 5A — coachesAPI surface. Currently just the recipient lookup for the
+// Plan 5B Send Hand-Off modal. Other coach endpoints (search, discover) live
+// on the API object directly via API.get('/coaches/...').
+const coachesAPI = {
+    getAtMySchool: async () => await apiRequest('/coaches/at-my-school')
+};
+
 const API = {
     // Direct access to apiRequest for custom endpoints
     get: async (endpoint) => await apiRequest(endpoint),
@@ -1172,6 +1235,9 @@ const API = {
     payments: paymentsAPI,
     deviceTokens: deviceTokensAPI,
     questionnaire: questionnaireAPI,
+    pool: poolAPI,
+    pipeline: pipelineAPI,
+    coaches: coachesAPI,
 
     // Auth helpers
     getUser,
