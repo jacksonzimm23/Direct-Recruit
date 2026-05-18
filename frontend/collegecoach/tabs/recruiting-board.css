@@ -2090,11 +2090,15 @@ body.touch-dragging {
     display: block;
 }
 
-/* When the Pipeline tab is active, hide the shared board controls + field
-   (they live outside .rb-tab-content as page-level siblings). */
+/* When the Pipeline OR Team Pool tab is active, hide the shared board
+   controls + field (they live outside .rb-tab-content as page-level siblings).
+   Neither subtab uses the football field. */
 body.rb-tab-pipeline .recruiting-board-main .board-controls,
 body.rb-tab-pipeline .recruiting-board-main .remove-mode-indicator,
-body.rb-tab-pipeline .recruiting-board-main .football-field-container {
+body.rb-tab-pipeline .recruiting-board-main .football-field-container,
+body.rb-tab-team-pool .recruiting-board-main .board-controls,
+body.rb-tab-team-pool .recruiting-board-main .remove-mode-indicator,
+body.rb-tab-team-pool .recruiting-board-main .football-field-container {
     display: none !important;
 }
 
@@ -3720,5 +3724,658 @@ body.rb-shared-no-boards .recruiting-board-main .football-field-container {
     .sg-invite-accept-btn,
     .sg-invite-decline-btn {
         flex: 1;
+    }
+}
+
+/* ============================================================
+   Team Pool subtab (Plan 3 / 3.5)
+   ============================================================ */
+
+/* No-team-name fallback (matches .pipeline-nogroup-state pattern) */
+.rb-pool-empty-state {
+    max-width: 560px;
+    margin: 48px auto;
+    padding: 36px 28px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(18, 130, 162, 0.25);
+    border-radius: 12px;
+    text-align: center;
+    color: rgba(255, 255, 255, 0.92);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+}
+.rb-pool-empty-state svg {
+    color: var(--cerulean, #1282a2);
+}
+.rb-pool-empty-state h2 {
+    color: #fff;
+    margin: 4px 0 0;
+}
+.rb-pool-empty-state p {
+    color: rgba(255, 255, 255, 0.65);
+    margin: 0;
+}
+.rb-pool-empty-cta {
+    margin-top: 8px;
+    background: var(--cerulean, #1282a2);
+    color: #fff;
+    text-decoration: none;
+    padding: 10px 24px;
+    border-radius: 8px;
+    font-weight: 700;
+    transition: background 0.15s;
+}
+.rb-pool-empty-cta:hover { background: #0e6b87; }
+
+/* Header (logo + name + count) */
+.rb-pool-header {
+    margin: 16px 0 12px;
+    padding: 16px 18px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(18, 130, 162, 0.2);
+    border-radius: 10px;
+}
+.rb-pool-school-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+.rb-pool-school-logo {
+    width: 56px;
+    height: 56px;
+    background: #fff;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    overflow: hidden;
+}
+.rb-pool-school-logo img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+.rb-pool-school-name {
+    color: #fff;
+    margin: 0;
+    font-size: 1.15rem;
+    font-weight: 700;
+}
+.rb-pool-submission-count {
+    color: rgba(255, 255, 255, 0.6);
+    margin: 2px 0 0;
+    font-size: 0.85rem;
+}
+.rb-pool-header-actions {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.rb-pool-copy-link-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--cerulean, #1282a2);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 9px 16px;
+    font-size: 0.88rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.1s;
+}
+.rb-pool-copy-link-btn:hover {
+    background: #0e6b87;
+    transform: translateY(-1px);
+}
+.rb-pool-copy-link-btn svg {
+    flex-shrink: 0;
+}
+
+/* Filters — Discover-style, compacted (Plan 3.5) */
+.rb-pool-filters-container {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(18, 130, 162, 0.18);
+    border-radius: 10px;
+    padding: 14px;
+    margin-bottom: 14px;
+}
+.rb-pool-filters-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+.rb-pool-filters-title {
+    color: #fff;
+    margin: 0;
+    font-size: 0.95rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+}
+.rb-pool-filters-reset {
+    background: transparent;
+    color: rgba(255, 255, 255, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
+    padding: 5px 12px;
+    font-size: 0.78rem;
+    cursor: pointer;
+    font-weight: 600;
+}
+.rb-pool-filters-reset:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
+}
+.rb-pool-filters-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px 14px;
+}
+.rb-pool-filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.rb-pool-filter-group label {
+    color: rgba(255, 255, 255, 0.78);
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+.rb-pool-filter-select {
+    width: 100%;
+    padding: 7px 10px;
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 6px;
+    color: #fff;
+    font-size: 0.88rem;
+}
+.rb-pool-filter-select option {
+    background: var(--oxford-blue, #0a1128);
+    color: #fff;
+}
+.rb-pool-slider-group {
+    gap: 2px;
+}
+.rb-pool-filter-slider {
+    width: 100%;
+    -webkit-appearance: none;
+    appearance: none;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.12);
+    border-radius: 3px;
+    outline: none;
+    margin: 6px 0 2px;
+}
+.rb-pool-filter-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--cerulean, #1282a2);
+    border: 2px solid #fff;
+    cursor: pointer;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+    transition: transform 0.15s;
+}
+.rb-pool-filter-slider::-webkit-slider-thumb:hover {
+    transform: scale(1.15);
+}
+.rb-pool-filter-slider::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--cerulean, #1282a2);
+    border: 2px solid #fff;
+    cursor: pointer;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+.rb-pool-slider-label {
+    color: rgba(255, 255, 255, 0.65);
+    font-size: 0.76rem;
+    font-weight: 600;
+}
+.rb-pool-slider-label span {
+    color: var(--cerulean, #1282a2);
+    font-weight: 700;
+}
+.rb-pool-filters-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-top: 12px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+.rb-pool-filters-apply {
+    background: var(--cerulean, #1282a2);
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 8px 22px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.1s;
+}
+.rb-pool-filters-apply:hover {
+    background: #0e6b87;
+    transform: translateY(-1px);
+}
+.rb-pool-results-count {
+    color: rgba(255, 255, 255, 0.65);
+    font-size: 0.82rem;
+}
+.rb-pool-results-count span {
+    color: #fff;
+    font-weight: 700;
+}
+
+/* Pool list + rows */
+.rb-pool-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.rb-pool-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, transform 0.1s;
+}
+.rb-pool-row:hover {
+    background: rgba(18, 130, 162, 0.1);
+    border-color: rgba(18, 130, 162, 0.35);
+    transform: translateY(-1px);
+}
+.rb-pool-row-avatar {
+    flex-shrink: 0;
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    border: 2px solid #9ca3af;
+    background: rgba(156, 163, 175, 0.18);
+    color: #9ca3af;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+.rb-pool-row-avatar svg {
+    width: 28px;
+    height: 28px;
+}
+.rb-pool-row-avatar-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+.rb-pool-row-info {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+.rb-pool-row-name {
+    color: #fff;
+    font-weight: 700;
+    font-size: 1rem;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+}
+.rb-pool-row-meta {
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-top: 2px;
+}
+.rb-pool-row-badge {
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+.rb-pool-row-badge.dr {
+    background: rgba(34, 197, 94, 0.15);
+    color: #22c55e;
+    border: 1px solid rgba(34, 197, 94, 0.4);
+}
+.rb-pool-row-badge.resubmitted {
+    background: rgba(255, 107, 53, 0.15);
+    color: var(--accent-orange, #ff6b35);
+    border: 1px solid rgba(255, 107, 53, 0.4);
+}
+
+/* Loading / empty */
+.rb-pool-loading,
+.rb-pool-empty {
+    text-align: center;
+    padding: 32px 16px;
+    color: rgba(255, 255, 255, 0.55);
+}
+.rb-pool-empty {
+    display: none;
+    flex-direction: column;
+    gap: 8px;
+}
+.rb-pool-empty-hint {
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.4);
+}
+
+/* ============================================================
+   Pool Entry Detail Modal (Plan 3)
+   ============================================================ */
+.pool-detail-modal {
+    display: none;
+}
+.pool-detail-modal.open {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1000;
+}
+.pool-detail-modal .sg-modal-content {
+    max-width: 720px;
+    width: 92%;
+    max-height: 88vh;
+}
+.pool-detail-modal .recruiting-board-modal-body {
+    text-align: left;
+    overflow-y: auto;
+}
+.pool-detail-badge {
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 2px 10px;
+    border-radius: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-left: 8px;
+}
+.pool-detail-badge.dr {
+    background: rgba(34, 197, 94, 0.15);
+    color: #22c55e;
+    border: 1px solid rgba(34, 197, 94, 0.4);
+}
+.pool-detail-badge.resubmitted {
+    background: rgba(255, 107, 53, 0.15);
+    color: var(--accent-orange, #ff6b35);
+    border: 1px solid rgba(255, 107, 53, 0.4);
+}
+
+/* Inner tab bar */
+.pool-detail-tabs {
+    display: flex;
+    gap: 4px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+    margin-bottom: 14px;
+}
+.pool-detail-tab {
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.65);
+    padding: 10px 14px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: color 0.15s, border-color 0.15s;
+}
+.pool-detail-tab:hover { color: #fff; }
+.pool-detail-tab.active {
+    color: var(--cerulean, #1282a2);
+    border-bottom-color: var(--cerulean, #1282a2);
+}
+.pool-detail-tab-content {
+    display: none;
+}
+.pool-detail-tab-content.active {
+    display: block;
+}
+
+/* Sections inside the modal body */
+.pool-detail-section {
+    margin-bottom: 18px;
+}
+.pool-detail-section-title {
+    color: var(--cerulean, #1282a2);
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin: 0 0 8px;
+}
+.pool-detail-section-body {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px 18px;
+}
+.pool-detail-field {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 4px 0;
+}
+.pool-detail-field-label {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+.pool-detail-field-value {
+    color: #fff;
+    font-size: 0.92rem;
+    word-break: break-word;
+}
+.pool-detail-empty,
+.pool-detail-loading,
+.pool-detail-error {
+    color: rgba(255, 255, 255, 0.55);
+    padding: 20px 8px;
+    text-align: center;
+}
+.pool-detail-error { color: #ef4444; }
+.pool-detail-link {
+    color: var(--cerulean, #1282a2);
+    word-break: break-all;
+}
+
+/* Parent block */
+.pool-detail-parent-block {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin-bottom: 10px;
+    grid-column: 1 / -1;
+}
+.pool-detail-parent-name {
+    color: #fff;
+    font-weight: 700;
+    margin-bottom: 6px;
+}
+
+/* History view */
+.pool-detail-history-item {
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    margin-bottom: 10px;
+    overflow: hidden;
+}
+.pool-detail-history-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    background: rgba(255, 255, 255, 0.04);
+}
+.pool-detail-history-tag {
+    background: var(--cerulean, #1282a2);
+    color: #fff;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+.pool-detail-history-time {
+    color: rgba(255, 255, 255, 0.55);
+    font-size: 0.82rem;
+}
+.pool-detail-history-details summary {
+    color: var(--cerulean, #1282a2);
+    cursor: pointer;
+    padding: 8px 12px;
+    font-weight: 600;
+    user-select: none;
+}
+.pool-detail-history-details summary:hover {
+    background: rgba(255, 255, 255, 0.04);
+}
+.pool-detail-history-body {
+    padding: 8px 14px 12px;
+}
+
+/* DR Profile tab */
+.pool-detail-dr-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 16px;
+}
+.pool-detail-dr-avatar {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    object-fit: cover;
+    background: rgba(18, 130, 162, 0.18);
+    border: 2px solid var(--cerulean, #1282a2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--cerulean, #1282a2);
+    flex-shrink: 0;
+}
+.pool-detail-dr-avatar-fallback svg {
+    width: 32px;
+    height: 32px;
+}
+.pool-detail-dr-name {
+    color: #fff;
+    font-weight: 700;
+    font-size: 1.1rem;
+}
+.pool-detail-dr-link {
+    display: inline-block;
+    margin-top: 4px;
+    color: var(--cerulean, #1282a2);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+.pool-detail-dr-link:hover { text-decoration: underline; }
+
+/* Pool Detail Modal header — avatar (Plan 3.5) */
+.pool-detail-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+.pool-detail-avatar {
+    flex-shrink: 0;
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    border: 2px solid #9ca3af;
+    background: rgba(156, 163, 175, 0.18);
+    color: #9ca3af;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+.pool-detail-avatar svg {
+    width: 32px;
+    height: 32px;
+}
+.pool-detail-avatar-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+.pool-detail-title {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+/* Mobile: tighten filters, full-screen modal, sections single-column */
+@media (max-width: 768px) {
+    .rb-pool-filters-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+    .rb-pool-filters-actions {
+        flex-direction: column-reverse;
+        align-items: stretch;
+    }
+    .rb-pool-filters-apply {
+        width: 100%;
+    }
+    .rb-pool-school-row {
+        flex-wrap: wrap;
+    }
+    .rb-pool-header-actions {
+        margin-left: 0;
+        width: 100%;
+    }
+    .rb-pool-copy-link-btn {
+        width: 100%;
+        justify-content: center;
+    }
+    .rb-pool-row {
+        flex-direction: row;
+        align-items: center;
+        text-align: left;
+    }
+    .pool-detail-modal.open .sg-modal-content {
+        width: 100%;
+        height: 100%;
+        max-width: none;
+        max-height: none;
+        border-radius: 0;
+    }
+    .pool-detail-avatar {
+        width: 52px;
+        height: 52px;
+    }
+    .pool-detail-section-body {
+        grid-template-columns: 1fr;
+    }
+}
+@media (max-width: 520px) {
+    .rb-pool-filters-grid {
+        grid-template-columns: 1fr;
     }
 }

@@ -509,6 +509,257 @@ router.get('/groups/:groupId/questionnaire', authMiddleware, requireRole('coach'
   return resolveCoachQuestionnaire(req, res);
 });
 
+// ---------- Team Pool (per-school, Plan 3) ----------
+
+// GET /my-pool — paginated list of pool_entries for the requesting coach's
+// school (resolved from coach_profiles.team_name → normalized school_key).
+// Filters: position (multi), grad_year, state, height range, weight range, GPA range.
+router.get('/my-pool', authMiddleware, requireRole('coach'), async (req, res) => {
+  try {
+    // 1. Resolve coach school from team_name (same guard as /my-questionnaire)
+    const coachProfile = await pool.query(
+      `SELECT team_name FROM coach_profiles WHERE user_id = $1 LIMIT 1`,
+      [req.userId]
+    );
+    const teamName = coachProfile.rows[0] && coachProfile.rows[0].team_name;
+    if (!teamName) {
+      return res.status(400).json({
+        error: 'Set your team name in My Profile to see your team pool.'
+      });
+    }
+
+    // 2. Get/create the questionnaire row so the pool always has a parent
+    const q = await TeamQuestionnaire.getOrCreateForSchool(teamName);
+
+    // 3. Parse + assemble filter SQL
+    const {
+      position, grad_year, state,
+      min_height, max_height,
+      min_weight, max_weight,
+      min_gpa, max_gpa,
+      offset = 0, limit = 50
+    } = req.query;
+
+    const where = [`pe.questionnaire_id = $1`];
+    const params = [q.id];
+    let p = 1;
+
+    // Position: substring match against slash-joined positions string
+    if (position) {
+      const positions = Array.isArray(position) ? position : [position];
+      const orClauses = positions.map(pos => {
+        p++; params.push(`%${pos}%`);
+        return `qs.submission_data->'athletic'->>'positions' ILIKE $${p}`;
+      });
+      where.push(`(${orClauses.join(' OR ')})`);
+    }
+    if (grad_year) {
+      p++; params.push(parseInt(grad_year, 10));
+      where.push(`(qs.submission_data->'academic'->>'graduation_year')::int = $${p}`);
+    }
+    if (state) {
+      p++; params.push(state);
+      where.push(`qs.submission_data->'address'->>'state' = $${p}`);
+    }
+    if (min_height) {
+      p++; params.push(parseInt(min_height, 10));
+      where.push(`(qs.submission_data->'athletic'->>'height_inches')::int >= $${p}`);
+    }
+    if (max_height) {
+      p++; params.push(parseInt(max_height, 10));
+      where.push(`(qs.submission_data->'athletic'->>'height_inches')::int <= $${p}`);
+    }
+    if (min_weight) {
+      p++; params.push(parseInt(min_weight, 10));
+      where.push(`(qs.submission_data->'athletic'->>'weight_lbs')::int >= $${p}`);
+    }
+    if (max_weight) {
+      p++; params.push(parseInt(max_weight, 10));
+      where.push(`(qs.submission_data->'athletic'->>'weight_lbs')::int <= $${p}`);
+    }
+    if (min_gpa) {
+      p++; params.push(parseFloat(min_gpa));
+      where.push(`(qs.submission_data->'academic'->>'gpa')::numeric >= $${p}`);
+    }
+    if (max_gpa) {
+      p++; params.push(parseFloat(max_gpa));
+      where.push(`(qs.submission_data->'academic'->>'gpa')::numeric <= $${p}`);
+    }
+
+    // Pagination params
+    p++; params.push(parseInt(limit, 10) || 50);
+    const limitParam = `$${p}`;
+    p++; params.push(parseInt(offset, 10) || 0);
+    const offsetParam = `$${p}`;
+
+    // 4. Run the list query — LEFT JOIN the linked DR account's player_profile
+    // so we can surface their profile_image_url for the avatar (Plan 3.5).
+    const rowsResult = await pool.query(
+      `SELECT
+         pe.id,
+         pe.email,
+         pe.submission_count,
+         pe.first_submitted_at,
+         pe.last_submitted_at,
+         pe.linked_player_user_id,
+         qs.submission_data,
+         pp.profile_image_url AS dr_profile_image_s3_key
+       FROM pool_entries pe
+       JOIN questionnaire_submissions qs ON qs.id = pe.latest_submission_id
+       LEFT JOIN player_profiles pp ON pp.user_id = pe.linked_player_user_id
+       WHERE ${where.join(' AND ')}
+       ORDER BY pe.last_submitted_at DESC
+       LIMIT ${limitParam} OFFSET ${offsetParam}`,
+      params
+    );
+
+    // Total count for pagination (drop limit + offset params)
+    const countParams = params.slice(0, -2);
+    const countResult = await pool.query(
+      `SELECT COUNT(*)::int AS total
+         FROM pool_entries pe
+         JOIN questionnaire_submissions qs ON qs.id = pe.latest_submission_id
+         WHERE ${where.join(' AND ')}`,
+      countParams
+    );
+
+    // 5. Shape the response — sign the DR profile image S3 key when a linked
+    // DR account exists. Questionnaire-only entries do NOT have a profile pic
+    // (intentional UX choice — see Plan 3.5).
+    const entries = await Promise.all(rowsResult.rows.map(async (row) => {
+      const d = row.submission_data || {};
+      const personal = d.personal || {};
+      const athletic = d.athletic || {};
+      const academic = d.academic || {};
+      const address = d.address || {};
+
+      let profileImageUrl = null;
+      if (row.dr_profile_image_s3_key && row.dr_profile_image_s3_key.startsWith('profiles/')) {
+        try { profileImageUrl = await getSignedS3Url(row.dr_profile_image_s3_key); }
+        catch (_) { profileImageUrl = null; }
+      }
+
+      return {
+        id: row.id,
+        email: row.email,
+        first_name: personal.first_name || '',
+        last_name: personal.last_name || '',
+        positions: athletic.positions || null,
+        height_inches: athletic.height_inches || null,
+        weight_lbs: athletic.weight_lbs || null,
+        graduation_year: academic.graduation_year || null,
+        gpa: academic.gpa || null,
+        state: address.state || null,
+        city: address.city || null,
+        high_school: academic.high_school || null,
+        submission_count: row.submission_count,
+        first_submitted_at: row.first_submitted_at,
+        last_submitted_at: row.last_submitted_at,
+        linked_player_user_id: row.linked_player_user_id,
+        profile_image_url: profileImageUrl,
+        is_in_my_pipeline: false // Plan 4 will populate this from pipeline_recruits
+      };
+    }));
+
+    res.json({
+      total: countResult.rows[0].total || 0,
+      offset: parseInt(offset, 10) || 0,
+      limit: parseInt(limit, 10) || 50,
+      entries
+    });
+  } catch (err) {
+    logger.error('GET /my-pool error:', err);
+    res.status(500).json({ error: 'Failed to load pool' });
+  }
+});
+
+// GET /my-pool/:entryId — full submission history + DR profile snapshot.
+// Enforces per-school: requesting coach's school_key must match entry's school.
+router.get('/my-pool/:entryId', authMiddleware, requireRole('coach'), validateUUID('entryId'), async (req, res) => {
+  try {
+    const coachProfile = await pool.query(
+      `SELECT team_name FROM coach_profiles WHERE user_id = $1 LIMIT 1`,
+      [req.userId]
+    );
+    const teamName = coachProfile.rows[0] && coachProfile.rows[0].team_name;
+    if (!teamName) {
+      return res.status(400).json({ error: 'Set your team name in My Profile.' });
+    }
+    const schoolKey = TeamQuestionnaire.normalizeSchoolKey(teamName);
+
+    // Look up entry + its questionnaire's school_key — enforce match
+    const entryResult = await pool.query(
+      `SELECT
+         pe.id, pe.email, pe.questionnaire_id, pe.submission_count, pe.linked_player_user_id,
+         pe.first_submitted_at, pe.last_submitted_at,
+         tq.school_key
+       FROM pool_entries pe
+       JOIN team_questionnaires tq ON tq.id = pe.questionnaire_id
+       WHERE pe.id = $1
+       LIMIT 1`,
+      [req.params.entryId]
+    );
+    if (!entryResult.rows[0]) return res.status(404).json({ error: 'Pool entry not found' });
+    if (entryResult.rows[0].school_key !== schoolKey) {
+      return res.status(403).json({ error: 'This recruit submitted to a different school.' });
+    }
+    const entry = entryResult.rows[0];
+
+    // All submissions matching (questionnaire_id, email) chronological ASC
+    const subsResult = await pool.query(
+      `SELECT id, submission_data, submitted_at
+         FROM questionnaire_submissions
+        WHERE questionnaire_id = $1
+          AND LOWER(email) = LOWER($2)
+        ORDER BY submitted_at ASC`,
+      [entry.questionnaire_id, entry.email]
+    );
+
+    // Optional DR profile snapshot
+    let drProfile = null;
+    if (entry.linked_player_user_id) {
+      const profResult = await pool.query(
+        `SELECT user_id, first_name, last_name, username, position, height, weight,
+                graduation_year, gpa, team_name, city, state, profile_image_url,
+                college_division, transfer
+           FROM player_profiles WHERE user_id = $1 LIMIT 1`,
+        [entry.linked_player_user_id]
+      );
+      if (profResult.rows[0]) {
+        drProfile = profResult.rows[0];
+        if (drProfile.profile_image_url && drProfile.profile_image_url.startsWith('profiles/')) {
+          try { drProfile.profile_image_url = await getSignedS3Url(drProfile.profile_image_url); }
+          catch { drProfile.profile_image_url = null; }
+        }
+      }
+    }
+
+    res.json({
+      entry: {
+        id: entry.id,
+        email: entry.email,
+        submission_count: entry.submission_count,
+        first_submitted_at: entry.first_submitted_at,
+        last_submitted_at: entry.last_submitted_at,
+        linked_player_user_id: entry.linked_player_user_id,
+        // Convenience: surface the linked DR account's signed profile image
+        // URL at the top level so the modal header doesn't have to dig into
+        // dr_profile for the avatar.
+        profile_image_url: (drProfile && drProfile.profile_image_url) || null
+      },
+      submissions: subsResult.rows.map(r => ({
+        id: r.id,
+        submitted_at: r.submitted_at,
+        submission_data: r.submission_data
+      })),
+      dr_profile: drProfile
+    });
+  } catch (err) {
+    logger.error('GET /my-pool/:entryId error:', err);
+    res.status(500).json({ error: 'Failed to load pool entry' });
+  }
+});
+
 // Rename group (editor or owner)
 router.put('/groups/:groupId/name', authMiddleware, requireRole('coach'), validateUUID('groupId'), requireGroupAccess('editor'), async (req, res) => {
   try {

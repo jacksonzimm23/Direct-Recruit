@@ -142,6 +142,15 @@
                     </svg>
                     <span>Pipeline</span>
                 </button>
+                <button class="rb-subtab" data-tab="team-pool">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 6h18"></path>
+                        <path d="M3 12h18"></path>
+                        <path d="M3 18h18"></path>
+                    </svg>
+                    <span>Team Pool</span>
+                    <span class="rb-subtab-badge" style="display: none;"></span>
+                </button>
                 <button class="rb-subtab" data-tab="shared-boards">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
@@ -204,47 +213,11 @@
                 </div>
             </div>
 
-            <!-- Pipeline Tab — Plan 2 ships the Copy Questionnaire Link UI here.
-                 The grading/handoff pipeline UI itself ships in Plan 4. -->
+            <!-- Pipeline Tab — Plan 4 fills the body. Copy Questionnaire Link
+                 button moved to Team Pool header in Plan 3.5. -->
             <div class="rb-tab-content" id="pipelineTab">
-                <!-- State A: coach is in a group → show share UI -->
-                <div class="pipeline-share-state" id="pipelineShareState" style="display: none;">
-                    <h2 class="pipeline-share-title">Share your questionnaire</h2>
-                    <p class="pipeline-share-desc">Send this link to recruits so they can submit their info directly to your program. Every submission lands in your team's pool (coming in a future release).</p>
-                    <div class="pipeline-share-row">
-                        <button id="copyQuestionnaireLinkBtn" class="pipeline-copy-btn">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
-                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                            </svg>
-                            <span>Copy Questionnaire Link</span>
-                        </button>
-                        <a id="previewQuestionnaireLink" class="pipeline-preview-link" target="_blank" rel="noopener">
-                            <span>Preview</span>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-                                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-                                <polyline points="15 3 21 3 21 9"></polyline>
-                                <line x1="10" y1="14" x2="21" y2="3"></line>
-                            </svg>
-                        </a>
-                    </div>
-                    <div class="pipeline-share-url-display" id="pipelineShareUrlDisplay"></div>
-                </div>
-
-                <!-- State B: coach has no team_name set in their profile -->
-                <div class="pipeline-nogroup-state" id="pipelineNoGroupState" style="display: none;">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="56" height="56">
-                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                        <circle cx="12" cy="7" r="4"></circle>
-                    </svg>
-                    <h2>Add your team name first</h2>
-                    <p>Your questionnaire link is generated from your team's name. Set your team in My Profile to enable your team's recruiting questionnaire.</p>
-                    <a class="pipeline-go-shared-btn" href="my-profile.html">Go to My Profile</a>
-                </div>
-
-                <!-- Loading -->
-                <div class="pipeline-loading-state" id="pipelineLoadingState">
-                    <p>Loading...</p>
+                <div class="rb-pipeline-placeholder">
+                    <p>Pipeline coming in Plan 4.</p>
                 </div>
             </div>
 
@@ -347,6 +320,92 @@
                     <h2>No Boards Yet</h2>
                     <p>Create the first recruiting board for this group.</p>
                     <button class="sg-empty-cta" id="sgCreateFirstBoardBtn">Create First Board</button>
+                </div>
+            </div>
+
+            <!-- Team Pool Tab (Plan 3) -->
+            <div class="rb-tab-content" id="teamPoolTab">
+                <div id="teamPoolNoTeam" class="rb-pool-empty-state" style="display: none;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="56" height="56">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                    <h2>Add your team name first</h2>
+                    <p>Your school's pool is tied to your team in My Profile.</p>
+                    <a class="rb-pool-empty-cta" href="my-profile.html">Go to My Profile</a>
+                </div>
+
+                <div class="rb-pool-header" id="teamPoolHeader" style="display: none;">
+                    <div class="rb-pool-school-row">
+                        <div class="rb-pool-school-logo" id="teamPoolLogo"></div>
+                        <div class="rb-pool-school-text">
+                            <h2 class="rb-pool-school-name" id="teamPoolSchoolName"></h2>
+                            <p class="rb-pool-submission-count" id="teamPoolCount">0 submissions</p>
+                        </div>
+                        <div class="rb-pool-header-actions">
+                            <button id="poolCopyLinkBtn" class="rb-pool-copy-link-btn" title="Copy your team's public questionnaire link">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                                </svg>
+                                <span>Copy Questionnaire Link</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Filters — Discover-style, compact (Plan 3.5) -->
+                <div class="rb-pool-filters-container" id="teamPoolFilters" style="display: none;">
+                    <div class="rb-pool-filters-header">
+                        <h3 class="rb-pool-filters-title">Filter Recruits</h3>
+                        <button class="rb-pool-filters-reset" id="poolFiltersReset">Reset All</button>
+                    </div>
+                    <div class="rb-pool-filters-grid">
+                        <div class="rb-pool-filter-group">
+                            <label for="poolPosition">Position</label>
+                            <select class="rb-pool-filter-select" id="poolPosition">
+                                <option value="">All Positions</option>
+                            </select>
+                        </div>
+                        <div class="rb-pool-filter-group">
+                            <label for="poolGradYear">Graduation Year</label>
+                            <select class="rb-pool-filter-select" id="poolGradYear">
+                                <option value="">All Years</option>
+                            </select>
+                        </div>
+                        <div class="rb-pool-filter-group">
+                            <label for="poolState">State</label>
+                            <select class="rb-pool-filter-select" id="poolState">
+                                <option value="">All States</option>
+                            </select>
+                        </div>
+                        <div class="rb-pool-filter-group rb-pool-slider-group">
+                            <label>Height</label>
+                            <input type="range" class="rb-pool-filter-slider" id="poolHeightSlider" min="60" max="84" value="60" step="1">
+                            <div class="rb-pool-slider-label">Min: <span id="poolHeightValue">5'0"</span></div>
+                        </div>
+                        <div class="rb-pool-filter-group rb-pool-slider-group">
+                            <label>Weight (lbs)</label>
+                            <input type="range" class="rb-pool-filter-slider" id="poolWeightSlider" min="100" max="400" value="100" step="5">
+                            <div class="rb-pool-slider-label">Min: <span id="poolWeightValue">100</span> lbs</div>
+                        </div>
+                        <div class="rb-pool-filter-group rb-pool-slider-group">
+                            <label>GPA</label>
+                            <input type="range" class="rb-pool-filter-slider" id="poolGpaSlider" min="0" max="40" value="0" step="1">
+                            <div class="rb-pool-slider-label">Min: <span id="poolGpaValue">0.0</span></div>
+                        </div>
+                    </div>
+                    <div class="rb-pool-filters-actions">
+                        <button class="rb-pool-filters-apply" id="poolFiltersApply">Apply Filters</button>
+                        <div class="rb-pool-results-count">Showing <span id="poolResultsCount">0</span> recruits</div>
+                    </div>
+                </div>
+
+                <div class="rb-pool-list" id="teamPoolList" style="display: none;"></div>
+                <div class="rb-pool-loading" id="teamPoolLoading" style="display: none;">Loading…</div>
+                <div class="rb-pool-empty" id="teamPoolEmpty" style="display: none;">
+                    <p>No submissions yet.</p>
+                    <p class="rb-pool-empty-hint">Copy your questionnaire link above and send it to recruits to start collecting submissions.</p>
                 </div>
             </div>
 
@@ -747,6 +806,46 @@
     </div>
 
     <!-- Invites Modal — incoming group invites with inline Accept/Decline -->
+    <!-- Pool Entry Detail Modal — Plan 3 -->
+    <div class="recruiting-board-modal collab-modal sg-modal pool-detail-modal" id="poolDetailModal">
+        <div class="recruiting-board-modal-overlay" id="poolDetailOverlay"></div>
+        <div class="recruiting-board-modal-content sg-modal-content">
+            <div class="recruiting-board-modal-header collab-header pool-detail-header">
+                <div class="pool-detail-avatar" id="poolDetailAvatar">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                </div>
+                <h3 class="sg-info-title-row pool-detail-title">
+                    <span id="poolDetailName">Recruit</span>
+                    <span class="pool-detail-badge dr" id="poolDetailDrBadge" style="display: none;">DR Member</span>
+                    <span class="pool-detail-badge resubmitted" id="poolDetailResubmittedBadge" style="display: none;"></span>
+                </h3>
+                <button class="modal-close-btn" id="poolDetailClose">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="recruiting-board-modal-body">
+                <div class="pool-detail-tabs">
+                    <button class="pool-detail-tab active" data-pool-tab="questionnaire">Questionnaire</button>
+                    <button class="pool-detail-tab" data-pool-tab="history">Submission History</button>
+                    <button class="pool-detail-tab" data-pool-tab="dr-profile" id="poolDetailDrTabBtn" style="display: none;">DR Profile</button>
+                </div>
+                <div class="pool-detail-tab-content active" data-pool-tab-content="questionnaire" id="poolDetailQuestionnaire"></div>
+                <div class="pool-detail-tab-content" data-pool-tab-content="history" id="poolDetailHistory"></div>
+                <div class="pool-detail-tab-content" data-pool-tab-content="dr-profile" id="poolDetailDrProfile"></div>
+            </div>
+            <div class="recruiting-board-modal-footer">
+                <button class="btn-cancel" id="poolDetailCloseBtn">Close</button>
+                <!-- Add to My Pipeline button intentionally omitted in Plan 3. Plan 4 wires it. -->
+            </div>
+        </div>
+    </div>
+
     <div class="recruiting-board-modal collab-modal sg-modal invites-modal" id="invitesModal">
         <div class="recruiting-board-modal-overlay" id="invitesModalOverlay"></div>
         <div class="recruiting-board-modal-content sg-modal-content">

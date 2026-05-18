@@ -105,8 +105,10 @@ document.addEventListener('DOMContentLoaded', async function() {
         document.querySelectorAll('.rb-tab-content').forEach(content => {
             content.classList.toggle('active', content.id === targetId);
         });
-        // Body class drives visibility of the shared football field / controls
+        // Body class drives visibility of the shared football field / controls.
+        // Hidden on Pipeline AND Team Pool — neither subtab uses the field.
         document.body.classList.toggle('rb-tab-pipeline', tabName === 'pipeline');
+        document.body.classList.toggle('rb-tab-team-pool', tabName === 'team-pool');
         localStorage.setItem('lastViewedRecruitingBoardSubtab', tabName);
 
         if (tabName === 'shared-boards') {
@@ -120,56 +122,17 @@ document.addEventListener('DOMContentLoaded', async function() {
         if (tabName === 'personal-boards' && currentPersonalBoardId && currentBoardMode !== 'personal') {
             await loadPersonalBoardById(currentPersonalBoardId);
         }
-        if (tabName === 'pipeline') {
-            await initializePipelineShareUI();
-        }
-    }
-
-    // Pipeline tab — Plan 2 ships the Copy Questionnaire Link UI here.
-    // The grading/handoff pipeline UI itself ships in Plan 4.
-    // Questionnaire is per-SCHOOL, not per-group, so the link is available to
-    // any college coach with a team_name set, regardless of shared-group state.
-    let pipelineShareInitialized = false;
-    async function initializePipelineShareUI() {
-        const loadingEl = document.getElementById('pipelineLoadingState');
-        const shareEl = document.getElementById('pipelineShareState');
-        const errorEl = document.getElementById('pipelineNoGroupState');
-        if (!shareEl) return;
-
-        // Reset to loading state on every activation so stale state doesn't flash
-        if (loadingEl) loadingEl.style.display = 'block';
-        shareEl.style.display = 'none';
-        if (errorEl) errorEl.style.display = 'none';
-
-        try {
-            const data = await API.get('/recruiting-board/my-questionnaire');
-            if (loadingEl) loadingEl.style.display = 'none';
-            shareEl.style.display = 'block';
-
-            const previewLink = document.getElementById('previewQuestionnaireLink');
-            const urlDisplay = document.getElementById('pipelineShareUrlDisplay');
-            const copyBtn = document.getElementById('copyQuestionnaireLinkBtn');
-            if (previewLink) previewLink.href = data.public_url;
-            if (urlDisplay) urlDisplay.textContent = data.public_url;
-
-            if (copyBtn && !pipelineShareInitialized) {
-                copyBtn.addEventListener('click', async () => {
-                    try {
-                        await navigator.clipboard.writeText(data.public_url);
-                        if (typeof showToast === 'function') showToast('Questionnaire link copied to clipboard', 'success');
-                    } catch (_) {
-                        if (typeof showToast === 'function') showToast('Could not copy. Select the URL manually.', 'error');
-                    }
-                });
-                pipelineShareInitialized = true;
+        if (tabName === 'team-pool') {
+            if (!teamPoolInitialized) {
+                await initializeTeamPoolTab();
+            } else {
+                await refreshTeamPool();
             }
-        } catch (err) {
-            if (loadingEl) loadingEl.style.display = 'none';
-            // Only failure mode now is "coach has no team_name set" (400). Show
-            // the fallback panel pointing them to My Profile.
-            if (errorEl) errorEl.style.display = 'block';
         }
     }
+
+    // Pipeline tab body is empty in Plan 3.5 — Plan 4 fills it. The Copy
+    // Questionnaire Link button moved to the Team Pool header.
 
     document.querySelectorAll('.rb-subtab').forEach(btn => {
         btn.addEventListener('click', () => activateSubtab(btn.dataset.tab));
@@ -2946,7 +2909,579 @@ document.addEventListener('DOMContentLoaded', async function() {
         });
     }
 
-    // ==================== Invites Modal ====================
+    // ==================== Team Pool (Plan 3) ====================
+    // Per-school recruit pool. Reads pool_entries from the questionnaire keyed
+    // on the coach's normalized team_name. Browse-only in Plan 3 — Plan 4
+    // adds "Add to My Pipeline".
+
+    let teamPoolInitialized = false;
+    // Single-handle min-only filters (Plan 3.5 — matches Discover Players UX).
+    // `position` is now a single string (not array) since the dropdown is single-select.
+    let teamPoolFilters = {
+        position: '',
+        grad_year: '',
+        state: '',
+        min_height: null,
+        min_weight: null,
+        min_gpa: null
+    };
+
+    const POOL_POSITIONS = [
+        ['QB','Quarterback'],['RB','Running Back'],['FB','Fullback'],
+        ['WR','Wide Receiver'],['TE','Tight End'],['OT','Offensive Tackle'],
+        ['OG','Offensive Guard'],['C','Center'],['DE','Defensive End'],
+        ['DT','Defensive Tackle'],['NT','Nose Tackle'],['ILB','Inside LB'],
+        ['OLB','Outside LB'],['CB','Cornerback'],['S','Safety'],
+        ['K','Kicker'],['P','Punter'],['LS','Long Snapper']
+    ];
+
+    const US_STATES = [
+        ['AL','Alabama'],['AK','Alaska'],['AZ','Arizona'],['AR','Arkansas'],['CA','California'],
+        ['CO','Colorado'],['CT','Connecticut'],['DE','Delaware'],['FL','Florida'],['GA','Georgia'],
+        ['HI','Hawaii'],['ID','Idaho'],['IL','Illinois'],['IN','Indiana'],['IA','Iowa'],
+        ['KS','Kansas'],['KY','Kentucky'],['LA','Louisiana'],['ME','Maine'],['MD','Maryland'],
+        ['MA','Massachusetts'],['MI','Michigan'],['MN','Minnesota'],['MS','Mississippi'],['MO','Missouri'],
+        ['MT','Montana'],['NE','Nebraska'],['NV','Nevada'],['NH','New Hampshire'],['NJ','New Jersey'],
+        ['NM','New Mexico'],['NY','New York'],['NC','North Carolina'],['ND','North Dakota'],['OH','Ohio'],
+        ['OK','Oklahoma'],['OR','Oregon'],['PA','Pennsylvania'],['RI','Rhode Island'],['SC','South Carolina'],
+        ['SD','South Dakota'],['TN','Tennessee'],['TX','Texas'],['UT','Utah'],['VT','Vermont'],
+        ['VA','Virginia'],['WA','Washington'],['WV','West Virginia'],['WI','Wisconsin'],['WY','Wyoming']
+    ];
+
+    function inchesToHeight(inches) {
+        if (inches == null) return '—';
+        const ft = Math.floor(inches / 12);
+        const inch = inches % 12;
+        return `${ft}'${inch}"`;
+    }
+
+    async function initializeTeamPoolTab() {
+        const noTeamEl = document.getElementById('teamPoolNoTeam');
+        const headerEl = document.getElementById('teamPoolHeader');
+        const filtersEl = document.getElementById('teamPoolFilters');
+        const listEl = document.getElementById('teamPoolList');
+        const loadingEl = document.getElementById('teamPoolLoading');
+        const emptyEl = document.getElementById('teamPoolEmpty');
+
+        loadingEl.style.display = 'block';
+        noTeamEl.style.display = 'none';
+        headerEl.style.display = 'none';
+        filtersEl.style.display = 'none';
+        listEl.style.display = 'none';
+        emptyEl.style.display = 'none';
+
+        // Resolve coach's team_name via /auth/me
+        let me;
+        try {
+            me = await API.auth.getCurrentUser();
+        } catch (err) {
+            loadingEl.style.display = 'none';
+            noTeamEl.style.display = 'flex';
+            return;
+        }
+        const teamName = (me && me.profile && me.profile.team_name) || null;
+        if (!teamName) {
+            loadingEl.style.display = 'none';
+            noTeamEl.style.display = 'flex';
+            return;
+        }
+
+        // Render school header (logo + name)
+        try {
+            if (typeof ensureSchoolLogosLoaded === 'function') {
+                await ensureSchoolLogosLoaded('../../assets');
+            }
+        } catch (_) { /* logos are best-effort */ }
+        const logoWrap = document.getElementById('teamPoolLogo');
+        if (typeof getSchoolLogoHTML === 'function') {
+            logoWrap.innerHTML = getSchoolLogoHTML(teamName, '../../assets', 56) || '';
+        }
+        document.getElementById('teamPoolSchoolName').textContent = teamName;
+
+        // Wire the Copy Questionnaire Link button (moved from Pipeline tab in 3.5).
+        // Fetch the link once on init; cache it for the button click handler.
+        try {
+            const linkData = await API.get('/recruiting-board/my-questionnaire');
+            const copyBtn = document.getElementById('poolCopyLinkBtn');
+            if (copyBtn && linkData && linkData.public_url) {
+                copyBtn.addEventListener('click', async () => {
+                    try {
+                        await navigator.clipboard.writeText(linkData.public_url);
+                        if (typeof showToast === 'function') {
+                            showToast('Questionnaire link copied to clipboard', 'success');
+                        }
+                    } catch (_) {
+                        if (typeof showToast === 'function') {
+                            showToast('Could not copy. Select the URL manually.', 'error');
+                        }
+                    }
+                });
+            }
+        } catch (_) {
+            // Hide the button if we can't load the link (rare — should not happen
+            // since we already verified team_name is set above).
+            const copyBtn = document.getElementById('poolCopyLinkBtn');
+            if (copyBtn) copyBtn.style.display = 'none';
+        }
+
+        // Position dropdown (single-select, matches Discover Players UX)
+        const positionSel = document.getElementById('poolPosition');
+        POOL_POSITIONS.forEach(([code, label]) => {
+            const opt = document.createElement('option');
+            opt.value = code;
+            opt.textContent = `${label} (${code})`;
+            positionSel.appendChild(opt);
+        });
+
+        // Graduation year dropdown
+        const yearSel = document.getElementById('poolGradYear');
+        for (let y = 2024; y <= 2032; y++) {
+            const opt = document.createElement('option');
+            opt.value = String(y); opt.textContent = String(y);
+            yearSel.appendChild(opt);
+        }
+
+        // State dropdown
+        const stateSel = document.getElementById('poolState');
+        US_STATES.forEach(([abbr, name]) => {
+            const opt = document.createElement('option');
+            opt.value = abbr; opt.textContent = name;
+            stateSel.appendChild(opt);
+        });
+
+        // Sliders — single-handle min-only. INPUT events just update the
+        // display label; the actual filter doesn't fire until "Apply Filters".
+        const heightSlider = document.getElementById('poolHeightSlider');
+        const heightValue = document.getElementById('poolHeightValue');
+        heightSlider.addEventListener('input', () => {
+            heightValue.textContent = inchesToHeight(Number(heightSlider.value));
+        });
+
+        const weightSlider = document.getElementById('poolWeightSlider');
+        const weightValue = document.getElementById('poolWeightValue');
+        weightSlider.addEventListener('input', () => {
+            weightValue.textContent = weightSlider.value;
+        });
+
+        const gpaSlider = document.getElementById('poolGpaSlider');
+        const gpaValue = document.getElementById('poolGpaValue');
+        gpaSlider.addEventListener('input', () => {
+            // GPA slider stores 0-40 internally for step=1; display divides by 10.
+            gpaValue.textContent = (Number(gpaSlider.value) / 10).toFixed(1);
+        });
+
+        // Apply Filters button — reads all inputs and refreshes
+        document.getElementById('poolFiltersApply').addEventListener('click', () => {
+            const heightMin = Number(heightSlider.value);
+            const weightMin = Number(weightSlider.value);
+            const gpaMinTenths = Number(gpaSlider.value);
+            teamPoolFilters = {
+                position: positionSel.value || '',
+                grad_year: yearSel.value || '',
+                state: stateSel.value || '',
+                // Only send min_* if the user moved off the bottom (matches Discover)
+                min_height: heightMin > Number(heightSlider.min) ? heightMin : null,
+                min_weight: weightMin > Number(weightSlider.min) ? weightMin : null,
+                min_gpa: gpaMinTenths > 0 ? (gpaMinTenths / 10) : null
+            };
+            refreshTeamPool();
+        });
+
+        // Reset All button — clears every input and refreshes
+        document.getElementById('poolFiltersReset').addEventListener('click', () => {
+            positionSel.value = '';
+            yearSel.value = '';
+            stateSel.value = '';
+            heightSlider.value = heightSlider.min;
+            weightSlider.value = weightSlider.min;
+            gpaSlider.value = 0;
+            heightValue.textContent = inchesToHeight(Number(heightSlider.min));
+            weightValue.textContent = weightSlider.min;
+            gpaValue.textContent = '0.0';
+            teamPoolFilters = {
+                position: '', grad_year: '', state: '',
+                min_height: null, min_weight: null, min_gpa: null
+            };
+            refreshTeamPool();
+        });
+
+        teamPoolInitialized = true;
+
+        // Reveal UI + first load
+        headerEl.style.display = 'block';
+        filtersEl.style.display = 'block';
+        await refreshTeamPool();
+    }
+
+    async function refreshTeamPool() {
+        const listEl = document.getElementById('teamPoolList');
+        const loadingEl = document.getElementById('teamPoolLoading');
+        const emptyEl = document.getElementById('teamPoolEmpty');
+        const countEl = document.getElementById('teamPoolCount');
+
+        loadingEl.style.display = 'block';
+        listEl.style.display = 'none';
+        emptyEl.style.display = 'none';
+
+        try {
+            const data = await API.pool.list(teamPoolFilters);
+            loadingEl.style.display = 'none';
+            countEl.textContent = `${data.total} submission${data.total === 1 ? '' : 's'}`;
+            // Also update the filter-results count footer
+            const resultsCountEl = document.getElementById('poolResultsCount');
+            if (resultsCountEl) resultsCountEl.textContent = data.total;
+
+            if (!data.entries || data.entries.length === 0) {
+                emptyEl.style.display = 'flex';
+                listEl.innerHTML = '';
+                return;
+            }
+
+            listEl.style.display = 'flex';
+            listEl.innerHTML = '';
+            for (const entry of data.entries) {
+                listEl.appendChild(buildPoolRow(entry));
+            }
+        } catch (err) {
+            loadingEl.style.display = 'none';
+            if (typeof showToast === 'function') {
+                showToast(err && err.message ? err.message : 'Failed to load pool', 'error');
+            }
+        }
+    }
+
+    function buildPoolRow(entry) {
+        // Gray when no DR account, cerulean when linked (Plan 3.5).
+        const hasAccount = !!entry.linked_player_user_id;
+        const accentColor = hasAccount ? '#1282a2' : '#9ca3af';
+        const ringBg = hasAccount
+            ? 'rgba(18, 130, 162, 0.18)'
+            : 'rgba(156, 163, 175, 0.18)';
+
+        const fullName = `${entry.first_name || ''} ${entry.last_name || ''}`.trim() || 'Unknown';
+
+        // Subheader = hsplayer format: Position • Height • Weight • GradYear
+        const meta = [];
+        if (entry.positions) meta.push(entry.positions);
+        if (entry.height_inches) meta.push(inchesToHeight(entry.height_inches));
+        if (entry.weight_lbs) meta.push(`${entry.weight_lbs} lbs`);
+        if (entry.graduation_year) meta.push(`Class of ${entry.graduation_year}`);
+        const subheader = meta.join(' • ');
+
+        // Avatar: only show a profile image when a DR account is linked
+        // AND that account has one. Questionnaire-only entries always show
+        // the silhouette fallback (Plan 3.5 — no questionnaire profile pics).
+        const avatarInner = (hasAccount && entry.profile_image_url)
+            ? `<img src="${escapeHtml(entry.profile_image_url)}" alt="" class="rb-pool-row-avatar-img">`
+            : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                 <circle cx="12" cy="7" r="4"></circle>
+               </svg>`;
+
+        // Badges (DR member, resubmitted) — same as before
+        const badges = [];
+        if (hasAccount) {
+            badges.push('<span class="rb-pool-row-badge dr">DR Member</span>');
+        }
+        if (entry.submission_count && entry.submission_count > 1) {
+            badges.push(`<span class="rb-pool-row-badge resubmitted">Resubmitted ${entry.submission_count}x</span>`);
+        }
+
+        const row = document.createElement('div');
+        row.className = 'rb-pool-row';
+        row.dataset.entryId = entry.id;
+        row.innerHTML = `
+            <div class="rb-pool-row-avatar" style="border-color: ${accentColor}; background: ${ringBg}; color: ${accentColor};">
+                ${avatarInner}
+            </div>
+            <div class="rb-pool-row-info">
+                <div class="rb-pool-row-name">
+                    ${escapeHtml(fullName)}
+                    ${badges.join('')}
+                </div>
+                <div class="rb-pool-row-meta" style="color: ${accentColor};">${escapeHtml(subheader)}</div>
+            </div>
+        `;
+        row.addEventListener('click', () => openPoolDetailModal(entry.id));
+        return row;
+    }
+
+    // ---------- Pool Entry Detail Modal ----------
+    async function openPoolDetailModal(entryId) {
+        const modal = document.getElementById('poolDetailModal');
+        const nameEl = document.getElementById('poolDetailName');
+        const drBadge = document.getElementById('poolDetailDrBadge');
+        const resubBadge = document.getElementById('poolDetailResubmittedBadge');
+        const drTabBtn = document.getElementById('poolDetailDrTabBtn');
+        const avatarEl = document.getElementById('poolDetailAvatar');
+        const qBody = document.getElementById('poolDetailQuestionnaire');
+        const histBody = document.getElementById('poolDetailHistory');
+        const drBody = document.getElementById('poolDetailDrProfile');
+        if (!modal) return;
+
+        const silhouetteSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>';
+
+        // Reset state
+        nameEl.textContent = 'Loading…';
+        drBadge.style.display = 'none';
+        resubBadge.style.display = 'none';
+        drTabBtn.style.display = 'none';
+        qBody.innerHTML = '<p class="pool-detail-loading">Loading…</p>';
+        histBody.innerHTML = '';
+        drBody.innerHTML = '';
+        if (avatarEl) {
+            avatarEl.style.borderColor = '#9ca3af';
+            avatarEl.style.background = 'rgba(156, 163, 175, 0.18)';
+            avatarEl.style.color = '#9ca3af';
+            avatarEl.innerHTML = silhouetteSvg;
+        }
+
+        // Show modal + reset to first inner tab
+        modal.classList.add('open');
+        switchPoolDetailTab('questionnaire');
+
+        try {
+            const data = await API.pool.getEntry(entryId);
+            const entry = data.entry || {};
+            const submissions = data.submissions || [];
+            const dr = data.dr_profile || null;
+            const latest = submissions.length ? submissions[submissions.length - 1].submission_data : {};
+            const personal = latest.personal || {};
+
+            const fullName = `${personal.first_name || ''} ${personal.last_name || ''}`.trim() || entry.email || 'Recruit';
+            nameEl.textContent = fullName;
+
+            const hasAccount = !!entry.linked_player_user_id;
+            const accentColor = hasAccount ? '#1282a2' : '#9ca3af';
+            const ringBg = hasAccount
+                ? 'rgba(18, 130, 162, 0.18)'
+                : 'rgba(156, 163, 175, 0.18)';
+            if (avatarEl) {
+                avatarEl.style.borderColor = accentColor;
+                avatarEl.style.background = ringBg;
+                avatarEl.style.color = accentColor;
+                avatarEl.innerHTML = (hasAccount && entry.profile_image_url)
+                    ? `<img src="${escapeHtml(entry.profile_image_url)}" alt="" class="pool-detail-avatar-img">`
+                    : silhouetteSvg;
+            }
+
+            if (hasAccount) {
+                drBadge.style.display = 'inline-flex';
+                drTabBtn.style.display = 'inline-flex';
+            }
+            if (entry.submission_count && entry.submission_count > 1) {
+                resubBadge.style.display = 'inline-flex';
+                resubBadge.textContent = `Resubmitted ${entry.submission_count}x`;
+            }
+
+            qBody.innerHTML = renderQuestionnaireView(latest);
+            histBody.innerHTML = renderSubmissionHistory(submissions);
+            drBody.innerHTML = dr ? renderDrProfile(dr) : '<p class="pool-detail-empty">No Direct Recruit profile linked.</p>';
+        } catch (err) {
+            qBody.innerHTML = `<p class="pool-detail-error">${escapeHtml((err && err.message) || 'Failed to load entry')}</p>`;
+        }
+    }
+
+    function closePoolDetailModal() {
+        const modal = document.getElementById('poolDetailModal');
+        if (modal) modal.classList.remove('open');
+    }
+
+    function switchPoolDetailTab(tabKey) {
+        document.querySelectorAll('.pool-detail-tab').forEach(b => {
+            b.classList.toggle('active', b.dataset.poolTab === tabKey);
+        });
+        document.querySelectorAll('.pool-detail-tab-content').forEach(c => {
+            c.classList.toggle('active', c.dataset.poolTabContent === tabKey);
+        });
+    }
+
+    function poolField(label, value) {
+        if (value == null || value === '' || (Array.isArray(value) && value.length === 0)) return '';
+        const display = Array.isArray(value) ? value.join(', ') : value;
+        return `<div class="pool-detail-field">
+            <span class="pool-detail-field-label">${escapeHtml(label)}</span>
+            <span class="pool-detail-field-value">${escapeHtml(String(display))}</span>
+        </div>`;
+    }
+
+    function poolSection(title, body) {
+        if (!body || !body.trim()) return '';
+        return `<section class="pool-detail-section">
+            <h4 class="pool-detail-section-title">${escapeHtml(title)}</h4>
+            <div class="pool-detail-section-body">${body}</div>
+        </section>`;
+    }
+
+    function renderQuestionnaireView(d) {
+        d = d || {};
+        const personal = d.personal || {};
+        const address = d.address || {};
+        const parents = Array.isArray(d.parents) ? d.parents : [];
+        const family = d.family || {};
+        const academic = d.academic || {};
+        const athletic = d.athletic || {};
+        const film = d.film || {};
+
+        // Personal
+        const personalBody =
+            poolField('Email', personal.email) +
+            poolField('Phone', personal.mobile_phone) +
+            poolField('Birth date', personal.birth_date) +
+            poolField('Facebook', personal.facebook_username) +
+            poolField('Twitter / X', personal.twitter_username) +
+            poolField('Hobbies', personal.hobbies);
+
+        // Address
+        const addrParts = [address.line_1, address.line_2, address.city].filter(Boolean).join(', ');
+        const addrSecond = [address.state, address.zip].filter(Boolean).join(' ');
+        const addressBody =
+            poolField('Address', addrParts || null) +
+            poolField('State / Zip', addrSecond || null);
+
+        // Parents
+        let parentsBody = '';
+        if (parents.length) {
+            parentsBody = parents.map((p, i) => {
+                const pname = `${p.first_name || ''} ${p.last_name || ''}`.trim() || `Parent ${i + 1}`;
+                return `<div class="pool-detail-parent-block">
+                    <div class="pool-detail-parent-name">${escapeHtml(pname)}</div>
+                    ${poolField('Email', p.email)}
+                    ${poolField('Phone', p.phone)}
+                    ${poolField('Employment', p.employment)}
+                    ${poolField('College', p.college)}
+                </div>`;
+            }).join('');
+        }
+
+        // Family
+        const familyBody = poolField('Siblings', family.siblings);
+
+        // Academic
+        const academicBody =
+            poolField('High School', academic.high_school) +
+            poolField('Graduation Year', academic.graduation_year) +
+            poolField('GPA', academic.gpa != null ? Number(academic.gpa).toFixed(2) : null) +
+            poolField('Intended Major', academic.intended_major) +
+            poolField('NCAA Registered', academic.ncaa_registered ? 'Yes' : null) +
+            poolField('NCAA ID', academic.ncaa_id) +
+            poolField('SAT', academic.sat_score) +
+            poolField('ACT', academic.act_score) +
+            poolField('Academic Honors', academic.honors);
+
+        // Athletic
+        const heightDisp = athletic.height_inches ? inchesToHeight(athletic.height_inches) : null;
+        const athleticBody =
+            poolField('Position(s)', athletic.positions) +
+            poolField('Height', heightDisp) +
+            poolField('Weight', athletic.weight_lbs ? `${athletic.weight_lbs} lbs` : null) +
+            poolField('100m', athletic.track_100m ? `${athletic.track_100m}s` : null) +
+            poolField('200m', athletic.track_200m ? `${athletic.track_200m}s` : null) +
+            poolField('Power Clean', athletic.power_clean_lbs ? `${athletic.power_clean_lbs} lbs` : null) +
+            poolField('Bench', athletic.bench_lbs ? `${athletic.bench_lbs} lbs` : null) +
+            poolField('Squat', athletic.squat_lbs ? `${athletic.squat_lbs} lbs` : null) +
+            poolField('Athletic Honors', athletic.honors) +
+            poolField('Other Sports', athletic.other_sports);
+
+        // Film
+        let filmBody = '';
+        if (Array.isArray(film.video_urls) && film.video_urls.length) {
+            filmBody = film.video_urls.map(u =>
+                `<a class="pool-detail-link" href="${escapeHtml(u)}" target="_blank" rel="noopener">${escapeHtml(u)}</a>`
+            ).join('<br>');
+        }
+
+        return [
+            poolSection('Personal Information', personalBody),
+            poolSection('Address', addressBody),
+            poolSection('Parents / Guardians', parentsBody),
+            poolSection('Family', familyBody),
+            poolSection('Academic', academicBody),
+            poolSection('Athletic', athleticBody),
+            poolSection('Film & Recruiting Videos', filmBody)
+        ].filter(Boolean).join('') || '<p class="pool-detail-empty">No data submitted.</p>';
+    }
+
+    function renderSubmissionHistory(submissions) {
+        if (!submissions || !submissions.length) {
+            return '<p class="pool-detail-empty">No submissions yet.</p>';
+        }
+        return submissions.map((s, idx) => {
+            const isFirst = idx === 0;
+            const isLatest = idx === submissions.length - 1;
+            const tag = isLatest ? 'Latest' : (isFirst ? 'First' : `#${idx + 1}`);
+            const ts = s.submitted_at ? new Date(s.submitted_at).toLocaleString() : '—';
+            return `<div class="pool-detail-history-item">
+                <div class="pool-detail-history-header">
+                    <span class="pool-detail-history-tag">${escapeHtml(tag)}</span>
+                    <span class="pool-detail-history-time">${escapeHtml(ts)}</span>
+                </div>
+                <details class="pool-detail-history-details">
+                    <summary>View submission</summary>
+                    <div class="pool-detail-history-body">${renderQuestionnaireView(s.submission_data || {})}</div>
+                </details>
+            </div>`;
+        }).join('');
+    }
+
+    function renderDrProfile(dr) {
+        const name = `${dr.first_name || ''} ${dr.last_name || ''}`.trim() || 'DR Member';
+        const avatarSrc = dr.profile_image_url || '';
+        const folder = (typeof getProfileFolder === 'function')
+            ? getProfileFolder({
+                role: 'player',
+                is_transfer_player: dr.transfer === 'y',
+                transfer: dr.transfer,
+                college_division: dr.college_division
+            })
+            : 'hsplayer';
+        const profileUrl = `../../${folder}/tabs/my-profile.html${dr.username ? '?username=' + encodeURIComponent(dr.username) : ''}`;
+
+        const heightDisp = dr.height ? inchesToHeight(dr.height) : null;
+        const fields =
+            poolField('Username', dr.username) +
+            poolField('Position', dr.position) +
+            poolField('Height', heightDisp) +
+            poolField('Weight', dr.weight ? `${dr.weight} lbs` : null) +
+            poolField('Graduation Year', dr.graduation_year) +
+            poolField('GPA', dr.gpa != null ? Number(dr.gpa).toFixed(2) : null) +
+            poolField('Team', dr.team_name) +
+            poolField('Division', dr.college_division) +
+            poolField('Location', [dr.city, dr.state].filter(Boolean).join(', ') || null);
+
+        const avatarBlock = avatarSrc
+            ? `<img src="${escapeHtml(avatarSrc)}" alt="" class="pool-detail-dr-avatar">`
+            : `<div class="pool-detail-dr-avatar pool-detail-dr-avatar-fallback">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                      <circle cx="12" cy="7" r="4"></circle>
+                  </svg>
+              </div>`;
+
+        return `<div class="pool-detail-dr-header">
+            ${avatarBlock}
+            <div class="pool-detail-dr-name-block">
+                <div class="pool-detail-dr-name">${escapeHtml(name)}</div>
+                <a class="pool-detail-dr-link" href="${escapeHtml(profileUrl)}">View Full DR Profile →</a>
+            </div>
+        </div>
+        <div class="pool-detail-section-body">${fields}</div>`;
+    }
+
+    // Wire pool detail modal handlers once on init
+    (function wirePoolDetailModal() {
+        const closeBtn = document.getElementById('poolDetailClose');
+        const footerCloseBtn = document.getElementById('poolDetailCloseBtn');
+        const overlay = document.getElementById('poolDetailOverlay');
+        if (closeBtn) closeBtn.addEventListener('click', closePoolDetailModal);
+        if (footerCloseBtn) footerCloseBtn.addEventListener('click', closePoolDetailModal);
+        if (overlay) overlay.addEventListener('click', closePoolDetailModal);
+        document.querySelectorAll('.pool-detail-tab').forEach(btn => {
+            btn.addEventListener('click', () => switchPoolDetailTab(btn.dataset.poolTab));
+        });
+    })();
+
+
     // Incoming group invites surface here instead of in the Notifications tab.
     // Opening the modal clears the sidebar + subtab badge (mark-seen). Each
     // invite stays visible until accepted or declined; on action it's deleted
