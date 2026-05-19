@@ -4949,10 +4949,11 @@ document.addEventListener('DOMContentLoaded', async function() {
         const ok = await (typeof showConfirmModal === 'function'
             ? showConfirmModal({
                 title: 'Remove from Pipeline',
-                message: "Remove this recruit from your pipeline? They'll stay in the team pool, and your past grade stays in the evaluation history for reference.",
+                message: "Remove this recruit from your pipeline? Your past grade stays in the evaluation history for reference.",
                 confirmText: 'Remove',
                 cancelText: 'Cancel',
-                danger: true
+                danger: true,
+                icon: 'trash'
             })
             : Promise.resolve(window.confirm('Remove this recruit from your pipeline?')));
         if (!ok) return;

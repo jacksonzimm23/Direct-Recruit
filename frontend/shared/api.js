@@ -64,7 +64,7 @@ function showToast(message, type = 'error', duration = 4000) {
 }
 
 // Confirmation modal system — returns Promise<boolean>
-function showConfirmModal({ title = 'Confirm', message, confirmText = 'Confirm', cancelText = 'Cancel', danger = true } = {}) {
+function showConfirmModal({ title = 'Confirm', message, confirmText = 'Confirm', cancelText = 'Cancel', danger = true, icon = null } = {}) {
     return new Promise((resolve) => {
         // Inject CSS once
         if (!document.getElementById('confirm-modal-styles')) {
@@ -188,9 +188,18 @@ function showConfirmModal({ title = 'Confirm', message, confirmText = 'Confirm',
         }
 
         const iconType = danger ? 'danger' : 'info';
-        const svgIcon = danger
-            ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>'
-            : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>';
+        // Caller can override with a custom SVG via the `icon` param (preset
+        // names or raw SVG markup). Falls back to the default triangle/info
+        // markers based on `danger`.
+        const presetIcons = {
+            trash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>',
+            x: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>'
+        };
+        const svgIcon = icon
+            ? (presetIcons[icon] || icon)
+            : (danger
+                ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>'
+                : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>');
 
         const overlay = document.createElement('div');
         overlay.className = 'confirm-modal-overlay';
