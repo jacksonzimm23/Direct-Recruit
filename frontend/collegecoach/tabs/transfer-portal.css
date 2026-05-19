@@ -2661,3 +2661,181 @@
         min-width: unset;
     }
 }
+
+/* ============================================================ */
+/* SHARED FILTER STYLES — cloned from recruiting-board.css       */
+/* (Pool/Pipeline collapsible filter look). Source IDs differ    */
+/* per page but the .rb-pool-* class names are identical so the  */
+/* visual + collapse behavior stays consistent across tabs.     */
+/* ============================================================ */
+/* Filters — Discover-style, compacted (Plan 3.5) */
+.rb-pool-filters-container {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(18, 130, 162, 0.18);
+    border-radius: 10px;
+    padding: 14px;
+    margin-bottom: 14px;
+}
+.rb-pool-filters-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+.rb-pool-filters-title {
+    color: #fff;
+    margin: 0;
+    font-size: 0.95rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+}
+.rb-pool-filters-reset {
+    background: transparent;
+    color: rgba(255, 255, 255, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
+    padding: 5px 12px;
+    font-size: 0.78rem;
+    cursor: pointer;
+    font-weight: 600;
+}
+.rb-pool-filters-reset:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
+}
+/* Collapse toggle — chevron + title form a single clickable button. */
+.rb-pool-filters-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: transparent;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    color: inherit;
+}
+.rb-pool-filters-toggle-chevron {
+    width: 16px;
+    height: 16px;
+    color: rgba(255, 255, 255, 0.7);
+    transition: transform 0.2s ease;
+}
+/* Collapsed: rotate the chevron, hide the grid + actions rows, drop the
+   container's bottom margin so it sits tight above the list. */
+.rb-pool-filters-container.rb-pool-filters-collapsed .rb-pool-filters-toggle-chevron {
+    transform: rotate(-90deg);
+}
+.rb-pool-filters-container.rb-pool-filters-collapsed .rb-pool-filters-grid,
+.rb-pool-filters-container.rb-pool-filters-collapsed .rb-pool-filters-actions,
+.rb-pool-filters-container.rb-pool-filters-collapsed .rb-pool-filters-reset {
+    display: none;
+}
+.rb-pool-filters-container.rb-pool-filters-collapsed .rb-pool-filters-header {
+    margin-bottom: 0;
+}
+.rb-pool-filters-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px 14px;
+}
+.rb-pool-filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.rb-pool-filter-group label {
+    color: rgba(255, 255, 255, 0.78);
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+.rb-pool-filter-select {
+    width: 100%;
+    padding: 7px 10px;
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 6px;
+    color: #fff;
+    font-size: 0.88rem;
+}
+.rb-pool-filter-select option {
+    background: var(--oxford-blue, #0a1128);
+    color: #fff;
+}
+.rb-pool-slider-group {
+    gap: 2px;
+}
+.rb-pool-filter-slider {
+    width: 100%;
+    -webkit-appearance: none;
+    appearance: none;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.12);
+    border-radius: 3px;
+    outline: none;
+    margin: 6px 0 2px;
+}
+.rb-pool-filter-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--cerulean, #1282a2);
+    border: 2px solid #fff;
+    cursor: pointer;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+    transition: transform 0.15s;
+}
+.rb-pool-filter-slider::-webkit-slider-thumb:hover {
+    transform: scale(1.15);
+}
+.rb-pool-filter-slider::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--cerulean, #1282a2);
+    border: 2px solid #fff;
+    cursor: pointer;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+.rb-pool-slider-label {
+    color: rgba(255, 255, 255, 0.65);
+    font-size: 0.76rem;
+    font-weight: 600;
+}
+.rb-pool-slider-label span {
+    color: var(--cerulean, #1282a2);
+    font-weight: 700;
+}
+.rb-pool-filters-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-top: 12px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+.rb-pool-filters-apply {
+    background: var(--cerulean, #1282a2);
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 8px 22px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.1s;
+}
+.rb-pool-filters-apply:hover {
+    background: #0e6b87;
+    transform: translateY(-1px);
+}
+.rb-pool-results-count {
+    color: rgba(255, 255, 255, 0.65);
+    font-size: 0.82rem;
+}
+.rb-pool-results-count span {
+    color: #fff;
+    font-weight: 700;
+}

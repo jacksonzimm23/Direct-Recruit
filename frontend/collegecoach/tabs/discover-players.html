@@ -157,18 +157,23 @@
                 <span class="filter-count-badge" id="filterCountBadge" style="display: none;">0</span>
             </button>
 
-            <!-- Advanced Filters Section -->
-            <div class="filters-container">
-                <div class="filters-header">
-                    <h2>Filter Players</h2>
-                    <button class="btn-reset-filters" id="resetFilters">Reset All</button>
+            <!-- Advanced Filters Section — Pool/Pipeline visual (collapsible) -->
+            <div class="rb-pool-filters-container" id="discoverFilters">
+                <div class="rb-pool-filters-header">
+                    <button class="rb-pool-filters-toggle" id="discoverFiltersToggle" type="button" aria-expanded="true" title="Show/hide filters">
+                        <svg class="rb-pool-filters-toggle-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                        <h3 class="rb-pool-filters-title">Filter Players</h3>
+                    </button>
+                    <button class="rb-pool-filters-reset" id="resetFilters">Reset All</button>
                 </div>
 
-                <div class="filters-grid">
+                <div class="rb-pool-filters-grid">
                     <!-- Position Filter -->
-                    <div class="filter-group">
+                    <div class="rb-pool-filter-group">
                         <label>Position</label>
-                        <select class="filter-select" id="positionFilter">
+                        <select class="rb-pool-filter-select" id="positionFilter">
                             <option value="">All Positions</option>
                             <option value="QB">Quarterback (QB)</option>
                             <option value="RB">Running Back (RB)</option>
@@ -194,9 +199,9 @@
                     </div>
 
                     <!-- Graduation Year Filter -->
-                    <div class="filter-group">
+                    <div class="rb-pool-filter-group">
                         <label>Graduation Year</label>
-                        <select class="filter-select" id="gradYearFilter">
+                        <select class="rb-pool-filter-select" id="gradYearFilter">
                             <option value="">All Years</option>
                             <option value="2025">2025</option>
                             <option value="2026">2026</option>
@@ -208,9 +213,9 @@
                     </div>
 
                     <!-- State Filter -->
-                    <div class="filter-group">
+                    <div class="rb-pool-filter-group">
                         <label>State</label>
-                        <select class="filter-select" id="stateFilter">
+                        <select class="rb-pool-filter-select" id="stateFilter">
                             <option value="">All States</option>
                             <option value="AL">Alabama</option>
                             <option value="AK">Alaska</option>
@@ -266,42 +271,30 @@
                     </div>
 
                     <!-- Height Slider -->
-                    <div class="filter-group slider-group">
+                    <div class="rb-pool-filter-group rb-pool-slider-group">
                         <label>Height</label>
-                        <div class="slider-values">
-                            <span id="heightMin">5'0"</span>
-                            <span id="heightMax">7'0"</span>
-                        </div>
-                        <input type="range" class="filter-slider" id="heightSlider" min="60" max="84" value="60" step="1">
-                        <div class="slider-label">Minimum: <span id="heightValue">5'0"</span></div>
+                        <input type="range" class="rb-pool-filter-slider" id="heightSlider" min="60" max="84" value="60" step="1">
+                        <div class="rb-pool-slider-label">Min: <span id="heightValue">5'0"</span></div>
                     </div>
 
                     <!-- Weight Slider -->
-                    <div class="filter-group slider-group">
+                    <div class="rb-pool-filter-group rb-pool-slider-group">
                         <label>Weight (lbs)</label>
-                        <div class="slider-values">
-                            <span id="weightMin">150</span>
-                            <span id="weightMax">350</span>
-                        </div>
-                        <input type="range" class="filter-slider" id="weightSlider" min="150" max="350" value="150" step="5">
-                        <div class="slider-label">Minimum: <span id="weightValue">150</span> lbs</div>
+                        <input type="range" class="rb-pool-filter-slider" id="weightSlider" min="150" max="350" value="150" step="5">
+                        <div class="rb-pool-slider-label">Min: <span id="weightValue">150</span> lbs</div>
                     </div>
 
                     <!-- GPA Slider -->
-                    <div class="filter-group slider-group">
+                    <div class="rb-pool-filter-group rb-pool-slider-group">
                         <label>GPA</label>
-                        <div class="slider-values">
-                            <span id="gpaMin">0.0</span>
-                            <span id="gpaMax">4.0</span>
-                        </div>
-                        <input type="range" class="filter-slider" id="gpaSlider" min="0" max="40" value="0" step="1">
-                        <div class="slider-label">Minimum: <span id="gpaValue">0.0</span></div>
+                        <input type="range" class="rb-pool-filter-slider" id="gpaSlider" min="0" max="40" value="0" step="1">
+                        <div class="rb-pool-slider-label">Min: <span id="gpaValue">0.0</span></div>
                     </div>
                 </div>
 
-                <div class="filter-actions">
-                    <button class="btn-apply-filters" id="applyFilters">Apply Filters</button>
-                    <div class="results-count">Showing <span id="resultsCount">24</span> players</div>
+                <div class="rb-pool-filters-actions">
+                    <button class="rb-pool-filters-apply" id="applyFilters">Apply Filters</button>
+                    <div class="rb-pool-results-count">Showing <span id="resultsCount">24</span> players</div>
                 </div>
             </div>
 

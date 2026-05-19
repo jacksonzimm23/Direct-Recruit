@@ -553,6 +553,26 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     initMobileFilters();
 
+    // Pool/Pipeline collapsible filter look — clone of wireFilterPanelToggle
+    // from recruiting-board.js. Persists collapsed state in localStorage so
+    // a coach's preference survives reload.
+    (function wireTransferPortalFiltersToggle() {
+        const container = document.getElementById('transferPortalFilters');
+        const toggleBtn = document.getElementById('transferPortalFiltersToggle');
+        if (!container || !toggleBtn) return;
+        const storageKey = 'transferPortalFiltersHidden';
+        const hidden = localStorage.getItem(storageKey) === 'true';
+        if (hidden) {
+            container.classList.add('rb-pool-filters-collapsed');
+            toggleBtn.setAttribute('aria-expanded', 'false');
+        }
+        toggleBtn.addEventListener('click', () => {
+            const isCollapsed = container.classList.toggle('rb-pool-filters-collapsed');
+            localStorage.setItem(storageKey, isCollapsed);
+            toggleBtn.setAttribute('aria-expanded', !isCollapsed);
+        });
+    })();
+
     // Initial load - fetch first 9 transfer players
     fetchTransferPlayers({}, false);
 
