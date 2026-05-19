@@ -49,6 +49,30 @@ router.get('/contains', authMiddleware, requireRole('coach'), async (req, res) =
   }
 });
 
+// GET /evaluations?pool_entry_id=...&linked_player_user_id=... — live list of
+// every coach at the requester's current school who has this recruit in their
+// pipeline with a grade/color/notes set. Used by the on-board Info modal's
+// History tab so it reflects the current state of the staff's evaluations,
+// not the frozen snapshot taken at promote time.
+router.get('/evaluations', authMiddleware, requireRole('coach'), async (req, res) => {
+  try {
+    const schoolKey = await resolveCoachSchoolKey(req.userId);
+    if (!schoolKey) return res.json({ evaluations: [] });
+    const { pool_entry_id, linked_player_user_id } = req.query;
+    if (!pool_entry_id && !linked_player_user_id) {
+      return res.status(400).json({ error: 'pool_entry_id or linked_player_user_id is required' });
+    }
+    const evaluations = await PipelineRecruit.getEvaluationsAtSchool(schoolKey, {
+      poolEntryId: pool_entry_id || null,
+      linkedPlayerUserId: linked_player_user_id || null,
+    });
+    res.json({ evaluations });
+  } catch (err) {
+    logger.error('GET /pipeline/evaluations error:', err);
+    res.status(500).json({ error: 'Failed to load evaluations' });
+  }
+});
+
 // POST /from-pool — pull a team-pool entry into the coach's pipeline
 router.post('/from-pool', authMiddleware, requireRole('coach'), async (req, res) => {
   try {
@@ -133,7 +157,8 @@ router.get('/handoffs/in', authMiddleware, requireRole('coach'), async (req, res
   }
 });
 
-// GET /handoffs/out — pending outbound hand-offs I sent from my CURRENT school
+// GET /handoffs/out — ALL outbound hand-offs (pending + accepted + rejected
+// + rejected_duplicate) I sent from my CURRENT school.
 router.get('/handoffs/out', authMiddleware, requireRole('coach'), async (req, res) => {
   try {
     const schoolKey = await resolveCoachSchoolKey(req.userId);
@@ -143,6 +168,21 @@ router.get('/handoffs/out', authMiddleware, requireRole('coach'), async (req, re
   } catch (err) {
     logger.error('GET /pipeline/handoffs/out error:', err);
     res.status(500).json({ error: 'Failed to load hand-offs' });
+  }
+});
+
+// POST /handoffs/out/clear-resolved — delete every accepted/rejected outbound
+// hand-off so the sender can prune the Sent list manually. Pending rows are
+// untouched.
+router.post('/handoffs/out/clear-resolved', authMiddleware, requireRole('coach'), async (req, res) => {
+  try {
+    const schoolKey = await resolveCoachSchoolKey(req.userId);
+    if (!schoolKey) return res.json({ cleared: 0 });
+    const cleared = await PipelineHandoff.clearResolvedOut(req.userId, schoolKey);
+    res.json({ cleared });
+  } catch (err) {
+    logger.error('POST /pipeline/handoffs/out/clear-resolved error:', err);
+    res.status(500).json({ error: 'Failed to clear resolved hand-offs' });
   }
 });
 

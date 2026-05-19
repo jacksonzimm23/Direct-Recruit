@@ -312,11 +312,13 @@
     margin-bottom: 0;
 }
 
-/* Position Slot */
+/* Position Slot — all tiles locked to the same width regardless of how many
+   are in a row. Width is derived from the 5-up row (offense: LT/LG/C/RG/RT
+   etc.), and rows with fewer tiles (4-up: QB/RB/WR/TE) left-align rather
+   than stretching their tiles wider. Keeps every tile visually identical
+   across the board. */
 .position-slot {
-    flex: 0 0 calc((100% - 3rem) / 5); /* 5 columns with gaps */
-    min-width: 140px;
-    max-width: 180px;
+    flex: 0 0 calc((100% - 3rem) / 5);
 }
 
 .position-label {
@@ -3374,14 +3376,28 @@ body.rb-shared-no-boards .recruiting-board-main .football-field-container {
 .sg-coach-avatar {
     width: 40px;
     height: 40px;
+    flex: 0 0 40px;
+    border-radius: 50%;
     border: 2px solid var(--accent-orange);
     background: rgba(255, 107, 53, 0.2);
     color: var(--accent-orange);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
 }
 
 .sg-coach-avatar svg {
     width: 22px;
     height: 22px;
+}
+
+.sg-coach-avatar-img,
+.sg-coach-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
 }
 
 .sg-coach-subheader {
@@ -4993,6 +5009,22 @@ body.rb-shared-no-boards .recruiting-board-main .football-field-container {
 .eval-footer {
     flex-wrap: wrap;
     gap: 8px;
+    align-items: center;
+}
+/* Three buttons on the top row split the width evenly so each gets equal
+   breathing room (no cramped "Add to Board / Send to Coach" pair). */
+.eval-footer #evalDeleteBtn,
+.eval-footer #evalAddBoardBtn,
+.eval-footer #evalHandoffBtn {
+    flex: 1 1 0;
+    min-width: 0;
+    text-align: center;
+    padding: 0.6rem 0.5rem;
+    font-size: 0.85rem;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 /* Save Grade spans the full footer width on its own row */
 .eval-footer #evalSaveBtn {
@@ -5003,7 +5035,6 @@ body.rb-shared-no-boards .recruiting-board-main .football-field-container {
     background: rgba(239, 68, 68, 0.15);
     color: #ef4444;
     border-color: rgba(239, 68, 68, 0.4);
-    margin-right: auto;  /* push to left edge */
 }
 .eval-footer .btn-cancel#evalDeleteBtn:hover {
     background: rgba(239, 68, 68, 0.25);
@@ -5092,6 +5123,208 @@ body.rb-shared-no-boards .recruiting-board-main .football-field-container {
 .addboard-warning {
     color: #fbbf24;
     font-size: 0.85rem;
+    margin: 8px 0 0;
+}
+
+/* --------------------------------------------------------------------------
+   Add-to-Shared-Board: Tabs + Final Grade/Color + Evaluation History
+   -------------------------------------------------------------------------- */
+.addboard-tabs {
+    display: flex;
+    gap: 4px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    margin-bottom: 14px;
+}
+.addboard-tab {
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.55);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    padding: 8px 14px;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+}
+.addboard-tab:hover {
+    color: rgba(255, 255, 255, 0.85);
+}
+.addboard-tab.active {
+    color: var(--accent-orange, #ff6b35);
+    border-bottom-color: var(--accent-orange, #ff6b35);
+}
+.addboard-tab-panel {
+    display: none;
+}
+.addboard-tab-panel.active {
+    display: block;
+}
+.addboard-required {
+    color: #ef4444;
+    margin-left: 2px;
+}
+.addboard-empty-hint {
+    color: rgba(255, 255, 255, 0.55);
+    font-size: 0.82rem;
+    font-style: italic;
+    margin: 6px 0 0;
+}
+.addboard-color-row {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 4px;
+}
+.addboard-color-swatch {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    cursor: pointer;
+    padding: 0;
+    transition: transform 0.1s ease, border-color 0.15s ease;
+}
+.addboard-color-swatch:hover {
+    transform: scale(1.08);
+}
+.addboard-color-swatch.selected {
+    border-color: var(--white, #ffffff);
+    box-shadow: 0 0 0 2px var(--accent-orange, #ff6b35);
+}
+
+/* Evaluation History tab — compact list of coach + grade + color swatch.
+   No notes, no timestamps. Designed for one-glance scanning. */
+.addboard-history-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    margin-bottom: 8px;
+}
+.addboard-history-row:last-child {
+    margin-bottom: 0;
+}
+.addboard-history-swatch {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    flex: 0 0 16px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+}
+.addboard-history-swatch-empty {
+    background: transparent;
+    border-style: dashed;
+    border-color: rgba(255, 255, 255, 0.25);
+}
+.addboard-history-coach {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    min-width: 0;
+}
+.addboard-history-name {
+    color: var(--white, #ffffff);
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+.addboard-history-title {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.78rem;
+}
+.addboard-history-grade {
+    color: var(--accent-orange, #ff6b35);
+    font-weight: 700;
+    font-size: 1.05rem;
+    min-width: 32px;
+    text-align: right;
+}
+.addboard-history-empty {
+    color: rgba(255, 255, 255, 0.5);
+    font-style: italic;
+    text-align: center;
+    padding: 20px 12px;
+    margin: 0;
+}
+
+/* --------------------------------------------------------------------------
+   Football-field card: final color stripe on the leftmost edge (mirrors the
+   pipeline-card stripe style) + final grade badge on the right. Both
+   personal and shared board cards use these now. Legacy cards (added before
+   the final-synthesis feature) render with an empty dashed stripe and no
+   grade badge.
+   -------------------------------------------------------------------------- */
+.recruit-card {
+    position: relative;   /* anchor the absolutely-positioned color stripe */
+    padding-left: 12px;   /* clear the stripe + a little breathing room */
+}
+.recruit-final-color {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 5px;
+    border-top-left-radius: 8px;
+    border-bottom-left-radius: 8px;
+}
+.recruit-final-color-empty {
+    background: rgba(255, 255, 255, 0.08);
+}
+.recruit-final-grade {
+    flex: 0 0 auto;
+    margin-left: auto;
+    align-self: center;
+    min-width: 28px;
+    height: 24px;
+    padding: 0 8px;
+    border-radius: 12px;
+    background: var(--accent-orange, #ff6b35);
+    color: var(--white, #ffffff);
+    font-weight: 700;
+    font-size: 0.78rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* --------------------------------------------------------------------------
+   On-Board Player Info Modal — opens when a coach clicks a card on the
+   football field and picks "Show Info" from the context menu. Reuses the
+   eval modal's tab + content styling; only the audit caption is new.
+   -------------------------------------------------------------------------- */
+.board-info-modal .recruiting-board-modal-overlay {
+    background: rgba(0, 0, 0, 0.88);
+    backdrop-filter: blur(6px);
+}
+.board-info-modal .recruiting-board-modal-content {
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
+}
+
+/* Lock a consistent size on the tabbed recruiting-board modals so the modal
+   doesn't shrink/grow when switching between tabs with different amounts of
+   content (e.g. long questionnaire vs short history list). The body keeps
+   its own scroll, header/footer stay pinned. Confirm dialogs and other
+   sg-modal-content modals are left alone — they SHOULD size to content. */
+#evaluationModal .sg-modal-content,
+#boardPlayerInfoModal .sg-modal-content,
+#poolDetailModal .sg-modal-content,
+#addBoardModal .sg-modal-content {
+    height: 85vh;
+    max-height: 85vh;
+}
+.board-info-modal .recruiting-board-modal-footer {
+    justify-content: center;  /* single Save button, centered */
+}
+.board-info-modal .recruiting-board-modal-footer .btn-submit {
+    min-width: 200px;
+}
+.board-info-audit {
+    color: rgba(255, 255, 255, 0.55);
+    font-size: 0.78rem;
+    font-style: italic;
     margin: 8px 0 0;
 }
 
@@ -5248,6 +5481,39 @@ body.rb-shared-no-boards .recruiting-board-main .football-field-container {
     border-radius: 9px;
     line-height: 1.4;
 }
+/* State pill variants on the Sent view's recipient chips. Default (.handoff-pill-pending
+   above is yellow). Accepted → green, Rejected variants → red. */
+.handoff-pending-pill.handoff-pill-accepted {
+    background: rgba(34, 197, 94, 0.18);
+    color: #86efac;
+    border-color: rgba(34, 197, 94, 0.45);
+}
+.handoff-pending-pill.handoff-pill-rejected {
+    background: rgba(239, 68, 68, 0.18);
+    color: #f87171;
+    border-color: rgba(239, 68, 68, 0.45);
+}
+
+/* Clear Resolved button on the Sent view header. Sits right-aligned next to
+   the title/count block. Subtle until hovered. */
+.rb-pipeline-clear-btn {
+    margin-left: auto;
+    background: rgba(255, 255, 255, 0.05);
+    color: rgba(255, 255, 255, 0.75);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    transition: all 0.15s ease;
+}
+.rb-pipeline-clear-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+    border-color: rgba(255, 255, 255, 0.3);
+}
 
 /* ---- Received view cards ---- */
 .handoff-received-list {
@@ -5343,24 +5609,78 @@ body.rb-shared-no-boards .recruiting-board-main .football-field-container {
 .handoff-chain-toggle:hover {
     opacity: 0.85;
 }
+/* Sender attribution line replaces the old sender-row + sender-text block.
+   One sentence is enough — the full recruit card sits right below it, and
+   the sender's identity is already in the sidebar nav notifications. */
+.handoff-sender-line {
+    font-size: 0.92rem;
+    color: rgba(255, 255, 255, 0.85);
+    padding: 0 0 8px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    margin-bottom: 10px;
+}
+.handoff-sender-line strong {
+    color: var(--accent-orange, #ff6b35);
+    font-weight: 700;
+}
+
+/* Inline banner shown on a received hand-off card when the recruit is
+   already in the recipient's pipeline. Accepting would 409 on the UNIQUE
+   constraint, so we disable Accept and direct the coach to Reject (which
+   clears the pending hand-off without creating a duplicate). */
+.handoff-duplicate-banner {
+    background: rgba(250, 204, 21, 0.12);
+    color: #facc15;
+    border: 1px solid rgba(250, 204, 21, 0.4);
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-top: 8px;
+}
+
 .handoff-actions {
     display: flex;
     gap: 10px;
     justify-content: flex-end;
     padding-top: 4px;
 }
+/* Self-contained button styles — these cards aren't inside a modal footer
+   so the `.recruiting-board-modal-footer .btn-*` cascade doesn't reach
+   them. Define the look directly to avoid relying on global classes. */
 .handoff-reject-btn,
 .handoff-accept-btn {
-    min-width: 100px;
+    min-width: 110px;
+    padding: 0.6rem 1.1rem;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    transition: all 0.15s ease;
 }
 .handoff-reject-btn {
-    background: rgba(239, 68, 68, 0.15) !important;
-    color: #ef4444 !important;
-    border-color: rgba(239, 68, 68, 0.4) !important;
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+    border: 1px solid rgba(239, 68, 68, 0.4);
 }
 .handoff-reject-btn:hover:not(:disabled) {
-    background: rgba(239, 68, 68, 0.25) !important;
-    border-color: rgba(239, 68, 68, 0.6) !important;
+    background: rgba(239, 68, 68, 0.25);
+    border-color: rgba(239, 68, 68, 0.6);
+}
+.handoff-accept-btn {
+    background: var(--accent-orange, #ff6b35);
+    color: var(--white, #ffffff);
+    border: 1px solid var(--accent-orange, #ff6b35);
+}
+.handoff-accept-btn:hover:not(:disabled) {
+    background: #e55a2b;
+    border-color: #e55a2b;
+}
+.handoff-reject-btn:disabled,
+.handoff-accept-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
 }
 
 /* ---- Evaluation chain timeline (shared between Received card + Eval Modal History tab) ---- */
@@ -5441,6 +5761,13 @@ body.rb-shared-no-boards .recruiting-board-main .football-field-container {
 /* ---- Send Hand-Off Modal ---- */
 .send-handoff-modal .recruiting-board-modal-content {
     max-width: 560px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
+}
+/* Darker + blurred overlay matches the Add-to-Board / on-board Info modals
+   so the modal feels solid against the busy recruiting-board background. */
+.send-handoff-modal .recruiting-board-modal-overlay {
+    background: rgba(0, 0, 0, 0.88);
+    backdrop-filter: blur(6px);
 }
 .send-handoff-instructions {
     margin: 0 0 14px;

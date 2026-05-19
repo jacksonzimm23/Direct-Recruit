@@ -113,10 +113,14 @@ class PipelineHandoff {
         params
       );
 
-      // 4. Flip source recruit to 'out'
+      // Source recruit STAYS 'active' — coaches keep working their own copy
+      // of the player even after sending it to a teammate. The receiver gets
+      // their own pipeline_recruits row on accept; both coaches see the same
+      // recruit independently. We still bump updated_at so the row sorts to
+      // the top of the sender's pipeline (recently-acted-on first).
       await client.query(
         `UPDATE pipeline_recruits
-            SET status = 'out', updated_at = CURRENT_TIMESTAMP
+            SET updated_at = CURRENT_TIMESTAMP
           WHERE id = $1`,
         [sourceRecruitId]
       );
@@ -154,16 +158,17 @@ class PipelineHandoff {
   }
 
   /**
-   * Out view — pending hand-offs I sent, filtered to MY CURRENT school.
-   * Grouped by source recruit so the caller sees one card per recruit with
-   * N pending recipients.
+   * Out view — ALL hand-offs I sent (pending + accepted + rejected +
+   * rejected_duplicate), filtered to MY CURRENT school. Grouped by source
+   * recruit so the caller sees one card per recruit with N recipients each
+   * carrying their current state. Frontend renders status badges + lets the
+   * sender clear resolved rows manually via clearResolvedOut().
    */
   static async listOut(coachUserId, schoolKey) {
     if (!schoolKey) return [];
     const result = await pool.query(
       `${this._listSelectSQL('FROM_VIEW')}
         WHERE h.from_coach_id = $1
-          AND h.state = 'pending'
           AND h.school_key = $2
         ORDER BY h.created_at DESC`,
       [coachUserId, schoolKey]
@@ -175,16 +180,35 @@ class PipelineHandoff {
     for (const item of shaped) {
       const key = item.recruit.id;
       if (!grouped.has(key)) {
-        grouped.set(key, { recruit: item.recruit, pending_recipients: [], created_at: item.created_at });
+        grouped.set(key, { recruit: item.recruit, recipients: [], created_at: item.created_at });
       }
-      grouped.get(key).pending_recipients.push({
+      grouped.get(key).recipients.push({
         handoff_id: item.handoff_id,
         recipient: item.recipient,
         message: item.message,
+        state: item.state,
+        acted_on_at: item.acted_on_at,
         created_at: item.created_at,
       });
     }
     return Array.from(grouped.values());
+  }
+
+  /**
+   * Clear all non-pending hand-offs the sender has acted-on-resolution for
+   * at their current school. Used by the "Clear acted-on" button in the
+   * Sent view so the list doesn't grow forever.
+   */
+  static async clearResolvedOut(coachUserId, schoolKey) {
+    if (!schoolKey) return 0;
+    const result = await pool.query(
+      `DELETE FROM pipeline_handoffs
+        WHERE from_coach_id = $1
+          AND school_key = $2
+          AND state IN ('accepted', 'rejected', 'rejected_duplicate')`,
+      [coachUserId, schoolKey]
+    );
+    return result.rowCount || 0;
   }
 
   /** Lightweight unread counter for badge polling. */
@@ -310,10 +334,17 @@ class PipelineHandoff {
         newRecruitId = insertResult.rows[0].id;
       } catch (e) {
         if (e.code === '23505') {
-          // Receiver already has this recruit. Delete the handoff so it
-          // can't get stuck, flip source status if applicable, then surface
-          // DUPLICATE so the caller can show a clean toast.
-          await client.query(`DELETE FROM pipeline_handoffs WHERE id = $1`, [handoffId]);
+          // Receiver already has this recruit. Mark the hand-off as
+          // 'rejected_duplicate' so the sender still sees a row in their Sent
+          // view with the reason — instead of silently disappearing. Flip
+          // source status back if applicable, then surface DUPLICATE so the
+          // caller can show a clean toast.
+          await client.query(
+            `UPDATE pipeline_handoffs
+                SET state = 'rejected_duplicate', acted_on_at = CURRENT_TIMESTAMP
+              WHERE id = $1`,
+            [handoffId]
+          );
           await PipelineRecruit.flipBackStatusIfNoPendingHandoffs(client, handoff.source_recruit_id);
           await client.query('COMMIT');
           const err = new Error('You already have this recruit in your pipeline');
@@ -323,7 +354,8 @@ class PipelineHandoff {
         throw e;
       }
 
-      // 6. UPDATE handoff (audit), then DELETE
+      // 6. Mark the hand-off as accepted. Row stays in pipeline_handoffs so
+      // the sender's Sent view can show "Accepted" — sender clears manually.
       await client.query(
         `UPDATE pipeline_handoffs
             SET state = 'accepted',
@@ -332,7 +364,6 @@ class PipelineHandoff {
           WHERE id = $2`,
         [newRecruitId, handoffId]
       );
-      await client.query(`DELETE FROM pipeline_handoffs WHERE id = $1`, [handoffId]);
 
       // 7. Flip source recruit back to 'active' if no other handoffs remain
       await PipelineRecruit.flipBackStatusIfNoPendingHandoffs(client, handoff.source_recruit_id);
@@ -381,13 +412,14 @@ class PipelineHandoff {
         throw err;
       }
 
+      // Row stays in pipeline_handoffs (state='rejected') so the sender's
+      // Sent view can show "Rejected" — sender clears manually.
       await client.query(
         `UPDATE pipeline_handoffs
             SET state = 'rejected', acted_on_at = CURRENT_TIMESTAMP
           WHERE id = $1`,
         [handoffId]
       );
-      await client.query(`DELETE FROM pipeline_handoffs WHERE id = $1`, [handoffId]);
 
       await PipelineRecruit.flipBackStatusIfNoPendingHandoffs(client, handoff.source_recruit_id);
 
@@ -455,6 +487,7 @@ class PipelineHandoff {
     return `
       SELECT
         h.id AS handoff_id, h.message, h.is_read, h.created_at,
+        h.state, h.acted_on_at,
         h.from_coach_id, h.to_coach_id, h.school_key,
         oc.id AS oc_user_id, oc_cp.first_name AS oc_first_name,
         oc_cp.last_name AS oc_last_name, oc_cp.team_name AS oc_team_name,
@@ -539,6 +572,8 @@ class PipelineHandoff {
       handoff_id: row.handoff_id,
       message: row.message,
       created_at: row.created_at,
+      state: row.state,
+      acted_on_at: row.acted_on_at,
       recipient: {
         user_id: row.oc_user_id,
         first_name: row.oc_first_name,

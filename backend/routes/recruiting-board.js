@@ -3,6 +3,7 @@ const router = express.Router();
 const RecruitingBoard = require('../models/RecruitingBoard');
 const BoardGroup = require('../models/BoardGroup');
 const TeamQuestionnaire = require('../models/TeamQuestionnaire');
+const PipelineRecruit = require('../models/PipelineRecruit');
 const Notification = require('../models/Notification');
 const { notifyUser } = require('../utils/notifications');
 const { authMiddleware, requireRole, validateUUID } = require('../middleware/auth');
@@ -21,6 +22,52 @@ function buildQuestionnaireUrl(slug) {
     ? process.env.FRONTEND_PATH_PREFIX
     : (isProd ? '' : '/frontend');
   return `${appUrl}${prefix}/questionnaire/index.html?slug=${encodeURIComponent(slug)}`;
+}
+
+// Locked 6-color palette used by the Pipeline / Add-to-Board final synthesis.
+// Mirrors COLOR_HEX in frontend/collegecoach/tabs/recruiting-board.js. Any
+// change here MUST be applied to that frontend constant too.
+const VALID_FINAL_COLOR_TOKENS = ['dark_green', 'light_green', 'yellow', 'orange', 'red', 'dark_red'];
+
+// Shared validator for the optional final-synthesis fields accepted by the
+// add-to-board POST routes AND the update-final PUT routes. Mutates playerData
+// in place (normalises numbers, trims notes). Returns { ok: true } on success
+// or { ok: false, status, error } on failure so the caller can short-circuit
+// with `return res.status(status).json({ error })`.
+function validateFinalSynthesisFields(playerData) {
+  if (playerData.final_grade != null) {
+    const g = Number(playerData.final_grade);
+    if (!Number.isInteger(g) || g < 0 || g > 100) {
+      return { ok: false, status: 400, error: 'final_grade must be an integer 0-100 or null' };
+    }
+    playerData.final_grade = g;
+  }
+  if (playerData.final_color_tag != null && !VALID_FINAL_COLOR_TOKENS.includes(playerData.final_color_tag)) {
+    return { ok: false, status: 400, error: 'final_color_tag must be one of: ' + VALID_FINAL_COLOR_TOKENS.join(', ') };
+  }
+  if (playerData.grading_history != null) {
+    if (!Array.isArray(playerData.grading_history) || playerData.grading_history.length > 50) {
+      return { ok: false, status: 400, error: 'grading_history must be an array (max 50 entries)' };
+    }
+  }
+  if (playerData.final_notes != null && typeof playerData.final_notes === 'string') {
+    playerData.final_notes = playerData.final_notes.slice(0, 2000);
+  }
+  return { ok: true };
+}
+
+// Stamp server-side audit fields on the playerData. Always overwrites whatever
+// the client sent for promoted_by_user_id / promoted_at; accepts promoted_by_name
+// from the body (because req.user — User.findById projection — doesn't carry
+// first/last name from coach_profiles).
+function stampPromotedAudit(playerData, req) {
+  playerData.promoted_by_user_id = req.userId;
+  if (typeof playerData.promoted_by_name === 'string') {
+    playerData.promoted_by_name = playerData.promoted_by_name.slice(0, 200);
+  } else {
+    playerData.promoted_by_name = playerData.promoted_by_name || null;
+  }
+  playerData.promoted_at = new Date().toISOString();
 }
 
 // Helper function to add signed URLs to profiles/players
@@ -143,13 +190,22 @@ router.get('/personal/:boardId/players', authMiddleware, requireRole('coach'), v
   }
 });
 
-// Add a player to a specific personal board
+// Add a player to a specific personal board. Accepts the standard player JSONB
+// plus the same optional final-synthesis fields the shared-board route takes
+// (final_grade, final_color_tag, final_notes, grading_history) — gives personal
+// boards the same on-card swatch + grade badge as shared boards.
 router.post('/personal/:boardId/players', authMiddleware, requireRole('coach'), validateUUID('boardId'), async (req, res) => {
   try {
     const playerData = req.body;
-    if (!playerData.user_id || !playerData.position) {
-      return res.status(400).json({ error: 'Player user_id and position are required' });
+    // Accept either user_id (DR-account recruit) or pool_entry_id
+    // (questionnaire-only recruit, pulled forward from Plan 6).
+    if ((!playerData.user_id && !playerData.pool_entry_id) || !playerData.position) {
+      return res.status(400).json({ error: 'Player identifier (user_id or pool_entry_id) and position are required' });
     }
+    const v = validateFinalSynthesisFields(playerData);
+    if (!v.ok) return res.status(v.status).json({ error: v.error });
+    stampPromotedAudit(playerData, req);
+
     await RecruitingBoard.addPlayerToPersonalBoardById(req.params.boardId, req.userId, playerData);
     res.json({ message: 'Player added to recruiting board', player: playerData });
   } catch (error) {
@@ -190,6 +246,35 @@ router.put('/personal/:boardId/players/:playerId/position', authMiddleware, requ
     if (/not found/i.test(error.message)) return res.status(404).json({ error: error.message });
     logger.error('Error updating player position:', error);
     res.status(500).json({ error: 'Failed to update player position' });
+  }
+});
+
+// Update final-synthesis fields (final_grade / final_color_tag / final_notes)
+// on an existing player on a personal board. Body: { position, final_grade,
+// final_color_tag, final_notes }. Re-stamps promoted_by_user_id / promoted_at
+// to the editor each time. grading_history is NEVER mutated — it's a frozen
+// audit trail from the original promotion.
+router.put('/personal/:boardId/players/:playerId/final', authMiddleware, requireRole('coach'), validateUUID('boardId', 'playerId'), async (req, res) => {
+  try {
+    const { position } = req.body;
+    if (!position) return res.status(400).json({ error: 'position is required' });
+    const finalData = {
+      final_grade: req.body.final_grade,
+      final_color_tag: req.body.final_color_tag,
+      final_notes: req.body.final_notes,
+      promoted_by_name: req.body.promoted_by_name,
+    };
+    const v = validateFinalSynthesisFields(finalData);
+    if (!v.ok) return res.status(v.status).json({ error: v.error });
+    stampPromotedAudit(finalData, req);
+    await RecruitingBoard.updateFinalOnPersonalBoardById(
+      req.params.boardId, req.userId, req.params.playerId, position, finalData
+    );
+    res.json({ message: 'Final fields updated', final: finalData });
+  } catch (error) {
+    if (/not found/i.test(error.message)) return res.status(404).json({ error: error.message });
+    logger.error('Error updating personal board final fields:', error);
+    res.status(500).json({ error: 'Failed to update final fields' });
   }
 });
 
@@ -260,8 +345,8 @@ router.post('/personal/:classYear/players', authMiddleware, requireRole('coach')
     const { classYear } = req.params;
     const playerData = req.body;
 
-    if (!playerData.user_id || !playerData.position) {
-      return res.status(400).json({ error: 'Player user_id and position are required' });
+    if ((!playerData.user_id && !playerData.pool_entry_id) || !playerData.position) {
+      return res.status(400).json({ error: 'Player identifier (user_id or pool_entry_id) and position are required' });
     }
 
     await RecruitingBoard.addPlayerToPersonalBoard(req.userId, parseInt(classYear), playerData);
@@ -390,7 +475,25 @@ router.post('/groups', authMiddleware, requireRole('coach'), async (req, res) =>
 router.get('/groups/search-coaches', authMiddleware, requireRole('coach'), async (req, res) => {
   try {
     const { query, groupId } = req.query;
-    if (!query || query.length < 2) return res.json({ coaches: [] });
+    // Empty query is allowed: returns all same-school coaches (alphabetical)
+    // so the invite modal can show a "browse all teammates" dropdown when the
+    // search field is focused but empty. A non-empty short query (1 char) is
+    // still rejected — too noisy.
+    const hasQuery = !!(query && query.length >= 2);
+    if (query && query.length === 1) return res.json({ coaches: [] });
+
+    // Hard same-school restriction (mirrors the Plan 5A handoff recipient
+    // picker). New shared-group invites can only go to coaches whose
+    // normalized team_name matches the requester's. Existing cross-school
+    // members are grandfathered — this filter only gates new invites.
+    // If the requester has no team_name set, return empty (no school to match).
+    const meCp = await pool.query(
+      `SELECT team_name FROM coach_profiles WHERE user_id = $1 LIMIT 1`,
+      [req.userId]
+    );
+    const myTeamName = meCp.rows[0] && meCp.rows[0].team_name;
+    const mySchoolKey = TeamQuestionnaire.normalizeSchoolKey(myTeamName);
+    if (!mySchoolKey) return res.json({ coaches: [] });
 
     const excludeIds = [req.userId];
     if (groupId) {
@@ -412,23 +515,42 @@ router.get('/groups/search-coaches', authMiddleware, requireRole('coach'), async
       for (const r of pending.rows) excludeIds.push(r.user_id);
     }
 
-    const result = await pool.query(
-      `SELECT cp.user_id, cp.first_name, cp.last_name, cp.username, cp.profile_image_url, cp.team_name, cp.college_division, cp.state
-       FROM coach_profiles cp
-       JOIN users u ON cp.user_id = u.id
-       WHERE u.role = 'coach'
-         AND cp.college_division IS NOT NULL
-         AND cp.user_id != ALL($1::uuid[])
-         AND (
-           similarity(cp.first_name || ' ' || cp.last_name, $2) > 0.2
-           OR similarity(cp.username, $2) > 0.2
-           OR LOWER(cp.first_name || ' ' || cp.last_name) LIKE LOWER($3)
-           OR LOWER(cp.username) LIKE LOWER($3)
-         )
-       ORDER BY GREATEST(similarity(cp.first_name || ' ' || cp.last_name, $2), similarity(cp.username, $2)) DESC, cp.last_name, cp.first_name
-       LIMIT 10`,
-      [excludeIds, query, `%${escapeLikePattern(query)}%`]
-    );
+    let result;
+    if (hasQuery) {
+      result = await pool.query(
+        `SELECT cp.user_id, cp.first_name, cp.last_name, cp.username, cp.profile_image_url, cp.team_name, cp.college_division, cp.state
+         FROM coach_profiles cp
+         JOIN users u ON cp.user_id = u.id
+         WHERE u.role = 'coach'
+           AND cp.college_division IS NOT NULL
+           AND cp.user_id != ALL($1::uuid[])
+           AND LOWER(TRIM(cp.team_name)) = $4
+           AND (
+             similarity(cp.first_name || ' ' || cp.last_name, $2) > 0.2
+             OR similarity(cp.username, $2) > 0.2
+             OR LOWER(cp.first_name || ' ' || cp.last_name) LIKE LOWER($3)
+             OR LOWER(cp.username) LIKE LOWER($3)
+           )
+         ORDER BY GREATEST(similarity(cp.first_name || ' ' || cp.last_name, $2), similarity(cp.username, $2)) DESC, cp.last_name, cp.first_name
+         LIMIT 10`,
+        [excludeIds, query, `%${escapeLikePattern(query)}%`, mySchoolKey]
+      );
+    } else {
+      // Empty-query browse mode — alphabetical, cap higher (50) since coaches
+      // are scoped to a single school anyway and we want them to see everyone.
+      result = await pool.query(
+        `SELECT cp.user_id, cp.first_name, cp.last_name, cp.username, cp.profile_image_url, cp.team_name, cp.college_division, cp.state
+         FROM coach_profiles cp
+         JOIN users u ON cp.user_id = u.id
+         WHERE u.role = 'coach'
+           AND cp.college_division IS NOT NULL
+           AND cp.user_id != ALL($1::uuid[])
+           AND LOWER(TRIM(cp.team_name)) = $2
+         ORDER BY cp.last_name, cp.first_name
+         LIMIT 50`,
+        [excludeIds, mySchoolKey]
+      );
+    }
 
     // Sign avatars
     for (const r of result.rows) {
@@ -592,8 +714,21 @@ router.get('/my-pool', authMiddleware, requireRole('coach'), async (req, res) =>
     p++; params.push(parseInt(offset, 10) || 0);
     const offsetParam = `$${p}`;
 
+    // Plan 4 checkmark params (LATERAL join in the SELECT below). These come
+    // AFTER limit/offset so the count query below — which uses
+    // params.slice(0, -4) to drop the four pagination/checkmark params — still
+    // works. The count query does NOT reference the LATERAL join, so dropping
+    // these four is safe.
+    p++; params.push(req.userId);
+    const meParam = `$${p}`;
+    p++; params.push(q.school_key);
+    const schoolKeyParam = `$${p}`;
+
     // 4. Run the list query — LEFT JOIN the linked DR account's player_profile
     // so we can surface their profile_image_url for the avatar (Plan 3.5).
+    // LATERAL join pipeline_recruits → the Plan 4 cross-coach checkmark flags.
+    // in_my_pipeline = this coach; in_any_pipeline_at_school = any coach at
+    // this school (per pr.school_key snapshotted at add-time).
     const rowsResult = await pool.query(
       `SELECT
          pe.id,
@@ -603,18 +738,27 @@ router.get('/my-pool', authMiddleware, requireRole('coach'), async (req, res) =>
          pe.last_submitted_at,
          pe.linked_player_user_id,
          qs.submission_data,
-         pp.profile_image_url AS dr_profile_image_s3_key
+         pp.profile_image_url AS dr_profile_image_s3_key,
+         COALESCE(pip.in_my_pipeline, false) AS in_my_pipeline,
+         COALESCE(pip.in_any_pipeline_at_school, false) AS in_any_pipeline_at_school
        FROM pool_entries pe
        JOIN questionnaire_submissions qs ON qs.id = pe.latest_submission_id
        LEFT JOIN player_profiles pp ON pp.user_id = pe.linked_player_user_id
+       LEFT JOIN LATERAL (
+         SELECT
+           BOOL_OR(pr.coach_user_id = ${meParam}) AS in_my_pipeline,
+           COUNT(*) > 0 AS in_any_pipeline_at_school
+         FROM pipeline_recruits pr
+         WHERE pr.pool_entry_id = pe.id AND pr.school_key = ${schoolKeyParam}
+       ) pip ON TRUE
        WHERE ${where.join(' AND ')}
        ORDER BY pe.last_submitted_at DESC
        LIMIT ${limitParam} OFFSET ${offsetParam}`,
       params
     );
 
-    // Total count for pagination (drop limit + offset params)
-    const countParams = params.slice(0, -2);
+    // Total count for pagination (drop the last 4 params: limit, offset, me, schoolKey)
+    const countParams = params.slice(0, -4);
     const countResult = await pool.query(
       `SELECT COUNT(*)::int AS total
          FROM pool_entries pe
@@ -644,7 +788,11 @@ router.get('/my-pool', authMiddleware, requireRole('coach'), async (req, res) =>
         email: row.email,
         first_name: personal.first_name || '',
         last_name: personal.last_name || '',
-        positions: athletic.positions || null,
+        // Normalize positions to a clean upper-cased array — questionnaire
+        // JSONB can hold a string ("WR/CB", "WR,CB") or array. Helper handles
+        // all variants, splits on / and , so filters can match individual
+        // codes ("WR" filter matches "WR/CB" recruit).
+        positions: PipelineRecruit.normalizePositionList(athletic.positions, null),
         height_inches: athletic.height_inches || null,
         weight_lbs: athletic.weight_lbs || null,
         graduation_year: academic.graduation_year || null,
@@ -657,7 +805,8 @@ router.get('/my-pool', authMiddleware, requireRole('coach'), async (req, res) =>
         last_submitted_at: row.last_submitted_at,
         linked_player_user_id: row.linked_player_user_id,
         profile_image_url: profileImageUrl,
-        is_in_my_pipeline: false // Plan 4 will populate this from pipeline_recruits
+        is_in_my_pipeline: row.in_my_pipeline === true,
+        is_in_any_pipeline_at_school: row.in_any_pipeline_at_school === true
       };
     }));
 
@@ -734,6 +883,18 @@ router.get('/my-pool/:entryId', authMiddleware, requireRole('coach'), validateUU
       }
     }
 
+    // Plan 4 — checkmark flags so the modal footer button can render the
+    // right state without a second roundtrip.
+    const pipResult = await pool.query(
+      `SELECT
+         BOOL_OR(coach_user_id = $1) AS in_my_pipeline,
+         COUNT(*) > 0 AS in_any_pipeline_at_school
+       FROM pipeline_recruits
+       WHERE pool_entry_id = $2 AND school_key = $3`,
+      [req.userId, entry.id, schoolKey]
+    );
+    const pip = pipResult.rows[0] || {};
+
     res.json({
       entry: {
         id: entry.id,
@@ -745,7 +906,9 @@ router.get('/my-pool/:entryId', authMiddleware, requireRole('coach'), validateUU
         // Convenience: surface the linked DR account's signed profile image
         // URL at the top level so the modal header doesn't have to dig into
         // dr_profile for the avatar.
-        profile_image_url: (drProfile && drProfile.profile_image_url) || null
+        profile_image_url: (drProfile && drProfile.profile_image_url) || null,
+        is_in_my_pipeline: pip.in_my_pipeline === true,
+        is_in_any_pipeline_at_school: pip.in_any_pipeline_at_school === true
       },
       submissions: subsResult.rows.map(r => ({
         id: r.id,
@@ -1408,13 +1571,22 @@ router.get('/groups/:groupId/boards/:boardId/players', authMiddleware, requireRo
   }
 });
 
-// Add a player to a group board (editor only)
+// Add a player to a group board (editor only). Accepts the standard player
+// JSONB plus optional final-synthesis fields (final_grade, final_color_tag,
+// final_notes, grading_history). These are surfaced on the shared-board
+// football-field card so the rest of the staff sees a one-glance read on each
+// recruit. Validation lives in the shared validateFinalSynthesisFields helper
+// at the top of this file (used by both POST routes + the PUT update routes).
 router.post('/groups/:groupId/boards/:boardId/players', authMiddleware, requireRole('coach'), validateUUID('groupId', 'boardId'), requireGroupAccess('editor'), async (req, res) => {
   try {
     const playerData = req.body;
-    if (!playerData.user_id || !playerData.position) {
-      return res.status(400).json({ error: 'Player user_id and position are required' });
+    if ((!playerData.user_id && !playerData.pool_entry_id) || !playerData.position) {
+      return res.status(400).json({ error: 'Player identifier (user_id or pool_entry_id) and position are required' });
     }
+    const v = validateFinalSynthesisFields(playerData);
+    if (!v.ok) return res.status(v.status).json({ error: v.error });
+    stampPromotedAudit(playerData, req);
+
     await RecruitingBoard.addPlayerToGroupBoardById(req.params.boardId, req.params.groupId, playerData);
     res.json({ message: 'Player added', player: playerData });
   } catch (error) {
@@ -1446,6 +1618,32 @@ router.put('/groups/:groupId/boards/:boardId/players/:playerId/position', authMi
     res.json({ message: 'Player position updated' });
   } catch (error) {
     return handleGroupError(error, res, 'Failed to update player position');
+  }
+});
+
+// Update final-synthesis fields on an existing player on a group board (editor
+// only). Same shape as the personal-board PUT route. grading_history stays
+// frozen — only final_grade / final_color_tag / final_notes / promoted_by_*
+// are mutated.
+router.put('/groups/:groupId/boards/:boardId/players/:playerId/final', authMiddleware, requireRole('coach'), validateUUID('groupId', 'boardId', 'playerId'), requireGroupAccess('editor'), async (req, res) => {
+  try {
+    const { position } = req.body;
+    if (!position) return res.status(400).json({ error: 'position is required' });
+    const finalData = {
+      final_grade: req.body.final_grade,
+      final_color_tag: req.body.final_color_tag,
+      final_notes: req.body.final_notes,
+      promoted_by_name: req.body.promoted_by_name,
+    };
+    const v = validateFinalSynthesisFields(finalData);
+    if (!v.ok) return res.status(v.status).json({ error: v.error });
+    stampPromotedAudit(finalData, req);
+    await RecruitingBoard.updateFinalOnGroupBoardById(
+      req.params.boardId, req.params.groupId, req.params.playerId, position, finalData
+    );
+    res.json({ message: 'Final fields updated', final: finalData });
+  } catch (error) {
+    return handleGroupError(error, res, 'Failed to update final fields');
   }
 });
 

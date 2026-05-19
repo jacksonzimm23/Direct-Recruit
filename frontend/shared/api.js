@@ -1191,12 +1191,19 @@ const pipelineAPI = {
         method: 'POST',
         body: JSON.stringify({ to_coach_ids, message: message || null })
     }),
+    getEvaluations: async ({ poolEntryId, linkedPlayerUserId }) => {
+        const params = new URLSearchParams();
+        if (poolEntryId) params.set('pool_entry_id', poolEntryId);
+        if (linkedPlayerUserId) params.set('linked_player_user_id', linkedPlayerUserId);
+        return await apiRequest(`/pipeline/evaluations?${params.toString()}`);
+    },
     getHandoffsIn: async () => await apiRequest('/pipeline/handoffs/in'),
     getHandoffsOut: async () => await apiRequest('/pipeline/handoffs/out'),
     getHandoffUnreadCount: async () => await apiRequest('/pipeline/handoffs/unread-count'),
     markHandoffsSeen: async () => await apiRequest('/pipeline/handoffs/mark-seen', { method: 'POST' }),
     acceptHandoff: async (handoffId) => await apiRequest(`/pipeline/handoff/${handoffId}/accept`, { method: 'POST' }),
-    rejectHandoff: async (handoffId) => await apiRequest(`/pipeline/handoff/${handoffId}/reject`, { method: 'POST' })
+    rejectHandoff: async (handoffId) => await apiRequest(`/pipeline/handoff/${handoffId}/reject`, { method: 'POST' }),
+    clearResolvedOutboundHandoffs: async () => await apiRequest('/pipeline/handoffs/out/clear-resolved', { method: 'POST' })
 };
 
 // Plan 5A — coachesAPI surface. Currently just the recipient lookup for the

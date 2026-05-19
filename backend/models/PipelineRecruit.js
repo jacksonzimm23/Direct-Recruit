@@ -163,7 +163,11 @@ class PipelineRecruit {
    */
   static async getPipelineForCoach(coachUserId) {
     const result = await pool.query(
-      this._baseSelectSQL("WHERE pr.coach_user_id = $1 AND pr.status = 'active' ORDER BY pr.updated_at DESC"),
+      // Include 'active' AND any legacy 'out' rows so coaches who sent a
+      // recruit before the "sender keeps their copy" rule landed still see
+      // those recruits in their pipeline. 'promoted' stays excluded — those
+      // moved to a board and should NOT clutter the pipeline.
+      this._baseSelectSQL("WHERE pr.coach_user_id = $1 AND pr.status IN ('active', 'out') ORDER BY pr.updated_at DESC"),
       [coachUserId]
     );
     const shaped = await Promise.all(result.rows.map(r => this._shapeRow(r)));
@@ -381,6 +385,19 @@ class PipelineRecruit {
       catch { profileImageUrl = null; }
     }
 
+    // Cross-coach: every other coach at the same school who has this recruit
+    // in their pipeline AND has graded/noted them. Replaces the lagging
+    // evaluation_chain snapshot for History display purposes. The snapshot
+    // still ships separately for callers that need the frozen lineage at
+    // hand-off time (e.g. board JSONB grading_history at promote time).
+    let allSchoolEvaluations = [];
+    try {
+      allSchoolEvaluations = await this.getEvaluationsAtSchool(row.school_key, {
+        poolEntryId: row.pool_entry_id,
+        linkedPlayerUserId: row.linked_player_user_id,
+      });
+    } catch (_) { /* non-fatal — render with empty cross-coach view */ }
+
     return {
       id: row.id,
       pool_entry_id: row.pool_entry_id,
@@ -391,6 +408,7 @@ class PipelineRecruit {
       color_tag: row.color_tag,
       notes: row.notes,
       evaluation_chain: row.evaluation_chain || [],
+      all_school_evaluations: allSchoolEvaluations,
       added_at: row.added_at,
       updated_at: row.updated_at,
 
@@ -425,6 +443,48 @@ class PipelineRecruit {
       // film) — not just the handful surfaced on cards.
       submission_data: row.pool_entry_id ? d : null,
     };
+  }
+
+  /**
+   * Live cross-coach evaluations for one recruit at one school. Returns every
+   * pipeline_recruits row at `schoolKey` that targets the same recruit
+   * (matched by pool_entry_id OR linked_player_user_id), shaped as chain-
+   * compatible entries `{coach_id, coach_name, coach_title, grade, color_tag,
+   * notes, evaluated_at}` so the frontend can render them with the existing
+   * timeline renderers.
+   *
+   * This is the authoritative source for "all evaluations at this school"
+   * because each coach owns their own pipeline_recruits row — the static
+   * evaluation_chain JSONB snapshot is only what was inherited at hand-off
+   * accept time, so it can lag if other coaches grade their copies later.
+   * Skips rows with no evaluation (no grade, no color, no notes).
+   */
+  static async getEvaluationsAtSchool(schoolKey, { poolEntryId, linkedPlayerUserId }) {
+    if (!schoolKey) return [];
+    if (!poolEntryId && !linkedPlayerUserId) return [];
+    const result = await pool.query(
+      `SELECT pr.coach_user_id, pr.grade, pr.color_tag, pr.notes, pr.updated_at,
+              cp.first_name, cp.last_name, cp.position_title
+         FROM pipeline_recruits pr
+         LEFT JOIN coach_profiles cp ON cp.user_id = pr.coach_user_id
+        WHERE pr.school_key = $1
+          AND (
+            ($2::uuid IS NOT NULL AND pr.pool_entry_id = $2)
+            OR ($3::uuid IS NOT NULL AND pr.linked_player_user_id = $3)
+          )
+          AND (pr.grade IS NOT NULL OR pr.color_tag IS NOT NULL OR (pr.notes IS NOT NULL AND length(trim(pr.notes)) > 0))
+        ORDER BY pr.updated_at DESC`,
+      [schoolKey, poolEntryId || null, linkedPlayerUserId || null]
+    );
+    return result.rows.map(r => ({
+      coach_id: r.coach_user_id,
+      coach_name: `${r.first_name || ''} ${r.last_name || ''}`.trim() || 'Coach',
+      coach_title: r.position_title || null,
+      grade: r.grade,
+      color_tag: r.color_tag,
+      notes: r.notes,
+      evaluated_at: r.updated_at,
+    }));
   }
 }
 

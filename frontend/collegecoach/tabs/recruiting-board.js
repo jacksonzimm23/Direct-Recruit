@@ -218,13 +218,21 @@ document.addEventListener('DOMContentLoaded', async function() {
         hidePersonalEmptyState();
         updateBoardUI();
         localStorage.setItem('lastViewedPersonalBoardId', boardId);
+        // Same defensive cleanup as loadSharedGroupBoard — clear any stale
+        // field-hiding body classes so the football field is guaranteed
+        // visible while a real board is being rendered.
+        document.body.classList.remove('rb-shared-no-boards', 'rb-shared-empty', 'rb-personal-empty', 'rb-tab-pipeline', 'rb-tab-team-pool');
 
         try {
             const configData = await API.get(`/recruiting-board/personal/${boardId}/config`);
-            renderBoard(
-                configData.offensePositions || DEFAULT_OFFENSE_POSITIONS,
-                configData.defensePositions || DEFAULT_DEFENSE_POSITIONS
-            );
+            // Defensive fallback: empty arrays would render an empty field.
+            const off = (Array.isArray(configData.offensePositions) && configData.offensePositions.length > 0)
+                ? configData.offensePositions
+                : DEFAULT_OFFENSE_POSITIONS;
+            const def = (Array.isArray(configData.defensePositions) && configData.defensePositions.length > 0)
+                ? configData.defensePositions
+                : DEFAULT_DEFENSE_POSITIONS;
+            renderBoard(off, def);
             positionsLoaded = true;
         } catch (error) {
             console.error('Error loading personal board config:', error);
@@ -605,11 +613,26 @@ document.addEventListener('DOMContentLoaded', async function() {
         currentBoardRole = currentSharedGroupIsOwner ? 'owner' : (currentSharedGroupPermission === 'editor' ? 'collaborator' : 'collaborator');
         positionsLoaded = false;
         localStorage.setItem(`lastViewedSharedBoardId_${currentSharedGroupId}`, boardId);
+        // Defensive cleanup — clear every body class that hides the football
+        // field. One of these can get left on across renders (e.g. when an
+        // invited coach accepts and lands on a group that has boards, the
+        // earlier `rb-shared-no-boards` state from initial load can persist
+        // and keep the field hidden).
+        document.body.classList.remove('rb-shared-no-boards', 'rb-shared-empty', 'rb-personal-empty', 'rb-tab-pipeline', 'rb-tab-team-pool');
 
         try {
             const cfg = await API.get(`/recruiting-board/groups/${currentSharedGroupId}/boards/${boardId}/config`);
-            renderBoard(cfg.offensePositions || DEFAULT_OFFENSE_POSITIONS,
-                        cfg.defensePositions || DEFAULT_DEFENSE_POSITIONS);
+            // Fallback to defaults when the stored config is missing, malformed,
+            // or empty. The previous `||` check only caught null/undefined, so a
+            // legacy board with `offense_positions = []` would render an empty
+            // football field. This handles all three cases safely.
+            const off = (Array.isArray(cfg.offensePositions) && cfg.offensePositions.length > 0)
+                ? cfg.offensePositions
+                : DEFAULT_OFFENSE_POSITIONS;
+            const def = (Array.isArray(cfg.defensePositions) && cfg.defensePositions.length > 0)
+                ? cfg.defensePositions
+                : DEFAULT_DEFENSE_POSITIONS;
+            renderBoard(off, def);
             positionsLoaded = true;
         } catch (error) {
             console.error('Error loading group board config:', error);
@@ -857,17 +880,26 @@ document.addEventListener('DOMContentLoaded', async function() {
             clearTimeout(timer);
             timer = setTimeout(() => doSearch(input.value), 300);
         });
+        // Focus → show all teammates (empty-query browse mode). Triggers only
+        // when the input is empty so typing-then-focusing doesn't re-fetch.
+        input.addEventListener('focus', () => {
+            if (!input.value || input.value.length === 0) {
+                doSearch('');
+            }
+        });
         async function doSearch(q) {
-            if (!q || q.length < 2) {
+            // Single-character queries are too noisy — wait for 0 or 2+ chars.
+            if (q && q.length === 1) {
                 _lastSearchResults[ctx] = [];
                 results.innerHTML = '';
                 return;
             }
             try {
                 const groupId = getGroupId ? getGroupId() : null;
-                const url = groupId
-                    ? `/recruiting-board/groups/search-coaches?query=${encodeURIComponent(q)}&groupId=${groupId}`
-                    : `/recruiting-board/groups/search-coaches?query=${encodeURIComponent(q)}`;
+                const qParam = q ? `query=${encodeURIComponent(q)}` : '';
+                const groupParam = groupId ? `groupId=${groupId}` : '';
+                const qs = [qParam, groupParam].filter(Boolean).join('&');
+                const url = `/recruiting-board/groups/search-coaches${qs ? '?' + qs : ''}`;
                 const res = await API.get(url);
                 _lastSearchResults[ctx] = res.coaches || [];
                 renderResults(_lastSearchResults[ctx]);
@@ -1562,25 +1594,31 @@ document.addEventListener('DOMContentLoaded', async function() {
         const nameLine = `${player.first_name} ${player.last_name}`;
         const physicalLine = [heightDisplay, player.weight ? `${player.weight} lbs` : ''].filter(Boolean).join(' • ');
 
-        let locationLine = '';
-        if (isTransfer) {
-            locationLine = [player.team_name, player.college_division].filter(Boolean).join(' • ');
-        } else {
-            locationLine = [player.team_name, player.state].filter(Boolean).join(', ');
+        // Final synthesis: color swatch sits on the leftmost edge of the card
+        // (vertical bar style matching the pipeline-card swatch convention).
+        // Empty swatch when no color set keeps card layout consistent.
+        const finalColorHex = COLOR_HEX[player.final_color_tag] || null;
+        const finalColorHtml = finalColorHex
+            ? `<span class="recruit-final-color" data-color="${player.final_color_tag}" style="background:${finalColorHex};" title="Final color: ${player.final_color_tag.replace('_', ' ')}"></span>`
+            : '<span class="recruit-final-color recruit-final-color-empty" data-color="" title="No final color set"></span>';
+        // Grade badge background mirrors the final color so the at-a-glance read
+        // is consistent (color stripe + grade pill = one signal). gradePillTextColor
+        // picks black-on-light / white-on-dark for readability across the 6 tokens.
+        let finalGradeHtml = '';
+        if (Number.isFinite(player.final_grade)) {
+            const gradeStyle = finalColorHex
+                ? `style="background:${finalColorHex}; color:${gradePillTextColor(finalColorHex)};"`
+                : '';
+            finalGradeHtml = `<span class="recruit-final-grade" ${gradeStyle} title="Final grade">${player.final_grade}</span>`;
         }
 
-        // Q badge marks questionnaire-only recruits (no DR account). Coaches
-        // see at-a-glance which players don't have a DR profile to click into.
-        const qBadgeHtml = !player.user_id
-            ? '<span class="recruit-q-badge" title="Questionnaire only — no DR account">Q</span>'
-            : '';
         card.innerHTML = `
-            <div class="recruit-rank">1</div>
+            ${finalColorHtml}
             <div class="recruit-info">
-                <div class="recruit-name">${nameLine}${qBadgeHtml}</div>
+                <div class="recruit-name">${nameLine}</div>
                 <div class="recruit-details">${physicalLine}</div>
-                <div class="recruit-school">${locationLine}</div>
             </div>
+            ${finalGradeHtml}
         `;
 
         // Add drag listeners (desktop)
@@ -1610,33 +1648,29 @@ document.addEventListener('DOMContentLoaded', async function() {
 
         const menu = document.createElement('div');
         menu.className = 'player-context-menu';
-        // View Profile only renders when the player has a DR account
-        // (questionnaire-only entries have no profile to link to).
-        const viewProfileHtml = player.username
-            ? `<button class="context-menu-item view-profile-btn">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                    <circle cx="12" cy="7" r="4"></circle>
-                </svg>
-                View Profile
-            </button>`
-            : '';
-        menu.innerHTML = `
-            ${viewProfileHtml}
-            <button class="context-menu-item move-btn">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M5 12h14"></path>
-                    <path d="M12 5l7 7-7 7"></path>
-                </svg>
-                Move to Another Board
-            </button>
+        // Two actions only: Show Info (opens the on-board Info modal) and
+        // Remove from Board (with confirmation). Remove is hidden for shared-
+        // board viewers — the backend route is gated on requireGroupAccess
+        // ('editor') so they couldn't actually remove anyway.
+        const isSharedViewer = currentBoardMode === 'shared'
+            && currentSharedGroupPermission === 'viewer';
+        const removeHtml = isSharedViewer ? '' : `
             <button class="context-menu-item delete-btn">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <polyline points="3 6 5 6 21 6"></polyline>
                     <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
                 </svg>
                 Remove from Board
+            </button>`;
+        menu.innerHTML = `
+            <button class="context-menu-item show-info-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+                Show Info
             </button>
+            ${removeHtml}
         `;
 
         // Position the menu relative to the card
@@ -1691,32 +1725,33 @@ document.addEventListener('DOMContentLoaded', async function() {
             container.addEventListener('scroll', handleScroll, { passive: true });
         });
 
-        const viewProfileBtn = menu.querySelector('.view-profile-btn');
-        if (viewProfileBtn) viewProfileBtn.addEventListener('click', () => {
+        const cleanupMenu = () => {
             menu.remove();
             scrollContainers.forEach(container => {
                 container.removeEventListener('scroll', handleScroll);
             });
-            const username = player.username;
-            if (username) {
-                const folder = getProfileFolder({ role: 'player', is_transfer_player: player.player_type === 'transfer', college_division: player.college_division });
-                window.location.href = `../../${folder}/tabs/my-profile.html?username=${username}&from=recruiting`;
-            }
+        };
+
+        const showInfoBtn = menu.querySelector('.show-info-btn');
+        if (showInfoBtn) showInfoBtn.addEventListener('click', () => {
+            cleanupMenu();
+            // Sync player.position from the card's CURRENT DOM container before
+            // opening the modal — the captured player object in this closure
+            // can be stale after a drag (handleDrop updates the DOM dataset
+            // but not the in-memory player). Without this, the PUT /…/final
+            // route 404s with "Player not found in specified position".
+            const livePosition = (card.parentElement && card.parentElement.dataset && card.parentElement.dataset.position) || player.position;
+            player.position = livePosition;
+            openBoardPlayerInfoModal(player);
         });
 
-        menu.querySelector('.move-btn').addEventListener('click', () => {
-            menu.remove();
-            scrollContainers.forEach(container => {
-                container.removeEventListener('scroll', handleScroll);
-            });
-            showMovePlayerModal(player, card);
-        });
-
-        menu.querySelector('.delete-btn').addEventListener('click', () => {
-            menu.remove();
-            scrollContainers.forEach(container => {
-                container.removeEventListener('scroll', handleScroll);
-            });
+        const deleteBtn = menu.querySelector('.delete-btn');
+        if (deleteBtn) deleteBtn.addEventListener('click', () => {
+            cleanupMenu();
+            // Same drag-sync rationale as Show Info: ensure remove targets the
+            // current on-board position, not a stale closure value.
+            const livePosition = (card.parentElement && card.parentElement.dataset && card.parentElement.dataset.position) || player.position;
+            player.position = livePosition;
             showRemoveConfirmModal(player, card);
         });
 
@@ -3402,6 +3437,166 @@ document.addEventListener('DOMContentLoaded', async function() {
         dark_red: '#7f1d1d',
     };
 
+    // Cache the logged-in coach's identity (id + name + title) so any helper
+    // that needs to attribute an action to "the current coach" can read it
+    // synchronously after the first fetch. Used by the History tab to inject
+    // the current coach's own grade into the timeline (otherwise the chain
+    // looks empty for recruits added directly from a profile or pulled from
+    // the pool without ever being handed off).
+    let _cachedCurrentUser = null;
+    async function getCachedCurrentUser() {
+        if (_cachedCurrentUser) return _cachedCurrentUser;
+        try {
+            const me = await API.auth.getCurrentUser();
+            if (me && me.user) {
+                _cachedCurrentUser = {
+                    id: me.user.id,
+                    name: ((me.profile && (me.profile.first_name || '')) + ' ' + (me.profile && (me.profile.last_name || ''))).trim() || null,
+                    title: (me.profile && me.profile.position) || null,
+                };
+            }
+        } catch (_) { /* non-fatal */ }
+        return _cachedCurrentUser;
+    }
+
+    // ----- Final-synthesis helpers (Add to Shared Board) -------------------
+    // Used by the Add-to-Board modal's Shared mode to prefill the Final Grade
+    // slider + Final Color swatch, build the grading_history snapshot sent to
+    // the server, and render the Evaluation History tab (compact: no notes).
+
+    function computeFinalGradeMean(chain, ownGrade) {
+        const vals = [];
+        if (Array.isArray(chain)) {
+            chain.forEach(e => {
+                if (e && Number.isFinite(Number(e.grade))) vals.push(Number(e.grade));
+            });
+        }
+        if (Number.isFinite(Number(ownGrade))) vals.push(Number(ownGrade));
+        if (vals.length === 0) return 50;
+        const sum = vals.reduce((a, b) => a + b, 0);
+        return Math.round(sum / vals.length);
+    }
+
+    function computeMostCommonColor(chain, ownColor) {
+        const counts = new Map();
+        const lastSeen = new Map();   // for "most recent wins" tie-break
+        let idx = 0;
+        const tally = (tok) => {
+            if (!tok || !COLOR_HEX[tok]) return;
+            counts.set(tok, (counts.get(tok) || 0) + 1);
+            lastSeen.set(tok, idx++);
+        };
+        if (Array.isArray(chain)) chain.forEach(e => tally(e && e.color_tag));
+        tally(ownColor);
+        if (counts.size === 0) return null;
+        let bestTok = null, bestCount = -1, bestRecent = -1;
+        for (const [tok, c] of counts.entries()) {
+            const recent = lastSeen.get(tok);
+            if (c > bestCount || (c === bestCount && recent > bestRecent)) {
+                bestTok = tok; bestCount = c; bestRecent = recent;
+            }
+        }
+        return bestTok;
+    }
+
+    function buildGradingHistorySnapshot(recruit, currentUser) {
+        const chain = Array.isArray(recruit && recruit.evaluation_chain)
+            ? recruit.evaluation_chain.map(e => ({ ...e }))   // shallow clone
+            : [];
+        // Skip the synthetic entry if the current coach already appears in the
+        // chain (e.g. they hand-off-cycled). Dedupe by coach_id.
+        const alreadyInChain = currentUser && chain.some(e => String(e.coach_id) === String(currentUser.id));
+        if (currentUser && !alreadyInChain) {
+            // Prefer LIVE values from the eval modal (typed but not yet saved)
+            // over the recruit's last-saved state. This captures the case where
+            // a coach types notes/grade/color in the eval modal and clicks Add
+            // to Board without clicking Save Grade first — otherwise those
+            // unsaved values would be lost from the chain snapshot.
+            const liveValues = readLiveEvalValues();
+            const ownGrade = liveValues.grade != null
+                ? liveValues.grade
+                : (recruit && recruit.grade != null ? recruit.grade : null);
+            const ownColor = liveValues.color != null
+                ? liveValues.color
+                : (recruit && recruit.color_tag) || null;
+            const ownNotes = liveValues.notes != null
+                ? liveValues.notes
+                : (recruit && recruit.notes) || null;
+            // Include the current coach's own row only if they actually evaluated
+            // (any of grade / color / notes set). Coaches who promote without
+            // their own evaluation just preserve the upstream chain.
+            if (ownGrade != null || ownColor != null || (ownNotes && String(ownNotes).trim())) {
+                chain.push({
+                    coach_id: currentUser.id,
+                    coach_name: currentUser.name || null,
+                    coach_title: currentUser.title || null,
+                    grade: ownGrade,
+                    color_tag: ownColor,
+                    notes: ownNotes,
+                    evaluated_at: (recruit && recruit.updated_at) || new Date().toISOString(),
+                });
+            }
+        }
+        return chain;
+    }
+
+    // Read what's currently in the (still-open) pipeline eval modal's slider /
+    // selected swatch / notes textarea. Used by buildGradingHistorySnapshot
+    // so typed-but-unsaved values still land in the chain. Returns null for
+    // each field when the modal isn't open or the field is untouched.
+    function readLiveEvalValues() {
+        const slider = document.getElementById('evalGradeSlider');
+        const notesEl = document.getElementById('evalNotes');
+        const swatch = document.querySelector('#evalColorRow .eval-color-swatch.selected');
+        const modal = document.getElementById('evaluationModal');
+        // Only honor live values when the eval modal is actually open — avoids
+        // reading stale DOM from a previous open.
+        if (!modal || !modal.classList.contains('active')) {
+            return { grade: null, color: null, notes: null };
+        }
+        const gradeTouched = slider && slider.dataset.touched === '1';
+        const grade = gradeTouched ? parseInt(slider.value, 10) : null;
+        const color = swatch ? (swatch.dataset.color || null) : null;
+        const notes = notesEl ? (notesEl.value || null) : null;
+        return { grade, color, notes };
+    }
+
+    // Compact variant of renderEvaluationChainTimeline used by the Add-to-Board
+    // modal's Evaluation History tab. Drops notes and timestamps; keeps only
+    // coach + grade + color swatch so coaches scan the chain at a glance.
+    function renderEvaluationChainTimelineCompact(chain) {
+        if (!Array.isArray(chain) || chain.length === 0) {
+            return '<p class="addboard-history-empty">No prior evaluations yet.</p>';
+        }
+        // Newest evaluations first — mirrors renderEvaluationChainTimeline.
+        const sorted = [...chain].sort((a, b) => {
+            const ta = new Date(a && a.evaluated_at ? a.evaluated_at : 0).getTime();
+            const tb = new Date(b && b.evaluated_at ? b.evaluated_at : 0).getTime();
+            return tb - ta;
+        });
+        return sorted.map(entry => {
+            const colorHex = COLOR_HEX[entry.color_tag] || null;
+            const swatch = colorHex
+                ? `<span class="addboard-history-swatch" style="background:${colorHex};"></span>`
+                : '<span class="addboard-history-swatch addboard-history-swatch-empty"></span>';
+            const grade = (entry.grade != null) ? entry.grade : '—';
+            const name = escapeHtml(entry.coach_name || 'Coach');
+            const title = entry.coach_title
+                ? `<span class="addboard-history-title">${escapeHtml(entry.coach_title)}</span>`
+                : '';
+            return `
+                <div class="addboard-history-row">
+                    ${swatch}
+                    <div class="addboard-history-coach">
+                        <span class="addboard-history-name">${name}</span>
+                        ${title}
+                    </div>
+                    <span class="addboard-history-grade">${escapeHtml(String(grade))}</span>
+                </div>
+            `;
+        }).join('');
+    }
+
     let pipelineInitialized = false;
     let currentPipelineRecruits = [];
     let currentEvalRecruit = null;       // The recruit currently open in the Eval Modal
@@ -3789,7 +3984,24 @@ document.addEventListener('DOMContentLoaded', async function() {
             const data = await API.pipeline.getHandoffsOut();
             currentSentHandoffs = data.handoffs || [];
             loadingEl.style.display = 'none';
-            if (countEl) countEl.textContent = `${currentSentHandoffs.length} pending`;
+            // Count just the still-pending recipients so the badge matches what
+            // the receiver-side unread count would say.
+            const pendingCount = currentSentHandoffs.reduce((n, item) => {
+                const recipients = item.recipients || [];
+                return n + recipients.filter(r => r.state === 'pending').length;
+            }, 0);
+            const totalCount = currentSentHandoffs.reduce((n, item) => n + (item.recipients || []).length, 0);
+            const hasResolved = totalCount > pendingCount;
+            if (countEl) {
+                countEl.textContent = `${pendingCount} pending${hasResolved ? ` • ${totalCount - pendingCount} resolved` : ''}`;
+            }
+
+            // Show / wire the Clear Resolved button (declared in HTML, see
+            // pipelineSentView). Visible only when there are resolved rows.
+            const clearBtn = document.getElementById('handoffSentClearBtn');
+            if (clearBtn) {
+                clearBtn.style.display = hasResolved ? '' : 'none';
+            }
 
             if (currentSentHandoffs.length === 0) {
                 emptyEl.style.display = 'flex';
@@ -3809,10 +4021,12 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
     }
 
-    // Plan 5A's listOut groups by recruit: { recruit, pending_recipients: [{handoff_id, recipient, message, created_at}], created_at }
+    // listOut groups by recruit: { recruit, recipients: [{handoff_id, recipient,
+    // message, state, acted_on_at, created_at}], created_at }. Recipients can
+    // be in state 'pending' | 'accepted' | 'rejected' | 'rejected_duplicate'.
     function buildHandoffSentCard(item) {
         const recruit = item.recruit;
-        const recipients = item.pending_recipients || [];
+        const recipients = item.recipients || [];
         const fullName = `${recruit.first_name || ''} ${recruit.last_name || ''}`.trim() || 'Unknown';
 
         const meta = [];
@@ -3832,6 +4046,12 @@ document.addEventListener('DOMContentLoaded', async function() {
                  <circle cx="12" cy="7" r="4"></circle>
                </svg>`;
 
+        const STATE_PILL = {
+            pending:            { label: 'Pending', cls: 'handoff-pill-pending' },
+            accepted:           { label: 'Accepted', cls: 'handoff-pill-accepted' },
+            rejected:           { label: 'Rejected', cls: 'handoff-pill-rejected' },
+            rejected_duplicate: { label: 'Already in their pipeline', cls: 'handoff-pill-rejected' },
+        };
         const chipsHtml = recipients.map(r => {
             const recip = r.recipient || {};
             const name = `${recip.first_name || ''} ${recip.last_name || ''}`.trim() || 'Coach';
@@ -3839,11 +4059,12 @@ document.addEventListener('DOMContentLoaded', async function() {
             const av = recip.profile_image_url
                 ? `<img src="${escapeHtml(recip.profile_image_url)}" alt="" class="handoff-recipient-chip-img">`
                 : `<span class="handoff-recipient-chip-initials">${escapeHtml(initials.toUpperCase() || 'C')}</span>`;
+            const pill = STATE_PILL[r.state] || STATE_PILL.pending;
             return `
                 <span class="handoff-recipient-chip">
                     <span class="handoff-recipient-chip-avatar">${av}</span>
                     <span class="handoff-recipient-chip-name">${escapeHtml(name)}</span>
-                    <span class="handoff-pending-pill">pending</span>
+                    <span class="handoff-pending-pill ${pill.cls}">${pill.label}</span>
                 </span>
             `;
         }).join('');
@@ -3883,7 +4104,16 @@ document.addEventListener('DOMContentLoaded', async function() {
         emptyEl.style.display = 'none';
 
         try {
-            const data = await API.pipeline.getHandoffsIn();
+            // Load received hand-offs in parallel with My Pipeline so we can
+            // detect "already in your pipeline" duplicates regardless of
+            // whether the coach has visited My Pipeline yet this session.
+            const [data, myPipelineData] = await Promise.all([
+                API.pipeline.getHandoffsIn(),
+                API.pipeline.getMy().catch(() => null),
+            ]);
+            if (myPipelineData && Array.isArray(myPipelineData.recruits)) {
+                currentPipelineRecruits = myPipelineData.recruits;
+            }
             currentReceivedHandoffs = data.handoffs || [];
             loadingEl.style.display = 'none';
             if (countEl) countEl.textContent = `${currentReceivedHandoffs.length} awaiting your response`;
@@ -3914,15 +4144,21 @@ document.addEventListener('DOMContentLoaded', async function() {
         const handoffId = item.handoff_id;
 
         const senderName = `${sender.first_name || ''} ${sender.last_name || ''}`.trim() || 'Coach';
-        const senderSubheaderParts = [];
-        if (sender.team_name) senderSubheaderParts.push(sender.team_name);
-        if (sender.state) senderSubheaderParts[0] = `${senderSubheaderParts[0] || ''}, ${sender.state}`;
-        if (sender.college_division) senderSubheaderParts.push(sender.college_division);
-        const senderSubheader = senderSubheaderParts.filter(Boolean).join(' • ');
-        const senderInitials = ((sender.first_name || '')[0] || '') + ((sender.last_name || '')[0] || '');
-        const senderAvatar = sender.profile_image_url
-            ? `<img src="${escapeHtml(sender.profile_image_url)}" alt="" class="sg-coach-avatar-img">`
-            : `<span class="sg-coach-initials">${escapeHtml(senderInitials.toUpperCase() || 'C')}</span>`;
+
+        // Duplicate detection: if this recruit is already in my pipeline,
+        // accepting would 409 server-side (UNIQUE constraint on pool_entry_id
+        // or linked_player_user_id per coach). Show an inline banner and
+        // disable Accept so the coach can only Reject — which clears the
+        // pending hand-off without creating a duplicate row.
+        const alreadyInPipeline = currentPipelineRecruits.some(pr => {
+            if (recruit.linked_player_user_id && pr.linked_player_user_id) {
+                return String(pr.linked_player_user_id) === String(recruit.linked_player_user_id);
+            }
+            if (recruit.pool_entry_id && pr.pool_entry_id) {
+                return String(pr.pool_entry_id) === String(recruit.pool_entry_id);
+            }
+            return false;
+        });
 
         const recruitName = `${recruit.first_name || ''} ${recruit.last_name || ''}`.trim() || 'Unknown';
         const meta = [];
@@ -3940,10 +4176,6 @@ document.addEventListener('DOMContentLoaded', async function() {
                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
                  <circle cx="12" cy="7" r="4"></circle>
                </svg>`;
-
-        const messageHtml = (item.message && String(item.message).trim())
-            ? `<div class="handoff-received-message">"${escapeHtml(item.message)}"</div>`
-            : '';
 
         // Sender's evaluation block
         const evalColorHex = COLOR_HEX[eval_.color_tag] || null;
@@ -3967,14 +4199,9 @@ document.addEventListener('DOMContentLoaded', async function() {
         card.className = 'handoff-received-card';
         card.dataset.handoffId = handoffId;
         card.innerHTML = `
-            <div class="handoff-sender-row">
-                <div class="sg-coach-avatar">${senderAvatar}</div>
-                <div class="handoff-sender-text">
-                    <div class="sg-coach-name">${escapeHtml(senderName)}</div>
-                    <div class="sg-coach-subheader">${escapeHtml(senderSubheader)}</div>
-                </div>
+            <div class="handoff-sender-line">
+                <strong>${escapeHtml(senderName)}</strong> sent you a player
             </div>
-            ${messageHtml}
             <div class="handoff-received-recruit">
                 <div class="rb-pool-row-avatar" style="border-color: ${recruitAccent}; background: ${recruitRingBg}; color: ${recruitAccent};">
                     ${recruitAvatarInner}
@@ -3993,9 +4220,12 @@ document.addEventListener('DOMContentLoaded', async function() {
                 ${evalNotesHtml}
             </div>
             ${chainToggleHtml}
+            ${alreadyInPipeline
+                ? '<div class="handoff-duplicate-banner">This player is already in your pipeline. Reject to clear this hand-off.</div>'
+                : ''}
             <div class="handoff-actions">
-                <button class="btn-cancel handoff-reject-btn" type="button">Reject</button>
-                <button class="btn-submit handoff-accept-btn" type="button">Accept</button>
+                <button class="handoff-reject-btn" type="button">Reject</button>
+                <button class="handoff-accept-btn" type="button"${alreadyInPipeline ? ' disabled title="Already in your pipeline"' : ''}>Add to Pipeline</button>
             </div>
         `;
 
@@ -4163,26 +4393,37 @@ document.addEventListener('DOMContentLoaded', async function() {
             if (isNaN(d.getTime())) return '';
             return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
         };
+        // Newest evaluations first. Sort defensively in case chain order is
+        // not guaranteed (backend stores by insertion order, but render order
+        // is a presentation concern).
+        const sorted = [...chain].sort((a, b) => {
+            const ta = new Date(a && a.evaluated_at ? a.evaluated_at : 0).getTime();
+            const tb = new Date(b && b.evaluated_at ? b.evaluated_at : 0).getTime();
+            return tb - ta;
+        });
         return `<ol class="eval-chain-timeline">
-            ${chain.map(entry => {
+            ${sorted.map(entry => {
                 const colorHex = COLOR_HEX[entry.color_tag] || null;
                 const swatch = colorHex
                     ? `<span class="eval-chain-swatch" style="background:${colorHex};"></span>`
                     : '<span class="eval-chain-swatch eval-chain-swatch-empty"></span>';
+                // Left-edge stripe inherits the entry's color (or stays neutral
+                // when ungraded) so swatch + stripe always agree.
+                const stripeStyle = colorHex
+                    ? ` style="border-left-color:${colorHex};"`
+                    : ' style="border-left-color: rgba(255, 255, 255, 0.15);"';
                 const grade = (entry.grade != null) ? entry.grade : '—';
                 const name = escapeHtml(entry.coach_name || 'Coach');
-                const title = entry.coach_title ? `<span class="eval-chain-coach-title">${escapeHtml(entry.coach_title)}</span>` : '';
                 const date = formatDate(entry.evaluated_at);
                 const notes = entry.notes && String(entry.notes).trim()
                     ? `<blockquote class="eval-chain-notes">${escapeHtml(entry.notes)}</blockquote>`
                     : '';
                 return `
-                    <li class="eval-chain-entry">
+                    <li class="eval-chain-entry"${stripeStyle}>
                         <div class="eval-chain-entry-header">
                             ${swatch}
                             <div class="eval-chain-coach">
                                 <span class="eval-chain-coach-name">${name}</span>
-                                ${title}
                             </div>
                             <span class="eval-chain-grade">${escapeHtml(String(grade))}</span>
                             ${date ? `<span class="eval-chain-date">${escapeHtml(date)}</span>` : ''}
@@ -4333,12 +4574,11 @@ document.addEventListener('DOMContentLoaded', async function() {
             if (typeof showToast === 'function') {
                 showToast(`Sent to ${ids.length} coach${ids.length === 1 ? '' : 'es'}`, 'success');
             }
-            // Optimistic: remove the recruit from My Pipeline (status flipped to 'out')
-            currentPipelineRecruits = currentPipelineRecruits.filter(r => r.id !== sendHandoffRecruitId);
-            rerenderMyPipelineList();
+            // The sender keeps the recruit in their own pipeline — both coaches
+            // work the same player independently. Refresh to pull in any
+            // backend updates (e.g. updated_at bumps the row to the top).
             closeSendHandoffModal();
             closeEvaluationModal();
-            // Quiet re-fetch to reconcile
             refreshPipeline().catch(() => { /* noop */ });
         } catch (err) {
             const status = err && err.status;
@@ -4463,23 +4703,26 @@ document.addEventListener('DOMContentLoaded', async function() {
         addBoardBtn.disabled = false;
         addBoardBtn.title = '';
 
-        // Plan 5B: History tab — enable when this recruit has a non-empty
-        // evaluation_chain (i.e., they were handed off here). Render the
-        // chain into the History panel up front so tab switch is instant.
+        // History tab — shows ALL evaluations from every coach at the same
+        // school who has this recruit in their pipeline. Uses
+        // `all_school_evaluations` (computed live server-side) instead of
+        // the per-row evaluation_chain snapshot, so a coach who grades after
+        // the chain was frozen still shows up for everyone else.
         const historyTabBtn = document.querySelector('.eval-tab[data-eval-tab="history"]');
         const historyContent = document.getElementById('evalHistoryContent');
-        const hasChain = Array.isArray(recruit.evaluation_chain) && recruit.evaluation_chain.length > 0;
+        const schoolEvals = Array.isArray(recruit.all_school_evaluations) ? recruit.all_school_evaluations : [];
+        const hasAnyEval = schoolEvals.length > 0;
         if (historyTabBtn) {
-            if (hasChain) {
+            if (hasAnyEval) {
                 historyTabBtn.disabled = false;
                 historyTabBtn.removeAttribute('title');
             } else {
                 historyTabBtn.disabled = true;
-                historyTabBtn.title = 'Available once another coach hands off this recruit';
+                historyTabBtn.title = 'No evaluations yet — grade this recruit to see history';
             }
         }
         if (historyContent) {
-            historyContent.innerHTML = hasChain ? renderEvaluationChainTimeline(recruit.evaluation_chain) : '';
+            historyContent.innerHTML = hasAnyEval ? renderEvaluationChainTimeline(schoolEvals) : '';
         }
         // Always reset to the Info tab on open
         switchEvalTab('info');
@@ -4526,8 +4769,17 @@ document.addEventListener('DOMContentLoaded', async function() {
         currentEvalRecruit = null;
     }
 
-    async function saveEvaluation() {
-        if (!currentEvalRecruit) return;
+    // Save the open recruit's grade / color / notes from the eval modal.
+    // Options:
+    //   silent:    suppress the success toast (used when chained from another
+    //              action like Send to Coach or Add to Board).
+    //   keepOpen:  don't close the modal after a successful save. Lets the
+    //              caller chain into another modal (e.g. Send Hand-Off) that
+    //              expects the eval modal to still hold currentEvalRecruit.
+    // Returns true on success / no-op, false if the PUT failed.
+    async function saveEvaluation(opts) {
+        opts = opts || {};
+        if (!currentEvalRecruit) return false;
         const slider = document.getElementById('evalGradeSlider');
         const notes = document.getElementById('evalNotes').value;
         const selectedSwatch = document.querySelector('#evalColorRow .eval-color-swatch.selected');
@@ -4536,9 +4788,20 @@ document.addEventListener('DOMContentLoaded', async function() {
         const gradeTouched = slider.dataset.touched === '1';
         const grade = gradeTouched ? parseInt(slider.value, 10) : null;
 
+        // Dirty check — skip the round-trip when nothing changed. Compare
+        // against the in-memory recruit's last-saved values. Notes compare on
+        // trimmed strings since the textarea adds trailing whitespace easily.
+        const sameGrade = (grade == null && currentEvalRecruit.grade == null)
+            || (grade != null && Number(grade) === Number(currentEvalRecruit.grade));
+        const sameColor = (color_tag || null) === (currentEvalRecruit.color_tag || null);
+        const sameNotes = String(notes || '').trim() === String(currentEvalRecruit.notes || '').trim();
+        if (sameGrade && sameColor && sameNotes) {
+            return true;   // nothing to save
+        }
+
         try {
             const result = await API.pipeline.updateEvaluation(currentEvalRecruit.id, { grade, color_tag, notes });
-            if (typeof showToast === 'function') showToast('Saved', 'success');
+            if (!opts.silent && typeof showToast === 'function') showToast('Saved', 'success');
             // Update the in-memory copy + refresh just that row
             const idx = currentPipelineRecruits.findIndex(r => r.id === result.recruit.id);
             if (idx >= 0) currentPipelineRecruits[idx] = result.recruit;
@@ -4549,11 +4812,13 @@ document.addEventListener('DOMContentLoaded', async function() {
                 listEl.innerHTML = '';
                 for (const r of currentPipelineRecruits) listEl.appendChild(buildPipelineRow(r));
             }
-            closeEvaluationModal();
+            if (!opts.keepOpen) closeEvaluationModal();
+            return true;
         } catch (err) {
             if (typeof showToast === 'function') {
                 showToast(err && err.message ? err.message : 'Failed to save', 'error');
             }
+            return false;
         }
     }
 
@@ -4623,7 +4888,10 @@ document.addEventListener('DOMContentLoaded', async function() {
     // ADD-TO-BOARD MODAL (Plan 4 Step 9)
     // ====================================================================
 
-    let addBoardContext = null;  // { recruit, personalBoards: [], sharedGroups: [], positions: [] }
+    // Context for the Add-to-Board modal. Final-synthesis fields (finalGrade /
+    // finalColor / viewerInSelectedGroup) are reset on each open and only fed
+    // into the POST body when the coach picks Shared Board.
+    let addBoardContext = null;
 
     async function openAddBoardModal() {
         if (!currentEvalRecruit) return;
@@ -4633,19 +4901,31 @@ document.addEventListener('DOMContentLoaded', async function() {
         const modal = document.getElementById('addBoardModal');
         if (!modal) return;
 
-        // Load personal boards + groups in parallel
+        // Load personal boards + groups + current user (for the grading_history
+        // snapshot's "current coach" entry) in parallel.
         try {
-            const [personalRes, groupsRes] = await Promise.all([
-                API.get('/recruiting-board/personal'),  // existing route lists personal boards
-                API.get('/recruiting-board/groups')      // existing route lists groups
+            const [personalRes, groupsRes, me] = await Promise.all([
+                API.get('/recruiting-board/personal'),
+                API.get('/recruiting-board/groups'),
+                API.auth.getCurrentUser().catch(() => null)
             ]);
             const personalBoards = (personalRes && personalRes.boards) || personalRes || [];
             const sharedGroups = (groupsRes && groupsRes.groups) || groupsRes || [];
+
+            const currentUser = me && me.user ? {
+                id: me.user.id,
+                name: ((me.profile && (me.profile.first_name || '')) + ' ' + (me.profile && (me.profile.last_name || ''))).trim() || null,
+                title: (me.profile && me.profile.position) || null,
+            } : null;
 
             addBoardContext = {
                 recruit: currentEvalRecruit,
                 personalBoards,
                 sharedGroups,
+                currentUser,
+                finalGrade: null,
+                finalColor: null,
+                viewerInSelectedGroup: false,
                 // Positions: use the recruit's first position as the default if present;
                 // else a generic list. We populate via a fixed roster (same as the board UI).
                 positionsList: [
@@ -4681,6 +4961,21 @@ document.addEventListener('DOMContentLoaded', async function() {
                 posSelect.value = recruitFirstPos;
             }
 
+            // Reset final-synthesis UI to a clean slate every time we open.
+            // Both personal and shared modes use these controls now.
+            const finalGradeSlider = document.getElementById('addBoardFinalGrade');
+            const finalGradeReadout = document.getElementById('addBoardFinalGradeReadout');
+            const finalNotesEl = document.getElementById('addBoardFinalNotes');
+            if (finalGradeSlider) finalGradeSlider.value = 50;
+            if (finalGradeReadout) finalGradeReadout.textContent = '—';
+            if (finalNotesEl) finalNotesEl.value = '';
+            document.querySelectorAll('#addBoardFinalColorRowInner .addboard-color-swatch')
+                .forEach(b => b.classList.remove('selected'));
+            const historyList = document.getElementById('addBoardHistoryList');
+            if (historyList) historyList.innerHTML = '';
+            // Always default to the Setup tab on open
+            switchAddBoardTab('setup');
+
             // Wire personal/shared change + initial population
             handleAddBoardTypeChange();
             modal.classList.add('active');
@@ -4697,17 +4992,50 @@ document.addEventListener('DOMContentLoaded', async function() {
         addBoardContext = null;
     }
 
+    // Toggle which tab panel is visible inside the Add-to-Board modal.
+    // Only used when Shared Board is selected (personal mode hides the tab strip).
+    function switchAddBoardTab(tabKey) {
+        document.querySelectorAll('#addBoardTabs .addboard-tab').forEach(b => {
+            b.classList.toggle('active', b.dataset.addboardTab === tabKey);
+        });
+        document.querySelectorAll('#addBoardModal .addboard-tab-panel').forEach(p => {
+            const active = p.dataset.addboardPanel === tabKey;
+            p.classList.toggle('active', active);
+            p.style.display = active ? 'block' : 'none';
+        });
+    }
+
     function handleAddBoardTypeChange() {
         if (!addBoardContext) return;
         const type = document.querySelector('input[name="addBoardType"]:checked').value;
         const groupRow = document.getElementById('addBoardGroupRow');
         const boardSelect = document.getElementById('addBoardSelect');
         const warning = document.getElementById('addBoardWarning');
+        const tabs = document.getElementById('addBoardTabs');
+        const finalGradeRow = document.getElementById('addBoardFinalGradeRow');
+        const finalColorRow = document.getElementById('addBoardFinalColorRow');
+        const finalNotesRow = document.getElementById('addBoardFinalNotesRow');
+        const confirmBtn = document.getElementById('addBoardConfirmBtn');
         warning.style.display = 'none';
         warning.textContent = '';
 
+        // Both modes show final-grade/color/notes — personal and shared cards
+        // both render the swatch + grade badge on the football field. Only the
+        // Evaluation History tab is shared-only (personal recruits often have
+        // no chain).
+        if (finalGradeRow) finalGradeRow.style.display = 'block';
+        if (finalColorRow) finalColorRow.style.display = 'block';
+        if (finalNotesRow) finalNotesRow.style.display = 'block';
+        prefillFinalGradeAndColor();
+
         if (type === 'personal') {
             groupRow.style.display = 'none';
+            if (tabs) tabs.style.display = 'none';
+            // Personal mode always shows the Setup panel (the History tab only
+            // exists in shared mode).
+            switchAddBoardTab('setup');
+            if (confirmBtn) confirmBtn.textContent = 'Add to Board';
+
             const boards = addBoardContext.personalBoards;
             if (boards.length === 0) {
                 boardSelect.innerHTML = '<option value="" disabled selected>No personal boards — create one first</option>';
@@ -4718,13 +5046,22 @@ document.addEventListener('DOMContentLoaded', async function() {
                     `<option value="${b.id}">${escapeHtml(b.board_name || 'My Board')}</option>`
                 ).join('');
             }
+            evaluateConfirmEnabled();
         } else {
             groupRow.style.display = 'block';
+            if (tabs) tabs.style.display = 'flex';
+            if (confirmBtn) confirmBtn.textContent = 'Add to Shared Board';
+
             // Populate groups dropdown
             const groupSelect = document.getElementById('addBoardGroupSelect');
             groupSelect.innerHTML = addBoardContext.sharedGroups.map(g =>
                 `<option value="${g.id}">${escapeHtml(g.group_name || 'Group')}</option>`
             ).join('');
+
+            // Populate Evaluation History tab (shared-only). prefillFinalGradeAndColor
+            // already ran above so the slider/swatches are seeded for both modes.
+            renderAddBoardHistory();
+
             if (addBoardContext.sharedGroups.length > 0) {
                 handleAddBoardGroupChange();
             }
@@ -4732,11 +5069,18 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
 
     async function handleAddBoardGroupChange() {
+        if (!addBoardContext) return;
         const groupSelect = document.getElementById('addBoardGroupSelect');
         const boardSelect = document.getElementById('addBoardSelect');
         const warning = document.getElementById('addBoardWarning');
         const groupId = groupSelect.value;
         if (!groupId) return;
+
+        // Per-group permission lookup. listGroupsForUser returns `my_permission`
+        // per group; viewers can browse the modal but Confirm stays disabled.
+        const selectedGroup = addBoardContext.sharedGroups.find(g => String(g.id) === String(groupId));
+        addBoardContext.viewerInSelectedGroup = !!(selectedGroup && selectedGroup.my_permission === 'viewer');
+
         try {
             const res = await API.get(`/recruiting-board/groups/${groupId}/boards`);
             const boards = (res && res.boards) || res || [];
@@ -4748,12 +5092,92 @@ document.addEventListener('DOMContentLoaded', async function() {
                 boardSelect.innerHTML = boards.map(b =>
                     `<option value="${b.id}">${escapeHtml(b.board_name || 'Board')}</option>`
                 ).join('');
-                warning.style.display = 'none';
-                warning.textContent = '';
+                if (addBoardContext.viewerInSelectedGroup) {
+                    warning.style.display = 'block';
+                    warning.textContent = 'You need editor permissions to add to a shared board.';
+                } else {
+                    warning.style.display = 'none';
+                    warning.textContent = '';
+                }
             }
         } catch (err) {
             boardSelect.innerHTML = '<option value="">Failed to load boards</option>';
         }
+        evaluateConfirmEnabled();
+    }
+
+    // Compute mean/mode prefills and seed the slider + swatch row. Also toggles
+    // the "No prior grades" hint when nothing in the chain has a grade AND the
+    // recruit has no own grade.
+    function prefillFinalGradeAndColor() {
+        if (!addBoardContext) return;
+        const recruit = addBoardContext.recruit;
+        const chain = (recruit && Array.isArray(recruit.evaluation_chain)) ? recruit.evaluation_chain : [];
+        const ownGrade = (recruit && recruit.grade != null) ? recruit.grade : null;
+        const ownColor = (recruit && recruit.color_tag) || null;
+
+        // Final grade
+        const slider = document.getElementById('addBoardFinalGrade');
+        const readout = document.getElementById('addBoardFinalGradeReadout');
+        const hint = document.getElementById('addBoardEmptyChainHint');
+        const hasAnyGrade = (ownGrade != null) || chain.some(e => e && e.grade != null);
+        const mean = computeFinalGradeMean(chain, ownGrade);
+        if (slider) slider.value = mean;
+        if (hasAnyGrade) {
+            addBoardContext.finalGrade = mean;
+            if (readout) readout.textContent = String(mean);
+            if (hint) hint.style.display = 'none';
+        } else {
+            // Empty chain: leave the slider visually at 50 but treat as null
+            // until the coach touches it. Hint message explains the requirement.
+            addBoardContext.finalGrade = null;
+            if (readout) readout.textContent = '—';
+            if (hint) hint.style.display = 'block';
+        }
+
+        // Final color — pick the mode token (or null if no entries)
+        const mode = computeMostCommonColor(chain, ownColor);
+        addBoardContext.finalColor = mode;
+        document.querySelectorAll('#addBoardFinalColorRowInner .addboard-color-swatch').forEach(b => {
+            b.classList.toggle('selected', b.dataset.color === (mode || ''));
+        });
+    }
+
+    function renderAddBoardHistory() {
+        if (!addBoardContext) return;
+        const recruit = addBoardContext.recruit;
+        // Build the same snapshot we'd POST (chain + current coach if they
+        // actually evaluated). The History tab is read-only — coaches use it
+        // to inform the final grade/color they're about to set.
+        const snapshot = buildGradingHistorySnapshot(recruit, addBoardContext.currentUser);
+        const container = document.getElementById('addBoardHistoryList');
+        if (container) container.innerHTML = renderEvaluationChainTimelineCompact(snapshot);
+    }
+
+    // Central gate for the Confirm button. Both modes require final grade +
+    // final color (personal-board cards now also render the swatch + grade
+    // badge, so they need both inputs too). Shared mode additionally requires
+    // not being a viewer in the selected group.
+    function evaluateConfirmEnabled() {
+        const confirmBtn = document.getElementById('addBoardConfirmBtn');
+        if (!confirmBtn || !addBoardContext) return;
+        const type = document.querySelector('input[name="addBoardType"]:checked');
+        if (!type) { confirmBtn.disabled = true; return; }
+
+        const boardId = (document.getElementById('addBoardSelect') || {}).value;
+        const position = (document.getElementById('addBoardPositionSelect') || {}).value;
+        const hasFinals = addBoardContext.finalGrade != null
+            && addBoardContext.finalColor != null;
+
+        if (type.value === 'personal') {
+            confirmBtn.disabled = !(hasFinals && !!boardId && !!position);
+            return;
+        }
+        // Shared: also gate on group permission + groupId set
+        const groupId = (document.getElementById('addBoardGroupSelect') || {}).value;
+        confirmBtn.disabled = !(hasFinals
+            && !addBoardContext.viewerInSelectedGroup
+            && !!groupId && !!boardId && !!position);
     }
 
     async function confirmAddToBoard() {
@@ -4784,6 +5208,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             last_name: recruit.last_name || '',
             height: recruit.height_inches || null,
             weight: recruit.weight_lbs || null,
+            graduation_year: recruit.graduation_year || null,
             team_name: recruit.team_name || '',
             state: recruit.state || '',
             college_division: recruit.college_division || null,
@@ -4798,6 +5223,19 @@ document.addEventListener('DOMContentLoaded', async function() {
         } else {
             if (typeof showToast === 'function') showToast('This recruit has no DR account or pool entry — cannot add to board.', 'error');
             return;
+        }
+
+        // Both personal and shared modes attach the final synthesis + frozen
+        // grading history snapshot + promoted_by_name. Server stamps the rest
+        // of the audit fields. Final notes come from the new textarea (may be
+        // empty string — server tolerates).
+        const finalNotesEl = document.getElementById('addBoardFinalNotes');
+        playerData.final_grade = addBoardContext.finalGrade;
+        playerData.final_color_tag = addBoardContext.finalColor;
+        playerData.final_notes = finalNotesEl ? (finalNotesEl.value || null) : null;
+        playerData.grading_history = buildGradingHistorySnapshot(recruit, addBoardContext.currentUser);
+        if (addBoardContext.currentUser && addBoardContext.currentUser.name) {
+            playerData.promoted_by_name = addBoardContext.currentUser.name;
         }
 
         try {
@@ -4815,6 +5253,340 @@ document.addEventListener('DOMContentLoaded', async function() {
             }
         }
     }
+
+    // ====================================================================
+    // ON-BOARD PLAYER INFO MODAL
+    // ====================================================================
+    // Opens when a coach clicks a card on the football field and picks
+    // "Show Info" from the context menu. Two tabs:
+    //   - Info: DR profile link + full questionnaire (read-only, mirrors the
+    //     eval modal's Info tab structure). Pool-sourced players get their
+    //     latest submission fetched via /my-pool/:entryId on open.
+    //   - Evaluation: frozen grading_history list + editable final
+    //     grade/color/notes that PUT back to the board JSONB. On shared
+    //     boards, viewers see read-only (Save button hidden).
+
+    // The on-board player we're currently viewing, plus the board context
+    // (personal vs shared, board id, group id if shared). Captured at open
+    // time so the save handler knows which PUT route to hit.
+    let currentBoardInfoPlayer = null;
+    let currentBoardInfoContext = null;  // { mode: 'personal'|'shared', boardId, groupId?, canEdit }
+    let currentBoardInfoFinalGrade = null;
+    let currentBoardInfoFinalColor = null;
+
+    async function openBoardPlayerInfoModal(player) {
+        if (!player) return;
+        const modal = document.getElementById('boardPlayerInfoModal');
+        if (!modal) return;
+
+        currentBoardInfoPlayer = player;
+
+        // Snapshot the board context. On shared (group) boards, viewers can't
+        // edit — Save button stays hidden, but they can still browse both tabs.
+        // NOTE: currentBoardMode uses 'group' (not 'shared') for shared boards.
+        const isShared = currentBoardMode === 'group';
+        const canEdit = isShared
+            ? (currentSharedGroupPermission === 'editor')
+            : true;  // personal-board owner can always edit their own
+        currentBoardInfoContext = {
+            mode: isShared ? 'shared' : 'personal',
+            boardId: isShared ? currentSharedBoardId : currentPersonalBoardId,
+            groupId: isShared ? currentSharedGroupId : null,
+            canEdit,
+        };
+
+        // Header: name + subheader. Avatar uses cerulean ring for DR-linked,
+        // gray for questionnaire-only — matches the eval modal convention.
+        const hasAccount = !!player.user_id;
+        const accentColor = hasAccount ? '#1282a2' : '#9ca3af';
+        const ringBg = hasAccount
+            ? 'rgba(18, 130, 162, 0.18)'
+            : 'rgba(156, 163, 175, 0.18)';
+        const fullName = `${player.first_name || ''} ${player.last_name || ''}`.trim() || 'Unknown';
+        document.getElementById('boardInfoName').textContent = fullName;
+
+        const subParts = [];
+        if (player.position) subParts.push(player.position);
+        if (player.height) {
+            if (typeof player.height === 'number') {
+                const ft = Math.floor(player.height / 12);
+                const inches = player.height % 12;
+                subParts.push(`${ft}'${inches}"`);
+            } else {
+                subParts.push(player.height);
+            }
+        }
+        if (player.weight) subParts.push(`${player.weight} lbs`);
+        if (player.graduation_year) subParts.push(String(player.graduation_year));
+        const subEl = document.getElementById('boardInfoSubheader');
+        if (subEl) {
+            subEl.textContent = subParts.join(' • ');
+            subEl.style.color = accentColor;
+        }
+
+        const avatarEl = document.getElementById('boardInfoAvatar');
+        avatarEl.style.borderColor = accentColor;
+        avatarEl.style.background = ringBg;
+        avatarEl.style.color = accentColor;
+        avatarEl.innerHTML = (hasAccount && player.profile_image_url)
+            ? `<img src="${escapeHtml(player.profile_image_url)}" alt="" class="eval-avatar-img">`
+            : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                 <circle cx="12" cy="7" r="4"></circle>
+               </svg>`;
+
+        // Info tab: DR link + (loading state for) questionnaire. Pool-sourced
+        // players fetch their latest submission via /my-pool/:entryId.
+        const pSection = document.getElementById('boardInfoProfileSection');
+        const qSection = document.getElementById('boardInfoQuestionnaireSection');
+        const qBody = document.getElementById('boardInfoQuestionnaireBody');
+        const emptyMsg = document.getElementById('boardInfoEmpty');
+
+        if (hasAccount) {
+            pSection.style.display = 'block';
+            const profileLink = document.getElementById('boardInfoProfileLink');
+            profileLink.href = `../../shared/view-profile.html?userId=${encodeURIComponent(player.user_id)}`;
+        } else {
+            pSection.style.display = 'none';
+        }
+
+        if (player.pool_entry_id) {
+            qSection.style.display = 'block';
+            qBody.innerHTML = '<p class="pool-detail-loading">Loading…</p>';
+            try {
+                const res = await API.get(`/recruiting-board/my-pool/${player.pool_entry_id}`);
+                const submissions = (res && res.submissions) || [];
+                const latest = submissions.length ? submissions[submissions.length - 1].submission_data : {};
+                qBody.innerHTML = renderQuestionnaireView(latest);
+            } catch (err) {
+                qBody.innerHTML = '<p class="pool-detail-error">Failed to load questionnaire.</p>';
+            }
+        } else {
+            qSection.style.display = 'none';
+        }
+
+        if (emptyMsg) {
+            emptyMsg.style.display = (hasAccount || player.pool_entry_id) ? 'none' : 'block';
+        }
+
+        // Evaluation tab: final grade slider + final color swatches + final
+        // notes textarea, all editable (or read-only for viewers). Grading
+        // history list rendered from the frozen snapshot.
+        const slider = document.getElementById('boardInfoFinalGrade');
+        const readout = document.getElementById('boardInfoFinalGradeReadout');
+        const notesEl = document.getElementById('boardInfoFinalNotes');
+        const grade = Number.isFinite(player.final_grade) ? player.final_grade : 50;
+        currentBoardInfoFinalGrade = Number.isFinite(player.final_grade) ? player.final_grade : null;
+        currentBoardInfoFinalColor = player.final_color_tag || null;
+        if (slider) slider.value = grade;
+        if (readout) readout.textContent = (currentBoardInfoFinalGrade != null) ? String(currentBoardInfoFinalGrade) : '—';
+        if (notesEl) notesEl.value = player.final_notes || '';
+
+        document.querySelectorAll('#boardInfoFinalColorRow .addboard-color-swatch').forEach(b => {
+            b.classList.toggle('selected', b.dataset.color === (currentBoardInfoFinalColor || ''));
+        });
+
+        // Audit caption: "Last set by X on Y" — uses promoted_by_name +
+        // promoted_at (re-stamped on every edit). Falls back gracefully.
+        const auditEl = document.getElementById('boardInfoAudit');
+        if (auditEl) {
+            const by = player.promoted_by_name || null;
+            const at = player.promoted_at ? new Date(player.promoted_at) : null;
+            if (by || at) {
+                const dateStr = (at && !isNaN(at.getTime()))
+                    ? at.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
+                    : '';
+                auditEl.textContent = by
+                    ? `Last set by ${by}${dateStr ? ' • ' + dateStr : ''}`
+                    : `Last updated ${dateStr}`;
+                auditEl.style.display = 'block';
+            } else {
+                auditEl.textContent = '';
+                auditEl.style.display = 'none';
+            }
+        }
+
+        // Grading history — LIVE list of every coach at this school who has
+        // this recruit in their pipeline with a grade/color/notes set. Falls
+        // back to the frozen `grading_history` snapshot if the live fetch
+        // fails or returns nothing (e.g. card promoted before the cross-coach
+        // query existed). Renders via the full timeline renderer (with notes).
+        const historyEl = document.getElementById('boardInfoHistoryList');
+        const snapshot = Array.isArray(player.grading_history) ? player.grading_history : [];
+        if (historyEl) {
+            // Show the snapshot immediately so the tab isn't blank during the fetch.
+            historyEl.innerHTML = renderEvaluationChainTimeline(snapshot);
+            const identity = {
+                poolEntryId: player.pool_entry_id || null,
+                linkedPlayerUserId: player.user_id || null,
+            };
+            if (identity.poolEntryId || identity.linkedPlayerUserId) {
+                API.pipeline.getEvaluations(identity).then(res => {
+                    const live = (res && Array.isArray(res.evaluations)) ? res.evaluations : [];
+                    // Merge: live cross-coach evaluations win for any coach
+                    // that appears in both lists, but we keep snapshot-only
+                    // entries (e.g. a coach who has since removed the recruit
+                    // from their own pipeline) so the audit trail survives.
+                    const byCoach = new Map();
+                    for (const e of snapshot) {
+                        if (e && e.coach_id) byCoach.set(String(e.coach_id), e);
+                    }
+                    for (const e of live) {
+                        if (e && e.coach_id) byCoach.set(String(e.coach_id), e);
+                    }
+                    const merged = Array.from(byCoach.values());
+                    historyEl.innerHTML = renderEvaluationChainTimeline(merged);
+                }).catch(() => { /* keep snapshot fallback */ });
+            }
+        }
+
+        // Read-only mode for viewers: disable editor controls + hide Save.
+        const saveBtn = document.getElementById('boardInfoSaveBtn');
+        if (slider) slider.disabled = !canEdit;
+        if (notesEl) notesEl.disabled = !canEdit;
+        document.querySelectorAll('#boardInfoFinalColorRow .addboard-color-swatch').forEach(b => {
+            b.disabled = !canEdit;
+            b.style.cursor = canEdit ? 'pointer' : 'not-allowed';
+        });
+        if (saveBtn) saveBtn.style.display = canEdit ? '' : 'none';
+
+        switchBoardInfoTab('info');
+        modal.classList.add('active');
+    }
+
+    function closeBoardPlayerInfoModal() {
+        const modal = document.getElementById('boardPlayerInfoModal');
+        if (modal) modal.classList.remove('active');
+        currentBoardInfoPlayer = null;
+        currentBoardInfoContext = null;
+        currentBoardInfoFinalGrade = null;
+        currentBoardInfoFinalColor = null;
+    }
+
+    function switchBoardInfoTab(tabKey) {
+        document.querySelectorAll('#boardPlayerInfoModal .eval-tab').forEach(b => {
+            b.classList.toggle('active', b.dataset.boardInfoTab === tabKey);
+        });
+        document.querySelectorAll('#boardPlayerInfoModal .eval-tab-content').forEach(c => {
+            c.classList.toggle('active', c.dataset.boardInfoTabContent === tabKey);
+        });
+        // Save button is only meaningful on the Evaluation tab. Hide on Info
+        // and History to keep the footer clean. Also respects viewer read-only
+        // gating (canEdit) — viewers never see Save regardless of tab.
+        const saveBtn = document.getElementById('boardInfoSaveBtn');
+        if (saveBtn) {
+            const canEdit = currentBoardInfoContext && currentBoardInfoContext.canEdit;
+            saveBtn.style.display = (tabKey === 'evaluation' && canEdit) ? '' : 'none';
+        }
+    }
+
+    async function saveBoardPlayerFinal() {
+        if (!currentBoardInfoPlayer || !currentBoardInfoContext) return;
+        if (!currentBoardInfoContext.canEdit) return;
+        const player = currentBoardInfoPlayer;
+        const ctx = currentBoardInfoContext;
+        const notesEl = document.getElementById('boardInfoFinalNotes');
+
+        // We need a player identifier the backend can match on. The board
+        // JSONB stores either user_id (DR-linked) or pool_entry_id
+        // (questionnaire-only) — server-side _matchPlayerByAnyId handles both.
+        const playerId = player.user_id || player.pool_entry_id;
+        if (!playerId || !player.position) {
+            if (typeof showToast === 'function') showToast('Missing player identifier or position', 'error');
+            return;
+        }
+
+        // currentUser for the promoted_by_name stamp. Fetch fresh on save
+        // (not cached) so a name change is reflected immediately.
+        let promotedByName = null;
+        try {
+            const me = await API.auth.getCurrentUser();
+            if (me && me.profile) {
+                promotedByName = ((me.profile.first_name || '') + ' ' + (me.profile.last_name || '')).trim() || null;
+            }
+        } catch (_) { /* non-fatal */ }
+
+        const body = {
+            position: player.position,
+            final_grade: currentBoardInfoFinalGrade,
+            final_color_tag: currentBoardInfoFinalColor,
+            final_notes: notesEl ? (notesEl.value || null) : null,
+            promoted_by_name: promotedByName,
+        };
+
+        const url = ctx.mode === 'shared'
+            ? `/recruiting-board/groups/${ctx.groupId}/boards/${ctx.boardId}/players/${playerId}/final`
+            : `/recruiting-board/personal/${ctx.boardId}/players/${playerId}/final`;
+
+        try {
+            await API.put(url, body);
+            if (typeof showToast === 'function') showToast('Final synthesis updated', 'success');
+            // Reflect the new values on the in-memory player object so a
+            // subsequent reopen of the modal shows fresh data, AND on the
+            // football-field card (re-render).
+            player.final_grade = body.final_grade;
+            player.final_color_tag = body.final_color_tag;
+            player.final_notes = body.final_notes;
+            player.promoted_by_name = promotedByName;
+            player.promoted_at = new Date().toISOString();
+            closeBoardPlayerInfoModal();
+            // Reload the board so the card swatch + grade badge refresh.
+            if (ctx.mode === 'shared' && typeof loadSharedGroupBoard === 'function' && ctx.boardId) {
+                loadSharedGroupBoard(ctx.boardId);
+            } else if (ctx.mode === 'personal' && typeof loadPersonalBoardById === 'function' && ctx.boardId) {
+                loadPersonalBoardById(ctx.boardId);
+            }
+        } catch (err) {
+            if (typeof showToast === 'function') {
+                showToast((err && err.message) || 'Failed to save final synthesis', 'error');
+            }
+        }
+    }
+
+    // Wire on-board Info modal handlers once on init.
+    (function wireBoardPlayerInfoModal() {
+        const closeBtn = document.getElementById('boardPlayerInfoClose');
+        const overlay = document.getElementById('boardPlayerInfoOverlay');
+        const saveBtn = document.getElementById('boardInfoSaveBtn');
+        const slider = document.getElementById('boardInfoFinalGrade');
+
+        if (closeBtn) closeBtn.addEventListener('click', closeBoardPlayerInfoModal);
+        if (overlay) overlay.addEventListener('click', closeBoardPlayerInfoModal);
+        if (saveBtn) saveBtn.addEventListener('click', saveBoardPlayerFinal);
+
+        // Tab switching
+        document.querySelectorAll('#boardPlayerInfoModal .eval-tab').forEach(btn => {
+            btn.addEventListener('click', () => switchBoardInfoTab(btn.dataset.boardInfoTab));
+        });
+
+        // Slider — live readout + track value
+        if (slider) {
+            slider.addEventListener('input', () => {
+                if (!currentBoardInfoContext || !currentBoardInfoContext.canEdit) return;
+                currentBoardInfoFinalGrade = Number(slider.value);
+                const readout = document.getElementById('boardInfoFinalGradeReadout');
+                if (readout) readout.textContent = String(currentBoardInfoFinalGrade);
+            });
+        }
+
+        // Color swatches — single-select, click selected to deselect
+        document.querySelectorAll('#boardInfoFinalColorRow .addboard-color-swatch').forEach(btn => {
+            btn.addEventListener('click', (ev) => {
+                ev.preventDefault();
+                if (!currentBoardInfoContext || !currentBoardInfoContext.canEdit) return;
+                const target = ev.currentTarget;
+                const wasSelected = target.classList.contains('selected');
+                document.querySelectorAll('#boardInfoFinalColorRow .addboard-color-swatch')
+                    .forEach(b => b.classList.remove('selected'));
+                if (wasSelected) {
+                    currentBoardInfoFinalColor = null;
+                } else {
+                    target.classList.add('selected');
+                    currentBoardInfoFinalColor = target.dataset.color;
+                }
+            });
+        });
+    })();
 
     function switchPoolDetailTab(tabKey) {
         document.querySelectorAll('.pool-detail-tab').forEach(b => {
@@ -5024,13 +5796,30 @@ document.addEventListener('DOMContentLoaded', async function() {
         if (overlay) overlay.addEventListener('click', closeEvaluationModal);
         if (saveBtn) saveBtn.addEventListener('click', saveEvaluation);
         if (deleteBtn) deleteBtn.addEventListener('click', removeRecruitFromPipeline);
-        if (addBoardBtn) addBoardBtn.addEventListener('click', openAddBoardModal);
-        // Plan 5B: Send to Coach opens the Send Hand-Off modal
-        if (handoffBtn) handoffBtn.addEventListener('click', () => {
-            if (currentEvalRecruit) openSendHandoffModal(currentEvalRecruit);
+        // Auto-save the eval modal's pending grade/color/notes before opening
+        // Add to Board so the synthesized chain entry and the pipeline record
+        // both reflect what the coach just typed.
+        if (addBoardBtn) addBoardBtn.addEventListener('click', async () => {
+            if (!currentEvalRecruit) return;
+            const saved = await saveEvaluation({ silent: true, keepOpen: true });
+            if (!saved) return;
+            openAddBoardModal();
         });
-        // Plan 5B: tab switching (Evaluation / History)
-        document.querySelectorAll('.eval-tab').forEach(btn => {
+        // Plan 5B: Send to Coach opens the Send Hand-Off modal. Auto-save any
+        // pending grade/color/notes first so the sending coach's evaluation
+        // shows up in the receiving coach's chain — coaches expect Send to
+        // Coach to be a one-click action, not "save then send".
+        if (handoffBtn) handoffBtn.addEventListener('click', async () => {
+            if (!currentEvalRecruit) return;
+            const saved = await saveEvaluation({ silent: true, keepOpen: true });
+            if (!saved) return;   // save failed; toast already shown
+            openSendHandoffModal(currentEvalRecruit);
+        });
+        // Plan 5B: tab switching (Info / Evaluation / History). Scoped to
+        // #evaluationModal so this doesn't also bind to the on-board Info
+        // modal's tabs (which use data-board-info-tab and have their own
+        // listener wired in wireBoardPlayerInfoModal).
+        document.querySelectorAll('#evaluationModal .eval-tab').forEach(btn => {
             btn.addEventListener('click', () => switchEvalTab(btn.dataset.evalTab));
         });
 
@@ -5065,15 +5854,61 @@ document.addEventListener('DOMContentLoaded', async function() {
         const cancelBtn = document.getElementById('addBoardCancelBtn');
         const confirmBtn = document.getElementById('addBoardConfirmBtn');
         const groupSelect = document.getElementById('addBoardGroupSelect');
+        const boardSelect = document.getElementById('addBoardSelect');
+        const positionSelect = document.getElementById('addBoardPositionSelect');
+        const finalGradeSlider = document.getElementById('addBoardFinalGrade');
 
         if (closeBtn) closeBtn.addEventListener('click', closeAddBoardModal);
         if (overlay) overlay.addEventListener('click', closeAddBoardModal);
         if (cancelBtn) cancelBtn.addEventListener('click', closeAddBoardModal);
         if (confirmBtn) confirmBtn.addEventListener('click', confirmAddToBoard);
         if (groupSelect) groupSelect.addEventListener('change', handleAddBoardGroupChange);
+        // Board/position changes can re-enable Confirm (shared mode requires them set)
+        if (boardSelect) boardSelect.addEventListener('change', evaluateConfirmEnabled);
+        if (positionSelect) positionSelect.addEventListener('change', evaluateConfirmEnabled);
 
         document.querySelectorAll('input[name="addBoardType"]').forEach(radio => {
             radio.addEventListener('change', handleAddBoardTypeChange);
+        });
+
+        // Tab strip — shared mode only, but listeners are safe to bind on init
+        document.querySelectorAll('#addBoardTabs .addboard-tab').forEach(btn => {
+            btn.addEventListener('click', () => switchAddBoardTab(btn.dataset.addboardTab));
+        });
+
+        // Final Grade slider — live readout + update context + re-evaluate Confirm.
+        // Hide the empty-chain hint once the coach touches the slider (treats
+        // their interaction as the explicit grade).
+        if (finalGradeSlider) {
+            finalGradeSlider.addEventListener('input', () => {
+                if (!addBoardContext) return;
+                const val = Number(finalGradeSlider.value);
+                addBoardContext.finalGrade = val;
+                const readout = document.getElementById('addBoardFinalGradeReadout');
+                if (readout) readout.textContent = String(val);
+                const hint = document.getElementById('addBoardEmptyChainHint');
+                if (hint) hint.style.display = 'none';
+                evaluateConfirmEnabled();
+            });
+        }
+
+        // Final Color swatches — single-select, click selected to deselect
+        document.querySelectorAll('#addBoardFinalColorRowInner .addboard-color-swatch').forEach(btn => {
+            btn.addEventListener('click', (ev) => {
+                ev.preventDefault();
+                if (!addBoardContext) return;
+                const target = ev.currentTarget;
+                const wasSelected = target.classList.contains('selected');
+                document.querySelectorAll('#addBoardFinalColorRowInner .addboard-color-swatch')
+                    .forEach(b => b.classList.remove('selected'));
+                if (wasSelected) {
+                    addBoardContext.finalColor = null;
+                } else {
+                    target.classList.add('selected');
+                    addBoardContext.finalColor = target.dataset.color;
+                }
+                evaluateConfirmEnabled();
+            });
         });
     })();
 
@@ -5082,6 +5917,31 @@ document.addEventListener('DOMContentLoaded', async function() {
         document.querySelectorAll('.pipeline-view-btn').forEach(btn => {
             btn.addEventListener('click', () => switchPipelineView(btn.dataset.view));
         });
+        // Clear Resolved button on the Sent view — deletes every accepted/rejected
+        // outbound row at the coach's current school, then refreshes the list.
+        const clearBtn = document.getElementById('handoffSentClearBtn');
+        if (clearBtn) {
+            clearBtn.addEventListener('click', async () => {
+                const ok = await (typeof showConfirmModal === 'function'
+                    ? showConfirmModal({
+                        title: 'Clear Resolved Hand-offs',
+                        message: 'Remove every accepted or rejected hand-off from your Sent list? Pending hand-offs stay.',
+                        confirmText: 'Clear',
+                        cancelText: 'Cancel',
+                    })
+                    : Promise.resolve(window.confirm('Clear resolved hand-offs?')));
+                if (!ok) return;
+                try {
+                    await API.pipeline.clearResolvedOutboundHandoffs();
+                    if (typeof showToast === 'function') showToast('Resolved hand-offs cleared', 'success');
+                    await loadHandoffsSent();
+                } catch (err) {
+                    if (typeof showToast === 'function') {
+                        showToast((err && err.message) || 'Failed to clear', 'error');
+                    }
+                }
+            });
+        }
     })();
 
     // Plan 5B: wire the Send Hand-Off modal

@@ -217,16 +217,26 @@ class RecruitingBoard {
   }
 
   // Add a player to a specific personal board.
+  //
+  // Accepts EITHER playerData.user_id (DR-account recruit) OR
+  // playerData.pool_entry_id (questionnaire-only recruit, pulled forward from
+  // Plan 6). At least one is required by the calling route. The duplicate
+  // check matches on whichever identifier is present.
   static async addPlayerToPersonalBoardById(boardId, userId, playerData) {
     const board = await this.getPersonalBoardById(boardId, userId);
     if (!board) throw new Error('Board not found or not owned by user');
 
     const players = board.players || [];
-    if (players.some(p => p.user_id === playerData.user_id && p.position === playerData.position)) {
+    if (this._isPlayerAlreadyOnBoard(players, playerData)) {
       throw new Error('Player already on board for this position');
     }
 
-    const toStore = { ...playerData, added_at: new Date().toISOString() };
+    const toStore = {
+      ...playerData,
+      // Tag the source so the football field can render the right card variant.
+      source: playerData.user_id ? 'dr_profile' : 'questionnaire',
+      added_at: new Date().toISOString(),
+    };
     delete toStore.class_year; // class_year is not used on the new flat boards
     players.push(toStore);
 
@@ -246,7 +256,7 @@ class RecruitingBoard {
 
     const players = board.players || [];
     const updated = players.filter(
-      p => !(String(p.user_id) === String(playerId) && (!position || p.position === position))
+      p => !(this._matchPlayerByAnyId(p, playerId) && (!position || p.position === position))
     );
 
     await pool.query(
@@ -265,11 +275,43 @@ class RecruitingBoard {
 
     const players = board.players || [];
     const idx = players.findIndex(
-      p => String(p.user_id) === String(playerId) && p.position === oldPosition
+      p => this._matchPlayerByAnyId(p, playerId) && p.position === oldPosition
     );
     if (idx === -1) throw new Error('Player not found in specified position');
 
     players[idx].position = newPosition;
+
+    await pool.query(
+      `UPDATE recruiting_boards
+       SET players = $1, updated_at = CURRENT_TIMESTAMP
+       WHERE id = $2 AND owner_user_id = $3 AND is_personal = TRUE AND class_year = 0`,
+      [JSON.stringify(players), boardId, userId]
+    );
+    return { success: true };
+  }
+
+  // Update the editable final-synthesis fields on an existing player on a
+  // personal board. grading_history is NEVER mutated by this method — it's a
+  // frozen audit trail from the original promotion. Only final_grade /
+  // final_color_tag / final_notes / promoted_by_user_id / promoted_by_name /
+  // promoted_at are overwritten (the last three re-stamped to whoever is
+  // editing).
+  static async updateFinalOnPersonalBoardById(boardId, userId, playerId, position, finalData) {
+    const board = await this.getPersonalBoardById(boardId, userId);
+    if (!board) throw new Error('Board not found or not owned by user');
+
+    const players = board.players || [];
+    const idx = players.findIndex(
+      p => this._matchPlayerByAnyId(p, playerId) && p.position === position
+    );
+    if (idx === -1) throw new Error('Player not found in specified position');
+
+    players[idx].final_grade = (finalData.final_grade !== undefined) ? finalData.final_grade : players[idx].final_grade;
+    players[idx].final_color_tag = (finalData.final_color_tag !== undefined) ? finalData.final_color_tag : players[idx].final_color_tag;
+    players[idx].final_notes = (finalData.final_notes !== undefined) ? finalData.final_notes : players[idx].final_notes;
+    players[idx].promoted_by_user_id = finalData.promoted_by_user_id;
+    players[idx].promoted_by_name = finalData.promoted_by_name;
+    players[idx].promoted_at = finalData.promoted_at;
 
     await pool.query(
       `UPDATE recruiting_boards
@@ -394,17 +436,22 @@ class RecruitingBoard {
     return board.players || [];
   }
 
-  // Add a player to a group board.
+  // Add a player to a group board. Accepts user_id OR pool_entry_id; see
+  // addPlayerToPersonalBoardById for the dual-source rationale.
   static async addPlayerToGroupBoardById(boardId, groupId, playerData) {
     const board = await this.getGroupBoardById(boardId, groupId);
     if (!board) throw new Error('Board not found in this group');
 
     const players = board.players || [];
-    if (players.some(p => p.user_id === playerData.user_id && p.position === playerData.position)) {
+    if (this._isPlayerAlreadyOnBoard(players, playerData)) {
       throw new Error('Player already on board for this position');
     }
 
-    const toStore = { ...playerData, added_at: new Date().toISOString() };
+    const toStore = {
+      ...playerData,
+      source: playerData.user_id ? 'dr_profile' : 'questionnaire',
+      added_at: new Date().toISOString(),
+    };
     delete toStore.class_year;
     players.push(toStore);
 
@@ -424,7 +471,7 @@ class RecruitingBoard {
 
     const players = board.players || [];
     const updated = players.filter(
-      p => !(String(p.user_id) === String(playerId) && (!position || p.position === position))
+      p => !(this._matchPlayerByAnyId(p, playerId) && (!position || p.position === position))
     );
 
     await pool.query(
@@ -443,11 +490,40 @@ class RecruitingBoard {
 
     const players = board.players || [];
     const idx = players.findIndex(
-      p => String(p.user_id) === String(playerId) && p.position === oldPosition
+      p => this._matchPlayerByAnyId(p, playerId) && p.position === oldPosition
     );
     if (idx === -1) throw new Error('Player not found in specified position');
 
     players[idx].position = newPosition;
+
+    await pool.query(
+      `UPDATE recruiting_boards
+       SET players = $1, updated_at = CURRENT_TIMESTAMP
+       WHERE id = $2 AND group_id = $3 AND is_personal = FALSE AND class_year = 0`,
+      [JSON.stringify(players), boardId, groupId]
+    );
+    return { success: true };
+  }
+
+  // Group-board equivalent of updateFinalOnPersonalBoardById. Same semantics:
+  // grading_history is frozen, only the final synthesis + audit stamps mutate.
+  // Permission gating happens at the route layer (requireGroupAccess('editor')).
+  static async updateFinalOnGroupBoardById(boardId, groupId, playerId, position, finalData) {
+    const board = await this.getGroupBoardById(boardId, groupId);
+    if (!board) throw new Error('Board not found in this group');
+
+    const players = board.players || [];
+    const idx = players.findIndex(
+      p => this._matchPlayerByAnyId(p, playerId) && p.position === position
+    );
+    if (idx === -1) throw new Error('Player not found in specified position');
+
+    players[idx].final_grade = (finalData.final_grade !== undefined) ? finalData.final_grade : players[idx].final_grade;
+    players[idx].final_color_tag = (finalData.final_color_tag !== undefined) ? finalData.final_color_tag : players[idx].final_color_tag;
+    players[idx].final_notes = (finalData.final_notes !== undefined) ? finalData.final_notes : players[idx].final_notes;
+    players[idx].promoted_by_user_id = finalData.promoted_by_user_id;
+    players[idx].promoted_by_name = finalData.promoted_by_name;
+    players[idx].promoted_at = finalData.promoted_at;
 
     await pool.query(
       `UPDATE recruiting_boards
@@ -517,6 +593,34 @@ class RecruitingBoard {
       isOnBoard: entries.length > 0,
       entries
     };
+  }
+
+  /**
+   * Duplicate-on-board guard. Matches on either user_id (DR-account recruits)
+   * or pool_entry_id (questionnaire-only recruits) — whichever the incoming
+   * playerData carries. Also gates on position so the same player CAN appear
+   * at multiple positions on the same board (existing Plan 1 behavior).
+   */
+  static _isPlayerAlreadyOnBoard(players, playerData) {
+    if (!Array.isArray(players) || players.length === 0) return false;
+    if (playerData.user_id) {
+      return players.some(p => p.user_id === playerData.user_id && p.position === playerData.position);
+    }
+    if (playerData.pool_entry_id) {
+      return players.some(p => p.pool_entry_id === playerData.pool_entry_id && p.position === playerData.position);
+    }
+    return false;
+  }
+
+  /**
+   * Match a stored player by the front-end-supplied `playerId`. Used by the
+   * remove and move-position endpoints, which pass a single UUID that's
+   * either the player's user_id (DR-account recruit) OR pool_entry_id
+   * (questionnaire-only recruit pulled forward from Plan 6).
+   */
+  static _matchPlayerByAnyId(p, playerId) {
+    const id = String(playerId);
+    return String(p.user_id) === id || String(p.pool_entry_id) === id;
   }
 }
 

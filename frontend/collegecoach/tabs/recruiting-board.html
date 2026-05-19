@@ -305,6 +305,7 @@
                             <h2 class="rb-pipeline-title">Sent Hand-Offs</h2>
                             <p class="rb-pipeline-count" id="pipelineSentCount">0 pending</p>
                         </div>
+                        <button class="rb-pipeline-clear-btn" id="handoffSentClearBtn" type="button" style="display: none;">Clear Resolved</button>
                     </div>
                     <div class="handoff-sent-list" id="handoffSentList" style="display: none;"></div>
                     <div class="rb-pipeline-loading" id="handoffSentLoading" style="display: none;">Loading…</div>
@@ -1039,34 +1040,169 @@
                 </button>
             </div>
             <div class="recruiting-board-modal-body">
-                <label class="eval-field-label">Board Type</label>
-                <div class="addboard-type-row">
-                    <label class="addboard-type-option">
-                        <input type="radio" name="addBoardType" value="personal" checked>
-                        <span>Personal Board</span>
-                    </label>
-                    <label class="addboard-type-option" id="addBoardSharedOption">
-                        <input type="radio" name="addBoardType" value="shared">
-                        <span>Shared Board</span>
-                    </label>
+                <!-- Tab strip — only visible when Shared Board is selected. Lets the
+                     coach review the prior evaluation chain (compact: coach + grade
+                     + color swatch, no notes) before setting a final grade/color. -->
+                <div class="addboard-tabs" id="addBoardTabs" style="display: none;">
+                    <button type="button" class="addboard-tab active" data-addboard-tab="setup">Setup</button>
+                    <button type="button" class="addboard-tab" data-addboard-tab="history">Evaluation History</button>
                 </div>
 
-                <div class="addboard-group-row" id="addBoardGroupRow" style="display: none;">
-                    <label class="eval-field-label" for="addBoardGroupSelect">Group</label>
-                    <select id="addBoardGroupSelect" class="addboard-select"></select>
+                <!-- Setup panel — Board Type, group/board/position, and (shared-only)
+                     the Final Grade slider + Final Color swatch row. -->
+                <div class="addboard-tab-panel active" data-addboard-panel="setup">
+                    <label class="eval-field-label">Board Type</label>
+                    <div class="addboard-type-row">
+                        <label class="addboard-type-option">
+                            <input type="radio" name="addBoardType" value="personal" checked>
+                            <span>Personal Board</span>
+                        </label>
+                        <label class="addboard-type-option" id="addBoardSharedOption">
+                            <input type="radio" name="addBoardType" value="shared">
+                            <span>Shared Board</span>
+                        </label>
+                    </div>
+
+                    <div class="addboard-group-row" id="addBoardGroupRow" style="display: none;">
+                        <label class="eval-field-label" for="addBoardGroupSelect">Group</label>
+                        <select id="addBoardGroupSelect" class="addboard-select"></select>
+                    </div>
+
+                    <label class="eval-field-label" for="addBoardSelect">Board</label>
+                    <select id="addBoardSelect" class="addboard-select"></select>
+
+                    <label class="eval-field-label" for="addBoardPositionSelect">Position</label>
+                    <select id="addBoardPositionSelect" class="addboard-select"></select>
+
+                    <!-- Final Grade + Final Color — shared-only, hidden in personal mode.
+                         Both required before Confirm enables; prefilled with mean/mode
+                         of the evaluation chain on shared-mode entry. -->
+                    <div id="addBoardFinalGradeRow" style="display: none;">
+                        <label class="eval-field-label" for="addBoardFinalGrade">Final Grade <span class="addboard-required">*</span></label>
+                        <div class="eval-grade-row">
+                            <input type="range" class="eval-grade-slider" id="addBoardFinalGrade" min="0" max="100" value="50" step="1">
+                            <span class="eval-grade-readout" id="addBoardFinalGradeReadout">—</span>
+                        </div>
+                        <p class="addboard-empty-hint" id="addBoardEmptyChainHint" style="display: none;">No prior grades — set a final grade.</p>
+                    </div>
+
+                    <div id="addBoardFinalColorRow" style="display: none;">
+                        <label class="eval-field-label">Final Color <span class="addboard-required">*</span></label>
+                        <div class="addboard-color-row" id="addBoardFinalColorRowInner" role="radiogroup" aria-label="Final color">
+                            <button type="button" class="addboard-color-swatch" data-color="dark_green" style="background:#15803d;" title="Dark Green — Best"></button>
+                            <button type="button" class="addboard-color-swatch" data-color="light_green" style="background:#86efac;" title="Light Green — Strong interest"></button>
+                            <button type="button" class="addboard-color-swatch" data-color="yellow" style="background:#facc15;" title="Yellow — Worth watching"></button>
+                            <button type="button" class="addboard-color-swatch" data-color="orange" style="background:#f97316;" title="Orange — Concerns"></button>
+                            <button type="button" class="addboard-color-swatch" data-color="red" style="background:#ef4444;" title="Red — Weak fit"></button>
+                            <button type="button" class="addboard-color-swatch" data-color="dark_red" style="background:#7f1d1d;" title="Dark Red — Hard pass"></button>
+                        </div>
+                    </div>
+
+                    <div id="addBoardFinalNotesRow" style="display: none;">
+                        <label class="eval-field-label" for="addBoardFinalNotes">Final Notes</label>
+                        <textarea class="eval-notes" id="addBoardFinalNotes" rows="3" placeholder="Optional — staff-facing notes on the final synthesis (e.g., 'Best fit at OG, monitor highlights')…"></textarea>
+                    </div>
+
+                    <p class="addboard-warning" id="addBoardWarning" style="display: none;"></p>
                 </div>
 
-                <label class="eval-field-label" for="addBoardSelect">Board</label>
-                <select id="addBoardSelect" class="addboard-select"></select>
-
-                <label class="eval-field-label" for="addBoardPositionSelect">Position</label>
-                <select id="addBoardPositionSelect" class="addboard-select"></select>
-
-                <p class="addboard-warning" id="addBoardWarning" style="display: none;"></p>
+                <!-- Evaluation History panel — compact list of each coach's grade
+                     and color, no notes. Populated by renderAddBoardHistory(). -->
+                <div class="addboard-tab-panel" data-addboard-panel="history" style="display: none;">
+                    <div id="addBoardHistoryList"></div>
+                </div>
             </div>
             <div class="recruiting-board-modal-footer">
                 <button class="btn-cancel" id="addBoardCancelBtn">Cancel</button>
                 <button class="btn-submit" id="addBoardConfirmBtn">Add to Board</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- On-Board Player Info Modal. Opens when a coach clicks a card on the
+         football field and picks "Show Info". Two tabs: Info (questionnaire
+         data + DR profile link, read-only) and Evaluation (frozen grading
+         history + editable final grade/color/notes that write back to the
+         board JSONB via PUT /…/players/:playerId/final). -->
+    <div class="recruiting-board-modal collab-modal sg-modal eval-modal board-info-modal" id="boardPlayerInfoModal">
+        <div class="recruiting-board-modal-overlay" id="boardPlayerInfoOverlay"></div>
+        <div class="recruiting-board-modal-content sg-modal-content">
+            <div class="recruiting-board-modal-header collab-header eval-header">
+                <div class="eval-avatar" id="boardInfoAvatar">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                </div>
+                <div class="eval-title">
+                    <div class="eval-name-row">
+                        <span id="boardInfoName">Recruit</span>
+                    </div>
+                    <div class="eval-subheader" id="boardInfoSubheader"></div>
+                </div>
+                <button class="modal-close-btn" id="boardPlayerInfoClose">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="recruiting-board-modal-body eval-body">
+                <div class="eval-tabs">
+                    <button class="eval-tab active" data-board-info-tab="info">Info</button>
+                    <button class="eval-tab" data-board-info-tab="evaluation">Evaluation</button>
+                    <button class="eval-tab" data-board-info-tab="history">History</button>
+                </div>
+
+                <!-- Info tab — read-only DR profile link + full questionnaire
+                     (mirrors the eval modal's Info tab structure). -->
+                <div class="eval-tab-content active" data-board-info-tab-content="info">
+                    <div id="boardInfoProfileSection" style="display: none;">
+                        <h4 class="eval-info-section-title">Direct Recruit Profile</h4>
+                        <a id="boardInfoProfileLink" class="eval-profile-link" target="_blank" rel="noopener">View full profile in new tab →</a>
+                    </div>
+                    <div id="boardInfoQuestionnaireSection" style="display: none;">
+                        <h4 class="eval-info-section-title">Questionnaire</h4>
+                        <div id="boardInfoQuestionnaireBody"></div>
+                    </div>
+                    <p class="eval-info-empty" id="boardInfoEmpty" style="display: none;">No questionnaire or profile info available.</p>
+                </div>
+
+                <!-- Evaluation tab — frozen grading history + editable final
+                     synthesis. On shared boards, viewers see read-only (Save
+                     button hidden). -->
+                <div class="eval-tab-content" data-board-info-tab-content="evaluation">
+                    <h4 class="eval-info-section-title">Final Synthesis</h4>
+                    <label class="eval-field-label" for="boardInfoFinalGrade">Final Grade</label>
+                    <div class="eval-grade-row">
+                        <input type="range" class="eval-grade-slider" id="boardInfoFinalGrade" min="0" max="100" value="50" step="1">
+                        <span class="eval-grade-readout" id="boardInfoFinalGradeReadout">—</span>
+                    </div>
+
+                    <label class="eval-field-label">Final Color</label>
+                    <div class="addboard-color-row" id="boardInfoFinalColorRow" role="radiogroup" aria-label="Final color">
+                        <button type="button" class="addboard-color-swatch" data-color="dark_green" style="background:#15803d;" title="Dark Green — Best"></button>
+                        <button type="button" class="addboard-color-swatch" data-color="light_green" style="background:#86efac;" title="Light Green — Strong interest"></button>
+                        <button type="button" class="addboard-color-swatch" data-color="yellow" style="background:#facc15;" title="Yellow — Worth watching"></button>
+                        <button type="button" class="addboard-color-swatch" data-color="orange" style="background:#f97316;" title="Orange — Concerns"></button>
+                        <button type="button" class="addboard-color-swatch" data-color="red" style="background:#ef4444;" title="Red — Weak fit"></button>
+                        <button type="button" class="addboard-color-swatch" data-color="dark_red" style="background:#7f1d1d;" title="Dark Red — Hard pass"></button>
+                    </div>
+
+                    <label class="eval-field-label" for="boardInfoFinalNotes">Final Notes</label>
+                    <textarea class="eval-notes" id="boardInfoFinalNotes" rows="4" placeholder="Staff-facing notes on the final synthesis…"></textarea>
+
+                    <p class="board-info-audit" id="boardInfoAudit"></p>
+                </div>
+
+                <!-- History tab — full grading-chain timeline including each
+                     coach's notes (frozen snapshot from promotion time). -->
+                <div class="eval-tab-content" data-board-info-tab-content="history">
+                    <div id="boardInfoHistoryList"></div>
+                </div>
+            </div>
+            <div class="recruiting-board-modal-footer eval-footer">
+                <button class="btn-submit" id="boardInfoSaveBtn" style="display: none;">Save Final Grade</button>
             </div>
         </div>
     </div>
@@ -1097,8 +1233,6 @@
                 <div class="send-handoff-recipient-empty" id="sendHandoffRecipientEmpty" style="display: none;">
                     No other coaches found at your school.
                 </div>
-                <label class="send-handoff-message-label" for="sendHandoffMessage">Optional message</label>
-                <textarea class="send-handoff-message" id="sendHandoffMessage" rows="3" placeholder="e.g., 'second look pls'"></textarea>
             </div>
             <div class="recruiting-board-modal-footer">
                 <button class="btn-cancel" id="sendHandoffCancel">Cancel</button>
