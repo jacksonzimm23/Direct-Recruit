@@ -101,6 +101,21 @@ document.addEventListener('DOMContentLoaded', async function() {
         document.querySelectorAll('.rb-subtab').forEach(btn => {
             btn.classList.toggle('active', btn.dataset.tab === tabName);
         });
+
+        // Plan 8 mobile: nudge the newly-active subtab into the visible
+        // region of the horizontally-scrollable container. block:'nearest'
+        // avoids any vertical page scroll when the button is already
+        // vertically in view. requestAnimationFrame defers past the
+        // .active class flip's reflow so layout is settled.
+        const activeBtn = document.querySelector(`.rb-subtab[data-tab="${tabName}"]`);
+        if (activeBtn && window.matchMedia('(max-width: 768px)').matches) {
+            requestAnimationFrame(() => {
+                try {
+                    activeBtn.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' });
+                } catch (_) { /* older Safari ignores options — degrade silently */ }
+            });
+        }
+
         const targetId = `${camelTab(tabName)}Tab`;
         document.querySelectorAll('.rb-tab-content').forEach(content => {
             content.classList.toggle('active', content.id === targetId);
@@ -3739,7 +3754,18 @@ document.addEventListener('DOMContentLoaded', async function() {
         const container = document.getElementById(containerId);
         const toggleBtn = document.getElementById(toggleBtnId);
         if (!container || !toggleBtn) return;
-        const hidden = localStorage.getItem(storageKey) === 'true';
+        // Plan 8: on a first visit (localStorage absent) default to collapsed
+        // on mobile / expanded on desktop. We don't WRITE to localStorage
+        // here — preserves "no preference yet" so a user who later resizes
+        // to desktop sees the filters open by default. Once the user toggles
+        // explicitly, the stored value takes over forever.
+        const stored = localStorage.getItem(storageKey);
+        let hidden;
+        if (stored === null) {
+            hidden = window.matchMedia('(max-width: 768px)').matches;
+        } else {
+            hidden = stored === 'true';
+        }
         if (hidden) {
             container.classList.add('rb-pool-filters-collapsed');
             toggleBtn.setAttribute('aria-expanded', 'false');
@@ -4887,10 +4913,6 @@ document.addEventListener('DOMContentLoaded', async function() {
             if (finalNotesEl) finalNotesEl.value = '';
             document.querySelectorAll('#addBoardFinalColorRowInner .addboard-color-swatch')
                 .forEach(b => b.classList.remove('selected'));
-            const historyList = document.getElementById('addBoardHistoryList');
-            if (historyList) historyList.innerHTML = '';
-            // Always default to the Setup tab on open
-            switchAddBoardTab('setup');
 
             // Wire personal/shared change + initial population
             handleAddBoardTypeChange();
@@ -4908,26 +4930,12 @@ document.addEventListener('DOMContentLoaded', async function() {
         addBoardContext = null;
     }
 
-    // Toggle which tab panel is visible inside the Add-to-Board modal.
-    // Only used when Shared Board is selected (personal mode hides the tab strip).
-    function switchAddBoardTab(tabKey) {
-        document.querySelectorAll('#addBoardTabs .addboard-tab').forEach(b => {
-            b.classList.toggle('active', b.dataset.addboardTab === tabKey);
-        });
-        document.querySelectorAll('#addBoardModal .addboard-tab-panel').forEach(p => {
-            const active = p.dataset.addboardPanel === tabKey;
-            p.classList.toggle('active', active);
-            p.style.display = active ? 'block' : 'none';
-        });
-    }
-
     function handleAddBoardTypeChange() {
         if (!addBoardContext) return;
         const type = document.querySelector('input[name="addBoardType"]:checked').value;
         const groupRow = document.getElementById('addBoardGroupRow');
         const boardSelect = document.getElementById('addBoardSelect');
         const warning = document.getElementById('addBoardWarning');
-        const tabs = document.getElementById('addBoardTabs');
         const finalGradeRow = document.getElementById('addBoardFinalGradeRow');
         const finalColorRow = document.getElementById('addBoardFinalColorRow');
         const finalNotesRow = document.getElementById('addBoardFinalNotesRow');
@@ -4936,9 +4944,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         warning.textContent = '';
 
         // Both modes show final-grade/color/notes — personal and shared cards
-        // both render the swatch + grade badge on the football field. Only the
-        // Evaluation History tab is shared-only (personal recruits often have
-        // no chain).
+        // both render the swatch + grade badge on the football field.
         if (finalGradeRow) finalGradeRow.style.display = 'block';
         if (finalColorRow) finalColorRow.style.display = 'block';
         if (finalNotesRow) finalNotesRow.style.display = 'block';
@@ -4946,10 +4952,6 @@ document.addEventListener('DOMContentLoaded', async function() {
 
         if (type === 'personal') {
             groupRow.style.display = 'none';
-            if (tabs) tabs.style.display = 'none';
-            // Personal mode always shows the Setup panel (the History tab only
-            // exists in shared mode).
-            switchAddBoardTab('setup');
             if (confirmBtn) confirmBtn.textContent = 'Add to Board';
 
             const boards = addBoardContext.personalBoards;
@@ -4965,7 +4967,6 @@ document.addEventListener('DOMContentLoaded', async function() {
             evaluateConfirmEnabled();
         } else {
             groupRow.style.display = 'block';
-            if (tabs) tabs.style.display = 'flex';
             if (confirmBtn) confirmBtn.textContent = 'Add to Shared Board';
 
             // Populate groups dropdown
@@ -4973,10 +4974,6 @@ document.addEventListener('DOMContentLoaded', async function() {
             groupSelect.innerHTML = addBoardContext.sharedGroups.map(g =>
                 `<option value="${g.id}">${escapeHtml(g.group_name || 'Group')}</option>`
             ).join('');
-
-            // Populate Evaluation History tab (shared-only). prefillFinalGradeAndColor
-            // already ran above so the slider/swatches are seeded for both modes.
-            renderAddBoardHistory();
 
             if (addBoardContext.sharedGroups.length > 0) {
                 handleAddBoardGroupChange();
@@ -5057,17 +5054,6 @@ document.addEventListener('DOMContentLoaded', async function() {
         document.querySelectorAll('#addBoardFinalColorRowInner .addboard-color-swatch').forEach(b => {
             b.classList.toggle('selected', b.dataset.color === (mode || ''));
         });
-    }
-
-    function renderAddBoardHistory() {
-        if (!addBoardContext) return;
-        const recruit = addBoardContext.recruit;
-        // Build the same snapshot we'd POST (chain + current coach if they
-        // actually evaluated). The History tab is read-only — coaches use it
-        // to inform the final grade/color they're about to set.
-        const snapshot = buildGradingHistorySnapshot(recruit, addBoardContext.currentUser);
-        const container = document.getElementById('addBoardHistoryList');
-        if (container) container.innerHTML = renderEvaluationChainTimelineCompact(snapshot);
     }
 
     // Central gate for the Confirm button. Both modes require final grade +
@@ -6002,10 +5988,6 @@ document.addEventListener('DOMContentLoaded', async function() {
             radio.addEventListener('change', handleAddBoardTypeChange);
         });
 
-        // Tab strip — shared mode only, but listeners are safe to bind on init
-        document.querySelectorAll('#addBoardTabs .addboard-tab').forEach(btn => {
-            btn.addEventListener('click', () => switchAddBoardTab(btn.dataset.addboardTab));
-        });
 
         // Final Grade slider — live readout + update context + re-evaluate Confirm.
         // Hide the empty-chain hint once the coach touches the slider (treats

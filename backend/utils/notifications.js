@@ -42,6 +42,12 @@ function buildDeepLinkPath(notif) {
     if (rtype === 'portal_watchlist') {
         return `/recruiting-board.html`;
     }
+    // Plan 8: a recruit who originally filled out a public questionnaire
+    // just created a DR account — coaches with the recruit in their
+    // pipeline get pinged. Land them on the recruiting board.
+    if (rtype === 'dr_account_linked') {
+        return `/recruiting-board.html`;
+    }
     if (rtype === 'ai_search') {
         return `/notifications`;
     }

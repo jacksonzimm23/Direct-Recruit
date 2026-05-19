@@ -297,6 +297,36 @@ class PipelineRecruit {
   }
 
   /**
+   * Plan 8: resolve coaches whose ACTIVE pipeline contains a given recruit,
+   * matched by either pool_entry_id (questionnaire-sourced rows) or
+   * linked_player_user_id (DR-direct rows; populated post-backlink at
+   * register time). Used by the "DR Account Linked" notification fan-out
+   * in auth.js — a user who just registered may have submitted
+   * questionnaires to multiple schools, so accept an ARRAY of matched
+   * pool_entry_ids. SELECT DISTINCT collapses to one row per coach (each
+   * coach has at most one active row per recruit due to the partial
+   * UNIQUE index, but the DISTINCT is defensive against any future
+   * multi-row case).
+   *
+   * Filters removed_from_pipeline_at IS NULL (lesson #110: soft-delete
+   * must be filtered) and status IN ('active', 'out') to mirror
+   * getPipelineForCoach's "live pipeline" definition.
+   */
+  static async findCoachesWithRecruit(poolEntryIds, linkedPlayerUserId) {
+    const ids = Array.isArray(poolEntryIds) ? poolEntryIds.filter(Boolean) : [];
+    if (ids.length === 0 && !linkedPlayerUserId) return [];
+    const result = await pool.query(
+      `SELECT DISTINCT coach_user_id
+         FROM pipeline_recruits
+        WHERE (pool_entry_id = ANY($1::uuid[]) OR linked_player_user_id = $2)
+          AND removed_from_pipeline_at IS NULL
+          AND status IN ('active', 'out')`,
+      [ids, linkedPlayerUserId || null]
+    );
+    return result.rows.map(r => r.coach_user_id);
+  }
+
+  /**
    * Append a snapshot entry to a recruit's evaluation_chain (Plan 5A).
    * Pure function — returns a NEW array. The snapshot freezes the coach's
    * name, title, and the evaluation at the time of append. Plan 6 (final-

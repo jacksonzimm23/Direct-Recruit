@@ -1058,17 +1058,11 @@
                 </button>
             </div>
             <div class="recruiting-board-modal-body">
-                <!-- Tab strip — only visible when Shared Board is selected. Lets the
-                     coach review the prior evaluation chain (compact: coach + grade
-                     + color swatch, no notes) before setting a final grade/color. -->
-                <div class="addboard-tabs" id="addBoardTabs" style="display: none;">
-                    <button type="button" class="addboard-tab active" data-addboard-tab="setup">Setup</button>
-                    <button type="button" class="addboard-tab" data-addboard-tab="history">Evaluation History</button>
-                </div>
-
                 <!-- Setup panel — Board Type, group/board/position, and (shared-only)
-                     the Final Grade slider + Final Color swatch row. -->
-                <div class="addboard-tab-panel active" data-addboard-panel="setup">
+                     the Final Grade slider + Final Color swatch row. Evaluation
+                     History tab was removed — the unified Evaluation tab in the
+                     info modal is now the single source of truth for prior grades. -->
+                <div class="addboard-setup-panel">
                     <label class="eval-field-label">Board Type</label>
                     <div class="addboard-type-row">
                         <label class="addboard-type-option">
@@ -1124,11 +1118,6 @@
                     <p class="addboard-warning" id="addBoardWarning" style="display: none;"></p>
                 </div>
 
-                <!-- Evaluation History panel — compact list of each coach's grade
-                     and color, no notes. Populated by renderAddBoardHistory(). -->
-                <div class="addboard-tab-panel" data-addboard-panel="history" style="display: none;">
-                    <div id="addBoardHistoryList"></div>
-                </div>
             </div>
             <div class="recruiting-board-modal-footer">
                 <button class="btn-cancel" id="addBoardCancelBtn">Cancel</button>

@@ -2351,8 +2351,21 @@ body.rb-shared-no-boards .recruiting-board-main .football-field-container {
 }
 
 @media (max-width: 768px) {
+    /* Plan 8: horizontal-scroll the 4 subtabs so labels stay readable on
+       narrow viewports. Mirrors the .rc-tabs pattern in messages.css
+       (recruiting calendar modal). */
     .recruiting-board-main .rb-subtabs {
         margin: 0 1rem 0.75rem;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+    }
+    .recruiting-board-main .rb-subtabs::-webkit-scrollbar {
+        display: none;
+    }
+    .rb-subtab {
+        flex: 0 0 auto;       /* override desktop flex: 1 */
+        white-space: nowrap;
     }
     .pb-board-selector-row {
         margin: 0 1rem 1.25rem;
@@ -3365,6 +3378,20 @@ body.rb-shared-no-boards .recruiting-board-main .football-field-container {
         min-width: 0;
         flex: 1 1 100%;
     }
+
+    /* Plan 8 mobile: right-align Group Info + Leave Group as a unit. The
+       row wraps at narrow widths — the spacer would otherwise push only
+       the first button to the right, leaving the second on a new line at
+       the left edge. Force both buttons into a flex group aligned to the
+       right via margin-left: auto on the first, gap on the second. */
+    .sg-group-selector-row .sg-row-spacer {
+        flex-basis: 100%;       /* force a line break before the buttons */
+        height: 0;
+        min-height: 0;
+    }
+    .sg-group-selector-row .sg-action-btn-text.sg-info {
+        margin-left: auto;      /* push the pair right on the new line */
+    }
 }
 
 /* ==============================
@@ -4193,10 +4220,20 @@ body.rb-shared-no-boards .recruiting-board-main .football-field-container {
 }
 
 @media (max-width: 768px) {
+    /* Keep the action button inline on the right (do NOT force width:100%
+       which used to wrap it to a new row and squeeze the name). Compact
+       button so "In Your Pipeline" / "Add to Pipeline" fits without
+       pushing other content out of the card. */
     .rb-pool-row-actions {
-        margin-left: 0;
-        width: 100%;
+        margin-left: auto;
+        width: auto;
         justify-content: flex-end;
+        flex-shrink: 0;
+    }
+    .rb-pool-row-action {
+        font-size: 0.72rem;
+        padding: 0.35rem 0.6rem;
+        border-radius: 6px;
     }
 }
 
@@ -4728,17 +4765,17 @@ body.rb-shared-no-boards .recruiting-board-main .football-field-container {
     opacity: 0.85;
 }
 
-/* Mobile: stack the grade pill below the info on narrow screens so the
-   name and badges don't get squeezed. */
-@media (max-width: 520px) {
-    .pipeline-card {
-        flex-wrap: wrap;
-    }
-    .pipeline-card-info {
-        flex-basis: calc(100% - 80px);
-    }
+/* Mobile: keep the grade pill inline on the right but shrink it so it
+   stops forcing the name to wrap. Card stays a single row; long names
+   ellipsis-truncate via the .rb-pool-row-name rules. */
+@media (max-width: 768px) {
     .pipeline-grade-pill {
-        margin-left: 70px;
+        min-width: 42px;
+        padding: 4px 8px;
+        border-radius: 8px;
+    }
+    .pipeline-grade-number {
+        font-size: 0.95rem;
     }
 }
 
@@ -5302,38 +5339,10 @@ body.rb-shared-no-boards .recruiting-board-main .football-field-container {
 }
 
 /* --------------------------------------------------------------------------
-   Add-to-Shared-Board: Tabs + Final Grade/Color + Evaluation History
+   Add-to-Board modal — Final Grade/Color/Notes UI. Evaluation History tab
+   was removed; the unified Evaluation tab in the info modal is now the
+   single source of truth for prior grades.
    -------------------------------------------------------------------------- */
-.addboard-tabs {
-    display: flex;
-    gap: 4px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    margin-bottom: 14px;
-}
-.addboard-tab {
-    background: none;
-    border: none;
-    color: rgba(255, 255, 255, 0.55);
-    font-family: 'Inter', sans-serif;
-    font-size: 0.9rem;
-    font-weight: 600;
-    padding: 8px 14px;
-    cursor: pointer;
-    border-bottom: 2px solid transparent;
-}
-.addboard-tab:hover {
-    color: rgba(255, 255, 255, 0.85);
-}
-.addboard-tab.active {
-    color: var(--accent-orange, #ff6b35);
-    border-bottom-color: var(--accent-orange, #ff6b35);
-}
-.addboard-tab-panel {
-    display: none;
-}
-.addboard-tab-panel.active {
-    display: block;
-}
 .addboard-required {
     color: #ef4444;
     margin-left: 2px;
@@ -5490,12 +5499,28 @@ body.rb-shared-no-boards .recruiting-board-main .football-field-container {
         max-height: 100vh;
         border-radius: 0;
     }
+    /* Plan 8 mobile: 2 buttons (Add to Board + Send to Coach) on the top
+       row, Remove from Pipeline alone on its own full-width row below so
+       its longer label isn't cut off. DOM order is Remove · AddBoard ·
+       Handoff, so flex `order` reflows them visually without touching JS. */
     .eval-footer {
-        flex-direction: column;
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 6px;
+        padding: 0.6rem 0.5rem;
     }
-    .eval-footer .btn-cancel#evalDeleteBtn {
-        margin-right: 0;
-        order: 99;  /* push delete to the bottom on mobile */
+    .eval-footer #evalAddBoardBtn,
+    .eval-footer #evalHandoffBtn {
+        order: 1;
+        flex: 1 1 0;
+        font-size: 0.78rem;
+        padding: 0.5rem 0.4rem;
+    }
+    .eval-footer #evalDeleteBtn {
+        order: 2;
+        flex: 1 1 100%;       /* own row, full width */
+        font-size: 0.8rem;
+        padding: 0.55rem 0.5rem;
     }
 }
 
@@ -6056,5 +6081,95 @@ body.rb-shared-no-boards .recruiting-board-main .football-field-container {
     .handoff-reject-btn,
     .handoff-accept-btn {
         width: 100%;
+    }
+}
+
+/* ==============================================================
+   Plan 8 mobile polish — condense Pool/Pipeline rows + football-
+   field recruit cards so name/meta truncate cleanly with ellipsis
+   instead of getting cut mid-word. min-width: 0 is the unlock for
+   text-overflow: ellipsis inside flex containers (flex children
+   default to min-width: auto = intrinsic content width).
+   ============================================================== */
+@media (max-width: 768px) {
+    /* --- Pool + Pipeline rows --- */
+    .rb-pool-row {
+        gap: 10px;
+        padding: 10px 12px;
+        min-height: 44px;       /* WCAG tap target */
+    }
+    .rb-pool-row-avatar {
+        width: 40px;
+        height: 40px;
+    }
+    .rb-pool-row-avatar svg {
+        width: 22px;
+        height: 22px;
+    }
+    .rb-pool-row-info {
+        min-width: 0;
+    }
+    .rb-pool-row-name {
+        font-size: 0.9rem;
+        flex-wrap: nowrap;
+        gap: 6px;
+    }
+    .rb-pool-row-name > :first-child {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        min-width: 0;
+    }
+    .rb-pool-row-name > * {
+        flex-shrink: 0;         /* badges + checkmark don't squish */
+    }
+    .rb-pool-row-meta {
+        font-size: 0.75rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* --- Football-field recruit cards (Shared + Personal boards) --- */
+    .recruit-info {
+        min-width: 0;
+    }
+    .recruit-name {
+        font-size: 0.78rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .recruit-details,
+    .recruit-school,
+    .recruit-stats {
+        font-size: 0.65rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .recruit-final-grade {
+        min-width: 24px;
+        height: 20px;
+        font-size: 0.7rem;
+        padding: 0 6px;
+    }
+}
+
+@media (max-width: 480px) {
+    /* Drop the "Grade"/"Ungraded" label on tightest viewports so the
+       pipeline grade pill is number-only. */
+    .pipeline-grade-pill .pipeline-grade-label {
+        display: none;
+    }
+}
+
+@media (max-width: 375px) {
+    /* Strip the DR / Pool badges from pool/pipeline rows on the
+       narrowest viewports — name + meta + action are higher priority
+       than the source-of-truth chip. */
+    .rb-pool-row .pipeline-badge.dr,
+    .rb-pool-row .pipeline-badge.source {
+        display: none;
     }
 }

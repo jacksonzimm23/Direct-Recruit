@@ -14,6 +14,9 @@ const cognito = require('../utils/cognito');
 const { bumpRevokeCutoff } = require('../utils/tokenRevocation');
 const logger = require('../utils/logger');
 const pool = require('../config/database');
+const Notification = require('../models/Notification');
+const PipelineRecruit = require('../models/PipelineRecruit');
+const { notifyUser } = require('../utils/notifications');
 
 // Cookie configuration
 const COOKIE_OPTIONS = {
@@ -105,6 +108,47 @@ router.post('/register', authLimiter, validateRegistration, handleValidationErro
       );
     } catch (linkErr) {
       logger.error('Questionnaire backlink failed during registration (non-fatal):', linkErr);
+    }
+
+    // Plan 8: fan out "DR Account Linked" notifications to every coach who
+    // has this recruit in their active pipeline. Must run AFTER the
+    // backlink UPDATEs above — the SELECT below depends on
+    // pool_entries.linked_player_user_id being populated. Non-fatal: if
+    // anything throws, registration still succeeds.
+    try {
+      const matched = await pool.query(
+        `SELECT pe.id AS pool_entry_id,
+                qs.submission_data->'personal'->>'first_name' AS first_name,
+                qs.submission_data->'personal'->>'last_name'  AS last_name,
+                qs.submitted_at
+           FROM pool_entries pe
+           LEFT JOIN questionnaire_submissions qs ON qs.id = pe.latest_submission_id
+          WHERE pe.linked_player_user_id = $1
+          ORDER BY qs.submitted_at DESC NULLS LAST`,
+        [user.id]
+      );
+      if (matched.rows.length > 0) {
+        const poolEntryIds = matched.rows.map(r => r.pool_entry_id);
+        // Use most-recent submission's name; fall back to email local-part
+        // if the name fields are missing or empty.
+        const top = matched.rows[0];
+        const fullName = `${(top.first_name || '').trim()} ${(top.last_name || '').trim()}`.trim() || user.email;
+        const coachIds = await PipelineRecruit.findCoachesWithRecruit(poolEntryIds, user.id);
+        for (const coachId of coachIds) {
+          const notif = await Notification.create({
+            userId: coachId,
+            type: 'interaction',
+            title: 'Recruit Joined Direct Recruit',
+            message: `${fullName} just joined Direct Recruit — you can message them directly now.`,
+            relatedUserId: user.id,
+            relatedEntityId: user.id,
+            relatedEntityType: 'dr_account_linked'
+          });
+          if (notif) notifyUser(req.app.get('io'), notif);
+        }
+      }
+    } catch (notifyErr) {
+      logger.error('DR account linked notification fan-out failed (non-fatal):', notifyErr);
     }
 
     const token = generateToken(user.id, user.role);

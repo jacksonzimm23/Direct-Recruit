@@ -260,6 +260,8 @@ function formatNotificationMessage(notification) {
             return `${nameHtml} has entered the transfer portal`;
         case 'AI Search Match':
             return notification.message;
+        case 'Recruit Joined Direct Recruit':
+            return `${nameHtml} just joined Direct Recruit — you can message them directly now.`;
         default:
             // Fallback: try to replace any name pattern in the original message
             let message = notification.message || '';
@@ -288,6 +290,8 @@ function getTypeIconClass(type, title) {
             return 'portal-entry-icon';
         } else if (title === 'AI Search Match') {
             return 'ai-search-icon';
+        } else if (title === 'Recruit Joined Direct Recruit') {
+            return 'dr-linked-icon';
         }
     }
 
@@ -337,6 +341,12 @@ function getTypeIcon(type, title) {
         } else if (title === 'AI Search Match') {
             return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+            </svg>`;
+        } else if (title === 'Recruit Joined Direct Recruit') {
+            return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+                <circle cx="9" cy="7" r="4"></circle>
+                <polyline points="17 11 19 13 23 9"></polyline>
             </svg>`;
         }
     }
