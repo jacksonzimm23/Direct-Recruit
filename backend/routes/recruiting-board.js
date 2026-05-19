@@ -750,6 +750,7 @@ router.get('/my-pool', authMiddleware, requireRole('coach'), async (req, res) =>
            COUNT(*) > 0 AS in_any_pipeline_at_school
          FROM pipeline_recruits pr
          WHERE pr.pool_entry_id = pe.id AND pr.school_key = ${schoolKeyParam}
+           AND pr.removed_from_pipeline_at IS NULL
        ) pip ON TRUE
        WHERE ${where.join(' AND ')}
        ORDER BY pe.last_submitted_at DESC
@@ -890,7 +891,8 @@ router.get('/my-pool/:entryId', authMiddleware, requireRole('coach'), validateUU
          BOOL_OR(coach_user_id = $1) AS in_my_pipeline,
          COUNT(*) > 0 AS in_any_pipeline_at_school
        FROM pipeline_recruits
-       WHERE pool_entry_id = $2 AND school_key = $3`,
+       WHERE pool_entry_id = $2 AND school_key = $3
+         AND removed_from_pipeline_at IS NULL`,
       [req.userId, entry.id, schoolKey]
     );
     const pip = pipResult.rows[0] || {};

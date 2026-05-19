@@ -75,7 +75,8 @@ const MIGRATIONS = [
   'add-team-questionnaires.sql',
   'refactor-questionnaire-to-per-school.sql',
   'add-recruit-pipeline.sql',
-  'add-pipeline-handoffs.sql'
+  'add-pipeline-handoffs.sql',
+  'add-pipeline-soft-delete.sql'
 ];
 
 async function applyManualFixes() {

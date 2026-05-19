@@ -5006,13 +5006,15 @@ body.rb-shared-no-boards .recruiting-board-main .football-field-container {
     resize: vertical;
     box-sizing: border-box;
 }
+/* Phase 3: footer is exactly 3 buttons (Remove ⇆ Add to Pipeline · Add to
+   Board · Send to Coach), centered with equal spacing. Save Grade was moved
+   into #gradeEntryModal. */
 .eval-footer {
     flex-wrap: wrap;
-    gap: 8px;
+    gap: 12px;
     align-items: center;
+    justify-content: center;
 }
-/* Three buttons on the top row split the width evenly so each gets equal
-   breathing room (no cramped "Add to Board / Send to Coach" pair). */
 .eval-footer #evalDeleteBtn,
 .eval-footer #evalAddBoardBtn,
 .eval-footer #evalHandoffBtn {
@@ -5026,11 +5028,9 @@ body.rb-shared-no-boards .recruiting-board-main .football-field-container {
     overflow: hidden;
     text-overflow: ellipsis;
 }
-/* Save Grade spans the full footer width on its own row */
-.eval-footer #evalSaveBtn {
-    flex: 1 1 100%;
-    width: 100%;
-}
+/* "Remove from Pipeline" wears the destructive red look; when the same
+   button morphs into "Add to Pipeline" it inherits the .btn-submit class
+   (orange primary) — toggled by updateFooterButtonsForPipelineState. */
 .eval-footer .btn-cancel#evalDeleteBtn {
     background: rgba(239, 68, 68, 0.15);
     color: #ef4444;
@@ -5039,6 +5039,181 @@ body.rb-shared-no-boards .recruiting-board-main .football-field-container {
 .eval-footer .btn-cancel#evalDeleteBtn:hover {
     background: rgba(239, 68, 68, 0.25);
     border-color: rgba(239, 68, 68, 0.6);
+}
+.eval-footer #evalAddBoardBtn[disabled],
+.eval-footer #evalHandoffBtn[disabled] {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+/* Phase 3 — merged Evaluation tab list */
+.eval-evaluations-header {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 12px;
+}
+/* In-body action buttons that live inside .eval-tab-content (not the modal
+   footer) — the base .btn-submit rule is footer-scoped, so we restate the
+   orange-primary look for these in-body buttons. */
+#evalAddOrEditGradeBtn,
+#evalFinalGradeSaveBtn,
+#gradeEntrySaveBtn {
+    background: var(--accent-orange);
+    color: var(--white);
+    border: none;
+    padding: 0.6rem 1.25rem;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: 'Inter', sans-serif;
+}
+#evalAddOrEditGradeBtn:hover:not(:disabled),
+#evalFinalGradeSaveBtn:hover:not(:disabled),
+#gradeEntrySaveBtn:hover:not(:disabled) {
+    background: #e55a2b;
+    transform: translateY(-1px);
+}
+#evalAddOrEditGradeBtn:disabled,
+#evalFinalGradeSaveBtn:disabled,
+#gradeEntrySaveBtn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    transform: none;
+}
+.eval-evaluations-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.eval-evaluations-row {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    padding: 10px 12px;
+    transition: background 0.15s ease;
+}
+.eval-evaluations-row.is-mine {
+    border-left: 3px solid #1282a2;
+    background: rgba(18, 130, 162, 0.08);
+}
+.eval-evaluations-row.is-inactive {
+    opacity: 0.55;
+}
+.eval-evaluations-row-header {
+    display: grid;
+    grid-template-columns: 16px 1fr auto auto 18px;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+}
+.eval-evaluations-swatch {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    display: inline-block;
+    flex-shrink: 0;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+}
+.eval-evaluations-swatch-empty {
+    background: transparent;
+    border-style: dashed;
+}
+.eval-evaluations-name {
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.92);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.eval-evaluations-inactive-badge {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: rgba(255, 255, 255, 0.45);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-weight: 500;
+}
+.eval-evaluations-grade {
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.95);
+    min-width: 28px;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+.eval-evaluations-date {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.8rem;
+    white-space: nowrap;
+}
+.eval-evaluations-caret {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.85rem;
+    transition: transform 0.15s ease;
+    text-align: center;
+}
+.eval-evaluations-row.is-expanded .eval-evaluations-caret {
+    transform: rotate(180deg);
+}
+.eval-evaluations-caret-empty {
+    visibility: hidden;
+}
+.eval-evaluations-notes {
+    margin: 10px 0 0 26px;
+    padding: 8px 12px;
+    border-left: 2px solid rgba(255, 255, 255, 0.2);
+    color: rgba(255, 255, 255, 0.75);
+    font-size: 0.85rem;
+    line-height: 1.45;
+    white-space: pre-wrap;
+}
+.eval-evaluations-empty {
+    text-align: center;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.9rem;
+    padding: 24px 12px;
+}
+
+/* Phase 3 — Final Grade tab */
+.eval-final-promotion-row {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-bottom: 12px;
+}
+.eval-final-context {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.85rem;
+    margin: 0 0 12px 0;
+}
+.eval-final-audit {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.75rem;
+    margin: 12px 0 0 0;
+    font-style: italic;
+}
+.eval-final-actions {
+    margin-top: 16px;
+    display: flex;
+    justify-content: flex-end;
+}
+
+/* Phase 3 — Grade Entry sub-modal sits on top of the Evaluation modal.
+   z-index is set inline in the HTML (1100) to win over any cascade. */
+.grade-entry-modal .recruiting-board-modal-overlay {
+    background: rgba(0, 0, 0, 0.55);
+}
+.grade-entry-modal .recruiting-board-modal-content {
+    max-width: 560px;
 }
 .btn-submit-secondary {
     background: rgba(255, 255, 255, 0.08);
@@ -5290,48 +5465,25 @@ body.rb-shared-no-boards .recruiting-board-main .football-field-container {
     justify-content: center;
 }
 
-/* --------------------------------------------------------------------------
-   On-Board Player Info Modal — opens when a coach clicks a card on the
-   football field and picks "Show Info" from the context menu. Reuses the
-   eval modal's tab + content styling; only the audit caption is new.
-   -------------------------------------------------------------------------- */
-.board-info-modal .recruiting-board-modal-overlay {
-    background: rgba(0, 0, 0, 0.88);
-    backdrop-filter: blur(6px);
-}
-.board-info-modal .recruiting-board-modal-content {
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
-}
-
 /* Lock a consistent size on the tabbed recruiting-board modals so the modal
    doesn't shrink/grow when switching between tabs with different amounts of
    content (e.g. long questionnaire vs short history list). The body keeps
    its own scroll, header/footer stay pinned. Confirm dialogs and other
-   sg-modal-content modals are left alone — they SHOULD size to content. */
+   sg-modal-content modals are left alone — they SHOULD size to content.
+   Phase 3 removed #boardPlayerInfoModal — the unified eval modal covers both
+   pipeline-card and football-field entry points. */
 #evaluationModal .sg-modal-content,
-#boardPlayerInfoModal .sg-modal-content,
 #poolDetailModal .sg-modal-content,
 #addBoardModal .sg-modal-content {
     height: 85vh;
     max-height: 85vh;
 }
-.board-info-modal .recruiting-board-modal-footer {
-    justify-content: center;  /* single Save button, centered */
-}
-.board-info-modal .recruiting-board-modal-footer .btn-submit {
-    min-width: 200px;
-}
-.board-info-audit {
-    color: rgba(255, 255, 255, 0.55);
-    font-size: 0.78rem;
-    font-style: italic;
-    margin: 8px 0 0;
-}
 
 /* Mobile: full-screen modals per lesson 75 */
 @media (max-width: 768px) {
     .eval-modal.active .recruiting-board-modal-content,
-    .addboard-modal.active .recruiting-board-modal-content {
+    .addboard-modal.active .recruiting-board-modal-content,
+    .grade-entry-modal.active .recruiting-board-modal-content {
         width: 100vw;
         max-width: 100vw;
         height: 100vh;

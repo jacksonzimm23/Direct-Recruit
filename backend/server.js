@@ -62,6 +62,7 @@ const paymentsRoutes = require('./routes/payments');
 const coachSignupRoutes = require('./routes/coach-signup');
 const adminCoachVerificationRoutes = require('./routes/admin-coach-verification');
 const questionnaireRoutes = require('./routes/questionnaire');
+const pipelineRoutes = require('./routes/pipeline');
 const initializeSocket = require('./socket');
 const { apiLimiter } = require('./middleware/rateLimit');
 const { sanitizeBody } = require('./middleware/validation');
@@ -173,6 +174,7 @@ app.use('/api/payments', paymentsRoutes);
 app.use('/api/coach-signup', coachSignupRoutes);
 app.use('/api/admin/coach-verification', adminCoachVerificationRoutes);
 app.use('/api/questionnaire', questionnaireRoutes);
+app.use('/api/pipeline', pipelineRoutes);
 
 // In development, serve frontend files so cookies work on the same origin
 if (process.env.NODE_ENV !== 'production') {

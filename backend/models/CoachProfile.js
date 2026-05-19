@@ -1,5 +1,7 @@
 const pool = require('../config/database');
 const { escapeLikePattern } = require('../middleware/validation');
+// Plan 5A: team_name changes auto-cancel inbound pipeline hand-offs.
+// Required at call time to avoid a circular import on module load.
 
 class CoachProfile {
   static async create(userId, profileData) {
@@ -32,6 +34,18 @@ class CoachProfile {
       // profile_image_url removed — set via updateProfileImage() only (security #22)
     ]);
 
+    // Plan 5A: detect team_name change so we can auto-cancel inbound
+    // pipeline hand-offs whose snapshot school_key no longer matches.
+    const teamNameIncoming = (profileData.team_name !== undefined) ? profileData.team_name : null;
+    let oldTeamName = null;
+    if (profileData.team_name !== undefined) {
+      const oldResult = await pool.query(
+        `SELECT team_name FROM coach_profiles WHERE user_id = $1`,
+        [userId]
+      );
+      oldTeamName = (oldResult.rows[0] && oldResult.rows[0].team_name) || null;
+    }
+
     const fields = [];
     const values = [];
     let paramCount = 1;
@@ -47,7 +61,40 @@ class CoachProfile {
     values.push(userId);
     const query = `UPDATE coach_profiles SET ${fields.join(', ')} WHERE user_id = $${paramCount} RETURNING *`;
     const result = await pool.query(query, values);
-    return result.rows[0];
+    const updated = result.rows[0];
+
+    // Plan 5A: fire auto-cancel if normalized school_key actually changed.
+    // Lazy-require both modules to avoid a circular import (PipelineHandoff →
+    // PipelineRecruit → ../config/database is fine, but importing here at the
+    // top of CoachProfile would create a chain CoachProfile → PipelineHandoff
+    // → PipelineRecruit that some seed scripts touch in a different order).
+    if (profileData.team_name !== undefined) {
+      const TeamQuestionnaire = require('./TeamQuestionnaire');
+      const PipelineHandoff = require('./PipelineHandoff');
+      const oldKey = TeamQuestionnaire.normalizeSchoolKey(oldTeamName);
+      const newKey = TeamQuestionnaire.normalizeSchoolKey(teamNameIncoming);
+      if (oldKey !== newKey) {
+        const client = await pool.connect();
+        try {
+          await client.query('BEGIN');
+          await PipelineHandoff.autoCancelForRecipient(client, userId, newKey);
+          await client.query('COMMIT');
+        } catch (err) {
+          await client.query('ROLLBACK');
+          // Don't fail the profile update if auto-cancel errors — just log.
+          // The Out-view filter + view-time school_key filter still hide the
+          // stale rows from the user; auto-cancel is the cleanup pass.
+          try {
+            const logger = require('../utils/logger');
+            logger.error('Plan 5A auto-cancel hook failed (CoachProfile.update):', err);
+          } catch { /* noop */ }
+        } finally {
+          client.release();
+        }
+      }
+    }
+
+    return updated;
   }
 
   // Dedicated avatar update — bypasses the allowedColumns filter on update().

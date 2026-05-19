@@ -47,10 +47,13 @@ class PipelineHandoff {
     try {
       await client.query('BEGIN');
 
-      // 1. Verify source recruit belongs to sender and is 'active'
+      // 1. Verify source recruit belongs to sender and is 'active' and not
+      //    soft-deleted (a coach who removed a recruit can't suddenly send
+      //    a hand-off off the tombstoned row).
       const srcResult = await client.query(
         `SELECT id, status FROM pipeline_recruits
           WHERE id = $1 AND coach_user_id = $2
+            AND removed_from_pipeline_at IS NULL
           FOR UPDATE`,
         [sourceRecruitId, senderId]
       );

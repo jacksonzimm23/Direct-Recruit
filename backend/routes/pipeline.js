@@ -4,6 +4,7 @@ const pool = require('../config/database');
 const { authMiddleware, requireRole, validateUUID } = require('../middleware/auth');
 const PipelineRecruit = require('../models/PipelineRecruit');
 const PipelineHandoff = require('../models/PipelineHandoff');
+const RecruitingBoard = require('../models/RecruitingBoard');
 const TeamQuestionnaire = require('../models/TeamQuestionnaire');
 const logger = require('../utils/logger');
 
@@ -66,10 +67,36 @@ router.get('/evaluations', authMiddleware, requireRole('coach'), async (req, res
       poolEntryId: pool_entry_id || null,
       linkedPlayerUserId: linked_player_user_id || null,
     });
-    res.json({ evaluations });
+    // Decorate with is_mine so the frontend can highlight the viewer's own row
+    // and short-circuit the Add/Edit Grade button label resolution.
+    const decorated = evaluations.map(e => ({ ...e, is_mine: e.coach_id === req.userId }));
+    res.json({ evaluations: decorated });
   } catch (err) {
     logger.error('GET /pipeline/evaluations error:', err);
     res.status(500).json({ error: 'Failed to load evaluations' });
+  }
+});
+
+// GET /board-promotions?pool_entry_id=...&linked_player_user_id=... — every
+// shared board the requesting coach is a member of that contains this recruit
+// in its players JSONB. Drives the Final Grade tab in the unified info modal.
+// Personal boards intentionally excluded (private per coach). Each promotion
+// returns position + can_edit so the frontend knows whether to enable the
+// Save Final Grade button without inspecting any other state.
+router.get('/board-promotions', authMiddleware, requireRole('coach'), async (req, res) => {
+  try {
+    const { pool_entry_id, linked_player_user_id } = req.query;
+    if (!pool_entry_id && !linked_player_user_id) {
+      return res.status(400).json({ error: 'pool_entry_id or linked_player_user_id is required' });
+    }
+    const promotions = await RecruitingBoard.getBoardPromotionsForRecruit(req.userId, {
+      poolEntryId: pool_entry_id || null,
+      linkedPlayerUserId: linked_player_user_id || null,
+    });
+    res.json({ promotions });
+  } catch (err) {
+    logger.error('GET /pipeline/board-promotions error:', err);
+    res.status(500).json({ error: 'Failed to load board promotions' });
   }
 });
 
@@ -109,6 +136,33 @@ router.post('/from-profile', authMiddleware, requireRole('coach'), async (req, r
     if (err.code === 'INVALID_TARGET') return res.status(400).json({ error: err.message });
     if (err.code === 'DUPLICATE') return res.status(409).json({ error: err.message });
     logger.error('POST /pipeline/from-profile error:', err);
+    res.status(500).json({ error: 'Failed to add recruit to pipeline' });
+  }
+});
+
+// POST /from-board — used by the unified info modal's "Add to Pipeline" button
+// when opened from a football-field card. Body accepts either pool_entry_id
+// (questionnaire-only recruits) or linked_player_user_id (DR-linked); delegates
+// to the same add* methods as /from-pool and /from-profile.
+router.post('/from-board', authMiddleware, requireRole('coach'), async (req, res) => {
+  try {
+    const { pool_entry_id, linked_player_user_id } = req.body || {};
+    if (!pool_entry_id && !linked_player_user_id) {
+      return res.status(400).json({ error: 'pool_entry_id or linked_player_user_id is required' });
+    }
+    const schoolKey = await resolveCoachSchoolKey(req.userId);
+    if (!schoolKey) return res.status(400).json({ error: 'Set your team name in My Profile.' });
+
+    const recruit = pool_entry_id
+      ? await PipelineRecruit.addFromPool(req.userId, schoolKey, pool_entry_id)
+      : await PipelineRecruit.addFromDRProfile(req.userId, schoolKey, linked_player_user_id);
+    res.status(201).json({ recruit });
+  } catch (err) {
+    if (err.code === 'NOT_FOUND') return res.status(404).json({ error: err.message });
+    if (err.code === 'CROSS_SCHOOL') return res.status(403).json({ error: err.message });
+    if (err.code === 'INVALID_TARGET') return res.status(400).json({ error: err.message });
+    if (err.code === 'DUPLICATE') return res.status(409).json({ error: err.message });
+    logger.error('POST /pipeline/from-board error:', err);
     res.status(500).json({ error: 'Failed to add recruit to pipeline' });
   }
 });

@@ -1781,8 +1781,9 @@ function updateProfileActions(hasPendingRequest = false) {
         }
     } else {
         // Show back button, follow and message buttons
-        // Check if we should show the "Add to Recruiting Board" button
-        // Only show for college coaches viewing HS players or transfer players
+        // "Add to Pipeline" button (Plan 4) — replaces the legacy
+        // "Add to Recruiting Board" button. Visible only when a college coach
+        // is viewing an HS or transfer player.
         const showRecruitingBoardBtn = isCollegeCoach && (isViewedProfileHSPlayer || isViewedProfileTransferPlayer);
 
         let buttonsHTML = `
@@ -1796,7 +1797,6 @@ function updateProfileActions(hasPendingRequest = false) {
             <button class="btn-message" id="messageBtn" style="display: none;">Message</button>
         `;
 
-        // Add recruiting board button if applicable
         if (showRecruitingBoardBtn) {
             buttonsHTML += `
             <button class="btn-recruiting-board" id="recruitingBoardBtn">
@@ -1805,7 +1805,7 @@ function updateProfileActions(hasPendingRequest = false) {
                     <line x1="12" y1="8" x2="12" y2="16"></line>
                     <line x1="8" y1="12" x2="16" y2="12"></line>
                 </svg>
-                Add to Recruiting Board
+                Add to Pipeline
             </button>
             `;
         }
@@ -1864,41 +1864,48 @@ async function setupMessageButton() {
     }
 }
 
-// Track recruiting board status for the current player
-let playerRecruitingBoardStatus = null;
-
+// "Add to Pipeline" button (Plan 4) — POSTs directly to /api/pipeline/from-profile.
+// Replaces the previous "Add to Recruiting Board" modal flow.
 async function setupRecruitingBoardButton() {
     const recruitingBoardBtn = document.getElementById('recruitingBoardBtn');
-    if (!recruitingBoardBtn || !viewingUserId || !currentProfile) return;
+    if (!recruitingBoardBtn || !viewingUserId) return;
 
-    // Check if player is already on the recruiting board
-    try {
-        const response = await API.get(`/recruiting-board/check/${viewingUserId}`);
-        playerRecruitingBoardStatus = response;
-
-        if (response.isOnBoard) {
-            // Player is on the board - show remove button
-            recruitingBoardBtn.classList.add('remove-mode');
-            recruitingBoardBtn.innerHTML = `
-                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <line x1="15" y1="9" x2="9" y2="15"></line>
-                    <line x1="9" y1="9" x2="15" y2="15"></line>
-                </svg>
-                Remove from Recruiting Board
-            `;
-
-            // Setup remove modal functionality
-            setupRemoveFromBoardButton(response.entries);
-            return;
-        }
-    } catch (error) {
-        console.error('Error checking recruiting board status:', error);
-        // Continue with add functionality if check fails
+    function markInPipeline() {
+        recruitingBoardBtn.innerHTML = `
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+            In Your Pipeline
+        `;
+        recruitingBoardBtn.classList.add('in-pipeline');
+        recruitingBoardBtn.disabled = true;
     }
 
-    // Setup add to board functionality (default)
-    setupAddToBoardButton();
+    try {
+        const res = await API.pipeline.contains(viewingUserId);
+        if (res && res.in_pipeline) {
+            markInPipeline();
+            return;
+        }
+    } catch { /* fall through */ }
+
+    recruitingBoardBtn.addEventListener('click', async () => {
+        recruitingBoardBtn.disabled = true;
+        try {
+            await API.pipeline.addFromProfile(viewingUserId);
+            if (typeof showToast === 'function') showToast('Added to your pipeline', 'success');
+            markInPipeline();
+        } catch (err) {
+            recruitingBoardBtn.disabled = false;
+            console.error('[Add to Pipeline] error:', err, 'data:', err && err.data, 'status:', err && err.status);
+            const status = err && err.status;
+            const msg = (err && err.message) || 'Failed to add to pipeline';
+            if (typeof showToast === 'function') {
+                showToast(msg, status === 409 ? 'warning' : 'error');
+            }
+            if (status === 409) markInPipeline();
+        }
+    });
 }
 
 function setupAddToBoardButton() {

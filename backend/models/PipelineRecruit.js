@@ -61,6 +61,12 @@ class PipelineRecruit {
   /**
    * Pull a pool entry into the coach's pipeline. Server validates that the
    * pool entry's school_key matches the coach's current normalized team_name.
+   *
+   * If the coach previously removed this recruit (soft-deleted row exists for
+   * the same (coach_user_id, pool_entry_id) pair), the partial UNIQUE index
+   * excludes soft-deleted rows so this INSERT succeeds — a fresh ungraded row
+   * is created alongside the historical one. The old grade stays in
+   * getEvaluationsAtSchool's history view forever.
    */
   static async addFromPool(coachUserId, schoolKey, poolEntryId) {
     // Resolve pool entry + its questionnaire's school_key
@@ -107,6 +113,8 @@ class PipelineRecruit {
   /**
    * Add a DR player directly to the pipeline (no pool entry / no questionnaire).
    * Validates the target is a player; coach_user_id provides the perspective.
+   * Like addFromPool, the partial UNIQUE excludes soft-deleted rows so a fresh
+   * INSERT after a remove succeeds and the old grade stays in history.
    */
   static async addFromDRProfile(coachUserId, schoolKey, playerUserId) {
     const userResult = await pool.query(
@@ -145,10 +153,12 @@ class PipelineRecruit {
 
   /**
    * Return one pipeline row shaped for the frontend. Used by add* methods and
-   * by updateEvaluation to return the canonical row after a write.
+   * by updateEvaluation to return the canonical row after a write. Filters
+   * soft-deleted rows (removed_from_pipeline_at IS NOT NULL) so reads after
+   * a soft-delete behave like the row is gone.
    */
   static async getByIdForCoach(recruitId, coachUserId) {
-    const result = await pool.query(this._baseSelectSQL('WHERE pr.id = $1 AND pr.coach_user_id = $2'), [
+    const result = await pool.query(this._baseSelectSQL('WHERE pr.id = $1 AND pr.coach_user_id = $2 AND pr.removed_from_pipeline_at IS NULL'), [
       recruitId,
       coachUserId,
     ]);
@@ -166,8 +176,10 @@ class PipelineRecruit {
       // Include 'active' AND any legacy 'out' rows so coaches who sent a
       // recruit before the "sender keeps their copy" rule landed still see
       // those recruits in their pipeline. 'promoted' stays excluded — those
-      // moved to a board and should NOT clutter the pipeline.
-      this._baseSelectSQL("WHERE pr.coach_user_id = $1 AND pr.status IN ('active', 'out') ORDER BY pr.updated_at DESC"),
+      // moved to a board and should NOT clutter the pipeline. Soft-deleted
+      // rows (removed_from_pipeline_at IS NOT NULL) are excluded too — they
+      // live on only inside getEvaluationsAtSchool's history view.
+      this._baseSelectSQL("WHERE pr.coach_user_id = $1 AND pr.status IN ('active', 'out') AND pr.removed_from_pipeline_at IS NULL ORDER BY pr.updated_at DESC"),
       [coachUserId]
     );
     const shaped = await Promise.all(result.rows.map(r => this._shapeRow(r)));
@@ -220,14 +232,22 @@ class PipelineRecruit {
   }
 
   /**
-   * Hard delete. Returns {pool_entry_id, school_key} so the caller can chain
+   * Soft delete. Sets removed_from_pipeline_at = NOW() so the row stays in the
+   * table — getEvaluationsAtSchool includes soft-deleted rows so a coach a year
+   * later can still see "Coach Smith graded this kid 78 / yellow last May".
+   * Every other read path filters removed_from_pipeline_at IS NULL. The partial
+   * UNIQUE indexes also exclude soft-deleted, so re-adding the same recruit
+   * inserts a fresh ungraded row alongside the historical one.
+   *
+   * Returns {pool_entry_id, school_key} so the caller can chain
    * countAtSchoolForPoolEntry to compute still_in_any_pipeline_at_school for
    * the response (frontend uses this to clear the pool checkmark optimistically).
    */
   static async delete(recruitId, coachUserId) {
     const result = await pool.query(
-      `DELETE FROM pipeline_recruits
-        WHERE id = $1 AND coach_user_id = $2
+      `UPDATE pipeline_recruits
+          SET removed_from_pipeline_at = CURRENT_TIMESTAMP
+        WHERE id = $1 AND coach_user_id = $2 AND removed_from_pipeline_at IS NULL
         RETURNING pool_entry_id, school_key`,
       [recruitId, coachUserId]
     );
@@ -239,13 +259,14 @@ class PipelineRecruit {
     return result.rows[0];
   }
 
-  /** Cross-coach checkmark helper. */
+  /** Cross-coach checkmark helper. Filters soft-deleted rows so the checkmark
+   *  clears when the last active row at the school is removed. */
   static async countAtSchoolForPoolEntry(schoolKey, poolEntryId) {
     if (!poolEntryId) return 0;
     const result = await pool.query(
       `SELECT COUNT(*)::int AS n
          FROM pipeline_recruits
-        WHERE school_key = $1 AND pool_entry_id = $2`,
+        WHERE school_key = $1 AND pool_entry_id = $2 AND removed_from_pipeline_at IS NULL`,
       [schoolKey, poolEntryId]
     );
     return result.rows[0].n;
@@ -268,6 +289,7 @@ class PipelineRecruit {
          FROM pipeline_recruits
         WHERE coach_user_id = $1
           AND linked_player_user_id = $2
+          AND removed_from_pipeline_at IS NULL
         LIMIT 1`,
       [coachUserId, playerUserId]
     );
@@ -462,8 +484,14 @@ class PipelineRecruit {
   static async getEvaluationsAtSchool(schoolKey, { poolEntryId, linkedPlayerUserId }) {
     if (!schoolKey) return [];
     if (!poolEntryId && !linkedPlayerUserId) return [];
+    // INCLUDES soft-deleted rows — that's the whole point of soft-delete. A
+    // coach who removed a recruit a year ago still shows up here with
+    // is_active=false so the next coach sees the audit trail. The recruit_id
+    // field lets the frontend cache currentEvalRecruit.id from the viewer's
+    // own row without an extra roundtrip.
     const result = await pool.query(
-      `SELECT pr.coach_user_id, pr.grade, pr.color_tag, pr.notes, pr.updated_at,
+      `SELECT pr.id AS recruit_id, pr.coach_user_id, pr.grade, pr.color_tag, pr.notes, pr.updated_at,
+              (pr.removed_from_pipeline_at IS NULL) AS is_active,
               cp.first_name, cp.last_name, cp.position_title
          FROM pipeline_recruits pr
          LEFT JOIN coach_profiles cp ON cp.user_id = pr.coach_user_id
@@ -477,6 +505,7 @@ class PipelineRecruit {
       [schoolKey, poolEntryId || null, linkedPlayerUserId || null]
     );
     return result.rows.map(r => ({
+      recruit_id: r.recruit_id,
       coach_id: r.coach_user_id,
       coach_name: `${r.first_name || ''} ${r.last_name || ''}`.trim() || 'Coach',
       coach_title: r.position_title || null,
@@ -484,6 +513,7 @@ class PipelineRecruit {
       color_tag: r.color_tag,
       notes: r.notes,
       evaluated_at: r.updated_at,
+      is_active: r.is_active,
     }));
   }
 }

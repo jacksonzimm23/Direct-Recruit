@@ -1197,6 +1197,22 @@ const pipelineAPI = {
         if (linkedPlayerUserId) params.set('linked_player_user_id', linkedPlayerUserId);
         return await apiRequest(`/pipeline/evaluations?${params.toString()}`);
     },
+    // Unified info modal — "Add to Pipeline" footer button when opened from a
+    // football-field card. Accepts either pool_entry_id (questionnaire-only) or
+    // linked_player_user_id (DR-linked).
+    addFromBoard: async ({ poolEntryId, linkedPlayerUserId }) => await apiRequest('/pipeline/from-board', {
+        method: 'POST',
+        body: JSON.stringify({ pool_entry_id: poolEntryId || null, linked_player_user_id: linkedPlayerUserId || null })
+    }),
+    // Drives the Final Grade tab in the unified info modal. Returns every
+    // shared board the coach belongs to that contains this recruit, with the
+    // position + can_edit flag needed to render and save the final synthesis.
+    getBoardPromotions: async ({ poolEntryId, linkedPlayerUserId }) => {
+        const params = new URLSearchParams();
+        if (poolEntryId) params.set('pool_entry_id', poolEntryId);
+        if (linkedPlayerUserId) params.set('linked_player_user_id', linkedPlayerUserId);
+        return await apiRequest(`/pipeline/board-promotions?${params.toString()}`);
+    },
     getHandoffsIn: async () => await apiRequest('/pipeline/handoffs/in'),
     getHandoffsOut: async () => await apiRequest('/pipeline/handoffs/out'),
     getHandoffUnreadCount: async () => await apiRequest('/pipeline/handoffs/unread-count'),

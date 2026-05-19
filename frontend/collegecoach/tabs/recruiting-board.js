@@ -3507,21 +3507,14 @@ document.addEventListener('DOMContentLoaded', async function() {
         // chain (e.g. they hand-off-cycled). Dedupe by coach_id.
         const alreadyInChain = currentUser && chain.some(e => String(e.coach_id) === String(currentUser.id));
         if (currentUser && !alreadyInChain) {
-            // Prefer LIVE values from the eval modal (typed but not yet saved)
-            // over the recruit's last-saved state. This captures the case where
-            // a coach types notes/grade/color in the eval modal and clicks Add
-            // to Board without clicking Save Grade first — otherwise those
-            // unsaved values would be lost from the chain snapshot.
-            const liveValues = readLiveEvalValues();
-            const ownGrade = liveValues.grade != null
-                ? liveValues.grade
-                : (recruit && recruit.grade != null ? recruit.grade : null);
-            const ownColor = liveValues.color != null
-                ? liveValues.color
-                : (recruit && recruit.color_tag) || null;
-            const ownNotes = liveValues.notes != null
-                ? liveValues.notes
-                : (recruit && recruit.notes) || null;
+            // Phase 3: the in-modal Save Grade button is gone. All grade
+            // writes commit through the #gradeEntryModal → saveGradeEntry,
+            // which mirrors the saved values onto the in-memory recruit. So
+            // recruit.{grade,color_tag,notes} are always the latest — no
+            // unsaved-DOM-snapshot peek needed (readLiveEvalValues deleted).
+            const ownGrade = (recruit && recruit.grade != null) ? recruit.grade : null;
+            const ownColor = (recruit && recruit.color_tag) || null;
+            const ownNotes = (recruit && recruit.notes) || null;
             // Include the current coach's own row only if they actually evaluated
             // (any of grade / color / notes set). Coaches who promote without
             // their own evaluation just preserve the upstream chain.
@@ -3538,27 +3531,6 @@ document.addEventListener('DOMContentLoaded', async function() {
             }
         }
         return chain;
-    }
-
-    // Read what's currently in the (still-open) pipeline eval modal's slider /
-    // selected swatch / notes textarea. Used by buildGradingHistorySnapshot
-    // so typed-but-unsaved values still land in the chain. Returns null for
-    // each field when the modal isn't open or the field is untouched.
-    function readLiveEvalValues() {
-        const slider = document.getElementById('evalGradeSlider');
-        const notesEl = document.getElementById('evalNotes');
-        const swatch = document.querySelector('#evalColorRow .eval-color-swatch.selected');
-        const modal = document.getElementById('evaluationModal');
-        // Only honor live values when the eval modal is actually open — avoids
-        // reading stale DOM from a previous open.
-        if (!modal || !modal.classList.contains('active')) {
-            return { grade: null, color: null, notes: null };
-        }
-        const gradeTouched = slider && slider.dataset.touched === '1';
-        const grade = gradeTouched ? parseInt(slider.value, 10) : null;
-        const color = swatch ? (swatch.dataset.color || null) : null;
-        const notes = notesEl ? (notesEl.value || null) : null;
-        return { grade, color, notes };
     }
 
     // Compact variant of renderEvaluationChainTimeline used by the Add-to-Board
@@ -4594,7 +4566,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     // EVALUATION MODAL (Plan 4)
     // ====================================================================
 
-    function openEvaluationModal(recruit) {
+    async function openEvaluationModal(recruit) {
         currentEvalRecruit = recruit;
         const modal = document.getElementById('evaluationModal');
         if (!modal) return;
@@ -4666,12 +4638,25 @@ document.addEventListener('DOMContentLoaded', async function() {
 
         if (hasQuestionnaire) {
             qSection.style.display = 'block';
-            // Render the full latest questionnaire submission — every field
-            // the recruit submitted (personal, address, parents, family,
-            // academic, athletic, film). The backend ships submission_data
-            // on the recruit shape so no extra fetch is needed here.
-            document.getElementById('evalQuestionnaireBody').innerHTML =
-                renderQuestionnaireView(recruit.submission_data || {});
+            const qBodyEl = document.getElementById('evalQuestionnaireBody');
+            // Pipeline-source recruits arrive with submission_data already
+            // shipped by the backend. Board-source recruits (from the football
+            // field) do not — lazy-fetch the latest submission via /my-pool.
+            if (recruit.submission_data) {
+                qBodyEl.innerHTML = renderQuestionnaireView(recruit.submission_data);
+            } else if (recruit._source === 'board' && recruit.pool_entry_id) {
+                qBodyEl.innerHTML = '<p class="pool-detail-loading">Loading…</p>';
+                API.get(`/recruiting-board/my-pool/${recruit.pool_entry_id}`).then(res => {
+                    const submissions = (res && res.submissions) || [];
+                    const latest = submissions.length ? submissions[submissions.length - 1].submission_data : {};
+                    recruit.submission_data = latest;
+                    qBodyEl.innerHTML = renderQuestionnaireView(latest);
+                }).catch(() => {
+                    qBodyEl.innerHTML = '<p class="pool-detail-error">Failed to load questionnaire.</p>';
+                });
+            } else {
+                qBodyEl.innerHTML = renderQuestionnaireView({});
+            }
         } else {
             qSection.style.display = 'none';
         }
@@ -4680,50 +4665,15 @@ document.addEventListener('DOMContentLoaded', async function() {
             emptyMsg.style.display = (hasAccount || hasQuestionnaire) ? 'none' : 'block';
         }
 
-        // Evaluation fields
-        const slider = document.getElementById('evalGradeSlider');
-        const readout = document.getElementById('evalGradeReadout');
-        const initialGrade = (recruit.grade != null) ? recruit.grade : 50;
-        slider.value = initialGrade;
-        readout.textContent = (recruit.grade != null) ? String(recruit.grade) : '—';
-        slider.dataset.touched = (recruit.grade != null) ? '1' : '0';
+        // Phase 3 — merged Evaluation + History tab. Fetch the cross-coach
+        // evaluations (live, including soft-deleted historicals), populate the
+        // list, resolve _inMyPipeline, cache id from the viewer's own active
+        // row. Then fetch board promotions to show/hide the Final Grade tab,
+        // and finally update the footer button states.
+        await loadEvaluationsForModal(recruit);
+        await loadBoardPromotionsForModal(recruit);
+        updateFooterButtonsForPipelineState();
 
-        // Color swatches — mark the selected one
-        document.querySelectorAll('#evalColorRow .eval-color-swatch').forEach(btn => {
-            btn.classList.toggle('selected', btn.dataset.color === (recruit.color_tag || ''));
-        });
-
-        // Notes
-        document.getElementById('evalNotes').value = recruit.notes || '';
-
-        // Add to Board — always enabled. Pool recruits without a DR account
-        // get added via their pool_entry_id (questionnaire-only board support
-        // pulled forward from Plan 6).
-        const addBoardBtn = document.getElementById('evalAddBoardBtn');
-        addBoardBtn.disabled = false;
-        addBoardBtn.title = '';
-
-        // History tab — shows ALL evaluations from every coach at the same
-        // school who has this recruit in their pipeline. Uses
-        // `all_school_evaluations` (computed live server-side) instead of
-        // the per-row evaluation_chain snapshot, so a coach who grades after
-        // the chain was frozen still shows up for everyone else.
-        const historyTabBtn = document.querySelector('.eval-tab[data-eval-tab="history"]');
-        const historyContent = document.getElementById('evalHistoryContent');
-        const schoolEvals = Array.isArray(recruit.all_school_evaluations) ? recruit.all_school_evaluations : [];
-        const hasAnyEval = schoolEvals.length > 0;
-        if (historyTabBtn) {
-            if (hasAnyEval) {
-                historyTabBtn.disabled = false;
-                historyTabBtn.removeAttribute('title');
-            } else {
-                historyTabBtn.disabled = true;
-                historyTabBtn.title = 'No evaluations yet — grade this recruit to see history';
-            }
-        }
-        if (historyContent) {
-            historyContent.innerHTML = hasAnyEval ? renderEvaluationChainTimeline(schoolEvals) : '';
-        }
         // Always reset to the Info tab on open
         switchEvalTab('info');
 
@@ -4750,15 +4700,18 @@ document.addEventListener('DOMContentLoaded', async function() {
         modal.classList.add('active');
     }
 
-    // Plan 5B: switch between Evaluation and History tabs inside the Eval Modal.
+    // Phase 3: switch between Info / Evaluation / Final Grade tabs inside the
+    // unified Eval Modal. Scoped to #evaluationModal so the new #gradeEntryModal
+    // can host its own tab-like UI without colliding.
     function switchEvalTab(tabKey) {
-        // Don't allow switching to a disabled tab
-        const target = document.querySelector(`.eval-tab[data-eval-tab="${tabKey}"]`);
-        if (target && target.disabled) return;
-        document.querySelectorAll('.eval-tab').forEach(b => {
+        const modal = document.getElementById('evaluationModal');
+        if (!modal) return;
+        const target = modal.querySelector(`.eval-tab[data-eval-tab="${tabKey}"]`);
+        if (target && (target.disabled || target.style.display === 'none')) return;
+        modal.querySelectorAll('.eval-tab').forEach(b => {
             b.classList.toggle('active', b.dataset.evalTab === tabKey);
         });
-        document.querySelectorAll('.eval-tab-content').forEach(c => {
+        modal.querySelectorAll('.eval-tab-content').forEach(c => {
             c.classList.toggle('active', c.dataset.evalTabContent === tabKey);
         });
     }
@@ -4769,65 +4722,12 @@ document.addEventListener('DOMContentLoaded', async function() {
         currentEvalRecruit = null;
     }
 
-    // Save the open recruit's grade / color / notes from the eval modal.
-    // Options:
-    //   silent:    suppress the success toast (used when chained from another
-    //              action like Send to Coach or Add to Board).
-    //   keepOpen:  don't close the modal after a successful save. Lets the
-    //              caller chain into another modal (e.g. Send Hand-Off) that
-    //              expects the eval modal to still hold currentEvalRecruit.
-    // Returns true on success / no-op, false if the PUT failed.
-    async function saveEvaluation(opts) {
-        opts = opts || {};
-        if (!currentEvalRecruit) return false;
-        const slider = document.getElementById('evalGradeSlider');
-        const notes = document.getElementById('evalNotes').value;
-        const selectedSwatch = document.querySelector('#evalColorRow .eval-color-swatch.selected');
-        const color_tag = selectedSwatch ? (selectedSwatch.dataset.color || null) : null;
-        // Only send a grade if user touched the slider OR there was a prior grade
-        const gradeTouched = slider.dataset.touched === '1';
-        const grade = gradeTouched ? parseInt(slider.value, 10) : null;
-
-        // Dirty check — skip the round-trip when nothing changed. Compare
-        // against the in-memory recruit's last-saved values. Notes compare on
-        // trimmed strings since the textarea adds trailing whitespace easily.
-        const sameGrade = (grade == null && currentEvalRecruit.grade == null)
-            || (grade != null && Number(grade) === Number(currentEvalRecruit.grade));
-        const sameColor = (color_tag || null) === (currentEvalRecruit.color_tag || null);
-        const sameNotes = String(notes || '').trim() === String(currentEvalRecruit.notes || '').trim();
-        if (sameGrade && sameColor && sameNotes) {
-            return true;   // nothing to save
-        }
-
-        try {
-            const result = await API.pipeline.updateEvaluation(currentEvalRecruit.id, { grade, color_tag, notes });
-            if (!opts.silent && typeof showToast === 'function') showToast('Saved', 'success');
-            // Update the in-memory copy + refresh just that row
-            const idx = currentPipelineRecruits.findIndex(r => r.id === result.recruit.id);
-            if (idx >= 0) currentPipelineRecruits[idx] = result.recruit;
-            currentEvalRecruit = result.recruit;
-            // Easiest refresh: re-render the whole list
-            const listEl = document.getElementById('pipelineList');
-            if (listEl) {
-                listEl.innerHTML = '';
-                for (const r of currentPipelineRecruits) listEl.appendChild(buildPipelineRow(r));
-            }
-            if (!opts.keepOpen) closeEvaluationModal();
-            return true;
-        } catch (err) {
-            if (typeof showToast === 'function') {
-                showToast(err && err.message ? err.message : 'Failed to save', 'error');
-            }
-            return false;
-        }
-    }
-
     async function removeRecruitFromPipeline() {
-        if (!currentEvalRecruit) return;
+        if (!currentEvalRecruit || !currentEvalRecruit.id) return;
         const ok = await (typeof showConfirmModal === 'function'
             ? showConfirmModal({
                 title: 'Remove from Pipeline',
-                message: "Remove this recruit from your pipeline? They'll stay in the team pool.",
+                message: "Remove this recruit from your pipeline? They'll stay in the team pool, and your past grade stays in the evaluation history for reference.",
                 confirmText: 'Remove',
                 cancelText: 'Cancel',
                 danger: true
@@ -4835,30 +4735,35 @@ document.addEventListener('DOMContentLoaded', async function() {
             : Promise.resolve(window.confirm('Remove this recruit from your pipeline?')));
         if (!ok) return;
 
+        const fromBoardSource = currentEvalRecruit._source === 'board';
+        const removedRecruitId = currentEvalRecruit.id;
+
         try {
-            const result = await API.pipeline.remove(currentEvalRecruit.id);
+            const result = await API.pipeline.remove(removedRecruitId);
             if (typeof showToast === 'function') showToast('Removed from pipeline', 'success');
 
-            // Remove from in-memory list + re-render
-            currentPipelineRecruits = currentPipelineRecruits.filter(r => r.id !== currentEvalRecruit.id);
-            const listEl = document.getElementById('pipelineList');
-            const emptyEl = document.getElementById('pipelineEmpty');
-            const countEl = document.getElementById('pipelineCount');
-            if (countEl) countEl.textContent = `${currentPipelineRecruits.length} recruit${currentPipelineRecruits.length === 1 ? '' : 's'}`;
-            if (listEl) {
-                listEl.innerHTML = '';
-                for (const r of currentPipelineRecruits) listEl.appendChild(buildPipelineRow(r));
-            }
-            if (currentPipelineRecruits.length === 0 && emptyEl) {
-                emptyEl.style.display = 'flex';
-                if (listEl) listEl.style.display = 'none';
+            if (!fromBoardSource) {
+                // Pipeline-source: remove from in-memory list + re-render
+                currentPipelineRecruits = currentPipelineRecruits.filter(r => r.id !== removedRecruitId);
+                const listEl = document.getElementById('pipelineList');
+                const emptyEl = document.getElementById('pipelineEmpty');
+                const countEl = document.getElementById('pipelineCount');
+                if (countEl) countEl.textContent = `${currentPipelineRecruits.length} recruit${currentPipelineRecruits.length === 1 ? '' : 's'}`;
+                if (listEl) {
+                    listEl.innerHTML = '';
+                    for (const r of currentPipelineRecruits) listEl.appendChild(buildPipelineRow(r));
+                }
+                if (currentPipelineRecruits.length === 0 && emptyEl) {
+                    emptyEl.style.display = 'flex';
+                    if (listEl) listEl.style.display = 'none';
+                }
             }
 
-            // Sync the pool tab's matching row if it's mounted
+            // Sync the pool tab's matching row if it's mounted (both sources)
             if (result.pool_entry_id) {
                 const poolRow = document.querySelector(`.rb-pool-row[data-entry-id="${result.pool_entry_id}"]`);
                 if (poolRow) {
-                    // Always: I no longer have them → button flips back to "Add to Pipeline"
+                    // I no longer have them → button flips back to "Add to Pipeline"
                     const actionsEl = poolRow.querySelector('.rb-pool-row-actions');
                     if (actionsEl) {
                         actionsEl.innerHTML = '<button class="rb-pool-row-action add-pipeline" type="button">Add to Pipeline</button>';
@@ -4876,7 +4781,18 @@ document.addEventListener('DOMContentLoaded', async function() {
                 }
             }
 
-            closeEvaluationModal();
+            if (fromBoardSource) {
+                // Board-source: keep the modal open, swap footer buttons back
+                // to "Add to Pipeline" state, refresh the evaluation list so
+                // the just-removed row shows up as (inactive). The football-
+                // field card stays put.
+                currentEvalRecruit._inMyPipeline = false;
+                currentEvalRecruit.id = null;
+                await loadEvaluationsForModal(currentEvalRecruit);
+                updateFooterButtonsForPipelineState();
+            } else {
+                closeEvaluationModal();
+            }
         } catch (err) {
             if (typeof showToast === 'function') {
                 showToast(err && err.message ? err.message : 'Failed to remove', 'error');
@@ -5255,144 +5171,229 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
 
     // ====================================================================
-    // ON-BOARD PLAYER INFO MODAL
+    // UNIFIED INFO MODAL — Phase 3 helpers
     // ====================================================================
-    // Opens when a coach clicks a card on the football field and picks
-    // "Show Info" from the context menu. Two tabs:
-    //   - Info: DR profile link + full questionnaire (read-only, mirrors the
-    //     eval modal's Info tab structure). Pool-sourced players get their
-    //     latest submission fetched via /my-pool/:entryId on open.
-    //   - Evaluation: frozen grading_history list + editable final
-    //     grade/color/notes that PUT back to the board JSONB. On shared
-    //     boards, viewers see read-only (Save button hidden).
+    // The on-board "Show Info" modal and the pipeline-card eval modal are now
+    // ONE modal (#evaluationModal). Football-field cards route through
+    // openEvaluationModal(buildUnifiedRecruitFromBoardPlayer(player, ctx)).
+    // The Evaluation tab is a merged list of every coach's grade at the school
+    // (live cross-coach + soft-deleted historicals), with an Add/Edit Grade
+    // button at the top that opens #gradeEntryModal as a z-index 1100 sub-modal.
+    // The Final Grade tab is conditional: revealed only when the recruit
+    // appears on a shared board the viewer is a member of.
 
-    // The on-board player we're currently viewing, plus the board context
-    // (personal vs shared, board id, group id if shared). Captured at open
-    // time so the save handler knows which PUT route to hit.
-    let currentBoardInfoPlayer = null;
-    let currentBoardInfoContext = null;  // { mode: 'personal'|'shared', boardId, groupId?, canEdit }
-    let currentBoardInfoFinalGrade = null;
-    let currentBoardInfoFinalColor = null;
-
-    async function openBoardPlayerInfoModal(player) {
-        if (!player) return;
-        const modal = document.getElementById('boardPlayerInfoModal');
-        if (!modal) return;
-
-        currentBoardInfoPlayer = player;
-
-        // Snapshot the board context. On shared (group) boards, viewers can't
-        // edit — Save button stays hidden, but they can still browse both tabs.
-        // NOTE: currentBoardMode uses 'group' (not 'shared') for shared boards.
-        const isShared = currentBoardMode === 'group';
-        const canEdit = isShared
-            ? (currentSharedGroupPermission === 'editor')
-            : true;  // personal-board owner can always edit their own
-        currentBoardInfoContext = {
-            mode: isShared ? 'shared' : 'personal',
-            boardId: isShared ? currentSharedBoardId : currentPersonalBoardId,
-            groupId: isShared ? currentSharedGroupId : null,
-            canEdit,
+    // Adapt a football-field card's player JSONB into the recruit shape that
+    // openEvaluationModal expects. The viewer might not have the recruit in
+    // their pipeline (_inMyPipeline resolved by loadEvaluationsForModal); in
+    // that case the footer button reads "Add to Pipeline" and the other two
+    // are disabled via updateFooterButtonsForPipelineState.
+    function buildUnifiedRecruitFromBoardPlayer(player, boardContext) {
+        if (!player) return null;
+        const positions = player.position ? [player.position] : null;
+        return {
+            id: null,                                              // resolved by loadEvaluationsForModal if viewer has an active row
+            pool_entry_id: player.pool_entry_id || null,
+            linked_player_user_id: player.user_id || null,
+            school_key: null,
+            status: null,
+            grade: null,
+            color_tag: null,
+            notes: null,
+            evaluation_chain: [],
+            all_school_evaluations: [],                            // populated fresh by loadEvaluationsForModal
+            first_name: player.first_name || '',
+            last_name: player.last_name || '',
+            username: player.username || null,
+            positions,
+            height_inches: typeof player.height === 'number' ? player.height : null,
+            weight_lbs: typeof player.weight === 'number' ? player.weight : null,
+            graduation_year: player.graduation_year || null,
+            gpa: null,
+            state: player.state || null,
+            city: null,
+            high_school: null,
+            team_name: player.team_name || null,
+            college_division: player.college_division || null,
+            is_transfer: player.player_type === 'transfer',
+            profile_image_url: player.profile_image_url || null,
+            source: player.user_id ? 'dr_profile' : 'pool',
+            submission_data: null,                                 // lazy-fetched in openEvaluationModal Info tab for pool-sourced
+            _source: 'board',
+            _boardContext: boardContext,
+            _inMyPipeline: undefined,
         };
+    }
 
-        // Header: name + subheader. Avatar uses cerulean ring for DR-linked,
-        // gray for questionnaire-only — matches the eval modal convention.
-        const hasAccount = !!player.user_id;
-        const accentColor = hasAccount ? '#1282a2' : '#9ca3af';
-        const ringBg = hasAccount
-            ? 'rgba(18, 130, 162, 0.18)'
-            : 'rgba(156, 163, 175, 0.18)';
-        const fullName = `${player.first_name || ''} ${player.last_name || ''}`.trim() || 'Unknown';
-        document.getElementById('boardInfoName').textContent = fullName;
-
-        const subParts = [];
-        if (player.position) subParts.push(player.position);
-        if (player.height) {
-            if (typeof player.height === 'number') {
-                const ft = Math.floor(player.height / 12);
-                const inches = player.height % 12;
-                subParts.push(`${ft}'${inches}"`);
-            } else {
-                subParts.push(player.height);
-            }
-        }
-        if (player.weight) subParts.push(`${player.weight} lbs`);
-        if (player.graduation_year) subParts.push(String(player.graduation_year));
-        const subEl = document.getElementById('boardInfoSubheader');
-        if (subEl) {
-            subEl.textContent = subParts.join(' • ');
-            subEl.style.color = accentColor;
-        }
-
-        const avatarEl = document.getElementById('boardInfoAvatar');
-        avatarEl.style.borderColor = accentColor;
-        avatarEl.style.background = ringBg;
-        avatarEl.style.color = accentColor;
-        avatarEl.innerHTML = (hasAccount && player.profile_image_url)
-            ? `<img src="${escapeHtml(player.profile_image_url)}" alt="" class="eval-avatar-img">`
-            : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                 <circle cx="12" cy="7" r="4"></circle>
-               </svg>`;
-
-        // Info tab: DR link + (loading state for) questionnaire. Pool-sourced
-        // players fetch their latest submission via /my-pool/:entryId.
-        const pSection = document.getElementById('boardInfoProfileSection');
-        const qSection = document.getElementById('boardInfoQuestionnaireSection');
-        const qBody = document.getElementById('boardInfoQuestionnaireBody');
-        const emptyMsg = document.getElementById('boardInfoEmpty');
-
-        if (hasAccount) {
-            pSection.style.display = 'block';
-            const profileLink = document.getElementById('boardInfoProfileLink');
-            profileLink.href = `../../shared/view-profile.html?userId=${encodeURIComponent(player.user_id)}`;
-        } else {
-            pSection.style.display = 'none';
-        }
-
-        if (player.pool_entry_id) {
-            qSection.style.display = 'block';
-            qBody.innerHTML = '<p class="pool-detail-loading">Loading…</p>';
+    // Fetch + render the cross-coach evaluation list for the open recruit.
+    // Sets recruit._evaluations + _inMyPipeline + caches recruit.id from the
+    // viewer's own active row (if any). Updates the Add/Edit Grade button.
+    async function loadEvaluationsForModal(recruit) {
+        if (!recruit) return;
+        const params = {
+            poolEntryId: recruit.pool_entry_id || null,
+            linkedPlayerUserId: recruit.linked_player_user_id || null,
+        };
+        let evaluations = [];
+        if (params.poolEntryId || params.linkedPlayerUserId) {
             try {
-                const res = await API.get(`/recruiting-board/my-pool/${player.pool_entry_id}`);
-                const submissions = (res && res.submissions) || [];
-                const latest = submissions.length ? submissions[submissions.length - 1].submission_data : {};
-                qBody.innerHTML = renderQuestionnaireView(latest);
-            } catch (err) {
-                qBody.innerHTML = '<p class="pool-detail-error">Failed to load questionnaire.</p>';
+                const res = await API.pipeline.getEvaluations(params);
+                evaluations = (res && Array.isArray(res.evaluations)) ? res.evaluations : [];
+            } catch (_) { /* non-fatal */ }
+        }
+        recruit._evaluations = evaluations;
+
+        // Resolve viewer's pipeline state from the list. is_mine + is_active
+        // means the viewer has an active pipeline row for this recruit; cache
+        // its id so Send to Coach / Add to Board can act on it without a
+        // separate /contains roundtrip.
+        const mineActive = evaluations.find(e => e.is_mine && e.is_active);
+        recruit._inMyPipeline = !!mineActive;
+        if (mineActive && mineActive.recruit_id) recruit.id = mineActive.recruit_id;
+
+        // Render the list
+        const listEl = document.getElementById('evalEvaluationsList');
+        const emptyEl = document.getElementById('evalEvaluationsEmpty');
+        if (listEl && emptyEl) {
+            if (!evaluations.length) {
+                listEl.innerHTML = '';
+                emptyEl.style.display = 'block';
+            } else {
+                emptyEl.style.display = 'none';
+                listEl.innerHTML = renderEvaluationsList(evaluations);
             }
-        } else {
-            qSection.style.display = 'none';
         }
 
-        if (emptyMsg) {
-            emptyMsg.style.display = (hasAccount || player.pool_entry_id) ? 'none' : 'block';
+        // Sync the Add / Edit Grade button
+        const btn = document.getElementById('evalAddOrEditGradeBtn');
+        if (btn) {
+            btn.textContent = mineActive ? 'Edit Grade' : 'Add Grade';
+            btn.disabled = !recruit._inMyPipeline;
+            btn.title = recruit._inMyPipeline ? '' : 'Add to your pipeline first';
+        }
+    }
+
+    // Single-line + caret list of every coach's grade at the school. Newest
+    // first. is_mine rows get an accent border; is_active=false rows render
+    // muted with an "(inactive)" badge. Notes blockquote expands via caret.
+    function renderEvaluationsList(evaluations) {
+        if (!Array.isArray(evaluations) || evaluations.length === 0) return '';
+        const formatDate = (iso) => {
+            if (!iso) return '';
+            const d = new Date(iso);
+            if (isNaN(d.getTime())) return '';
+            return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+        };
+        const sorted = [...evaluations].sort((a, b) => {
+            const ta = new Date(a && a.evaluated_at ? a.evaluated_at : 0).getTime();
+            const tb = new Date(b && b.evaluated_at ? b.evaluated_at : 0).getTime();
+            return tb - ta;
+        });
+        return sorted.map((entry, idx) => {
+            const colorHex = COLOR_HEX[entry.color_tag] || null;
+            const swatch = colorHex
+                ? `<span class="eval-evaluations-swatch" style="background:${colorHex};"></span>`
+                : '<span class="eval-evaluations-swatch eval-evaluations-swatch-empty"></span>';
+            const grade = (entry.grade != null) ? entry.grade : '—';
+            const name = escapeHtml(entry.coach_name || 'Coach');
+            const date = formatDate(entry.evaluated_at);
+            const hasNotes = entry.notes && String(entry.notes).trim();
+            const inactiveBadge = entry.is_active === false
+                ? '<span class="eval-evaluations-inactive-badge">inactive</span>'
+                : '';
+            const mineClass = entry.is_mine ? ' is-mine' : '';
+            const inactiveClass = entry.is_active === false ? ' is-inactive' : '';
+            return `
+                <li class="eval-evaluations-row${mineClass}${inactiveClass}" data-row-idx="${idx}">
+                    <div class="eval-evaluations-row-header" data-row-toggle="${idx}">
+                        ${swatch}
+                        <span class="eval-evaluations-name">${name}${inactiveBadge}</span>
+                        <span class="eval-evaluations-grade">${escapeHtml(String(grade))}</span>
+                        <span class="eval-evaluations-date">${escapeHtml(date)}</span>
+                        ${hasNotes
+                            ? '<span class="eval-evaluations-caret" aria-hidden="true">▾</span>'
+                            : '<span class="eval-evaluations-caret eval-evaluations-caret-empty" aria-hidden="true"></span>'}
+                    </div>
+                    ${hasNotes
+                        ? `<blockquote class="eval-evaluations-notes" style="display:none;">${escapeHtml(entry.notes)}</blockquote>`
+                        : ''}
+                </li>
+            `;
+        }).join('');
+    }
+
+    // Fetch + render the Final Grade tab. Hides the tab button when the
+    // recruit has 0 promotions, shows the dropdown when >1, otherwise picks
+    // the single promotion and renders.
+    async function loadBoardPromotionsForModal(recruit) {
+        if (!recruit) return;
+        const tabBtn = document.getElementById('evalFinalGradeTabBtn');
+        const params = {
+            poolEntryId: recruit.pool_entry_id || null,
+            linkedPlayerUserId: recruit.linked_player_user_id || null,
+        };
+        let promotions = [];
+        if (params.poolEntryId || params.linkedPlayerUserId) {
+            try {
+                const res = await API.pipeline.getBoardPromotions(params);
+                promotions = (res && Array.isArray(res.promotions)) ? res.promotions : [];
+            } catch (_) { /* non-fatal — tab stays hidden */ }
+        }
+        recruit._promotions = promotions;
+
+        if (!promotions.length) {
+            if (tabBtn) tabBtn.style.display = 'none';
+            return;
+        }
+        if (tabBtn) tabBtn.style.display = '';
+
+        const sel = document.getElementById('evalFinalGradePromotionSelect');
+        const selLabel = document.getElementById('evalFinalGradePromotionLabel');
+        if (sel) {
+            if (promotions.length > 1) {
+                if (selLabel) selLabel.style.display = '';
+                sel.style.display = '';
+                sel.innerHTML = promotions
+                    .map((p, i) => `<option value="${i}">${escapeHtml(p.board_name || 'Board')} (${escapeHtml(p.group_name || '')})</option>`)
+                    .join('');
+                sel.value = '0';
+            } else {
+                if (selLabel) selLabel.style.display = 'none';
+                sel.style.display = 'none';
+            }
+        }
+        renderFinalGradePromotion(promotions[0]);
+    }
+
+    // Render the Final Grade tab for one promotion. Inputs disabled when
+    // !promo.can_edit; Save button hidden in the same case.
+    function renderFinalGradePromotion(promo) {
+        if (!promo) return;
+        const contextEl = document.getElementById('evalFinalContext');
+        const slider = document.getElementById('evalFinalGrade');
+        const readout = document.getElementById('evalFinalGradeReadout');
+        const notesEl = document.getElementById('evalFinalNotes');
+        const auditEl = document.getElementById('evalFinalAudit');
+        const saveBtn = document.getElementById('evalFinalGradeSaveBtn');
+
+        if (contextEl) {
+            contextEl.textContent = promo.board_name
+                ? `Promoted to ${promo.board_name}${promo.group_name ? ' (' + promo.group_name + ')' : ''}`
+                : '';
         }
 
-        // Evaluation tab: final grade slider + final color swatches + final
-        // notes textarea, all editable (or read-only for viewers). Grading
-        // history list rendered from the frozen snapshot.
-        const slider = document.getElementById('boardInfoFinalGrade');
-        const readout = document.getElementById('boardInfoFinalGradeReadout');
-        const notesEl = document.getElementById('boardInfoFinalNotes');
-        const grade = Number.isFinite(player.final_grade) ? player.final_grade : 50;
-        currentBoardInfoFinalGrade = Number.isFinite(player.final_grade) ? player.final_grade : null;
-        currentBoardInfoFinalColor = player.final_color_tag || null;
+        const grade = Number.isFinite(promo.final_grade) ? promo.final_grade : 50;
         if (slider) slider.value = grade;
-        if (readout) readout.textContent = (currentBoardInfoFinalGrade != null) ? String(currentBoardInfoFinalGrade) : '—';
-        if (notesEl) notesEl.value = player.final_notes || '';
+        if (readout) readout.textContent = Number.isFinite(promo.final_grade) ? String(promo.final_grade) : '—';
+        if (notesEl) notesEl.value = promo.final_notes || '';
 
-        document.querySelectorAll('#boardInfoFinalColorRow .addboard-color-swatch').forEach(b => {
-            b.classList.toggle('selected', b.dataset.color === (currentBoardInfoFinalColor || ''));
+        document.querySelectorAll('#evalFinalColorRow .addboard-color-swatch').forEach(b => {
+            b.classList.toggle('selected', b.dataset.color === (promo.final_color_tag || ''));
         });
 
-        // Audit caption: "Last set by X on Y" — uses promoted_by_name +
-        // promoted_at (re-stamped on every edit). Falls back gracefully.
-        const auditEl = document.getElementById('boardInfoAudit');
         if (auditEl) {
-            const by = player.promoted_by_name || null;
-            const at = player.promoted_at ? new Date(player.promoted_at) : null;
-            if (by || at) {
+            const by = promo.promoted_by_name || null;
+            const at = promo.promoted_at ? new Date(promo.promoted_at) : null;
+            if (by || (at && !isNaN(at.getTime()))) {
                 const dateStr = (at && !isNaN(at.getTime()))
                     ? at.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
                     : '';
@@ -5406,98 +5407,42 @@ document.addEventListener('DOMContentLoaded', async function() {
             }
         }
 
-        // Grading history — LIVE list of every coach at this school who has
-        // this recruit in their pipeline with a grade/color/notes set. Falls
-        // back to the frozen `grading_history` snapshot if the live fetch
-        // fails or returns nothing (e.g. card promoted before the cross-coach
-        // query existed). Renders via the full timeline renderer (with notes).
-        const historyEl = document.getElementById('boardInfoHistoryList');
-        const snapshot = Array.isArray(player.grading_history) ? player.grading_history : [];
-        if (historyEl) {
-            // Show the snapshot immediately so the tab isn't blank during the fetch.
-            historyEl.innerHTML = renderEvaluationChainTimeline(snapshot);
-            const identity = {
-                poolEntryId: player.pool_entry_id || null,
-                linkedPlayerUserId: player.user_id || null,
-            };
-            if (identity.poolEntryId || identity.linkedPlayerUserId) {
-                API.pipeline.getEvaluations(identity).then(res => {
-                    const live = (res && Array.isArray(res.evaluations)) ? res.evaluations : [];
-                    // Merge: live cross-coach evaluations win for any coach
-                    // that appears in both lists, but we keep snapshot-only
-                    // entries (e.g. a coach who has since removed the recruit
-                    // from their own pipeline) so the audit trail survives.
-                    const byCoach = new Map();
-                    for (const e of snapshot) {
-                        if (e && e.coach_id) byCoach.set(String(e.coach_id), e);
-                    }
-                    for (const e of live) {
-                        if (e && e.coach_id) byCoach.set(String(e.coach_id), e);
-                    }
-                    const merged = Array.from(byCoach.values());
-                    historyEl.innerHTML = renderEvaluationChainTimeline(merged);
-                }).catch(() => { /* keep snapshot fallback */ });
-            }
-        }
-
-        // Read-only mode for viewers: disable editor controls + hide Save.
-        const saveBtn = document.getElementById('boardInfoSaveBtn');
+        // Editor vs viewer gating — Final Grade has its OWN can_edit per
+        // promotion, NOT the surrounding board context's permission.
+        const canEdit = !!promo.can_edit;
         if (slider) slider.disabled = !canEdit;
         if (notesEl) notesEl.disabled = !canEdit;
-        document.querySelectorAll('#boardInfoFinalColorRow .addboard-color-swatch').forEach(b => {
+        document.querySelectorAll('#evalFinalColorRow .addboard-color-swatch').forEach(b => {
             b.disabled = !canEdit;
             b.style.cursor = canEdit ? 'pointer' : 'not-allowed';
         });
         if (saveBtn) saveBtn.style.display = canEdit ? '' : 'none';
-
-        switchBoardInfoTab('info');
-        modal.classList.add('active');
     }
 
-    function closeBoardPlayerInfoModal() {
-        const modal = document.getElementById('boardPlayerInfoModal');
-        if (modal) modal.classList.remove('active');
-        currentBoardInfoPlayer = null;
-        currentBoardInfoContext = null;
-        currentBoardInfoFinalGrade = null;
-        currentBoardInfoFinalColor = null;
-    }
+    // Save the active Final Grade promotion. Body mirrors Plan 6's PUT.
+    async function saveFinalGradeFromModal() {
+        if (!currentEvalRecruit || !Array.isArray(currentEvalRecruit._promotions) || !currentEvalRecruit._promotions.length) return;
+        const sel = document.getElementById('evalFinalGradePromotionSelect');
+        const idx = Math.max(0, Number((sel && sel.value) || 0));
+        const promo = currentEvalRecruit._promotions[idx];
+        if (!promo || !promo.can_edit) return;
 
-    function switchBoardInfoTab(tabKey) {
-        document.querySelectorAll('#boardPlayerInfoModal .eval-tab').forEach(b => {
-            b.classList.toggle('active', b.dataset.boardInfoTab === tabKey);
-        });
-        document.querySelectorAll('#boardPlayerInfoModal .eval-tab-content').forEach(c => {
-            c.classList.toggle('active', c.dataset.boardInfoTabContent === tabKey);
-        });
-        // Save button is only meaningful on the Evaluation tab. Hide on Info
-        // and History to keep the footer clean. Also respects viewer read-only
-        // gating (canEdit) — viewers never see Save regardless of tab.
-        const saveBtn = document.getElementById('boardInfoSaveBtn');
-        if (saveBtn) {
-            const canEdit = currentBoardInfoContext && currentBoardInfoContext.canEdit;
-            saveBtn.style.display = (tabKey === 'evaluation' && canEdit) ? '' : 'none';
-        }
-    }
-
-    async function saveBoardPlayerFinal() {
-        if (!currentBoardInfoPlayer || !currentBoardInfoContext) return;
-        if (!currentBoardInfoContext.canEdit) return;
-        const player = currentBoardInfoPlayer;
-        const ctx = currentBoardInfoContext;
-        const notesEl = document.getElementById('boardInfoFinalNotes');
-
-        // We need a player identifier the backend can match on. The board
-        // JSONB stores either user_id (DR-linked) or pool_entry_id
-        // (questionnaire-only) — server-side _matchPlayerByAnyId handles both.
-        const playerId = player.user_id || player.pool_entry_id;
-        if (!playerId || !player.position) {
+        const playerId = currentEvalRecruit.linked_player_user_id || currentEvalRecruit.pool_entry_id;
+        if (!playerId || !promo.position) {
             if (typeof showToast === 'function') showToast('Missing player identifier or position', 'error');
             return;
         }
 
-        // currentUser for the promoted_by_name stamp. Fetch fresh on save
-        // (not cached) so a name change is reflected immediately.
+        // Read live values from the form
+        const slider = document.getElementById('evalFinalGrade');
+        const notesEl = document.getElementById('evalFinalNotes');
+        const selectedSwatch = document.querySelector('#evalFinalColorRow .addboard-color-swatch.selected');
+        const finalGrade = slider ? Number(slider.value) : null;
+        const finalColor = selectedSwatch ? (selectedSwatch.dataset.color || null) : null;
+        const finalNotes = notesEl ? (notesEl.value || null) : null;
+
+        // Stamp promoted_by_name with the viewer's current name so the audit
+        // line updates to "Last set by …".
         let promotedByName = null;
         try {
             const me = await API.auth.getCurrentUser();
@@ -5507,34 +5452,32 @@ document.addEventListener('DOMContentLoaded', async function() {
         } catch (_) { /* non-fatal */ }
 
         const body = {
-            position: player.position,
-            final_grade: currentBoardInfoFinalGrade,
-            final_color_tag: currentBoardInfoFinalColor,
-            final_notes: notesEl ? (notesEl.value || null) : null,
+            position: promo.position,
+            final_grade: finalGrade,
+            final_color_tag: finalColor,
+            final_notes: finalNotes,
             promoted_by_name: promotedByName,
         };
 
-        const url = ctx.mode === 'shared'
-            ? `/recruiting-board/groups/${ctx.groupId}/boards/${ctx.boardId}/players/${playerId}/final`
-            : `/recruiting-board/personal/${ctx.boardId}/players/${playerId}/final`;
-
         try {
-            await API.put(url, body);
+            await API.put(`/recruiting-board/groups/${promo.group_id}/boards/${promo.board_id}/players/${playerId}/final`, body);
             if (typeof showToast === 'function') showToast('Final synthesis updated', 'success');
-            // Reflect the new values on the in-memory player object so a
-            // subsequent reopen of the modal shows fresh data, AND on the
-            // football-field card (re-render).
-            player.final_grade = body.final_grade;
-            player.final_color_tag = body.final_color_tag;
-            player.final_notes = body.final_notes;
-            player.promoted_by_name = promotedByName;
-            player.promoted_at = new Date().toISOString();
-            closeBoardPlayerInfoModal();
-            // Reload the board so the card swatch + grade badge refresh.
-            if (ctx.mode === 'shared' && typeof loadSharedGroupBoard === 'function' && ctx.boardId) {
-                loadSharedGroupBoard(ctx.boardId);
-            } else if (ctx.mode === 'personal' && typeof loadPersonalBoardById === 'function' && ctx.boardId) {
-                loadPersonalBoardById(ctx.boardId);
+
+            // Update the cached promotion in-place so a subsequent dropdown
+            // switch doesn't show stale data, then re-render audit + readouts.
+            promo.final_grade = finalGrade;
+            promo.final_color_tag = finalColor;
+            promo.final_notes = finalNotes;
+            promo.promoted_by_name = promotedByName;
+            promo.promoted_at = new Date().toISOString();
+            renderFinalGradePromotion(promo);
+
+            // If the viewer is also currently viewing this board on the
+            // football field, refresh it so the card swatch + grade pill
+            // reflect the new values.
+            const ctx = currentEvalRecruit._boardContext;
+            if (ctx && ctx.mode === 'shared' && ctx.groupId === promo.group_id && ctx.boardId === promo.board_id && typeof loadSharedGroupBoard === 'function') {
+                loadSharedGroupBoard(promo.board_id);
             }
         } catch (err) {
             if (typeof showToast === 'function') {
@@ -5543,50 +5486,213 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
     }
 
-    // Wire on-board Info modal handlers once on init.
-    (function wireBoardPlayerInfoModal() {
-        const closeBtn = document.getElementById('boardPlayerInfoClose');
-        const overlay = document.getElementById('boardPlayerInfoOverlay');
-        const saveBtn = document.getElementById('boardInfoSaveBtn');
-        const slider = document.getElementById('boardInfoFinalGrade');
+    // "Add to Pipeline" handler for the unified modal footer when opened from
+    // a board card. Inserts via /pipeline/from-board, flips _inMyPipeline,
+    // refreshes the evaluation list, and re-renders the footer buttons.
+    async function addBoardRecruitToPipeline() {
+        if (!currentEvalRecruit) return;
+        const params = {
+            poolEntryId: currentEvalRecruit.pool_entry_id || null,
+            linkedPlayerUserId: currentEvalRecruit.linked_player_user_id || null,
+        };
+        if (!params.poolEntryId && !params.linkedPlayerUserId) {
+            if (typeof showToast === 'function') showToast('Cannot add — missing recruit identifier', 'error');
+            return;
+        }
+        try {
+            const res = await API.pipeline.addFromBoard(params);
+            const newRecruit = res && res.recruit;
+            if (newRecruit && newRecruit.id) currentEvalRecruit.id = newRecruit.id;
+            currentEvalRecruit._inMyPipeline = true;
+            if (typeof showToast === 'function') showToast('Added to your pipeline', 'success');
+            await loadEvaluationsForModal(currentEvalRecruit);
+            updateFooterButtonsForPipelineState();
+        } catch (err) {
+            // 409 DUPLICATE is the most common — surface as a soft warning.
+            if (typeof showToast === 'function') {
+                showToast((err && err.message) || 'Failed to add to pipeline', 'error');
+            }
+        }
+    }
 
-        if (closeBtn) closeBtn.addEventListener('click', closeBoardPlayerInfoModal);
-        if (overlay) overlay.addEventListener('click', closeBoardPlayerInfoModal);
-        if (saveBtn) saveBtn.addEventListener('click', saveBoardPlayerFinal);
+    // Footer button label + gating swap based on _inMyPipeline. Buttons stay
+    // visible at all times; gating uses disabled + tooltip rather than hiding.
+    function updateFooterButtonsForPipelineState() {
+        const r = currentEvalRecruit;
+        const inPipe = !!(r && r._inMyPipeline);
+        const deleteBtn = document.getElementById('evalDeleteBtn');
+        const addBoardBtn = document.getElementById('evalAddBoardBtn');
+        const handoffBtn = document.getElementById('evalHandoffBtn');
+        if (!deleteBtn || !addBoardBtn || !handoffBtn) return;
+        if (inPipe) {
+            deleteBtn.textContent = 'Remove from Pipeline';
+            deleteBtn.classList.add('btn-cancel');
+            deleteBtn.classList.remove('btn-submit');
+            deleteBtn.title = '';
+            addBoardBtn.disabled = false; addBoardBtn.title = '';
+            handoffBtn.disabled = false; handoffBtn.title = '';
+        } else {
+            deleteBtn.textContent = 'Add to Pipeline';
+            deleteBtn.classList.add('btn-submit');
+            deleteBtn.classList.remove('btn-cancel');
+            deleteBtn.title = '';
+            addBoardBtn.disabled = true; addBoardBtn.title = 'Add to your pipeline first';
+            handoffBtn.disabled = true; handoffBtn.title = 'Add to your pipeline first';
+        }
+    }
 
-        // Tab switching
-        document.querySelectorAll('#boardPlayerInfoModal .eval-tab').forEach(btn => {
-            btn.addEventListener('click', () => switchBoardInfoTab(btn.dataset.boardInfoTab));
+    // ====================================================================
+    // GRADE ENTRY SUB-MODAL (Phase 3)
+    // ====================================================================
+    // Opens on top of #evaluationModal (z-index 1100). Lets the viewer set or
+    // edit their own grade/color/notes. Save PUTs /api/pipeline/:recruitId,
+    // refreshes the parent's evaluation list, and closes.
+
+    let gradeEntrySelectedColor = null;     // tracks single-select swatch state
+    let gradeEntryGradeTouched = false;     // mirrors evalGradeSlider.dataset.touched
+
+    function openGradeEntryModal(mode) {
+        const modal = document.getElementById('gradeEntryModal');
+        if (!modal || !currentEvalRecruit) return;
+        if (!currentEvalRecruit._inMyPipeline) return;
+
+        const titleEl = document.getElementById('gradeEntryTitle');
+        const slider = document.getElementById('geGradeSlider');
+        const readout = document.getElementById('geGradeReadout');
+        const notesEl = document.getElementById('geNotes');
+
+        const evals = Array.isArray(currentEvalRecruit._evaluations) ? currentEvalRecruit._evaluations : [];
+        const mineActive = evals.find(e => e.is_mine && e.is_active);
+
+        if (mode === 'edit' && mineActive) {
+            titleEl.textContent = 'Edit Grade';
+            if (slider) slider.value = (mineActive.grade != null) ? mineActive.grade : 50;
+            if (readout) readout.textContent = (mineActive.grade != null) ? String(mineActive.grade) : '—';
+            gradeEntryGradeTouched = mineActive.grade != null;
+            gradeEntrySelectedColor = mineActive.color_tag || null;
+            if (notesEl) notesEl.value = mineActive.notes || '';
+        } else {
+            titleEl.textContent = 'Add Grade';
+            if (slider) slider.value = 50;
+            if (readout) readout.textContent = '—';
+            gradeEntryGradeTouched = false;
+            gradeEntrySelectedColor = null;
+            if (notesEl) notesEl.value = '';
+        }
+        document.querySelectorAll('#geColorRow .eval-color-swatch').forEach(b => {
+            b.classList.toggle('selected', b.dataset.color === (gradeEntrySelectedColor || ''));
         });
+        modal.classList.add('active');
+    }
 
-        // Slider — live readout + track value
+    function closeGradeEntryModal() {
+        const modal = document.getElementById('gradeEntryModal');
+        if (modal) modal.classList.remove('active');
+    }
+
+    async function saveGradeEntry() {
+        if (!currentEvalRecruit || !currentEvalRecruit.id) {
+            if (typeof showToast === 'function') showToast('Add to your pipeline first', 'error');
+            return;
+        }
+        const slider = document.getElementById('geGradeSlider');
+        const notesEl = document.getElementById('geNotes');
+        const grade = gradeEntryGradeTouched ? parseInt(slider.value, 10) : null;
+        const color_tag = gradeEntrySelectedColor || null;
+        const notes = notesEl ? notesEl.value : null;
+
+        try {
+            await API.pipeline.updateEvaluation(currentEvalRecruit.id, { grade, color_tag, notes });
+            if (typeof showToast === 'function') showToast('Grade saved', 'success');
+            // Mirror onto the in-memory recruit so any downstream snapshot
+            // (e.g. buildGradingHistorySnapshot for Add to Board) uses the
+            // freshly-saved values.
+            currentEvalRecruit.grade = grade;
+            currentEvalRecruit.color_tag = color_tag;
+            currentEvalRecruit.notes = notes;
+            closeGradeEntryModal();
+            await loadEvaluationsForModal(currentEvalRecruit);
+        } catch (err) {
+            if (typeof showToast === 'function') {
+                showToast((err && err.message) || 'Failed to save grade', 'error');
+            }
+        }
+    }
+
+    // Wire #gradeEntryModal handlers once on init.
+    (function wireGradeEntryModal() {
+        const closeBtn = document.getElementById('gradeEntryClose');
+        const overlay = document.getElementById('gradeEntryOverlay');
+        const cancelBtn = document.getElementById('gradeEntryCancelBtn');
+        const saveBtn = document.getElementById('gradeEntrySaveBtn');
+        const slider = document.getElementById('geGradeSlider');
+
+        if (closeBtn) closeBtn.addEventListener('click', closeGradeEntryModal);
+        if (overlay) overlay.addEventListener('click', closeGradeEntryModal);
+        if (cancelBtn) cancelBtn.addEventListener('click', closeGradeEntryModal);
+        if (saveBtn) saveBtn.addEventListener('click', saveGradeEntry);
+
         if (slider) {
             slider.addEventListener('input', () => {
-                if (!currentBoardInfoContext || !currentBoardInfoContext.canEdit) return;
-                currentBoardInfoFinalGrade = Number(slider.value);
-                const readout = document.getElementById('boardInfoFinalGradeReadout');
-                if (readout) readout.textContent = String(currentBoardInfoFinalGrade);
+                gradeEntryGradeTouched = true;
+                const readout = document.getElementById('geGradeReadout');
+                if (readout) readout.textContent = String(slider.value);
             });
         }
 
-        // Color swatches — single-select, click selected to deselect
-        document.querySelectorAll('#boardInfoFinalColorRow .addboard-color-swatch').forEach(btn => {
+        // Color swatch — single select with click-to-deselect, matches the
+        // pattern from the deleted in-modal #evalColorRow handler.
+        document.querySelectorAll('#geColorRow .eval-color-swatch').forEach(btn => {
             btn.addEventListener('click', (ev) => {
                 ev.preventDefault();
-                if (!currentBoardInfoContext || !currentBoardInfoContext.canEdit) return;
                 const target = ev.currentTarget;
                 const wasSelected = target.classList.contains('selected');
-                document.querySelectorAll('#boardInfoFinalColorRow .addboard-color-swatch')
+                document.querySelectorAll('#geColorRow .eval-color-swatch')
                     .forEach(b => b.classList.remove('selected'));
-                if (wasSelected) {
-                    currentBoardInfoFinalColor = null;
+                if (wasSelected || !target.dataset.color) {
+                    gradeEntrySelectedColor = null;
                 } else {
                     target.classList.add('selected');
-                    currentBoardInfoFinalColor = target.dataset.color;
+                    gradeEntrySelectedColor = target.dataset.color;
                 }
             });
         });
+
+        // Caret expand/collapse for evaluation rows — delegated handler so it
+        // works against the dynamically-rendered list inside #evaluationModal.
+        const listEl = document.getElementById('evalEvaluationsList');
+        if (listEl) {
+            listEl.addEventListener('click', (ev) => {
+                const header = ev.target.closest('[data-row-toggle]');
+                if (!header) return;
+                const row = header.closest('.eval-evaluations-row');
+                if (!row) return;
+                const notes = row.querySelector('.eval-evaluations-notes');
+                if (!notes) return;
+                const expanded = notes.style.display !== 'none';
+                notes.style.display = expanded ? 'none' : '';
+                row.classList.toggle('is-expanded', !expanded);
+            });
+        }
     })();
+
+    // Legacy placeholder so any stray reference doesn't crash. Real entry
+    // point is openEvaluationModal(buildUnifiedRecruitFromBoardPlayer(...)).
+    function openBoardPlayerInfoModal(player) {
+        const isShared = currentBoardMode === 'group';
+        const canEdit = isShared
+            ? (currentSharedGroupPermission === 'editor')
+            : true;
+        const boardContext = {
+            mode: isShared ? 'shared' : 'personal',
+            boardId: isShared ? currentSharedBoardId : currentPersonalBoardId,
+            groupId: isShared ? currentSharedGroupId : null,
+            canEdit,
+        };
+        openEvaluationModal(buildUnifiedRecruitFromBoardPlayer(player, boardContext));
+    }
+
+    // ---- end Phase 3 unified-modal block ----
 
     function switchPoolDetailTab(tabKey) {
         document.querySelectorAll('.pool-detail-tab').forEach(b => {
@@ -5782,68 +5888,93 @@ document.addEventListener('DOMContentLoaded', async function() {
         });
     })();
 
-    // Wire evaluation modal handlers once on init (Plan 4)
+    // Wire evaluation modal handlers once on init (Plan 4 + Phase 3 unified)
     (function wireEvaluationModal() {
         const closeBtn = document.getElementById('evaluationModalClose');
         const overlay = document.getElementById('evaluationModalOverlay');
-        const saveBtn = document.getElementById('evalSaveBtn');
         const deleteBtn = document.getElementById('evalDeleteBtn');
         const addBoardBtn = document.getElementById('evalAddBoardBtn');
         const handoffBtn = document.getElementById('evalHandoffBtn');
-        const slider = document.getElementById('evalGradeSlider');
+        const addEditGradeBtn = document.getElementById('evalAddOrEditGradeBtn');
+        const promotionSelect = document.getElementById('evalFinalGradePromotionSelect');
+        const finalGradeSlider = document.getElementById('evalFinalGrade');
+        const finalGradeSaveBtn = document.getElementById('evalFinalGradeSaveBtn');
 
         if (closeBtn) closeBtn.addEventListener('click', closeEvaluationModal);
         if (overlay) overlay.addEventListener('click', closeEvaluationModal);
-        if (saveBtn) saveBtn.addEventListener('click', saveEvaluation);
-        if (deleteBtn) deleteBtn.addEventListener('click', removeRecruitFromPipeline);
-        // Auto-save the eval modal's pending grade/color/notes before opening
-        // Add to Board so the synthesized chain entry and the pipeline record
-        // both reflect what the coach just typed.
-        if (addBoardBtn) addBoardBtn.addEventListener('click', async () => {
+
+        // Footer delete button is dynamic: Remove from Pipeline OR Add to
+        // Pipeline depending on the viewer's _inMyPipeline state.
+        if (deleteBtn) deleteBtn.addEventListener('click', () => {
             if (!currentEvalRecruit) return;
-            const saved = await saveEvaluation({ silent: true, keepOpen: true });
-            if (!saved) return;
+            if (currentEvalRecruit._inMyPipeline) {
+                removeRecruitFromPipeline();
+            } else {
+                addBoardRecruitToPipeline();
+            }
+        });
+
+        // Add to Board + Send to Coach — gated on _inMyPipeline. Auto-save
+        // chain removed in Phase 3: the new flow forces the coach to commit
+        // a grade via the #gradeEntryModal first, so there's nothing to flush
+        // here. buildGradingHistorySnapshot reads recruit.{grade,color,notes}
+        // which are kept in sync by saveGradeEntry.
+        if (addBoardBtn) addBoardBtn.addEventListener('click', () => {
+            if (!currentEvalRecruit || !currentEvalRecruit._inMyPipeline) return;
             openAddBoardModal();
         });
-        // Plan 5B: Send to Coach opens the Send Hand-Off modal. Auto-save any
-        // pending grade/color/notes first so the sending coach's evaluation
-        // shows up in the receiving coach's chain — coaches expect Send to
-        // Coach to be a one-click action, not "save then send".
-        if (handoffBtn) handoffBtn.addEventListener('click', async () => {
-            if (!currentEvalRecruit) return;
-            const saved = await saveEvaluation({ silent: true, keepOpen: true });
-            if (!saved) return;   // save failed; toast already shown
+        if (handoffBtn) handoffBtn.addEventListener('click', () => {
+            if (!currentEvalRecruit || !currentEvalRecruit._inMyPipeline) return;
             openSendHandoffModal(currentEvalRecruit);
         });
-        // Plan 5B: tab switching (Info / Evaluation / History). Scoped to
-        // #evaluationModal so this doesn't also bind to the on-board Info
-        // modal's tabs (which use data-board-info-tab and have their own
-        // listener wired in wireBoardPlayerInfoModal).
+
+        // Add Grade / Edit Grade — opens the #gradeEntryModal sub-modal.
+        // Mode flips based on whether the viewer already has an active row.
+        if (addEditGradeBtn) addEditGradeBtn.addEventListener('click', () => {
+            if (!currentEvalRecruit || !currentEvalRecruit._inMyPipeline) return;
+            const evals = Array.isArray(currentEvalRecruit._evaluations) ? currentEvalRecruit._evaluations : [];
+            const mineActive = evals.find(e => e.is_mine && e.is_active);
+            openGradeEntryModal(mineActive ? 'edit' : 'add');
+        });
+
+        // Tab switching — scoped to #evaluationModal so it doesn't bleed
+        // into the sub-modal.
         document.querySelectorAll('#evaluationModal .eval-tab').forEach(btn => {
             btn.addEventListener('click', () => switchEvalTab(btn.dataset.evalTab));
         });
 
-        if (slider) {
-            slider.addEventListener('input', () => {
-                slider.dataset.touched = '1';
-                document.getElementById('evalGradeReadout').textContent = slider.value;
+        // Final Grade tab — promotion dropdown switches between boards.
+        if (promotionSelect) {
+            promotionSelect.addEventListener('change', () => {
+                if (!currentEvalRecruit || !Array.isArray(currentEvalRecruit._promotions)) return;
+                const idx = Math.max(0, Number(promotionSelect.value || 0));
+                const promo = currentEvalRecruit._promotions[idx];
+                if (promo) renderFinalGradePromotion(promo);
             });
         }
 
-        // Color swatches — single-select, click again to deselect
-        document.querySelectorAll('#evalColorRow .eval-color-swatch').forEach(btn => {
+        // Final Grade slider live readout
+        if (finalGradeSlider) {
+            finalGradeSlider.addEventListener('input', () => {
+                const readout = document.getElementById('evalFinalGradeReadout');
+                if (readout) readout.textContent = String(finalGradeSlider.value);
+            });
+        }
+
+        // Final Grade color swatches — single-select with click-to-deselect.
+        document.querySelectorAll('#evalFinalColorRow .addboard-color-swatch').forEach(btn => {
             btn.addEventListener('click', (ev) => {
                 ev.preventDefault();
+                if (btn.disabled) return;
                 const target = ev.currentTarget;
-                if (target.classList.contains('eval-color-clear')) {
-                    document.querySelectorAll('#evalColorRow .eval-color-swatch').forEach(b => b.classList.remove('selected'));
-                    return;
-                }
                 const wasSelected = target.classList.contains('selected');
-                document.querySelectorAll('#evalColorRow .eval-color-swatch').forEach(b => b.classList.remove('selected'));
+                document.querySelectorAll('#evalFinalColorRow .addboard-color-swatch')
+                    .forEach(b => b.classList.remove('selected'));
                 if (!wasSelected) target.classList.add('selected');
             });
         });
+
+        if (finalGradeSaveBtn) finalGradeSaveBtn.addEventListener('click', saveFinalGradeFromModal);
 
     })();
 

@@ -1147,6 +1147,18 @@ router.post('/switch-profile', authMiddleware, async (req, res) => {
       }
     }
 
+    // Plan 5A: capture old team_name BEFORE the DELETE so the auto-cancel
+    // hook below (right before COMMIT) can compare normalized old vs new
+    // school_key. Null if the switching user wasn't a coach.
+    let preSwitchTeamName = null;
+    if (user.role === 'coach') {
+      const oldCp = await client.query(
+        `SELECT team_name FROM coach_profiles WHERE user_id = $1`,
+        [req.userId]
+      );
+      preSwitchTeamName = (oldCp.rows[0] && oldCp.rows[0].team_name) || null;
+    }
+
     // Delete old profile row (CASCADE handles player_games/player_game_stats)
     if (user.role === 'player') {
       await client.query('DELETE FROM player_profiles WHERE user_id = $1', [req.userId]);
@@ -1312,6 +1324,25 @@ router.post('/switch-profile', authMiddleware, async (req, res) => {
     // transaction so the consumption rolls back if anything later fails.
     if (inviteIdToConsume) {
       await client.query('UPDATE coach_invites SET used_at = NOW() WHERE id = $1', [inviteIdToConsume]);
+    }
+
+    // Plan 5A: if the user's normalized school_key changed (including
+    // coach → non-coach, where new key is null), DELETE every pending
+    // inbound pipeline hand-off and flip the source recruits' status back
+    // to 'active' where applicable. Wrapped in try/catch so a failure here
+    // doesn't roll back the whole switch — but if it succeeds, it's part of
+    // the same transaction.
+    try {
+      const TeamQuestionnaire = require('../models/TeamQuestionnaire');
+      const PipelineHandoff = require('../models/PipelineHandoff');
+      const newTeamName = (targetRole === 'coach') ? (profile_data.team_name || null) : null;
+      const oldKey = TeamQuestionnaire.normalizeSchoolKey(preSwitchTeamName);
+      const newKey = TeamQuestionnaire.normalizeSchoolKey(newTeamName);
+      if (oldKey !== newKey) {
+        await PipelineHandoff.autoCancelForRecipient(client, req.userId, newKey);
+      }
+    } catch (e) {
+      logger.error('Plan 5A auto-cancel hook failed (settings.switch-profile):', e);
     }
 
     await client.query('COMMIT');

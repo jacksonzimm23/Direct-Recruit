@@ -596,6 +596,55 @@ class RecruitingBoard {
   }
 
   /**
+   * Find every shared (group) board the coach is a member of that contains the
+   * given recruit. Drives the Final Grade tab in the unified info modal. Each
+   * promotion carries enough state to render + save the final synthesis without
+   * a second fetch: position (required by the PUT route), final_*, audit
+   * fields, can_edit (true if coach has 'editor' permission in the group).
+   *
+   * Personal boards are intentionally NOT included — those are private per
+   * coach and don't need a shared Final Grade workflow.
+   */
+  static async getBoardPromotionsForRecruit(userId, { poolEntryId, linkedPlayerUserId }) {
+    if (!poolEntryId && !linkedPlayerUserId) return [];
+    const result = await pool.query(
+      `SELECT rb.id AS board_id, rb.board_name, rb.players,
+              rb.group_id, g.group_name, m.permission
+         FROM recruiting_boards rb
+         JOIN board_group_members m ON m.group_id = rb.group_id AND m.user_id = $1
+         JOIN board_groups g ON g.id = rb.group_id
+        WHERE rb.is_personal = FALSE AND rb.class_year = 0`,
+      [userId]
+    );
+
+    const promotions = [];
+    for (const row of result.rows) {
+      let players = row.players || [];
+      if (typeof players === 'string') players = JSON.parse(players);
+      for (const p of players) {
+        const matchesUser = linkedPlayerUserId && p.user_id != null && String(p.user_id) === String(linkedPlayerUserId);
+        const matchesPool = poolEntryId && p.pool_entry_id != null && String(p.pool_entry_id) === String(poolEntryId);
+        if (!matchesUser && !matchesPool) continue;
+        promotions.push({
+          group_id: row.group_id,
+          group_name: row.group_name,
+          board_id: row.board_id,
+          board_name: row.board_name,
+          position: p.position,
+          final_grade: p.final_grade != null ? p.final_grade : null,
+          final_color_tag: p.final_color_tag || null,
+          final_notes: p.final_notes || null,
+          promoted_by_user_id: p.promoted_by_user_id || null,
+          promoted_by_name: p.promoted_by_name || null,
+          promoted_at: p.promoted_at || null,
+          can_edit: row.permission === 'editor',
+        });
+      }
+    }
+    return promotions;
+  }
+
+  /**
    * Duplicate-on-board guard. Matches on either user_id (DR-account recruits)
    * or pool_entry_id (questionnaire-only recruits) — whichever the incoming
    * playerData carries. Also gates on position so the same player CAN appear

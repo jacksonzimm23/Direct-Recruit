@@ -72,7 +72,13 @@
                 return;
             }
 
-            const folder = getProfileFolder(me.user);
+            // lesson 69: getProfileFolder needs college_division from me.profile —
+            // me.user alone returns the wrong folder for college coaches/players.
+            const folder = getProfileFolder({
+                role: me.user.role,
+                is_transfer_player: me.user.is_transfer_player,
+                college_division: me.profile && me.profile.college_division
+            });
 
             // Phase 3c: shared handler — branches to IAP on iOS, Stripe on web.
             // profileType: 'hsplayer'|'transferplayer'|'collegecoach'; tier: null for players, 'starter'|'pro'|'elite' for coaches
