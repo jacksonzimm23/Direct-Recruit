@@ -531,6 +531,7 @@
                     <div class="board-toggle">
                         <button class="toggle-btn active" id="offenseBtn" data-side="offense">Offense</button>
                         <button class="toggle-btn" id="defenseBtn" data-side="defense">Defense</button>
+                        <button class="toggle-btn" id="specsBtn" data-side="specs">Specs</button>
                     </div>
                     <button class="btn-invite-collaborators" id="inviteCollaboratorsBtn" style="display: none;">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -576,6 +577,10 @@
 
                 <!-- Defense Field - populated dynamically -->
                 <div class="football-field hidden" id="defenseField"></div>
+
+                <!-- Specs (Special Teams) Field - populated dynamically. Added in
+                     migration 039. Hidden by default; revealed by the Specs toggle. -->
+                <div class="football-field hidden" id="specsField"></div>
             </div>
         </main>
     </div>
@@ -975,7 +980,7 @@
                 <div class="eval-tab-content active" data-eval-tab-content="info">
                     <div id="evalProfileSection" style="display: none;">
                         <h4 class="eval-info-section-title">Direct Recruit Profile</h4>
-                        <a id="evalProfileLink" class="eval-profile-link" target="_blank" rel="noopener">View full profile in new tab →</a>
+                        <a id="evalProfileLink" class="eval-profile-link">View full profile →</a>
                     </div>
                     <div id="evalQuestionnaireSection" style="display: none;">
                         <h4 class="eval-info-section-title">Questionnaire</h4>

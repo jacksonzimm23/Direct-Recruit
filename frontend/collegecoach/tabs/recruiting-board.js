@@ -13,6 +13,15 @@ document.addEventListener('DOMContentLoaded', async function() {
         { group: 'secondary-group', positions: ['FS', 'SS', 'CB'] }
     ];
 
+    // Specs (Special Teams) — added in migration 039. Existing boards stored
+    // `specs_positions = '[]'` after backfill; the defensive fallback in
+    // loadPersonalBoardById / loadSharedGroupBoard renders this default
+    // when the API returns an empty array, so legacy boards visually pick
+    // up the new section without any data migration.
+    const DEFAULT_SPECS_POSITIONS = [
+        { group: 'specs-group', positions: ['K', 'P', 'LS'] }
+    ];
+
     // Track if board has unsaved changes
     let hasUnsavedChanges = false;
     let saveTimeout = null;
@@ -241,17 +250,22 @@ document.addEventListener('DOMContentLoaded', async function() {
         try {
             const configData = await API.get(`/recruiting-board/personal/${boardId}/config`);
             // Defensive fallback: empty arrays would render an empty field.
+            // Specs is auto-populated with DEFAULT_SPECS_POSITIONS for legacy
+            // boards that have specs_positions = '[]' post-migration.
             const off = (Array.isArray(configData.offensePositions) && configData.offensePositions.length > 0)
                 ? configData.offensePositions
                 : DEFAULT_OFFENSE_POSITIONS;
             const def = (Array.isArray(configData.defensePositions) && configData.defensePositions.length > 0)
                 ? configData.defensePositions
                 : DEFAULT_DEFENSE_POSITIONS;
-            renderBoard(off, def);
+            const spc = (Array.isArray(configData.specsPositions) && configData.specsPositions.length > 0)
+                ? configData.specsPositions
+                : DEFAULT_SPECS_POSITIONS;
+            renderBoard(off, def, spc);
             positionsLoaded = true;
         } catch (error) {
             console.error('Error loading personal board config:', error);
-            renderBoard(DEFAULT_OFFENSE_POSITIONS, DEFAULT_DEFENSE_POSITIONS);
+            renderBoard(DEFAULT_OFFENSE_POSITIONS, DEFAULT_DEFENSE_POSITIONS, DEFAULT_SPECS_POSITIONS);
             positionsLoaded = true;
         }
 
@@ -640,18 +654,23 @@ document.addEventListener('DOMContentLoaded', async function() {
             // Fallback to defaults when the stored config is missing, malformed,
             // or empty. The previous `||` check only caught null/undefined, so a
             // legacy board with `offense_positions = []` would render an empty
-            // football field. This handles all three cases safely.
+            // football field. This handles all three cases safely. Specs is
+            // auto-populated with K/P/LS for legacy boards (specs_positions = '[]'
+            // post-migration 039).
             const off = (Array.isArray(cfg.offensePositions) && cfg.offensePositions.length > 0)
                 ? cfg.offensePositions
                 : DEFAULT_OFFENSE_POSITIONS;
             const def = (Array.isArray(cfg.defensePositions) && cfg.defensePositions.length > 0)
                 ? cfg.defensePositions
                 : DEFAULT_DEFENSE_POSITIONS;
-            renderBoard(off, def);
+            const spc = (Array.isArray(cfg.specsPositions) && cfg.specsPositions.length > 0)
+                ? cfg.specsPositions
+                : DEFAULT_SPECS_POSITIONS;
+            renderBoard(off, def, spc);
             positionsLoaded = true;
         } catch (error) {
             console.error('Error loading group board config:', error);
-            renderBoard(DEFAULT_OFFENSE_POSITIONS, DEFAULT_DEFENSE_POSITIONS);
+            renderBoard(DEFAULT_OFFENSE_POSITIONS, DEFAULT_DEFENSE_POSITIONS, DEFAULT_SPECS_POSITIONS);
             positionsLoaded = true;
         }
 
@@ -1574,6 +1593,104 @@ document.addEventListener('DOMContentLoaded', async function() {
         });
     }
 
+    // Lightweight player-only refresh. Re-fetches players for the currently-
+    // loaded board (matching targetBoardId) and re-mounts cards into existing
+    // .recruits-list nodes. Does NOT call renderBoard, does NOT touch body
+    // classes (lesson learned: prior loadSharedGroupBoard call from the
+    // Final Grade save path leaked field visibility into the pipeline
+    // subtab). Safe to call from any subtab — only mutates .recruits-list
+    // children inside the football field. If the user has switched to a
+    // different board since the patch was issued, no-ops cleanly.
+    async function refreshOnBoardPlayersOnly(targetBoardId) {
+        if (!targetBoardId) return;
+        try {
+            let playersData;
+            if (currentBoardMode === 'personal') {
+                if (currentPersonalBoardId !== targetBoardId) return;
+                playersData = await API.get(`/recruiting-board/personal/${targetBoardId}/players`);
+            } else if (currentBoardMode === 'group') {
+                if (currentSharedBoardId !== targetBoardId) return;
+                if (!currentSharedGroupId) return;
+                playersData = await API.get(`/recruiting-board/groups/${currentSharedGroupId}/boards/${targetBoardId}/players`);
+            } else {
+                return;
+            }
+            document.querySelectorAll('.football-field .recruits-list').forEach(list => {
+                list.innerHTML = '';
+            });
+            loadPlayersIntoBoard(playersData || []);
+            if (currentBoardMode === 'group' && typeof applySharedPermissionToUI === 'function') {
+                applySharedPermissionToUI();
+            }
+        } catch (err) {
+            console.error('refreshOnBoardPlayersOnly failed:', err);
+            // Silent fallback — the synchronous DOM patch already happened.
+        }
+    }
+
+    // Patch an on-board card's color swatch + grade pill in place. Called
+    // from saveFinalGradeFromModal so the info modal's "source of truth"
+    // edit is reflected on the football-field card without a board reload.
+    // Matches via data-player-id + data-position so the right copy of the
+    // recruit is updated when the same player sits at multiple positions.
+    // playerIdAlt is the secondary identifier (e.g. user_id when playerId
+    // is pool_entry_id, or vice versa) — used as a fallback when the primary
+    // identifier doesn't match. Some recruits exist in DB with BOTH ids
+    // (pool entry that's been linked to a DR account), and the on-board
+    // card may have stored a different one than the modal's playerId.
+    function updateBoardCardFinalDisplay(playerId, position, finalGrade, finalColorTag, playerIdAlt) {
+        if (!playerId || !position) return;
+        let cards = document.querySelectorAll(
+            `.recruit-card[data-player-id="${playerId}"][data-position="${position}"]`
+        );
+        if (!cards.length && playerIdAlt) {
+            cards = document.querySelectorAll(
+                `.recruit-card[data-player-id="${playerIdAlt}"][data-position="${position}"]`
+            );
+        }
+        if (!cards.length) return;
+        const finalColorHex = COLOR_HEX[finalColorTag] || null;
+        const hasColor = !!finalColorHex;
+        cards.forEach(card => {
+            // Swatch — leftmost vertical bar
+            const swatch = card.querySelector('.recruit-final-color');
+            if (swatch) {
+                if (hasColor) {
+                    swatch.classList.remove('recruit-final-color-empty');
+                    swatch.setAttribute('data-color', finalColorTag);
+                    swatch.style.background = finalColorHex;
+                    swatch.setAttribute('title', `Final color: ${finalColorTag.replace('_', ' ')}`);
+                } else {
+                    swatch.classList.add('recruit-final-color-empty');
+                    swatch.setAttribute('data-color', '');
+                    swatch.style.background = '';
+                    swatch.setAttribute('title', 'No final color set');
+                }
+            }
+            // Grade pill — rightmost badge. Add/remove/update depending on
+            // whether finalGrade is set.
+            let pill = card.querySelector('.recruit-final-grade');
+            if (Number.isFinite(finalGrade)) {
+                if (!pill) {
+                    pill = document.createElement('span');
+                    pill.className = 'recruit-final-grade';
+                    pill.setAttribute('title', 'Final grade');
+                    card.appendChild(pill);
+                }
+                pill.textContent = String(finalGrade);
+                if (hasColor) {
+                    pill.style.background = finalColorHex;
+                    pill.style.color = gradePillTextColor(finalColorHex);
+                } else {
+                    pill.style.background = '';
+                    pill.style.color = '';
+                }
+            } else if (pill) {
+                pill.remove();
+            }
+        });
+    }
+
     // Create a player card element
     function createPlayerCard(player) {
         const card = document.createElement('div');
@@ -2211,12 +2328,17 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
 
     // ==================== Board Rendering ====================
-    function renderBoard(offensePositions, defensePositions) {
+    // Renders three sections: Offense, Defense, Specs (Special Teams).
+    // All three are populated identically — the toggle buttons control
+    // visibility via the .hidden class on the field containers.
+    function renderBoard(offensePositions, defensePositions, specsPositions) {
         const offenseField = document.getElementById('offenseField');
         const defenseField = document.getElementById('defenseField');
+        const specsField = document.getElementById('specsField');
 
         offenseField.innerHTML = '';
         defenseField.innerHTML = '';
+        if (specsField) specsField.innerHTML = '';
 
         offensePositions.forEach(groupConfig => {
             const group = document.createElement('div');
@@ -2241,6 +2363,20 @@ document.addEventListener('DOMContentLoaded', async function() {
 
             defenseField.appendChild(group);
         });
+
+        if (specsField && Array.isArray(specsPositions)) {
+            specsPositions.forEach(groupConfig => {
+                const group = document.createElement('div');
+                group.className = `position-group ${groupConfig.group}`;
+
+                groupConfig.positions.forEach(pos => {
+                    const slot = createPositionSlotFromConfig(pos);
+                    group.appendChild(slot);
+                });
+
+                specsField.appendChild(group);
+            });
+        }
 
         document.querySelectorAll('.recruits-list').forEach(list => {
             initDragDropForList(list);
@@ -2377,6 +2513,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     function getBoardConfiguration() {
         const offenseField = document.getElementById('offenseField');
         const defenseField = document.getElementById('defenseField');
+        const specsField = document.getElementById('specsField');
 
         const offensePositions = [];
         offenseField.querySelectorAll('.position-group').forEach(group => {
@@ -2392,7 +2529,16 @@ document.addEventListener('DOMContentLoaded', async function() {
             defensePositions.push({ group: groupClass, positions });
         });
 
-        return { offensePositions, defensePositions };
+        const specsPositions = [];
+        if (specsField) {
+            specsField.querySelectorAll('.position-group').forEach(group => {
+                const groupClass = Array.from(group.classList).find(c => c !== 'position-group') || 'custom-group';
+                const positions = Array.from(group.querySelectorAll('.position-label-input')).map(input => input.value);
+                specsPositions.push({ group: groupClass, positions });
+            });
+        }
+
+        return { offensePositions, defensePositions, specsPositions };
     }
 
     async function saveBoardConfiguration() {
@@ -2420,38 +2566,48 @@ document.addEventListener('DOMContentLoaded', async function() {
         saveTimeout = setTimeout(saveBoardConfiguration, 500);
     }
 
-    // ==================== Toggle Offense/Defense ====================
+    // ==================== Toggle Offense/Defense/Specs ====================
+    // Three mutually-exclusive sections — Offense (default), Defense, Specs
+    // (Special Teams). Only one field visible at a time; the others get the
+    // .hidden class. localStorage remembers the last-viewed side. Each click
+    // also exits remove-mode for safety.
     const offenseBtn = document.getElementById('offenseBtn');
     const defenseBtn = document.getElementById('defenseBtn');
+    const specsBtn = document.getElementById('specsBtn');
     const offenseField = document.getElementById('offenseField');
     const defenseField = document.getElementById('defenseField');
+    const specsField = document.getElementById('specsField');
 
-    // Restore last viewed offense/defense from localStorage
-    const lastViewedSide = localStorage.getItem('lastViewedRecruitingBoardSide');
-    if (lastViewedSide === 'defense') {
-        defenseBtn.classList.add('active');
-        offenseBtn.classList.remove('active');
-        defenseField.classList.remove('hidden');
-        offenseField.classList.add('hidden');
+    function activateBoardSide(side) {
+        const sides = [
+            { side: 'offense', btn: offenseBtn, field: offenseField },
+            { side: 'defense', btn: defenseBtn, field: defenseField },
+            { side: 'specs',   btn: specsBtn,   field: specsField   }
+        ];
+        sides.forEach(s => {
+            if (!s.btn || !s.field) return;
+            if (s.side === side) {
+                s.btn.classList.add('active');
+                s.field.classList.remove('hidden');
+            } else {
+                s.btn.classList.remove('active');
+                s.field.classList.add('hidden');
+            }
+        });
+        localStorage.setItem('lastViewedRecruitingBoardSide', side);
+        exitRemoveMode();
     }
 
-    offenseBtn.addEventListener('click', () => {
-        offenseBtn.classList.add('active');
-        defenseBtn.classList.remove('active');
-        offenseField.classList.remove('hidden');
-        defenseField.classList.add('hidden');
-        localStorage.setItem('lastViewedRecruitingBoardSide', 'offense');
-        exitRemoveMode();
-    });
+    // Restore last viewed side from localStorage (offense is the default; only
+    // need to act on non-default values since offense is active in the markup).
+    const lastViewedSide = localStorage.getItem('lastViewedRecruitingBoardSide');
+    if (lastViewedSide === 'defense' || lastViewedSide === 'specs') {
+        activateBoardSide(lastViewedSide);
+    }
 
-    defenseBtn.addEventListener('click', () => {
-        defenseBtn.classList.add('active');
-        offenseBtn.classList.remove('active');
-        defenseField.classList.remove('hidden');
-        offenseField.classList.add('hidden');
-        localStorage.setItem('lastViewedRecruitingBoardSide', 'defense');
-        exitRemoveMode();
-    });
+    if (offenseBtn) offenseBtn.addEventListener('click', () => activateBoardSide('offense'));
+    if (defenseBtn) defenseBtn.addEventListener('click', () => activateBoardSide('defense'));
+    if (specsBtn)   specsBtn.addEventListener('click',   () => activateBoardSide('specs'));
 
     // ==================== Position Management ====================
     const addPositionBtn = document.getElementById('addPositionBtn');
@@ -2461,7 +2617,9 @@ document.addEventListener('DOMContentLoaded', async function() {
     let positionCounter = 0;
 
     function getActiveField() {
-        return offenseField.classList.contains('hidden') ? defenseField : offenseField;
+        if (!offenseField.classList.contains('hidden')) return offenseField;
+        if (!defenseField.classList.contains('hidden')) return defenseField;
+        return specsField;
     }
 
     function createPositionSlot(positionName = 'NEW') {
@@ -3873,10 +4031,22 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     function buildPipelineRow(recruit) {
         const hasAccount = !!recruit.linked_player_user_id;
-        const accentColor = hasAccount ? '#1282a2' : '#9ca3af';
-        const ringBg = hasAccount
-            ? 'rgba(18, 130, 162, 0.18)'
-            : 'rgba(156, 163, 175, 0.18)';
+        // Transfer recruits get the platform-wide red subheader treatment
+        // (lesson #2) — Position • Height • Weight • YOE instead of grad year.
+        // Non-transfer DR-linked recruits stay cerulean; questionnaire-only
+        // (no DR account) stay neutral gray.
+        const isTransfer = hasAccount && !!recruit.is_transfer;
+        let accentColor, ringBg;
+        if (isTransfer) {
+            accentColor = '#b91c1c';
+            ringBg = 'rgba(185, 28, 28, 0.18)';
+        } else if (hasAccount) {
+            accentColor = '#1282a2';
+            ringBg = 'rgba(18, 130, 162, 0.18)';
+        } else {
+            accentColor = '#9ca3af';
+            ringBg = 'rgba(156, 163, 175, 0.18)';
+        }
 
         const fullName = `${recruit.first_name || ''} ${recruit.last_name || ''}`.trim() || 'Unknown';
 
@@ -3884,7 +4054,13 @@ document.addEventListener('DOMContentLoaded', async function() {
         if (recruit.positions && recruit.positions.length) meta.push(recruit.positions.join('/'));
         if (recruit.height_inches) meta.push(inchesToHeight(recruit.height_inches));
         if (recruit.weight_lbs) meta.push(`${recruit.weight_lbs} lbs`);
-        if (recruit.graduation_year) meta.push(String(recruit.graduation_year));
+        if (isTransfer) {
+            if (recruit.eligibility != null) {
+                meta.push(`YOE: ${recruit.eligibility} year${recruit.eligibility === 1 ? '' : 's'}`);
+            }
+        } else if (recruit.graduation_year) {
+            meta.push(String(recruit.graduation_year));
+        }
         const subheader = meta.join(' • ');
 
         const avatarInner = (hasAccount && recruit.profile_image_url)
@@ -4598,17 +4774,25 @@ document.addEventListener('DOMContentLoaded', async function() {
         if (!modal) return;
 
         const hasAccount = !!recruit.linked_player_user_id;
-        const accentColor = hasAccount ? '#1282a2' : '#9ca3af';
-        const ringBg = hasAccount
-            ? 'rgba(18, 130, 162, 0.18)'
-            : 'rgba(156, 163, 175, 0.18)';
+        // Match buildPipelineRow: transfer recruits get red treatment +
+        // YOE in the subheader. DR-linked non-transfer = cerulean.
+        // Questionnaire-only = neutral gray.
+        const isTransfer = hasAccount && !!recruit.is_transfer;
+        let accentColor, ringBg;
+        if (isTransfer) {
+            accentColor = '#b91c1c';
+            ringBg = 'rgba(185, 28, 28, 0.18)';
+        } else if (hasAccount) {
+            accentColor = '#1282a2';
+            ringBg = 'rgba(18, 130, 162, 0.18)';
+        } else {
+            accentColor = '#9ca3af';
+            ringBg = 'rgba(156, 163, 175, 0.18)';
+        }
 
         const fullName = `${recruit.first_name || ''} ${recruit.last_name || ''}`.trim() || 'Unknown';
 
-        // Header — name on top with compact DR badge, subheader on the
-        // line below (positions • height • weight • grad year). Subheader
-        // renders for both DR-linked and questionnaire-only recruits; the
-        // color reflects DR-account presence (cerulean vs neutral gray).
+        // Header — name on top with compact DR badge, subheader below.
         document.getElementById('evalName').textContent = fullName;
         const drBadge = document.getElementById('evalDrBadge');
         drBadge.style.display = hasAccount ? 'inline-flex' : 'none';
@@ -4621,7 +4805,13 @@ document.addEventListener('DOMContentLoaded', async function() {
         if (recruit.positions && recruit.positions.length) subParts.push(recruit.positions.join('/'));
         if (recruit.height_inches) subParts.push(inchesToHeight(recruit.height_inches));
         if (recruit.weight_lbs) subParts.push(`${recruit.weight_lbs} lbs`);
-        if (recruit.graduation_year) subParts.push(String(recruit.graduation_year));
+        if (isTransfer) {
+            if (recruit.eligibility != null) {
+                subParts.push(`YOE: ${recruit.eligibility} year${recruit.eligibility === 1 ? '' : 's'}`);
+            }
+        } else if (recruit.graduation_year) {
+            subParts.push(String(recruit.graduation_year));
+        }
         const subEl = document.getElementById('evalSubheader');
         if (subEl) {
             subEl.textContent = subParts.join(' • ');
@@ -4657,7 +4847,13 @@ document.addEventListener('DOMContentLoaded', async function() {
         if (hasAccount) {
             pSection.style.display = 'block';
             const profileLink = document.getElementById('evalProfileLink');
-            profileLink.href = `../../shared/view-profile.html?userId=${encodeURIComponent(recruit.linked_player_user_id)}`;
+            // Same-tab nav so the browser Back button returns the coach to
+            // the recruiting board with the eval modal re-opened. ?from=
+            // tells the player-side sidebar-nav.js which nav item to mark
+            // active (recruiting-board) once that's added to the player
+            // sidebar map. The replaceState below encodes which recruit's
+            // modal to re-open on Back.
+            profileLink.href = `../../shared/view-profile.html?userId=${encodeURIComponent(recruit.linked_player_user_id)}&from=recruiting-board`;
         } else {
             pSection.style.display = 'none';
         }
@@ -4868,13 +5064,11 @@ document.addEventListener('DOMContentLoaded', async function() {
                 finalGrade: null,
                 finalColor: null,
                 viewerInSelectedGroup: false,
-                // Positions: use the recruit's first position as the default if present;
-                // else a generic list. We populate via a fixed roster (same as the board UI).
-                positionsList: [
-                    'QB','RB','FB','WR','TE','OL','OT','OG','C',
-                    'DL','DE','DT','NT','LB','ILB','OLB','CB','S','FS','SS',
-                    'K','P','LS','ATH'
-                ]
+                // Hint the populate helper uses to pre-select the recruit's
+                // first position when the board's config contains it. The
+                // actual position list is fetched per-board via
+                // populateAddBoardPositionsFromBoard.
+                preferredPosition: (currentEvalRecruit.positions && currentEvalRecruit.positions[0]) || null
             };
 
             // Reset radio to personal
@@ -4894,14 +5088,13 @@ document.addEventListener('DOMContentLoaded', async function() {
                 sharedOption.title = '';
             }
 
-            // Render positions dropdown (default = recruit's first position)
+            // Position dropdown is populated reactively by
+            // populateAddBoardPositionsFromBoard() once handleAddBoardTypeChange
+            // sets the initial boardSelect value below. Clear it here so the
+            // user doesn't briefly see a stale list.
             const posSelect = document.getElementById('addBoardPositionSelect');
-            posSelect.innerHTML = addBoardContext.positionsList.map(p =>
-                `<option value="${p}">${p}</option>`).join('');
-            const recruitFirstPos = (currentEvalRecruit.positions && currentEvalRecruit.positions[0]) || '';
-            if (recruitFirstPos && addBoardContext.positionsList.includes(recruitFirstPos)) {
-                posSelect.value = recruitFirstPos;
-            }
+            posSelect.innerHTML = '<option value="" disabled selected>Loading positions…</option>';
+            posSelect.disabled = true;
 
             // Reset final-synthesis UI to a clean slate every time we open.
             // Both personal and shared modes use these controls now.
@@ -4928,6 +5121,88 @@ document.addEventListener('DOMContentLoaded', async function() {
         const modal = document.getElementById('addBoardModal');
         if (modal) modal.classList.remove('active');
         addBoardContext = null;
+    }
+
+    // Reactively populate the Add-to-Board position dropdown from the
+    // CURRENTLY SELECTED board's config. Replaces the old hardcoded 24-
+    // position list. Flattens offense + defense + specs into a flat,
+    // deduped list. Pre-selects addBoardContext.preferredPosition (the
+    // recruit's first position) when the board's config contains it.
+    // Handles three edge cases: no board picked yet, empty board (no
+    // positions), and fetch failure.
+    async function populateAddBoardPositionsFromBoard() {
+        if (!addBoardContext) return;
+        const posSelect = document.getElementById('addBoardPositionSelect');
+        const boardSelect = document.getElementById('addBoardSelect');
+        if (!posSelect || !boardSelect) return;
+        const boardId = boardSelect.value;
+        const typeInput = document.querySelector('input[name="addBoardType"]:checked');
+        const type = typeInput ? typeInput.value : 'personal';
+
+        if (!boardId) {
+            posSelect.innerHTML = '<option value="" disabled selected>Select a board first</option>';
+            posSelect.disabled = true;
+            evaluateConfirmEnabled();
+            return;
+        }
+
+        try {
+            let cfg;
+            if (type === 'personal') {
+                cfg = await API.get(`/recruiting-board/personal/${boardId}/config`);
+            } else {
+                const groupSelect = document.getElementById('addBoardGroupSelect');
+                const groupId = groupSelect && groupSelect.value;
+                if (!groupId) {
+                    posSelect.innerHTML = '<option value="" disabled selected>Select a group first</option>';
+                    posSelect.disabled = true;
+                    evaluateConfirmEnabled();
+                    return;
+                }
+                cfg = await API.get(`/recruiting-board/groups/${groupId}/boards/${boardId}/config`);
+            }
+
+            // Flatten the three section arrays. Empty/missing sections OK.
+            const flatten = (sections) => (Array.isArray(sections) ? sections : [])
+                .flatMap(s => Array.isArray(s.positions) ? s.positions : []);
+            // Apply the same defensive fallback used by loadPersonal/SharedGroupBoard:
+            // an empty array means "render the default" (legacy board pre-migration 039,
+            // or new section the coach hasn't touched). This keeps the Add-to-Board
+            // dropdown in sync with what the football field actually shows.
+            const off = (Array.isArray(cfg.offensePositions) && cfg.offensePositions.length > 0)
+                ? cfg.offensePositions : DEFAULT_OFFENSE_POSITIONS;
+            const def = (Array.isArray(cfg.defensePositions) && cfg.defensePositions.length > 0)
+                ? cfg.defensePositions : DEFAULT_DEFENSE_POSITIONS;
+            const spc = (Array.isArray(cfg.specsPositions) && cfg.specsPositions.length > 0)
+                ? cfg.specsPositions : DEFAULT_SPECS_POSITIONS;
+            const allPositions = [...flatten(off), ...flatten(def), ...flatten(spc)];
+
+            // De-dupe (e.g. coach put QB in both offense and a custom group).
+            const seen = new Set();
+            const unique = allPositions.filter(p => {
+                if (!p || seen.has(p)) return false;
+                seen.add(p);
+                return true;
+            });
+
+            if (unique.length === 0) {
+                posSelect.innerHTML = '<option value="" disabled selected>This board has no positions — add one first</option>';
+                posSelect.disabled = true;
+            } else {
+                posSelect.disabled = false;
+                posSelect.innerHTML = unique.map(p =>
+                    `<option value="${escapeHtml(p)}">${escapeHtml(p)}</option>`
+                ).join('');
+                const preferred = addBoardContext.preferredPosition;
+                if (preferred && unique.includes(preferred)) {
+                    posSelect.value = preferred;
+                }
+            }
+        } catch (err) {
+            posSelect.innerHTML = '<option value="" disabled selected>Failed to load board positions</option>';
+            posSelect.disabled = true;
+        }
+        evaluateConfirmEnabled();
     }
 
     function handleAddBoardTypeChange() {
@@ -4964,7 +5239,8 @@ document.addEventListener('DOMContentLoaded', async function() {
                     `<option value="${b.id}">${escapeHtml(b.board_name || 'My Board')}</option>`
                 ).join('');
             }
-            evaluateConfirmEnabled();
+            // Refresh the position dropdown to reflect the now-selected board.
+            populateAddBoardPositionsFromBoard();
         } else {
             groupRow.style.display = 'block';
             if (confirmBtn) confirmBtn.textContent = 'Add to Shared Board';
@@ -5016,7 +5292,8 @@ document.addEventListener('DOMContentLoaded', async function() {
         } catch (err) {
             boardSelect.innerHTML = '<option value="">Failed to load boards</option>';
         }
-        evaluateConfirmEnabled();
+        // Refresh the position dropdown for the (possibly new) default board.
+        populateAddBoardPositionsFromBoard();
     }
 
     // Compute mean/mode prefills and seed the slider + swatch row. Also toggles
@@ -5228,13 +5505,34 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
         recruit._evaluations = evaluations;
 
-        // Resolve viewer's pipeline state from the list. is_mine + is_active
-        // means the viewer has an active pipeline row for this recruit; cache
-        // its id so Send to Coach / Add to Board can act on it without a
-        // separate /contains roundtrip.
+        // Resolve viewer's pipeline state. /pipeline/evaluations only returns
+        // rows that have a grade/color/notes set — a freshly-added ungraded
+        // recruit won't show up there, so the mineActive check alone would
+        // wrongly say "not in pipeline". Three resolution paths in order:
+        //   1. Recruits opened from the pipeline list already carry recruit.id
+        //      AND have _source != 'board' — trust that as truth, they're in.
+        //   2. mineActive from evaluations — graded board-sourced recruits.
+        //   3. /pipeline/contains lookup for DR-linked board-sourced recruits
+        //      (the only path that catches ungraded board-source rows).
         const mineActive = evaluations.find(e => e.is_mine && e.is_active);
-        recruit._inMyPipeline = !!mineActive;
-        if (mineActive && mineActive.recruit_id) recruit.id = mineActive.recruit_id;
+        if (recruit._source !== 'board' && recruit.id) {
+            recruit._inMyPipeline = true;
+        } else if (mineActive) {
+            recruit._inMyPipeline = true;
+            if (mineActive.recruit_id) recruit.id = mineActive.recruit_id;
+        } else if (recruit.linked_player_user_id) {
+            // Board-sourced, ungraded — last check via /contains. Non-fatal:
+            // a 404/500 just leaves _inMyPipeline false (button stays "Add").
+            try {
+                const containsRes = await API.pipeline.contains(recruit.linked_player_user_id);
+                recruit._inMyPipeline = !!(containsRes && containsRes.in_pipeline);
+                if (containsRes && containsRes.recruit_id) recruit.id = containsRes.recruit_id;
+            } catch (_) {
+                recruit._inMyPipeline = false;
+            }
+        } else {
+            recruit._inMyPipeline = false;
+        }
 
         // Render the list
         const listEl = document.getElementById('evalEvaluationsList');
@@ -5338,8 +5636,17 @@ document.addEventListener('DOMContentLoaded', async function() {
             if (promotions.length > 1) {
                 if (selLabel) selLabel.style.display = '';
                 sel.style.display = '';
+                // Append the position to the option label so a recruit
+                // promoted to multiple positions on the same board (e.g.
+                // FB AND RB) shows two distinguishable entries instead of
+                // two identical "Board Name (Group)" rows.
                 sel.innerHTML = promotions
-                    .map((p, i) => `<option value="${i}">${escapeHtml(p.board_name || 'Board')} (${escapeHtml(p.group_name || '')})</option>`)
+                    .map((p, i) => {
+                        const boardName = escapeHtml(p.board_name || 'Board');
+                        const groupName = escapeHtml(p.group_name || '');
+                        const positionLabel = p.position ? ` — ${escapeHtml(p.position)}` : '';
+                        return `<option value="${i}">${boardName} (${groupName})${positionLabel}</option>`;
+                    })
                     .join('');
                 sel.value = '0';
             } else {
@@ -5362,8 +5669,12 @@ document.addEventListener('DOMContentLoaded', async function() {
         const saveBtn = document.getElementById('evalFinalGradeSaveBtn');
 
         if (contextEl) {
+            // Include position so a recruit promoted to multiple positions
+            // on the same board (e.g. FB + RB) makes it clear which copy is
+            // being edited.
+            const positionLabel = promo.position ? ` — ${promo.position}` : '';
             contextEl.textContent = promo.board_name
-                ? `Promoted to ${promo.board_name}${promo.group_name ? ' (' + promo.group_name + ')' : ''}`
+                ? `Promoted to ${promo.board_name}${promo.group_name ? ' (' + promo.group_name + ')' : ''}${positionLabel}`
                 : '';
         }
 
@@ -5458,13 +5769,40 @@ document.addEventListener('DOMContentLoaded', async function() {
             promo.promoted_at = new Date().toISOString();
             renderFinalGradePromotion(promo);
 
-            // If the viewer is also currently viewing this board on the
-            // football field, refresh it so the card swatch + grade pill
-            // reflect the new values.
-            const ctx = currentEvalRecruit._boardContext;
-            if (ctx && ctx.mode === 'shared' && ctx.groupId === promo.group_id && ctx.boardId === promo.board_id && typeof loadSharedGroupBoard === 'function') {
-                loadSharedGroupBoard(promo.board_id);
-            }
+            // Patch the on-board card directly with the new grade + color.
+            // The shared-board football field is rendered once when the user
+            // visits that subtab and lives in the DOM regardless of which
+            // subtab is active — patching here ensures the next visit shows
+            // the new grade without depending on an API re-fetch (which has
+            // been unreliable due to cache layers we don't control). The
+            // info modal is the source of truth; the card mirrors it.
+            // Pass both identifiers so the patch tolerates the case where
+            // the on-board card stored a different id than the modal's
+            // primary (e.g. a pool entry that was later linked to a DR
+            // account — the card may have user_id while playerId is the
+            // pool_entry_id, or vice versa).
+            const playerIdPrimary = playerId;
+            const playerIdAlt = playerId === currentEvalRecruit.linked_player_user_id
+                ? currentEvalRecruit.pool_entry_id
+                : currentEvalRecruit.linked_player_user_id;
+            updateBoardCardFinalDisplay(playerIdPrimary, promo.position, finalGrade, finalColor, playerIdAlt);
+
+            // Belt-and-suspenders: re-fetch ONLY the players for this board
+            // (no renderBoard, no body-class strip) so the on-board cards
+            // reflect the persisted DB state. Safe to call from any subtab —
+            // no-ops if the user isn't viewing this board. AFTER the refresh
+            // completes, re-apply the in-place patch once more so that even
+            // if the API returned stale data via some cache layer (browser
+            // disk, service worker, etc.), the user-facing card still shows
+            // what they just saved. This is a "patch wins" guarantee — the
+            // modal is the source of truth per the user's directive.
+            (async () => {
+                try {
+                    await refreshOnBoardPlayersOnly(promo.board_id);
+                } finally {
+                    updateBoardCardFinalDisplay(playerIdPrimary, promo.position, finalGrade, finalColor, playerIdAlt);
+                }
+            })();
         } catch (err) {
             if (typeof showToast === 'function') {
                 showToast((err && err.message) || 'Failed to save final synthesis', 'error');
@@ -5596,6 +5934,19 @@ document.addEventListener('DOMContentLoaded', async function() {
             currentEvalRecruit.grade = grade;
             currentEvalRecruit.color_tag = color_tag;
             currentEvalRecruit.notes = notes;
+            // Sync the pipeline list cache so the row re-renders with the
+            // new grade pill + color stripe the moment the modal closes —
+            // no more "refresh to see your grade" UX.
+            if (Array.isArray(currentPipelineRecruits)) {
+                const idx = currentPipelineRecruits.findIndex(r => r.id === currentEvalRecruit.id);
+                if (idx >= 0) {
+                    currentPipelineRecruits[idx].grade = grade;
+                    currentPipelineRecruits[idx].color_tag = color_tag;
+                    currentPipelineRecruits[idx].notes = notes;
+                    currentPipelineRecruits[idx].updated_at = new Date().toISOString();
+                }
+            }
+            if (typeof rerenderMyPipelineList === 'function') rerenderMyPipelineList();
             closeGradeEntryModal();
             await loadEvaluationsForModal(currentEvalRecruit);
         } catch (err) {
@@ -5885,9 +6236,35 @@ document.addEventListener('DOMContentLoaded', async function() {
         const promotionSelect = document.getElementById('evalFinalGradePromotionSelect');
         const finalGradeSlider = document.getElementById('evalFinalGrade');
         const finalGradeSaveBtn = document.getElementById('evalFinalGradeSaveBtn');
+        const profileLink = document.getElementById('evalProfileLink');
 
         if (closeBtn) closeBtn.addEventListener('click', closeEvaluationModal);
         if (overlay) overlay.addEventListener('click', closeEvaluationModal);
+
+        // Before navigating to the player's profile (same-tab), encode the
+        // open recruit's identity into our URL so the browser Back button
+        // returns here AND auto-reopens the eval modal for that recruit.
+        // Uses replaceState so we don't add a junk history entry.
+        if (profileLink) {
+            profileLink.addEventListener('click', () => {
+                if (!currentEvalRecruit) return;
+                const params = new URLSearchParams(window.location.search);
+                const activeBtn = document.querySelector('.rb-subtab.active');
+                const subtab = (activeBtn && activeBtn.dataset.tab)
+                    || localStorage.getItem('lastViewedRecruitingBoardSubtab')
+                    || 'pipeline';
+                params.set('subtab', subtab);
+                if (currentEvalRecruit.pool_entry_id) {
+                    params.set('modal_pool_entry_id', currentEvalRecruit.pool_entry_id);
+                    params.delete('modal_player_user_id');
+                } else if (currentEvalRecruit.linked_player_user_id) {
+                    params.set('modal_player_user_id', currentEvalRecruit.linked_player_user_id);
+                    params.delete('modal_pool_entry_id');
+                }
+                const newUrl = `${window.location.pathname}?${params.toString()}`;
+                window.history.replaceState({}, '', newUrl);
+            });
+        }
 
         // Footer delete button is dynamic: Remove from Pipeline OR Add to
         // Pipeline depending on the viewer's _inMyPipeline state.
@@ -5980,8 +6357,11 @@ document.addEventListener('DOMContentLoaded', async function() {
         if (cancelBtn) cancelBtn.addEventListener('click', closeAddBoardModal);
         if (confirmBtn) confirmBtn.addEventListener('click', confirmAddToBoard);
         if (groupSelect) groupSelect.addEventListener('change', handleAddBoardGroupChange);
-        // Board/position changes can re-enable Confirm (shared mode requires them set)
-        if (boardSelect) boardSelect.addEventListener('change', evaluateConfirmEnabled);
+        // Board change → repopulate position dropdown from the new board's
+        // config (offense + defense + specs flattened). The populate helper
+        // calls evaluateConfirmEnabled at the end, so the Confirm gating
+        // stays in sync without a separate listener.
+        if (boardSelect) boardSelect.addEventListener('change', populateAddBoardPositionsFromBoard);
         if (positionSelect) positionSelect.addEventListener('change', evaluateConfirmEnabled);
 
         document.querySelectorAll('input[name="addBoardType"]').forEach(radio => {
@@ -6236,13 +6616,57 @@ document.addEventListener('DOMContentLoaded', async function() {
     })();
 
     // ==================== Initialize ====================
-    const initialSubtab = localStorage.getItem('lastViewedRecruitingBoardSubtab') || 'personal-boards';
+    // URL ?subtab=…&modal_pool_entry_id=… or ?modal_player_user_id=… is the
+    // "return from view-profile" path: a coach clicked View Full Profile in
+    // the eval modal, navigated same-tab to the player profile, and used
+    // browser Back. The eval-modal click handler stashes these params via
+    // history.replaceState so Back returns to the exact subtab + reopens
+    // the modal for that recruit.
+    const _initParams = new URLSearchParams(window.location.search);
+    const _urlSubtab = _initParams.get('subtab');
+    const _restorePoolEntryId = _initParams.get('modal_pool_entry_id');
+    const _restorePlayerUserId = _initParams.get('modal_player_user_id');
+    const initialSubtab = _urlSubtab
+        || localStorage.getItem('lastViewedRecruitingBoardSubtab')
+        || 'personal-boards';
+
+    async function _restoreEvalModalIfRequested() {
+        if (!_restorePoolEntryId && !_restorePlayerUserId) return;
+        // Pipeline tab is the only place we read currentPipelineRecruits, and
+        // the modal restore needs a recruit object. If the URL targets Team
+        // Pool or another subtab, we still match against the pipeline list
+        // first (cross-coach evals come back via /pipeline/evaluations on
+        // modal open regardless of which list the recruit came from).
+        try { await initializePipelineTab(); } catch (_) {}
+        const list = Array.isArray(currentPipelineRecruits) ? currentPipelineRecruits : [];
+        const match = list.find(r => {
+            if (_restorePoolEntryId && r.pool_entry_id) {
+                return String(r.pool_entry_id) === String(_restorePoolEntryId);
+            }
+            if (_restorePlayerUserId && r.linked_player_user_id) {
+                return String(r.linked_player_user_id) === String(_restorePlayerUserId);
+            }
+            return false;
+        });
+        if (match) {
+            openEvaluationModal(match);
+        }
+        // Strip the modal-restore params so a manual refresh doesn't keep
+        // re-opening the modal. Keep ?subtab so subtab persistence works.
+        const cleanParams = new URLSearchParams(window.location.search);
+        cleanParams.delete('modal_pool_entry_id');
+        cleanParams.delete('modal_player_user_id');
+        const qs = cleanParams.toString();
+        const cleanUrl = qs ? `${window.location.pathname}?${qs}` : window.location.pathname;
+        window.history.replaceState({}, '', cleanUrl);
+    }
+
     // Always boot the personal tab so currentPersonalBoardId is populated, then
     // switch to the user's last subtab. activateSubtab() will lazy-init shared if needed.
     initializePersonalBoardsTab().then(() => {
         if (initialSubtab !== 'personal-boards') {
-            activateSubtab(initialSubtab);
+            return activateSubtab(initialSubtab);
         }
-    });
+    }).then(() => _restoreEvalModalIfRequested());
 
 });

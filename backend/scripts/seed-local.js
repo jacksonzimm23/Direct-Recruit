@@ -76,7 +76,8 @@ const MIGRATIONS = [
   'refactor-questionnaire-to-per-school.sql',
   'add-recruit-pipeline.sql',
   'add-pipeline-handoffs.sql',
-  'add-pipeline-soft-delete.sql'
+  'add-pipeline-soft-delete.sql',
+  'add-specs-positions.sql'
 ];
 
 async function applyManualFixes() {

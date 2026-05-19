@@ -12,6 +12,14 @@ class RecruitingBoard {
     { group: 'secondary-group', positions: ['FS', 'SS', 'CB'] }
   ];
 
+  // Specs (Special Teams) — added in migration 039. Existing boards have
+  // specs_positions = '[]' post-backfill; the frontend renders an empty
+  // array as the default K/P/LS slots via a defensive fallback so legacy
+  // boards visually pick up the new section without any data migration.
+  static DEFAULT_SPECS_POSITIONS = [
+    { group: 'specs-group', positions: ['K', 'P', 'LS'] }
+  ];
+
   // ==================== Personal Board Methods (legacy single-board API) ====================
   // Kept for compatibility with the player-profile "Add to Recruiting Board" button which
   // still hits the old class-year-keyed personal endpoints. Will be migrated when the
@@ -32,10 +40,10 @@ class RecruitingBoard {
 
     // Create personal board config row
     result = await pool.query(
-      `INSERT INTO recruiting_boards (owner_user_id, class_year, offense_positions, defense_positions, players, is_personal, collab)
-       VALUES ($1, 0, $2, $3, '[]'::jsonb, TRUE, '[]'::jsonb)
+      `INSERT INTO recruiting_boards (owner_user_id, class_year, offense_positions, defense_positions, specs_positions, players, is_personal, collab)
+       VALUES ($1, 0, $2, $3, $4, '[]'::jsonb, TRUE, '[]'::jsonb)
        RETURNING *`,
-      [userId, JSON.stringify(this.DEFAULT_OFFENSE_POSITIONS), JSON.stringify(this.DEFAULT_DEFENSE_POSITIONS)]
+      [userId, JSON.stringify(this.DEFAULT_OFFENSE_POSITIONS), JSON.stringify(this.DEFAULT_DEFENSE_POSITIONS), JSON.stringify(this.DEFAULT_SPECS_POSITIONS)]
     );
 
     return result.rows[0];
@@ -48,14 +56,14 @@ class RecruitingBoard {
     if (boardId) {
       // Get config for specific shared board
       result = await pool.query(
-        `SELECT offense_positions, defense_positions, board_name FROM recruiting_boards
+        `SELECT offense_positions, defense_positions, specs_positions, board_name FROM recruiting_boards
          WHERE id = $1 AND class_year = 0`,
         [boardId]
       );
     } else {
       // Get personal board config
       result = await pool.query(
-        `SELECT offense_positions, defense_positions FROM recruiting_boards
+        `SELECT offense_positions, defense_positions, specs_positions FROM recruiting_boards
          WHERE owner_user_id = $1 AND is_personal = TRUE AND class_year = 0`,
         [userId]
       );
@@ -65,6 +73,7 @@ class RecruitingBoard {
       return {
         offensePositions: result.rows[0].offense_positions,
         defensePositions: result.rows[0].defense_positions,
+        specsPositions: result.rows[0].specs_positions || [],
         boardName: result.rows[0].board_name
       };
     }
@@ -73,30 +82,31 @@ class RecruitingBoard {
     return {
       offensePositions: this.DEFAULT_OFFENSE_POSITIONS,
       defensePositions: this.DEFAULT_DEFENSE_POSITIONS,
+      specsPositions: this.DEFAULT_SPECS_POSITIONS,
       isDefault: true
     };
   }
 
   // Save position config for a board
-  static async savePositionConfig(userId, offensePositions, defensePositions, boardId = null) {
+  static async savePositionConfig(userId, offensePositions, defensePositions, boardId = null, specsPositions = []) {
     if (boardId) {
       // Update shared board config
       const result = await pool.query(
         `UPDATE recruiting_boards
-         SET offense_positions = $1, defense_positions = $2, updated_at = CURRENT_TIMESTAMP
-         WHERE id = $3 AND class_year = 0
+         SET offense_positions = $1, defense_positions = $2, specs_positions = $3, updated_at = CURRENT_TIMESTAMP
+         WHERE id = $4 AND class_year = 0
          RETURNING *`,
-        [JSON.stringify(offensePositions), JSON.stringify(defensePositions), boardId]
+        [JSON.stringify(offensePositions), JSON.stringify(defensePositions), JSON.stringify(specsPositions), boardId]
       );
       return result.rows[0];
     } else {
       // Update personal board config
       const result = await pool.query(
         `UPDATE recruiting_boards
-         SET offense_positions = $1, defense_positions = $2, updated_at = CURRENT_TIMESTAMP
-         WHERE owner_user_id = $3 AND is_personal = TRUE AND class_year = 0
+         SET offense_positions = $1, defense_positions = $2, specs_positions = $3, updated_at = CURRENT_TIMESTAMP
+         WHERE owner_user_id = $4 AND is_personal = TRUE AND class_year = 0
          RETURNING *`,
-        [JSON.stringify(offensePositions), JSON.stringify(defensePositions), userId]
+        [JSON.stringify(offensePositions), JSON.stringify(defensePositions), JSON.stringify(specsPositions), userId]
       );
       return result.rows[0];
     }
@@ -114,7 +124,7 @@ class RecruitingBoard {
   // List a coach's named personal boards, oldest first.
   static async listPersonalBoards(userId) {
     const result = await pool.query(
-      `SELECT id, board_name, offense_positions, defense_positions, created_at, updated_at
+      `SELECT id, board_name, offense_positions, defense_positions, specs_positions, created_at, updated_at
        FROM recruiting_boards
        WHERE owner_user_id = $1 AND is_personal = TRUE AND class_year = 0
        ORDER BY created_at ASC`,
@@ -140,14 +150,15 @@ class RecruitingBoard {
 
     const result = await pool.query(
       `INSERT INTO recruiting_boards
-         (owner_user_id, class_year, board_name, offense_positions, defense_positions, players, is_personal, collab)
-       VALUES ($1, 0, $2, $3, $4, '[]'::jsonb, TRUE, '[]'::jsonb)
-       RETURNING id, board_name, offense_positions, defense_positions, created_at, updated_at`,
+         (owner_user_id, class_year, board_name, offense_positions, defense_positions, specs_positions, players, is_personal, collab)
+       VALUES ($1, 0, $2, $3, $4, $5, '[]'::jsonb, TRUE, '[]'::jsonb)
+       RETURNING id, board_name, offense_positions, defense_positions, specs_positions, created_at, updated_at`,
       [
         userId,
         trimmed,
         JSON.stringify(this.DEFAULT_OFFENSE_POSITIONS),
-        JSON.stringify(this.DEFAULT_DEFENSE_POSITIONS)
+        JSON.stringify(this.DEFAULT_DEFENSE_POSITIONS),
+        JSON.stringify(this.DEFAULT_SPECS_POSITIONS)
       ]
     );
     return result.rows[0];
@@ -185,7 +196,7 @@ class RecruitingBoard {
   // Get a personal board by ID (asserts ownership).
   static async getPersonalBoardById(boardId, userId) {
     const result = await pool.query(
-      `SELECT id, board_name, offense_positions, defense_positions, players, created_at, updated_at
+      `SELECT id, board_name, offense_positions, defense_positions, specs_positions, players, created_at, updated_at
        FROM recruiting_boards
        WHERE id = $1 AND owner_user_id = $2 AND is_personal = TRUE AND class_year = 0`,
       [boardId, userId]
@@ -196,14 +207,16 @@ class RecruitingBoard {
     return row;
   }
 
-  // Save position config to a specific personal board.
-  static async savePersonalBoardConfig(boardId, userId, offensePositions, defensePositions) {
+  // Save position config to a specific personal board. specsPositions added
+  // in migration 039; default `[]` preserves back-compat for any caller that
+  // hasn't been updated.
+  static async savePersonalBoardConfig(boardId, userId, offensePositions, defensePositions, specsPositions = []) {
     const result = await pool.query(
       `UPDATE recruiting_boards
-       SET offense_positions = $1, defense_positions = $2, updated_at = CURRENT_TIMESTAMP
-       WHERE id = $3 AND owner_user_id = $4 AND is_personal = TRUE AND class_year = 0
+       SET offense_positions = $1, defense_positions = $2, specs_positions = $3, updated_at = CURRENT_TIMESTAMP
+       WHERE id = $4 AND owner_user_id = $5 AND is_personal = TRUE AND class_year = 0
        RETURNING id`,
-      [JSON.stringify(offensePositions), JSON.stringify(defensePositions), boardId, userId]
+      [JSON.stringify(offensePositions), JSON.stringify(defensePositions), JSON.stringify(specsPositions), boardId, userId]
     );
     if (!result.rows[0]) throw new Error('Board not found or not owned by user');
     return { success: true };
@@ -334,7 +347,7 @@ class RecruitingBoard {
   // List all boards in a group, oldest first.
   static async listGroupBoards(groupId) {
     const result = await pool.query(
-      `SELECT id, board_name, offense_positions, defense_positions, created_at, updated_at
+      `SELECT id, board_name, offense_positions, defense_positions, specs_positions, created_at, updated_at
        FROM recruiting_boards
        WHERE group_id = $1 AND is_personal = FALSE AND class_year = 0
        ORDER BY created_at ASC`,
@@ -360,14 +373,15 @@ class RecruitingBoard {
 
     const result = await pool.query(
       `INSERT INTO recruiting_boards
-         (group_id, class_year, board_name, offense_positions, defense_positions, players, is_personal, collab)
-       VALUES ($1, 0, $2, $3, $4, '[]'::jsonb, FALSE, '[]'::jsonb)
-       RETURNING id, board_name, offense_positions, defense_positions, created_at, updated_at`,
+         (group_id, class_year, board_name, offense_positions, defense_positions, specs_positions, players, is_personal, collab)
+       VALUES ($1, 0, $2, $3, $4, $5, '[]'::jsonb, FALSE, '[]'::jsonb)
+       RETURNING id, board_name, offense_positions, defense_positions, specs_positions, created_at, updated_at`,
       [
         groupId,
         trimmed,
         JSON.stringify(this.DEFAULT_OFFENSE_POSITIONS),
-        JSON.stringify(this.DEFAULT_DEFENSE_POSITIONS)
+        JSON.stringify(this.DEFAULT_DEFENSE_POSITIONS),
+        JSON.stringify(this.DEFAULT_SPECS_POSITIONS)
       ]
     );
     return result.rows[0];
@@ -405,7 +419,7 @@ class RecruitingBoard {
   // Get a single board (with config + players) inside a group.
   static async getGroupBoardById(boardId, groupId) {
     const result = await pool.query(
-      `SELECT id, board_name, offense_positions, defense_positions, players, created_at, updated_at
+      `SELECT id, board_name, offense_positions, defense_positions, specs_positions, players, created_at, updated_at
        FROM recruiting_boards
        WHERE id = $1 AND group_id = $2 AND is_personal = FALSE AND class_year = 0`,
       [boardId, groupId]
@@ -416,14 +430,16 @@ class RecruitingBoard {
     return row;
   }
 
-  // Save position config for a group board.
-  static async saveGroupBoardConfig(boardId, groupId, offensePositions, defensePositions) {
+  // Save position config for a group board. specsPositions added in
+  // migration 039; default `[]` preserves back-compat for any caller that
+  // hasn't been updated.
+  static async saveGroupBoardConfig(boardId, groupId, offensePositions, defensePositions, specsPositions = []) {
     const result = await pool.query(
       `UPDATE recruiting_boards
-       SET offense_positions = $1, defense_positions = $2, updated_at = CURRENT_TIMESTAMP
-       WHERE id = $3 AND group_id = $4 AND is_personal = FALSE AND class_year = 0
+       SET offense_positions = $1, defense_positions = $2, specs_positions = $3, updated_at = CURRENT_TIMESTAMP
+       WHERE id = $4 AND group_id = $5 AND is_personal = FALSE AND class_year = 0
        RETURNING id`,
-      [JSON.stringify(offensePositions), JSON.stringify(defensePositions), boardId, groupId]
+      [JSON.stringify(offensePositions), JSON.stringify(defensePositions), JSON.stringify(specsPositions), boardId, groupId]
     );
     if (!result.rows[0]) throw new Error('Board not found in this group');
     return { success: true };

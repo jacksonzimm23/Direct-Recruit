@@ -154,7 +154,8 @@ router.get('/personal/:boardId/config', authMiddleware, requireRole('coach'), va
     if (!board) return res.status(404).json({ error: 'Board not found' });
     res.json({
       offensePositions: board.offense_positions,
-      defensePositions: board.defense_positions
+      defensePositions: board.defense_positions,
+      specsPositions: board.specs_positions || []
     });
   } catch (error) {
     logger.error('Error fetching personal board config:', error);
@@ -162,15 +163,18 @@ router.get('/personal/:boardId/config', authMiddleware, requireRole('coach'), va
   }
 });
 
-// Save position config for a specific personal board
+// Save position config for a specific personal board. specsPositions optional
+// for back-compat with old clients; defaults to [] which renders as the
+// frontend default K/P/LS via defensive fallback.
 router.put('/personal/:boardId/config', authMiddleware, requireRole('coach'), validateUUID('boardId'), async (req, res) => {
   try {
-    const { offensePositions, defensePositions } = req.body;
+    const { offensePositions, defensePositions, specsPositions } = req.body;
     if (!offensePositions || !defensePositions) {
       return res.status(400).json({ error: 'Both offense and defense positions are required' });
     }
-    await RecruitingBoard.savePersonalBoardConfig(req.params.boardId, req.userId, offensePositions, defensePositions);
-    res.json({ message: 'Position configuration saved', offensePositions, defensePositions });
+    const specs = Array.isArray(specsPositions) ? specsPositions : [];
+    await RecruitingBoard.savePersonalBoardConfig(req.params.boardId, req.userId, offensePositions, defensePositions, specs);
+    res.json({ message: 'Position configuration saved', offensePositions, defensePositions, specsPositions: specs });
   } catch (error) {
     if (/not found/i.test(error.message)) return res.status(404).json({ error: error.message });
     logger.error('Error saving personal board config:', error);
@@ -183,6 +187,8 @@ router.get('/personal/:boardId/players', authMiddleware, requireRole('coach'), v
   try {
     let players = await RecruitingBoard.getPlayersFromPersonalBoardById(req.params.boardId, req.userId);
     players = await addSignedUrlsToPlayers(players);
+    // Same cache-busting as the group board variant.
+    res.set('Cache-Control', 'no-store, must-revalidate');
     res.json(players);
   } catch (error) {
     logger.error('Error fetching personal board players:', error);
@@ -1541,22 +1547,24 @@ router.get('/groups/:groupId/boards/:boardId/config', authMiddleware, requireRol
     if (!board) return res.status(404).json({ error: 'Board not found' });
     res.json({
       offensePositions: board.offense_positions,
-      defensePositions: board.defense_positions
+      defensePositions: board.defense_positions,
+      specsPositions: board.specs_positions || []
     });
   } catch (error) {
     return handleGroupError(error, res, 'Failed to fetch position configuration');
   }
 });
 
-// Save position config (editor only)
+// Save position config (editor only). specsPositions optional for back-compat.
 router.put('/groups/:groupId/boards/:boardId/config', authMiddleware, requireRole('coach'), validateUUID('groupId', 'boardId'), requireGroupAccess('editor'), async (req, res) => {
   try {
-    const { offensePositions, defensePositions } = req.body;
+    const { offensePositions, defensePositions, specsPositions } = req.body;
     if (!offensePositions || !defensePositions) {
       return res.status(400).json({ error: 'Both offense and defense positions are required' });
     }
-    await RecruitingBoard.saveGroupBoardConfig(req.params.boardId, req.params.groupId, offensePositions, defensePositions);
-    res.json({ message: 'Position configuration saved', offensePositions, defensePositions });
+    const specs = Array.isArray(specsPositions) ? specsPositions : [];
+    await RecruitingBoard.saveGroupBoardConfig(req.params.boardId, req.params.groupId, offensePositions, defensePositions, specs);
+    res.json({ message: 'Position configuration saved', offensePositions, defensePositions, specsPositions: specs });
   } catch (error) {
     return handleGroupError(error, res, 'Failed to save position configuration');
   }
@@ -1567,6 +1575,10 @@ router.get('/groups/:groupId/boards/:boardId/players', authMiddleware, requireRo
   try {
     let players = await RecruitingBoard.getPlayersFromGroupBoardById(req.params.boardId, req.params.groupId);
     players = await addSignedUrlsToPlayers(players);
+    // Defeat the browser disk cache — final_grade / final_color_tag edits
+    // need to surface immediately after the next tab-activation fetch, not
+    // wait for the browser's heuristic cache TTL to expire.
+    res.set('Cache-Control', 'no-store, must-revalidate');
     res.json(players);
   } catch (error) {
     return handleGroupError(error, res, 'Failed to fetch players');
