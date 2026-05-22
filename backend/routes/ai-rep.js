@@ -80,7 +80,7 @@ router.get('/matches', async (req, res) => {
   try {
     // Require active subscription for AI Rep
     const subInfo = await User.getSubscriptionInfo(req.userId);
-    if (!subInfo || (subInfo.subscription_status !== 'active' && subInfo.subscription_status !== 'past_due')) {
+    if (!subInfo || !['active', 'past_due', 'comp'].includes(subInfo.subscription_status)) {
       return res.status(403).json({ error: 'Active subscription required' });
     }
 
@@ -179,7 +179,7 @@ router.get('/matches', async (req, res) => {
 router.get('/profile-completion', async (req, res) => {
   try {
     const subInfo = await User.getSubscriptionInfo(req.userId);
-    if (!subInfo || (subInfo.subscription_status !== 'active' && subInfo.subscription_status !== 'past_due')) {
+    if (!subInfo || !['active', 'past_due', 'comp'].includes(subInfo.subscription_status)) {
       return res.status(403).json({ error: 'Active subscription required' });
     }
 

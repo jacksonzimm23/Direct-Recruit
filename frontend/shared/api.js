@@ -1352,8 +1352,9 @@ window.API_BASE_URL = API_BASE_URL;
             if (!PAID_FOLDERS.includes(folder)) return;
 
             const status = me.user.subscription_status;
-            // Allow active and past_due (Stripe retries payment)
-            if (status === 'active' || status === 'past_due') {
+            // Allow active, past_due (Stripe retries payment), and comp
+            // (admin-approved complimentary access — no Stripe subscription).
+            if (status === 'active' || status === 'past_due' || status === 'comp') {
                 // Phase 3c: webhook has caught up — clear any stale grace key
                 try { localStorage.removeItem('iap_pending_activation'); } catch (_) {}
                 return;

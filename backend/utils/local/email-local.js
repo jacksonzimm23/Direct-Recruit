@@ -63,7 +63,9 @@ async function sendCoachRequestNotification(toEmail, data) {
 async function sendCoachInvite(toEmail, data, link) {
   const typeLabel = data.is_team_switch
     ? `🏫 TEAM SWITCH (from ${data.old_team_name || 'unknown'} → ${data.school})`
-    : data.is_switch ? '🔄 PROFILE-TYPE SWITCH (existing user)' : '🆕 NEW SIGNUP';
+    : data.is_switch ? '🔄 PROFILE-TYPE SWITCH (existing user)'
+    : data.is_free ? '🎁 FREE / COMP ACCESS (no Stripe)'
+    : '🆕 NEW SIGNUP';
   console.log('\n[LOCAL EMAIL] Coach Invite');
   console.log(`  To: ${toEmail}`);
   console.log(`  Type: ${typeLabel}`);

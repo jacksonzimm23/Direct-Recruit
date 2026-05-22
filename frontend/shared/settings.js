@@ -3250,6 +3250,19 @@ async function initializeSubscriptionSection() {
 }
 
 function renderSubscriptionUI(container, sub, profileFolder) {
+    // Comp-access coaches (admin-approved FREE) don't have a Stripe subscription,
+    // so the Cancel/Change Plan UI doesn't apply. Render a friendly read-only state.
+    if (sub.status === 'comp') {
+        container.innerHTML = `
+            <div class="sub-details">
+                <div class="sub-row"><span class="sub-label">Plan</span><span class="sub-value">Complimentary Access</span></div>
+                <div class="sub-row"><span class="sub-label">Status</span><span class="sub-value"><span class="sub-badge sub-badge-active" style="background:#ff6b35;">Comped</span></span></div>
+            </div>
+            <p style="color:#8892b0;font-size:0.9rem;line-height:1.6;margin-top:16px;">You have complimentary access to Direct Recruit, granted by our admin team. No payment required. Questions? Reach out to support.</p>
+        `;
+        return;
+    }
+
     const plan = PLAN_DISPLAY[sub.tier] || null;
     const isActive = sub.status === 'active';
     const isPastDue = sub.status === 'past_due';

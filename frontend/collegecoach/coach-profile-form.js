@@ -5,6 +5,11 @@ let validatedInviteToken = null;
 // True when the invite came from a profile-type switch (existing user) vs a brand-new signup.
 // Switch mode hides registration fields + posts to /settings/switch-profile instead of /profile/coach.
 let isSwitchMode = false;
+// True when the admin approved this signup with complimentary access (no Stripe).
+// Free mode skips the tier selection modal + Stripe Checkout step entirely; the
+// createCoachProfile backend handler writes subscription_status='comp' for these
+// invites (decision read from the DB row, not the frontend flag).
+let isFreeMode = false;
 
 document.addEventListener('DOMContentLoaded', async function() {
     // This is a CREATE profile page - do NOT load existing profile data
@@ -36,6 +41,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
         validatedInviteToken = urlToken;
         isSwitchMode = !!validateData.is_switch;
+        isFreeMode = !!validateData.is_free;
 
         // Switch mode requires the user to be signed in (the switch endpoint needs to know
         // WHICH existing user to convert, and we verify they own the account by matching
@@ -109,6 +115,19 @@ document.addEventListener('DOMContentLoaded', async function() {
                 hint.style.cssText = 'display:block;color:#ff6b35;font-size:0.8rem;margin-top:0.25rem;font-weight:500;';
                 group.appendChild(hint);
             }
+        }
+    }
+
+    // FREE comp-access banner: tells the coach upfront they're not getting
+    // billed. Inserted at the very top of the form so it can't be missed.
+    if (isFreeMode) {
+        const formEl = document.getElementById('coachProfileForm');
+        if (formEl && !document.getElementById('compAccessBanner')) {
+            const banner = document.createElement('div');
+            banner.id = 'compAccessBanner';
+            banner.style.cssText = 'margin:0 0 1.25rem 0;padding:0.875rem 1rem;background:rgba(255,107,53,0.12);border:1px solid #ff6b35;border-radius:8px;color:#ff6b35;font-weight:600;font-size:0.95rem;display:flex;align-items:center;gap:0.5rem;';
+            banner.innerHTML = '🎁 <span>Your account has been approved with <strong>complimentary access</strong> — no payment required.</span>';
+            formEl.insertBefore(banner, formEl.firstChild);
         }
     }
 
@@ -584,6 +603,17 @@ document.addEventListener('DOMContentLoaded', async function() {
                         window.location.href = 'mainpage-coach.html';
                     }, 1200);
                 }
+            } else if (isFreeMode) {
+                // FREE comp-access path: skip Stripe entirely. Create the profile
+                // directly — backend writes subscription_status='comp' inside
+                // createCoachProfile because the invite row has is_free=true.
+                // (The DB row is the source of truth; this frontend flag is just
+                // a hint to skip the tier modal.) Land on the coach mainpage.
+                await profileAPI.createCoachProfile(profileData);
+                showToast("Welcome aboard — your account is comped!", 'success');
+                setTimeout(() => {
+                    window.location.href = 'mainpage-coach.html';
+                }, 1200);
             } else {
                 // New signups: store profile data and show tier selection
                 localStorage.setItem('pendingProfileData', JSON.stringify(profileData));

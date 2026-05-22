@@ -20,10 +20,12 @@ const logger = require('../utils/logger');
 const { RateLimiterMemory } = require('rate-limiter-flexible');
 const { stripHtml } = require('../middleware/validation');
 
-// Check if coach has active subscription before AI usage
+// Check if coach has active subscription before AI usage.
+// 'comp' = admin-approved complimentary access (no Stripe sub); treated like 'active'.
+const ACTIVE_SUB_STATUSES = ['active', 'past_due', 'comp'];
 async function requireActiveSubscription(req, res) {
     const subInfo = await User.getSubscriptionInfo(req.userId);
-    if (!subInfo || (subInfo.subscription_status !== 'active' && subInfo.subscription_status !== 'past_due')) {
+    if (!subInfo || !ACTIVE_SUB_STATUSES.includes(subInfo.subscription_status)) {
         res.status(403).json({ error: 'Active subscription required to use AI features' });
         return false;
     }

@@ -179,7 +179,7 @@ router.get('/validate-token', authLimiter, async (req, res) => {
     // snapshot (old_team_name) without an extra roundtrip from the confirm page.
     const r = await pool.query(
       `SELECT i.id, i.first_name, i.last_name, i.school, i.division, i.edu_email, i.position,
-              i.expires_at, i.used_at, i.revoked_at, i.is_switch, i.is_team_switch,
+              i.expires_at, i.used_at, i.revoked_at, i.is_switch, i.is_team_switch, i.is_free,
               r.existing_user_id, r.old_team_name, r.old_division
          FROM coach_invites i
          LEFT JOIN coach_signup_requests r ON r.id = i.request_id
@@ -206,6 +206,7 @@ router.get('/validate-token', authLimiter, async (req, res) => {
       position: row.position,
       is_switch: !!row.is_switch,
       is_team_switch: !!row.is_team_switch,
+      is_free: !!row.is_free,
       existing_user_id: row.existing_user_id,
       old_team_name: row.old_team_name,
       old_division: row.old_division

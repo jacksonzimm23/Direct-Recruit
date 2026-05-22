@@ -95,7 +95,8 @@ router.get('/requests', async (req, res) => {
         i.used_at    AS invite_used_at,
         i.revoked_at AS invite_revoked_at,
         i.created_at AS invite_created_at,
-        i.is_team_switch AS invite_is_team_switch
+        i.is_team_switch AS invite_is_team_switch,
+        i.is_free        AS invite_is_free
       FROM coach_signup_requests r
       LEFT JOIN users eu ON eu.id = r.existing_user_id
       LEFT JOIN LATERAL (
@@ -140,12 +141,12 @@ router.get('/requests', async (req, res) => {
   }
 });
 
-// POST /api/admin/coach-verification/requests/:id/approve
-router.post('/requests/:id/approve', async (req, res) => {
+// Shared approval helper used by both /approve (paid) and /approve-free (comp).
+// The two paths differ only in the `isFree` flag stored on the invite row and
+// surfaced in the email body. The coach-side fork (skip Stripe vs show tier
+// modal) reads is_free from validate-token at create-profile load time.
+async function approveRequestInternal(requestId, { isFree }, res) {
   try {
-    const requestId = req.params.id;
-
-    // Fetch request and verify status + locked
     const r = await pool.query(
       `SELECT id, first_name, last_name, school, position, edu_email, personal_email, status,
               locked_school, locked_division, is_switch, is_team_switch, old_team_name
@@ -162,21 +163,21 @@ router.post('/requests/:id/approve', async (req, res) => {
 
     const request = r.rows[0];
 
-    // Generate token
     const token = crypto.randomBytes(32).toString('hex');
     const expiresAt = new Date(Date.now() + INVITE_EXPIRY_DAYS * 24 * 60 * 60 * 1000);
 
-    // Use locked_school + locked_division (the admin-canonicalized values) for the invite.
-    // Carry is_switch + is_team_switch forward so the email link + body branch
-    // route to the correct destination page.
+    // Use locked_school + locked_division (admin-canonicalized) for the invite.
+    // Carry is_switch + is_team_switch + is_free forward so the email link +
+    // body branch + create-profile fork all route correctly.
     const inviteIns = await pool.query(
       `INSERT INTO coach_invites
-        (request_id, token, edu_email, first_name, last_name, school, division, position, expires_at, is_switch, is_team_switch)
-        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+        (request_id, token, edu_email, first_name, last_name, school, division, position,
+         expires_at, is_switch, is_team_switch, is_free)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
         RETURNING id, expires_at`,
       [requestId, token, request.edu_email, request.first_name, request.last_name,
        request.locked_school, request.locked_division, request.position, expiresAt,
-       !!request.is_switch, !!request.is_team_switch]
+       !!request.is_switch, !!request.is_team_switch, !!isFree]
     );
 
     await pool.query(
@@ -192,6 +193,7 @@ router.post('/requests/:id/approve', async (req, res) => {
         expires_at: inviteIns.rows[0].expires_at,
         is_switch: !!request.is_switch,
         is_team_switch: !!request.is_team_switch,
+        is_free: !!isFree,
         old_team_name: request.old_team_name
       }, link);
     } catch (emailErr) {
@@ -202,12 +204,26 @@ router.post('/requests/:id/approve', async (req, res) => {
       success: true,
       token,
       expires_at: inviteIns.rows[0].expires_at,
-      invite_id: inviteIns.rows[0].id
+      invite_id: inviteIns.rows[0].id,
+      is_free: !!isFree
     });
   } catch (err) {
     logger.error('[admin-coach-verification] approve error:', err);
     res.status(500).json({ error: 'Failed to approve request' });
   }
+}
+
+// POST /api/admin/coach-verification/requests/:id/approve — standard paid path
+router.post('/requests/:id/approve', async (req, res) => {
+  await approveRequestInternal(req.params.id, { isFree: false }, res);
+});
+
+// POST /api/admin/coach-verification/requests/:id/approve-free — comp access
+// (skip Stripe). Marks coach_invites.is_free=true so the coach-side create-
+// profile fork skips the tier modal and the createCoachProfile handler writes
+// subscription_status='comp' + subscription_tier='starter' + source='comp'.
+router.post('/requests/:id/approve-free', async (req, res) => {
+  await approveRequestInternal(req.params.id, { isFree: true }, res);
 });
 
 // POST /api/admin/coach-verification/requests/:id/lock
@@ -333,7 +349,7 @@ router.post('/invites/:id/resend', async (req, res) => {
     // Fetch current invite + request (for old_team_name on team-switch emails)
     const current = await pool.query(
       `SELECT i.request_id, i.edu_email, i.first_name, i.last_name, i.school, i.division,
-              i.position, i.used_at, i.is_switch, i.is_team_switch,
+              i.position, i.used_at, i.is_switch, i.is_team_switch, i.is_free,
               r.old_team_name
          FROM coach_invites i
          LEFT JOIN coach_signup_requests r ON r.id = i.request_id
@@ -354,11 +370,13 @@ router.post('/invites/:id/resend', async (req, res) => {
     const expiresAt = new Date(Date.now() + INVITE_EXPIRY_DAYS * 24 * 60 * 60 * 1000);
     const ins = await pool.query(
       `INSERT INTO coach_invites
-        (request_id, token, edu_email, first_name, last_name, school, division, position, expires_at, is_switch, is_team_switch)
-        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+        (request_id, token, edu_email, first_name, last_name, school, division, position,
+         expires_at, is_switch, is_team_switch, is_free)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
         RETURNING id, expires_at`,
       [data.request_id, newToken, data.edu_email, data.first_name, data.last_name,
-       data.school, data.division, data.position, expiresAt, !!data.is_switch, !!data.is_team_switch]
+       data.school, data.division, data.position, expiresAt,
+       !!data.is_switch, !!data.is_team_switch, !!data.is_free]
     );
 
     const link = buildInviteLink(newToken, !!data.is_team_switch);
@@ -369,6 +387,7 @@ router.post('/invites/:id/resend', async (req, res) => {
         expires_at: ins.rows[0].expires_at,
         is_switch: !!data.is_switch,
         is_team_switch: !!data.is_team_switch,
+        is_free: !!data.is_free,
         old_team_name: data.old_team_name
       }, link);
     } catch (emailErr) {

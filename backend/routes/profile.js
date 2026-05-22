@@ -243,7 +243,7 @@ router.post('/coach', authMiddleware, requireRole('coach'), validateCoachProfile
       }
       const pool = require('../config/database');
       const inviteResult = await pool.query(
-        `SELECT id, school, division FROM coach_invites
+        `SELECT id, school, division, is_free FROM coach_invites
          WHERE token = $1 AND used_at IS NULL AND revoked_at IS NULL AND expires_at > NOW()
          FOR UPDATE`,
         [inviteToken]
@@ -257,6 +257,10 @@ router.post('/coach', authMiddleware, requireRole('coach'), validateCoachProfile
         req.body.college_division = inviteResult.rows[0].division;
       }
       inviteIdToConsume = inviteResult.rows[0].id;
+      // Comp-access flag: read from DB row, NEVER from req.body. The
+      // create-profile fork uses this to decide whether to mark the user
+      // active without Stripe.
+      req._inviteIsFree = !!inviteResult.rows[0].is_free;
     }
 
     let profile;
@@ -273,6 +277,19 @@ router.post('/coach', authMiddleware, requireRole('coach'), validateCoachProfile
         await User.updateUsername(req.userId, req.body.username);
       }
       await User.markProfileCompleted(req.userId);
+    }
+
+    // FREE comp-access invites: mark the user subscription_status='comp' so the
+    // paywall + AI gates pass without a Stripe payment. The decision comes from
+    // the DB-stored invite row (req._inviteIsFree was set above from the
+    // FOR-UPDATE select), so DevTools can't fake it. No Stripe customer is
+    // created — stripe_customer_id stays NULL.
+    if (req._inviteIsFree) {
+      await User.updateSubscription(req.userId, {
+        status: 'comp',
+        tier: 'starter',
+        source: 'comp'
+      });
     }
 
     // Mark the invite consumed only after a successful profile creation

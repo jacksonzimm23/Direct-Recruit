@@ -677,12 +677,14 @@ async function sendCoachInvite(toEmail, data, link) {
   const expiresText = data.expires_at
     ? new Date(data.expires_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
     : '7 days from today';
-  // Three audiences:
+  // Four audiences (checked in priority order):
   //   is_team_switch: existing collegecoach changing schools (X → Y)
   //   is_switch:      existing user becoming a collegecoach for the first time
-  //   default:        brand-new account signup
+  //   is_free:        brand-new collegecoach signup with complimentary access (no Stripe)
+  //   default:        brand-new collegecoach signup, paid path
   const isTeamSwitch = !!data.is_team_switch;
   const isSwitch = !!data.is_switch;
+  const isFree = !!data.is_free;
   let subjectLine, headline, bodyLead, ctaText;
   if (isTeamSwitch) {
     subjectLine = `Confirm your school change — ${data.school}`;
@@ -695,6 +697,11 @@ async function sendCoachInvite(toEmail, data, link) {
     headline = 'Verify Your College Coach Switch';
     bodyLead = `Your switch to a College Coach account at <strong>${data.school}</strong> has been approved. Click the button below to finish the switch — your existing account, posts, and connections will be preserved.`;
     ctaText = 'Complete Your Switch';
+  } else if (isFree) {
+    subjectLine = `You're invited to join Direct Recruit — ${data.school} (Complimentary Access)`;
+    headline = "Welcome Aboard — Complimentary Access";
+    bodyLead = `Welcome! Your account at <strong>${data.school}</strong> has been approved with <strong>complimentary access</strong> — no payment required. Click the button below to finish setting up your profile.`;
+    ctaText = 'Complete Your Signup';
   } else {
     subjectLine = `You're invited to join Direct Recruit — ${data.school}`;
     headline = "You're Invited";
@@ -781,7 +788,9 @@ ${isTeamSwitch
   ? `Your switch from ${data.old_team_name || 'your current school'} to ${data.school} has been approved. Sign in and confirm to update your team — your account, recruits, and connections all stay intact.`
   : isSwitch
     ? `Your switch to a College Coach account at ${data.school} has been approved. Complete your switch using the link below — your existing account, posts, and connections will be preserved.`
-    : `Your account at ${data.school} has been approved. Complete your signup using the link below:`}
+    : isFree
+      ? `Welcome! Your account at ${data.school} has been approved with complimentary access — no payment required. Complete your signup using the link below:`
+      : `Your account at ${data.school} has been approved. Complete your signup using the link below:`}
 
 ${link}
 
