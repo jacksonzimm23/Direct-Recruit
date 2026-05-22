@@ -19,6 +19,14 @@ const VALID_STAT_KEYS = new Set([
   'total_tds', 'total_yds'
 ]);
 
+// Allowlist for SQL comparison operators emitted by the AI. The AI prompt
+// instructs Claude to return one of these five strings (>=, <=, >, <, =),
+// but it's a generative model and occasionally hallucinates — past
+// production logs caught a stat_filter whose operator contained a stray
+// `;` which crashed the query with "syntax error at or near `;`". This
+// allowlist normalises any unexpected value back to '>=' (the safe default).
+const VALID_STAT_OPERATORS = new Set(['>=', '<=', '>', '<', '=']);
+
 // Build a dynamic SQL scoring expression based on which filters are active.
 // Returns { expr: string, paramCount: number }.
 // Scoring is query-adaptive: factors are weighted based on what the coach asked for.
@@ -893,7 +901,7 @@ class PlayerProfile {
           statSubquery += ` AND ${alias}.position IN (${posList.join(', ')})`;
         }
 
-        const op = sf.operator || '>=';
+        const op = VALID_STAT_OPERATORS.has(sf.operator) ? sf.operator : '>=';
         // Build the stat expression — composite keys sum multiple JSONB fields
         const compositeKeys = COMPOSITE_STAT_KEYS[sf.stat_key];
         const statExpr = compositeKeys
@@ -943,4 +951,5 @@ class PlayerProfile {
 
 module.exports = PlayerProfile;
 module.exports.VALID_STAT_KEYS = VALID_STAT_KEYS;
+module.exports.VALID_STAT_OPERATORS = VALID_STAT_OPERATORS;
 module.exports.COMPOSITE_STAT_KEYS = COMPOSITE_STAT_KEYS;

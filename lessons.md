@@ -1150,3 +1150,16 @@ DO NOT run seed
 
     The coach UI's shared `renderQuestionnaireView(d, transcriptUrl)` helper renders a "View transcript (PDF)" link in the Academic section when a URL is present. Single source of truth — adding it to the helper means every modal that uses it (pool detail, pipeline modal, board info modal) gets the link automatically.
 
+
+## AI-Generated SQL Inputs Must Be Allowlisted
+
+113. **Anything Claude outputs that lands directly in a SQL string needs an allowlist guard, not just a fallback.** The AI Recruiting Assistant's `stat_filters[].operator` was interpolated into the SQL via `${op}` with only `sf.operator || '>='` as protection — that's a falsy-check, not a value-check. Claude occasionally hallucinated operators like `">=;"` (likely trying to inline a value), which crashed the query with `syntax error at or near ";"` (Postgres error 42601). Recurred across multiple days of prod logs.
+
+    **Fix:** module-level `VALID_STAT_OPERATORS = new Set(['>=', '<=', '>', '<', '=']);` in `backend/models/PlayerProfile.js`, with `const op = VALID_STAT_OPERATORS.has(sf.operator) ? sf.operator : '>=';` at both interpolation sites (one in `PlayerProfile.js`, one in `PortalSignal.js`). The same allowlist pattern was already used for `VALID_STAT_KEYS` — extending it to `operator` is the obvious move that should have happened day one.
+
+    **General rule for AI-generated filter JSON:**
+    - String fields that go into SQL identifiers (column names, operators) → allowlist
+    - String fields that go into SQL literals (values) → parameterised via `$N` placeholders, already safe
+    - Numeric fields → cast via `Number()` or `parseInt()` with NaN check before interpolation
+    - Array fields → validate length cap + per-element allowlist
+

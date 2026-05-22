@@ -1,7 +1,7 @@
 const pool = require('../config/database');
 const { PORTAL_KEYWORDS } = require('../utils/portal-intelligence');
 // Reuse stat allowlists from PlayerProfile so RA and PI accept identical stat keys.
-const { VALID_STAT_KEYS, COMPOSITE_STAT_KEYS } = require('./PlayerProfile');
+const { VALID_STAT_KEYS, VALID_STAT_OPERATORS, COMPOSITE_STAT_KEYS } = require('./PlayerProfile');
 
 class PortalSignal {
   /**
@@ -286,7 +286,7 @@ class PortalSignal {
           statSubquery += ` AND ${alias}.position IN (${posList.join(', ')})`;
         }
 
-        const op = sf.operator || '>=';
+        const op = VALID_STAT_OPERATORS.has(sf.operator) ? sf.operator : '>=';
         const compositeKeys = COMPOSITE_STAT_KEYS[sf.stat_key];
         const statExpr = compositeKeys
           ? compositeKeys.map(k => `COALESCE(CAST(${alias}.stats->>'${k}' AS NUMERIC), 0)`).join(' + ')
