@@ -79,6 +79,16 @@ function generateMessageMediaKey(userId, originalFilename, mediaType = 'image') 
   return `message-media/${userId}/${mediaType}-${timestamp}-${randomId}.${extension}`;
 }
 
+// Mirrors generateTranscriptKey in s3.js — see that file for rationale.
+function generateTranscriptKey(emailLower, originalFilename) {
+  const crypto = require('crypto');
+  const hash = crypto.createHash('sha256').update(String(emailLower || '').trim().toLowerCase()).digest('hex').slice(0, 16);
+  const extension = (originalFilename && originalFilename.split('.').pop() || 'pdf').toLowerCase();
+  const timestamp = Date.now();
+  const randomId = Math.random().toString(36).substring(2, 8);
+  return `transcripts/anon/${hash}-${timestamp}-${randomId}.${extension}`;
+}
+
 module.exports = {
   uploadToS3,
   getSignedS3Url,
@@ -88,6 +98,7 @@ module.exports = {
   generateHighlightVideoKey,
   generatePostMediaKey,
   generateMessageMediaKey,
+  generateTranscriptKey,
   s3Client: null,
   BUCKET_NAME: 'local-dev'
 };

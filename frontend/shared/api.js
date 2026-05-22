@@ -1153,6 +1153,27 @@ const questionnaireAPI = {
             throw err;
         }
         return res.json();
+    },
+    // Upload a single PDF transcript for the recruit. Multipart form-data —
+    // the email is sent as a form field (server uses it to shard the S3 key).
+    // Returns { success, s3_key }; caller stashes s3_key for the eventual
+    // submit() call's submission_data.academic.transcript_s3_keys.
+    uploadTranscript: async (slug, file, email) => {
+        const fd = new FormData();
+        fd.append('transcript', file);
+        fd.append('email', email);
+        const res = await fetch(`${API_BASE_URL}/questionnaire/${encodeURIComponent(slug)}/transcript`, {
+            method: 'POST',
+            credentials: 'omit',
+            body: fd
+        });
+        if (!res.ok) {
+            const body = await res.json().catch(() => ({}));
+            const err = new Error(body.error || 'Upload failed');
+            err.status = res.status;
+            throw err;
+        }
+        return res.json();
     }
 };
 

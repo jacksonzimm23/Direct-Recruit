@@ -419,3 +419,30 @@ body.q-body {
     .q-submit-btn { width: 100%; }
     .q-thankyou-cta-btn { width: 100%; }
 }
+
+.q-turnstile-row {
+    display: flex;
+    justify-content: center;
+    margin: 0 0 16px 0;
+}
+
+/* File-input + upload status (transcript) */
+.q-file-input {
+    display: block;
+    width: 100%;
+    padding: 10px 12px;
+    font-size: 14px;
+    border: 1px solid var(--border-strong);
+    border-radius: 6px;
+    background: var(--surface-alt);
+    cursor: pointer;
+}
+.q-file-input:focus { outline: none; border-color: var(--cerulean); }
+.q-file-status {
+    margin-top: 6px;
+    font-size: 13px;
+    color: #6b7280;
+    min-height: 18px;
+}
+.q-file-status-success { color: var(--success); font-weight: 600; }
+.q-file-status-error { color: var(--err); }

@@ -6173,3 +6173,24 @@ body.rb-shared-no-boards .recruiting-board-main .football-field-container {
         display: none;
     }
 }
+
+/* Transcript link in the questionnaire Academic section */
+.pool-field-transcript { margin-top: 8px; }
+.pool-detail-transcript-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    background: #fff4e8;
+    border: 1px solid #ff6b35;
+    border-radius: 6px;
+    color: #ff6b35;
+    font-weight: 600;
+    font-size: 13px;
+    text-decoration: none;
+    transition: background 0.15s, color 0.15s;
+}
+.pool-detail-transcript-link:hover {
+    background: #ff6b35;
+    color: #fff;
+}

@@ -615,6 +615,16 @@ class PipelineHandoff {
       catch { profileImageUrl = null; }
     }
 
+    // Sign the recruit's questionnaire transcript (if present) so the
+    // handoff modal can render the same "View Transcript" link the pool /
+    // pipeline cards show. Pure DR-direct recruits don't have a transcript.
+    let transcriptUrl = null;
+    const transcriptKeys = Array.isArray(academic.transcript_s3_keys) ? academic.transcript_s3_keys : [];
+    if (transcriptKeys.length > 0 && typeof transcriptKeys[0] === 'string' && transcriptKeys[0].startsWith('transcripts/anon/')) {
+      try { transcriptUrl = await getSignedS3Url(transcriptKeys[0]); }
+      catch { transcriptUrl = null; }
+    }
+
     return {
       id: row.pr_id,
       pool_entry_id: row.pr_pool_entry_id,
@@ -647,6 +657,7 @@ class PipelineHandoff {
       is_transfer: row.pp_transfer === 'y',
 
       profile_image_url: profileImageUrl,
+      transcript_url: transcriptUrl,
       source: row.pr_pool_entry_id ? 'pool' : 'dr_profile',
     };
   }

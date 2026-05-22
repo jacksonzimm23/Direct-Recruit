@@ -41,6 +41,14 @@
             <!-- Form sections injected by questionnaire.js -->
             <div id="qFormBody"></div>
 
+            <!-- Cloudflare Turnstile container. Widget is rendered explicitly
+                 by questionnaire.js once the GET response returns the public
+                 site key. Hidden entirely when no site key is configured
+                 (e.g. local dev) so the form still submits cleanly. -->
+            <div class="q-turnstile-row" id="qTurnstileRow" style="display: none;">
+                <div id="qTurnstileWidget"></div>
+            </div>
+
             <div class="q-submit-row">
                 <button type="submit" class="q-submit-btn" id="qSubmitBtn">Submit Questionnaire</button>
             </div>

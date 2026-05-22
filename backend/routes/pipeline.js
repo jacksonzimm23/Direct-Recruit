@@ -42,8 +42,9 @@ router.get('/contains', authMiddleware, requireRole('coach'), async (req, res) =
   try {
     const { player_user_id } = req.query;
     if (!player_user_id) return res.status(400).json({ error: 'player_user_id is required' });
-    const inPipeline = await PipelineRecruit.containsLinkedPlayerForCoach(req.userId, player_user_id);
-    res.json({ in_pipeline: inPipeline });
+    const result = await PipelineRecruit.containsLinkedPlayerForCoach(req.userId, player_user_id);
+    // result: { in_pipeline, recruit_id } — recruit_id is null when not in pipeline.
+    res.json(result);
   } catch (err) {
     logger.error('GET /pipeline/contains error:', err);
     res.status(500).json({ error: 'Failed to check pipeline status' });

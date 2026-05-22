@@ -1,10 +1,29 @@
 const express = require('express');
 const router = express.Router();
+const multer = require('multer');
 const pool = require('../config/database');
 const logger = require('../utils/logger');
 const { sanitizeBody } = require('../middleware/validation');
 const { questionnaireGetLimiter, questionnaireSubmitLimiter } = require('../middleware/rateLimit');
 const { sendQuestionnaireConfirmation } = require('../utils/email');
+const { uploadToS3, generateTranscriptKey } = require('../utils/s3');
+
+// Multer config dedicated to the anonymous-public transcript upload. Memory
+// storage (not disk) so the PDF buffer goes straight to S3 without touching
+// the EC2 disk. PDF-only via mimetype + extension check; magic-byte sniffing
+// happens inside the route handler before we hit S3.
+const TRANSCRIPT_MAX_BYTES = 5 * 1024 * 1024; // 5 MB
+const transcriptUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: TRANSCRIPT_MAX_BYTES, files: 1 },
+  fileFilter: (req, file, cb) => {
+    const ext = (file.originalname || '').toLowerCase().split('.').pop();
+    if (file.mimetype !== 'application/pdf' || ext !== 'pdf') {
+      return cb(new Error('Only PDF files are allowed.'));
+    }
+    cb(null, true);
+  }
+});
 
 // Build the DR signup CTA URL — pattern matches buildInviteLink in
 // admin-coach-verification.js and buildQuestionnaireUrl in recruiting-board.js.
@@ -22,6 +41,52 @@ function ensureMaxLen(value, max) {
   if (value === undefined || value === null) return true;
   if (typeof value !== 'string') return false;
   return value.length <= max;
+}
+
+// Cloudflare Turnstile verification. The submit endpoint is public, so it's
+// exposed to bot spam — a script that learns a school's slug could flood that
+// school's team pool with fake recruits. Turnstile is invisible to most real
+// users (CF auto-decides; managed widget mode) and adds a token to the submit
+// payload that we verify against CF's siteverify endpoint.
+//
+// Behavior by env:
+//   - TURNSTILE_SECRET_KEY missing in production  -> fail CLOSED (reject all
+//     submissions with 500). Loud-by-design so the operator notices.
+//   - TURNSTILE_SECRET_KEY missing in development -> skip verification with a
+//     one-time console warning. Local dev shouldn't need the integration.
+//   - Token missing / invalid                    -> 400 with a friendly error.
+async function verifyTurnstile(token, remoteIp) {
+  const secret = process.env.TURNSTILE_SECRET_KEY;
+  if (!secret) {
+    if (process.env.NODE_ENV === 'production') {
+      return { ok: false, fatal: true, status: 500, error: 'Verification is misconfigured. Please contact support.' };
+    }
+    if (!verifyTurnstile._warned) {
+      logger.warn('TURNSTILE_SECRET_KEY not set — skipping Turnstile verification (dev only).');
+      verifyTurnstile._warned = true;
+    }
+    return { ok: true, skipped: true };
+  }
+  if (!token || typeof token !== 'string') {
+    return { ok: false, status: 400, error: 'Please complete the verification challenge.' };
+  }
+  try {
+    const params = new URLSearchParams();
+    params.append('secret', secret);
+    params.append('response', token);
+    if (remoteIp) params.append('remoteip', remoteIp);
+    const resp = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+      method: 'POST',
+      body: params,
+    });
+    const data = await resp.json();
+    if (data && data.success === true) return { ok: true };
+    logger.warn('Turnstile verification rejected', { codes: data && data['error-codes'] });
+    return { ok: false, status: 400, error: 'Verification failed. Please try again.' };
+  } catch (err) {
+    logger.error('Turnstile siteverify network error:', err);
+    return { ok: false, status: 503, error: 'Verification service unavailable. Please try again.' };
+  }
 }
 
 // GET /api/questionnaire/:slug — public, no auth.
@@ -76,7 +141,10 @@ router.get('/:slug', questionnaireGetLimiter, async (req, res) => {
         college_division: collegeDivision,
         state,
         city
-      }
+      },
+      // Public site key for the Turnstile widget on the form. Null when not
+      // configured (dev / unset env) — frontend treats null as "skip widget".
+      turnstile_site_key: process.env.TURNSTILE_SITE_KEY || null
     });
   } catch (err) {
     logger.error('Public questionnaire GET error:', err);
@@ -84,10 +152,82 @@ router.get('/:slug', questionnaireGetLimiter, async (req, res) => {
   }
 });
 
+// POST /api/questionnaire/:slug/transcript — public, no auth, rate-limited.
+// Accepts a single PDF (5 MB max), uploads it to S3, returns the S3 key. The
+// frontend stashes the key in submission_data.academic.transcript_s3_keys
+// and sends it along with the eventual /submit call.
+//
+// Defense layers:
+//  - Multer file filter rejects non-PDF mimetype + non-.pdf extension
+//  - 5 MB size cap enforced by multer
+//  - Magic-byte sniff (%PDF-) defeats content-type spoofing
+//  - Per-IP rate limit (reuses the submit limiter — same 1h / 5 req cap)
+//  - Email param required + validated; S3 key shards by email-hash for traceability
+router.post('/:slug/transcript', questionnaireSubmitLimiter, (req, res, next) => {
+  transcriptUpload.single('transcript')(req, res, (err) => {
+    if (err) {
+      if (err.code === 'LIMIT_FILE_SIZE') {
+        return res.status(400).json({ error: 'Transcript must be 5 MB or smaller.' });
+      }
+      return res.status(400).json({ error: err.message || 'Upload failed.' });
+    }
+    next();
+  });
+}, async (req, res) => {
+  try {
+    const slug = (req.params.slug || '').trim().toLowerCase();
+    if (!slug) return res.status(404).json({ error: 'Questionnaire not found' });
+
+    // Verify the slug exists. We don't need anything from it for the upload
+    // itself, but this rejects scattershot uploads to garbage slugs early
+    // (before paying for the S3 PutObject).
+    const qLookup = await pool.query(
+      `SELECT 1 FROM team_questionnaires WHERE slug = $1 LIMIT 1`,
+      [slug]
+    );
+    if (!qLookup.rows[0]) return res.status(404).json({ error: 'Questionnaire not found' });
+
+    if (!req.file || !req.file.buffer) {
+      return res.status(400).json({ error: 'No file received.' });
+    }
+
+    // Magic-byte sniff. Real PDFs start with the 5-byte ASCII sequence "%PDF-".
+    // A spoofed content-type can fool multer's filter; the magic bytes can't
+    // be faked without actually building a PDF (at which point we don't care).
+    const buf = req.file.buffer;
+    if (buf.length < 5 || buf[0] !== 0x25 || buf[1] !== 0x50 || buf[2] !== 0x44 || buf[3] !== 0x46 || buf[4] !== 0x2D) {
+      return res.status(400).json({ error: 'File does not look like a valid PDF.' });
+    }
+
+    // Pull the email from the form field. Required so the S3 key can shard
+    // by recruit (same recruit's resubmissions group under the same hash).
+    const emailRaw = typeof req.body.email === 'string' ? req.body.email.trim().toLowerCase() : '';
+    const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRaw || emailRaw.length > 255 || !emailRe.test(emailRaw)) {
+      return res.status(400).json({ error: 'A valid email is required to upload a transcript.' });
+    }
+
+    const key = generateTranscriptKey(emailRaw, req.file.originalname || 'transcript.pdf');
+    await uploadToS3(buf, key, 'application/pdf');
+
+    return res.json({ success: true, s3_key: key });
+  } catch (err) {
+    logger.error('Transcript upload error:', err);
+    return res.status(500).json({ error: 'Upload failed. Please try again.' });
+  }
+});
+
 // POST /api/questionnaire/:slug/submit — public, no auth, rate-limited, sanitized.
 // Inserts an immutable submission row and upserts the pool entry. If the email
 // matches an existing DR user, both rows are linked.
 router.post('/:slug/submit', questionnaireSubmitLimiter, sanitizeBody, async (req, res) => {
+  // Verify Turnstile FIRST so bot traffic never touches the DB. Runs before
+  // the slug lookup to keep the failure path cheap (no pool client checkout).
+  const turnstileResult = await verifyTurnstile(req.body && req.body.turnstile_token, req.ip);
+  if (!turnstileResult.ok) {
+    return res.status(turnstileResult.status).json({ error: turnstileResult.error });
+  }
+
   const client = await pool.connect();
   try {
     const slug = (req.params.slug || '').trim().toLowerCase();
@@ -171,9 +311,26 @@ router.post('/:slug/submit', questionnaireSubmitLimiter, sanitizeBody, async (re
     if (!ensureMaxLen(academic.intended_major, 200)) return res.status(400).json({ error: 'Intended major too long' });
     if (!ensureMaxLen(academic.ncaa_id, 20)) return res.status(400).json({ error: 'NCAA ID too long' });
     if (!ensureMaxLen(academic.honors, 500)) return res.status(400).json({ error: 'Academic honors too long' });
-    // Plan 2 does NOT support file uploads — coerce key arrays to []
-    academic.transcript_s3_keys = [];
+    // Test-score uploads still not supported.
     academic.test_score_s3_keys = [];
+    // Transcript: accept at most one key, validate it's a recruit-uploaded PDF
+    // key. The frontend uploads via /transcript and pastes the returned key
+    // here — anything else is rejected so a hostile client can't reference
+    // arbitrary S3 objects (e.g. profile images) and have the coach UI render
+    // them as transcripts. Empty / missing → coerce to [].
+    if (academic.transcript_s3_keys === undefined || academic.transcript_s3_keys === null) {
+      academic.transcript_s3_keys = [];
+    } else if (!Array.isArray(academic.transcript_s3_keys)) {
+      return res.status(400).json({ error: 'transcript_s3_keys must be an array' });
+    } else if (academic.transcript_s3_keys.length > 1) {
+      return res.status(400).json({ error: 'Only one transcript is allowed' });
+    } else {
+      for (const k of academic.transcript_s3_keys) {
+        if (typeof k !== 'string' || !k.startsWith('transcripts/anon/') || !k.toLowerCase().endsWith('.pdf') || k.length > 200) {
+          return res.status(400).json({ error: 'Invalid transcript reference' });
+        }
+      }
+    }
 
     // Athletic
     const athletic = submissionData.athletic && typeof submissionData.athletic === 'object' ? submissionData.athletic : {};

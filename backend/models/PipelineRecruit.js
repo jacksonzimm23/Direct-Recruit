@@ -283,9 +283,9 @@ class PipelineRecruit {
    * via a pool entry whose linked_player_user_id was auto-populated.
    */
   static async containsLinkedPlayerForCoach(coachUserId, playerUserId) {
-    if (!playerUserId) return false;
+    if (!playerUserId) return { in_pipeline: false, recruit_id: null };
     const result = await pool.query(
-      `SELECT 1
+      `SELECT id
          FROM pipeline_recruits
         WHERE coach_user_id = $1
           AND linked_player_user_id = $2
@@ -293,7 +293,10 @@ class PipelineRecruit {
         LIMIT 1`,
       [coachUserId, playerUserId]
     );
-    return result.rows.length > 0;
+    if (result.rows.length === 0) {
+      return { in_pipeline: false, recruit_id: null };
+    }
+    return { in_pipeline: true, recruit_id: result.rows[0].id };
   }
 
   /**
@@ -408,7 +411,8 @@ class PipelineRecruit {
         pp.state AS pp_state,
         pp.profile_image_url AS pp_profile_image_s3_key,
         pp.college_division AS pp_college_division,
-        pp.transfer AS pp_transfer
+        pp.transfer AS pp_transfer,
+        pp.eligibility AS pp_eligibility
       FROM pipeline_recruits pr
       LEFT JOIN pool_entries pe ON pe.id = pr.pool_entry_id
       LEFT JOIN questionnaire_submissions qs ON qs.id = pe.latest_submission_id
@@ -435,6 +439,17 @@ class PipelineRecruit {
     if (drLinked && row.pp_profile_image_s3_key && row.pp_profile_image_s3_key.startsWith('profiles/')) {
       try { profileImageUrl = await getSignedS3Url(row.pp_profile_image_s3_key); }
       catch { profileImageUrl = null; }
+    }
+
+    // Transcript PDF (questionnaire-sourced only). Pipeline rows added from a
+    // DR profile have no questionnaire submission, so no transcript. We surface
+    // the signed URL on the shaped row so the pipeline card / modal can render
+    // a "View Transcript" link without a second roundtrip.
+    let transcriptUrl = null;
+    const transcriptKeys = Array.isArray(academic.transcript_s3_keys) ? academic.transcript_s3_keys : [];
+    if (transcriptKeys.length > 0 && typeof transcriptKeys[0] === 'string' && transcriptKeys[0].startsWith('transcripts/anon/')) {
+      try { transcriptUrl = await getSignedS3Url(transcriptKeys[0]); }
+      catch { transcriptUrl = null; }
     }
 
     // Cross-coach: every other coach at the same school who has this recruit
@@ -484,8 +499,10 @@ class PipelineRecruit {
       team_name: row.pp_team_name || null,
       college_division: row.pp_college_division || null,
       is_transfer: row.pp_transfer === 'y',
+      eligibility: row.pp_eligibility != null ? row.pp_eligibility : null,
 
       profile_image_url: profileImageUrl,
+      transcript_url: transcriptUrl,
       // Source signal for the card badge: 'pool' or 'dr_profile'
       source: row.pool_entry_id ? 'pool' : 'dr_profile',
       // Full latest questionnaire submission JSONB (null for DR-only recruits

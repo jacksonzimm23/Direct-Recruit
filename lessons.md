@@ -1101,6 +1101,17 @@ DO NOT run seed
 
 112. **`.btn-submit` in [recruiting-board.css](frontend/collegecoach/tabs/recruiting-board.css) is footer-scoped (`.recruiting-board-modal-footer .btn-submit`), so in-body buttons that need the orange-primary look must restate the styling explicitly.** Symptom: the button renders as the bare-default native browser `<button>` — white background, system font, no padding. Fix is to add per-id rules (e.g. `#evalAddOrEditGradeBtn, #evalFinalGradeSaveBtn, #gradeEntrySaveBtn { background: var(--accent-orange); … }`) plus matching `:hover:not(:disabled)` and `:disabled` rules. When adding any new in-body primary action button to this page, either name it in the per-id rule block or move the button into the modal footer.
 
+113. **AI Report (3-sentence Claude summary above the Evaluation tab's grading list) is a deferred future feature — spec'd in [pipeline.md](pipeline.md) Plan 7 but intentionally NOT built.** The plan calls for an AI-generated `{summary, pro, con}` blob that types in (typewriter animation) above the per-coach grading rows inside the unified `#evaluationModal` Evaluation tab — placed under the Add/Edit Grade button and above the evaluation list. Caching is keyed to a SHA-256 hash of the normalized `evaluation_chain` content (sorted by `evaluated_at`, coach name stripped, notes trimmed) so the same chain state across coaches is one Claude call shared by all viewers; only a new evaluation invalidates the cache via hash change. Dedicated `pipeline_ai_reports` table per the spec — keyed on `(school_key, recruit_identity_key, evaluation_chain_hash)`.
+
+    **If/when this gets built:**
+    - Use the existing `direct-recruit-PI` Anthropic key (lower-volume than the RA key, so spare capacity); do NOT spin up a third key. Per-feature attribution already lives in `ai_analytics.ai_type` — add `pipeline_ai_report` as a new enum value.
+    - Migration number is **039** (not 038 — Plan 6's soft-delete shipped as `038_add_pipeline_soft_delete.sql`; pipeline.md's Plan 7 text says 038 but that's stale).
+    - The `/api/pipeline/evaluations` response shape (with `is_active` + `is_mine` + `recruit_id` per lesson #111) is the natural data source for the chain content — no new join needed; just hash the rows the modal already fetches.
+    - The Evaluation tab list is already wired through `loadEvaluationsForModal()` in [recruiting-board.js](frontend/collegecoach/tabs/recruiting-board.js); the AI Report card mounts inside `#evalEvaluationsList`'s parent `.eval-tab-content[data-eval-tab-content="evaluation"]` between the `.eval-evaluations-header` (Add/Edit Grade button) and the `<ol id="evalEvaluationsList">`.
+    - Cost is trivial (~$4.50/team/season at the upper bound per the spec's math), so feature gating doesn't need a new tier — it folds into the existing combined token pool with RA + PI.
+
+    **Why deferred:** the feature is purely UX polish on top of an already-functional Evaluation tab. A coaching staff can read the per-coach grades + notes themselves; the AI summary saves a few seconds per recruit-open, but adds Claude API spend, a new migration, a new util, a new prompt to maintain, and a typewriter animation that needs cross-browser testing. Worth shipping later if usage data shows coaches are spending time skimming long chains — not worth shipping now when the chain is usually 1–2 entries.
+
 ---
 
 ## Credential Rotation Log
@@ -1114,4 +1125,28 @@ DO NOT run seed
 | 2026-05-12 | `AWS_COGNITO_CLIENT_SECRET` | Verified by signing in fresh. |
 | 2026-05-12 | `DB_PASSWORD` | RDS master password for `direct-recruit-db`. Modified via RDS console with Apply Immediately. |
 | 2026-05-12 | `JWT_SECRET` | Logged out all existing sessions (expected). Verified by signing in fresh. |
+
+
+## Anonymous Public File Uploads (Questionnaire Transcripts)
+
+111. **Pattern for anonymous file uploads from a public endpoint.** The public questionnaire (no auth, no userId) accepts a PDF transcript upload via `POST /api/questionnaire/:slug/transcript`. The defense stack — same pattern works for any future anonymous upload:
+
+    1. **Dedicated multer instance** with `memoryStorage()` (so the buffer goes straight to S3, never touches the EC2 disk).
+    2. **File filter**: mimetype check + extension check at the multer layer.
+    3. **Size cap** in `limits.fileSize` (5 MB for transcripts).
+    4. **Magic-byte sniff** inside the route handler before calling `uploadToS3()`. PDFs start with `%PDF-` (`25 50 44 46 2D`). Defeats content-type spoofing.
+    5. **Per-IP rate limit** (reused `questionnaireSubmitLimiter` — 5 req/hr in prod).
+    6. **Slug existence check** before hitting S3 — rejects scattershot uploads to garbage slugs early so the S3 PutObject cost only applies to real recruits.
+    7. **Email required + validated** on the upload endpoint (the S3 key is sharded by SHA-256 hash of the lowercased email — `transcripts/anon/<hash-prefix>-<ts>-<rand>.<ext>` — so a single recruit's resubmissions group together, and raw PII is never in the key path).
+    8. **`/submit` validates the returned key** — must be a string starting with `transcripts/anon/` and ending in `.pdf`, max length 200 chars. Defends against a hostile client trying to reference arbitrary S3 objects (e.g. another player's profile image) and have the coach UI render them as a transcript.
+
+    Files: `backend/routes/questionnaire.js` (upload handler + /submit key validation), `backend/utils/s3.js` (`generateTranscriptKey`).
+
+112. **JSONB submission data + signed URLs at read time.** The transcript key is stored inside `questionnaire_submissions.submission_data.academic.transcript_s3_keys` (a JSONB array) — no schema migration needed since `submission_data` is already JSONB. On read, the four places that surface questionnaire data to the coach UI each sign the latest transcript key into a top-level `transcript_url`:
+    - `GET /recruiting-board/my-pool` (pool list shaper, recruiting-board.js)
+    - `GET /recruiting-board/my-pool/:entryId` (detail shaper)
+    - `PipelineRecruit._shapeRow()` (pipeline list + handoff accept response)
+    - `PipelineHandoff._shapeRecruitFromJoinedRow()` (handoff in/out lists)
+
+    The coach UI's shared `renderQuestionnaireView(d, transcriptUrl)` helper renders a "View transcript (PDF)" link in the Academic section when a URL is present. Single source of truth — adding it to the helper means every modal that uses it (pool detail, pipeline modal, board info modal) gets the link automatically.
 

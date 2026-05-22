@@ -6,7 +6,7 @@ const TeamQuestionnaire = require('../models/TeamQuestionnaire');
 const PipelineRecruit = require('../models/PipelineRecruit');
 const Notification = require('../models/Notification');
 const { notifyUser } = require('../utils/notifications');
-const { authMiddleware, requireRole, validateUUID } = require('../middleware/auth');
+const { authMiddleware, requireRole, validateUUID, UUID_REGEX } = require('../middleware/auth');
 const { escapeLikePattern } = require('../middleware/validation');
 const pool = require('../config/database');
 const { getSignedS3Url } = require('../utils/s3');
@@ -790,6 +790,16 @@ router.get('/my-pool', authMiddleware, requireRole('coach'), async (req, res) =>
         catch (_) { profileImageUrl = null; }
       }
 
+      // Sign the transcript PDF S3 key (if present). At most one key per
+      // submission; we take the first. Frontend surfaces this as a download
+      // link on the recruit card / detail modal.
+      let transcriptUrl = null;
+      const transcriptKeys = Array.isArray(academic.transcript_s3_keys) ? academic.transcript_s3_keys : [];
+      if (transcriptKeys.length > 0 && typeof transcriptKeys[0] === 'string' && transcriptKeys[0].startsWith('transcripts/anon/')) {
+        try { transcriptUrl = await getSignedS3Url(transcriptKeys[0]); }
+        catch (_) { transcriptUrl = null; }
+      }
+
       return {
         id: row.id,
         email: row.email,
@@ -812,6 +822,7 @@ router.get('/my-pool', authMiddleware, requireRole('coach'), async (req, res) =>
         last_submitted_at: row.last_submitted_at,
         linked_player_user_id: row.linked_player_user_id,
         profile_image_url: profileImageUrl,
+        transcript_url: transcriptUrl,
         is_in_my_pipeline: row.in_my_pipeline === true,
         is_in_any_pipeline_at_school: row.in_any_pipeline_at_school === true
       };
@@ -903,6 +914,18 @@ router.get('/my-pool/:entryId', authMiddleware, requireRole('coach'), validateUU
     );
     const pip = pipResult.rows[0] || {};
 
+    // Sign the transcript URL from the LATEST submission (subsResult is
+    // chronological ASC, so the last row is newest). Surfaced at the entry
+    // top level so the modal can render a download button without digging
+    // into submissions[].submission_data.academic.transcript_s3_keys.
+    let entryTranscriptUrl = null;
+    const latestSub = subsResult.rows.length > 0 ? subsResult.rows[subsResult.rows.length - 1] : null;
+    const latestTKeys = latestSub && latestSub.submission_data && latestSub.submission_data.academic && latestSub.submission_data.academic.transcript_s3_keys;
+    if (Array.isArray(latestTKeys) && latestTKeys[0] && typeof latestTKeys[0] === 'string' && latestTKeys[0].startsWith('transcripts/anon/')) {
+      try { entryTranscriptUrl = await getSignedS3Url(latestTKeys[0]); }
+      catch { entryTranscriptUrl = null; }
+    }
+
     res.json({
       entry: {
         id: entry.id,
@@ -915,6 +938,7 @@ router.get('/my-pool/:entryId', authMiddleware, requireRole('coach'), validateUU
         // URL at the top level so the modal header doesn't have to dig into
         // dr_profile for the avatar.
         profile_image_url: (drProfile && drProfile.profile_image_url) || null,
+        transcript_url: entryTranscriptUrl,
         is_in_my_pipeline: pip.in_my_pipeline === true,
         is_in_any_pipeline_at_school: pip.in_any_pipeline_at_school === true
       },
@@ -1097,6 +1121,27 @@ router.post('/groups/:groupId/invite', authMiddleware, requireRole('coach'), val
       return res.status(400).json({ error: 'permission must be "viewer" or "editor"' });
     }
     const perm = permission || 'viewer';
+
+    // Hard same-school restriction. The search-coaches picker filters by
+    // school_key for the UI, but the invite POST must enforce it server-side
+    // too — otherwise a crafted request can invite any coach by UUID. Mirrors
+    // the PipelineHandoff recipient check (cross-school = 403).
+    const sameSchoolCheck = await pool.query(
+      `SELECT
+         (SELECT team_name FROM coach_profiles WHERE user_id = $1 LIMIT 1) AS sender_team,
+         (SELECT team_name FROM coach_profiles WHERE user_id = $2 LIMIT 1) AS invitee_team`,
+      [req.userId, inviteeUserId]
+    );
+    const senderTeam = sameSchoolCheck.rows[0] && sameSchoolCheck.rows[0].sender_team;
+    const inviteeTeam = sameSchoolCheck.rows[0] && sameSchoolCheck.rows[0].invitee_team;
+    const senderKey = TeamQuestionnaire.normalizeSchoolKey(senderTeam);
+    const inviteeKey = TeamQuestionnaire.normalizeSchoolKey(inviteeTeam);
+    if (!senderKey) {
+      return res.status(400).json({ error: 'Set your team name in My Profile before inviting coaches.' });
+    }
+    if (!inviteeKey || inviteeKey !== senderKey) {
+      return res.status(403).json({ error: 'You can only invite coaches from your school.' });
+    }
 
     // Already a member?
     const already = await BoardGroup.getMembership(req.params.groupId, inviteeUserId);
@@ -1351,6 +1396,7 @@ router.post('/invite/accept', authMiddleware, requireRole('coach'), async (req, 
   try {
     const { notificationId, groupId } = req.body;
     if (!groupId) return res.status(400).json({ error: 'Group ID is required' });
+    if (!UUID_REGEX.test(groupId)) return res.status(400).json({ error: 'Invalid group ID format' });
 
     // Look up the invite notification to recover the proposed permission.
     // Entity type is 'group_invite' (viewer) or 'group_invite_editor' (editor).
@@ -1371,7 +1417,40 @@ router.post('/invite/accept', authMiddleware, requireRole('coach'), async (req, 
     const senderId = inviteRow.related_user_id;
     const perm = inviteRow.related_entity_type === 'group_invite_editor' ? 'editor' : 'viewer';
 
-    // Add the member (also enforces invitee's 5-group cap).
+    // Defense in depth: re-check same-school at accept time. The invite POST
+    // gates on school_key, but a coach may have changed their team_name after
+    // the invite was sent — in which case the invite is stale and must not
+    // resolve. Also catches any invite that pre-dates the POST-side check.
+    // Look up the school_key of an existing group member (any one) to compare
+    // against the accepter's current school.
+    const memberSchoolResult = await pool.query(
+      `SELECT cp.team_name
+         FROM board_group_members m
+         JOIN coach_profiles cp ON cp.user_id = m.user_id
+        WHERE m.group_id = $1
+        LIMIT 1`,
+      [groupId]
+    );
+    const accepterCpResult = await pool.query(
+      `SELECT team_name FROM coach_profiles WHERE user_id = $1 LIMIT 1`,
+      [req.userId]
+    );
+    const groupSchoolKey = TeamQuestionnaire.normalizeSchoolKey(
+      memberSchoolResult.rows[0] && memberSchoolResult.rows[0].team_name
+    );
+    const accepterSchoolKey = TeamQuestionnaire.normalizeSchoolKey(
+      accepterCpResult.rows[0] && accepterCpResult.rows[0].team_name
+    );
+    if (!accepterSchoolKey || !groupSchoolKey || accepterSchoolKey !== groupSchoolKey) {
+      // Delete the stale invite so it doesn't sit in the modal forever.
+      await pool.query(
+        `DELETE FROM notifications WHERE id = $1 AND user_id = $2`,
+        [inviteRow.id, req.userId]
+      );
+      return res.status(403).json({ error: 'You can only join groups from your school.' });
+    }
+
+    // Add the member (also enforces invitee's per-user group cap).
     try {
       await BoardGroup.addMember(groupId, req.userId, req.userId, perm);
     } catch (err) {
@@ -1432,6 +1511,9 @@ router.post('/invite/accept', authMiddleware, requireRole('coach'), async (req, 
 router.post('/invite/decline', authMiddleware, requireRole('coach'), async (req, res) => {
   try {
     const { notificationId, groupId } = req.body;
+    if (groupId && !UUID_REGEX.test(groupId)) {
+      return res.status(400).json({ error: 'Invalid group ID format' });
+    }
 
     // Find the invite row + delete it. is_read state is ignored — the Invites
     // modal flips invites to read when it opens; the row itself only goes away

@@ -92,7 +92,7 @@ class BoardGroup {
   // ---------- Writes (group lifecycle) ----------
 
   // Create a new group. The creator becomes owner + 'editor' member. Enforces
-  // the 5-group cap.
+  // the per-user group cap (GROUPS_PER_USER_CAP — currently 1).
   static async createGroup(userId, groupName) {
     const trimmed = (groupName || '').trim();
     if (!trimmed) throw new Error('Group name is required');
@@ -292,7 +292,7 @@ class BoardGroup {
 
   // Add a member directly (no invite step). Used internally when an invite is
   // accepted. Editor-or-owner only on the requester side. Enforces invitee's
-  // 5-group cap.
+  // per-user group cap (GROUPS_PER_USER_CAP — currently 1).
   static async addMember(groupId, requesterId, targetId, permission) {
     if (permission !== 'viewer' && permission !== 'editor') {
       throw new Error('Permission must be "viewer" or "editor"');

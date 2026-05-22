@@ -121,6 +121,22 @@ function generateMessageMediaKey(userId, originalFilename, mediaType = 'image') 
   return `message-media/${userId}/${mediaType}-${timestamp}-${randomId}.${extension}`;
 }
 
+/**
+ * Generate S3 key for an anonymous questionnaire transcript upload. The
+ * submitter has no DR account yet, so we shard by SHA-256 hash of the
+ * lowercased email (avoids stuffing raw PII into the key path while still
+ * grouping a single recruit's resubmissions). A random suffix keeps re-uploads
+ * by the same recruit from colliding.
+ */
+function generateTranscriptKey(emailLower, originalFilename) {
+  const crypto = require('crypto');
+  const hash = crypto.createHash('sha256').update(String(emailLower || '').trim().toLowerCase()).digest('hex').slice(0, 16);
+  const extension = (originalFilename && originalFilename.split('.').pop() || 'pdf').toLowerCase();
+  const timestamp = Date.now();
+  const randomId = Math.random().toString(36).substring(2, 8);
+  return `transcripts/anon/${hash}-${timestamp}-${randomId}.${extension}`;
+}
+
 module.exports = {
   uploadToS3,
   getSignedS3Url,
@@ -130,6 +146,7 @@ module.exports = {
   generateHighlightVideoKey,
   generatePostMediaKey,
   generateMessageMediaKey,
+  generateTranscriptKey,
   s3Client,
   BUCKET_NAME
 };

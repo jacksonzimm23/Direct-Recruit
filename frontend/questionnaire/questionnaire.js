@@ -5,6 +5,24 @@
 (function () {
     'use strict';
 
+    // ---------- Module-scope state ----------
+    // Public site key returned by GET /questionnaire/:slug. Null when Turnstile
+    // is unconfigured (dev) — frontend skips the widget entirely in that case.
+    let TURNSTILE_SITE_KEY = null;
+    // Cloudflare's render() returns a widget id we need for getResponse() and
+    // reset() calls after submit. null until the script loads and renders.
+    let turnstileWidgetId = null;
+    // S3 key returned by POST /questionnaire/:slug/transcript after a
+    // successful upload. Stays null when no transcript was uploaded.
+    // Included as a single-element array in submission_data.academic
+    // .transcript_s3_keys on submit.
+    let uploadedTranscriptKey = null;
+    // True between file-pick and upload-complete. Submit is blocked while
+    // true so the transcript reference isn't lost.
+    let transcriptUploadInProgress = false;
+    // Max transcript size (must match the backend limit).
+    const TRANSCRIPT_MAX_BYTES = 5 * 1024 * 1024;
+
     // ---------- Constants ----------
     const STATES_50 = [
         ['AL','Alabama'],['AK','Alaska'],['AZ','Arizona'],['AR','Arkansas'],['CA','California'],
@@ -261,6 +279,23 @@
             makeInput({ id: 'act_score', label: 'ACT Score', optional: true, type: 'number', min: 1, max: 36 })
         ));
         sec.appendChild(makeTextarea({ id: 'academic_honors', label: 'Academic Honors', optional: true, maxLength: 500, placeholder: 'Honors, awards, GPA distinctions, etc.' }));
+
+        // Transcript upload (optional). PDF-only, 5 MB max. Validation +
+        // upload wiring happens in wireTranscriptUpload(); we just declare
+        // the DOM here. The status line is updated by the upload handler.
+        const transcriptGroup = el('div', { className: 'q-form-group' });
+        transcriptGroup.appendChild(el('label', { className: 'q-label', htmlFor: 'transcript_file' },
+            'Academic Transcript ', el('span', { className: 'q-optional' }, '(PDF, optional, 5 MB max)')
+        ));
+        transcriptGroup.appendChild(el('input', {
+            type: 'file',
+            id: 'transcript_file',
+            className: 'q-file-input',
+            accept: 'application/pdf,.pdf'
+        }));
+        transcriptGroup.appendChild(el('div', { className: 'q-file-status', id: 'transcript_status' }, ''));
+        sec.appendChild(transcriptGroup);
+
         return sec;
     }
 
@@ -406,7 +441,7 @@
                 sat_score: n('sat_score'),
                 act_score: n('act_score'),
                 honors: v('academic_honors') || null,
-                transcript_s3_keys: [],
+                transcript_s3_keys: uploadedTranscriptKey ? [uploadedTranscriptKey] : [],
                 test_score_s3_keys: []
             },
             athletic: {
@@ -473,6 +508,114 @@
         });
     }
 
+    // Load the Turnstile script (once) and render the widget into #qTurnstileWidget.
+    // Uses explicit rendering (data-render=onload-callback) so we can control
+    // exactly when render() runs — no race against the inline DOM at parse time.
+    function setupTurnstile() {
+        if (!TURNSTILE_SITE_KEY) return; // dev / unconfigured: skip the widget entirely
+        const row = $('qTurnstileRow');
+        if (row) row.style.display = '';
+
+        // Define the onload callback BEFORE injecting the script so Cloudflare
+        // finds it when the script loads.
+        window._drTurnstileOnload = function () {
+            if (!window.turnstile || !window.turnstile.render) return;
+            turnstileWidgetId = window.turnstile.render('#qTurnstileWidget', {
+                sitekey: TURNSTILE_SITE_KEY,
+                theme: 'light',
+                // 'managed' is set on the CF dashboard; no client option needed.
+            });
+        };
+
+        if (document.querySelector('script[data-dr-turnstile]')) return; // already injected
+        const s = document.createElement('script');
+        s.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?onload=_drTurnstileOnload&render=explicit';
+        s.async = true;
+        s.defer = true;
+        s.setAttribute('data-dr-turnstile', '1');
+        document.head.appendChild(s);
+    }
+
+    // Read the current Turnstile token. Returns null when the widget isn't
+    // configured (dev) — server will skip verification in that case too.
+    function getTurnstileToken() {
+        if (!TURNSTILE_SITE_KEY) return null;
+        if (window.turnstile && turnstileWidgetId !== null) {
+            return window.turnstile.getResponse(turnstileWidgetId) || '';
+        }
+        return '';
+    }
+
+    function resetTurnstile() {
+        if (window.turnstile && turnstileWidgetId !== null) {
+            try { window.turnstile.reset(turnstileWidgetId); } catch (_) {}
+        }
+    }
+
+    // Wire the transcript file input. On change: validate, upload, update
+    // status. The upload requires the recruit's email (sent as a form field
+    // and validated server-side) so we don't fire if the email is missing —
+    // we politely surface that requirement instead of bouncing on the server.
+    function wireTranscriptUpload() {
+        const input = $('transcript_file');
+        const status = $('transcript_status');
+        if (!input) return;
+
+        input.addEventListener('change', async function() {
+            uploadedTranscriptKey = null;
+            const file = input.files && input.files[0];
+            if (!file) {
+                status.textContent = '';
+                status.className = 'q-file-status';
+                return;
+            }
+            // Client-side filter — server enforces the same rules + magic bytes.
+            const isPdfType = file.type === 'application/pdf';
+            const isPdfExt = file.name.toLowerCase().endsWith('.pdf');
+            if (!isPdfType || !isPdfExt) {
+                status.textContent = 'Only PDF files are allowed.';
+                status.className = 'q-file-status q-file-status-error';
+                input.value = '';
+                return;
+            }
+            if (file.size > TRANSCRIPT_MAX_BYTES) {
+                status.textContent = 'File is too large (5 MB max).';
+                status.className = 'q-file-status q-file-status-error';
+                input.value = '';
+                return;
+            }
+            // Require the email field to be filled first (the upload endpoint
+            // needs it to shard the S3 key). Prompt and bail without firing.
+            const email = ($('email') && $('email').value || '').trim();
+            const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!email || !emailRe.test(email)) {
+                status.textContent = 'Please fill in your email above before uploading a transcript.';
+                status.className = 'q-file-status q-file-status-error';
+                input.value = '';
+                return;
+            }
+
+            transcriptUploadInProgress = true;
+            status.textContent = 'Uploading…';
+            status.className = 'q-file-status';
+            try {
+                const slug = getSlug();
+                const result = await API.questionnaire.uploadTranscript(slug, file, email);
+                uploadedTranscriptKey = result && result.s3_key ? result.s3_key : null;
+                if (!uploadedTranscriptKey) throw new Error('Upload did not return a file reference.');
+                status.textContent = '✓ Transcript uploaded (' + file.name + ')';
+                status.className = 'q-file-status q-file-status-success';
+            } catch (err) {
+                uploadedTranscriptKey = null;
+                status.textContent = (err && err.message) || 'Upload failed. Please try again.';
+                status.className = 'q-file-status q-file-status-error';
+                input.value = '';
+            } finally {
+                transcriptUploadInProgress = false;
+            }
+        });
+    }
+
     function wireSubmit() {
         const form = $('qForm');
         form.addEventListener('submit', async function(ev) {
@@ -490,11 +633,32 @@
                 return;
             }
 
+            // Pull the Turnstile token (null when widget isn't configured —
+            // server skips verification in that case). When the widget IS
+            // configured but the user hasn't completed the challenge yet,
+            // getTurnstileToken() returns '' — block submit with a hint.
+            const turnstileToken = getTurnstileToken();
+            if (TURNSTILE_SITE_KEY && !turnstileToken) {
+                if (typeof showToast === 'function') showToast('Please complete the verification challenge.', 'error');
+                return;
+            }
+
+            // Don't let submit race the transcript upload. If the recruit
+            // is still uploading their PDF, blocking here keeps the key from
+            // being lost.
+            if (transcriptUploadInProgress) {
+                if (typeof showToast === 'function') showToast('Please wait for the transcript upload to finish.', 'error');
+                return;
+            }
+
             btn.disabled = true;
             btn.textContent = 'Submitting...';
             try {
                 const slug = getSlug();
-                await API.questionnaire.submit(slug, { submission_data: submissionData });
+                await API.questionnaire.submit(slug, {
+                    submission_data: submissionData,
+                    turnstile_token: turnstileToken
+                });
                 // Swap to thank-you state
                 $('qForm').style.display = 'none';
                 $('qThankYou').style.display = 'block';
@@ -506,6 +670,9 @@
                 btn.disabled = false;
                 btn.textContent = 'Submit Questionnaire';
                 if (typeof showToast === 'function') showToast(err.message || 'Submission failed. Please try again.', 'error');
+                // Turnstile tokens are single-use. Reset so the user can submit
+                // again without a stale-token rejection on the next attempt.
+                resetTurnstile();
             }
         });
     }
@@ -522,8 +689,14 @@
         try {
             const resp = await API.questionnaire.get(slug);
             SCHOOL = resp.school || { team_name: '' };
+            // GET response carries the public Turnstile site key (null when
+            // unconfigured). Stash it before renderForm() so setupTurnstile()
+            // can decide whether to render the widget.
+            TURNSTILE_SITE_KEY = resp.turnstile_site_key || null;
             await renderHeader();
             renderForm();
+            setupTurnstile();
+            wireTranscriptUpload();
             wireSubmit();
             showForm();
         } catch (err) {

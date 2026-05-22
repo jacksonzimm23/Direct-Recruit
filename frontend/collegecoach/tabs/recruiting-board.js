@@ -3407,16 +3407,17 @@ document.addEventListener('DOMContentLoaded', async function() {
                  <circle cx="12" cy="7" r="4"></circle>
                </svg>`;
 
-        // Badges (DR member, resubmitted, + Plan 4 cross-coach checkmark)
+        // Badges (DR member + Plan 4 cross-coach checkmark). Resubmission
+        // badge intentionally omitted from the row — a new submission
+        // already bumps the recruit to the top of the list (sorted by
+        // last_submitted_at DESC), and the detail modal still surfaces the
+        // full submission history.
         const badges = [];
         if (entry.is_in_any_pipeline_at_school) {
             badges.push('<span class="rb-pool-row-check" title="Already in a coach’s pipeline at this school">✓</span>');
         }
         if (hasAccount) {
             badges.push('<span class="rb-pool-row-badge dr">DR Member</span>');
-        }
-        if (entry.submission_count && entry.submission_count > 1) {
-            badges.push(`<span class="rb-pool-row-badge resubmitted">Resubmitted ${entry.submission_count}x</span>`);
         }
 
         // Plan 4 "Add to My Pipeline" action button (or disabled "In Your Pipeline")
@@ -3563,7 +3564,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                 resubBadge.textContent = `Resubmitted ${entry.submission_count}x`;
             }
 
-            qBody.innerHTML = renderQuestionnaireView(latest);
+            qBody.innerHTML = renderQuestionnaireView(latest, entry.transcript_url || null);
             histBody.innerHTML = renderSubmissionHistory(submissions);
             drBody.innerHTML = dr ? renderDrProfile(dr) : '<p class="pool-detail-empty">No Direct Recruit profile linked.</p>';
 
@@ -4865,14 +4866,18 @@ document.addEventListener('DOMContentLoaded', async function() {
             // shipped by the backend. Board-source recruits (from the football
             // field) do not — lazy-fetch the latest submission via /my-pool.
             if (recruit.submission_data) {
-                qBodyEl.innerHTML = renderQuestionnaireView(recruit.submission_data);
+                qBodyEl.innerHTML = renderQuestionnaireView(recruit.submission_data, recruit.transcript_url || null);
             } else if (recruit._source === 'board' && recruit.pool_entry_id) {
                 qBodyEl.innerHTML = '<p class="pool-detail-loading">Loading…</p>';
                 API.get(`/recruiting-board/my-pool/${recruit.pool_entry_id}`).then(res => {
                     const submissions = (res && res.submissions) || [];
                     const latest = submissions.length ? submissions[submissions.length - 1].submission_data : {};
                     recruit.submission_data = latest;
-                    qBodyEl.innerHTML = renderQuestionnaireView(latest);
+                    // The detail endpoint signs entry.transcript_url from the
+                    // latest submission — use it directly so the link works.
+                    const txUrl = (res && res.entry && res.entry.transcript_url) || null;
+                    recruit.transcript_url = txUrl;
+                    qBodyEl.innerHTML = renderQuestionnaireView(latest, txUrl);
                 }).catch(() => {
                     qBodyEl.innerHTML = '<p class="pool-detail-error">Failed to load questionnaire.</p>';
                 });
@@ -6058,7 +6063,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         </section>`;
     }
 
-    function renderQuestionnaireView(d) {
+    function renderQuestionnaireView(d, transcriptUrl) {
         d = d || {};
         const personal = d.personal || {};
         const address = d.address || {};
@@ -6102,7 +6107,21 @@ document.addEventListener('DOMContentLoaded', async function() {
         // Family
         const familyBody = poolField('Siblings', family.siblings);
 
-        // Academic
+        // Academic. The transcript link (when present) is rendered as a
+        // distinct row so it stands out from the field grid. We prefer the
+        // explicit transcriptUrl arg the caller hands us (already a signed
+        // S3 URL) over digging into academic.transcript_s3_keys — those keys
+        // are raw S3 paths and won't work in an <a href>.
+        let transcriptRow = '';
+        if (transcriptUrl) {
+            transcriptRow = `<div class="pool-field pool-field-transcript">
+                <span class="pool-field-label">Transcript</span>
+                <a class="pool-detail-transcript-link" href="${escapeHtml(transcriptUrl)}" target="_blank" rel="noopener" download>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+                    <span>View transcript (PDF)</span>
+                </a>
+            </div>`;
+        }
         const academicBody =
             poolField('High School', academic.high_school) +
             poolField('Graduation Year', academic.graduation_year) +
@@ -6112,7 +6131,8 @@ document.addEventListener('DOMContentLoaded', async function() {
             poolField('NCAA ID', academic.ncaa_id) +
             poolField('SAT', academic.sat_score) +
             poolField('ACT', academic.act_score) +
-            poolField('Academic Honors', academic.honors);
+            poolField('Academic Honors', academic.honors) +
+            transcriptRow;
 
         // Athletic
         const heightDisp = athletic.height_inches ? inchesToHeight(athletic.height_inches) : null;
