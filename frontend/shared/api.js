@@ -1238,6 +1238,41 @@ const coachesAPI = {
     getAtMySchool: async () => await apiRequest('/coaches/at-my-school')
 };
 
+// Team-switch flow + verify-token. The new-coach signup flow uses a public
+// page that posts directly via fetch(); these helpers are for the
+// authenticated team-switch entry points called from the collegecoach Edit
+// Profile modal + the confirm-team-switch landing page.
+const coachSignupAPI = {
+    getTeamSwitchEligibility: async () => await apiRequest('/coach-signup/team-switch/eligibility'),
+    requestTeamSwitch: async (payload) => await apiRequest('/coach-signup/request', {
+        method: 'POST',
+        body: JSON.stringify(Object.assign({ is_team_switch: true }, payload))
+    }),
+    validateToken: async (token) => await apiRequest(`/coach-signup/validate-token?token=${encodeURIComponent(token)}`),
+    confirmTeamSwitch: async (token) => await apiRequest('/coach-signup/confirm-team-switch', {
+        method: 'POST',
+        body: JSON.stringify({ token })
+    })
+};
+
+// Tiny env discriminator (GET /api/config). Cached after first call so we
+// don't refetch on every modal open. Returns { env: 'development' | 'production' }.
+// Falls back to 'production' on any error so dev-only UI stays hidden when
+// the backend is unreachable.
+let _cachedConfig = null;
+const configAPI = {
+    getEnv: async () => {
+        if (_cachedConfig) return _cachedConfig;
+        try {
+            // apiRequest prepends /api so we just pass /config.
+            _cachedConfig = await apiRequest('/config');
+        } catch (e) {
+            _cachedConfig = { env: 'production' };
+        }
+        return _cachedConfig;
+    }
+};
+
 const API = {
     // Direct access to apiRequest for custom endpoints
     get: async (endpoint) => await apiRequest(endpoint),
@@ -1270,6 +1305,8 @@ const API = {
     pool: poolAPI,
     pipeline: pipelineAPI,
     coaches: coachesAPI,
+    coachSignup: coachSignupAPI,
+    config: configAPI,
 
     // Auth helpers
     getUser,

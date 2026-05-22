@@ -222,6 +222,14 @@ app.get('/health', async (req, res) => {
   res.status(statusCode).json(health);
 });
 
+// Env discriminator for frontend feature gates (e.g. dev-only "Change Team"
+// button on the collegecoach Edit Profile modal, dev-only "Team Switches" tab
+// on the admin coach-verification dashboard). Returns only the env name —
+// no secrets, no config values. Safe to call unauthenticated.
+app.get('/api/config', (req, res) => {
+  res.json({ env: process.env.NODE_ENV || 'production' });
+});
+
 // Error handler
 app.use((err, req, res, next) => {
   logger.error(err.message, {

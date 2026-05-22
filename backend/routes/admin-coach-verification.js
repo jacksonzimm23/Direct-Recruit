@@ -25,19 +25,26 @@ function adminAuth(req, res, next) {
 
 router.use(adminAuth);
 
-function buildInviteLink(token /*, isSwitch — no longer needed at link-build time */) {
+function buildInviteLink(token, isTeamSwitch) {
   const isProd = process.env.NODE_ENV === 'production';
   const appUrl = process.env.APP_URL || (isProd ? 'https://directrecruit.net' : 'http://localhost:5000');
   const prefix = process.env.FRONTEND_PATH_PREFIX !== undefined
     ? process.env.FRONTEND_PATH_PREFIX
     : (isProd ? '' : '/frontend');
-  // Both new signups AND profile-type switches go to the same create-coach-profile page.
-  // The page itself detects switch mode from the validate-token response (is_switch flag)
-  // and adapts its UI/submit flow accordingly.
-  return `${appUrl}${prefix}/collegecoach/create-coach-profile.html?token=${encodeURIComponent(token)}`;
+  // Team switches land on a small confirmation page (existing user → just
+  // flip team_name/division on their coach_profiles row). New signups and
+  // profile-type switches land on create-coach-profile.html as before.
+  const path = isTeamSwitch
+    ? '/collegecoach/confirm-team-switch.html'
+    : '/collegecoach/create-coach-profile.html';
+  return `${appUrl}${prefix}${path}?token=${encodeURIComponent(token)}`;
 }
 
-// GET /api/admin/coach-verification/requests?status=pending|approved|rejected|all
+// GET /api/admin/coach-verification/requests?status=pending|approved|rejected|all&type=signup|team_switch|all
+// `type` filter splits the dashboard into two views — coach signups (the
+// existing flow, includes brand-new + profile-type switches) vs team switches
+// (intra-collegecoach school changes). Default 'signup' preserves the existing
+// behavior so the existing UI keeps working.
 router.get('/requests', async (req, res) => {
   try {
     const status = req.query.status || 'pending';
@@ -45,16 +52,31 @@ router.get('/requests', async (req, res) => {
     if (!validStatuses.includes(status)) {
       return res.status(400).json({ error: 'Invalid status filter' });
     }
+    const type = req.query.type || 'signup';
+    const validTypes = ['signup', 'team_switch', 'all'];
+    if (!validTypes.includes(type)) {
+      return res.status(400).json({ error: 'Invalid type filter' });
+    }
 
     // Archived rows (deleted_at IS NOT NULL) are hidden from every tab — they
     // represent coaches who deleted their account or switched profile type
     // away from collegecoach, so the admin shouldn't see them in pending/
     // approved/rejected queues. They stay in the DB for audit purposes.
     const archivedFilter = 'r.deleted_at IS NULL';
-    const whereClause = status === 'all'
-      ? `WHERE ${archivedFilter}`
-      : `WHERE r.status = $1 AND ${archivedFilter}`;
-    const params = status === 'all' ? [] : [status];
+    const typeFilter = type === 'team_switch'
+      ? 'r.is_team_switch = true'
+      : type === 'signup'
+        ? 'COALESCE(r.is_team_switch, false) = false'
+        : null;  // 'all' — no type filter
+
+    const wheres = [archivedFilter];
+    const params = [];
+    if (status !== 'all') {
+      params.push(status);
+      wheres.push(`r.status = $${params.length}`);
+    }
+    if (typeFilter) wheres.push(typeFilter);
+    const whereClause = `WHERE ${wheres.join(' AND ')}`;
 
     const requestsQuery = `
       SELECT
@@ -63,6 +85,7 @@ router.get('/requests', async (req, res) => {
         r.ip_address, r.created_at, r.reviewed_at,
         r.locked_school, r.locked_division, r.locked_at,
         r.is_switch, r.existing_user_id,
+        r.is_team_switch, r.old_team_name, r.old_division, r.old_state, r.state,
         eu.email AS existing_user_email,
         eu.role  AS existing_user_role,
         i.id         AS invite_id,
@@ -71,7 +94,8 @@ router.get('/requests', async (req, res) => {
         i.expires_at AS invite_expires_at,
         i.used_at    AS invite_used_at,
         i.revoked_at AS invite_revoked_at,
-        i.created_at AS invite_created_at
+        i.created_at AS invite_created_at,
+        i.is_team_switch AS invite_is_team_switch
       FROM coach_signup_requests r
       LEFT JOIN users eu ON eu.id = r.existing_user_id
       LEFT JOIN LATERAL (
@@ -84,10 +108,15 @@ router.get('/requests', async (req, res) => {
       ORDER BY r.created_at DESC
       LIMIT 500
     `;
+
+    // Counts respect the type filter so the per-tab counts make sense (a team-
+    // switch tab shouldn't count signup requests and vice-versa).
+    const countsWheres = ['deleted_at IS NULL'];
+    if (typeFilter) countsWheres.push(typeFilter.replace(/\br\./g, ''));
     const countsQuery = `
       SELECT status, COUNT(*) AS cnt
       FROM coach_signup_requests
-      WHERE deleted_at IS NULL
+      WHERE ${countsWheres.join(' AND ')}
       GROUP BY status
     `;
 
@@ -119,7 +148,7 @@ router.post('/requests/:id/approve', async (req, res) => {
     // Fetch request and verify status + locked
     const r = await pool.query(
       `SELECT id, first_name, last_name, school, position, edu_email, personal_email, status,
-              locked_school, locked_division, is_switch
+              locked_school, locked_division, is_switch, is_team_switch, old_team_name
          FROM coach_signup_requests WHERE id = $1`,
       [requestId]
     );
@@ -138,15 +167,16 @@ router.post('/requests/:id/approve', async (req, res) => {
     const expiresAt = new Date(Date.now() + INVITE_EXPIRY_DAYS * 24 * 60 * 60 * 1000);
 
     // Use locked_school + locked_division (the admin-canonicalized values) for the invite.
-    // Carry is_switch forward so the email link routes to the correct destination page.
+    // Carry is_switch + is_team_switch forward so the email link + body branch
+    // route to the correct destination page.
     const inviteIns = await pool.query(
       `INSERT INTO coach_invites
-        (request_id, token, edu_email, first_name, last_name, school, division, position, expires_at, is_switch)
-        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+        (request_id, token, edu_email, first_name, last_name, school, division, position, expires_at, is_switch, is_team_switch)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
         RETURNING id, expires_at`,
       [requestId, token, request.edu_email, request.first_name, request.last_name,
        request.locked_school, request.locked_division, request.position, expiresAt,
-       !!request.is_switch]
+       !!request.is_switch, !!request.is_team_switch]
     );
 
     await pool.query(
@@ -154,13 +184,15 @@ router.post('/requests/:id/approve', async (req, res) => {
       [requestId]
     );
 
-    const link = buildInviteLink(token, !!request.is_switch);
+    const link = buildInviteLink(token, !!request.is_team_switch);
     try {
       await sendCoachInvite(request.edu_email, {
         first_name: request.first_name,
         school: request.locked_school,
         expires_at: inviteIns.rows[0].expires_at,
-        is_switch: !!request.is_switch
+        is_switch: !!request.is_switch,
+        is_team_switch: !!request.is_team_switch,
+        old_team_name: request.old_team_name
       }, link);
     } catch (emailErr) {
       logger.error('[admin-coach-verification] failed to send invite email:', emailErr);
@@ -298,10 +330,14 @@ router.post('/invites/:id/resend', async (req, res) => {
   try {
     const inviteId = req.params.id;
 
-    // Fetch current invite
+    // Fetch current invite + request (for old_team_name on team-switch emails)
     const current = await pool.query(
-      `SELECT request_id, edu_email, first_name, last_name, school, division, position, used_at, is_switch
-         FROM coach_invites WHERE id = $1`,
+      `SELECT i.request_id, i.edu_email, i.first_name, i.last_name, i.school, i.division,
+              i.position, i.used_at, i.is_switch, i.is_team_switch,
+              r.old_team_name
+         FROM coach_invites i
+         LEFT JOIN coach_signup_requests r ON r.id = i.request_id
+         WHERE i.id = $1`,
       [inviteId]
     );
     if (!current.rows[0]) return res.status(404).json({ error: 'Invite not found' });
@@ -318,20 +354,22 @@ router.post('/invites/:id/resend', async (req, res) => {
     const expiresAt = new Date(Date.now() + INVITE_EXPIRY_DAYS * 24 * 60 * 60 * 1000);
     const ins = await pool.query(
       `INSERT INTO coach_invites
-        (request_id, token, edu_email, first_name, last_name, school, division, position, expires_at, is_switch)
-        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+        (request_id, token, edu_email, first_name, last_name, school, division, position, expires_at, is_switch, is_team_switch)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
         RETURNING id, expires_at`,
       [data.request_id, newToken, data.edu_email, data.first_name, data.last_name,
-       data.school, data.division, data.position, expiresAt, !!data.is_switch]
+       data.school, data.division, data.position, expiresAt, !!data.is_switch, !!data.is_team_switch]
     );
 
-    const link = buildInviteLink(newToken, !!data.is_switch);
+    const link = buildInviteLink(newToken, !!data.is_team_switch);
     try {
       await sendCoachInvite(data.edu_email, {
         first_name: data.first_name,
         school: data.school,
         expires_at: ins.rows[0].expires_at,
-        is_switch: !!data.is_switch
+        is_switch: !!data.is_switch,
+        is_team_switch: !!data.is_team_switch,
+        old_team_name: data.old_team_name
       }, link);
     } catch (emailErr) {
       logger.error('[admin-coach-verification] failed to re-send invite email:', emailErr);

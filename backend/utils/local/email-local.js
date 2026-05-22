@@ -42,9 +42,12 @@ async function sendAccountDeletionConfirmation(toEmail) {
 }
 
 async function sendCoachRequestNotification(toEmail, data) {
+  const typeLabel = data.is_team_switch
+    ? `🏫 TEAM SWITCH (from ${data.old_team_name || 'unknown'}${data.old_division ? ` — ${data.old_division}` : ''})`
+    : data.is_switch ? '🔄 PROFILE-TYPE SWITCH' : '🆕 NEW SIGNUP';
   console.log('\n[LOCAL EMAIL] Coach Request Notification');
   console.log(`  To: ${toEmail}`);
-  console.log(`  Type: ${data.is_switch ? '🔄 SWITCH from existing account' : '🆕 NEW SIGNUP'}`);
+  console.log(`  Type: ${typeLabel}`);
   console.log(`  Name: ${data.first_name} ${data.last_name}`);
   console.log(`  School: ${data.school}`);
   console.log(`  Division: ${data.division || '(not provided)'}`);
@@ -58,9 +61,12 @@ async function sendCoachRequestNotification(toEmail, data) {
 }
 
 async function sendCoachInvite(toEmail, data, link) {
+  const typeLabel = data.is_team_switch
+    ? `🏫 TEAM SWITCH (from ${data.old_team_name || 'unknown'} → ${data.school})`
+    : data.is_switch ? '🔄 PROFILE-TYPE SWITCH (existing user)' : '🆕 NEW SIGNUP';
   console.log('\n[LOCAL EMAIL] Coach Invite');
   console.log(`  To: ${toEmail}`);
-  console.log(`  Type: ${data.is_switch ? '🔄 SWITCH (existing user)' : '🆕 NEW SIGNUP'}`);
+  console.log(`  Type: ${typeLabel}`);
   console.log(`  Name: ${data.first_name}`);
   console.log(`  School: ${data.school}`);
   console.log(`  Expires: ${data.expires_at || '7 days from now'}`);

@@ -1,6 +1,7 @@
 // My Profile JavaScript - Dynamic Version
 
 let currentProfile = null;
+let currentUser = null;       // mirrors response.user from /auth/me — used by the Change Team modal to surface the coach's login email
 let currentUserId = null;
 let viewingUserId = null;
 let isOwnProfile = true;
@@ -134,12 +135,12 @@ async function updateSidebarFooterFromAPI() {
 }
 
 document.addEventListener('DOMContentLoaded', async function() {
-    // Initialize school search for edit modal
-    editSchoolSearch = initSchoolSearch({
-        nameInput: '#editCollegeName',
-        divisionSelect: '#editDivision',
-        assetBasePath: '../../assets'
-    });
+    // Edit Profile modal no longer surfaces the school name / division as editable
+    // inputs — team changes now go through the admin-verified team-switch flow
+    // (Change Team button). Hidden mirrors keep the old IDs so the save handler
+    // still finds them, but they're never written to. The school-search widget
+    // is no longer wired here for that reason.
+    editSchoolSearch = null;
 
     // Hide sidebar footer initially to prevent flash of old content
     const sidebarFooter = document.querySelector('.sidebar-footer');
@@ -819,6 +820,7 @@ async function loadOwnProfile() {
         const response = await API.get('/auth/me');
         if (response.user && response.profile) {
             currentProfile = response.profile;
+            currentUser = response.user;
             viewingUserId = response.user.id;
             isOwnProfile = true;
             displayProfile(response.profile, response.user.role);
@@ -2250,7 +2252,8 @@ function populateEditForm() {
     // Store original username for validation
     originalUsername = currentProfile.username || '';
 
-    // Populate college coach fields (no toggle — use Settings to switch profile type)
+    // Mirror current team values onto the hidden inputs (no longer user-editable
+    // here). The Change Team flow handles updates; this is just UI state parity.
     const collegeName = document.getElementById('editCollegeName');
     const collegeState = document.getElementById('editCollegeState');
     const division = document.getElementById('editDivision');
@@ -2259,14 +2262,9 @@ function populateEditForm() {
     if (collegeState) collegeState.value = currentProfile.state || '';
     if (division) division.value = currentProfile.college_division || '';
 
-    // Show school logo preview if school is in the database
-    if (editSchoolSearch) {
-        if (currentProfile.team_name) {
-            editSchoolSearch.preselectSchool(currentProfile.team_name);
-        } else {
-            editSchoolSearch.clearSelection();
-        }
-    }
+    // Render the read-only "current team" display block + wire up the Change
+    // Team button (only shown in dev for now — gated by /api/config).
+    renderCurrentTeamDisplay(currentProfile);
 
     // Handle coaching positions - split slash-separated string into array
     editSelectedCoachingPositions = [];
@@ -2422,10 +2420,13 @@ async function saveProfileChanges() {
             philosophy: document.getElementById('editPhilosophy').value.trim()
         };
 
-        // College coach fields (always college)
-        formData.team_name = document.getElementById('editCollegeName').value;
-        formData.state = document.getElementById('editCollegeState').value;
-        formData.college_division = document.getElementById('editDivision').value;
+        // team_name / state / college_division are NOT included in the payload —
+        // these are only changeable through the admin-verified team-switch flow
+        // (Change Team button). The hidden inputs in the modal mirror the current
+        // values for UI parity but are never read here. The backend would also
+        // ignore them on a normal PUT /profile (no override is wired on update;
+        // the protection is purely client-side at this point — Plan 5A still
+        // fires if any other path mutates team_name).
 
         // Send update request
         const response = await API.put('/profile', formData);
@@ -6707,3 +6708,268 @@ function escapeHtml(text) {
     div.textContent = text;
     return div.innerHTML;
 }
+
+// US state list shared between current-team-display rendering and the Change Team modal
+const US_STATES = [
+    ['AL','Alabama'],['AK','Alaska'],['AZ','Arizona'],['AR','Arkansas'],['CA','California'],
+    ['CO','Colorado'],['CT','Connecticut'],['DE','Delaware'],['FL','Florida'],['GA','Georgia'],
+    ['HI','Hawaii'],['ID','Idaho'],['IL','Illinois'],['IN','Indiana'],['IA','Iowa'],
+    ['KS','Kansas'],['KY','Kentucky'],['LA','Louisiana'],['ME','Maine'],['MD','Maryland'],
+    ['MA','Massachusetts'],['MI','Michigan'],['MN','Minnesota'],['MS','Mississippi'],['MO','Missouri'],
+    ['MT','Montana'],['NE','Nebraska'],['NV','Nevada'],['NH','New Hampshire'],['NJ','New Jersey'],
+    ['NM','New Mexico'],['NY','New York'],['NC','North Carolina'],['ND','North Dakota'],['OH','Ohio'],
+    ['OK','Oklahoma'],['OR','Oregon'],['PA','Pennsylvania'],['RI','Rhode Island'],['SC','South Carolina'],
+    ['SD','South Dakota'],['TN','Tennessee'],['TX','Texas'],['UT','Utah'],['VT','Vermont'],
+    ['VA','Virginia'],['WA','Washington'],['WV','West Virginia'],['WI','Wisconsin'],['WY','Wyoming']
+];
+
+// Position groups for the Change Team modal — mirrors the Edit Profile modal's
+// checkbox grid exactly, but rendered into its own container so the two modals
+// don't share DOM ids.
+const COACHING_POSITION_GROUPS = [
+    { label: 'Head Coach', items: ['Head Coach'] },
+    { label: 'Coordinators', items: ['Offensive Coordinator','Defensive Coordinator','Special Teams Coordinator'] },
+    { label: 'Offensive Position Coaches', items: ['Quarterbacks Coach','Running Backs Coach','Wide Receivers Coach','Tight Ends Coach','Offensive Line Coach'] },
+    { label: 'Defensive Position Coaches', items: ['Defensive Line Coach','Linebackers Coach','Defensive Backs Coach','Safeties Coach','Cornerbacks Coach'] },
+    { label: 'Special Teams', items: ['Special Teams Coach'] },
+    { label: 'Other Staff', items: ['Recruiting Coordinator','Assistant Coach','Graduate Assistant'] }
+];
+
+let ctSelectedPositions = [];
+
+function buildChangeTeamStateList() {
+    const sel = document.getElementById('ctNewState');
+    if (!sel || sel.options.length > 1) return;
+    US_STATES.forEach(([code, name]) => {
+        const opt = document.createElement('option');
+        opt.value = code;
+        opt.textContent = name;
+        sel.appendChild(opt);
+    });
+}
+
+function buildChangeTeamPositionGrid() {
+    const container = document.getElementById('ctCoachingPositionsContainer');
+    if (!container || container.children.length > 0) return;
+    COACHING_POSITION_GROUPS.forEach(group => {
+        const wrap = document.createElement('div');
+        wrap.className = 'multi-select-group';
+        const h4 = document.createElement('h4');
+        h4.className = 'group-label';
+        h4.textContent = group.label;
+        wrap.appendChild(h4);
+        group.items.forEach(item => {
+            const lab = document.createElement('label');
+            lab.className = 'checkbox-label';
+            const cb = document.createElement('input');
+            cb.type = 'checkbox';
+            cb.name = 'ctCoachingPosition';
+            cb.value = item;
+            cb.addEventListener('change', () => {
+                if (cb.checked) {
+                    if (!ctSelectedPositions.includes(item)) ctSelectedPositions.push(item);
+                } else {
+                    ctSelectedPositions = ctSelectedPositions.filter(p => p !== item);
+                }
+                renderCtSelectedPositions();
+            });
+            const span = document.createElement('span');
+            span.textContent = item;
+            lab.appendChild(cb);
+            lab.appendChild(span);
+            wrap.appendChild(lab);
+        });
+        container.appendChild(wrap);
+    });
+}
+
+function renderCtSelectedPositions() {
+    const c = document.getElementById('ctSelectedCoachingPositions');
+    if (!c) return;
+    c.innerHTML = '';
+    ctSelectedPositions.forEach(pos => {
+        const pill = document.createElement('div');
+        pill.className = 'selected-item';
+        pill.innerHTML = `${escapeHtml(pos)} <button type="button" class="remove-item" data-position="${escapeHtml(pos)}">×</button>`;
+        c.appendChild(pill);
+    });
+    c.querySelectorAll('.remove-item').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const pos = btn.dataset.position;
+            ctSelectedPositions = ctSelectedPositions.filter(p => p !== pos);
+            const cb = document.querySelector(`#ctCoachingPositionsContainer input[value="${CSS.escape(pos)}"]`);
+            if (cb) cb.checked = false;
+            renderCtSelectedPositions();
+        });
+    });
+}
+
+// ─── Team Switch (Change Team) ────────────────────────────────────────────────
+// Fills the read-only "current team" display inside the Edit Profile modal and
+// gates the Change Team button on dev-mode env. Production builds hide the
+// button entirely — coaches can still see their team here but can't open the
+// switch modal until we flip the gate.
+async function renderCurrentTeamDisplay(profile) {
+    const nameEl = document.getElementById('currentTeamName');
+    const subEl = document.getElementById('currentTeamSub');
+    const logoSlot = document.getElementById('currentTeamLogoSlot');
+    const btn = document.getElementById('btnOpenChangeTeam');
+    const hint = document.getElementById('changeTeamHint');
+    if (!nameEl || !subEl) return;
+
+    nameEl.textContent = profile.team_name || 'No team set';
+    const parts = [];
+    if (profile.college_division) parts.push(profile.college_division);
+    if (profile.state) parts.push(profile.state);
+    subEl.textContent = parts.join(' · ') || '';
+
+    // School logo (best-effort — silently skip if school-search isn't loaded)
+    if (logoSlot) {
+        logoSlot.innerHTML = '';
+        try {
+            if (typeof ensureSchoolLogosLoaded === 'function') {
+                await ensureSchoolLogosLoaded('../../assets');
+            }
+            if (typeof getSchoolLogoHTML === 'function' && profile.team_name) {
+                logoSlot.innerHTML = getSchoolLogoHTML(profile.team_name, '../../assets', 32);
+            }
+        } catch (_) { /* noop */ }
+    }
+
+    // Gate the button on dev env. Cached after first call.
+    let env = 'production';
+    try {
+        const cfg = await API.config.getEnv();
+        env = (cfg && cfg.env) || 'production';
+    } catch (_) { /* default production */ }
+    if (env !== 'development') {
+        if (btn) btn.style.display = 'none';
+        if (hint) hint.style.display = 'none';
+        return;
+    }
+
+    // Dev mode — check eligibility (cooldown + pending request) before showing
+    if (btn && hint) {
+        try {
+            const elig = await API.coachSignup.getTeamSwitchEligibility();
+            if (elig.eligible) {
+                btn.style.display = '';
+                btn.disabled = false;
+                hint.style.display = 'none';
+            } else {
+                btn.style.display = '';
+                btn.disabled = true;
+                hint.style.display = '';
+                if (elig.reason === 'cooldown' && elig.next_eligible_at) {
+                    const d = new Date(elig.next_eligible_at);
+                    hint.textContent = `You can request another team change after ${d.toLocaleString()}.`;
+                } else if (elig.reason === 'pending_request') {
+                    hint.textContent = "You already have a team-switch request in review.";
+                } else {
+                    hint.textContent = "Team switches aren't available right now.";
+                }
+            }
+        } catch (e) {
+            if (btn) btn.style.display = 'none';
+        }
+    }
+}
+
+async function openChangeTeamModal() {
+    const modal = document.getElementById('changeTeamModal');
+    if (!modal) return;
+    buildChangeTeamStateList();
+    buildChangeTeamPositionGrid();
+    ctSelectedPositions = [];
+    renderCtSelectedPositions();
+    // Reset fields
+    const f = (id) => document.getElementById(id);
+    // Login email lives on response.user.email (not coach_profiles). Fall back
+    // to a fresh /auth/me fetch if currentUser wasn't populated yet for some reason.
+    let acctEmail = (currentUser && currentUser.email) || '';
+    if (!acctEmail) {
+        try {
+            const me = await API.auth.getCurrentUser();
+            if (me && me.user) {
+                currentUser = me.user;
+                acctEmail = me.user.email || '';
+            }
+        } catch (_) { /* leave blank */ }
+    }
+    if (f('ctCurrentEmail')) f('ctCurrentEmail').value = acctEmail;
+    if (f('ctNewEduEmail')) f('ctNewEduEmail').value = '';
+    if (f('ctNewTeamName')) f('ctNewTeamName').value = '';
+    if (f('ctNewDivision')) f('ctNewDivision').value = '';
+    if (f('ctNewState')) f('ctNewState').value = '';
+    document.querySelectorAll('#ctCoachingPositionsContainer input[name="ctCoachingPosition"]').forEach(cb => { cb.checked = false; });
+    modal.classList.add('active');
+    document.body.style.overflow = 'hidden';
+}
+
+function hideChangeTeamModal() {
+    const modal = document.getElementById('changeTeamModal');
+    if (!modal) return;
+    modal.classList.remove('active');
+    document.body.style.overflow = '';
+}
+
+async function submitChangeTeam() {
+    const submitBtn = document.getElementById('changeTeamSubmit');
+    if (!submitBtn) return;
+    const originalText = submitBtn.textContent;
+    const newEdu = (document.getElementById('ctNewEduEmail').value || '').trim();
+    const newTeam = (document.getElementById('ctNewTeamName').value || '').trim();
+    const newDiv = document.getElementById('ctNewDivision').value;
+    const newState = document.getElementById('ctNewState').value;
+    if (!newEdu || !newTeam || !newDiv || !newState || ctSelectedPositions.length === 0) {
+        if (typeof showToast === 'function') showToast('Please fill in every required field.', 'error');
+        return;
+    }
+    if (!/\.edu(\.[a-z]{2})?$/i.test(newEdu)) {
+        if (typeof showToast === 'function') showToast('Your new email must be a .edu address.', 'error');
+        return;
+    }
+    submitBtn.textContent = 'Submitting...';
+    submitBtn.disabled = true;
+    try {
+        const resp = await API.coachSignup.requestTeamSwitch({
+            new_edu_email: newEdu,
+            new_team_name: newTeam,
+            new_division: newDiv,
+            new_state: newState,
+            new_position: ctSelectedPositions.join('/')
+        });
+        hideChangeTeamModal();
+        // Also close the edit-profile modal so the coach lands back on their profile
+        const editModal = document.getElementById('editProfileModal');
+        if (editModal) {
+            editModal.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+        if (typeof showToast === 'function') {
+            showToast(resp.message || "Request submitted. We'll review within 24-48 hours.", 'success');
+        } else {
+            alert(resp.message || "Request submitted. We'll review within 24-48 hours.");
+        }
+    } catch (err) {
+        const msg = (err && err.data && err.data.error) || err.message || 'Failed to submit request';
+        if (typeof showToast === 'function') showToast(msg, 'error'); else alert(msg);
+    } finally {
+        submitBtn.textContent = originalText;
+        submitBtn.disabled = false;
+    }
+}
+
+// Wire up the Change Team button + modal close/cancel/submit handlers once on load.
+document.addEventListener('DOMContentLoaded', function() {
+    const openBtn = document.getElementById('btnOpenChangeTeam');
+    const closeBtn = document.getElementById('changeTeamClose');
+    const cancelBtn = document.getElementById('changeTeamCancel');
+    const submitBtn = document.getElementById('changeTeamSubmit');
+    const overlay = document.getElementById('changeTeamOverlay');
+    if (openBtn) openBtn.addEventListener('click', openChangeTeamModal);
+    if (closeBtn) closeBtn.addEventListener('click', hideChangeTeamModal);
+    if (cancelBtn) cancelBtn.addEventListener('click', hideChangeTeamModal);
+    if (overlay) overlay.addEventListener('click', hideChangeTeamModal);
+    if (submitBtn) submitBtn.addEventListener('click', submitChangeTeam);
+});

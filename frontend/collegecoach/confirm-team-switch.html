@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#0a1128">
+    <link rel="icon" type="image/png" href="https://res.cloudinary.com/dzmsj6nwv/image/upload/v1770078659/LOGO.PNG_i0uvv4.png">
+    <title>Confirm School Change - Direct Recruit</title>
+    <link rel="stylesheet" href="../landingpage/styles.css">
+    <link rel="stylesheet" href="verify-email.css">
+    <link rel="stylesheet" href="../shared/ios-app-overrides.css?v=1">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script src="../shared/capacitor-init.js"></script>
+</head>
+<body>
+    <section class="verify-section">
+        <div class="verify-container" style="max-width:520px;">
+            <div class="verify-icon" id="statusIcon" style="color:#ff6b35;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+            </div>
+
+            <h1 id="statusTitle">Confirm your school change</h1>
+            <p class="verify-subtitle" id="statusMessage">Validating your invite...</p>
+
+            <div id="switchDetails" style="display:none;margin:1.5rem 0;padding:1rem 1.25rem;background:#f7f7f8;border:1px solid #e0e0e0;border-radius:8px;text-align:left;">
+                <div style="font-size:0.8125rem;color:#666;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.25rem;">From</div>
+                <div id="fromTeam" style="font-weight:600;font-size:1rem;color:#1a1a2e;margin-bottom:1rem;"></div>
+                <div style="font-size:0.8125rem;color:#666;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.25rem;">To</div>
+                <div id="toTeam" style="font-weight:600;font-size:1rem;color:#ff6b35;"></div>
+            </div>
+
+            <div id="actionButtons" style="display:none;margin-top:1.5rem;display:flex;gap:0.75rem;flex-direction:column;">
+                <button id="confirmBtn" class="btn-primary" style="background:#ff6b35;color:#fff;padding:0.875rem 1.5rem;border:none;border-radius:8px;font-weight:600;font-size:1rem;cursor:pointer;">Confirm School Change</button>
+                <button id="cancelBtn" class="btn-secondary" style="background:transparent;color:#666;padding:0.875rem 1.5rem;border:1px solid #ccc;border-radius:8px;font-weight:500;font-size:1rem;cursor:pointer;">Cancel</button>
+            </div>
+
+            <div class="help-text" id="helpText" style="margin-top:1.25rem;font-size:0.875rem;color:#888;">
+                Once confirmed, this change is immediate. You can switch again after 72 hours.
+            </div>
+        </div>
+    </section>
+
+    <script src="../shared/api.js"></script>
+    <script src="confirm-team-switch.js"></script>
+</body>
+</html>

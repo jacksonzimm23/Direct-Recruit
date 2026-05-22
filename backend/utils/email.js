@@ -592,8 +592,12 @@ async function sendCoachRequestNotification(toEmail, data) {
   const notes = data.notes && data.notes.trim() ? data.notes : '(none)';
   const phone = data.phone && data.phone.trim() ? data.phone : '(not provided)';
   const division = data.division || '(not provided)';
+  const isTeamSwitch = !!data.is_team_switch;
   const isSwitch = !!data.is_switch;
-  const requestKind = isSwitch ? 'Profile-Type Switch' : 'New Signup';
+  const requestKind = isTeamSwitch ? 'Team Switch' : isSwitch ? 'Profile-Type Switch' : 'New Signup';
+  const typeBadge = isTeamSwitch
+    ? `🏫 Team switch (from ${data.old_team_name || 'unknown'}${data.old_division ? ` — ${data.old_division}` : ''})`
+    : isSwitch ? '🔄 Switch from existing account' : '🆕 New signup';
   const subjectLine = `[${requestKind}] ${data.first_name} ${data.last_name} — ${data.school}`;
   const params = {
     Source: FROM_EMAIL,
@@ -609,9 +613,9 @@ async function sendCoachRequestNotification(toEmail, data) {
             <!DOCTYPE html>
             <html><head><meta charset="UTF-8"></head>
             <body style="font-family: Arial, sans-serif; color:#1a1a2e;">
-              <h2 style="color:#1282a2;">New College Coach ${isSwitch ? 'Switch' : 'Signup'} Request</h2>
+              <h2 style="color:#1282a2;">New College Coach ${requestKind} Request</h2>
               <p><strong>Submitted:</strong> ${new Date().toISOString()}</p>
-              <p><strong>Type:</strong> ${isSwitch ? '🔄 Switch from existing account' : '🆕 New signup'}</p>
+              <p><strong>Type:</strong> ${typeBadge}</p>
               <table cellpadding="6" style="border-collapse:collapse;">
                 <tr><td><strong>Name:</strong></td><td>${data.first_name} ${data.last_name}</td></tr>
                 <tr><td><strong>School:</strong></td><td>${data.school}</td></tr>
@@ -634,9 +638,9 @@ async function sendCoachRequestNotification(toEmail, data) {
         },
         Text: {
           Data: `
-New College Coach ${isSwitch ? 'Switch' : 'Signup'} Request
+New College Coach ${requestKind} Request
 Submitted: ${new Date().toISOString()}
-Type: ${isSwitch ? 'Switch from existing account' : 'New signup'}
+Type: ${typeBadge}
 
 Name: ${data.first_name} ${data.last_name}
 School: ${data.school}
@@ -673,16 +677,30 @@ async function sendCoachInvite(toEmail, data, link) {
   const expiresText = data.expires_at
     ? new Date(data.expires_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
     : '7 days from today';
-  // Switches: user already has an account; signups: brand-new account
+  // Three audiences:
+  //   is_team_switch: existing collegecoach changing schools (X → Y)
+  //   is_switch:      existing user becoming a collegecoach for the first time
+  //   default:        brand-new account signup
+  const isTeamSwitch = !!data.is_team_switch;
   const isSwitch = !!data.is_switch;
-  const subjectLine = isSwitch
-    ? `Verify your College Coach account — ${data.school}`
-    : `You're invited to join Direct Recruit — ${data.school}`;
-  const headline = isSwitch ? 'Verify Your College Coach Switch' : "You're Invited";
-  const bodyLead = isSwitch
-    ? `Your switch to a College Coach account at <strong>${data.school}</strong> has been approved. Click the button below to finish the switch — your existing account, posts, and connections will be preserved.`
-    : `Your account at <strong>${data.school}</strong> has been approved. Click the button below to finish setting up your Direct Recruit profile.`;
-  const ctaText = isSwitch ? 'Complete Your Switch' : 'Complete Your Signup';
+  let subjectLine, headline, bodyLead, ctaText;
+  if (isTeamSwitch) {
+    subjectLine = `Confirm your school change — ${data.school}`;
+    headline = 'Confirm Your School Change';
+    const fromHtml = data.old_team_name ? `<strong>${data.old_team_name}</strong>` : 'your current school';
+    bodyLead = `Your switch from ${fromHtml} to <strong>${data.school}</strong> has been approved. Sign in and confirm to update your team — your account, recruits, and connections all stay intact.`;
+    ctaText = 'Confirm School Change';
+  } else if (isSwitch) {
+    subjectLine = `Verify your College Coach account — ${data.school}`;
+    headline = 'Verify Your College Coach Switch';
+    bodyLead = `Your switch to a College Coach account at <strong>${data.school}</strong> has been approved. Click the button below to finish the switch — your existing account, posts, and connections will be preserved.`;
+    ctaText = 'Complete Your Switch';
+  } else {
+    subjectLine = `You're invited to join Direct Recruit — ${data.school}`;
+    headline = "You're Invited";
+    bodyLead = `Your account at <strong>${data.school}</strong> has been approved. Click the button below to finish setting up your Direct Recruit profile.`;
+    ctaText = 'Complete Your Signup';
+  }
   const params = {
     Source: FROM_EMAIL,
     Destination: { ToAddresses: [toEmail] },
@@ -759,9 +777,11 @@ Direct Recruit — ${headline}
 
 Hi ${data.first_name},
 
-${isSwitch
-  ? `Your switch to a College Coach account at ${data.school} has been approved. Complete your switch using the link below — your existing account, posts, and connections will be preserved.`
-  : `Your account at ${data.school} has been approved. Complete your signup using the link below:`}
+${isTeamSwitch
+  ? `Your switch from ${data.old_team_name || 'your current school'} to ${data.school} has been approved. Sign in and confirm to update your team — your account, recruits, and connections all stay intact.`
+  : isSwitch
+    ? `Your switch to a College Coach account at ${data.school} has been approved. Complete your switch using the link below — your existing account, posts, and connections will be preserved.`
+    : `Your account at ${data.school} has been approved. Complete your signup using the link below:`}
 
 ${link}
 

@@ -448,81 +448,30 @@
                         <div id="editUsernameValidation" class="validation-message"></div>
                     </div>
 
-                    <!-- College Coach fields (no toggle — use Settings to switch profile type) -->
-                        <div class="form-group">
-                            <label for="editCollegeName">College/University Name</label>
-                            <input type="text" id="editCollegeName" name="collegeName" placeholder="University of Colorado">
+                    <!-- College Coach team info — read-only display + Change Team button (gated to dev for now).
+                         Direct edits to team_name / college_division / state are no longer allowed from this modal:
+                         the coach must go through the admin-verified team-switch flow. The hidden inputs below
+                         keep the old IDs so the save handler doesn't break — they're populated from currentProfile
+                         at modal-open time but never written to. -->
+                    <div class="form-group" id="editTeamInfoGroup">
+                        <label>Team</label>
+                        <div class="current-team-display" id="currentTeamDisplay" style="display:flex;align-items:center;gap:0.75rem;padding:0.75rem;background:#f7f7f8;border:1px solid #e0e0e0;border-radius:6px;">
+                            <div id="currentTeamLogoSlot" style="flex-shrink:0;"></div>
+                            <div style="flex:1;min-width:0;">
+                                <div id="currentTeamName" style="font-weight:600;color:#1a1a2e;"></div>
+                                <div id="currentTeamSub" style="font-size:0.875rem;color:#666;margin-top:2px;"></div>
+                            </div>
+                            <button type="button" id="btnOpenChangeTeam" style="display:none;flex-shrink:0;padding:0.5rem 1rem;font-size:0.875rem;font-weight:600;background:#ff6b35;color:#fff;border:none;border-radius:6px;cursor:pointer;transition:background 0.15s;" onmouseover="this.style.background='#e85a26'" onmouseout="this.style.background='#ff6b35'">Change Team</button>
                         </div>
+                        <p class="form-hint" id="changeTeamHint" style="display:none;margin-top:0.5rem;font-size:0.8125rem;color:#666;"></p>
+                    </div>
 
-                        <div class="form-group">
-                            <label for="editCollegeState">State</label>
-                            <select id="editCollegeState" name="collegeState">
-                            <option value="">Select State</option>
-                            <option value="AL">Alabama</option>
-                            <option value="AK">Alaska</option>
-                            <option value="AZ">Arizona</option>
-                            <option value="AR">Arkansas</option>
-                            <option value="CA">California</option>
-                            <option value="CO">Colorado</option>
-                            <option value="CT">Connecticut</option>
-                            <option value="DE">Delaware</option>
-                            <option value="FL">Florida</option>
-                            <option value="GA">Georgia</option>
-                            <option value="HI">Hawaii</option>
-                            <option value="ID">Idaho</option>
-                            <option value="IL">Illinois</option>
-                            <option value="IN">Indiana</option>
-                            <option value="IA">Iowa</option>
-                            <option value="KS">Kansas</option>
-                            <option value="KY">Kentucky</option>
-                            <option value="LA">Louisiana</option>
-                            <option value="ME">Maine</option>
-                            <option value="MD">Maryland</option>
-                            <option value="MA">Massachusetts</option>
-                            <option value="MI">Michigan</option>
-                            <option value="MN">Minnesota</option>
-                            <option value="MS">Mississippi</option>
-                            <option value="MO">Missouri</option>
-                            <option value="MT">Montana</option>
-                            <option value="NE">Nebraska</option>
-                            <option value="NV">Nevada</option>
-                            <option value="NH">New Hampshire</option>
-                            <option value="NJ">New Jersey</option>
-                            <option value="NM">New Mexico</option>
-                            <option value="NY">New York</option>
-                            <option value="NC">North Carolina</option>
-                            <option value="ND">North Dakota</option>
-                            <option value="OH">Ohio</option>
-                            <option value="OK">Oklahoma</option>
-                            <option value="OR">Oregon</option>
-                            <option value="PA">Pennsylvania</option>
-                            <option value="RI">Rhode Island</option>
-                            <option value="SC">South Carolina</option>
-                            <option value="SD">South Dakota</option>
-                            <option value="TN">Tennessee</option>
-                            <option value="TX">Texas</option>
-                            <option value="UT">Utah</option>
-                            <option value="VT">Vermont</option>
-                            <option value="VA">Virginia</option>
-                            <option value="WA">Washington</option>
-                            <option value="WV">West Virginia</option>
-                            <option value="WI">Wisconsin</option>
-                            <option value="WY">Wyoming</option>
-                        </select>
-                        </div>
+                    <!-- Hidden mirrors so the save handler still finds these IDs (kept for code parity).
+                         Direct edits are blocked; values reflect the current profile and are ignored server-side. -->
+                    <input type="hidden" id="editCollegeName" name="collegeName">
+                    <input type="hidden" id="editDivision" name="college_division">
+                    <input type="hidden" id="editCollegeState" name="collegeState">
 
-                        <div class="form-group">
-                            <label for="editDivision">Division</label>
-                            <select id="editDivision" name="college_division">
-                                <option value="">Select Division</option>
-                                <option value="D1 FBS">D1 FBS (Football Bowl Subdivision)</option>
-                                <option value="D1 FCS">D1 FCS (Football Championship Subdivision)</option>
-                                <option value="D2">Division II</option>
-                                <option value="D3">Division III</option>
-                                <option value="NAIA">NAIA</option>
-                                <option value="NJCAA">NJCAA (Junior College)</option>
-                            </select>
-                        </div>
 
                     <div class="form-group">
                         <label>Coaching Position(s)</label>
@@ -873,6 +822,76 @@
     </div>
 
     <script src="../../shared/api.js"></script>
+    <!-- Change Team Modal — dev-only entry from Edit Profile. Submits a verification
+         request to the admin dashboard; the actual school flip happens only after the
+         coach clicks the email link sent to their new .edu address. -->
+    <div class="edit-profile-modal" id="changeTeamModal">
+        <div class="edit-modal-overlay" id="changeTeamOverlay"></div>
+        <div class="edit-modal-content">
+            <div class="edit-modal-header">
+                <h2>Change Team</h2>
+                <button class="edit-modal-close" id="changeTeamClose" aria-label="Close">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="edit-modal-body">
+                <p style="margin:0 0 1rem 0;color:#555;font-size:0.9375rem;line-height:1.5;">
+                    We verify all team changes to protect each program's recruiting pipeline.
+                    Submit your new school below and we'll email your new .edu address once
+                    approved (typically within 24-48 hours). Your team won't change until
+                    you confirm via that email.
+                </p>
+                <form id="changeTeamForm">
+                    <div class="form-group">
+                        <label for="ctCurrentEmail">Current Account Email</label>
+                        <input type="email" id="ctCurrentEmail" readonly style="background:rgba(255,255,255,0.08);color:#fff;cursor:not-allowed;opacity:1;-webkit-text-fill-color:#fff;">
+                        <p class="form-hint" style="margin-top:0.25rem;font-size:0.8125rem;color:#888;">Your login email won't change.</p>
+                    </div>
+                    <div class="form-group">
+                        <label for="ctNewEduEmail">New .edu Email <span style="color:#dc2626;">*</span></label>
+                        <input type="email" id="ctNewEduEmail" placeholder="coach@newschool.edu" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="ctNewTeamName">New School / Team <span style="color:#dc2626;">*</span></label>
+                        <input type="text" id="ctNewTeamName" placeholder="University of Alabama" maxlength="200" required>
+                        <p class="form-hint" style="margin-top:0.25rem;font-size:0.8125rem;color:#888;">We'll canonicalize this when reviewing your request.</p>
+                    </div>
+                    <div class="form-group">
+                        <label for="ctNewDivision">New Division <span style="color:#dc2626;">*</span></label>
+                        <select id="ctNewDivision" required>
+                            <option value="">Select Division</option>
+                            <option value="D1 FBS">D1 FBS (Football Bowl Subdivision)</option>
+                            <option value="D1 FCS">D1 FCS (Football Championship Subdivision)</option>
+                            <option value="D2">Division II</option>
+                            <option value="D3">Division III</option>
+                            <option value="NAIA">NAIA</option>
+                            <option value="NJCAA">NJCAA (Junior College)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="ctNewState">New State <span style="color:#dc2626;">*</span></label>
+                        <select id="ctNewState" required>
+                            <option value="">Select State</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>New Coaching Position(s) <span style="color:#dc2626;">*</span></label>
+                        <p class="form-hint" style="margin-bottom: 0.75rem;">Select all positions you'll coach at the new school</p>
+                        <div class="multi-select-container" id="ctCoachingPositionsContainer"></div>
+                        <div class="selected-items" id="ctSelectedCoachingPositions"></div>
+                    </div>
+                </form>
+            </div>
+            <div class="edit-modal-footer">
+                <button class="btn-modal-cancel" id="changeTeamCancel" type="button">Cancel</button>
+                <button class="btn-modal-save" id="changeTeamSubmit" type="button">Submit Request</button>
+            </div>
+        </div>
+    </div>
+
     <script src="../../shared/mobile-header.js?v=4"></script>
     <script src="../../shared/image-cropper.js"></script>
     <script src="../../shared/native-camera.js"></script>
