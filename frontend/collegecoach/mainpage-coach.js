@@ -317,6 +317,15 @@ async function verifyCoachType() {
         if (urlParams.get('username')) return;
 
         const response = await API.get('/auth/me');
+        // Email-verification gate: comp coaches (and any unverified user) get an
+        // auth cookie from /register before confirming the Cognito code, so they
+        // can otherwise reach this page. Bounce them to verify-email.html until
+        // email_verified=true. replace() prevents Back-button regression here.
+        if (response.user && !response.user.email_verified) {
+            localStorage.setItem('pendingVerificationEmail', response.user.email);
+            window.location.replace('verify-email.html');
+            return;
+        }
         if (response.user && response.profile) {
             const correctFolder = getProfileFolder({ role: response.user.role, is_transfer_player: response.user.is_transfer_player, ...response.profile });
             if (correctFolder !== 'collegecoach') {

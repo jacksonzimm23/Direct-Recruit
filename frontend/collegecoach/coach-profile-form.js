@@ -610,11 +610,13 @@ document.addEventListener('DOMContentLoaded', async function() {
                 // (The DB row is the source of truth; this frontend flag is just
                 // a hint to skip the tier modal.) Email verification still
                 // required — same flow as paid signups, just no Stripe step.
+                // replace() (not href) + no setTimeout closes the race where the
+                // user could otherwise land on mainpage-coach.html via stale tab
+                // history or autofill before the redirect fired. Layer A in
+                // mainpage-coach.js catches anyone who slips past anyway.
                 await profileAPI.createCoachProfile(profileData);
-                showToast("Welcome aboard — your account is comped! Please verify your email.", 'success');
-                setTimeout(() => {
-                    window.location.href = 'verify-email.html';
-                }, 1200);
+                localStorage.setItem('pendingVerificationEmail', email);
+                window.location.replace('verify-email.html');
             } else {
                 // New signups: store profile data and show tier selection
                 localStorage.setItem('pendingProfileData', JSON.stringify(profileData));
