@@ -608,11 +608,12 @@ document.addEventListener('DOMContentLoaded', async function() {
                 // directly — backend writes subscription_status='comp' inside
                 // createCoachProfile because the invite row has is_free=true.
                 // (The DB row is the source of truth; this frontend flag is just
-                // a hint to skip the tier modal.) Land on the coach mainpage.
+                // a hint to skip the tier modal.) Email verification still
+                // required — same flow as paid signups, just no Stripe step.
                 await profileAPI.createCoachProfile(profileData);
-                showToast("Welcome aboard — your account is comped!", 'success');
+                showToast("Welcome aboard — your account is comped! Please verify your email.", 'success');
                 setTimeout(() => {
-                    window.location.href = 'mainpage-coach.html';
+                    window.location.href = 'verify-email.html';
                 }, 1200);
             } else {
                 // New signups: store profile data and show tier selection
