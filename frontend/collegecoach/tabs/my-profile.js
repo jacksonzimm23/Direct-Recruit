@@ -6836,19 +6836,9 @@ async function renderCurrentTeamDisplay(profile) {
         } catch (_) { /* noop */ }
     }
 
-    // Gate the button on dev env. Cached after first call.
-    let env = 'production';
-    try {
-        const cfg = await API.config.getEnv();
-        env = (cfg && cfg.env) || 'production';
-    } catch (_) { /* default production */ }
-    if (env !== 'development') {
-        if (btn) btn.style.display = 'none';
-        if (hint) hint.style.display = 'none';
-        return;
-    }
-
-    // Dev mode — check eligibility (cooldown + pending request) before showing
+    // Check eligibility (cooldown + pending request) before showing the button.
+    // The button is now live in both dev and prod — server-side eligibility check
+    // is the real gate.
     if (btn && hint) {
         try {
             const elig = await API.coachSignup.getTeamSwitchEligibility();
