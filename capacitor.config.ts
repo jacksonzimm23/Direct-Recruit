@@ -9,6 +9,15 @@ const config: CapacitorConfig = {
   // API calls still hit https://directrecruit.net via fetch/XHR.
   // Safer for Apple Guideline 4.2 review than pure remote-loading.
 
+  // WebView origin = https://directrecruit.net (instead of capacitor://localhost).
+  // Makes window.location.origin match the API host so cookies are same-origin
+  // and API_BASE_URL in api.js resolves to https://directrecruit.net/api.
+  server: {
+    hostname: 'directrecruit.net',
+    iosScheme: 'https',
+    androidScheme: 'https'
+  },
+
   ios: {
     // 'never' = CSS controls safe-area padding (Phase 2b)
     contentInset: 'never',

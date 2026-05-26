@@ -5,10 +5,13 @@
   'use strict';
 
   // Skip SW in local dev — it caches aggressively and fights with live reloads.
-  // Also actively unregister any existing SW and wipe its caches so old installs clean up.
+  // Also skip inside the Capacitor iOS app — Capacitor manages its own WebView
+  // caching, and a SW running alongside it fights with bundled-asset loading.
+  // Actively unregister any existing SW and wipe its caches so old installs clean up.
   const host = window.location.hostname;
   const isLocalDev = host === 'localhost' || host === '127.0.0.1' || host === '';
-  if (isLocalDev) {
+  const isCapacitor = !!window.Capacitor;
+  if (isLocalDev || isCapacitor) {
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.getRegistrations().then(function(regs) {
         regs.forEach(function(r) { r.unregister().catch(function() {}); });

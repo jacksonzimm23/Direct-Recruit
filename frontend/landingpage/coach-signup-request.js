@@ -35,13 +35,9 @@
     let personalEmailCheckTimeout;
     let isPersonalEmailAvailable = true;
 
-    // Use the same API_BASE_URL pattern as shared/api.js — works on both
-    // Live Server (:5500) and the node server (:5000) without CORS issues
+    // API_BASE_URL is set by shared/api.js (loaded before this script in coach-signup-request.html)
     function getApiBase() {
-        if (typeof window.API_BASE_URL === 'string') return window.API_BASE_URL;
-        const host = window.location.hostname;
-        if (host === 'localhost' || host === '127.0.0.1') return `http://${host}:5000/api`;
-        return `${window.location.origin}/api`;
+        return window.API_BASE_URL;
     }
 
     // Wire the debounced availability check (only for new signups, not switches)

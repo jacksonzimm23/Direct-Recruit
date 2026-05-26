@@ -25,12 +25,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         return;
     }
     try {
-        // Use API_BASE_URL from shared/api.js so this works on both Live Server and node
-        const apiBase = (typeof window.API_BASE_URL === 'string')
-            ? window.API_BASE_URL
-            : (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-                ? `http://${window.location.hostname}:5000/api`
-                : `${window.location.origin}/api`);
+        const apiBase = window.API_BASE_URL;
         const validateRes = await fetch(apiBase + '/coach-signup/validate-token?token=' + encodeURIComponent(urlToken), {
             credentials: 'include'
         });
@@ -186,9 +181,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         // firing on their own already-owned username). Username comes from the user's existing
         // profile (it's stored on profile rows + users.username — read whichever is populated).
         try {
-            const apiBase = (typeof window.API_BASE_URL === 'string')
-                ? window.API_BASE_URL
-                : `http://${window.location.hostname}:5000/api`;
+            const apiBase = window.API_BASE_URL;
             const me = await fetch(apiBase + '/auth/me', { credentials: 'include' }).then(r => r.json());
             const existingUsername = (me?.profile?.username) || (me?.user?.username) || null;
             if (existingUsername) {
