@@ -18,27 +18,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <script src="../shared/capacitor-init.js"></script>
+    <script src="../shared/mobile-web-redirect.js"></script>
     <script src="../shared/sw-register.js"></script>
-    <script>
-        // Mobile web visitors on the root landing page go straight to the app
-        // store redirect — desktop stays on the splash. iOS app (Capacitor)
-        // exempted via window.Capacitor.
-        (function () {
-            try {
-                if (window.Capacitor) return;
-                var ua = navigator.userAgent || '';
-                var isIOS = /iPhone|iPad|iPod/i.test(ua);
-                var isAndroid = /Android/i.test(ua);
-                if (!isIOS && !isAndroid) return;
-                var path = window.location.pathname;
-                var prefix = path.startsWith('/frontend/') ? '/frontend' : '';
-                var target = isIOS
-                    ? prefix + '/landingpage/get-the-app.html'
-                    : prefix + '/landingpage/coming-soon-android.html';
-                window.location.replace(target);
-            } catch (e) { console.error('[mobileWebRedirect]', e); }
-        })();
-    </script>
 </head>
 <body class="v2-splash-body">
     <!-- Navigation -->
