@@ -335,6 +335,91 @@ class RecruitingBoard {
     return { success: true };
   }
 
+  // Team-switch redaction for the coach's personal boards. Walks every
+  // personal board the coach owns and, for each player entry that came from
+  // the OLD school's pool (has pool_entry_id set), either:
+  //   - hard-removes the entry if it has no DR account fallback (no way to
+  //     render the recruit's name without leaking the questionnaire data), or
+  //   - strips every questionnaire-derived field, drops the final synthesis,
+  //     and severs the pool_entry_id reference. Keeps first/last name,
+  //     position on the board, DR account link, and the promotion audit
+  //     stamps.
+  //
+  // DR-sourced entries (user_id set, pool_entry_id null from the start) are
+  // left alone — the data lives on a public DR profile, no leak.
+  //
+  // Must run inside an existing transaction; caller passes `client`.
+  static async redactPoolSourcedFromPersonalBoards(client, coachUserId) {
+    // Pull every personal board for this coach with its players JSONB.
+    const boardsResult = await client.query(
+      `SELECT id, players
+         FROM recruiting_boards
+        WHERE owner_user_id = $1 AND is_personal = TRUE AND class_year = 0`,
+      [coachUserId]
+    );
+
+    // Fields that hold school-private questionnaire data — stripped from any
+    // pool-sourced entry. Anything else on the entry survives.
+    const QUESTIONNAIRE_FIELDS = [
+      'pool_entry_id',
+      'height', 'height_inches', 'weight', 'weight_lbs',
+      'gpa', 'graduation_year',
+      'state', 'city', 'high_school', 'address',
+      'email', 'phone', 'transcript_url', 'transcript_s3_keys',
+      // Final-synthesis fields: these were derived from old-school
+      // evaluations (avg of evaluation_chain), so reset them too.
+      'final_grade', 'final_color_tag', 'final_notes',
+      'grading_history', 'evaluation_chain',
+    ];
+
+    let totalRedacted = 0;
+    let totalDeleted = 0;
+
+    for (const row of boardsResult.rows) {
+      let players = row.players || [];
+      if (typeof players === 'string') players = JSON.parse(players);
+      if (!Array.isArray(players) || players.length === 0) continue;
+
+      let mutated = false;
+      const next = [];
+      for (const p of players) {
+        // Only touch pool-sourced entries. DR-sourced (no pool_entry_id) pass through.
+        if (!p.pool_entry_id) {
+          next.push(p);
+          continue;
+        }
+        // Pool-only orphan (no DR account fallback) → drop the entry entirely.
+        if (!p.user_id) {
+          totalDeleted++;
+          mutated = true;
+          continue;
+        }
+        // Pool entry with a DR fallback → strip questionnaire data, keep identity.
+        const stripped = { ...p };
+        for (const f of QUESTIONNAIRE_FIELDS) delete stripped[f];
+        // Mark the entry so the frontend can render the "different school" banner
+        // without needing a separate lookup. The original source label is
+        // overwritten so the UI no longer treats it as a questionnaire entry.
+        stripped.source = 'dr_profile';
+        stripped.redacted_from_old_school = true;
+        next.push(stripped);
+        totalRedacted++;
+        mutated = true;
+      }
+
+      if (mutated) {
+        await client.query(
+          `UPDATE recruiting_boards
+              SET players = $1::jsonb, updated_at = CURRENT_TIMESTAMP
+            WHERE id = $2`,
+          [JSON.stringify(next), row.id]
+        );
+      }
+    }
+
+    return { redactedCount: totalRedacted, deletedCount: totalDeleted };
+  }
+
   // ==================== Group Boards (Phase 2 — Google-Docs-style sharing) ====================
   // Mirror of the personal-board API above, but the ownership predicate is
   // `group_id = $X` instead of `owner_user_id = $X AND is_personal = TRUE`.

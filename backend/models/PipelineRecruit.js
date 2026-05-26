@@ -62,11 +62,15 @@ class PipelineRecruit {
    * Pull a pool entry into the coach's pipeline. Server validates that the
    * pool entry's school_key matches the coach's current normalized team_name.
    *
-   * If the coach previously removed this recruit (soft-deleted row exists for
-   * the same (coach_user_id, pool_entry_id) pair), the partial UNIQUE index
-   * excludes soft-deleted rows so this INSERT succeeds — a fresh ungraded row
-   * is created alongside the historical one. The old grade stays in
-   * getEvaluationsAtSchool's history view forever.
+   * Revival semantics: if the coach previously removed this recruit (one or
+   * more soft-deleted rows exist for the same (coach_user_id, pool_entry_id)
+   * pair), revive the MOST RECENTLY removed row by clearing
+   * removed_from_pipeline_at. Their old grade / color_tag / notes /
+   * evaluation_chain all come back as they were, and the "inactive" badge
+   * in the evaluation list disappears (the badge is driven by
+   * removed_from_pipeline_at IS NOT NULL). Older soft-deleted rows stay
+   * frozen in history as inactive. Only if no soft-deleted row exists do we
+   * INSERT a fresh ungraded row.
    */
   static async addFromPool(coachUserId, schoolKey, poolEntryId) {
     // Resolve pool entry + its questionnaire's school_key
@@ -91,6 +95,29 @@ class PipelineRecruit {
 
     const linkedPlayerUserId = peResult.rows[0].linked_player_user_id || null;
 
+    // Revive the most recently removed row if one exists. Returning the
+    // updated id lets us fall through to the standard getByIdForCoach path.
+    const revived = await pool.query(
+      `UPDATE pipeline_recruits
+          SET removed_from_pipeline_at = NULL,
+              status = 'active',
+              school_key = $2,
+              updated_at = CURRENT_TIMESTAMP
+        WHERE id = (
+          SELECT id FROM pipeline_recruits
+           WHERE coach_user_id = $1
+             AND pool_entry_id = $3
+             AND removed_from_pipeline_at IS NOT NULL
+           ORDER BY removed_from_pipeline_at DESC
+           LIMIT 1
+        )
+        RETURNING id`,
+      [coachUserId, schoolKey, poolEntryId]
+    );
+    if (revived.rows[0]) {
+      return this.getByIdForCoach(revived.rows[0].id, coachUserId);
+    }
+
     try {
       const inserted = await pool.query(
         `INSERT INTO pipeline_recruits
@@ -113,8 +140,13 @@ class PipelineRecruit {
   /**
    * Add a DR player directly to the pipeline (no pool entry / no questionnaire).
    * Validates the target is a player; coach_user_id provides the perspective.
-   * Like addFromPool, the partial UNIQUE excludes soft-deleted rows so a fresh
-   * INSERT after a remove succeeds and the old grade stays in history.
+   *
+   * Revival semantics: if the coach previously removed this DR player (one or
+   * more soft-deleted rows with linked_player_user_id matching), revive the
+   * most recently removed one. See addFromPool for the rationale. Only
+   * matches DR-direct rows (pool_entry_id IS NULL) so we don't accidentally
+   * revive a pool-sourced row when the coach was trying to re-add the same
+   * person from a profile.
    */
   static async addFromDRProfile(coachUserId, schoolKey, playerUserId) {
     const userResult = await pool.query(
@@ -130,6 +162,31 @@ class PipelineRecruit {
       const err = new Error('Only player accounts can be added to a pipeline');
       err.code = 'INVALID_TARGET';
       throw err;
+    }
+
+    // Revive the most recently removed DR-direct row, if any. Restricted to
+    // rows where pool_entry_id IS NULL so a soft-deleted pool-sourced row
+    // for the same DR account doesn't accidentally revive here.
+    const revived = await pool.query(
+      `UPDATE pipeline_recruits
+          SET removed_from_pipeline_at = NULL,
+              status = 'active',
+              school_key = $2,
+              updated_at = CURRENT_TIMESTAMP
+        WHERE id = (
+          SELECT id FROM pipeline_recruits
+           WHERE coach_user_id = $1
+             AND linked_player_user_id = $3
+             AND pool_entry_id IS NULL
+             AND removed_from_pipeline_at IS NOT NULL
+           ORDER BY removed_from_pipeline_at DESC
+           LIMIT 1
+        )
+        RETURNING id`,
+      [coachUserId, schoolKey, playerUserId]
+    );
+    if (revived.rows[0]) {
+      return this.getByIdForCoach(revived.rows[0].id, coachUserId);
     }
 
     try {
@@ -149,6 +206,63 @@ class PipelineRecruit {
       }
       throw e;
     }
+  }
+
+  /**
+   * Team-switch redaction. When a coach changes schools, every pool-sourced
+   * pipeline row they're carrying needs to be scrubbed:
+   *   - rows with no DR account link (questionnaire-only recruits whose name
+   *     can no longer be resolved from any source) are hard-deleted.
+   *   - rows linked to a DR account survive but get pool_entry_id NULLed out
+   *     (severs the link to the old school's questionnaire data), school_key
+   *     updated to the new school, and evaluation_chain filtered to keep only
+   *     the switching coach's own evaluation entry.
+   *
+   * DR-profile-sourced rows (pool_entry_id IS NULL from the start) are
+   * untouched — those recruits' data is public on the DR profile, no leak.
+   *
+   * Must run inside an existing transaction; caller passes `client`. Returns
+   * counts for verification.
+   */
+  static async redactPoolSourcedAtOldSchool(client, coachUserId, oldKey, newKey) {
+    // 1. Hard-delete pool-only orphans (no DR account to resolve name from).
+    //    These rows would have no first/last name source after redaction —
+    //    their only identity comes from the pool entry we're about to detach.
+    const deleted = await client.query(
+      `DELETE FROM pipeline_recruits
+       WHERE coach_user_id = $1
+         AND pool_entry_id IS NOT NULL
+         AND linked_player_user_id IS NULL
+         AND school_key = $2
+         AND removed_from_pipeline_at IS NULL
+       RETURNING id`,
+      [coachUserId, oldKey]
+    );
+
+    // 2. Sever pool reference + filter chain for rows that DO have a DR link.
+    //    The recruit's name still resolves via the DR profile JOIN at read time.
+    //    Coach's own grade / color_tag / notes columns are left untouched.
+    const updated = await client.query(
+      `UPDATE pipeline_recruits
+       SET pool_entry_id = NULL,
+           school_key = $2,
+           evaluation_chain = COALESCE(
+             (SELECT jsonb_agg(elem)
+                FROM jsonb_array_elements(evaluation_chain) elem
+               WHERE elem->>'coach_id' = $1::text),
+             '[]'::jsonb
+           ),
+           updated_at = CURRENT_TIMESTAMP
+       WHERE coach_user_id = $1
+         AND pool_entry_id IS NOT NULL
+         AND linked_player_user_id IS NOT NULL
+         AND school_key = $3
+         AND removed_from_pipeline_at IS NULL
+       RETURNING id`,
+      [coachUserId, newKey, oldKey]
+    );
+
+    return { deletedCount: deleted.rowCount, redactedCount: updated.rowCount };
   }
 
   /**

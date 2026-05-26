@@ -1326,23 +1326,77 @@ router.post('/switch-profile', authMiddleware, async (req, res) => {
       await client.query('UPDATE coach_invites SET used_at = NOW() WHERE id = $1', [inviteIdToConsume]);
     }
 
-    // Plan 5A: if the user's normalized school_key changed (including
-    // coach → non-coach, where new key is null), DELETE every pending
-    // inbound pipeline hand-off and flip the source recruits' status back
-    // to 'active' where applicable. Wrapped in try/catch so a failure here
-    // doesn't roll back the whole switch — but if it succeeds, it's part of
-    // the same transaction.
+    // Plan 5A + cross-school redaction. When a coach's normalized school_key
+    // changes (including coach → non-coach where new key is null):
+    //   1. Auto-cancel pending inbound hand-offs (Plan 5A).
+    //   2. Redact pool-sourced pipeline rows — recruits the coach pulled from
+    //      the old school's questionnaire pool. Coach's own grade + DR profile
+    //      link survive; questionnaire data is stripped, pool_entry_id is
+    //      nulled, and other coaches' evaluations are dropped from the chain.
+    //   3. Redact pool-sourced personal-board entries — same data scrub.
+    //      Orphan entries with no DR account fallback are removed entirely.
+    //   4. Drop the coach from every shared group at the old school. Same-
+    //      school invite rules already prevent NEW cross-school memberships;
+    //      this enforces the rule on switch too. Ownership auto-transfers if
+    //      the leaver was the owner.
+    //
+    // Wrapped in try/catch so a redaction failure doesn't roll back the whole
+    // switch — but on success, every change above is in the same transaction
+    // as the profile flip below.
     try {
       const TeamQuestionnaire = require('../models/TeamQuestionnaire');
       const PipelineHandoff = require('../models/PipelineHandoff');
+      const PipelineRecruit = require('../models/PipelineRecruit');
+      const RecruitingBoard = require('../models/RecruitingBoard');
+      const BoardGroup = require('../models/BoardGroup');
       const newTeamName = (targetRole === 'coach') ? (profile_data.team_name || null) : null;
       const oldKey = TeamQuestionnaire.normalizeSchoolKey(preSwitchTeamName);
       const newKey = TeamQuestionnaire.normalizeSchoolKey(newTeamName);
       if (oldKey !== newKey) {
+        // (1) Existing Plan 5A handoff cleanup.
         await PipelineHandoff.autoCancelForRecipient(client, req.userId, newKey);
+
+        // (2) Pipeline redaction. Only meaningful when oldKey is non-null
+        //     (the coach actually had a previous school). For a brand-new
+        //     coach (oldKey null) there's nothing to redact.
+        if (oldKey) {
+          await PipelineRecruit.redactPoolSourcedAtOldSchool(client, req.userId, oldKey, newKey);
+
+          // (3) Personal board redaction. Player JSONB entries on every
+          //     personal board the coach owns are scrubbed in place.
+          await RecruitingBoard.redactPoolSourcedFromPersonalBoards(client, req.userId);
+
+          // (4) Shared-group cleanup. Find every group the coach is in that
+          //     belongs to the old school, and drop the coach. The owner's
+          //     coach_profiles.team_name is the proxy for the group's school
+          //     (same-school invite enforcement guarantees every member
+          //     shares one key, so the owner's school = the group's school).
+          //
+          //     Special case: when the switching coach IS the owner, their
+          //     own coach_profiles row has ALREADY been replaced with the
+          //     new school by this point in the transaction (DELETE at
+          //     line ~1166, INSERT a few lines later). So a school_key
+          //     filter on the owner row would miss groups they own. The
+          //     `OR bg.owner_user_id = $1` clause catches those — the only
+          //     groups a coach can own are at their old school anyway
+          //     (they can't have created a group at the new school before
+          //     arriving via this switch).
+          const oldSchoolGroups = await client.query(
+            `SELECT DISTINCT bg.id
+               FROM board_groups bg
+               JOIN board_group_members bgm ON bgm.group_id = bg.id AND bgm.user_id = $1
+               LEFT JOIN coach_profiles ocp ON ocp.user_id = bg.owner_user_id
+              WHERE bg.owner_user_id = $1
+                 OR LOWER(TRIM(ocp.team_name)) = $2`,
+            [req.userId, oldKey]
+          );
+          for (const g of oldSchoolGroups.rows) {
+            await BoardGroup.removeMemberWithOwnerTransfer(client, g.id, req.userId);
+          }
+        }
       }
     } catch (e) {
-      logger.error('Plan 5A auto-cancel hook failed (settings.switch-profile):', e);
+      logger.error('Cross-school redaction hook failed (settings.switch-profile):', e);
     }
 
     await client.query('COMMIT');

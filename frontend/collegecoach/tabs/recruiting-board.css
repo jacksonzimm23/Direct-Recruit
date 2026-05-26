@@ -3379,18 +3379,19 @@ body.rb-shared-no-boards .recruiting-board-main .football-field-container {
         flex: 1 1 100%;
     }
 
-    /* Plan 8 mobile: right-align Group Info + Leave Group as a unit. The
-       row wraps at narrow widths — the spacer would otherwise push only
-       the first button to the right, leaving the second on a new line at
-       the left edge. Force both buttons into a flex group aligned to the
-       right via margin-left: auto on the first, gap on the second. */
+    /* Mobile: put Group Info + Leave Group on their own row UNDER the
+       group-name label, left-aligned. The name keeps the top row to itself
+       so long group names can't push the action buttons onto a weird wrap.
+       Spacer becomes a full-width line break; the buttons sit flush left
+       on the new row. */
     .sg-group-selector-row .sg-row-spacer {
-        flex-basis: 100%;       /* force a line break before the buttons */
+        flex-basis: 100%;
         height: 0;
         min-height: 0;
     }
-    .sg-group-selector-row .sg-action-btn-text.sg-info {
-        margin-left: auto;      /* push the pair right on the new line */
+    .sg-group-selector-row .sg-action-btn-text.sg-info,
+    .sg-group-selector-row .sg-action-btn-text.sg-leave {
+        flex-shrink: 0;
     }
 }
 
@@ -6334,4 +6335,83 @@ body.rb-shared-no-boards .recruiting-board-main .football-field-container {
 .recruiting-board-modal.info-modal .recruiting-board-modal-body strong {
     color: var(--white, #ffffff);
     font-weight: 700;
+}
+
+/* ==================== Team-switch redacted info banner ====================
+   Shown inside the unified Eval Modal's Info tab when the on-board recruit
+   was a pool entry at the coach's PREVIOUS school. The questionnaire data
+   was scrubbed by the team-switch redaction in routes/settings.js; this
+   banner explains what happened and offers a copy-link CTA to collect new
+   info under the coach's current school. */
+.eval-redacted-banner {
+    display: none;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px 16px;
+    margin-bottom: 16px;
+    background: rgba(255, 107, 53, 0.08);
+    border: 1px solid rgba(255, 107, 53, 0.3);
+    border-radius: 10px;
+    color: rgba(254, 252, 251, 0.9);
+}
+.eval-redacted-banner > svg {
+    flex-shrink: 0;
+    width: 22px;
+    height: 22px;
+    color: var(--accent-orange, #ff6b35);
+    margin-top: 2px;
+}
+.eval-redacted-banner-text {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+.eval-redacted-banner-title {
+    margin: 0 0 4px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--accent-orange, #ff6b35);
+}
+.eval-redacted-banner-body {
+    margin: 0;
+    font-size: 0.85rem;
+    line-height: 1.5;
+    color: rgba(254, 252, 251, 0.75);
+}
+.eval-redacted-banner-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+    padding: 8px 14px;
+    background: var(--accent-orange, #ff6b35);
+    color: var(--white, #ffffff);
+    border: none;
+    border-radius: 8px;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.82rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.1s;
+    align-self: center;
+}
+.eval-redacted-banner-cta:hover {
+    background: rgba(255, 107, 53, 0.85);
+    transform: translateY(-1px);
+}
+.eval-redacted-banner-cta svg {
+    width: 14px;
+    height: 14px;
+}
+
+/* Mobile: stack the banner vertically so the long body text and the CTA
+   each get their own line. */
+@media (max-width: 768px) {
+    .eval-redacted-banner {
+        flex-direction: column;
+        gap: 10px;
+    }
+    .eval-redacted-banner-cta {
+        align-self: stretch;
+        justify-content: center;
+    }
 }

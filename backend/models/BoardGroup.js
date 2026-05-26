@@ -288,6 +288,92 @@ class BoardGroup {
     }
   }
 
+  // Remove a member from a group using an EXISTING transaction client. Mirrors
+  // the ownership-transfer logic in leaveGroup() but does not open or commit
+  // its own transaction — the caller is responsible for BEGIN/COMMIT/ROLLBACK.
+  //
+  // Used by the team-switch redaction in routes/settings.js when a coach
+  // changes schools: every old-school group membership is cleaned up inside
+  // the same transaction that flips the coach's profile.
+  //
+  // Returns { transferred_to, deleted } matching leaveGroup's shape.
+  static async removeMemberWithOwnerTransfer(client, groupId, userId) {
+    const groupResult = await client.query(
+      `SELECT owner_user_id FROM board_groups WHERE id = $1`,
+      [groupId]
+    );
+    if (!groupResult.rows[0]) {
+      // Group already gone — treat as a no-op success.
+      return { transferred_to: null, deleted: true };
+    }
+    const isOwner = String(groupResult.rows[0].owner_user_id) === String(userId);
+
+    const memberCheck = await client.query(
+      `SELECT 1 FROM board_group_members WHERE group_id = $1 AND user_id = $2`,
+      [groupId, userId]
+    );
+    if (!memberCheck.rows[0]) {
+      // Not a member — nothing to do.
+      return { transferred_to: null, deleted: false };
+    }
+
+    if (!isOwner) {
+      await client.query(
+        `DELETE FROM board_group_members WHERE group_id = $1 AND user_id = $2`,
+        [groupId, userId]
+      );
+      return { transferred_to: null, deleted: false };
+    }
+
+    // Owner leaving — try to promote another editor first.
+    const editorCandidate = await client.query(
+      `SELECT user_id FROM board_group_members
+       WHERE group_id = $1 AND user_id != $2 AND permission = 'editor'
+       ORDER BY added_at ASC LIMIT 1`,
+      [groupId, userId]
+    );
+    if (editorCandidate.rows[0]) {
+      const newOwnerId = editorCandidate.rows[0].user_id;
+      await client.query(
+        `UPDATE board_groups SET owner_user_id = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2`,
+        [newOwnerId, groupId]
+      );
+      await client.query(
+        `DELETE FROM board_group_members WHERE group_id = $1 AND user_id = $2`,
+        [groupId, userId]
+      );
+      return { transferred_to: newOwnerId, deleted: false };
+    }
+
+    // No editor candidate — promote a viewer if any.
+    const viewerCandidate = await client.query(
+      `SELECT user_id FROM board_group_members
+       WHERE group_id = $1 AND user_id != $2
+       ORDER BY added_at ASC LIMIT 1`,
+      [groupId, userId]
+    );
+    if (viewerCandidate.rows[0]) {
+      const newOwnerId = viewerCandidate.rows[0].user_id;
+      await client.query(
+        `UPDATE board_group_members SET permission = 'editor' WHERE group_id = $1 AND user_id = $2`,
+        [groupId, newOwnerId]
+      );
+      await client.query(
+        `UPDATE board_groups SET owner_user_id = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2`,
+        [newOwnerId, groupId]
+      );
+      await client.query(
+        `DELETE FROM board_group_members WHERE group_id = $1 AND user_id = $2`,
+        [groupId, userId]
+      );
+      return { transferred_to: newOwnerId, deleted: false };
+    }
+
+    // Last member leaving — delete the group (recruiting_boards rows cascade).
+    await client.query(`DELETE FROM board_groups WHERE id = $1`, [groupId]);
+    return { transferred_to: null, deleted: true };
+  }
+
   // ---------- Writes (membership) ----------
 
   // Add a member directly (no invite step). Used internally when an invite is

@@ -1524,10 +1524,10 @@ html {
 
     /* === RECRUITING BOARD PAGE === */
 
-    /* Show title on mobile */
-    .recruiting-board-main .content-header h1 {
-        display: block !important;
-        font-size: 1.5rem !important;
+    /* Leave Group button: icon only on mobile (the row gets tight on
+       narrow screens, and the icon + aria-label are enough). */
+    #leaveSharedGroupBtn .sg-leave-label {
+        display: none !important;
     }
 
     /* Remove side margins on mobile */

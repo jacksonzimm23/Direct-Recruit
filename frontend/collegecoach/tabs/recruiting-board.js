@@ -177,6 +177,36 @@ document.addEventListener('DOMContentLoaded', async function() {
     if (_rbInfoClose) _rbInfoClose.addEventListener('click', closeInfoModal);
     if (_rbInfoGotIt) _rbInfoGotIt.addEventListener('click', closeInfoModal);
 
+    // "Copy Questionnaire Link" inside the team-switch redacted banner. Same
+    // per-school link the Team Pool tab uses — cached after first fetch so
+    // repeated clicks don't hammer the API.
+    let _redactedQuestionnaireUrl = null;
+    const _redactedCopyBtn = document.getElementById('evalRedactedSendQuestionnaireBtn');
+    if (_redactedCopyBtn) {
+        _redactedCopyBtn.addEventListener('click', async () => {
+            try {
+                if (!_redactedQuestionnaireUrl) {
+                    const linkData = await API.get('/recruiting-board/my-questionnaire');
+                    _redactedQuestionnaireUrl = (linkData && linkData.public_url) || null;
+                }
+                if (!_redactedQuestionnaireUrl) {
+                    if (typeof showToast === 'function') {
+                        showToast('Could not load your questionnaire link. Try the Team Pool tab.', 'error');
+                    }
+                    return;
+                }
+                await navigator.clipboard.writeText(_redactedQuestionnaireUrl);
+                if (typeof showToast === 'function') {
+                    showToast('Questionnaire link copied to clipboard', 'success');
+                }
+            } catch (_) {
+                if (typeof showToast === 'function') {
+                    showToast('Could not copy. Open the Team Pool tab and copy the link manually.', 'error');
+                }
+            }
+        });
+    }
+
     // Track if board has unsaved changes
     let hasUnsavedChanges = false;
     let saveTimeout = null;
@@ -1989,25 +2019,54 @@ document.addEventListener('DOMContentLoaded', async function() {
         document.body.appendChild(menu);
         positionMenu();
 
-        // Update position on scroll
-        const scrollContainers = [
-            document.querySelector('.board-content'),
-            document.querySelector('.position-column'),
-            window
-        ].filter(Boolean);
+        // Update position on scroll. Walk up from the card and attach to
+        // every scrollable ancestor so the menu tracks the card when any
+        // container scrolls — including the horizontal scroll on
+        // .football-field (the position-columns row), the vertical scroll
+        // on individual .position-column lists, and the page itself.
+        const collectScrollContainers = (startEl) => {
+            const containers = [];
+            const seen = new Set();
+            let el = startEl ? startEl.parentElement : null;
+            while (el && el !== document.body) {
+                if (seen.has(el)) break;
+                seen.add(el);
+                const style = window.getComputedStyle(el);
+                const ox = style.overflowX;
+                const oy = style.overflowY;
+                if (ox === 'auto' || ox === 'scroll' || oy === 'auto' || oy === 'scroll') {
+                    containers.push(el);
+                }
+                el = el.parentElement;
+            }
+            containers.push(window);
+            return containers;
+        };
+        const scrollContainers = collectScrollContainers(card);
+
+        // Declared up here so handleScroll can call cleanupMenu directly when
+        // the card scrolls out of view. scrollContainers must already exist
+        // (the cleanup needs to remove every listener it added).
+        const cleanupMenu = () => {
+            menu.remove();
+            scrollContainers.forEach(container => {
+                container.removeEventListener('scroll', handleScroll);
+            });
+        };
 
         const handleScroll = () => {
-            // Check if card is still visible
+            // If the card has scrolled out of view of any ancestor scroll
+            // container, close the menu (don't try to track an invisible card).
             const cardRect = card.getBoundingClientRect();
-            const boardContent = document.querySelector('.board-content');
-            if (boardContent) {
-                const boardRect = boardContent.getBoundingClientRect();
-                // If card scrolled out of view, close menu
-                if (cardRect.bottom < boardRect.top || cardRect.top > boardRect.bottom) {
-                    menu.remove();
-                    scrollContainers.forEach(container => {
-                        container.removeEventListener('scroll', handleScroll);
-                    });
+            for (const container of scrollContainers) {
+                if (container === window) continue;
+                const cRect = container.getBoundingClientRect();
+                const offBottom = cardRect.bottom < cRect.top;
+                const offTop    = cardRect.top    > cRect.bottom;
+                const offRight  = cardRect.right  < cRect.left;
+                const offLeft   = cardRect.left   > cRect.right;
+                if (offBottom || offTop || offRight || offLeft) {
+                    cleanupMenu();
                     return;
                 }
             }
@@ -2017,13 +2076,6 @@ document.addEventListener('DOMContentLoaded', async function() {
         scrollContainers.forEach(container => {
             container.addEventListener('scroll', handleScroll, { passive: true });
         });
-
-        const cleanupMenu = () => {
-            menu.remove();
-            scrollContainers.forEach(container => {
-                container.removeEventListener('scroll', handleScroll);
-            });
-        };
 
         const showInfoBtn = menu.querySelector('.show-info-btn');
         if (showInfoBtn) showInfoBtn.addEventListener('click', () => {
@@ -5004,7 +5056,12 @@ document.addEventListener('DOMContentLoaded', async function() {
         const qSection = document.getElementById('evalQuestionnaireSection');
         const pSection = document.getElementById('evalProfileSection');
         const emptyMsg = document.getElementById('evalInfoEmpty');
+        const redactedBanner = document.getElementById('evalRedactedBanner');
         const hasQuestionnaire = recruit.source === 'pool';
+        // Team-switch redaction: board entry was pool-sourced at the old
+        // school. Show the friendly banner instead of a stale questionnaire
+        // view or a "Failed to load" error.
+        const isRedacted = recruit._redactedFromOldSchool === true;
 
         if (hasAccount) {
             pSection.style.display = 'block';
@@ -5020,7 +5077,13 @@ document.addEventListener('DOMContentLoaded', async function() {
             pSection.style.display = 'none';
         }
 
-        if (hasQuestionnaire) {
+        if (isRedacted) {
+            // Banner shows. Skip the questionnaire fetch entirely — there's
+            // nothing to load (pool_entry_id was nulled out at switch time).
+            if (redactedBanner) redactedBanner.style.display = 'flex';
+            qSection.style.display = 'none';
+        } else if (hasQuestionnaire) {
+            if (redactedBanner) redactedBanner.style.display = 'none';
             qSection.style.display = 'block';
             const qBodyEl = document.getElementById('evalQuestionnaireBody');
             // Pipeline-source recruits arrive with submission_data already
@@ -5046,11 +5109,15 @@ document.addEventListener('DOMContentLoaded', async function() {
                 qBodyEl.innerHTML = renderQuestionnaireView({});
             }
         } else {
+            if (redactedBanner) redactedBanner.style.display = 'none';
             qSection.style.display = 'none';
         }
 
         if (emptyMsg) {
-            emptyMsg.style.display = (hasAccount || hasQuestionnaire) ? 'none' : 'block';
+            // The redacted banner counts as content too — don't show the
+            // "no questionnaire or profile info available" fallback when
+            // the banner is visible.
+            emptyMsg.style.display = (hasAccount || hasQuestionnaire || isRedacted) ? 'none' : 'block';
         }
 
         // Phase 3 — merged Evaluation + History tab. Fetch the cross-coach
@@ -5651,6 +5718,13 @@ document.addEventListener('DOMContentLoaded', async function() {
             _source: 'board',
             _boardContext: boardContext,
             _inMyPipeline: undefined,
+            // Surfaced by the team-switch redaction in
+            // RecruitingBoard.redactPoolSourcedFromPersonalBoards. When true,
+            // the Info tab renders a "different school" banner instead of
+            // questionnaire data — the original questionnaire was gathered
+            // by a different school and was scrubbed when the coach switched
+            // teams.
+            _redactedFromOldSchool: player.redacted_from_old_school === true,
         };
     }
 
