@@ -487,10 +487,56 @@ document.addEventListener('DOMContentLoaded', async function() {
                 await profileAPI.createPlayerProfile(profileData);
                 showSuccessMessage(isUpdating);
             } else {
-                // New signups: store profile data and redirect to Stripe Checkout
+                // New signups: store profile data, then pay
                 localStorage.setItem('pendingProfileData', JSON.stringify(profileData));
                 submitBtn.textContent = 'Redirecting to payment...';
 
+                // Phase 3c: iOS branch — use IAP instead of Stripe
+                if (API.isIOSApp()) {
+                    try {
+                        const r = await window.IAP.purchaseTier('transferplayer', null);
+                        if (r.success) {
+                            // Mirror payment-success.js logic inline (iOS never reaches that page via URL)
+                            try {
+                                await profileAPI.createPlayerProfile(profileData);
+                                localStorage.removeItem('pendingProfileData');
+
+                                // Grace period for paywall IIFE on next page
+                                const me = await API.auth.getCurrentUser().catch(() => null);
+                                if (me && me.user && me.user.id) {
+                                    localStorage.setItem('iap_pending_activation', JSON.stringify({
+                                        at: Date.now(), userId: me.user.id
+                                    }));
+                                }
+
+                                window.location.href = 'verify-email.html';
+                            } catch (innerErr) {
+                                console.error('Post-IAP profile setup error:', innerErr);
+                                showToast('Profile setup failed after purchase: ' + innerErr.message, 'error');
+                                submitBtn.disabled = false;
+                                submitBtn.textContent = originalText;
+                            }
+                            return;
+                        }
+                        if (r.cancelled) {
+                            submitBtn.disabled = false;
+                            submitBtn.textContent = originalText;
+                            return;
+                        }
+                        showToast('Purchase failed: ' + (r.error || 'unknown'), 'error');
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = originalText;
+                        return;
+                    } catch (iosErr) {
+                        console.error('IAP error:', iosErr);
+                        showToast('Purchase failed: ' + iosErr.message, 'error');
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = originalText;
+                        return;
+                    }
+                }
+
+                // Web — existing Stripe flow
                 const { url } = await API.payments.createCheckoutSession(
                     'transferplayer',
                     null,
