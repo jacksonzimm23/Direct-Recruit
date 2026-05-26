@@ -1492,16 +1492,20 @@ function initRecruitingCalendar() {
 
     openBtn.addEventListener('click', () => {
         overlay.classList.add('active');
+        if (window.ModalUtils) ModalUtils.lockBodyScroll();
     });
 
+    const closeOverlay = () => {
+        overlay.classList.remove('active');
+        if (window.ModalUtils) ModalUtils.unlockBodyScroll();
+    };
+
     if (closeBtn) {
-        closeBtn.addEventListener('click', () => {
-            overlay.classList.remove('active');
-        });
+        closeBtn.addEventListener('click', closeOverlay);
     }
 
     overlay.addEventListener('click', (e) => {
-        if (e.target === overlay) overlay.classList.remove('active');
+        if (e.target === overlay) closeOverlay();
     });
 
     tabs.forEach(tab => {

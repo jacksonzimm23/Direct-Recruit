@@ -279,11 +279,15 @@ function showLogoutModal() {
     `;
 
     document.body.appendChild(modal);
+    if (window.ModalUtils) ModalUtils.lockBodyScroll();
+
+    const closeModal = () => {
+        modal.remove();
+        if (window.ModalUtils) ModalUtils.unlockBodyScroll();
+    };
 
     // Handle cancel
-    document.getElementById('logoutCancel').addEventListener('click', () => {
-        modal.remove();
-    });
+    document.getElementById('logoutCancel').addEventListener('click', closeModal);
 
     // Handle confirm
     document.getElementById('logoutConfirm').addEventListener('click', async () => {
@@ -296,7 +300,7 @@ function showLogoutModal() {
     // Close on overlay click
     modal.addEventListener('click', (e) => {
         if (e.target === modal) {
-            modal.remove();
+            closeModal();
         }
     });
 }
@@ -852,6 +856,7 @@ async function openMobileProfileViewersModal() {
 
     modalBody.innerHTML = '<div class="follow-list-loading">Loading...</div>';
     modal.classList.add('active');
+    if (window.ModalUtils) ModalUtils.lockBodyScroll();
 
     try {
         const authResponse = await API.get('/auth/me');
@@ -928,6 +933,7 @@ function closeMobileProfileViewersModal() {
     const modal = document.getElementById('mobileProfileViewersModal');
     if (modal) {
         modal.classList.remove('active');
+        if (window.ModalUtils) ModalUtils.unlockBodyScroll();
     }
 }
 

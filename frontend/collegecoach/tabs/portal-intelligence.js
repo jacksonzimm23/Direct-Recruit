@@ -720,12 +720,14 @@ document.addEventListener('DOMContentLoaded', function() {
     function openWatchlistModal() {
         if (!watchlistOverlay) return;
         watchlistOverlay.classList.add('active');
+        if (window.ModalUtils) ModalUtils.lockBodyScroll();
         renderWatchlistModal();
     }
 
     function closeWatchlistModal() {
         if (!watchlistOverlay) return;
         watchlistOverlay.classList.remove('active');
+        if (window.ModalUtils) ModalUtils.unlockBodyScroll();
     }
 
     async function renderWatchlistModal() {
@@ -1090,6 +1092,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (summary) summary.textContent = Math.round(percent) + '%';
 
         piUsageOverlay.classList.add('active');
+        if (window.ModalUtils) ModalUtils.lockBodyScroll();
         } catch (err) {
             console.error('Failed to load usage:', err);
         }
@@ -1097,6 +1100,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function closePiUsageModal() {
         if (piUsageOverlay) piUsageOverlay.classList.remove('active');
+        if (window.ModalUtils) ModalUtils.unlockBodyScroll();
     }
 
     if (piOpenUsageBtn) {

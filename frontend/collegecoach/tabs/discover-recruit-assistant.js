@@ -964,10 +964,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
         renderPositionFields(baselines);
         baselinesOverlay.classList.add('active');
+        if (window.ModalUtils) ModalUtils.lockBodyScroll();
     }
 
     function closeBaselines() {
         if (baselinesOverlay) baselinesOverlay.classList.remove('active');
+        if (window.ModalUtils) ModalUtils.unlockBodyScroll();
     }
 
     function collectBaselinesData() {
@@ -1083,6 +1085,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (summary) summary.textContent = Math.round(percent) + '%';
 
         usageOverlay.classList.add('active');
+        if (window.ModalUtils) ModalUtils.lockBodyScroll();
         } catch (err) {
             console.error('Failed to load usage:', err);
         }
@@ -1090,6 +1093,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function closeUsageModal() {
         if (usageOverlay) usageOverlay.classList.remove('active');
+        if (window.ModalUtils) ModalUtils.unlockBodyScroll();
     }
 
     if (openUsageBtn) {
@@ -1276,6 +1280,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const overlay = document.getElementById('raSavedOverlay');
         const body = document.getElementById('raSavedBody');
         overlay.style.display = 'flex';
+        if (window.ModalUtils) ModalUtils.lockBodyScroll();
 
         body.innerHTML = '<div class="ra-saved-loading">Loading...</div>';
 
@@ -1372,6 +1377,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function closeSavedModal() {
         const overlay = document.getElementById('raSavedOverlay');
         if (overlay) overlay.style.display = 'none';
+        if (window.ModalUtils) ModalUtils.unlockBodyScroll();
     }
 
     init();

@@ -815,11 +815,15 @@ function showLogoutModal(userFolder) {
     `;
 
     document.body.appendChild(modal);
+    if (window.ModalUtils) ModalUtils.lockBodyScroll();
+
+    const closeModal = () => {
+        modal.remove();
+        if (window.ModalUtils) ModalUtils.unlockBodyScroll();
+    };
 
     // Handle cancel
-    document.getElementById('logoutCancel').addEventListener('click', () => {
-        modal.remove();
-    });
+    document.getElementById('logoutCancel').addEventListener('click', closeModal);
 
     // Handle confirm
     document.getElementById('logoutConfirm').addEventListener('click', async () => {
@@ -830,7 +834,7 @@ function showLogoutModal(userFolder) {
     // Close on overlay click
     modal.addEventListener('click', (e) => {
         if (e.target === modal) {
-            modal.remove();
+            closeModal();
         }
     });
 }

@@ -893,10 +893,12 @@ function showTierSelectionModal() {
     `;
 
     document.body.appendChild(overlay);
+    if (window.ModalUtils) ModalUtils.lockBodyScroll();
 
     // Close button
     document.getElementById('tierModalClose').addEventListener('click', () => {
         overlay.remove();
+        if (window.ModalUtils) ModalUtils.unlockBodyScroll();
         const submitBtn = document.querySelector('.btn-primary[type="submit"]');
         if (submitBtn) {
             submitBtn.disabled = false;

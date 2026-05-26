@@ -619,10 +619,14 @@ function showLogoutModal(userFolder) {
     `;
 
     document.body.appendChild(modal);
+    if (window.ModalUtils) ModalUtils.lockBodyScroll();
 
-    document.getElementById('logoutCancel').addEventListener('click', () => {
+    const closeModal = () => {
         modal.remove();
-    });
+        if (window.ModalUtils) ModalUtils.unlockBodyScroll();
+    };
+
+    document.getElementById('logoutCancel').addEventListener('click', closeModal);
 
     document.getElementById('logoutConfirm').addEventListener('click', async () => {
         await API.auth.logout();
@@ -630,7 +634,7 @@ function showLogoutModal(userFolder) {
 
     modal.addEventListener('click', (e) => {
         if (e.target === modal) {
-            modal.remove();
+            closeModal();
         }
     });
 }
