@@ -22,6 +22,161 @@ document.addEventListener('DOMContentLoaded', async function() {
         { group: 'specs-group', positions: ['K', 'P', 'LS'] }
     ];
 
+    // ==================== Per-tab "How this works" info modal ====================
+    // One modal element (`#rbInfoModal`) shared by all 4 subtabs. The body is
+    // populated from RB_INFO_COPY keyed by the subtab's data-tab name. Auto-opens
+    // the first time a coach lands on each tab (persisted via localStorage), then
+    // only on explicit click of the .rb-info-btn buttons in each tab's header.
+    const RB_INFO_COPY = {
+        'personal-boards': {
+            title: 'How Personal Boards Works',
+            body: `
+                <p><strong>What it is</strong></p>
+                <p>Your private football field view for ranking recruits by position. Only you can see your personal boards. You can have up to 5.</p>
+                <h4>How to use it</h4>
+                <ol>
+                    <li>Click + to create a new board (e.g., "2026 Class", "Transfer Targets", "Spring Eval").</li>
+                    <li>Use Add Position or Remove Position to customize the offense, defense, and specs columns to match your scheme.</li>
+                    <li>Promote recruits here from your Pipeline. You'll set a final grade, final color, and final notes, pulled from all the evaluations in their history.</li>
+                    <li>Drag and drop recruits to reorder them within a position, or move them between positions.</li>
+                    <li>Toggle Offense, Defense, or Specs to switch views.</li>
+                </ol>
+                <h4>Good to know</h4>
+                <ul>
+                    <li>Each promoted recruit carries a frozen evaluation history of every coach who graded them on the way here.</li>
+                    <li>Click a recruit's card to edit their final grade or move them to another board.</li>
+                </ul>
+            `,
+        },
+        'pipeline': {
+            title: 'How Pipeline Works',
+            body: `
+                <p><strong>What it is</strong></p>
+                <p>Your personal short list of recruits you're actively evaluating. This is where you grade players and decide who's worth promoting to a board.</p>
+                <h4>How to use it</h4>
+                <ol>
+                    <li>Add recruits from the Team Pool or directly from a player's profile.</li>
+                    <li>Click a recruit to open their evaluation card. Set a grade from 0 to 100, pick a color tag, and add notes.</li>
+                    <li>Use the filters at the top to slice your pipeline by position, grad year, state, or measurables.</li>
+                    <li>When you're ready to commit, promote them to a Personal Board or Shared Board. Their evaluation history travels with them.</li>
+                </ol>
+                <h4>The three views</h4>
+                <ul>
+                    <li><strong>My Pipeline:</strong> every recruit you're evaluating.</li>
+                    <li><strong>Sent:</strong> recruits you've handed off to other coaches at your school. Tracks pending, accepted, and rejected.</li>
+                    <li><strong>Received:</strong> recruits another coach sent you with their evaluation attached. Review their grade and notes, then Accept (adds to your pipeline) or Reject.</li>
+                </ul>
+                <h4>Color tags</h4>
+                <p>Dark Green, Light Green, Yellow, Orange, Red, Dark Red. Your school sets the meaning. Use them consistently.</p>
+            `,
+        },
+        'team-pool': {
+            title: 'How Team Pool Works',
+            body: `
+                <p><strong>What it is</strong></p>
+                <p>Your school's shared inbox of recruits who filled out your team's questionnaire. Every coach at your school sees the same pool.</p>
+                <h4>How to use it</h4>
+                <ol>
+                    <li>Click Copy Questionnaire Link and share it with recruits (email, DMs, camp flyers, your school's recruiting page).</li>
+                    <li>When a recruit submits, they appear here automatically. Re-submissions update their info, and you'll see a submission count.</li>
+                    <li>Use the filters (position, grad year, state, height, weight, GPA) to narrow the list.</li>
+                    <li>Click any recruit to open their full submission, including transcript, contact info, and their DR profile if they have one.</li>
+                    <li>Hit Add to Pipeline to start evaluating them.</li>
+                </ol>
+                <h4>Good to know</h4>
+                <ul>
+                    <li>&#10003; "In my pipeline" means you've already added this recruit.</li>
+                    <li>&#10003; "In another coach's pipeline" means another coach at your school is already on them.</li>
+                    <li>Recruits without a DR account won't have a profile picture. That's normal.</li>
+                </ul>
+            `,
+        },
+        'shared-boards': {
+            title: 'How Shared Boards Works',
+            body: `
+                <p><strong>What it is</strong></p>
+                <p>Collaborative recruiting boards for your position group or full staff. Think Google Docs for recruiting boards. Everyone at your school can grade and rank together.</p>
+                <h4>How to use it</h4>
+                <ol>
+                    <li>Create a Group (e.g., "OL Staff", "Defensive Staff") and invite coaches from your school. Invites only go to coaches with matching team names.</li>
+                    <li>Inside the group, create up to 5 shared boards (e.g., "2026 Class", "Priority Targets").</li>
+                    <li>Promote recruits from your Pipeline to a shared board. The board's final grade is suggested from the average of every coach's grade in the recruit's evaluation history.</li>
+                    <li>Members with Editor permission can add, move, grade, and rename. Viewers see everything read only.</li>
+                    <li>Click Group Info to manage members, change permissions, or transfer ownership.</li>
+                </ol>
+                <h4>Permissions</h4>
+                <ul>
+                    <li><strong>Owner:</strong> full control, including deleting the group.</li>
+                    <li><strong>Editor:</strong> add, move, grade, and rename recruits and boards. Invite new members.</li>
+                    <li><strong>Viewer:</strong> read only.</li>
+                </ul>
+                <h4>Good to know</h4>
+                <ul>
+                    <li>One group per coach.</li>
+                    <li>Leaving a group as the owner auto transfers ownership to another editor.</li>
+                    <li>Deleting a group removes all its boards for every member. This is permanent.</li>
+                </ul>
+            `,
+        },
+    };
+    const RB_INFO_SEEN_KEY = (tab) => `rbInfoSeen_${tab}`;
+
+    // Track whether we've called lockBodyScroll for the info modal so close
+    // handlers don't double-unlock if invoked twice (overlay + Got it both
+    // firing in quick succession, etc.). ModalUtils itself ref-counts, but
+    // local guarding keeps the count balanced.
+    let _rbInfoModalScrollLocked = false;
+
+    function openInfoModal(tabName) {
+        const copy = RB_INFO_COPY[tabName];
+        const modal = document.getElementById('rbInfoModal');
+        const titleEl = document.getElementById('rbInfoModalTitle');
+        const bodyEl = document.getElementById('rbInfoModalBody');
+        if (!copy || !modal || !titleEl || !bodyEl) return;
+        titleEl.textContent = copy.title;
+        bodyEl.innerHTML = copy.body;
+        // Reset body scroll position so each open starts at the top of the copy.
+        bodyEl.scrollTop = 0;
+        modal.classList.add('active');
+        if (!_rbInfoModalScrollLocked && window.ModalUtils && typeof window.ModalUtils.lockBodyScroll === 'function') {
+            window.ModalUtils.lockBodyScroll();
+            _rbInfoModalScrollLocked = true;
+        }
+        try { localStorage.setItem(RB_INFO_SEEN_KEY(tabName), '1'); } catch (_) { /* localStorage unavailable */ }
+    }
+
+    function closeInfoModal() {
+        const modal = document.getElementById('rbInfoModal');
+        if (modal) modal.classList.remove('active');
+        if (_rbInfoModalScrollLocked && window.ModalUtils && typeof window.ModalUtils.unlockBodyScroll === 'function') {
+            window.ModalUtils.unlockBodyScroll();
+            _rbInfoModalScrollLocked = false;
+        }
+    }
+
+    function maybeAutoOpenInfoModal(tabName) {
+        if (!RB_INFO_COPY[tabName]) return;
+        let seen = null;
+        try { seen = localStorage.getItem(RB_INFO_SEEN_KEY(tabName)); } catch (_) { /* localStorage unavailable */ }
+        if (!seen) openInfoModal(tabName);
+    }
+
+    // Wire click handlers for all .rb-info-btn buttons across the 4 tab headers.
+    document.querySelectorAll('.rb-info-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            const tab = btn.dataset.infoFor;
+            if (tab) openInfoModal(tab);
+        });
+    });
+    // Close handlers — overlay click, close (×) button, and "Got it" footer button.
+    const _rbInfoOverlay = document.getElementById('rbInfoModalOverlay');
+    const _rbInfoClose = document.getElementById('rbInfoModalClose');
+    const _rbInfoGotIt = document.getElementById('rbInfoModalGotItBtn');
+    if (_rbInfoOverlay) _rbInfoOverlay.addEventListener('click', closeInfoModal);
+    if (_rbInfoClose) _rbInfoClose.addEventListener('click', closeInfoModal);
+    if (_rbInfoGotIt) _rbInfoGotIt.addEventListener('click', closeInfoModal);
+
     // Track if board has unsaved changes
     let hasUnsavedChanges = false;
     let saveTimeout = null;
@@ -162,6 +317,12 @@ document.addEventListener('DOMContentLoaded', async function() {
         if (tabName === 'pipeline') {
             await initializePipelineTab();
         }
+
+        // Auto-open the "How this works" info modal the first time a coach
+        // lands on each subtab. Tracked via localStorage so subsequent visits
+        // don't auto-open — the (i) buttons in each tab header remain
+        // available for explicit re-open.
+        maybeAutoOpenInfoModal(tabName);
     }
 
     // Pipeline tab body is empty in Plan 3.5 — Plan 4 fills it. The Copy
@@ -6688,6 +6849,9 @@ document.addEventListener('DOMContentLoaded', async function() {
         if (initialSubtab !== 'personal-boards') {
             return activateSubtab(initialSubtab);
         }
+        // No activateSubtab() call on the personal-boards default path — fire
+        // the first-visit info-modal check here so it still auto-opens.
+        maybeAutoOpenInfoModal('personal-boards');
     }).then(() => _restoreEvalModalIfRequested());
 
 });

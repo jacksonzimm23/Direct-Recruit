@@ -6194,3 +6194,144 @@ body.rb-shared-no-boards .recruiting-board-main .football-field-container {
     background: #ff6b35;
     color: #fff;
 }
+
+/* ==================== Per-tab "How this works" info button + modal ==================== */
+
+/* Tab-header row for Personal Boards + Shared Boards (the two tabs that
+   didn't previously have a section title). Pipeline + Team Pool use their
+   own existing headers (.rb-pipeline-header / .rb-pool-header) and just
+   slot the .rb-tab-title-row into place there. */
+.rb-tab-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 4px 4px 16px;
+    margin-bottom: 4px;
+}
+.rb-tab-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--white, #ffffff);
+    margin: 0;
+    letter-spacing: -0.01em;
+}
+
+/* Pairs the section title with the (i) info button so they read as one unit
+   (title then icon, tight grouping). Used inside every tab header. */
+.rb-tab-title-row {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Icon-only circular info button. Hover label comes from the title attribute
+   on the <button> element. */
+.rb-info-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    background: transparent;
+    border: none;
+    border-radius: 50%;
+    color: var(--accent-orange, #ff6b35);
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+    flex-shrink: 0;
+}
+.rb-info-btn:hover,
+.rb-info-btn:focus {
+    background: rgba(255, 107, 53, 0.15);
+    color: var(--accent-orange, #ff6b35);
+    outline: none;
+}
+.rb-info-btn svg {
+    width: 18px;
+    height: 18px;
+}
+
+/* Info modal: orange themed variant of the shared .recruiting-board-modal
+   pattern. Modeled on .move-modal so the header icon is a centered circle.
+   The content is constrained to 90vh and laid out as a flex column so the
+   header + footer stay pinned and the body scrolls when copy overflows. */
+.recruiting-board-modal.info-modal .recruiting-board-modal-content {
+    max-width: 520px;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+}
+.recruiting-board-modal.info-modal .recruiting-board-modal-header.info-header {
+    flex-shrink: 0;
+}
+.recruiting-board-modal.info-modal .recruiting-board-modal-footer {
+    flex-shrink: 0;
+}
+.recruiting-board-modal.info-modal .recruiting-board-modal-header.info-header {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    position: relative;
+    padding-top: 1.5rem;
+}
+.recruiting-board-modal.info-modal .info-modal-icon {
+    width: 60px;
+    height: 60px;
+    margin-bottom: 1rem;
+    background: rgba(255, 107, 53, 0.15);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.recruiting-board-modal.info-modal .info-modal-icon svg {
+    width: 32px;
+    height: 32px;
+    color: var(--accent-orange, #ff6b35);
+}
+.recruiting-board-modal.info-modal .recruiting-board-modal-header h3 {
+    color: var(--white, #ffffff);
+}
+.recruiting-board-modal.info-modal .recruiting-board-modal-header .modal-close-btn {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+}
+.recruiting-board-modal.info-modal .recruiting-board-modal-body {
+    text-align: left;
+    color: rgba(254, 252, 251, 0.85);
+    font-size: 0.92rem;
+    line-height: 1.55;
+    flex: 1 1 auto;
+    overflow-y: auto;
+    min-height: 0;
+}
+.recruiting-board-modal.info-modal .recruiting-board-modal-body p {
+    margin: 0 0 0.75rem;
+}
+.recruiting-board-modal.info-modal .recruiting-board-modal-body p:first-child {
+    margin-top: 0;
+}
+.recruiting-board-modal.info-modal .recruiting-board-modal-body h4 {
+    margin: 1.1rem 0 0.5rem;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--accent-orange, #ff6b35);
+    font-weight: 700;
+}
+.recruiting-board-modal.info-modal .recruiting-board-modal-body ol,
+.recruiting-board-modal.info-modal .recruiting-board-modal-body ul {
+    padding-left: 1.25rem;
+    margin: 0.25rem 0 0.75rem;
+}
+.recruiting-board-modal.info-modal .recruiting-board-modal-body ol li,
+.recruiting-board-modal.info-modal .recruiting-board-modal-body ul li {
+    margin-bottom: 0.5rem;
+    line-height: 1.5;
+}
+.recruiting-board-modal.info-modal .recruiting-board-modal-body strong {
+    color: var(--white, #ffffff);
+    font-weight: 700;
+}
