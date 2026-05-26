@@ -76,10 +76,30 @@
         }
     }
 
+    // Apple Guideline 3.1.1 requires a Restore Purchases option for subscription
+    // apps. RevenueCat's restorePurchases() asks Apple for the user's existing
+    // transactions and re-syncs entitlements. The webhook then fires server-side
+    // and updates subscription_status in the DB.
+    async function restorePurchases() {
+        try {
+            const Purchases = window.Capacitor?.Plugins?.Purchases;
+            if (!Purchases) return { success: false, error: 'RevenueCat plugin not available' };
+
+            const result = await Purchases.restorePurchases();
+            const customerInfo = result?.customerInfo || result || {};
+            const entitlements = customerInfo?.entitlements?.active || {};
+            const hasActive = Object.keys(entitlements).length > 0;
+            return { success: true, hasActive: hasActive, customerInfo: customerInfo };
+        } catch (e) {
+            return { success: false, error: (e && e.message) || 'Restore failed' };
+        }
+    }
+
     // Expose globally — Phase 3c's 6 touchpoints use window.IAP
     window.IAP = {
         loadConfig: loadConfig,
         getProductForTier: getProductForTier,
-        purchaseTier: purchaseTier
+        purchaseTier: purchaseTier,
+        restorePurchases: restorePurchases
     };
 })();

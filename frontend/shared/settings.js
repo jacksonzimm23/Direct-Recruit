@@ -3232,12 +3232,23 @@ async function initializeSubscriptionSection() {
         const isPaid = PAID_PROFILE_TYPES.includes(profileFolder);
 
         if (!isPaid) {
+            const showRestore = API.isIOSApp();
             content.innerHTML = `
                 <div class="sub-free-message">
                     <p>Your account type is <strong>free</strong> — no subscription needed.</p>
                     <p style="color:rgba(255,255,255,0.4);font-size:0.85rem;margin-top:8px;">All social features, messaging, and discovery are included at no cost.</p>
                 </div>
+                ${showRestore ? `
+                <div class="sub-actions" style="margin-top:20px;">
+                    <button class="btn-secondary" id="subRestorePurchasesBtn">Restore Purchases</button>
+                    <p class="sub-cancel-note" style="margin-top:8px;font-size:0.8rem;">Previously paid through Apple? Tap to restore your subscription.</p>
+                </div>
+                ` : ''}
             `;
+            if (showRestore) {
+                const restoreBtn = document.getElementById('subRestorePurchasesBtn');
+                if (restoreBtn) restoreBtn.addEventListener('click', () => handleRestorePurchases(restoreBtn));
+            }
             return;
         }
 
@@ -3327,6 +3338,16 @@ function renderSubscriptionUI(container, sub, profileFolder) {
     }
     html += '</div>';
 
+    // Apple Guideline 3.1.1 requires Restore Purchases to be reachable on iOS
+    // regardless of current subscription state — covers reinstalls, device
+    // changes, and edge cases where Apple's record diverges from ours.
+    if (isIOS) {
+        html += '<div class="sub-actions" style="margin-top:12px;">';
+        html += '<button class="btn-secondary" id="subRestorePurchasesBtn">Restore Purchases</button>';
+        html += '<p class="sub-cancel-note" style="margin-top:8px;font-size:0.8rem;">Already paid through Apple? Tap to restore your subscription.</p>';
+        html += '</div>';
+    }
+
     container.innerHTML = html;
 
     // Attach event listeners
@@ -3348,6 +3369,32 @@ function renderSubscriptionUI(container, sub, profileFolder) {
 
     const reactivateBtn = document.getElementById('subReactivateBtn');
     if (reactivateBtn) reactivateBtn.addEventListener('click', () => handleReactivate());
+
+    const restoreBtn = document.getElementById('subRestorePurchasesBtn');
+    if (restoreBtn) restoreBtn.addEventListener('click', () => handleRestorePurchases(restoreBtn));
+}
+
+async function handleRestorePurchases(btn) {
+    const originalText = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = 'Restoring...';
+    try {
+        const r = await window.IAP.restorePurchases();
+        if (r.success) {
+            showToast('Purchases restored successfully.', 'success');
+            // Give RevenueCat's webhook a moment to update the backend before reload
+            setTimeout(() => window.location.reload(), 1500);
+            return;
+        }
+        showToast('Restore failed: ' + (r.error || 'unknown'), 'error');
+        btn.disabled = false;
+        btn.textContent = originalText;
+    } catch (e) {
+        console.error('Restore error:', e);
+        showToast('Restore failed: ' + e.message, 'error');
+        btn.disabled = false;
+        btn.textContent = originalText;
+    }
 }
 
 function showCancelSubscriptionModal(sub) {
