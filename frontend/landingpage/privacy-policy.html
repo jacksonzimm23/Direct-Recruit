@@ -49,7 +49,7 @@
                         <li><strong>Profile Information:</strong> Photos, bio, position, height, weight, graduation year, school, team, athletic stats, academic information (optional), and highlight videos</li>
                         <li><strong>Communications:</strong> Messages sent through our platform, posts, comments</li>
                         <li><strong>Recruiting Information:</strong> Offers received, schools of interest, transfer portal status</li>
-                        <li><strong>Subscription & Billing Information:</strong> Subscription tier and status, Stripe customer and subscription identifiers, billing period dates, and payment history. We do <strong>not</strong> store your full credit card number, CVV, or bank account details &mdash; those are handled directly by Stripe.</li>
+                        <li><strong>Subscription & Billing Information:</strong> Subscription tier and status, <span class="web-only">Stripe customer and subscription identifiers, </span>billing period dates, and payment history. We do <strong>not</strong> store your full credit card number, CVV, or bank account details &mdash; those are handled directly by <span class="web-only">Stripe</span><span class="ios-only">your platform's payment processor (Apple on iOS)</span>.</li>
                         <li><strong>Support Communications:</strong> Emails, phone inquiries, and other correspondence you send to our support team.</li>
                     </ul>
 
@@ -123,7 +123,7 @@
                         <li>Encryption of data in transit (TLS) and at rest</li>
                         <li>Industry-standard authentication with hashed credentials and secure session tokens</li>
                         <li>Regular security reviews and access controls</li>
-                        <li>Payment data isolation &mdash; full card details are handled only by Stripe, never stored on our servers</li>
+                        <li>Payment data isolation &mdash; full card details are handled only by <span class="web-only">Stripe</span><span class="ios-only">your platform's payment processor</span>, never stored on our servers</li>
                     </ul>
                     <p>However, no method of transmission over the Internet is 100% secure. While we strive to protect your information, we cannot guarantee absolute security.</p>
                 </div>

@@ -72,3 +72,14 @@ html.ios-app body { background-color: inherit; }
 
 /* Reassert iOS text-size auto-adjustment control */
 .ios-app { -webkit-text-size-adjust: 100%; }
+
+/* ============================================================
+   Generic .web-only / .ios-only helpers (Fix #6)
+   .web-only content is hidden inside the iOS app; .ios-only is
+   hidden everywhere else. Used to swap Stripe / hardcoded $ price
+   language between web and iOS bundles without duplicating entire
+   pages. Apple Guidelines 3.1.1 / 3.1.3.
+   ============================================================ */
+.ios-only { display: none; }
+html.ios-app .web-only { display: none !important; }
+html.ios-app .ios-only { display: revert; }

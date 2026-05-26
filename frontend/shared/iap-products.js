@@ -76,6 +76,38 @@
         }
     }
 
+    // Apple Guideline 3.1.1 prohibits hardcoded $ prices in the iOS app —
+    // they must come from Apple in the user's local currency. This helper
+    // returns a { tierKey: priceString } map for tier-picker modals to use.
+    // Returns empty {} on any failure so callers can fall back to web prices.
+    async function getOfferingsPriceMap() {
+        try {
+            await loadConfig();
+            const Purchases = window.Capacitor?.Plugins?.Purchases;
+            if (!Purchases) return {};
+            const offerings = await Purchases.getOfferings();
+            const currentOffering = offerings?.current || offerings?.all?.default;
+            if (!currentOffering?.availablePackages?.length) return {};
+            const map = {};
+            const cfg = _configCache?.products || {};
+            for (const pkg of currentOffering.availablePackages) {
+                const id = pkg.product?.identifier || pkg.storeProduct?.identifier;
+                const priceString = pkg.product?.priceString
+                    || pkg.storeProduct?.priceString
+                    || pkg.product?.localizedPriceString
+                    || null;
+                if (!id || !priceString) continue;
+                for (const [tierKey, productId] of Object.entries(cfg)) {
+                    if (productId === id) map[tierKey] = priceString;
+                }
+            }
+            return map;
+        } catch (e) {
+            console.warn('[IAP] getOfferingsPriceMap failed:', e);
+            return {};
+        }
+    }
+
     // Apple Guideline 3.1.1 requires a Restore Purchases option for subscription
     // apps. RevenueCat's restorePurchases() asks Apple for the user's existing
     // transactions and re-syncs entitlements. The webhook then fires server-side
@@ -99,6 +131,7 @@
     window.IAP = {
         loadConfig: loadConfig,
         getProductForTier: getProductForTier,
+        getOfferingsPriceMap: getOfferingsPriceMap,
         purchaseTier: purchaseTier,
         restorePurchases: restorePurchases
     };

@@ -3281,6 +3281,11 @@ function renderSubscriptionUI(container, sub, profileFolder) {
     const isNone = !sub.status || sub.status === 'none';
     const isCoach = profileFolder === 'collegecoach';
 
+    // Apple Guideline 3.1.1: don't show $ prices inside the iOS app.
+    // The user already paid via Apple — they can see the exact amount in
+    // their App Store subscriptions page in their local currency.
+    const isIOS = API.isIOSApp();
+
     let statusBadge = '';
     if (isActive && sub.cancelAtPeriodEnd) statusBadge = '<span class="sub-badge sub-badge-warning">Cancelling</span>';
     else if (isActive) statusBadge = '<span class="sub-badge sub-badge-active">Active</span>';
@@ -3290,8 +3295,9 @@ function renderSubscriptionUI(container, sub, profileFolder) {
 
     let html = '<div class="sub-details">';
 
-    // Plan name
-    html += `<div class="sub-row"><span class="sub-label">Plan</span><span class="sub-value">${plan ? plan.name + ' (' + plan.price + ')' : 'None'}</span></div>`;
+    // Plan name — hide ($price) suffix on iOS
+    const planLabel = plan ? (isIOS ? plan.name : plan.name + ' (' + plan.price + ')') : 'None';
+    html += `<div class="sub-row"><span class="sub-label">Plan</span><span class="sub-value">${planLabel}</span></div>`;
 
     // Status
     html += `<div class="sub-row"><span class="sub-label">Status</span><span class="sub-value">${statusBadge}</span></div>`;
@@ -3310,8 +3316,7 @@ function renderSubscriptionUI(container, sub, profileFolder) {
 
     // Phase 3c: iOS devices must use Apple's subscription management (Apple
     // Guideline 3.1.3). Stripe cancel/change buttons are replaced by a deep
-    // link to Apple's subscription center.
-    const isIOS = API.isIOSApp();
+    // link to Apple's subscription center. (`isIOS` is computed above.)
 
     // Buttons
     html += '<div class="sub-actions">';

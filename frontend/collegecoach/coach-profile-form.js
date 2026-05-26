@@ -866,27 +866,41 @@ function showTierSelectionModal() {
                     'Recruiting Board',
                     '4M AI tokens/month',
                     'Direct messaging'
-                ], false)}
+                ], false, 'coach_starter')}
                 ${tierCard('Pro', '50', [
                     'Everything in Starter',
                     '10M AI tokens/month (2.5x)',
                     'Saved players & portal watchlist',
                     'Custom baseline metrics',
                     'Priority support'
-                ], true)}
+                ], true, 'coach_pro')}
                 ${tierCard('Elite', '100', [
                     'Everything in Pro',
                     '20M AI tokens/month (5x)',
                     'Team collaboration tools',
                     'Unlimited saved players',
                     'Dedicated support'
-                ], false)}
+                ], false, 'coach_elite')}
             </div>
         </div>
     `;
 
     document.body.appendChild(overlay);
     if (window.ModalUtils) ModalUtils.lockBodyScroll();
+
+    // Apple Guideline 3.1.1: replace hardcoded USD prices with Apple's
+    // localized priceString once RevenueCat offerings come back.
+    if (API.isIOSApp() && window.IAP?.getOfferingsPriceMap) {
+        window.IAP.getOfferingsPriceMap().then((prices) => {
+            if (!prices) return;
+            ['coach_starter', 'coach_pro', 'coach_elite'].forEach((tierKey) => {
+                const el = overlay.querySelector('[data-tier-price="' + tierKey + '"]');
+                const suf = overlay.querySelector('[data-tier-suffix="' + tierKey + '"]');
+                if (el && prices[tierKey]) el.textContent = prices[tierKey];
+                if (suf && prices[tierKey]) suf.textContent = '';
+            });
+        });
+    }
 
     // Close button
     document.getElementById('tierModalClose').addEventListener('click', () => {
@@ -982,7 +996,7 @@ function showTierSelectionModal() {
     });
 }
 
-function tierCard(name, price, features, isPopular) {
+function tierCard(name, price, features, isPopular, tierKey) {
     const borderColor = isPopular ? '#ff6b35' : 'rgba(255,255,255,0.08)';
     const bgColor = isPopular ? 'rgba(255,107,53,0.04)' : 'rgba(255,255,255,0.03)';
     const badge = isPopular ? '<div style="position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:#ff6b35;color:#fff;font-size:11px;font-weight:700;padding:4px 16px;border-radius:20px;text-transform:uppercase;letter-spacing:0.5px;white-space:nowrap;">Most Popular</div>' : '';
@@ -994,13 +1008,18 @@ function tierCard(name, price, features, isPopular) {
         </li>`
     ).join('');
 
+    // data-tier-price / data-tier-suffix let the modal opener patch live
+    // Apple-localized prices in after RevenueCat offerings resolve (iOS only).
+    const priceAttr = tierKey ? ` data-tier-price="${tierKey}"` : '';
+    const suffixAttr = tierKey ? ` data-tier-suffix="${tierKey}"` : '';
+
     return `
         <div style="background:${bgColor};border:1px solid ${borderColor};border-radius:16px;padding:28px 20px;text-align:center;position:relative;display:flex;flex-direction:column;">
             ${badge}
             <h3 style="color:#fff;font-size:20px;font-weight:700;margin:0 0 12px;">${name}</h3>
             <div style="margin-bottom:12px;">
-                <span style="font-size:32px;font-weight:800;color:#fff;">$${price}</span>
-                <span style="font-size:14px;color:rgba(255,255,255,0.4);">/month</span>
+                <span style="font-size:32px;font-weight:800;color:#fff;"${priceAttr}>$${price}</span>
+                <span style="font-size:14px;color:rgba(255,255,255,0.4);"${suffixAttr}>/month</span>
             </div>
             <ul style="list-style:none;padding:0;margin:0 0 20px;text-align:left;flex:1;">${featureList}</ul>
             <button data-tier="${name.toLowerCase()}" style="background:#ff6b35;color:#fff;border:none;border-radius:8px;padding:12px;font-size:14px;font-weight:600;cursor:pointer;width:100%;font-family:'Inter',sans-serif;">Select</button>

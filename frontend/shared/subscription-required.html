@@ -156,18 +156,29 @@
                 await API.auth.logout();
             });
 
-            function showTierSelection() {
+            async function showTierSelection() {
                 const container = document.querySelector('.paywall-actions');
                 container.innerHTML = '<p style="color:#8892b0;font-size:14px;margin:0 0 16px;">Select your plan:</p>';
+
+                // Apple Guideline 3.1.1: prefer Apple's localized price on iOS,
+                // fall back to hardcoded USD on web or if offerings fetch fails.
+                let livePrices = {};
+                if (window.API?.isIOSApp && window.API.isIOSApp() && window.IAP?.getOfferingsPriceMap) {
+                    try { livePrices = await window.IAP.getOfferingsPriceMap(); } catch (_) {}
+                }
+
                 const tiers = [
-                    { name: 'Starter', price: '20', tier: 'starter' },
-                    { name: 'Pro', price: '50', tier: 'pro' },
-                    { name: 'Elite', price: '100', tier: 'elite' }
+                    { name: 'Starter', price: '20', tier: 'starter', priceKey: 'coach_starter' },
+                    { name: 'Pro', price: '50', tier: 'pro', priceKey: 'coach_pro' },
+                    { name: 'Elite', price: '100', tier: 'elite', priceKey: 'coach_elite' }
                 ];
                 tiers.forEach(t => {
                     const btn = document.createElement('button');
                     btn.className = 'paywall-btn ' + (t.tier === 'pro' ? 'paywall-btn-primary' : 'paywall-btn-secondary');
-                    btn.textContent = t.name + ' — $' + t.price + '/mo';
+                    const livePrice = livePrices[t.priceKey];
+                    btn.textContent = livePrice
+                        ? (t.name + ' — ' + livePrice)
+                        : (t.name + ' — $' + t.price + '/mo');
                     btn.addEventListener('click', async () => {
                         const originalText = btn.textContent;
                         btn.textContent = 'Redirecting...';
