@@ -89,8 +89,12 @@ if (process.env.NODE_ENV === 'production') {
 // both gitignored, never deployed) can call the prod admin API from Live Server.
 // The admin endpoints are independently protected by the x-admin-key header,
 // so opening CORS to localhost doesn't reduce security.
+// 'capacitor://localhost' and 'https://localhost' are the default Capacitor
+// WebView origins on iOS — kept as a fallback even though capacitor.config.ts
+// sets server.hostname to directrecruit.net (so the Origin header normally
+// already matches the allowlist).
 const allowedOrigins = process.env.NODE_ENV === 'production'
-  ? ['https://directrecruit.net', 'https://www.directrecruit.net', 'http://localhost:5500']
+  ? ['https://directrecruit.net', 'https://www.directrecruit.net', 'http://localhost:5500', 'capacitor://localhost', 'https://localhost']
   : true; // Allow all origins in development
 
 app.use(cors({
