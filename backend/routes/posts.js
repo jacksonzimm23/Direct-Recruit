@@ -353,7 +353,7 @@ router.get('/comments/:commentId/replies', authMiddleware, validateUUID('comment
     const limit = Math.min(parseInt(req.query.limit) || 20, 100);
     const offset = Math.max(parseInt(req.query.offset) || 0, 0);
 
-    let replies = await Post.getCommentReplies(req.params.commentId, limit, offset);
+    let replies = await Post.getCommentReplies(req.params.commentId, limit, offset, req.userId);
     replies = await addSignedUrlsToPosts(replies); // Comments have author_image field
     res.json({ replies, count: replies.length });
   } catch (error) {
@@ -986,7 +986,7 @@ router.get('/share/:shareId/comments', authMiddleware, validateUUID('shareId'), 
     const limit = Math.min(parseInt(req.query.limit) || 50, 100);
     const offset = Math.max(parseInt(req.query.offset) || 0, 0);
 
-    let comments = await Post.getShareComments(req.params.shareId, limit, offset);
+    let comments = await Post.getShareComments(req.params.shareId, limit, offset, req.userId);
     comments = await addSignedUrlsToUsers(comments);
     res.json({ comments });
   } catch (error) {

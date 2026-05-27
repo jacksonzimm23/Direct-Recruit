@@ -67,11 +67,11 @@ function showToast(message, type = 'error', duration = 4000) {
 function showConfirmModal({ title = 'Confirm', message, confirmText = 'Confirm', cancelText = 'Cancel', danger = true, icon = null } = {}) {
     return new Promise((resolve) => {
         // Inject CSS once
-        if (!document.getElementById('confirm-modal-styles')) {
+        if (!document.getElementById('dr-confirm-modal-styles')) {
             const style = document.createElement('style');
-            style.id = 'confirm-modal-styles';
+            style.id = 'dr-confirm-modal-styles';
             style.textContent = `
-                .confirm-modal-overlay {
+                .dr-confirm-modal-overlay {
                     position: fixed;
                     top: 0;
                     left: 0;
@@ -89,7 +89,7 @@ function showConfirmModal({ title = 'Confirm', message, confirmText = 'Confirm',
                     from { opacity: 0; }
                     to { opacity: 1; }
                 }
-                .confirm-modal {
+                .dr-confirm-modal {
                     background: rgba(10, 17, 40, 0.98);
                     border: 1px solid rgba(18, 130, 162, 0.3);
                     border-radius: 16px;
@@ -104,7 +104,7 @@ function showConfirmModal({ title = 'Confirm', message, confirmText = 'Confirm',
                     from { opacity: 0; transform: translateY(20px); }
                     to { opacity: 1; transform: translateY(0); }
                 }
-                .confirm-modal-icon {
+                .dr-confirm-modal-icon {
                     width: 64px;
                     height: 64px;
                     border-radius: 50%;
@@ -113,41 +113,41 @@ function showConfirmModal({ title = 'Confirm', message, confirmText = 'Confirm',
                     justify-content: center;
                     margin: 0 auto 1.5rem;
                 }
-                .confirm-modal-icon.danger {
+                .dr-confirm-modal-icon.danger {
                     background: rgba(255, 107, 107, 0.1);
                 }
-                .confirm-modal-icon.info {
+                .dr-confirm-modal-icon.info {
                     background: rgba(18, 130, 162, 0.1);
                 }
-                .confirm-modal-icon svg {
+                .dr-confirm-modal-icon svg {
                     width: 32px;
                     height: 32px;
                     stroke-width: 2;
                 }
-                .confirm-modal-icon.danger svg {
+                .dr-confirm-modal-icon.danger svg {
                     color: #ff6b6b;
                 }
-                .confirm-modal-icon.info svg {
+                .dr-confirm-modal-icon.info svg {
                     color: #1282a2;
                 }
-                .confirm-modal-title {
+                .dr-confirm-modal-title {
                     font-size: 1.5rem;
                     font-weight: 700;
                     color: #fff;
                     margin: 0 0 0.5rem 0;
                 }
-                .confirm-modal-text {
+                .dr-confirm-modal-text {
                     font-size: 1rem;
                     color: rgba(255, 255, 255, 0.7);
                     margin: 0 0 2rem 0;
                     line-height: 1.5;
                 }
-                .confirm-modal-actions {
+                .dr-confirm-modal-actions {
                     display: flex;
                     gap: 1rem;
                     justify-content: center;
                 }
-                .confirm-modal-btn {
+                .dr-confirm-modal-btn {
                     padding: 0.75rem 2rem;
                     border-radius: 8px;
                     font-size: 1rem;
@@ -157,31 +157,57 @@ function showConfirmModal({ title = 'Confirm', message, confirmText = 'Confirm',
                     transition: all 0.2s ease;
                     font-family: 'Inter', sans-serif;
                 }
-                .confirm-modal-btn:hover {
+                .dr-confirm-modal-btn:hover {
                     transform: translateY(-1px);
                     filter: brightness(1.1);
                 }
-                .confirm-modal-btn-cancel {
+                .dr-confirm-modal-btn-cancel {
                     background: rgba(255, 255, 255, 0.1);
                     color: #fff;
                     border: 1px solid rgba(255, 255, 255, 0.2);
                 }
-                .confirm-modal-btn-cancel:hover {
+                .dr-confirm-modal-btn-cancel:hover {
                     background: rgba(255, 255, 255, 0.15);
                 }
-                .confirm-modal-btn-confirm.danger {
+                .dr-confirm-modal-btn-confirm.danger {
                     background: #ff6b6b;
                     color: #fff;
                 }
-                .confirm-modal-btn-confirm.danger:hover {
+                .dr-confirm-modal-btn-confirm.danger:hover {
                     background: #ff5252;
                 }
-                .confirm-modal-btn-confirm.info {
+                .dr-confirm-modal-btn-confirm.info {
                     background: #1282a2;
                     color: #fff;
                 }
-                .confirm-modal-btn-confirm.info:hover {
+                .dr-confirm-modal-btn-confirm.info:hover {
                     background: #0e6d8a;
+                }
+                /* Mobile: full-screen instead of centered popup (lesson 75). */
+                @media (max-width: 768px) {
+                    .dr-confirm-modal-overlay {
+                        align-items: stretch;
+                        justify-content: stretch;
+                    }
+                    .dr-confirm-modal {
+                        width: 100vw;
+                        height: 100vh;
+                        max-width: 100vw;
+                        max-height: 100vh;
+                        border-radius: 0;
+                        border: none;
+                        display: flex;
+                        flex-direction: column;
+                        justify-content: center;
+                        padding: 2rem 1.5rem;
+                    }
+                    .dr-confirm-modal-actions {
+                        margin-top: 1rem;
+                    }
+                    .dr-confirm-modal-btn {
+                        flex: 1;
+                        padding: 0.85rem 1rem;
+                    }
                 }
             `;
             document.head.appendChild(style);
@@ -193,7 +219,8 @@ function showConfirmModal({ title = 'Confirm', message, confirmText = 'Confirm',
         // markers based on `danger`.
         const presetIcons = {
             trash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>',
-            x: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>'
+            x: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>',
+            check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="8 12 11 15 16 9"></polyline></svg>'
         };
         const svgIcon = icon
             ? (presetIcons[icon] || icon)
@@ -202,15 +229,15 @@ function showConfirmModal({ title = 'Confirm', message, confirmText = 'Confirm',
                 : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>');
 
         const overlay = document.createElement('div');
-        overlay.className = 'confirm-modal-overlay';
+        overlay.className = 'dr-confirm-modal-overlay';
         overlay.innerHTML = `
-            <div class="confirm-modal">
-                <div class="confirm-modal-icon ${iconType}">${svgIcon}</div>
-                <h2 class="confirm-modal-title">${title}</h2>
-                <p class="confirm-modal-text">${message}</p>
-                <div class="confirm-modal-actions">
-                    <button class="confirm-modal-btn confirm-modal-btn-cancel">${cancelText}</button>
-                    <button class="confirm-modal-btn confirm-modal-btn-confirm ${iconType}">${confirmText}</button>
+            <div class="dr-confirm-modal">
+                <div class="dr-confirm-modal-icon ${iconType}">${svgIcon}</div>
+                <h2 class="dr-confirm-modal-title">${title}</h2>
+                <p class="dr-confirm-modal-text">${message}</p>
+                <div class="dr-confirm-modal-actions">
+                    <button class="dr-confirm-modal-btn dr-confirm-modal-btn-cancel">${cancelText}</button>
+                    <button class="dr-confirm-modal-btn dr-confirm-modal-btn-confirm ${iconType}">${confirmText}</button>
                 </div>
             </div>
         `;
@@ -222,8 +249,8 @@ function showConfirmModal({ title = 'Confirm', message, confirmText = 'Confirm',
             resolve(result);
         }
 
-        overlay.querySelector('.confirm-modal-btn-cancel').addEventListener('click', () => close(false));
-        overlay.querySelector('.confirm-modal-btn-confirm').addEventListener('click', () => close(true));
+        overlay.querySelector('.dr-confirm-modal-btn-cancel').addEventListener('click', () => close(false));
+        overlay.querySelector('.dr-confirm-modal-btn-confirm').addEventListener('click', () => close(true));
         overlay.addEventListener('click', (e) => { if (e.target === overlay) close(false); });
         document.addEventListener('keydown', function handler(e) {
             if (e.key === 'Escape') { document.removeEventListener('keydown', handler); close(false); }
@@ -234,28 +261,28 @@ function showConfirmModal({ title = 'Confirm', message, confirmText = 'Confirm',
 // Logout confirmation modal — uses the logout door icon
 function showLogoutConfirmModal() {
     return new Promise((resolve) => {
-        if (!document.getElementById('confirm-modal-styles')) {
+        if (!document.getElementById('dr-confirm-modal-styles')) {
             // Ensure confirm modal CSS is loaded
             showConfirmModal({ title: '', message: '' }).then(() => {});
-            document.querySelector('.confirm-modal-overlay')?.remove();
+            document.querySelector('.dr-confirm-modal-overlay')?.remove();
         }
 
         const overlay = document.createElement('div');
-        overlay.className = 'confirm-modal-overlay';
+        overlay.className = 'dr-confirm-modal-overlay';
         overlay.innerHTML = `
-            <div class="confirm-modal">
-                <div class="confirm-modal-icon danger">
+            <div class="dr-confirm-modal">
+                <div class="dr-confirm-modal-icon danger">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
                         <polyline points="16 17 21 12 16 7"></polyline>
                         <line x1="21" y1="12" x2="9" y2="12"></line>
                     </svg>
                 </div>
-                <h2 class="confirm-modal-title">Log Out</h2>
-                <p class="confirm-modal-text">Are you sure you want to log out?</p>
-                <div class="confirm-modal-actions">
-                    <button class="confirm-modal-btn confirm-modal-btn-cancel">Cancel</button>
-                    <button class="confirm-modal-btn confirm-modal-btn-confirm danger">Log Out</button>
+                <h2 class="dr-confirm-modal-title">Log Out</h2>
+                <p class="dr-confirm-modal-text">Are you sure you want to log out?</p>
+                <div class="dr-confirm-modal-actions">
+                    <button class="dr-confirm-modal-btn dr-confirm-modal-btn-cancel">Cancel</button>
+                    <button class="dr-confirm-modal-btn dr-confirm-modal-btn-confirm danger">Log Out</button>
                 </div>
             </div>
         `;
@@ -266,8 +293,8 @@ function showLogoutConfirmModal() {
             resolve(result);
         }
 
-        overlay.querySelector('.confirm-modal-btn-cancel').addEventListener('click', () => close(false));
-        overlay.querySelector('.confirm-modal-btn-confirm').addEventListener('click', () => close(true));
+        overlay.querySelector('.dr-confirm-modal-btn-cancel').addEventListener('click', () => close(false));
+        overlay.querySelector('.dr-confirm-modal-btn-confirm').addEventListener('click', () => close(true));
         overlay.addEventListener('click', (e) => { if (e.target === overlay) close(false); });
         document.addEventListener('keydown', function handler(e) {
             if (e.key === 'Escape') { document.removeEventListener('keydown', handler); close(false); }

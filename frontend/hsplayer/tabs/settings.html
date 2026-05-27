@@ -181,6 +181,13 @@
                     </svg>
                     Security
                 </button>
+                <button class="settings-nav-btn" data-section="blockedUsers">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line>
+                    </svg>
+                    Blocked Users
+                </button>
             </div>
 
             <!-- Settings Sections -->
@@ -601,6 +608,14 @@
                         </div>
                     </div>
                 </section>
+
+                <!-- Blocked Users Section (Fix #2d) -->
+                <section class="settings-section" id="blockedUsers">
+                    <h2 class="section-heading">Blocked Users</h2>
+                    <div class="settings-card">
+                        <div id="blockedUsersContent">Loading&hellip;</div>
+                    </div>
+                </section>
             </div>
 
             <!-- Save Changes Footer -->
@@ -922,6 +937,9 @@
     <script src="../sidebar-footer.js"></script>
     <script src="../mainpage-player.js"></script>
     <script src="../../shared/iap-products.js"></script>
+    <script src="../../shared/report-modal.js"></script>
+    <script src="../../shared/block-helpers.js"></script>
+    <script src="../../shared/blocked-users-section.js"></script>
     <script src="../../shared/settings.js"></script>
 </body>
 </html>

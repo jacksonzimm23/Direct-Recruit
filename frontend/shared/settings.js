@@ -100,8 +100,14 @@ function initializeSettingsNavigation() {
             // Hide save/discard footer on sections that don't use it
             const footer = document.querySelector('.settings-footer');
             if (footer) {
-                const noFooterSections = ['profileType', 'subscription', 'security'];
+                const noFooterSections = ['profileType', 'subscription', 'security', 'blockedUsers'];
                 footer.style.display = noFooterSections.includes(targetSection) ? 'none' : '';
+            }
+
+            // Lazy-init the Blocked Users section the first time it opens
+            // (and refresh whenever the user re-enters it).
+            if (targetSection === 'blockedUsers' && typeof window.initializeBlockedUsersSection === 'function') {
+                window.initializeBlockedUsersSection();
             }
 
             // Scroll to top of settings content on mobile

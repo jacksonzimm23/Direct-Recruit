@@ -7509,8 +7509,13 @@ input[type="file"]::file-selector-button:hover {
         display: none;
     }
 
-    /* Recruiting board button - icon-only square, inline with other buttons */
+    /* Recruiting board button - on mobile, absolutely position to the left of
+       the three-dot (which sits at top:56px; right:1rem; width:30px). Pipeline
+       button = 30px wide; 8px gap → right offset of 1rem + 30 + 8 = ~3.375rem. */
     .btn-recruiting-board {
+        position: absolute;
+        top: 56px;
+        right: calc(1rem + 38px);
         width: 30px;
         height: 30px;
         padding: 0;
@@ -7520,6 +7525,7 @@ input[type="file"]::file-selector-button:hover {
         gap: 0;
         order: unset;
         margin-top: 0;
+        z-index: 5;
     }
 
     .btn-recruiting-board svg {

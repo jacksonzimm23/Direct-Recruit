@@ -7900,60 +7900,60 @@ input[type="file"]::file-selector-button:hover {
     }
 
     .btn-edit-profile {
-        height: 26px;
-        padding: 0 0.5rem;
-        font-size: 0.7rem;
+        height: 30px;
+        padding: 0 0.75rem;
+        font-size: 0.75rem;
         border-radius: 6px;
-        gap: 0.2rem;
+        gap: 0.3rem;
         align-items: center;
     }
 
     .btn-edit-profile svg {
-        width: 10px !important;
-        height: 10px !important;
-        flex-shrink: 0;
-    }
-
-    .btn-share-profile {
-        width: 26px;
-        height: 26px;
-        padding: 0;
-        border-radius: 6px;
-    }
-
-    .btn-share-profile svg {
         width: 12px !important;
         height: 12px !important;
         flex-shrink: 0;
     }
 
+    .btn-share-profile {
+        width: 30px;
+        height: 30px;
+        padding: 0;
+        border-radius: 6px;
+    }
+
+    .btn-share-profile svg {
+        width: 14px !important;
+        height: 14px !important;
+        flex-shrink: 0;
+    }
+
     /* Other-profile action buttons (Back, Follow, Message) */
     .btn-back {
-        height: 26px;
-        padding: 0 0.5rem;
-        font-size: 0.7rem;
+        height: 30px;
+        padding: 0 0.75rem;
+        font-size: 0.75rem;
         border-radius: 6px;
-        gap: 0.2rem;
+        gap: 0.3rem;
         align-items: center;
     }
 
     .btn-back svg {
-        width: 10px !important;
-        height: 10px !important;
+        width: 12px !important;
+        height: 12px !important;
         flex-shrink: 0;
     }
 
     .btn-follow {
-        height: 26px;
-        padding: 0 0.5rem;
-        font-size: 0.7rem;
+        height: 30px;
+        padding: 0 0.75rem;
+        font-size: 0.75rem;
         border-radius: 6px;
     }
 
     .btn-message {
-        height: 26px;
-        padding: 0 0.5rem;
-        font-size: 0.7rem;
+        height: 30px;
+        padding: 0 0.75rem;
+        font-size: 0.75rem;
         border-radius: 6px;
     }
 
@@ -7962,10 +7962,16 @@ input[type="file"]::file-selector-button:hover {
         display: none;
     }
 
-    /* Recruiting board button - icon-only square, inline with other buttons */
+    /* Recruiting board button - on mobile, absolutely position to the left of
+       the three-dot. Transferplayer card pads differently than hsplayer
+       (align-items:flex-start + 80px avatar) so the action row sits higher
+       and needs a slightly larger top offset to clear it. */
     .btn-recruiting-board {
-        width: 26px;
-        height: 26px;
+        position: absolute;
+        top: 72px;
+        right: calc(1rem + 38px);
+        width: 30px;
+        height: 30px;
         padding: 0;
         border-radius: 6px;
         font-size: 0;
@@ -7973,6 +7979,14 @@ input[type="file"]::file-selector-button:hover {
         gap: 0;
         order: unset;
         margin-top: 0;
+        z-index: 5;
+    }
+
+    /* Override the shared three-dot position on transferplayer profiles only
+       so it lines up with the pipeline button at the new top offset. */
+    .profile-actions .btn-profile-more,
+    .profile-header-simple .btn-profile-more {
+        top: 72px !important;
     }
 
     .btn-recruiting-board svg {

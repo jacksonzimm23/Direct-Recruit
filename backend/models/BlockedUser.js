@@ -137,7 +137,19 @@ class BlockedUser {
               COALESCE(pp.first_name, cp.first_name, op.first_name) AS first_name,
               COALESCE(pp.last_name, cp.last_name, op.last_name) AS last_name,
               COALESCE(pp.username, cp.username, op.username) AS username,
-              COALESCE(pp.profile_image_url, cp.profile_image_url, op.profile_picture_url) AS profile_image_url
+              COALESCE(pp.profile_image_url, cp.profile_image_url, op.profile_picture_url) AS profile_image_url,
+              -- Fields needed by buildCommentSubheader() to render the
+              -- role-specific subheader on the Settings list (Fix #2d).
+              COALESCE(pp.position, cp.position_title) AS position,
+              COALESCE(pp.team_name, cp.team_name) AS school,
+              COALESCE(pp.state, cp.state) AS state,
+              COALESCE(pp.college_division, cp.college_division) AS division,
+              pp.transfer,
+              pp.height,
+              pp.weight,
+              pp.graduation_year AS grad_year,
+              pp.eligibility,
+              op.subheader
        FROM blocked_users b
        JOIN users u ON u.id = b.blocked_id
        LEFT JOIN player_profiles pp ON pp.user_id = b.blocked_id

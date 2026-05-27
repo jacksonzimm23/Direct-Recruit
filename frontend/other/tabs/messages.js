@@ -445,6 +445,87 @@ function updateThreadHeader(participant) {
             threadAvatarCircle.innerHTML = `<img src="${escapeHtml(participant.profile_image)}" alt="${escapeHtml(participant.first_name)}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
         }
     }
+
+    // Wire up the More menu (Report User + Block User) — Fix #2d.
+    const oldMoreBtn = document.getElementById('threadMoreBtn');
+    if (oldMoreBtn && participant.user_id) {
+        const moreBtn = oldMoreBtn.cloneNode(true);
+        oldMoreBtn.parentNode.replaceChild(moreBtn, oldMoreBtn);
+        moreBtn.style.display = '';
+        const displayName = `${participant.first_name || ''} ${participant.last_name || ''}`.trim() || 'this user';
+        moreBtn.addEventListener('click', (e) => showThreadMoreMenu(e, participant.user_id, displayName));
+    }
+}
+
+function showThreadMoreMenu(event, userId, displayName) {
+    event.stopPropagation();
+    document.querySelectorAll('.thread-more-menu').forEach(m => m.remove());
+
+    const menu = document.createElement('div');
+    menu.className = 'thread-more-menu';
+    menu.style.cssText = 'position:fixed;background:#0a1128;border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:6px;z-index:10000;min-width:200px;box-shadow:0 8px 24px rgba(0,0,0,0.5);font-family:Inter,sans-serif;';
+    menu.innerHTML = `
+        <div class="dropdown-item" data-action="report" style="display:flex;align-items:center;gap:0.65rem;padding:0.6rem 0.8rem;border-radius:6px;color:rgba(255,255,255,0.92);font-size:0.92rem;cursor:pointer;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#1282a2" stroke-width="2" width="18" height="18">
+                <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
+                <line x1="4" y1="22" x2="4" y2="15"></line>
+            </svg>
+            <span>Report User</span>
+        </div>
+        <div class="dropdown-item" data-action="block" style="display:flex;align-items:center;gap:0.65rem;padding:0.6rem 0.8rem;border-radius:6px;color:#ff8a8a;font-size:0.92rem;cursor:pointer;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#ff8a8a" stroke-width="2" width="18" height="18">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line>
+            </svg>
+            <span>Block User</span>
+        </div>
+    `;
+    document.body.appendChild(menu);
+
+    const btn = event.target.closest('button');
+    const rect = btn.getBoundingClientRect();
+    menu.style.top = (rect.bottom + 6) + 'px';
+    menu.style.right = (window.innerWidth - rect.right) + 'px';
+
+    menu.querySelectorAll('.dropdown-item').forEach(item => {
+        item.addEventListener('mouseenter', () => { item.style.background = 'rgba(255,255,255,0.06)'; });
+        item.addEventListener('mouseleave', () => { item.style.background = ''; });
+        item.addEventListener('click', async (ev) => {
+            ev.stopPropagation();
+            const action = item.dataset.action;
+            menu.remove();
+            if (action === 'report') {
+                if (typeof window.openReportModal !== 'function') {
+                    if (typeof showToast === 'function') showToast('Report unavailable. Please refresh.', 'error');
+                    return;
+                }
+                await window.openReportModal({
+                    contentType: 'profile',
+                    reportedUserId: userId,
+                    contentLabel: 'User'
+                });
+            } else if (action === 'block') {
+                if (typeof window.confirmAndBlock !== 'function') {
+                    if (typeof showToast === 'function') showToast('Block unavailable. Please refresh.', 'error');
+                    return;
+                }
+                const ok = await window.confirmAndBlock({ userId, displayName });
+                if (ok) {
+                    window.location.href = '../mainpage-other.html';
+                }
+            }
+        });
+    });
+
+    setTimeout(() => {
+        function closeMenu() {
+            menu.remove();
+            document.removeEventListener('click', closeMenu);
+            window.removeEventListener('scroll', closeMenu, true);
+        }
+        document.addEventListener('click', closeMenu);
+        window.addEventListener('scroll', closeMenu, true);
+    }, 0);
 }
 
 async function sendMessage() {

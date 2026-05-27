@@ -11,7 +11,37 @@
 (function () {
     'use strict';
 
-    function _profileMoreMainpageUrl() {
+    // Determine the SIGNED-IN viewer's mainpage URL, not the viewed profile's.
+    // Important: when a coach views a player profile (or vice versa), the page
+    // URL contains the VIEWED profile's role folder (e.g. /hsplayer/...),
+    // which would wrongly send the coach to the player mainpage. We fetch
+    // /auth/me to get the viewer's actual role + division + transfer, then
+    // derive their correct folder via getProfileFolder().
+    async function _profileMoreMainpageUrl() {
+        try {
+            const me = await API.get('/auth/me');
+            if (me && me.user && typeof window.getProfileFolder === 'function') {
+                const folder = window.getProfileFolder({
+                    role: me.user.role,
+                    is_transfer_player: me.user.is_transfer_player,
+                    college_division: me.profile && me.profile.college_division
+                });
+                // Map folder -> mainpage filename
+                if (folder === 'hsplayer' || folder === 'collegeplayer' || folder === 'transferplayer') {
+                    return `../../${folder}/mainpage-player.html`;
+                }
+                if (folder === 'hscoach' || folder === 'collegecoach') {
+                    return `../../${folder}/mainpage-coach.html`;
+                }
+                if (folder === 'other') {
+                    return `../../other/mainpage-other.html`;
+                }
+            }
+        } catch (e) {
+            // Fall through to path-based fallback
+        }
+        // Fallback: assume the current page is in the viewer's own folder
+        // (true on settings/messages/feed; wrong on cross-role profile view).
         const path = window.location.pathname;
         if (path.includes('/hsplayer/')
             || path.includes('/collegeplayer/')
@@ -24,7 +54,6 @@
         if (path.includes('/other/')) {
             return '../mainpage-other.html';
         }
-        // Fallback: parent folder
         return '../';
     }
 
@@ -203,7 +232,7 @@
                         }
                         const ok = await window.confirmAndBlock({ userId: profile.user_id, displayName });
                         if (ok) {
-                            window.location.href = _profileMoreMainpageUrl();
+                            window.location.href = await _profileMoreMainpageUrl();
                         }
                     } else if (action === 'unblock') {
                         if (typeof window.confirmAndUnblock !== 'function') {

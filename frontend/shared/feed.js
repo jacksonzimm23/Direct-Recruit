@@ -586,6 +586,7 @@ class FeedManager {
         const postId = post.original_post_id || post.id;
         article.dataset.postId = postId;
         article.dataset.userReposted = post.user_reposted ? 'true' : 'false';
+        if (post.user_id) article.dataset.authorUserId = post.user_id;
         if (showRepostIndicator && post.id !== postId) {
             // Store share ID for unrepost functionality
             article.dataset.shareId = post.id;
@@ -876,6 +877,8 @@ class FeedManager {
         article.dataset.postId = postId;
         article.dataset.shareId = post.share_id;
         article.dataset.userReposted = post.user_reposted ? 'true' : 'false';
+        if (post.user_id) article.dataset.authorUserId = post.user_id;
+        if (post.reposter_user_id) article.dataset.reposterUserId = post.reposter_user_id;
 
         const reposterName = this.escapeHtml(`${post.reposter_first_name || ''} ${post.reposter_last_name || ''}`.trim() || 'Someone');
         const isOwnRepost = post.reposter_user_id === this.currentUserId;
@@ -998,6 +1001,8 @@ class FeedManager {
         const postId = post.original_post_id || post.id;
         article.dataset.postId = postId;
         article.dataset.shareId = post.share_id;
+        if (post.user_id) article.dataset.authorUserId = post.user_id;
+        if (post.reposter_user_id) article.dataset.quoterUserId = post.reposter_user_id;
 
         const reposterName = this.escapeHtml(`${post.reposter_first_name || ''} ${post.reposter_last_name || ''}`.trim() || 'Someone');
         const repostTimeAgo = this.getTimeAgo(post.sort_date);
@@ -1130,6 +1135,8 @@ class FeedManager {
         const postId = share.original_post_id;
         article.dataset.postId = postId;
         article.dataset.shareId = share.share_id;
+        if (share.user_id) article.dataset.authorUserId = share.user_id;
+        if (share.quoter_user_id) article.dataset.quoterUserId = share.quoter_user_id;
 
         const quoterName = this.escapeHtml(`${share.quoter_first_name || ''} ${share.quoter_last_name || ''}`.trim() || 'Someone');
         const isOwnQuote = share.quoter_user_id === this.currentUserId;
@@ -1593,6 +1600,11 @@ class FeedManager {
         article.dataset.postId = post.id;
         article.dataset.shareId = post.id; // For quote posts, share_id is the same as id
         article.dataset.originalPostId = post.original_post_id;
+        // Author of the ORIGINAL post being quoted (for "Block User" target).
+        // The original author's user_id isn't exposed on this template's post
+        // object directly — set if available, otherwise leave to other surfaces.
+        if (post.author_user_id) article.dataset.authorUserId = post.author_user_id;
+        if (post.quoter_user_id) article.dataset.quoterUserId = post.quoter_user_id;
 
         const timeAgo = this.getTimeAgo(post.reposted_at || post.created_at);
         const quoterName = this.escapeHtml(`${post.quoter_first_name || ''} ${post.quoter_last_name || ''}`.trim() || 'You');
@@ -1744,6 +1756,13 @@ class FeedManager {
                         <line x1="4" y1="22" x2="4" y2="15"></line>
                     </svg>
                     <span>Report Quote Post</span>
+                </div>
+                <div class="dropdown-item dropdown-item-danger" onclick="feedManager.blockQuoterFromMenu('${shareId}')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line>
+                    </svg>
+                    <span>Block User</span>
                 </div>
             `}
         `;
@@ -2446,7 +2465,12 @@ class FeedManager {
                                         <polyline points="3 6 5 6 21 6"></polyline>
                                         <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
                                     </svg>
-                                </button>` : ''}
+                                </button>` : `<button class="comment-report-btn" title="Report comment" aria-label="Report comment" onclick="feedManager.reportComment('${comment.id}')">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                                        <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
+                                        <line x1="4" y1="22" x2="4" y2="15"></line>
+                                    </svg>
+                                </button>`}
                             </div>
                         </div>
                     </div>
@@ -2685,7 +2709,12 @@ class FeedManager {
                                             <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
                                         </svg>
                                     </button>` :
-                                    ''
+                                    `<button class="comment-report-btn" title="Report comment" aria-label="Report comment" onclick="feedManager.reportComment('${comment.id}')">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                                            <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
+                                            <line x1="4" y1="22" x2="4" y2="15"></line>
+                                        </svg>
+                                    </button>`
                                 }
                             </div>
                         </div>
@@ -3142,6 +3171,13 @@ class FeedManager {
                         <line x1="4" y1="22" x2="4" y2="15"></line>
                     </svg>
                     <span>Report Post</span>
+                </div>
+                <div class="dropdown-item dropdown-item-danger" onclick="feedManager.blockPostAuthorFromMenu('${postId}', false)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line>
+                    </svg>
+                    <span>Block User</span>
                 </div>
             `}
         `;
@@ -4163,6 +4199,70 @@ class FeedManager {
         if (card && typeof window.fadeAndReplaceWithReportedChip === 'function') {
             window.fadeAndReplaceWithReportedChip(card);
         }
+    }
+
+    // Report a comment (regular-post or share-post comments). Hides the
+    // comment locally on success; server-side filter from #2d keeps it
+    // hidden on refresh (Post.getComments / getShareComments).
+    async reportComment(commentId) {
+        if (typeof window.openReportModal !== 'function') {
+            this.showToast('Report unavailable. Please refresh and try again.', 'error');
+            return;
+        }
+        const submitted = await window.openReportModal({
+            contentType: 'comment',
+            contentId: commentId,
+            contentLabel: 'Comment'
+        });
+        if (!submitted) return;
+        const commentEl = document.querySelector(`.comment[data-comment-id="${commentId}"]`);
+        if (commentEl && typeof window.fadeAndReplaceWithReportedChip === 'function') {
+            window.fadeAndReplaceWithReportedChip(commentEl);
+        }
+    }
+
+    // Block the author of a post or quote-post. After confirm, fades out
+    // every post in the visible feed authored by that user. Server-side
+    // filter from #2b takes over on next fetch.
+    async blockPostAuthor(userId, displayName) {
+        document.querySelector('.post-dropdown-menu')?.remove();
+        if (typeof window.confirmAndBlock !== 'function') {
+            this.showToast('Block unavailable. Please refresh and try again.', 'error');
+            return;
+        }
+        if (!userId) {
+            this.showToast('Unable to identify user.', 'error');
+            return;
+        }
+        const ok = await window.confirmAndBlock({ userId, displayName: displayName || 'this user' });
+        if (!ok) return;
+        // Fade out every visible card by this author (posts + their reposts/quotes)
+        const sel = `.post-card[data-author-user-id="${userId}"], .post-card[data-reposter-user-id="${userId}"], .post-card[data-quoter-user-id="${userId}"]`;
+        document.querySelectorAll(sel).forEach(el => {
+            el.style.transition = 'opacity 300ms ease';
+            el.style.opacity = '0';
+            setTimeout(() => el.remove(), 300);
+        });
+    }
+
+    // Called from the post 3-dot menu's "Block User" item. Resolves the
+    // author's user_id + display name from the post card DOM.
+    blockPostAuthorFromMenu(postId) {
+        const card = document.querySelector(`.post-card[data-post-id="${postId}"]:not([data-share-id])`)
+                  || document.querySelector(`.post-card[data-post-id="${postId}"]`);
+        const userId = card?.dataset.authorUserId;
+        const displayName = card?.querySelector('.post-user-name')?.textContent?.trim() || '';
+        return this.blockPostAuthor(userId, displayName);
+    }
+
+    // Called from the quote-post 3-dot menu's "Block User" item. Targets the
+    // QUOTER (the person who quoted), not the original post's author.
+    blockQuoterFromMenu(shareId) {
+        const card = document.querySelector(`.post-card[data-share-id="${shareId}"]`);
+        const userId = card?.dataset.quoterUserId;
+        // The quoter's name in feed quote cards is the .post-user-name on the OUTER post card.
+        const displayName = card?.querySelector('.post-user-name')?.textContent?.trim() || '';
+        return this.blockPostAuthor(userId, displayName);
     }
 
     // Navigate to single post view page

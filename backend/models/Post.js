@@ -948,6 +948,17 @@ class Post {
   }
 
   static async getComments(postId, currentUserId = null, limit = 50, offset = 0) {
+    // Hide comments the viewer has reported (content_type='comment').
+    // Only injects when currentUserId is provided — same param ($4) is reused
+    // for both the user_liked existence check and the content_reports filter.
+    const reportFilter = currentUserId
+      ? `AND NOT EXISTS (
+           SELECT 1 FROM content_reports
+           WHERE reporter_user_id = $4
+             AND content_type = 'comment'
+             AND content_id = c.id
+         )`
+      : '';
     const result = await pool.query(
       `SELECT c.*,
               u.id as author_user_id,
@@ -974,6 +985,7 @@ class Post {
        LEFT JOIN other_profiles op ON u.id = op.user_id
        WHERE c.post_id = $1 AND c.parent_comment_id IS NULL
        AND (c.is_deleted = false OR c.is_deleted IS NULL)
+       ${reportFilter}
        ORDER BY c.created_at DESC
        LIMIT $2 OFFSET $3`,
       currentUserId ? [postId, limit, offset, currentUserId] : [postId, limit, offset]
@@ -981,7 +993,16 @@ class Post {
     return result.rows;
   }
 
-  static async getCommentReplies(commentId, limit = 20, offset = 0) {
+  static async getCommentReplies(commentId, limit = 20, offset = 0, currentUserId = null) {
+    // Hide replies the viewer has reported (content_type='comment').
+    const reportFilter = currentUserId
+      ? `AND NOT EXISTS (
+           SELECT 1 FROM content_reports
+           WHERE reporter_user_id = $4
+             AND content_type = 'comment'
+             AND content_id = c.id
+         )`
+      : '';
     const result = await pool.query(
       `SELECT c.*,
               u.id as author_user_id,
@@ -997,9 +1018,10 @@ class Post {
        LEFT JOIN other_profiles op ON u.id = op.user_id
        WHERE c.parent_comment_id = $1
        AND (c.is_deleted = false OR c.is_deleted IS NULL)
+       ${reportFilter}
        ORDER BY c.created_at ASC
        LIMIT $2 OFFSET $3`,
-      [commentId, limit, offset]
+      currentUserId ? [commentId, limit, offset, currentUserId] : [commentId, limit, offset]
     );
     return result.rows;
   }
@@ -1859,7 +1881,16 @@ class Post {
   }
 
   // Get comments for a share
-  static async getShareComments(shareId, limit = 50, offset = 0) {
+  static async getShareComments(shareId, limit = 50, offset = 0, currentUserId = null) {
+    // Hide share-comments the viewer has reported (content_type='comment').
+    const reportFilter = currentUserId
+      ? `AND NOT EXISTS (
+           SELECT 1 FROM content_reports
+           WHERE reporter_user_id = $4
+             AND content_type = 'comment'
+             AND content_id = c.id
+         )`
+      : '';
     const result = await pool.query(
       `SELECT
         c.id,
@@ -1889,9 +1920,10 @@ class Post {
        LEFT JOIN coach_profiles cp ON u.id = cp.user_id
        LEFT JOIN other_profiles op ON u.id = op.user_id
        WHERE c.share_id = $1 AND c.parent_comment_id IS NULL
+       ${reportFilter}
        ORDER BY c.created_at ASC
        LIMIT $2 OFFSET $3`,
-      [shareId, limit, offset]
+      currentUserId ? [shareId, limit, offset, currentUserId] : [shareId, limit, offset]
     );
     return result.rows;
   }

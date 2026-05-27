@@ -7503,7 +7503,7 @@ function createProfilePostElement(post) {
 
     return `
         ${pinnedBadge}
-        <article class="profile-post-card${isPinned ? ' pinned' : ''}" data-post-id="${post.id}" onclick="navigateToPost('${post.id}')">
+        <article class="profile-post-card${isPinned ? ' pinned' : ''}" data-post-id="${post.id}" data-author-user-id="${post.author_user_id || post.user_id || ''}" onclick="navigateToPost('${post.id}')">
             <div class="profile-post-header">
                 <div class="profile-post-avatar" style="border: 2px solid ${getRoleBorderColor(post.author_role, post.author_transfer === 'y', post.author_division)}; color: ${getRoleBorderColor(post.author_role, post.author_transfer === 'y', post.author_division)}; background: ${getRoleAvatarBg(post.author_role, post.author_transfer === 'y', post.author_division)}">
                     ${post.author_image
@@ -7617,7 +7617,7 @@ function createProfileRepostElement(post) {
     `;
 
     return `
-        <article class="profile-post-card profile-repost-card" data-post-id="${post.id}" data-share-id="${post.share_id}" onclick="navigateToPost('${post.id}')">
+        <article class="profile-post-card profile-repost-card" data-post-id="${post.id}" data-share-id="${post.share_id}" data-author-user-id="${post.author_user_id || post.user_id || ''}" onclick="navigateToPost('${post.id}')">
             <div class="profile-repost-indicator">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
                     <polyline points="17 1 21 5 17 9"></polyline>
@@ -7759,7 +7759,7 @@ function createProfileQuotePostElement(post) {
     `;
 
     return `
-        <article class="profile-post-card profile-quote-card" data-post-id="${originalPostId}" data-share-id="${post.share_id}" onclick="navigateToQuotePost('${post.share_id}')" style="cursor: pointer;">
+        <article class="profile-post-card profile-quote-card" data-post-id="${originalPostId}" data-share-id="${post.share_id}" data-author-user-id="${post.author_user_id || post.user_id || ''}" onclick="navigateToQuotePost('${post.share_id}')" style="cursor: pointer;">
             <div class="profile-post-header">
                 <div class="profile-post-avatar" onclick="event.stopPropagation(); goToProfile('${post.author_username || quoterId}', '${post.author_role || 'player'}', '${post.author_division || ''}', '${quoterId}', ${post.author_transfer === 'y'})" style="cursor: pointer; border: 2px solid ${getRoleBorderColor(post.author_role || 'player', post.author_transfer === 'y', post.author_division)}; color: ${getRoleBorderColor(post.author_role || 'player', post.author_transfer === 'y', post.author_division)}; background: ${getRoleAvatarBg(post.author_role || 'player', post.author_transfer === 'y', post.author_division)}">
                     ${post.author_image
@@ -7941,6 +7941,13 @@ function showRepostMenu(shareId, postId, isOwner, event) {
             </svg>
             <span>Report Post</span>
         </div>
+        <div class="dropdown-item dropdown-item-danger" onclick="event.stopPropagation(); window.blockProfilePostAuthor('${postId}', '${shareId}')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line>
+            </svg>
+            <span>Block User</span>
+        </div>
     `;
 
     // Position menu
@@ -7996,6 +8003,13 @@ function showQuoteMenu(shareId, postId, isOwner, event) {
                     <line x1="4" y1="22" x2="4" y2="15"></line>
                 </svg>
                 Report Quote
+            </div>
+            <div class="dropdown-item dropdown-item-danger" onclick="event.stopPropagation(); window.blockProfilePostAuthor('${postId}', '${shareId}')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line>
+                </svg>
+                Block User
             </div>
         `}
     `;
@@ -10121,7 +10135,7 @@ function createProfileLikedPostElement(post) {
     ` : '';
 
     return `
-        <article class="profile-post-card" data-post-id="${post.id}" onclick="navigateToPost('${post.id}')">
+        <article class="profile-post-card" data-post-id="${post.id}" data-author-user-id="${post.author_user_id || post.user_id || ''}" onclick="navigateToPost('${post.id}')">
             <div class="profile-post-header">
                 <div class="profile-post-avatar" style="border: 2px solid ${getRoleBorderColor(post.author_role, post.author_transfer === 'y', post.author_division)}; color: ${getRoleBorderColor(post.author_role, post.author_transfer === 'y', post.author_division)}; background: ${getRoleAvatarBg(post.author_role, post.author_transfer === 'y', post.author_division)}">
                     ${post.author_image
@@ -10241,7 +10255,7 @@ function createProfileLikedQuotePostElement(post) {
     const quoteMediaHtml = buildMediaGridHTML(post.quote_media_urls, post.quote_media_type);
 
     return `
-        <article class="profile-post-card profile-quote-card" data-post-id="${originalPostId}" data-share-id="${post.share_id}" onclick="navigateToQuotePost('${post.share_id}')" style="cursor: pointer;">
+        <article class="profile-post-card profile-quote-card" data-post-id="${originalPostId}" data-share-id="${post.share_id}" data-author-user-id="${post.author_user_id || post.user_id || ''}" onclick="navigateToQuotePost('${post.share_id}')" style="cursor: pointer;">
             <div class="profile-post-header">
                 <div class="profile-post-avatar" onclick="event.stopPropagation(); goToProfile('${post.author_username || quoterId}', '${post.author_role || 'player'}', '${post.author_division || ''}', '${quoterId}', ${post.author_transfer === 'y'})" style="cursor: pointer; border: 2px solid ${getRoleBorderColor(post.author_role || 'player', post.author_transfer === 'y', post.author_division)}; color: ${getRoleBorderColor(post.author_role || 'player', post.author_transfer === 'y', post.author_division)}; background: ${getRoleAvatarBg(post.author_role || 'player', post.author_transfer === 'y', post.author_division)}">
                     ${post.author_image
