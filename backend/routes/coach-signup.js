@@ -24,7 +24,11 @@ function isEduEmail(email) {
 // intra-collegecoach team switch). The `is_team_switch` branch forks early
 // because the request shape and validation rules differ enough that mixing
 // them into the new-signup path would be hard to read.
-router.post('/request', coachRequestLimiter, optionalAuthMiddleware, async (req, res) => {
+// Middleware order matters here: optionalAuthMiddleware MUST run before
+// coachRequestLimiter so the limiter's skip-fn can read `req.user` and bypass
+// the per-IP cap for logged-in coaches (team-switch / profile-type switch).
+// Anonymous public submissions still hit the 3/hr/IP cap.
+router.post('/request', optionalAuthMiddleware, coachRequestLimiter, async (req, res) => {
   try {
     // Fork: intra-collegecoach team switch (existing college coach changing schools).
     // Distinct from `is_switch` (profile-type switch into collegecoach).
