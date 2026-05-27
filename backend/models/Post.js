@@ -257,6 +257,19 @@ class Post {
         )
         AND p.visibility IN ('public', 'followers_only')
         AND (p.is_deleted = false OR p.is_deleted IS NULL)
+        -- Apple Guideline 1.2: hide blocked users (both directions)
+        AND p.user_id NOT IN (
+          SELECT blocked_id FROM blocked_users WHERE blocker_id = $1
+          UNION
+          SELECT blocker_id FROM blocked_users WHERE blocked_id = $1
+        )
+        -- Auto-hide posts the viewer has personally reported
+        AND NOT EXISTS (
+          SELECT 1 FROM content_reports
+          WHERE reporter_user_id = $1
+            AND content_type = 'post'
+            AND content_id = p.id
+        )
 
         UNION ALL
 
@@ -333,6 +346,18 @@ class Post {
         WHERE ps.user_id IN (SELECT following_id FROM follows WHERE follower_id = $1)
         AND ps.user_id != $1
         AND (p.is_deleted = false OR p.is_deleted IS NULL)
+        -- Hide reposts FROM blocked users
+        AND ps.user_id NOT IN (
+          SELECT blocked_id FROM blocked_users WHERE blocker_id = $1
+          UNION
+          SELECT blocker_id FROM blocked_users WHERE blocked_id = $1
+        )
+        -- Hide reposts OF posts authored by blocked users
+        AND p.user_id NOT IN (
+          SELECT blocked_id FROM blocked_users WHERE blocker_id = $1
+          UNION
+          SELECT blocker_id FROM blocked_users WHERE blocked_id = $1
+        )
       )
       SELECT fp.*,
              -- For quote posts, check share_likes; for regular posts/reposts, check post_likes
@@ -438,6 +463,19 @@ class Post {
         LEFT JOIN other_profiles op ON u.id = op.user_id
         WHERE p.visibility = 'public'
         AND (p.is_deleted = false OR p.is_deleted IS NULL)
+        -- Apple Guideline 1.2: hide blocked users (both directions)
+        AND p.user_id NOT IN (
+          SELECT blocked_id FROM blocked_users WHERE blocker_id = $1
+          UNION
+          SELECT blocker_id FROM blocked_users WHERE blocked_id = $1
+        )
+        -- Auto-hide posts the viewer has personally reported
+        AND NOT EXISTS (
+          SELECT 1 FROM content_reports
+          WHERE reporter_user_id = $1
+            AND content_type = 'post'
+            AND content_id = p.id
+        )
 
         UNION ALL
 
@@ -513,6 +551,18 @@ class Post {
         LEFT JOIN other_profiles oop ON ou.id = oop.user_id
         WHERE p.visibility = 'public'
         AND (p.is_deleted = false OR p.is_deleted IS NULL)
+        -- Hide reposts FROM blocked users
+        AND ps.user_id NOT IN (
+          SELECT blocked_id FROM blocked_users WHERE blocker_id = $1
+          UNION
+          SELECT blocker_id FROM blocked_users WHERE blocked_id = $1
+        )
+        -- Hide reposts OF posts authored by blocked users
+        AND p.user_id NOT IN (
+          SELECT blocked_id FROM blocked_users WHERE blocker_id = $1
+          UNION
+          SELECT blocker_id FROM blocked_users WHERE blocked_id = $1
+        )
       )
       SELECT dp.*,
              -- For quote posts, check share_likes; for regular posts/reposts, check post_likes

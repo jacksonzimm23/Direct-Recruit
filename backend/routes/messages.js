@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Message = require('../models/Message');
 const Follow = require('../models/Follow');
+const BlockedUser = require('../models/BlockedUser');
 const Notification = require('../models/Notification');
 const { notifyUser } = require('../utils/notifications');
 const PlayerProfile = require('../models/PlayerProfile');
@@ -172,6 +173,18 @@ router.post('/conversations/:conversationId/messages', authMiddleware, validateU
     const isParticipant = await Message.isParticipant(conversationId, req.userId);
     if (!isParticipant) {
       return res.status(403).json({ error: 'Not a participant in this conversation' });
+    }
+
+    // Apple Guideline 1.2: block check. If either party blocked the other,
+    // reject with a generic error (don't reveal which user blocked whom).
+    const otherParticipants = await pool.query(
+      'SELECT user_id FROM conversation_participants WHERE conversation_id = $1 AND user_id != $2',
+      [conversationId, req.userId]
+    );
+    for (const row of otherParticipants.rows) {
+      if (await BlockedUser.isBlocked(req.userId, row.user_id)) {
+        return res.status(403).json({ error: 'This conversation is unavailable.' });
+      }
     }
 
     const message = await Message.sendMessage(

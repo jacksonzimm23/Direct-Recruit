@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Follow = require('../models/Follow');
+const BlockedUser = require('../models/BlockedUser');
 const Notification = require('../models/Notification');
 const { notifyUser } = require('../utils/notifications');
 const PlayerProfile = require('../models/PlayerProfile');
@@ -54,6 +55,12 @@ router.post('/:userId', authMiddleware, validateUUID('userId'), async (req, res)
 
     if (userId === req.userId) {
       return res.status(400).json({ error: 'Cannot follow yourself' });
+    }
+
+    // Apple Guideline 1.2: if either party blocked the other, reject with
+    // a generic error (don't reveal that a block exists).
+    if (await BlockedUser.isBlocked(req.userId, userId)) {
+      return res.status(403).json({ error: 'Unable to follow this user' });
     }
 
     const isAlreadyFollowing = await Follow.isFollowing(req.userId, userId);
@@ -151,7 +158,7 @@ router.get('/:userId/followers', authMiddleware, validateUUID('userId'), async (
       return res.status(403).json({ error: 'This account is private', isPrivate: true });
     }
 
-    let followers = await Follow.getFollowers(userId, limit, offset);
+    let followers = await Follow.getFollowers(userId, limit, offset, req.userId);
     followers = await addSignedUrlsToProfiles(followers);
     res.json({ followers, count: followers.length });
   } catch (error) {
@@ -174,7 +181,7 @@ router.get('/:userId/following', authMiddleware, validateUUID('userId'), async (
       return res.status(403).json({ error: 'This account is private', isPrivate: true });
     }
 
-    let following = await Follow.getFollowing(userId, limit, offset);
+    let following = await Follow.getFollowing(userId, limit, offset, req.userId);
     following = await addSignedUrlsToProfiles(following);
     res.json({ following, count: following.length });
   } catch (error) {

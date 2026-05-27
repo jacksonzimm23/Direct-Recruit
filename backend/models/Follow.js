@@ -363,7 +363,18 @@ class Follow {
     }
   }
 
-  static async getFollowers(userId, limit = 50, offset = 0) {
+  static async getFollowers(userId, limit = 50, offset = 0, viewerId = null) {
+    // viewerId is the logged-in user requesting the list. When present, we
+    // filter out users the viewer has blocked (or who blocked the viewer).
+    // Falls back to no filtering when null for backward compat.
+    const blockFilter = viewerId
+      ? ` AND u.id NOT IN (
+            SELECT blocked_id FROM blocked_users WHERE blocker_id = $4
+            UNION
+            SELECT blocker_id FROM blocked_users WHERE blocked_id = $4
+          )`
+      : '';
+    const params = viewerId ? [userId, limit, offset, viewerId] : [userId, limit, offset];
     const result = await pool.query(
       `SELECT u.id, u.role,
               COALESCE(pp.first_name, cp.first_name, op.first_name) as first_name,
@@ -390,15 +401,23 @@ class Follow {
        LEFT JOIN player_profiles pp ON u.id = pp.user_id
        LEFT JOIN coach_profiles cp ON u.id = cp.user_id
        LEFT JOIN other_profiles op ON u.id = op.user_id
-       WHERE f.following_id = $1
+       WHERE f.following_id = $1${blockFilter}
        ORDER BY f.created_at DESC
        LIMIT $2 OFFSET $3`,
-      [userId, limit, offset]
+      params
     );
     return result.rows;
   }
 
-  static async getFollowing(userId, limit = 50, offset = 0) {
+  static async getFollowing(userId, limit = 50, offset = 0, viewerId = null) {
+    const blockFilter = viewerId
+      ? ` AND u.id NOT IN (
+            SELECT blocked_id FROM blocked_users WHERE blocker_id = $4
+            UNION
+            SELECT blocker_id FROM blocked_users WHERE blocked_id = $4
+          )`
+      : '';
+    const params = viewerId ? [userId, limit, offset, viewerId] : [userId, limit, offset];
     const result = await pool.query(
       `SELECT u.id, u.role,
               COALESCE(pp.first_name, cp.first_name, op.first_name) as first_name,
@@ -425,10 +444,10 @@ class Follow {
        LEFT JOIN player_profiles pp ON u.id = pp.user_id
        LEFT JOIN coach_profiles cp ON u.id = cp.user_id
        LEFT JOIN other_profiles op ON u.id = op.user_id
-       WHERE f.follower_id = $1
+       WHERE f.follower_id = $1${blockFilter}
        ORDER BY f.created_at DESC
        LIMIT $2 OFFSET $3`,
-      [userId, limit, offset]
+      params
     );
     return result.rows;
   }

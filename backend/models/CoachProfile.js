@@ -1,5 +1,6 @@
 const pool = require('../config/database');
 const { escapeLikePattern } = require('../middleware/validation');
+const { blockedUserFilter } = require('../utils/blockFilter');
 // Plan 5A: team_name changes auto-cancel inbound pipeline hand-offs.
 // Required at call time to avoid a circular import on module load.
 
@@ -115,6 +116,14 @@ class CoachProfile {
     let query = 'SELECT cp.* FROM coach_profiles cp JOIN users u ON cp.user_id = u.id WHERE u.is_active = true';
     const values = [];
     let paramCount = 1;
+
+    // Apple Guideline 1.2: hide users the viewer has blocked (or who blocked the viewer)
+    if (filters.excludeBlockedFor) {
+      const f = blockedUserFilter('cp.user_id', filters.excludeBlockedFor, paramCount);
+      query += ` AND ${f.sql}`;
+      values.push(f.param);
+      paramCount = f.nextIndex;
+    }
 
     if (filters.college_division) {
       query += ` AND cp.college_division = $${paramCount}`;

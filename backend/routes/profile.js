@@ -7,6 +7,7 @@ const User = require('../models/User');
 const ProfileView = require('../models/ProfileView');
 const CoachProfileView = require('../models/CoachProfileView');
 const Follow = require('../models/Follow');
+const BlockedUser = require('../models/BlockedUser');
 const Notification = require('../models/Notification');
 const { notifyUser } = require('../utils/notifications');
 const PortalWatchlist = require('../models/PortalWatchlist');
@@ -439,7 +440,8 @@ router.get('/search/players', authMiddleware, async (req, res) => {
       position: req.query.position,
       graduation_year: req.query.graduation_year,
       state: req.query.state,
-      searchTerm: req.query.q
+      searchTerm: req.query.q,
+      excludeBlockedFor: req.userId
     };
     const limit = Math.min(Math.max(parseInt(req.query.limit) || 50, 1), 100);
     const offset = Math.max(parseInt(req.query.offset) || 0, 0);
@@ -464,7 +466,8 @@ router.get('/discover/hsplayers', authMiddleware, async (req, res) => {
       min_weight: req.query.min_weight,
       min_gpa: req.query.min_gpa,
       searchTerm: req.query.q,
-      excludeUserId: req.userId // Exclude current user's profile
+      excludeUserId: req.userId, // Exclude current user's profile
+      excludeBlockedFor: req.userId
     };
     const limit = Math.min(parseInt(req.query.limit) || 9, 100);
     const offset = Math.max(parseInt(req.query.offset) || 0, 0);
@@ -486,7 +489,8 @@ router.get('/discover/collegeplayers', authMiddleware, async (req, res) => {
       college_division: req.query.college_division,
       state: req.query.state,
       searchTerm: req.query.q,
-      excludeUserId: req.userId // Exclude current user's profile
+      excludeUserId: req.userId, // Exclude current user's profile
+      excludeBlockedFor: req.userId
     };
     const limit = Math.min(parseInt(req.query.limit) || 9, 100);
     const offset = Math.max(parseInt(req.query.offset) || 0, 0);
@@ -511,7 +515,8 @@ router.get('/discover/transferplayers', authMiddleware, async (req, res) => {
       min_weight: req.query.min_weight,
       min_gpa: req.query.min_gpa,
       searchTerm: req.query.q,
-      excludeUserId: req.userId // Exclude current user's profile
+      excludeUserId: req.userId, // Exclude current user's profile
+      excludeBlockedFor: req.userId
     };
     const limit = Math.min(parseInt(req.query.limit) || 9, 100);
     const offset = Math.max(parseInt(req.query.offset) || 0, 0);
@@ -530,7 +535,8 @@ router.get('/discover/other', authMiddleware, async (req, res) => {
   try {
     const filters = {
       searchTerm: req.query.q,
-      excludeUserId: req.userId // Exclude current user's profile
+      excludeUserId: req.userId, // Exclude current user's profile
+      excludeBlockedFor: req.userId
     };
     const limit = Math.min(parseInt(req.query.limit) || 12, 100);
     const offset = Math.max(parseInt(req.query.offset) || 0, 0);
@@ -550,7 +556,8 @@ router.get('/search/coaches', authMiddleware, async (req, res) => {
     const filters = {
       college_division: req.query.college_division,
       state: req.query.state,
-      searchTerm: req.query.q
+      searchTerm: req.query.q,
+      excludeBlockedFor: req.userId
     };
     const limit = Math.min(Math.max(parseInt(req.query.limit) || 50, 1), 100);
     const offset = Math.max(parseInt(req.query.offset) || 0, 0);
@@ -585,9 +592,9 @@ router.get('/search', authMiddleware, async (req, res) => {
     // even when one source has fewer rows than another.
     const fanOut = Math.min(limit + offset, 100);
     const [playerRes, coachRes, otherRes] = await Promise.all([
-      PlayerProfile.search({ searchTerm }, fanOut, 0),
-      CoachProfile.search({ searchTerm }, fanOut, 0),
-      OtherProfile.search({ searchTerm }, fanOut, 0)
+      PlayerProfile.search({ searchTerm, excludeBlockedFor: req.userId }, fanOut, 0),
+      CoachProfile.search({ searchTerm, excludeBlockedFor: req.userId }, fanOut, 0),
+      OtherProfile.search({ searchTerm, excludeBlockedFor: req.userId }, fanOut, 0)
     ]);
 
     [playerRes.players, coachRes.coaches, otherRes.others] = await Promise.all([
@@ -736,6 +743,12 @@ router.get('/username/:username', authMiddleware, async (req, res) => {
     }
 
     if (!profile) {
+      return res.status(404).json({ error: 'Profile not found' });
+    }
+
+    // Apple Guideline 1.2: if either party blocked the other, return 404
+    // (don't reveal that a block exists — matches Twitter/Instagram pattern).
+    if (await BlockedUser.isBlocked(req.userId, profile.user_id)) {
       return res.status(404).json({ error: 'Profile not found' });
     }
 
@@ -919,6 +932,12 @@ router.get('/suggested-connections', authMiddleware, async (req, res) => {
         AND NOT EXISTS (
           SELECT 1 FROM follows f
           WHERE f.follower_id = $1 AND f.following_id = mv.user_id
+        )
+        -- Apple Guideline 1.2: hide blocked users from suggested connections
+        AND mv.user_id NOT IN (
+          SELECT blocked_id FROM blocked_users WHERE blocker_id = $1
+          UNION
+          SELECT blocker_id FROM blocked_users WHERE blocked_id = $1
         )
       ORDER BY (
         mv.base_popularity_score

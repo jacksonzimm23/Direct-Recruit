@@ -1,6 +1,7 @@
 const pool = require('../config/database');
 const { otherPopularityExpr } = require('../utils/popularity-score');
 const { escapeLikePattern } = require('../middleware/validation');
+const { blockedUserFilter } = require('../utils/blockFilter');
 
 class OtherProfile {
   static async create(userId, profileData) {
@@ -80,6 +81,14 @@ class OtherProfile {
     const values = [];
     let paramCount = 1;
 
+    // Apple Guideline 1.2: hide users the viewer has blocked (or who blocked the viewer)
+    if (filters.excludeBlockedFor) {
+      const f = blockedUserFilter('op.user_id', filters.excludeBlockedFor, paramCount);
+      query += ` AND ${f.sql}`;
+      values.push(f.param);
+      paramCount = f.nextIndex;
+    }
+
     if (filters.searchTerm) {
       query += ` AND (similarity(op.first_name, $${paramCount}) > 0.2 OR similarity(op.last_name, $${paramCount}) > 0.2 OR similarity(op.username, $${paramCount}) > 0.2 OR similarity(COALESCE(op.subheader, ''), $${paramCount}) > 0.2 OR op.first_name ILIKE $${paramCount + 1} OR op.last_name ILIKE $${paramCount + 1} OR op.username ILIKE $${paramCount + 1} OR op.subheader ILIKE $${paramCount + 1})`;
       values.push(filters.searchTerm, `%${escapeLikePattern(filters.searchTerm)}%`);
@@ -115,6 +124,14 @@ class OtherProfile {
       query += ` AND op.user_id != $${paramCount}`;
       values.push(filters.excludeUserId);
       paramCount++;
+    }
+
+    // Apple Guideline 1.2: hide users the viewer has blocked (or who blocked the viewer)
+    if (filters.excludeBlockedFor) {
+      const f = blockedUserFilter('op.user_id', filters.excludeBlockedFor, paramCount);
+      query += ` AND ${f.sql}`;
+      values.push(f.param);
+      paramCount = f.nextIndex;
     }
 
     // Search term filter — fuzzy + ILIKE fallback

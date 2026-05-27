@@ -2,9 +2,33 @@ const { Server } = require('socket.io');
 const jwt = require('jsonwebtoken');
 const cookie = require('cookie');
 const Message = require('./models/Message');
+const BlockedUser = require('./models/BlockedUser');
+const pool = require('./config/database');
 const logger = require('./utils/logger');
 const { stripHtml } = require('./middleware/validation');
 const { isTokenRevoked } = require('./utils/tokenRevocation');
+
+// Returns true if any other participant in this conversation has a block
+// relationship with the socket user. Used to silently drop send_message /
+// typing events without revealing block status to the sender.
+async function isAnyParticipantBlocked(conversationId, socketUserId) {
+  try {
+    const result = await pool.query(
+      'SELECT user_id FROM conversation_participants WHERE conversation_id = $1 AND user_id != $2',
+      [conversationId, socketUserId]
+    );
+    for (const row of result.rows) {
+      if (await BlockedUser.isBlocked(socketUserId, row.user_id)) return true;
+    }
+    return false;
+  } catch (e) {
+    logger.error('isAnyParticipantBlocked check failed:', e.message);
+    // Fail-open: if the check itself errors, allow the event through rather
+    // than silently dropping legitimate messages. The HTTP send-message
+    // endpoint will still reject the message at REST layer.
+    return false;
+  }
+}
 
 // Redis-backed rate limiter for socket events (falls back to in-memory in dev)
 function createSocketRateLimiter(maxEvents, windowMs) {
@@ -133,6 +157,8 @@ function initializeSocket(server) {
         logger.error('Typing start participant check failed:', error);
         return;
       }
+      // Apple Guideline 1.2: silent drop on block — don't reveal block status
+      if (await isAnyParticipantBlocked(conversationId, socket.userId)) return;
       socket.to(conversationId).emit('user_typing', { userId: socket.userId, conversationId });
     });
 
@@ -145,6 +171,8 @@ function initializeSocket(server) {
         logger.error('Typing stop participant check failed:', error);
         return;
       }
+      // Apple Guideline 1.2: silent drop on block
+      if (await isAnyParticipantBlocked(conversationId, socket.userId)) return;
       socket.to(conversationId).emit('user_stopped_typing', { userId: socket.userId, conversationId });
     });
 
@@ -159,6 +187,13 @@ function initializeSocket(server) {
         const isParticipant = await Message.isParticipant(conversationId, socket.userId);
         if (!isParticipant) {
           socket.emit('error', { message: 'Not a participant' });
+          return;
+        }
+
+        // Apple Guideline 1.2: silently drop messages between blocked pairs.
+        // Sender's UI shows the message as sent, recipient never receives.
+        // Prevents the sender from probing block status by retrying.
+        if (await isAnyParticipantBlocked(conversationId, socket.userId)) {
           return;
         }
 

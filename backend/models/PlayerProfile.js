@@ -1,6 +1,7 @@
 const pool = require('../config/database');
 const { playerPopularityExpr } = require('../utils/popularity-score');
 const { escapeLikePattern } = require('../middleware/validation');
+const { blockedUserFilter } = require('../utils/blockFilter');
 
 // Composite stat keys that sum multiple JSONB fields (e.g., "total_tds" = pass_tds + rush_tds + rec_tds)
 const COMPOSITE_STAT_KEYS = {
@@ -281,6 +282,14 @@ class PlayerProfile {
     const values = [];
     let paramCount = 1;
 
+    // Apple Guideline 1.2: hide users the viewer has blocked (or who blocked the viewer)
+    if (filters.excludeBlockedFor) {
+      const f = blockedUserFilter('pp.user_id', filters.excludeBlockedFor, paramCount);
+      query += ` AND ${f.sql}`;
+      values.push(f.param);
+      paramCount = f.nextIndex;
+    }
+
     if (filters.position) {
       query += ` AND pp.position = $${paramCount}`;
       values.push(filters.position);
@@ -334,6 +343,14 @@ class PlayerProfile {
       query += ` AND pp.user_id != $${paramCount}`;
       values.push(filters.excludeUserId);
       paramCount++;
+    }
+
+    // Apple Guideline 1.2: hide users the viewer has blocked (or who blocked the viewer)
+    if (filters.excludeBlockedFor) {
+      const f = blockedUserFilter('pp.user_id', filters.excludeBlockedFor, paramCount);
+      query += ` AND ${f.sql}`;
+      values.push(f.param);
+      paramCount = f.nextIndex;
     }
 
     if (filters.position) {
@@ -417,6 +434,14 @@ class PlayerProfile {
       paramCount++;
     }
 
+    // Apple Guideline 1.2: hide users the viewer has blocked (or who blocked the viewer)
+    if (filters.excludeBlockedFor) {
+      const f = blockedUserFilter('pp.user_id', filters.excludeBlockedFor, paramCount);
+      query += ` AND ${f.sql}`;
+      values.push(f.param);
+      paramCount = f.nextIndex;
+    }
+
     if (filters.position) {
       query += ` AND pp.position ILIKE $${paramCount}`;
       values.push(`%${filters.position}%`);
@@ -470,6 +495,14 @@ class PlayerProfile {
       query += ` AND pp.user_id != $${paramCount}`;
       values.push(filters.excludeUserId);
       paramCount++;
+    }
+
+    // Apple Guideline 1.2: hide users the viewer has blocked (or who blocked the viewer)
+    if (filters.excludeBlockedFor) {
+      const f = blockedUserFilter('pp.user_id', filters.excludeBlockedFor, paramCount);
+      query += ` AND ${f.sql}`;
+      values.push(f.param);
+      paramCount = f.nextIndex;
     }
 
     if (filters.position) {

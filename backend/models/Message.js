@@ -170,6 +170,13 @@ class Message {
              AND m.created_at > cp_user.hidden_at
            )
          )
+         -- Apple Guideline 1.2: hide conversations whose other participant
+         -- is in either direction of a block relationship with the viewer.
+         AND cp_other.user_id NOT IN (
+           SELECT blocked_id FROM blocked_users WHERE blocker_id = $1
+           UNION
+           SELECT blocker_id FROM blocked_users WHERE blocked_id = $1
+         )
        GROUP BY c.id, cp_user.last_read_at
        ORDER BY c.updated_at DESC
        LIMIT $2 OFFSET $3`,
