@@ -146,7 +146,17 @@ app.use(helmet({
       styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
       fontSrc: ["'self'", "https://fonts.gstatic.com"],
       imgSrc: ["'self'", "data:", "blob:", "https://res.cloudinary.com", "https://*.amazonaws.com"],
-      connectSrc: ["'self'", "wss:", "ws:"],
+      // Explicit origins + Capacitor schemes so the iOS WebView and plugin
+      // bridges can talk to the API + websockets. `'self'` resolves to
+      // https://directrecruit.net in prod, but explicit listing avoids any
+      // edge cases in Capacitor's WebView origin resolution.
+      connectSrc: [
+        "'self'",
+        "https://directrecruit.net",
+        "wss://directrecruit.net",
+        "capacitor://localhost",
+        "ionic://localhost"
+      ],
       mediaSrc: ["'self'", "blob:", "https://*.amazonaws.com"],
       frameSrc: ["'none'"],
       objectSrc: ["'none'"]

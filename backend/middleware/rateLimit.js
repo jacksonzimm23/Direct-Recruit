@@ -33,11 +33,15 @@ const apiLimiter = rateLimit({
   }
 });
 
-// Auth endpoints rate limiter (stricter)
+// Auth endpoints rate limiter (stricter).
+// Cap is generous to absorb carrier NAT (cell users sharing IPs on the iOS
+// app). 500/15min = ~33/min, comfortably handles hundreds of users behind
+// one carrier NAT without false-429s. keyGenerator stays on req.ip since
+// req.userId is null at login/signup time.
 const authLimiter = rateLimit({
   ...getRedisStore('rl:auth:'),
   windowMs: 15 * 60 * 1000,
-  max: isDevelopment ? 10000 : 200, // Much higher limit for development
+  max: isDevelopment ? 10000 : 500, // Cell-NAT-safe cap for iOS app users
   message: 'Too many authentication attempts, please try again later',
   standardHeaders: true,
   legacyHeaders: false,
@@ -76,11 +80,13 @@ const passwordResetLimiter = rateLimit({
   }
 });
 
-// Availability check rate limiter — short window, prevents bursts
+// Availability check rate limiter — short window, prevents bursts.
+// Raised from 10 to 25 to absorb carrier NAT (multiple cell users behind
+// the same IP) without false-429s on signup availability checks.
 const availabilityLimiter = rateLimit({
   ...getRedisStore('rl:avail:'),
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: isDevelopment ? 10000 : 10, // 10 checks per 15 minutes per IP
+  max: isDevelopment ? 10000 : 25, // 25 checks per 15 minutes per IP (cell-NAT-safe)
   message: 'Too many requests, please try again later',
   standardHeaders: true,
   legacyHeaders: false,
