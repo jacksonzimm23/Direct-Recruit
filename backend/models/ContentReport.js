@@ -1,6 +1,6 @@
 const pool = require('../config/database');
 
-const VALID_CONTENT_TYPES = ['post', 'comment', 'message', 'profile'];
+const VALID_CONTENT_TYPES = ['post', 'comment', 'message', 'profile', 'share'];
 const VALID_REASONS = ['spam', 'harassment', 'inappropriate', 'hate_speech', 'impersonation', 'other'];
 
 class ContentReport {

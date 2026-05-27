@@ -1294,6 +1294,27 @@ const configAPI = {
     }
 };
 
+const blocksAPI = {
+    list:    ()       => apiRequest('/blocks'),
+    check:   (userId) => apiRequest(`/blocks/check/${userId}`),
+    block:   (userId) => apiRequest(`/blocks/${userId}`, { method: 'POST' }),
+    unblock: (userId) => apiRequest(`/blocks/${userId}`, { method: 'DELETE' })
+};
+
+const reportsAPI = {
+    create: ({ contentType, contentId, reportedUserId, reason, details }) =>
+        apiRequest('/reports', {
+            method: 'POST',
+            body: JSON.stringify({
+                content_type: contentType,
+                content_id: contentId || null,
+                reported_user_id: reportedUserId || null,
+                reason,
+                details: details || null
+            })
+        })
+};
+
 const API = {
     // Direct access to apiRequest for custom endpoints
     get: async (endpoint) => await apiRequest(endpoint),
@@ -1328,6 +1349,8 @@ const API = {
     coaches: coachesAPI,
     coachSignup: coachSignupAPI,
     config: configAPI,
+    blocks: blocksAPI,
+    reports: reportsAPI,
 
     // Auth helpers
     getUser,

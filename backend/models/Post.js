@@ -358,6 +358,13 @@ class Post {
           UNION
           SELECT blocker_id FROM blocked_users WHERE blocked_id = $1
         )
+        -- Hide shares the viewer has reported (content_type='share', content_id=ps.id)
+        AND NOT EXISTS (
+          SELECT 1 FROM content_reports
+          WHERE reporter_user_id = $1
+            AND content_type = 'share'
+            AND content_id = ps.id
+        )
       )
       SELECT fp.*,
              -- For quote posts, check share_likes; for regular posts/reposts, check post_likes
@@ -562,6 +569,13 @@ class Post {
           SELECT blocked_id FROM blocked_users WHERE blocker_id = $1
           UNION
           SELECT blocker_id FROM blocked_users WHERE blocked_id = $1
+        )
+        -- Hide shares the viewer has reported (content_type='share', content_id=ps.id)
+        AND NOT EXISTS (
+          SELECT 1 FROM content_reports
+          WHERE reporter_user_id = $1
+            AND content_type = 'share'
+            AND content_id = ps.id
         )
       )
       SELECT dp.*,

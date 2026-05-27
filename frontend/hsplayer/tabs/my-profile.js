@@ -1809,6 +1809,11 @@ function updateProfileActions(hasPendingRequest = false) {
             </button>
             <button class="btn-follow" id="followBtn">Follow</button>
             <button class="btn-message" id="messageBtn" style="display: none;">Message</button>
+            <button class="btn-profile-more" id="profileMoreBtn" aria-label="More options">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                    <circle cx="12" cy="5" r="1.5"></circle><circle cx="12" cy="12" r="1.5"></circle><circle cx="12" cy="19" r="1.5"></circle>
+                </svg>
+            </button>
         `;
 
         if (showRecruitingBoardBtn) {
@@ -1836,6 +1841,9 @@ function updateProfileActions(hasPendingRequest = false) {
 
         // Setup follow button
         setupFollowButton();
+
+        // Setup three-dot (Report / Block) menu — Fix #2c
+        setupProfileMoreMenu(currentProfile);
 
         // Setup message button (checks permissions and shows/hides accordingly)
         setupMessageButton();
@@ -8331,16 +8339,42 @@ async function editQuote(shareId) {
 }
 
 // Report quote post
-function reportQuote(shareId) {
+async function reportQuote(shareId) {
     const menu = document.querySelector('.quote-dropdown-menu');
     if (menu) menu.remove();
-    showToast('Quote post reported. We will review it shortly.', 'info');
+    if (typeof window.openReportModal !== 'function') {
+        showToast('Report unavailable. Please refresh and try again.', 'error');
+        return;
+    }
+    const submitted = await window.openReportModal({
+        contentType: 'share',
+        contentId: shareId,
+        contentLabel: 'Quote Post'
+    });
+    if (!submitted) return;
+    const card = document.querySelector(`.post-card[data-share-id="${shareId}"]`);
+    if (card && typeof window.fadeAndReplaceWithReportedChip === 'function') {
+        window.fadeAndReplaceWithReportedChip(card);
+    }
 }
 
-function reportPost(postId) {
+async function reportPost(postId) {
     const menu = document.querySelector('.repost-dropdown-menu');
     if (menu) menu.remove();
-    showToast('Post reported. We will review it shortly.', 'info');
+    if (typeof window.openReportModal !== 'function') {
+        showToast('Report unavailable. Please refresh and try again.', 'error');
+        return;
+    }
+    const submitted = await window.openReportModal({
+        contentType: 'post',
+        contentId: postId,
+        contentLabel: 'Post'
+    });
+    if (!submitted) return;
+    const card = document.querySelector(`.post-card[data-post-id="${postId}"]:not([data-share-id])`);
+    if (card && typeof window.fadeAndReplaceWithReportedChip === 'function') {
+        window.fadeAndReplaceWithReportedChip(card);
+    }
 }
 
 // Delete repost

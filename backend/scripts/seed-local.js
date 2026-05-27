@@ -80,7 +80,8 @@ const MIGRATIONS = [
   'add-specs-positions.sql',
   'add-coach-team-switch.sql',
   'add-free-coach-invite.sql',
-  'add-reports-and-blocks.sql'
+  'add-reports-and-blocks.sql',
+  'add-share-content-type.sql'
 ];
 
 async function applyManualFixes() {

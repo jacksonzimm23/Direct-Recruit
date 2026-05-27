@@ -2123,10 +2123,24 @@ class FeedManager {
         }).join('');
     }
 
-    // Report quote post
-    reportQuotePost(shareId) {
+    // Report quote post — targets the share itself (content_type='share'),
+    // not the underlying original post.
+    async reportQuotePost(shareId) {
         document.querySelector('.post-dropdown-menu')?.remove();
-        this.showToast('Quote post reported. We will review it shortly.', 'info');
+        if (typeof window.openReportModal !== 'function') {
+            this.showToast('Report unavailable. Please refresh and try again.', 'error');
+            return;
+        }
+        const submitted = await window.openReportModal({
+            contentType: 'share',
+            contentId: shareId,
+            contentLabel: 'Quote Post'
+        });
+        if (!submitted) return;
+        const card = document.querySelector(`.post-card[data-share-id="${shareId}"]`);
+        if (card && typeof window.fadeAndReplaceWithReportedChip === 'function') {
+            window.fadeAndReplaceWithReportedChip(card);
+        }
     }
 
     async deleteQuotePost(shareId) {
@@ -4132,8 +4146,23 @@ class FeedManager {
         });
     }
 
-    reportPost(postId) {
-        this.showToast('Report feature coming soon!', 'info');
+    async reportPost(postId) {
+        document.querySelector('.post-dropdown-menu')?.remove();
+        if (typeof window.openReportModal !== 'function') {
+            this.showToast('Report unavailable. Please refresh and try again.', 'error');
+            return;
+        }
+        const submitted = await window.openReportModal({
+            contentType: 'post',
+            contentId: postId,
+            contentLabel: 'Post'
+        });
+        if (!submitted) return;
+        // :not([data-share-id]) avoids fading a quote post that also has data-post-id
+        const card = document.querySelector(`.post-card[data-post-id="${postId}"]:not([data-share-id])`);
+        if (card && typeof window.fadeAndReplaceWithReportedChip === 'function') {
+            window.fadeAndReplaceWithReportedChip(card);
+        }
     }
 
     // Navigate to single post view page

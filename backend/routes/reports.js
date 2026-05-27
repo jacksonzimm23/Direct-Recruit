@@ -56,6 +56,10 @@ async function getContentExcerpt(contentType, contentId) {
       const r = await pool.query('SELECT content FROM messages WHERE id = $1', [contentId]);
       return r.rows[0]?.content || null;
     }
+    if (contentType === 'share') {
+      const r = await pool.query('SELECT quote_content FROM post_shares WHERE id = $1', [contentId]);
+      return r.rows[0]?.quote_content || null;
+    }
   } catch (e) {
     logger.warn('[reports] getContentExcerpt failed', contentType, contentId, e.message);
   }
