@@ -1025,6 +1025,167 @@ Triage: SELECT * FROM content_reports WHERE status = 'pending' ORDER BY created_
   }
 }
 
+// Moderation: warning email sent when admin uses the "Warn" action (Fix #10).
+// Notifies the reported user that their content was reported without taking
+// further action. Tone is professional and references community guidelines.
+async function sendModerationWarning(toEmail, { reason, contentType } = {}) {
+  const reasonLabel = reason ? reason.replace(/_/g, ' ') : 'a community guidelines violation';
+  const params = {
+    Source: FROM_EMAIL,
+    Destination: { ToAddresses: [toEmail] },
+    Message: {
+      Subject: { Data: 'A note about your recent activity - Direct Recruit', Charset: 'UTF-8' },
+      Body: {
+        Html: {
+          Data: `
+            <!DOCTYPE html>
+            <html><head><meta charset="UTF-8"></head>
+            <body style="margin:0;padding:0;font-family:Arial,sans-serif;background-color:#f4f4f4;">
+              <table role="presentation" style="width:100%;border-collapse:collapse;background-color:#f4f4f4;">
+                <tr><td align="center" style="padding:40px 20px;">
+                  <table role="presentation" style="max-width:480px;width:100%;border-collapse:collapse;">
+                    <tr><td style="text-align:center;padding-bottom:30px;">
+                      <h1 style="color:#1282a2;font-size:28px;margin:0;">Direct Recruit</h1>
+                    </td></tr>
+                    <tr><td style="background-color:#ffffff;border:1px solid #e0e0e0;border-radius:8px;padding:40px 30px;">
+                      <h2 style="color:#1a1a2e;font-size:22px;margin:0 0 20px 0;">A note about your recent activity</h2>
+                      <p style="color:#555;font-size:16px;line-height:1.6;margin:0 0 16px 0;">
+                        We received a report regarding ${contentType ? `a recent ${contentType}` : 'recent content'} you posted on Direct Recruit. The report cited <strong>${reasonLabel}</strong>.
+                      </p>
+                      <p style="color:#555;font-size:16px;line-height:1.6;margin:0 0 16px 0;">
+                        We're sharing this as a one-time courtesy notice. Repeated violations of our community guidelines may result in content removal or account suspension.
+                      </p>
+                      <p style="color:#555;font-size:16px;line-height:1.6;margin:0 0 16px 0;">
+                        If you believe this report was made in error, you don't need to take any action.
+                      </p>
+                      <p style="color:#888;font-size:13px;margin:24px 0 0 0;">— The Direct Recruit Team</p>
+                    </td></tr>
+                  </table>
+                </td></tr>
+              </table>
+            </body></html>
+          `,
+          Charset: 'UTF-8'
+        },
+        Text: {
+          Data: `A note about your recent activity\n\nWe received a report regarding ${contentType ? `a recent ${contentType}` : 'recent content'} you posted on Direct Recruit. The report cited ${reasonLabel}.\n\nThis is a one-time courtesy notice. Repeated violations of our community guidelines may result in content removal or account suspension.\n\nIf you believe this report was made in error, you don't need to take any action.\n\n— The Direct Recruit Team`,
+          Charset: 'UTF-8'
+        }
+      }
+    }
+  };
+  try {
+    await sesClient.send(new SendEmailCommand(params));
+  } catch (e) {
+    logger.error('sendModerationWarning failed:', e.message);
+  }
+}
+
+// Moderation: suspension notice sent when admin suspends a user (Fix #10).
+async function sendSuspensionNotification(toEmail, { reason } = {}) {
+  const params = {
+    Source: FROM_EMAIL,
+    Destination: { ToAddresses: [toEmail] },
+    Message: {
+      Subject: { Data: 'Your Direct Recruit account has been suspended', Charset: 'UTF-8' },
+      Body: {
+        Html: {
+          Data: `
+            <!DOCTYPE html>
+            <html><head><meta charset="UTF-8"></head>
+            <body style="margin:0;padding:0;font-family:Arial,sans-serif;background-color:#f4f4f4;">
+              <table role="presentation" style="width:100%;border-collapse:collapse;background-color:#f4f4f4;">
+                <tr><td align="center" style="padding:40px 20px;">
+                  <table role="presentation" style="max-width:480px;width:100%;border-collapse:collapse;">
+                    <tr><td style="text-align:center;padding-bottom:30px;">
+                      <h1 style="color:#1282a2;font-size:28px;margin:0;">Direct Recruit</h1>
+                    </td></tr>
+                    <tr><td style="background-color:#ffffff;border:1px solid #e0e0e0;border-radius:8px;padding:40px 30px;">
+                      <h2 style="color:#b91c1c;font-size:22px;margin:0 0 20px 0;">Your account has been suspended</h2>
+                      <p style="color:#555;font-size:16px;line-height:1.6;margin:0 0 16px 0;">
+                        Your Direct Recruit account has been suspended for violating our community guidelines.
+                      </p>
+                      ${reason ? `<p style="color:#555;font-size:16px;line-height:1.6;margin:0 0 16px 0;"><strong>Reason:</strong> ${reason}</p>` : ''}
+                      <p style="color:#555;font-size:16px;line-height:1.6;margin:0 0 16px 0;">
+                        You will not be able to access your account or post on Direct Recruit while this suspension is active.
+                      </p>
+                      <p style="color:#555;font-size:16px;line-height:1.6;margin:0 0 16px 0;">
+                        If you believe this suspension was applied in error, you may reply to this email to appeal.
+                      </p>
+                      <p style="color:#888;font-size:13px;margin:24px 0 0 0;">— The Direct Recruit Team</p>
+                    </td></tr>
+                  </table>
+                </td></tr>
+              </table>
+            </body></html>
+          `,
+          Charset: 'UTF-8'
+        },
+        Text: {
+          Data: `Your account has been suspended\n\nYour Direct Recruit account has been suspended for violating our community guidelines.\n\n${reason ? `Reason: ${reason}\n\n` : ''}You will not be able to access your account or post on Direct Recruit while this suspension is active.\n\nIf you believe this suspension was applied in error, you may reply to this email to appeal.\n\n— The Direct Recruit Team`,
+          Charset: 'UTF-8'
+        }
+      }
+    }
+  };
+  try {
+    await sesClient.send(new SendEmailCommand(params));
+  } catch (e) {
+    logger.error('sendSuspensionNotification failed:', e.message);
+  }
+}
+
+// Moderation: content-removal notice sent when admin deletes a user's content (Fix #10).
+async function sendContentRemovalNotification(toEmail, { contentType, reason } = {}) {
+  const reasonLabel = reason ? reason.replace(/_/g, ' ') : 'a community guidelines violation';
+  const params = {
+    Source: FROM_EMAIL,
+    Destination: { ToAddresses: [toEmail] },
+    Message: {
+      Subject: { Data: `Your ${contentType || 'content'} was removed - Direct Recruit`, Charset: 'UTF-8' },
+      Body: {
+        Html: {
+          Data: `
+            <!DOCTYPE html>
+            <html><head><meta charset="UTF-8"></head>
+            <body style="margin:0;padding:0;font-family:Arial,sans-serif;background-color:#f4f4f4;">
+              <table role="presentation" style="width:100%;border-collapse:collapse;background-color:#f4f4f4;">
+                <tr><td align="center" style="padding:40px 20px;">
+                  <table role="presentation" style="max-width:480px;width:100%;border-collapse:collapse;">
+                    <tr><td style="text-align:center;padding-bottom:30px;">
+                      <h1 style="color:#1282a2;font-size:28px;margin:0;">Direct Recruit</h1>
+                    </td></tr>
+                    <tr><td style="background-color:#ffffff;border:1px solid #e0e0e0;border-radius:8px;padding:40px 30px;">
+                      <h2 style="color:#1a1a2e;font-size:22px;margin:0 0 20px 0;">Your ${contentType || 'content'} was removed</h2>
+                      <p style="color:#555;font-size:16px;line-height:1.6;margin:0 0 16px 0;">
+                        A ${contentType || 'piece of content'} you posted on Direct Recruit was removed after a report citing <strong>${reasonLabel}</strong>.
+                      </p>
+                      <p style="color:#555;font-size:16px;line-height:1.6;margin:0 0 16px 0;">
+                        Continued violations may result in account suspension.
+                      </p>
+                      <p style="color:#888;font-size:13px;margin:24px 0 0 0;">— The Direct Recruit Team</p>
+                    </td></tr>
+                  </table>
+                </td></tr>
+              </table>
+            </body></html>
+          `,
+          Charset: 'UTF-8'
+        },
+        Text: {
+          Data: `Your ${contentType || 'content'} was removed\n\nA ${contentType || 'piece of content'} you posted on Direct Recruit was removed after a report citing ${reasonLabel}.\n\nContinued violations may result in account suspension.\n\n— The Direct Recruit Team`,
+          Charset: 'UTF-8'
+        }
+      }
+    }
+  };
+  try {
+    await sesClient.send(new SendEmailCommand(params));
+  } catch (e) {
+    logger.error('sendContentRemovalNotification failed:', e.message);
+  }
+}
+
 module.exports = {
   sendEmailChangeVerification,
   sendEmailChangeConfirmation,
@@ -1035,5 +1196,8 @@ module.exports = {
   sendCoachInvite,
   sendCoachRejection,
   sendQuestionnaireConfirmation,
-  sendReportNotification
+  sendReportNotification,
+  sendModerationWarning,
+  sendSuspensionNotification,
+  sendContentRemovalNotification
 };

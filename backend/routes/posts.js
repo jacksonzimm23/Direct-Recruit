@@ -13,6 +13,7 @@ const { authMiddleware, validateUUID } = require('../middleware/auth');
 const { body, validationResult } = require('express-validator');
 const { postLimiter } = require('../middleware/rateLimit');
 const { getSignedS3Url, deleteFromS3 } = require('../utils/s3');
+const { containsBlockedContent } = require('../utils/profanity-filter');
 const logger = require('../utils/logger');
 
 // Helper function to check if viewer can access a user's content
@@ -445,6 +446,11 @@ router.post('/', authMiddleware, postLimiter, [
     return res.status(400).json({ errors: errors.array() });
   }
 
+  // Slur / violence filter (Fix #10 — Apple Guideline 1.2)
+  if (containsBlockedContent(req.body.content)) {
+    return res.status(400).json({ error: 'Content not allowed.' });
+  }
+
   try {
     const post = await Post.create(req.userId, req.body);
     res.status(201).json({ message: 'Post created', post });
@@ -644,6 +650,11 @@ router.post('/:postId/comments', authMiddleware, validateUUID('postId'), [
     return res.status(400).json({ errors: errors.array() });
   }
 
+  // Slur / violence filter (Fix #10)
+  if (containsBlockedContent(req.body.content)) {
+    return res.status(400).json({ error: 'Content not allowed.' });
+  }
+
   try {
     const comment = await Post.addComment(
       req.params.postId,
@@ -783,6 +794,11 @@ router.post('/:postId/share', authMiddleware, validateUUID('postId'), [
   body('media_urls').optional().isArray(),
   body('media_type').optional().isIn(['image', 'video', 'mixed'])
 ], async (req, res) => {
+  // Slur / violence filter on quote commentary (Fix #10) — only when present.
+  if (req.body.quote_content && containsBlockedContent(req.body.quote_content)) {
+    return res.status(400).json({ error: 'Content not allowed.' });
+  }
+
   try {
     const { share_type = 'repost', quote_content, media_urls, media_type } = req.body;
     const result = await Post.sharePost(req.params.postId, req.userId, share_type, quote_content, media_urls, media_type);
@@ -955,6 +971,11 @@ router.post('/share/:shareId/comments', authMiddleware, validateUUID('shareId'),
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res.status(400).json({ errors: errors.array() });
+  }
+
+  // Slur / violence filter (Fix #10)
+  if (containsBlockedContent(req.body.content)) {
+    return res.status(400).json({ error: 'Content not allowed.' });
   }
 
   try {

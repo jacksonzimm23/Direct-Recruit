@@ -48,6 +48,15 @@ const authMiddleware = async (req, res, next) => {
       return res.status(401).json({ error: 'Invalid authentication' });
     }
 
+    // Suspended users (Fix #10) get a distinct 403 with a flag the frontend
+    // can detect to show a "you've been suspended" page (future fix).
+    if (user.is_suspended) {
+      return res.status(403).json({
+        error: 'Your account has been suspended for violating community guidelines.',
+        suspended: true
+      });
+    }
+
     req.user = user;
     req.userId = user.id;
     next();
@@ -85,7 +94,9 @@ const optionalAuthMiddleware = async (req, res, next) => {
     }
 
     const user = await User.findById(decoded.userId);
-    if (user && user.is_active) {
+    // Suspended users are treated as anonymous in optional-auth flows so they
+    // can still hit anonymous-friendly endpoints (e.g. coach-signup form).
+    if (user && user.is_active && !user.is_suspended) {
       req.user = user;
       req.userId = user.id;
     }

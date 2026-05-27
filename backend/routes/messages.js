@@ -15,6 +15,7 @@ const { messageLimiter } = require('../middleware/rateLimit');
 const { getSignedS3Url } = require('../utils/s3');
 const AiEngagement = require('../models/AiEngagement');
 const logger = require('../utils/logger');
+const { containsBlockedContent } = require('../utils/profanity-filter');
 
 // Helper function to add signed URLs to conversations/messages with profile images
 async function addSignedUrlsToConversations(conversations) {
@@ -154,6 +155,11 @@ router.post('/conversations/:conversationId/messages', authMiddleware, validateU
 
   if (!content && !mediaUrl) {
     return res.status(400).json({ error: 'Message must have content or an attachment' });
+  }
+
+  // Slur / violence filter (Fix #10) — only on text content, not media
+  if (content && containsBlockedContent(content)) {
+    return res.status(400).json({ error: 'Content not allowed.' });
   }
 
   // Security: if media_url is provided, it must belong to this user's upload path

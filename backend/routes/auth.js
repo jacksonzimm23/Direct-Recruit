@@ -301,6 +301,15 @@ router.post('/login', authLimiter, async (req, res) => {
       throw cognitoError;
     }
 
+    // Block suspended users from getting a JWT (Fix #10). Checked AFTER Cognito
+    // sign-in so we don't reveal suspension to attackers without valid creds.
+    if (user.is_suspended) {
+      return res.status(403).json({
+        error: 'Your account has been suspended for violating community guidelines.',
+        suspended: true
+      });
+    }
+
     await User.updateLastLogin(user.id);
     const token = generateToken(user.id, user.role);
 

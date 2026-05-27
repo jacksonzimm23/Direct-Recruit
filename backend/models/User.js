@@ -18,7 +18,7 @@ class User {
     const result = await pool.query(
       `SELECT id, email, username, role, profile_completed, is_active,
               email_verified, subscription_status, subscription_tier,
-              last_profile_switch_at
+              last_profile_switch_at, is_suspended
        FROM users WHERE email = $1`,
       [email]
     );
@@ -26,7 +26,7 @@ class User {
   }
 
   static async findById(id) {
-    const result = await pool.query('SELECT id, email, username, role, created_at, email_verified, profile_completed, is_active, last_profile_switch_at, subscription_status, subscription_tier FROM users WHERE id = $1', [id]);
+    const result = await pool.query('SELECT id, email, username, role, created_at, email_verified, profile_completed, is_active, last_profile_switch_at, subscription_status, subscription_tier, is_suspended FROM users WHERE id = $1', [id]);
     return result.rows[0];
   }
 
@@ -37,11 +37,62 @@ class User {
     const result = await pool.query(
       `SELECT id, email, username, role, profile_completed, is_active,
               email_verified, subscription_status, subscription_tier,
-              last_profile_switch_at
+              last_profile_switch_at, is_suspended
        FROM users WHERE cognito_sub = $1`,
       [cognitoSub]
     );
     return result.rows[0];
+  }
+
+  // Suspend a user (Fix #10 — admin moderation action). Sets is_suspended
+  // and records audit columns. Returns the updated row or null if not found.
+  // suspendedByUserId is nullable (admins don't have user accounts).
+  static async suspendUser(userId, { reason = null, suspendedByUserId = null } = {}) {
+    const result = await pool.query(
+      `UPDATE users
+       SET is_suspended = TRUE,
+           suspended_at = NOW(),
+           suspended_by = $2,
+           suspension_reason = $3
+       WHERE id = $1
+       RETURNING id, email, role, is_suspended, suspended_at, suspension_reason`,
+      [userId, suspendedByUserId, reason]
+    );
+    return result.rows[0] || null;
+  }
+
+  // Reverse a suspension. Clears audit columns too so the row looks pristine.
+  static async unsuspendUser(userId) {
+    const result = await pool.query(
+      `UPDATE users
+       SET is_suspended = FALSE,
+           suspended_at = NULL,
+           suspended_by = NULL,
+           suspension_reason = NULL
+       WHERE id = $1
+       RETURNING id, email, role, is_suspended`,
+      [userId]
+    );
+    return result.rows[0] || null;
+  }
+
+  // List currently-suspended users for the admin panel.
+  static async listSuspended(limit = 100) {
+    const result = await pool.query(
+      `SELECT u.id, u.email, u.role, u.suspended_at, u.suspension_reason,
+              COALESCE(pp.first_name, cp.first_name, op.first_name) AS first_name,
+              COALESCE(pp.last_name, cp.last_name, op.last_name) AS last_name,
+              COALESCE(pp.username, cp.username, op.username) AS username
+       FROM users u
+       LEFT JOIN player_profiles pp ON pp.user_id = u.id
+       LEFT JOIN coach_profiles cp ON cp.user_id = u.id
+       LEFT JOIN other_profiles op ON op.user_id = u.id
+       WHERE u.is_suspended = TRUE
+       ORDER BY u.suspended_at DESC
+       LIMIT $1`,
+      [limit]
+    );
+    return result.rows;
   }
 
   // Security #15: only caller (username-availability check) needs existence

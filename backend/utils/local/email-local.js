@@ -117,6 +117,33 @@ async function sendReportNotification(toEmail, data) {
   return { success: true, messageId: 'local-dev-' + Date.now() };
 }
 
+// Moderation emails (Fix #10) — console mocks for local dev.
+async function sendModerationWarning(toEmail, { reason, contentType } = {}) {
+  console.log('\n[LOCAL EMAIL] Moderation Warning');
+  console.log(`  To: ${toEmail}`);
+  console.log(`  Content type: ${contentType || '(unspecified)'}`);
+  console.log(`  Reason: ${reason || '(unspecified)'}`);
+  console.log('  (Action: warn — no DB state change, courtesy notice only)\n');
+  return { success: true, messageId: 'local-dev-' + Date.now() };
+}
+
+async function sendSuspensionNotification(toEmail, { reason } = {}) {
+  console.log('\n[LOCAL EMAIL] Account Suspension Notification');
+  console.log(`  To: ${toEmail}`);
+  console.log(`  Reason: ${reason || '(unspecified)'}`);
+  console.log('  (User is_suspended=TRUE; cannot log in or access protected routes)\n');
+  return { success: true, messageId: 'local-dev-' + Date.now() };
+}
+
+async function sendContentRemovalNotification(toEmail, { contentType, reason } = {}) {
+  console.log('\n[LOCAL EMAIL] Content Removal Notification');
+  console.log(`  To: ${toEmail}`);
+  console.log(`  Content type: ${contentType || '(unspecified)'}`);
+  console.log(`  Reason: ${reason || '(unspecified)'}`);
+  console.log('  (Content soft-deleted; user retains account access)\n');
+  return { success: true, messageId: 'local-dev-' + Date.now() };
+}
+
 module.exports = {
   sendEmailChangeVerification,
   sendEmailChangeConfirmation,
@@ -127,5 +154,8 @@ module.exports = {
   sendCoachInvite,
   sendCoachRejection,
   sendQuestionnaireConfirmation,
-  sendReportNotification
+  sendReportNotification,
+  sendModerationWarning,
+  sendSuspensionNotification,
+  sendContentRemovalNotification
 };

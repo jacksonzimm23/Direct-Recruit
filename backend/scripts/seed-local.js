@@ -81,7 +81,8 @@ const MIGRATIONS = [
   'add-coach-team-switch.sql',
   'add-free-coach-invite.sql',
   'add-reports-and-blocks.sql',
-  'add-share-content-type.sql'
+  'add-share-content-type.sql',
+  'add-user-suspension.sql'
 ];
 
 async function applyManualFixes() {
