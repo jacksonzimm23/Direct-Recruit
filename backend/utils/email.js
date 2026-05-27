@@ -936,6 +936,95 @@ async function sendQuestionnaireConfirmation(toEmail, { firstName, schoolName, s
   }
 }
 
+/**
+ * Send internal notification to admin when a user submits a content report.
+ * Apple Guideline 1.2 reporting flow (Fix #2a). Mirrors the structure of
+ * sendCoachRequestNotification — admin-facing email with the report details.
+ */
+async function sendReportNotification(toEmail, data) {
+  const REASON_LABELS = {
+    spam: 'Spam',
+    harassment: 'Harassment',
+    inappropriate: 'Inappropriate content',
+    hate_speech: 'Hate speech',
+    impersonation: 'Impersonation',
+    other: 'Other'
+  };
+  const reasonLabel = REASON_LABELS[data.reason] || data.reason;
+  const details = data.details && data.details.trim() ? data.details : '(none)';
+  const excerpt = data.content_excerpt && data.content_excerpt.trim()
+    ? data.content_excerpt.slice(0, 500)
+    : '(no excerpt available)';
+  const subjectLine = `[Report] ${reasonLabel} — ${data.content_type} reported by ${data.reporter_name || 'a user'}`;
+  const params = {
+    Source: FROM_EMAIL,
+    Destination: { ToAddresses: [toEmail] },
+    Message: {
+      Subject: { Data: subjectLine, Charset: 'UTF-8' },
+      Body: {
+        Html: {
+          Data: `
+            <!DOCTYPE html>
+            <html><head><meta charset="UTF-8"></head>
+            <body style="font-family: Arial, sans-serif; color:#1a1a2e;">
+              <h2 style="color:#ef4444;">New Content Report</h2>
+              <p><strong>Submitted:</strong> ${new Date().toISOString()}</p>
+              <table cellpadding="6" style="border-collapse:collapse;">
+                <tr><td><strong>Reason:</strong></td><td>${reasonLabel}</td></tr>
+                <tr><td><strong>Content type:</strong></td><td>${data.content_type}</td></tr>
+                <tr><td><strong>Content ID:</strong></td><td>${data.content_id || '(profile report — no content id)'}</td></tr>
+                <tr><td><strong>Reporter:</strong></td><td>${data.reporter_name || '(unknown)'} (${data.reporter_email || 'no email'}) &mdash; ${data.reporter_role || 'unknown role'}</td></tr>
+                <tr><td><strong>Reported user:</strong></td><td>${data.reported_name || '(unknown)'} (${data.reported_email || 'no email'}) &mdash; ${data.reported_role || 'unknown role'}</td></tr>
+                <tr><td valign="top"><strong>Excerpt:</strong></td><td><pre style="white-space:pre-wrap;font-family:inherit;margin:0;">${excerpt}</pre></td></tr>
+                <tr><td valign="top"><strong>Details:</strong></td><td><pre style="white-space:pre-wrap;font-family:inherit;margin:0;">${details}</pre></td></tr>
+                <tr><td><strong>Report ID:</strong></td><td>${data.report_id || '(unknown)'}</td></tr>
+              </table>
+              <p style="margin-top:20px;color:#64748b;font-size:13px;">
+                Admin moderation dashboard is deferred to a future release.
+                Triage reports directly in Postgres: <code>SELECT * FROM content_reports WHERE status = 'pending' ORDER BY created_at DESC;</code>
+              </p>
+            </body></html>
+          `,
+          Charset: 'UTF-8'
+        },
+        Text: {
+          Data: `
+New Content Report
+Submitted: ${new Date().toISOString()}
+
+Reason: ${reasonLabel}
+Content type: ${data.content_type}
+Content ID: ${data.content_id || '(profile report)'}
+Reporter: ${data.reporter_name || '(unknown)'} (${data.reporter_email || 'no email'}) — ${data.reporter_role || 'unknown role'}
+Reported user: ${data.reported_name || '(unknown)'} (${data.reported_email || 'no email'}) — ${data.reported_role || 'unknown role'}
+
+Excerpt:
+${excerpt}
+
+Details:
+${details}
+
+Report ID: ${data.report_id || '(unknown)'}
+
+Triage: SELECT * FROM content_reports WHERE status = 'pending' ORDER BY created_at DESC;
+          `,
+          Charset: 'UTF-8'
+        }
+      }
+    }
+  };
+
+  try {
+    const command = new SendEmailCommand(params);
+    const response = await sesClient.send(command);
+    logger.info('[Email] Report notification sent to:', toEmail, 'MessageId:', response.MessageId);
+    return { success: true, messageId: response.MessageId };
+  } catch (error) {
+    logger.error('[Email] Failed to send report notification:', error);
+    throw error;
+  }
+}
+
 module.exports = {
   sendEmailChangeVerification,
   sendEmailChangeConfirmation,
@@ -945,5 +1034,6 @@ module.exports = {
   sendCoachRequestNotification,
   sendCoachInvite,
   sendCoachRejection,
-  sendQuestionnaireConfirmation
+  sendQuestionnaireConfirmation,
+  sendReportNotification
 };

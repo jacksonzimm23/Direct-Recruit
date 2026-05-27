@@ -79,7 +79,8 @@ const MIGRATIONS = [
   'add-pipeline-soft-delete.sql',
   'add-specs-positions.sql',
   'add-coach-team-switch.sql',
-  'add-free-coach-invite.sql'
+  'add-free-coach-invite.sql',
+  'add-reports-and-blocks.sql'
 ];
 
 async function applyManualFixes() {

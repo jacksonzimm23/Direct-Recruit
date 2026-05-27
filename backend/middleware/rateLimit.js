@@ -120,7 +120,13 @@ const messageLimiter = rateLimit({
   legacyHeaders: false
 });
 
-// Coach signup request limiter — public contact form abuse protection
+// Coach signup request limiter — public contact form abuse protection.
+// Only applies to anonymous requests. Authenticated coaches (profile-type
+// switches and intra-school team switches) skip the limit entirely because
+// they're already verified users and the 3/hr cap was hitting normal usage
+// (e.g. a coach editing their team in Settings burned all 3 slots quickly).
+// `optionalAuthMiddleware` must run BEFORE this limiter on the route so
+// `req.user` is populated by the time `skip` reads it.
 const coachRequestLimiter = rateLimit({
   ...getRedisStore('rl:coachreq:'),
   windowMs: 60 * 60 * 1000, // 1 hour
@@ -129,7 +135,7 @@ const coachRequestLimiter = rateLimit({
   message: 'Too many signup requests. Please try again later.',
   standardHeaders: true,
   legacyHeaders: false,
-  skip: (req) => isDevelopment,
+  skip: (req) => isDevelopment || !!req.user,
   handler: (req, res) => {
     res.status(429).json({
       error: 'Too many signup requests. Please try again later.'
@@ -165,6 +171,26 @@ const questionnaireSubmitLimiter = rateLimit({
   }
 });
 
+// Report submissions — per-user, 20 reports per rolling 24h.
+// Must be mounted AFTER authMiddleware so req.userId is populated.
+// Apple Guideline 1.2 wants a reporting mechanism but we also need to
+// prevent abusers from spamming reports to harass legitimate users.
+const reportRateLimit = rateLimit({
+  ...getRedisStore('rl:report:'),
+  windowMs: 24 * 60 * 60 * 1000, // 24 hours
+  max: isDevelopment ? 10000 : 20,
+  keyGenerator: (req) => req.userId || req.ip,
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: (req) => isDevelopment,
+  handler: (req, res) => {
+    logger.warn('Report rate limit hit', { userId: req.userId, ip: req.ip });
+    res.status(429).json({
+      error: "You've reached the daily report limit. Please try again tomorrow."
+    });
+  }
+});
+
 module.exports = {
   apiLimiter,
   authLimiter,
@@ -175,5 +201,6 @@ module.exports = {
   availabilityDailyLimiter,
   coachRequestLimiter,
   questionnaireGetLimiter,
-  questionnaireSubmitLimiter
+  questionnaireSubmitLimiter,
+  reportRateLimit
 };

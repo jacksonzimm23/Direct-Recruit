@@ -94,6 +94,29 @@ async function sendQuestionnaireConfirmation(toEmail, data) {
   return { success: true, messageId: 'local-dev-' + Date.now() };
 }
 
+async function sendReportNotification(toEmail, data) {
+  const REASON_LABELS = {
+    spam: 'Spam',
+    harassment: 'Harassment',
+    inappropriate: 'Inappropriate content',
+    hate_speech: 'Hate speech',
+    impersonation: 'Impersonation',
+    other: 'Other'
+  };
+  console.log('\n[LOCAL EMAIL] Content Report Notification');
+  console.log(`  To: ${toEmail}`);
+  console.log(`  Reason: ${REASON_LABELS[data.reason] || data.reason}`);
+  console.log(`  Content type: ${data.content_type}`);
+  console.log(`  Content ID: ${data.content_id || '(profile report)'}`);
+  console.log(`  Reporter: ${data.reporter_name || '(unknown)'} <${data.reporter_email || 'no email'}> — ${data.reporter_role || 'unknown role'}`);
+  console.log(`  Reported user: ${data.reported_name || '(unknown)'} <${data.reported_email || 'no email'}> — ${data.reported_role || 'unknown role'}`);
+  if (data.content_excerpt) console.log(`  Excerpt: ${data.content_excerpt.slice(0, 200)}`);
+  if (data.details) console.log(`  Details: ${data.details}`);
+  console.log(`  Report ID: ${data.report_id || '(unknown)'}`);
+  console.log('  (Triage via: SELECT * FROM content_reports WHERE status = \'pending\')\n');
+  return { success: true, messageId: 'local-dev-' + Date.now() };
+}
+
 module.exports = {
   sendEmailChangeVerification,
   sendEmailChangeConfirmation,
@@ -103,5 +126,6 @@ module.exports = {
   sendCoachRequestNotification,
   sendCoachInvite,
   sendCoachRejection,
-  sendQuestionnaireConfirmation
+  sendQuestionnaireConfirmation,
+  sendReportNotification
 };
