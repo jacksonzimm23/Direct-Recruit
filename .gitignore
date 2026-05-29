@@ -73,3 +73,7 @@ video/
 
 # Package lock (optional - can be committed if you want reproducible builds)
 # package-lock.json
+
+# APNs auth key (never commit)
+*.p8
+backend/keys/
