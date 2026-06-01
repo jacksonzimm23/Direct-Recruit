@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#0a1128">
+    <link rel="icon" type="image/png" href="../assets/dr-logo.png">
+    <title>DEV — Bypass Team Switch Verification</title>
+    <link rel="stylesheet" href="../landingpage/styles.css">
+    <link rel="stylesheet" href="verify-email.css">
+    <link rel="stylesheet" href="../shared/school-search.css">
+    <link rel="stylesheet" href="../shared/ios-app-overrides.css?v=1">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script src="../shared/capacitor-init.js"></script>
+    <style>
+        .dev-banner {
+            background: repeating-linear-gradient(45deg, #fde68a, #fde68a 12px, #fcd34d 12px, #fcd34d 24px);
+            color: #78350f;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            text-align: center;
+            padding: 0.6rem 1rem;
+            font-size: 0.8125rem;
+            border-bottom: 2px solid #b45309;
+        }
+        .dev-card { max-width: 540px; }
+        .dev-form-group { text-align: left; margin-bottom: 1.1rem; }
+        .dev-form-group label {
+            display: block;
+            font-size: 0.8125rem;
+            font-weight: 700;
+            color: #1a1a2e;
+            margin-bottom: 0.4rem;
+        }
+        .dev-form-group input[type="text"],
+        .dev-form-group select {
+            width: 100%;
+            padding: 0.7rem 0.85rem;
+            border: 1px solid #d0d0d8;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-family: inherit;
+            box-sizing: border-box;
+        }
+        #devCurrentTeam {
+            font-weight: 600;
+            color: #1a1a2e;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+        #devSwitchBtn {
+            background: #ff6b35; color: #fff; padding: 0.875rem 1.5rem; border: none;
+            border-radius: 8px; font-weight: 700; font-size: 1rem; cursor: pointer; width: 100%;
+        }
+        #devSwitchBtn:disabled { opacity: 0.55; cursor: not-allowed; }
+        #devCancelBtn {
+            background: transparent; color: #666; padding: 0.75rem 1.5rem; border: 1px solid #ccc;
+            border-radius: 8px; font-weight: 500; font-size: 0.95rem; cursor: pointer; width: 100%;
+            margin-top: 0.6rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="dev-banner">⚠ Bypassing Team Switch Verification — DEV ONLY</div>
+    <section class="verify-section">
+        <div class="verify-container dev-card">
+            <div class="verify-icon" id="statusIcon" style="color:#ff6b35;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 10v6M2 10l10-5 10 5-10 5z"></path>
+                    <path d="M6 12v5c3 3 9 3 12 0v-5"></path>
+                </svg>
+            </div>
+
+            <h1 id="statusTitle">Change school (dev bypass)</h1>
+            <p class="verify-subtitle" id="statusMessage">Pick a new school below. This applies immediately — no admin approval.</p>
+
+            <div id="devForm" style="display:none;margin-top:1.25rem;">
+                <div class="dev-form-group">
+                    <label>Current team</label>
+                    <div id="devCurrentTeam">—</div>
+                </div>
+
+                <div class="dev-form-group">
+                    <label for="devSchoolName">New school</label>
+                    <input type="text" id="devSchoolName" placeholder="Search for a school...">
+                </div>
+
+                <div class="dev-form-group">
+                    <label for="devDivision">Division</label>
+                    <select id="devDivision">
+                        <option value="">Select division</option>
+                        <option value="D1 FBS">D1 FBS</option>
+                        <option value="D1 FCS">D1 FCS</option>
+                        <option value="D2">D2</option>
+                        <option value="D3">D3</option>
+                        <option value="NAIA">NAIA</option>
+                        <option value="NJCAA">NJCAA</option>
+                    </select>
+                </div>
+
+                <div class="dev-form-group">
+                    <label for="devState">State (optional — keeps current if blank)</label>
+                    <input type="text" id="devState" placeholder="e.g. CO">
+                </div>
+
+                <button id="devSwitchBtn" disabled>Apply School Change</button>
+                <button id="devCancelBtn">Cancel</button>
+            </div>
+
+            <div class="help-text" id="helpText" style="margin-top:1.25rem;font-size:0.875rem;color:#888;">
+                This page only works on a local dev server. In production the team-switch goes through admin verification.
+            </div>
+        </div>
+    </section>
+
+    <script src="../shared/api.js"></script>
+    <script src="../shared/school-search.js"></script>
+    <script src="dev-team-switch.js"></script>
+</body>
+</html>

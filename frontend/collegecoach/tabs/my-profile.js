@@ -6888,6 +6888,18 @@ async function renderCurrentTeamDisplay(profile) {
         } catch (_) { /* noop */ }
     }
 
+    // DEV: the bypass page applies switches instantly and logs to the same
+    // history table, which would otherwise trip the 72h cooldown and disable
+    // this button. Skip the eligibility gate in dev so devs can switch freely.
+    try {
+        const cfg = await API.config.getEnv();
+        if (cfg && cfg.env === 'development') {
+            if (btn) { btn.style.display = ''; btn.disabled = false; }
+            if (hint) hint.style.display = 'none';
+            return;
+        }
+    } catch (_) { /* fall through to the prod eligibility gate */ }
+
     // Check eligibility (cooldown + pending request) before showing the button.
     // The button is now live in both dev and prod — server-side eligibility check
     // is the real gate.
@@ -6918,6 +6930,20 @@ async function renderCurrentTeamDisplay(profile) {
 }
 
 async function openChangeTeamModal() {
+    // DEV BYPASS: on a local dev server, skip the admin-verification request
+    // flow entirely and route to the standalone dev bypass page where the coach
+    // can pick a school and apply it instantly. Prod keeps the request modal.
+    // /api/config returns { env } and falls back to 'production' on error, so
+    // this never fires in prod.
+    try {
+        const cfg = await API.config.getEnv();
+        if (cfg && cfg.env === 'development') {
+            const prefix = window.location.pathname.startsWith('/frontend/') ? '/frontend' : '';
+            window.location.href = `${prefix}/collegecoach/dev-team-switch.html`;
+            return;
+        }
+    } catch (_) { /* fall through to the prod request modal */ }
+
     const modal = document.getElementById('changeTeamModal');
     if (!modal) return;
     buildChangeTeamStateList();

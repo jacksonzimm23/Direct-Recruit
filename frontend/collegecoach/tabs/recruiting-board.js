@@ -1577,10 +1577,13 @@ document.addEventListener('DOMContentLoaded', async function() {
     document.getElementById('sgTransferConfirmCancelBtn')?.addEventListener('click', closeTransferConfirmModal);
 
     document.getElementById('sgTransferConfirmSubmitBtn')?.addEventListener('click', async (e) => {
-        const newOwnerUid = e.currentTarget.dataset.targetUid;
+        // Capture the button now — e.currentTarget is reset to null once the
+        // event finishes dispatching, so referencing it after an await throws.
+        const btn = e.currentTarget;
+        const newOwnerUid = btn.dataset.targetUid;
         if (!newOwnerUid || !currentSharedGroupId) return;
         const t = (typeof window.showToast === 'function') ? window.showToast : showToast;
-        e.currentTarget.disabled = true;
+        btn.disabled = true;
         try {
             await API.post(`/recruiting-board/groups/${currentSharedGroupId}/transfer-ownership`, { newOwnerUserId: newOwnerUid });
             closeTransferConfirmModal();
@@ -1591,7 +1594,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         } catch (err) {
             t(err.error || 'Failed to transfer ownership', 'error');
         } finally {
-            e.currentTarget.disabled = false;
+            btn.disabled = false;
         }
     });
 

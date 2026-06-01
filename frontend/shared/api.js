@@ -1300,7 +1300,14 @@ const coachSignupAPI = {
     confirmTeamSwitch: async (token) => await apiRequest('/coach-signup/confirm-team-switch', {
         method: 'POST',
         body: JSON.stringify({ token })
-    })
+    }),
+    // DEV ONLY — backend is hard-gated on NODE_ENV==='development' and returns
+    // 403 in prod. Bypasses the admin-verification team-switch flow.
+    devTeamSwitch: async ({ new_team_name, new_division, new_state }) =>
+        await apiRequest('/coach-signup/dev-team-switch', {
+            method: 'POST',
+            body: JSON.stringify({ new_team_name, new_division, new_state })
+        })
 };
 
 // Tiny env discriminator (GET /api/config). Cached after first call so we

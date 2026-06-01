@@ -541,4 +541,79 @@ router.post('/confirm-team-switch', authMiddleware, async (req, res) => {
   });
 });
 
+// ===========================================================================
+// DEV-ONLY team switch — bypasses the entire admin-verification flow.
+// ===========================================================================
+//
+// In production, a college coach changing schools must submit a request,
+// wait for an admin to Lock + Approve in coach-verification.html, then click
+// an emailed invite link (confirm-team-switch). This endpoint short-circuits
+// all of that so local dev can flip a coach's school instantly.
+//
+// SECURITY: hard-gated on NODE_ENV === 'development'. Returns 403 in prod
+// regardless of what the frontend sends — the prod flow above is untouched.
+// The dev page (collegecoach/dev-team-switch.html) only renders on localhost,
+// but this server-side check is the real boundary.
+router.post('/dev-team-switch', authMiddleware, async (req, res) => {
+  if (process.env.NODE_ENV !== 'development') {
+    return res.status(403).json({ error: 'Dev team-switch bypass is disabled in this environment.' });
+  }
+
+  const { new_team_name, new_division, new_state } = req.body || {};
+
+  if (!new_team_name || typeof new_team_name !== 'string' || new_team_name.length > 200) {
+    return res.status(400).json({ error: 'A valid school name is required' });
+  }
+  if (!new_division || !VALID_DIVISIONS.includes(new_division)) {
+    return res.status(400).json({ error: 'A valid division is required' });
+  }
+  if (new_state && (typeof new_state !== 'string' || new_state.length > 50)) {
+    return res.status(400).json({ error: 'Invalid state' });
+  }
+
+  try {
+    const CoachProfile = require('../models/CoachProfile');
+    const current = await CoachProfile.findByUserId(req.user.id);
+    if (!current || !current.college_division) {
+      return res.status(400).json({ error: 'You are not currently a college coach' });
+    }
+
+    const fromTeamName = current.team_name;
+    const fromDivision = current.college_division;
+
+    // Same update path the prod confirm-team-switch uses, so the Plan 5A
+    // pipeline-handoff auto-cancel hook (CoachProfile.update) still fires.
+    const updatePayload = {
+      team_name: new_team_name.trim(),
+      college_division: new_division,
+      state: (new_state && new_state.trim()) || current.state
+    };
+    const updated = await CoachProfile.update(req.user.id, updatePayload);
+
+    // Log to the same history table so the 72h cooldown behaves consistently
+    // if a dev later exercises the real flow. invite_token marks it as a dev
+    // bypass for traceability.
+    try {
+      await pool.query(
+        `INSERT INTO coach_team_switch_history
+           (user_id, from_team_name, from_division, to_team_name, to_division, invite_token)
+         VALUES ($1,$2,$3,$4,$5,$6)`,
+        [req.user.id, fromTeamName, fromDivision, updatePayload.team_name, updatePayload.college_division, 'DEV-BYPASS']
+      );
+    } catch (histErr) {
+      logger.error('[coach-signup] dev team_switch_history insert failed:', histErr);
+    }
+
+    return res.json({
+      success: true,
+      new_team_name: updated.team_name,
+      new_college_division: updated.college_division,
+      new_state: updated.state
+    });
+  } catch (err) {
+    logger.error('[coach-signup] dev team-switch error:', err);
+    return res.status(500).json({ error: 'Failed to switch team' });
+  }
+});
+
 module.exports = router;
