@@ -331,11 +331,27 @@ document.addEventListener('DOMContentLoaded', async function() {
                 await loadSharedGroupBoard(currentSharedBoardId);
             }
         }
-        if (tabName === 'personal-boards' && currentPersonalBoardId) {
-            // Always re-render the active personal board on tab activation.
-            // Same reason as shared-boards above — the field DOM is shared,
-            // so the last tab's render lingers until we explicitly re-mount.
-            await loadPersonalBoardById(currentPersonalBoardId);
+        if (tabName === 'personal-boards') {
+            if (currentPersonalBoardId) {
+                // Always re-render the active personal board on tab activation.
+                // Same reason as shared-boards above — the field DOM is shared,
+                // so the last tab's render lingers until we explicitly re-mount.
+                await loadPersonalBoardById(currentPersonalBoardId);
+            } else {
+                // Zero personal boards. The football field DOM is shared with
+                // the shared-boards tab, so whatever it rendered last (e.g. a
+                // shared board) is still mounted. Re-assert the empty state —
+                // which hides the field/controls via the rb-personal-empty body
+                // class — and wipe the stale field DOM so nothing shows under
+                // "No Personal Boards Yet".
+                currentBoardMode = 'personal';
+                currentBoardType = 'personal';
+                document.getElementById('offenseField').innerHTML = '';
+                document.getElementById('defenseField').innerHTML = '';
+                const specsField = document.getElementById('specsField');
+                if (specsField) specsField.innerHTML = '';
+                showPersonalEmptyState();
+            }
         }
         if (tabName === 'team-pool') {
             if (!teamPoolInitialized) {
@@ -408,6 +424,11 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
 
     function showPersonalEmptyState() {
+        // Clear the other tabs' field-state classes so only the personal-empty
+        // rule governs the shared football field while we're on this tab.
+        // Otherwise a lingering rb-shared-* / rb-tab-* class (or the absence of
+        // rb-personal-empty) could leave another tab's board visible here.
+        document.body.classList.remove('rb-shared-empty', 'rb-shared-no-boards', 'rb-tab-pipeline', 'rb-tab-team-pool');
         document.body.classList.add('rb-personal-empty');
         if (pbEmptyState) pbEmptyState.style.display = 'flex';
         const selectorRow = document.querySelector('.pb-board-selector-row');
