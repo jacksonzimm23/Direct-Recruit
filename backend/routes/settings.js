@@ -17,11 +17,11 @@ const pool = require('../config/database');
 const logger = require('../utils/logger');
 const stripe = require('../utils/stripe');
 
-// Cookie configuration (mirrored from auth.js)
+// Cookie configuration (mirrored from auth.js — keep sameSite in sync with auth.js)
 const COOKIE_OPTIONS = {
   httpOnly: true,
   secure: process.env.NODE_ENV === 'production',
-  sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
+  sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
   maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
 };
 

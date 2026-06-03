@@ -19,10 +19,14 @@ const PipelineRecruit = require('../models/PipelineRecruit');
 const { notifyUser } = require('../utils/notifications');
 
 // Cookie configuration
+// sameSite 'none' in prod (was 'strict'): the iOS Capacitor WKWebView does not reliably
+// store/send a sameSite=strict auth cookie, so sign-in succeeded but the next request read as
+// logged-out (lessons.md #9). 'none' requires secure:true, which is already set in prod. The web
+// app is unaffected since requests are same-origin. localhost dev stays 'lax'.
 const COOKIE_OPTIONS = {
   httpOnly: true,
   secure: process.env.NODE_ENV === 'production',
-  sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
+  sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
   maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
 };
 
@@ -350,7 +354,8 @@ router.post('/logout', async (req, res) => {
   res.clearCookie('token', {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax'
+    // Must match the sameSite used when setting the cookie, or the browser won't clear it.
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
   });
   res.json({ message: 'Logged out successfully' });
 });

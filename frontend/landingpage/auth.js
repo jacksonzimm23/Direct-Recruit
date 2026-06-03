@@ -9,6 +9,9 @@
         const meResponse = await fetch(`${API_BASE_URL}/auth/me`, { credentials: 'include' });
         if (!meResponse.ok) throw new Error('No valid session');
         const meData = await meResponse.json();
+        // Guard: a 200 with no user (e.g. cookie not sent in an iOS WebView) must not crash the
+        // page on load — fall through to the catch and show the normal sign-in form.
+        if (!meData || !meData.user || !meData.user.role) throw new Error('No valid session');
 
         // Valid session — redirect to their dashboard
         const folder = getProfileFolder({
@@ -46,6 +49,14 @@ if (document.getElementById('signinForm')) {
 
         try {
             const data = await authAPI.login(email, password, rememberMe);
+
+            // Guard against a malformed/empty success body (e.g. the auth cookie failed to
+            // persist in an iOS WebView, or a proxy returned a non-JSON 200). Reading
+            // data.user.role on an undefined user is what produced the raw
+            // "undefined is not an object (evaluating 'data.user.role')" crash.
+            if (!data || !data.user || !data.user.role) {
+                throw new Error('Sign-in did not complete. Please try again.');
+            }
 
             // Honor ?next=<relative-path> on the signin URL so flows that bounce users
             // through signin (e.g., the invite-gated profile-type switch to collegecoach)
@@ -450,7 +461,7 @@ function showRegistrationModal(role) {
                 <div class="form-group tos-agreement">
                     <label class="tos-label">
                         <input type="checkbox" id="reg-agree-tos" required>
-                        <span>I agree to the <a href="terms-of-service.html" target="_blank" rel="noopener">Terms of Service</a> and <a href="privacy-policy.html" target="_blank" rel="noopener">Privacy Policy</a></span>
+                        <span>I agree to the <a href="terms-of-service.html">Terms of Service</a> and <a href="privacy-policy.html">Privacy Policy</a></span>
                     </label>
                 </div>
                 <button type="submit" class="btn-primary">Create Account</button>

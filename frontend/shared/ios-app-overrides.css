@@ -83,3 +83,11 @@ html.ios-app body { background-color: inherit; }
 .ios-only { display: none !important; }
 html.ios-app .web-only { display: none !important; }
 html.ios-app .ios-only { display: revert !important; }
+
+/* ============================================================
+   Landing pages: hide the top Features/Pricing/Support nav on iOS.
+   The links are redundant (also in the footer) and the position:fixed
+   navbar is overlapped by the iOS status bar (time/wifi/battery).
+   Scoped to .v2-nav-minimal so in-app nav bars are unaffected.
+   ============================================================ */
+html.ios-app .v2-nav-minimal { display: none !important; }

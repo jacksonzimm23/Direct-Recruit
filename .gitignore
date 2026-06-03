@@ -42,6 +42,7 @@ DEPLOYMENT-GUIDE.md
 testing.md
 pipeline.md
 lessons.md
+appcheck.md
 
 # Local cookie/test auth jars — never commit (contain real JWTs)
 cookies.txt
