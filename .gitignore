@@ -65,6 +65,14 @@ frontend/admin/
 !ios/App/App/App.entitlements
 !ios/App/App/AppDelegate.swift
 !ios/App/App/PrivacyInfo.xcprivacy
+# Custom bridge VC (native swipe-back) + storyboard that references it + Xcode project
+# membership. All three must be tracked together or a fresh clone references a missing
+# class and crashes at launch.
+!ios/App/App/ViewController.swift
+!ios/App/App/Base.lproj/
+!ios/App/App/Base.lproj/Main.storyboard
+!ios/App/App.xcodeproj/
+!ios/App/App.xcodeproj/project.pbxproj
 
 # PowerShell scripts (temporary/local)
 *.ps1

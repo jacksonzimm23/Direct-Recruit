@@ -416,6 +416,18 @@ async function apiRequest(endpoint, options = {}) {
         } else {
             // Handle plain text responses (like rate limit errors)
             const text = await response.text();
+            // DIAGNOSTIC: a 2xx that isn't JSON previously resolved silently with no `user`,
+            // producing the misleading "Sign-in did not complete" guard downstream. Surface the
+            // status + content-type + body snippet so the on-screen error names the real culprit
+            // (e.g. a proxy/CDN HTML interstitial or a redirect the WebView followed).
+            if (response.ok) {
+                const err = new Error(
+                    `Unexpected non-JSON ${response.status} from ${endpoint} ` +
+                    `[type: ${contentType || 'none'}]: ${(text || '').slice(0, 160)}`
+                );
+                err.status = response.status;
+                throw err;
+            }
             data = { error: text };
         }
 

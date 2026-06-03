@@ -27,31 +27,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
     func applicationDidBecomeActive(_ application: UIApplication) {
         // Restart any tasks that were paused (or not yet started) while the application was inactive. If the application was previously in the background, optionally refresh the user interface.
-        // Enable iOS native edge-swipe-back on the Capacitor WebView. Idempotent — runs each
-        // activation. Capacitor builds the WebView before the app becomes active, so by now it exists.
-        enableSwipeBackGesture()
-    }
-
-    /// Sets allowsBackForwardNavigationGestures = true on the Capacitor bridge WebView so users
-    /// can swipe from the left edge to go back (standard iOS gesture). Browser history is naturally
-    /// populated by the app's full-page (MPA) navigations.
-    private func enableSwipeBackGesture() {
-        guard let root = window?.rootViewController,
-              let bridgeVC = Self.findBridgeViewController(from: root) else { return }
-        bridgeVC.webView?.allowsBackForwardNavigationGestures = true
-    }
-
-    /// Walks the view-controller hierarchy to locate the CAPBridgeViewController, which owns the
-    /// WKWebView. Handles the direct-root case as well as nested/presented containers.
-    private static func findBridgeViewController(from vc: UIViewController) -> CAPBridgeViewController? {
-        if let bridge = vc as? CAPBridgeViewController { return bridge }
-        for child in vc.children {
-            if let found = findBridgeViewController(from: child) { return found }
-        }
-        if let presented = vc.presentedViewController {
-            return findBridgeViewController(from: presented)
-        }
-        return nil
+        // Native swipe-back is enabled in ViewController.capacitorDidLoad() (more reliable than here).
     }
 
     func applicationWillTerminate(_ application: UIApplication) {
