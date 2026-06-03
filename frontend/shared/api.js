@@ -557,8 +557,11 @@ const authAPI = {
             console.error('Logout error:', error);
         } finally {
             // GUARANTEED to run — even if a plugin/network call hung or threw.
+            // Full URL (origin + path), not a bare /frontend/... — iOS WKWebView (origin
+            // https://localhost) won't navigate on a bare root-relative path, so the redirect
+            // silently no-op'd before (session cleared but page didn't change).
             clearAuth();
-            window.location.href = '/frontend/landingpage/index.html';
+            window.location.href = window.location.origin + '/frontend/landingpage/index.html';
         }
     },
 

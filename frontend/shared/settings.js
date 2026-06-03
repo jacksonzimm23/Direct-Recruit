@@ -3015,9 +3015,10 @@ function closeSwitchProfileModal() {
 function showCollegeCoachSwitchVerificationSplash() {
     const body = document.querySelector('.switch-modal-body');
     if (!body) return;
-    // Settings is loaded from /{role}/tabs/settings.html — landingpage is at /landingpage/.
-    // Use absolute path to avoid breaking depending on which role's settings page we're in.
-    const requestUrl = '/frontend/landingpage/coach-signup-request.html?switch=1';
+    // Full URL (origin + path), not a bare /frontend/... — iOS WKWebView (origin
+    // https://localhost) won't navigate on a bare root-relative path. origin is correct on
+    // web (directrecruit.net) and in the app (localhost).
+    const requestUrl = window.location.origin + '/frontend/landingpage/coach-signup-request.html?switch=1';
     body.innerHTML = `
         <div style="padding: 1rem 0.5rem; text-align: center;">
             <div style="width:64px;height:64px;border-radius:50%;background:rgba(255,107,53,0.15);

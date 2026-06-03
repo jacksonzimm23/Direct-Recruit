@@ -318,34 +318,8 @@
                 console.error('[capacitorInit][EdgeSwipeBack]', e);
             }
         })();
-
-        // --- Bottom-nav delegation fallback (my-profile rebuilds the nav via innerHTML) ---
-        // my-profile.js replaces .sidebar-nav.innerHTML on load, which destroys any per-<a>
-        // click listeners attached to those nodes — that's why prior per-element fixes failed.
-        // A delegated listener on `document` survives the rebuild. We do NOT preventDefault:
-        // the anchor's own navigation is what moves the page (proven on other tab pages). We
-        // only clear an open mobile sidebar (class 'active') + body scroll-lock that can
-        // otherwise sit over the bottom nav and absorb the tap. Only active on my-profile.
-        (function bottomNavDelegation() {
-            try {
-                if (!window.location.pathname.includes('/my-profile.html')) return;
-                document.addEventListener('click', function (e) {
-                    const link = e.target.closest && e.target.closest('.sidebar .nav-item[href], .sidebar-nav .nav-item[href]');
-                    if (!link) return;
-                    const href = link.getAttribute('href');
-                    if (!href || href === '#') return;
-                    // Clear blockers that can swallow the navigation on iOS, then let the
-                    // anchor's default navigation proceed (single navigation path).
-                    document.body.style.overflow = '';
-                    const ms = document.getElementById('mobileSidebar');
-                    const mso = document.getElementById('mobileSidebarOverlay');
-                    if (ms) ms.classList.remove('active');
-                    if (mso) mso.classList.remove('active');
-                }, false);
-            } catch (e) {
-                console.error('[capacitorInit][BottomNavDelegation]', e);
-            }
-        })();
+        // (Removed the bottom-nav delegation fallback: the real fix is origin-prefixed nav
+        // hrefs in my-profile.js, which navigate natively. Delegation is no longer needed.)
     } catch (e) {
         console.error('[capacitorInit]', e);
     }
