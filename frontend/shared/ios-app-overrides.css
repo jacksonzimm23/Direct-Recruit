@@ -30,6 +30,33 @@ html.ios-app body { background-color: inherit; }
     padding-top: env(safe-area-inset-top, 0px);
 }
 
+/* ---- Content top-offset for the status bar ----
+   The fixed .mobile-header grows by env(safe-area-inset-top) (rule above), but the
+   scrollable content below it uses fixed top offsets (mobile-overrides.css) that
+   don't account for the notch — so the first content (e.g. the feed search bar,
+   the messages list, the AI chat panel) gets cut off under the status bar.
+   These add the inset on top of the existing offsets. Scoped to the iOS app and to
+   the mobile breakpoint so web/desktop are untouched. Loaded after mobile-overrides
+   so these win; env(...) is 0 on non-notched devices, so it's safe everywhere. */
+@media (max-width: 768px) {
+    /* Feed + most tab pages: .main-content uses padding-top: 65px */
+    .ios-app .main-content {
+        padding-top: calc(65px + env(safe-area-inset-top, 0px)) !important;
+    }
+
+    /* Messages: .messages-content uses padding-top: 60px (fills viewport) */
+    .ios-app .messages-content {
+        padding-top: calc(60px + env(safe-area-inset-top, 0px)) !important;
+    }
+
+    /* AI chat panels (Recruiting Assistant / Portal Intelligence) are
+       position: fixed with top: 50px instead of padding — adjust the top. */
+    .ios-app .main-content:has(.ra-layout),
+    .ios-app .main-content:has(.pi-layout) {
+        top: calc(50px + env(safe-area-inset-top, 0px)) !important;
+    }
+}
+
 /* ---- Web-isms: make it feel native ---- */
 
 /* No blue/gray flash on tap, no iOS long-press menu */
