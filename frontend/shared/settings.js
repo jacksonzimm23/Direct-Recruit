@@ -2911,7 +2911,7 @@ async function executeSwitchProfile(profileData) {
                 other: 'mainpage-other.html'
             };
             const mainpage = mainpageMap[folder] || 'mainpage-player.html';
-            const redirectUrl = `/frontend/${folder}/${mainpage}`;
+            const redirectUrl = `${window.location.origin}/frontend/${folder}/${mainpage}`;
 
             if (result.requires_payment) {
                 // Close the switch modal
@@ -3583,7 +3583,7 @@ function showSwitchTierModal() {
                         // Navigate directly to the stored redirect URL (bypass payment-success-switch.html)
                         const redirectUrl = localStorage.getItem('switchRedirectUrl');
                         localStorage.removeItem('switchRedirectUrl');
-                        window.location.href = redirectUrl || '/frontend/collegecoach/mainpage-coach.html';
+                        window.location.href = redirectUrl || (window.location.origin + '/frontend/collegecoach/mainpage-coach.html');
                         return;
                     }
                     if (r.cancelled) {

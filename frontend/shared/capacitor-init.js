@@ -172,7 +172,8 @@
                             fullPath = pathPart + '.html' + queryPart;
                         }
 
-                        window.location.href = fullPath;
+                        // Full URL (origin + path) — bare /frontend/... no-ops in iOS WKWebView.
+                        window.location.href = window.location.origin + fullPath;
                     } catch (e) {
                         console.error('[push] tap handler error:', e);
                     }

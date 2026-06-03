@@ -369,34 +369,34 @@ function updateNavbarForLoggedInUser(user, profile) {
             `;
         } else if (role === 'other') {
             navHTML = `
-                <a href="/frontend/other/mainpage-other.html" class="nav-item ${feedActive}" id="feedNavItem">
+                <a href="${window.location.origin}/frontend/other/mainpage-other.html" class="nav-item ${feedActive}" id="feedNavItem">
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
                         <polyline points="9 22 9 12 15 12 15 22"></polyline>
                     </svg>
                     <span>Feed</span>
                 </a>
-                <a href="/frontend/other/tabs/discover-players.html" class="nav-item ${discoverActive}">
+                <a href="${window.location.origin}/frontend/other/tabs/discover-players.html" class="nav-item ${discoverActive}">
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                     </svg>
                     <span>Discover</span>
                 </a>
-                <a href="/frontend/other/tabs/my-profile.html" class="nav-item ${profileActive}" id="profileNavItem">
+                <a href="${window.location.origin}/frontend/other/tabs/my-profile.html" class="nav-item ${profileActive}" id="profileNavItem">
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
                         <circle cx="12" cy="7" r="4"></circle>
                     </svg>
                     <span>My Profile</span>
                 </a>
-                <a href="/frontend/other/tabs/messages.html" class="nav-item ${messagesActive}" id="messagesNavItem">
+                <a href="${window.location.origin}/frontend/other/tabs/messages.html" class="nav-item ${messagesActive}" id="messagesNavItem">
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
                     </svg>
                     <span>Messages</span>
                     <span class="notification-badge" style="display: none;"></span>
                 </a>
-                <a href="/frontend/other/tabs/notifications.html" class="nav-item ${notificationsActive}">
+                <a href="${window.location.origin}/frontend/other/tabs/notifications.html" class="nav-item ${notificationsActive}">
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
                         <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
@@ -404,7 +404,7 @@ function updateNavbarForLoggedInUser(user, profile) {
                     <span>Notifications</span>
                     <span class="notification-badge" style="display: none;"></span>
                 </a>
-                <a href="/frontend/other/tabs/settings.html" class="nav-item">
+                <a href="${window.location.origin}/frontend/other/tabs/settings.html" class="nav-item">
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <circle cx="12" cy="12" r="3"></circle>
                         <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
@@ -733,9 +733,9 @@ function setupUserMenuDropdown(userFolder) {
                     dropdown.remove();
                     showLogoutModal(userFolder);
                 } else if (action === 'profile') {
-                    window.location.href = `/frontend/${userFolder}/tabs/my-profile.html`;
+                    window.location.href = `${window.location.origin}/frontend/${userFolder}/tabs/my-profile.html`;
                 } else if (action === 'settings') {
-                    window.location.href = `/frontend/${userFolder}/tabs/settings.html`;
+                    window.location.href = `${window.location.origin}/frontend/${userFolder}/tabs/settings.html`;
                 }
 
                 dropdown.remove();
@@ -1692,7 +1692,7 @@ async function setupMessageButton() {
             messageBtn.addEventListener('click', () => {
                 // Navigate to messages page with the userId to start/open conversation
                 const folder = loggedInUserFolder || 'hscoach';
-                window.location.href = `/frontend/${folder}/tabs/messages.html?userId=${viewingUserId}`;
+                window.location.href = `${window.location.origin}/frontend/${folder}/tabs/messages.html?userId=${viewingUserId}`;
             });
         } else {
             // Keep the button hidden (already hidden by default)
@@ -1704,7 +1704,7 @@ async function setupMessageButton() {
         messageBtn.style.display = '';
         messageBtn.addEventListener('click', () => {
             const folder = loggedInUserFolder || 'hscoach';
-            window.location.href = `/frontend/${folder}/tabs/messages.html?userId=${viewingUserId}`;
+            window.location.href = `${window.location.origin}/frontend/${folder}/tabs/messages.html?userId=${viewingUserId}`;
         });
     }
 }
@@ -1981,7 +1981,7 @@ function setupUI() {
                 e.preventDefault();
                 // Navigate to logged-in user's profile using absolute path
                 if (loggedInUserFolder) {
-                    window.location.href = `/frontend/${loggedInUserFolder}/tabs/my-profile.html`;
+                    window.location.href = `${window.location.origin}/frontend/${loggedInUserFolder}/tabs/my-profile.html`;
                 } else {
                     // Fallback to relative path if folder not set
                     window.location.href = 'my-profile.html';

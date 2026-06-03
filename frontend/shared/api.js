@@ -1422,7 +1422,7 @@ window.API_BASE_URL = API_BASE_URL;
 // Runs on every protected page. Redirects unpaid users on paid profile types.
 (function() {
     const PAID_FOLDERS = ['hsplayer', 'transferplayer', 'collegecoach'];
-    const paywallPath = '/frontend/shared/subscription-required.html';
+    const paywallPath = window.location.origin + '/frontend/shared/subscription-required.html';
 
     // Skip if already on paywall, landing pages, or payment pages
     const path = window.location.pathname;

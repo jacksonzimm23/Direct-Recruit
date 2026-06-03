@@ -3,7 +3,7 @@
 // Check authentication on page load
 function checkAuth() {
     if (!isAuthenticated()) {
-        window.location.href = '/frontend/landingpage/signin.html';
+        window.location.href = window.location.origin + '/frontend/landingpage/signin.html';
         return false;
     }
     return true;
@@ -13,7 +13,7 @@ function checkAuth() {
 function checkRole(requiredRole) {
     const user = getUser();
     if (!user || user.role !== requiredRole) {
-        window.location.href = '/frontend/landingpage/index.html';
+        window.location.href = window.location.origin + '/frontend/landingpage/index.html';
         return false;
     }
     return true;
