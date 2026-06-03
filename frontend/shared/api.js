@@ -354,10 +354,16 @@ window.escapeJsAttr = escapeJsAttr;
 
 // ==================== API Configuration ====================
 
-// In local dev, use the same hostname as the frontend for proper cookie handling
-const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-    ? `http://${window.location.hostname}:5000/api`
-    : `${window.location.origin}/api`;
+// In the iOS app the WebView origin is https://localhost (no server.hostname), so
+// window.location.origin is NOT directrecruit.net — we must call the real host
+// absolutely. The cross-origin call is then routed natively by CapacitorHttp.
+// On web/localhost, keep deriving from the current origin as before.
+const _isNativeApp = !!(window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function' && window.Capacitor.isNativePlatform());
+const API_BASE_URL = _isNativeApp
+    ? 'https://directrecruit.net/api'
+    : (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+        ? `http://${window.location.hostname}:5000/api`
+        : `${window.location.origin}/api`);
 
 // Storage keys
 const USER_KEY = 'user_data';
@@ -487,7 +493,7 @@ const authAPI = {
                 if (Purchases) {
                     // If RC wasn't configured at page load (logged out at load time),
                     // configure it now before logIn.
-                    const cfg = await fetch('/api/payments/revenuecat-config', { credentials: 'include' })
+                    const cfg = await fetch(`${API_BASE_URL}/payments/revenuecat-config`, { credentials: 'include' })
                         .then(r => r.ok ? r.json() : null)
                         .catch(() => null);
                     if (cfg && cfg.apiKey) {

@@ -15,7 +15,10 @@
 
     async function loadConfig() {
         if (_configCache) return _configCache;
-        const res = await fetch('/api/payments/revenuecat-config', { credentials: 'include' });
+        // Use the shared API base (absolute https://directrecruit.net/api in the app) so the
+        // call reaches the backend via CapacitorHttp rather than the local bundle origin.
+        const base = window.API_BASE_URL || '/api';
+        const res = await fetch(`${base}/payments/revenuecat-config`, { credentials: 'include' });
         if (!res.ok) throw new Error('Failed to load RevenueCat config');
         _configCache = await res.json();
         return _configCache;

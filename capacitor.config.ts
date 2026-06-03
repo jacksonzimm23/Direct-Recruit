@@ -6,14 +6,17 @@ const config: CapacitorConfig = {
   webDir: 'frontend',
 
   // Bundled mode: frontend files ship inside the .ipa.
-  // API calls still hit https://directrecruit.net via fetch/XHR.
-  // Safer for Apple Guideline 4.2 review than pure remote-loading.
+  // API calls hit https://directrecruit.net via native HTTP (CapacitorHttp).
 
-  // WebView origin = https://directrecruit.net (instead of capacitor://localhost).
-  // Makes window.location.origin match the API host so cookies are same-origin
-  // and API_BASE_URL in api.js resolves to https://directrecruit.net/api.
+  // WebView origin is left at the default https://localhost (NO server.hostname).
+  // This is critical: CapacitorHttp bypasses requests to the WebView's OWN origin
+  // (see @capacitor/ios native-bridge.js). If the WebView origin were
+  // directrecruit.net, /api calls would be same-origin and get served the bundled
+  // index.html instead of reaching the backend. With origin = https://localhost,
+  // calls to https://directrecruit.net/api/* are cross-origin and CapacitorHttp
+  // routes them natively. CapacitorCookies persists the auth cookie in the native
+  // iOS cookie store, so cookie-based auth works without same-origin.
   server: {
-    hostname: 'directrecruit.net',
     iosScheme: 'https',
     androidScheme: 'https'
   },
@@ -33,6 +36,12 @@ const config: CapacitorConfig = {
     // which broke sign-in on iOS. Native HTTP hits the real server and handles cookies
     // via the iOS cookie store.
     CapacitorHttp: {
+      enabled: true
+    },
+    // Persists cookies (incl. the auth cookie) in the native iOS cookie store so
+    // cookie-based auth works with native HTTP across the localhost↔directrecruit.net
+    // origin split. Required alongside CapacitorHttp for this setup.
+    CapacitorCookies: {
       enabled: true
     },
     SplashScreen: {
