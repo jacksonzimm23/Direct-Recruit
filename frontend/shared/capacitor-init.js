@@ -44,7 +44,11 @@
                 const Purchases = plugins.Purchases;
                 if (!Purchases) return;
 
-                const res = await fetch('/api/payments/revenuecat-config', { credentials: 'include' });
+                // Absolute host: this code only runs inside the native app, where the WebView
+                // origin is https://localhost — a bare /api/... would hit the bundle, not the
+                // backend. CapacitorHttp routes the absolute cross-origin call natively.
+                const API_HOST = 'https://directrecruit.net';
+                const res = await fetch(`${API_HOST}/api/payments/revenuecat-config`, { credentials: 'include' });
                 if (!res.ok) return;  // Not authenticated or backend error — skip
                 const cfg = await res.json();
                 if (!cfg.apiKey) return;  // Dev mode without RC keys — skip
@@ -53,7 +57,7 @@
 
                 // If the user is already authenticated, tell RC who they are
                 try {
-                    const me = await fetch('/api/auth/me', { credentials: 'include' });
+                    const me = await fetch(`${API_HOST}/api/auth/me`, { credentials: 'include' });
                     if (me.ok) {
                         const body = await me.json();
                         if (body && body.user && body.user.id) {
@@ -268,6 +272,46 @@
                 });
             } catch (e) {
                 console.error('[capacitorInit][NavSpinner]', e);
+            }
+        })();
+
+        // --- Edge-swipe-back (JS fallback) ---
+        // The native WKWebView gesture (allowsBackForwardNavigationGestures) requires a
+        // compiled CAPBridgeViewController subclass wired into the Xcode target, which is
+        // fragile across Windows→Mac builds. This JS handler is target-membership-independent:
+        // a swipe starting near the left edge and moving right triggers history.back().
+        // Gated to the iOS app via .ios-app; never runs on web/desktop.
+        (function edgeSwipeBack() {
+            try {
+                if (!document.documentElement.classList.contains('ios-app')) return;
+
+                const EDGE_PX = 30;        // must start within 30px of the left edge
+                const MIN_DX = 60;         // horizontal distance to count as a swipe
+                const MAX_DY = 50;         // reject mostly-vertical gestures (scrolling)
+                let startX = 0, startY = 0, tracking = false;
+
+                document.addEventListener('touchstart', function (e) {
+                    if (!e.touches || e.touches.length !== 1) { tracking = false; return; }
+                    const t = e.touches[0];
+                    tracking = t.clientX <= EDGE_PX;   // only arm near the left edge
+                    startX = t.clientX;
+                    startY = t.clientY;
+                }, { passive: true });
+
+                document.addEventListener('touchend', function (e) {
+                    if (!tracking) return;
+                    tracking = false;
+                    const t = (e.changedTouches && e.changedTouches[0]);
+                    if (!t) return;
+                    const dx = t.clientX - startX;
+                    const dy = Math.abs(t.clientY - startY);
+                    // left-edge → rightward swipe, mostly horizontal, with history to go back to
+                    if (dx >= MIN_DX && dy <= MAX_DY && window.history.length > 1) {
+                        window.history.back();
+                    }
+                }, { passive: true });
+            } catch (e) {
+                console.error('[capacitorInit][EdgeSwipeBack]', e);
             }
         })();
     } catch (e) {
