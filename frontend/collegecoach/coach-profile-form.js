@@ -58,7 +58,8 @@ document.addEventListener('DOMContentLoaded', async function() {
             const ln = document.getElementById('lastName');
             if (ln) ln.value = validateData.last_name;
         }
-        // School + division are locked — set after schoolSearch init below so values stick
+        // School + division are locked — rendered as a read-only display by
+        // renderLockedSchool() below (no search/manual entry on this page).
         window._inviteSchool = validateData.school;
         window._inviteDivision = validateData.division || null;
     } catch (e) {
@@ -68,50 +69,39 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     const form = document.getElementById('coachProfileForm');
 
-    // Initialize school search with logo + auto-division
-    const schoolSearch = initSchoolSearch({
-        nameInput: '#collegeName',
-        divisionSelect: '#division',
-        assetBasePath: '../assets'
-    });
+    // SECURITY: there is intentionally NO school search on this page. The school
+    // is 100% determined by the admin-issued invite — a coach must never be able
+    // to type/search/pick a different school (that would let them access another
+    // program's recruiting data). We render the locked school as a read-only
+    // display (logo + name) and submit it via a hidden #collegeName input. The
+    // backend re-overrides team_name from the invite anyway (profile.js), so this
+    // is belt-and-suspenders. school-search.js is still loaded on this page only
+    // for the getSchoolLogoHTML / ensureSchoolLogosLoaded helpers below — we do
+    // NOT call initSchoolSearch.
+    (async function renderLockedSchool() {
+        const display = document.getElementById('lockedSchoolDisplay');
+        const hidden  = document.getElementById('collegeName');
+        const name = window._inviteSchool || '';
+        // Submit the invite school as team_name (backend overrides it from the invite regardless)
+        if (hidden) hidden.value = name;
+        if (!display) return;
 
-    // Lock the school field to the verified invite school.
-    // Use schoolSearch.preselectSchool() so the module renders its "picked" state:
-    // logo + school name + division in a preview strip, with the search input hidden.
-    // Then we hide the clear/change and manual-entry buttons so the admin's canonical
-    // pick can't be overridden from the client.
-    if (window._inviteSchool && schoolSearch && typeof schoolSearch.preselectSchool === 'function') {
-        schoolSearch.preselectSchool(window._inviteSchool);
-
-        const group = document.getElementById('collegeName').closest('.form-group');
-        if (group) {
-            // Hide the "Change school" clear button on the preview strip
-            const previewClear = group.querySelector('.school-preview-clear');
-            if (previewClear) previewClear.style.display = 'none';
-
-            // Hide the "Can't find your school? Enter manually" + "Back to school search" buttons
-            const cantFind = group.querySelector('.school-cant-find-btn');
-            if (cantFind) cantFind.style.display = 'none';
-            const backToSearch = group.querySelector('.school-back-to-search-btn');
-            if (backToSearch) backToSearch.style.display = 'none';
-
-            // Give the preview strip an orange border ring to indicate it's locked
-            const preview = group.querySelector('.school-preview');
-            if (preview) {
-                preview.style.borderColor = '#ff6b35';
-                preview.style.boxShadow = '0 0 0 1px rgba(255,107,53,0.3)';
-            }
-
-            // Add a lock hint below the preview
-            if (!group.querySelector('.invite-lock-hint')) {
-                const hint = document.createElement('small');
-                hint.className = 'invite-lock-hint';
-                hint.textContent = '🔒 Verified school — contact support to change';
-                hint.style.cssText = 'display:block;color:#ff6b35;font-size:0.8rem;margin-top:0.25rem;font-weight:500;';
-                group.appendChild(hint);
-            }
+        // Load the school-logos JSON before the synchronous logo lookup (lessons 50/51)
+        if (typeof ensureSchoolLogosLoaded === 'function') {
+            try { await ensureSchoolLogosLoaded('../assets'); } catch (e) { /* non-fatal — render name w/o logo */ }
         }
-    }
+
+        const nameSlot = display.querySelector('.invite-locked-name');
+        if (nameSlot) nameSlot.textContent = name || '—';   // textContent — never innerHTML
+
+        // getSchoolLogoHTML returns '' if the name isn't a JSON key → show name with no logo.
+        // There is no search box to fall back to. After the &amp; backfill fix the invite
+        // value carries a literal '&', so canonical names like "West Texas A&M University" match.
+        const logoSlot = display.querySelector('.invite-locked-logo');
+        if (logoSlot && typeof getSchoolLogoHTML === 'function') {
+            logoSlot.innerHTML = getSchoolLogoHTML(name, '../assets', 22) || '';
+        }
+    })();
 
     // FREE comp-access banner: tells the coach upfront they're not getting
     // billed. Inserted at the very top of the form so it can't be missed.
@@ -800,9 +790,13 @@ async function loadExistingProfile() {
                 document.getElementById('email').value = data.user.email || '';
 
                 // Fill in college data
+                // NOTE: this whole function is dead code — its only caller (line ~18)
+                // is commented out. Create-profile never edits an existing profile.
+                // The school field is now a read-only locked display with no
+                // schoolSearch instance, so we only set the hidden #collegeName value.
                 if (profile.team_name) {
-                    document.getElementById('collegeName').value = profile.team_name;
-                    if (schoolSearch) schoolSearch.preselectSchool(profile.team_name);
+                    const cn = document.getElementById('collegeName');
+                    if (cn) cn.value = profile.team_name;
                 }
                 if (profile.state) {
                     document.getElementById('collegeState').value = profile.state;
@@ -1118,6 +1112,43 @@ function showInvitePaywall(reason) {
         .invite-locked:focus {
             outline: none !important;
             box-shadow: 0 0 0 2px rgba(255, 107, 53, 0.25);
+        }
+        /* Read-only locked-school display (replaces the old searchable input).
+           Logo + name shown as a non-editable, orange-ringed field. */
+        .invite-locked-display {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.7rem 0.85rem;
+            background-color: rgba(10, 17, 40, 0.6);
+            border: 1px solid #ff6b35;
+            border-radius: 8px;
+            color: rgba(254, 252, 251, 0.92);
+            font-size: 0.95rem;
+            font-weight: 600;
+            min-height: 44px;
+            cursor: not-allowed;
+        }
+        .invite-locked-display .invite-locked-logo {
+            display: inline-flex;
+            align-items: center;
+            flex-shrink: 0;
+        }
+        .invite-locked-display .invite-locked-logo img {
+            display: block;
+            border-radius: 3px;
+        }
+        .invite-locked-display .invite-locked-name {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .invite-lock-hint {
+            display: block;
+            color: #ff6b35;
+            font-size: 0.8rem;
+            margin-top: 0.25rem;
+            font-weight: 500;
         }
     `;
     document.head.appendChild(style);

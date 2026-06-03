@@ -14,10 +14,32 @@ const SANITIZE_OPTS = {
   parseStyleAttributes: false,
 };
 
+// sanitize-html (with allowedTags:[]) strips every tag but, as a side effect of
+// tokenizing, entity-ENCODES the bare characters it leaves behind: &->&amp;,
+// <->&lt;, >->&gt;. That corrupts plain-text values at rest (e.g. a school named
+// "West Texas A&M University" was stored as "...A&amp;M..."), which breaks any
+// exact-string match downstream (school-logos.json key lookups, invite preselect).
+// We decode those entities back AFTER stripping so literal text is preserved.
+// This does NOT weaken XSS protection: tags are still removed here, and every
+// frontend render path escapes at output time (escapeHtml()/textContent). The
+// at-rest encoding was redundant, not load-bearing.
+//
+// ORDER MATTERS: decode &amp; LAST. sanitize-html turns a user's literal "&lt;"
+// into "&amp;lt;"; decoding &amp; first would collapse that to "<" and fabricate
+// a tag. Decoding &amp; last restores the literal "&lt;" string instead.
+function decodeBasicEntities(str) {
+  return str
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&amp;/g, '&'); // MUST be last
+}
+
 function stripHtml(str) {
   if (typeof str !== 'string') return str;
   if (str.length === 0) return str;
-  return sanitizeHtmlLib(str, SANITIZE_OPTS);
+  return decodeBasicEntities(sanitizeHtmlLib(str, SANITIZE_OPTS));
 }
 
 // Escape Postgres LIKE/ILIKE pattern metacharacters so user input is matched

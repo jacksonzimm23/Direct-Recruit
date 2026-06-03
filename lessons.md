@@ -106,7 +106,7 @@
     - **Offers** — filter by total offer count (`min_count`) and/or offer division (`division`). Examples: "5+ D1 FBS offers", "players with D2 offers". Cannot filter by conference — assistant tells coach it can only filter by division.
     - **Name search** — fuzzy name/username search with similarity scoring
     - **Recruiting terms** — "sleeper" (≤2 offers), "hidden gem", "ready now" (current class), "plug and play", "high ceiling" (above baseline), "local"/"in-state" (coach's state)
-    - **Multi-sport** — filter by additional sports the player plays (`other_sports` TEXT[] on `player_profiles`). Two filter keys: `other_sports: ['Basketball', 'Wrestling']` (AND semantics — player must have all listed sports, uses `pp.other_sports @> ARRAY[...]::text[]` containment) and `plays_other_sports: true` (boolean shortcut for any multi-sport athlete). Canonical sport names: Basketball, Baseball, Track and Field, Wrestling, Soccer, Lacrosse, Hockey, Volleyball, Tennis, Golf, Swimming, Rugby. Examples: "QBs who also play basketball", "wrestlers", "two-sport athletes from Texas", "kid that plays basketball and wrestles". CRITICAL: the canonical name is "Track and Field" (with "and", not "&") — the `sanitize-html` middleware encodes `&` to `&amp;` on write, so the dropdown stores the spelled-out version and the AI must emit the same. Glossary section 16 (`multiSportTerms`) maps natural-language phrases to these keys.
+    - **Multi-sport** — filter by additional sports the player plays (`other_sports` TEXT[] on `player_profiles`). Two filter keys: `other_sports: ['Basketball', 'Wrestling']` (AND semantics — player must have all listed sports, uses `pp.other_sports @> ARRAY[...]::text[]` containment) and `plays_other_sports: true` (boolean shortcut for any multi-sport athlete). Canonical sport names: Basketball, Baseball, Track and Field, Wrestling, Soccer, Lacrosse, Hockey, Volleyball, Tennis, Golf, Swimming, Rugby. Examples: "QBs who also play basketball", "wrestlers", "two-sport athletes from Texas", "kid that plays basketball and wrestles". CRITICAL: the canonical name is "Track and Field" (with "and", not "&") — the dropdown stores the spelled-out version by data convention and the AI must emit the same, so existing rows match. (Historical note: this was originally required because the `sanitize-html` middleware encoded `&` → `&amp;` on write; that encoding was fixed in June 2026 — see lesson #114 — so `&` now round-trips literally. The "Track and Field" spelling is kept anyway for consistency with already-stored data.) Glossary section 16 (`multiSportTerms`) maps natural-language phrases to these keys.
     - **Track times** — filter by 100m/200m sprint times (`track_100m`, `track_200m` NUMERIC(5,2) on `player_profiles`, stored as decimal seconds). Two scalar filter keys, both upper bounds since faster = lower: `track_100m_max: 11.0` and `track_200m_max: 22.5`. Examples: "sub-11 100m", "under 22 in the 200", "WR with under 11.5 100 time". The filter fires ONLY on EXPLICIT numeric thresholds — "burner" / "speedy" / "fast" stay tied to the `weightAdj` heuristic and do NOT trigger track filters (most players don't have track times on file, so firing on vague terms would zero out results). Filter respects `IS NOT NULL` so players without track times are excluded from sub-X searches. Relevance scoring rewards faster sub-threshold times by up to +10 points (mirrors height/GPA). Glossary section 17 (`trackTerms`) lists the recognized patterns.
     - **Results are ranked by relevance score** (not recency). The scoring is query-adaptive and works in tandem with the coach's baseline metrics. The flow: (1) coach sets per-position baseline ranges for height/weight/GPA in the Baseline Metrics modal, (2) when the coach uses size terms like "tall" or "big," Claude interprets them relative to those baselines for the specific position (e.g., "tall QB" uses the QB baseline max height, not a generic number), (3) Claude outputs filter thresholds (e.g., min_height: 75), (4) the WHERE clause filters out non-matches, (5) `buildRelevanceScoreExpr()` in `PlayerProfile.js` ranks the remaining players by how much they exceed those thresholds — taller/heavier/higher GPA = higher score. Additional scoring factors always active: profile completeness (photo +3, bio +2, highlights +3), offer count (+0.5 per offer, max 5 pts), offer division quality (D1 FBS +2/offer, D1 FCS +1.5, D2 +1, D3/NAIA/NJCAA +0.5, max 10 pts). Coach profile views (`cc_views`) are intentionally NOT included in the relevance score — they create a popularity bias that conflicts with "sleeper" / "under the radar" searches where low visibility is the point. The baseline metrics ensure position-awareness — the scoring layer doesn't need to know positions because Claude already set appropriate thresholds from the baselines.
     - **Save/bookmark players** — coaches can save up to 50 players from search results for later review. Saved players are accessible via the "Saved Players" button in the RA sidebar. Each saved player shows role-specific subheaders (HS player in cerulean, transfer in red). Table: `ra_saved_players`. Model: `backend/models/RaSavedPlayers.js`.
@@ -885,7 +885,9 @@
 
     **Resilient to bailing:** the token is consumed AFTER profile insert succeeds, NOT on Stripe success or registration. So if a coach registers, hits Stripe, and bails → token is still valid, they can come back via the same URL and retry. Only successful profile creation kills the token. If they bail AFTER profile creation but BEFORE email verification → invite is dead, but they sign in via signin.html which auto-resends the verification code and routes them to the right verify-email page (see lesson 80).
 
-79. **The create-coach-profile page is now invite-locked on three fields.** When `?token=...` is present in the URL, `coach-profile-form.js` validates the token via `GET /api/coach-signup/validate-token`. On success: first/last name pre-filled but editable; school field is locked using `schoolSearch.preselectSchool()` which renders the logo + name + division preview with the input hidden — IMPORTANT: only call `preselectSchool` if the value is an exact JSON key match (otherwise the module switches to manual mode and traps the admin/user); the division `<select>` is `disabled` with a hidden mirror `<input type="hidden" name="division">` so the value still submits (disabled selects don't); a 🔒 hint appears: "Verified school — contact support to change". Without a token → full-screen paywall overlay with "Request access" CTA → contact form.
+79. **The create-coach-profile page is now invite-locked on three fields.** When `?token=...` is present in the URL, `coach-profile-form.js` validates the token via `GET /api/coach-signup/validate-token`. On success: first/last name pre-filled but editable; the division `<select>` is `disabled` with a hidden mirror `<input type="hidden" name="division">` so the value still submits (disabled selects don't); a 🔒 hint appears: "Verified school — contact support to change". Without a token → full-screen paywall overlay with "Request access" CTA → contact form.
+
+    **UPDATE (June 2026): the school field has NO search at all — it is a pure read-only display.** Earlier this page called `initSchoolSearch()` + `preselectSchool()`, which had a security hole: if the invite school name failed the exact-JSON-key match (e.g. because of the `&amp;` corruption in lesson #114), the module fell through to `switchToManual()` and rendered a *typeable search box*, letting an invited coach pick a *different* school and access another program's recruiting data. Now `initSchoolSearch` is NOT called on this page. Instead the school renders as a static `#lockedSchoolDisplay` (logo + name) populated by `renderLockedSchool()` from the invite value, with a hidden `#collegeName` input carrying the value to submit. `school-search.js` is still loaded on the page, but ONLY for the `getSchoolLogoHTML` / `ensureSchoolLogosLoaded` logo helpers — never `initSchoolSearch`. There is zero search/dropdown/manual-entry DOM. (The old `preselectSchool` exact-key caveat no longer applies here; it still applies on the admin coach-verification school-lock editor, which DOES use `initSchoolSearch`.)
 
     **Server-side override is the actual security boundary.** `req.body.team_name` and `req.body.college_division` are overridden from `coach_invites` regardless of what the frontend sends. `readonly` / `disabled` / `hidden` mirrors are UX only — DevTools tampering is allowed because the backend always wins. The override happens inside `createCoachProfile` in `backend/routes/profile.js`, which only fires for new (non-update) profiles where `school_type === 'college'`, so the existing `collegecoach@test.com` seed account and any legacy profiles are grandfathered in.
 
@@ -1163,3 +1165,124 @@ DO NOT run seed
     - Numeric fields → cast via `Number()` or `parseInt()` with NaN check before interpolation
     - Array fields → validate length cap + per-element allowlist
 
+
+## sanitizeBody Decodes Entities — `&` Round-Trips Literally
+
+114. **The global `sanitizeBody` middleware strips tags THEN decodes the entities sanitize-html introduces, so `& < >` survive literally at rest (fixed June 2026).** Root cause of a long-standing bug: `sanitize-html` with `allowedTags: []` (in `backend/middleware/validation.js`, mounted globally at `backend/server.js`) strips all tags but, as a tokenizing side effect, entity-ENCODES the bare characters it leaves behind — `&`→`&amp;`, `<`→`&lt;`, `>`→`&gt;`, plus `&quot;`/`&#39;`. Because the middleware runs on EVERY request body, this corrupted plain-text values app-wide. It surfaced most visibly on school names: an admin locking "West Texas A&M University" stored "West Texas A&amp;M University", which then broke exact-string matching against `school-logos.json` (logo lookup returned '', and the coach-side `preselectSchool` fell into a typeable manual-entry box — a security hole, see lesson #79).
+
+    **Fix:** `stripHtml()` now calls `decodeBasicEntities()` after sanitizing. **ORDER MATTERS — decode `&amp;` LAST.** sanitize-html turns a user's literal `&lt;` into `&amp;lt;`; decoding `&amp;` first would collapse it to `<` and fabricate a tag. Decoding `&amp;` last restores the literal `&lt;` string. The same replace-chain (with `&amp;` last) is used in the backfill SQL.
+
+    **This does NOT weaken XSS protection.** Tags are still stripped at write time, and every frontend render path escapes at output (`escapeHtml()` / `textContent`). The at-rest encoding was redundant, not load-bearing. **Invariant to preserve: never `innerHTML = rawDbString`.** Now that stored data can contain a literal `<`, any future code that injects a raw DB string into `innerHTML` would be a stored-XSS sink — always escape or use `textContent` (the one allowed exception is controlled emitters like `getSchoolLogoHTML`, which key-look-up the value and emit a fixed `<img src>` from JSON, never the raw string).
+
+    **Backfill:** already-corrupted rows were repaired by `backend/migrations/045_backfill_school_amp_encoding.sql` (prod) + `backend/scripts/backfill-school-amp-encoding.sql` (local one-shot, NOT in the seed MIGRATIONS array since a fresh seed has no corruption). Scope was the three school columns that flow through admin-lock → invite → profile: `coach_signup_requests.locked_school`, `coach_invites.school`, `coach_profiles.team_name`. The decode is idempotent (guarded by `LIKE '%&amp;%'` etc.). Bios / post content were intentionally left untouched. **Key files:** `backend/middleware/validation.js` (`stripHtml` + `decodeBasicEntities`).
+
+
+
+
+
+
+
+# App Store Submission Checklist — Direct Recruit iOS
+
+ORDER OF FIXES (after #5 which is done):
+
+#7  App Store ID placeholder         — SKIP for now (do after first Apple approval)
+#9  Cookie sameSite verification     — TEST FIRST (likely no-op after #5; plan only if it fails)
+
+
+#10 Content moderation               — PLAN NEEDED (depends on #2; profanity lib, admin queue, suspension flow)
+
+Then: NICE TO HAVE items + Pre-Submission Verification + Apple account setup.
+
+## MEDIUM — Likely Required for Approval
+
+### [ ] 9. Cookie auth may break cross-origin on iOS
+auth.js:25 sameSite: 'strict' — won't attach cookies from capacitor://localhost to directrecruit.net.
+Pick one:
+- [ ] Option A: Change to sameSite: 'none' + secure: true (review CSRF)
+- [ ] Option B: Add Authorization: Bearer header fallback — return JWT in login body, store in Keychain via @capacitor-community/secure-storage on iOS, server reads cookie OR header
+- [ ] If fix #5 Option A was used, this may resolve itself — verify
+- [ ] Test login persistence across iOS app launches
+
+## NICE TO HAVE
+
+- [ ] Exclude landingpage/pricing.html, features.html, marketing footers from iOS via .ios-app CSS or build exclusion
+- [ ] Surface privacy + terms inside Settings on iOS
+- [ ] Add Authorization: Bearer fallback for iOS (cleaner long-term than cookies)
+- [ ] Verify CSP connect-src in server.js:142 includes Capacitor origins
+- [ ] Verify rate-limit handles cell-IP source from WebView
+- [ ] Test iap_pending_activation grace key clears in 60s prod
+- [ ] Add age verification beyond ToS attestation (parent email loop)
+- [ ] Settings → Notifications toggle UI for push types
+
+---
+
+## Pre-Submission Verification
+
+After all CRITICAL items done:
+- [ ] npx cap sync ios, archive in Xcode
+- [ ] Test on real iPhone with sandbox Apple ID
+- [ ] Full IAP flow: subscribe → cancel → restore → re-subscribe
+- [ ] Report + block flow end-to-end on real device
+- [ ] Account deletion on real device (reviewers WILL test)
+- [ ] Mobile Safari redirect on real iPhone, multiple URLs
+- [ ] Push notifications arrive in production
+- [ ] Push permission prompt fires on first login
+- [ ] Confirm PrivacyInfo.xcprivacy is in iOS bundle (required May 2024+)
+- [ ] Fill App Privacy questionnaire in App Store Connect
+- [ ] Prepare review notes: test account creds, NCAA recruiting context
+
+---
+
+## Apple Account Setup (one-time)
+
+- [ ] Apple Developer Program active ($99/yr)
+- [ ] App Store Connect app record created, bundle ID matches ios/App/App.xcodeproj
+- [ ] Create IAP products in App Store Connect:
+  - [ ] player_monthly_10 (matches IAP_PRODUCT_PLAYER env)
+  - [ ] coach_starter_monthly_20
+  - [ ] coach_pro_monthly_50
+  - [ ] coach_elite_monthly_100
+- [ ] Each IAP product: name, description, price tier, screenshot, review notes
+- [ ] RevenueCat dashboard: project + iOS app + matching product IDs
+- [ ] RevenueCat webhook URL → https://directrecruit.net/api/payments/revenuecat-webhook
+- [ ] Set prod env vars:
+  - [ ] REVENUECAT_IOS_API_KEY
+  - [ ] REVENUECAT_WEBHOOK_AUTH_HEADER
+  - [ ] IAP_PRODUCT_PLAYER
+  - [ ] IAP_PRODUCT_COACH_STARTER
+  - [ ] IAP_PRODUCT_COACH_PRO
+  - [ ] IAP_PRODUCT_COACH_ELITE
+- [ ] pm2 restart direct-recruit --update-env after env changes
+- [ ] App screenshots (6.7" required)
+- [ ] App icon 1024×1024
+- [ ] Privacy Policy URL set in App Store Connect
+- [ ] Support URL set in App Store Connect
+- [ ] App Review test account credentials ready
+
+---
+
+## Getting Paid — IAP Payout Setup
+
+In App Store Connect → Agreements, Tax, and Banking:
+- [ ] Accept Paid Apps Agreement
+- [ ] Add U.S. bank account (routing + account number)
+- [ ] Complete W-9 (U.S. tax)
+- [ ] Complete international tax forms for any territory you sell in
+- [ ] Confirm contact + financial info populated
+- [ ] Apply for Small Business Program (15% rate vs 30%) at developer.apple.com/app-store/small-business-program/
+- Apple pays monthly, ~30-45 days after fiscal month end, to your bank
+- Renewals: Apple handles charges, RevenueCat webhook updates subscription_status in DB — no manual work
+
+---
+
+## Submission Steps
+
+1. [ ] Xcode → Product → Archive
+2. [ ] Window → Organizer → select archive → Distribute App → App Store Connect → Upload
+3. [ ] Wait ~15 min for processing
+4. [ ] App Store Connect → app → + Version → fill version notes
+5. [ ] Select uploaded build
+6. [ ] Submit for Review
+7. [ ] Expect 24-48 hr review turnaround
+8. [ ] If rejected: read notes carefully, fix, resubmit
