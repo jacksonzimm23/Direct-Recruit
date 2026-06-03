@@ -3041,12 +3041,13 @@ function showCollegeCoachSwitchVerificationSplash() {
                 you click the verification link.
             </p>
             <div style="display:flex;gap:0.75rem;flex-direction:column;max-width:280px;margin:0 auto;">
-                <a href="${requestUrl}"
+                <button type="button"
+                   onclick="closeSwitchProfileModal(); window.location.href='${requestUrl}';"
                    style="display:inline-block;background:linear-gradient(135deg,#1282a2 0%,#ff6b35 140%);
-                          color:#fff;text-decoration:none;font-weight:700;padding:0.75rem 1.5rem;
-                          border-radius:10px;font-size:0.95rem;">
+                          color:#fff;border:none;font-weight:700;padding:0.75rem 1.5rem;cursor:pointer;
+                          border-radius:10px;font-size:0.95rem;font-family:inherit;">
                     Request Access
-                </a>
+                </button>
                 <button type="button" onclick="closeSwitchProfileModal()"
                         style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.15);
                                color:rgba(255,255,255,0.85);font-weight:600;padding:0.65rem 1.5rem;

@@ -599,8 +599,10 @@ html {
         top: auto !important;
         width: 100% !important;
         max-width: 100% !important;
-        height: 70px !important;
-        min-height: 70px !important;
+        /* 76px (was 70px): with overflow:hidden, the extra height + .sidebar-nav top
+           padding keeps the active tab's box (border + radius) from being clipped at the top. */
+        height: 76px !important;
+        min-height: 76px !important;
         background: rgba(0, 15, 35, 0.98) !important;
         backdrop-filter: blur(20px) !important;
         -webkit-backdrop-filter: blur(20px) !important;
@@ -626,7 +628,8 @@ html {
         align-items: center !important;
         height: 100% !important;
         width: 100% !important;
-        padding: 0 0.5rem !important;
+        /* small top padding so the active tab's box isn't flush against the clipped top edge */
+        padding: 4px 0.5rem 0 !important;
         gap: 0 !important;
     }
 

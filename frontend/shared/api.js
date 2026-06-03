@@ -532,35 +532,34 @@ const authAPI = {
     },
 
     logout: async () => {
-        // Phase 3b: disassociate RC identity BEFORE clearing our session so
-        // next user on same device doesn't inherit previous user's RC state.
-        // Best-effort — errors swallowed so logout always completes.
-        if (isIOSApp()) {
-            try {
-                const Purchases = window.Capacitor?.Plugins?.Purchases;
-                if (Purchases) await Purchases.logOut();
-            } catch (e) {
-                console.error('[authAPI.logout][RevenueCat]', e);
-            }
-        }
-
-        // Phase 4c-III: clear delivered iOS notifications so next user doesn't see stale banners.
-        if (isIOSApp()) {
-            try {
-                const Push = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.PushNotifications;
-                if (Push) await Push.removeAllDeliveredNotifications();
-            } catch (e) {
-                console.error('[authAPI.logout][Push]', e);
-            }
-        }
+        // Never let a hung iOS plugin promise (RevenueCat / Push) or a stalled network
+        // call block the logout redirect — race each against a short timeout, and ALWAYS
+        // clear the session + redirect in finally. (Previously a hung Purchases.logOut()
+        // on iOS could leave the logout button doing nothing.)
+        const withTimeout = (p, ms) => Promise.race([
+            Promise.resolve(p).catch(() => {}),
+            new Promise((res) => setTimeout(res, ms))
+        ]);
 
         try {
-            await apiRequest('/auth/logout', { method: 'POST' });
+            if (isIOSApp()) {
+                // Phase 3b: disassociate RC identity so the next user doesn't inherit it.
+                const Purchases = window.Capacitor?.Plugins?.Purchases;
+                if (Purchases) await withTimeout(Purchases.logOut(), 2000);
+
+                // Phase 4c-III: clear delivered iOS notifications.
+                const Push = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.PushNotifications;
+                if (Push) await withTimeout(Push.removeAllDeliveredNotifications(), 2000);
+            }
+
+            await withTimeout(apiRequest('/auth/logout', { method: 'POST' }), 3000);
         } catch (error) {
             console.error('Logout error:', error);
+        } finally {
+            // GUARANTEED to run — even if a plugin/network call hung or threw.
+            clearAuth();
+            window.location.href = '/frontend/landingpage/index.html';
         }
-        clearAuth();
-        window.location.href = '/frontend/landingpage/index.html';
     },
 
     getCurrentUser: async () => {
