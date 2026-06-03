@@ -301,6 +301,21 @@ function updateNavbarForLoggedInUser(user, profile) {
 
         sidebarNav.innerHTML = navHTML;
 
+        // Defensive bottom-nav navigation: on this page the nav is rebuilt dynamically, and
+        // taps sometimes failed to navigate (a leftover open mobile-sidebar / body scroll-lock /
+        // overlay could absorb the tap). Force navigation explicitly after clearing any blocker.
+        sidebarNav.querySelectorAll('a.nav-item[href]').forEach((link) => {
+            link.addEventListener('click', (e) => {
+                const href = link.getAttribute('href');
+                if (!href || href === '#') return;
+                e.preventDefault();
+                document.body.style.overflow = '';
+                document.querySelectorAll('.mobile-sidebar.open, .mobile-sidebar-overlay.open')
+                    .forEach((el) => el.classList.remove('open'));
+                window.location.href = href;
+            });
+        });
+
         // Theme colors based on logged-in user's folder
         let navActiveColor, navActiveBg, navHoverBg;
 

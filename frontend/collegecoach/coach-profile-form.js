@@ -856,7 +856,7 @@ function showTierSelectionModal() {
 
     overlay.innerHTML = `
         <div style="background:#0a1128;border-radius:16px;max-width:900px;width:100%;padding:40px 32px;position:relative;max-height:90vh;overflow-y:auto;">
-            <button id="tierModalClose" style="position:absolute;top:16px;right:16px;background:none;border:none;color:rgba(255,255,255,0.5);font-size:24px;cursor:pointer;">&times;</button>
+            <button id="tierModalClose" style="position:absolute;top:calc(16px + env(safe-area-inset-top, 0px));right:16px;background:none;border:none;color:rgba(255,255,255,0.5);font-size:24px;cursor:pointer;">&times;</button>
             <h2 style="color:#fff;text-align:center;font-size:24px;font-weight:700;margin:0 0 8px;">Choose Your Plan</h2>
             <p style="color:rgba(255,255,255,0.45);text-align:center;font-size:14px;margin:0 0 32px;">Select a subscription tier to get started.</p>
             <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;">

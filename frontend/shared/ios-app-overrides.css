@@ -55,6 +55,37 @@ html.ios-app body { background-color: inherit; }
     .ios-app .main-content:has(.pi-layout) {
         top: calc(50px + env(safe-area-inset-top, 0px)) !important;
     }
+
+    /* ---- Modal headers: keep the X close button below the status bar ----
+       Full-screen modals sit at top:0; their header positions the X via flex + header
+       padding, so adding env(safe-area-inset-top) to the header's padding-top pushes the
+       X down clear of the time/wifi/battery. Headers are uniquely named (no shared class),
+       so enumerate them. Base top padding is ~1.25rem for most; mobile-post uses 1rem. */
+    .ios-app .mobile-post-modal-header {
+        padding-top: calc(1rem + env(safe-area-inset-top, 0px)) !important;
+    }
+    .ios-app .follow-list-modal-header,
+    .ios-app .rc-header,
+    .ios-app .recruiting-board-modal-header,
+    .ios-app .feed-modal-header,
+    .ios-app .likes-modal-header,
+    .ios-app .shares-modal-header,
+    .ios-app .profile-post-modal-header,
+    .ios-app .delete-account-modal-header,
+    .ios-app .edit-modal-header,
+    .ios-app .add-highlight-modal-header,
+    .ios-app .add-offer-modal-header,
+    .ios-app .add-stars-modal-header,
+    .ios-app .connections-modal-header,
+    .ios-app .edit-academics-modal-header,
+    .ios-app .edit-athletics-modal-header,
+    .ios-app .edit-recruiting-modal-header,
+    .ios-app .season-select-modal-header,
+    .ios-app .switch-modal-header,
+    .ios-app .email-verification-modal-header,
+    .ios-app .forgot-password-modal-header {
+        padding-top: calc(1.25rem + env(safe-area-inset-top, 0px)) !important;
+    }
 }
 
 /* ---- Web-isms: make it feel native ---- */

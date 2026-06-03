@@ -610,7 +610,11 @@ html {
         z-index: 1000 !important;
         padding-bottom: env(safe-area-inset-bottom) !important;
         flex-direction: row !important;
-        overflow: visible !important;
+        /* box-sizing: include the safe-area padding within the 70px so the bar height
+           is stable, and overflow: hidden clips the active tab's colored box to the bar
+           (it was bleeding into the content area on iOS with overflow: visible). */
+        box-sizing: border-box !important;
+        overflow: hidden !important;
         transform: none !important;
         margin: 0 !important;
     }
@@ -2904,6 +2908,43 @@ html {
 
     .modal-overlay {
         align-items: stretch !important;
+    }
+
+    /* --- Previously-centered modals: make full-screen on mobile (lessons.md #75).
+       These lacked mobile overrides and stayed vertically centered, so their headers/X
+       buttons sat mid-screen. Full-screen + top:0 so the iOS safe-area header padding
+       (ios-app-overrides.css) keeps the X below the status bar. --- */
+    .add-highlight-modal-content,
+    .add-offer-modal-content,
+    .add-stars-modal-content,
+    .edit-academics-modal-content,
+    .edit-athletics-modal-content,
+    .edit-recruiting-modal-content,
+    .season-select-modal-content,
+    .connections-modal,
+    .switch-profile-modal {
+        width: 100% !important;
+        max-width: 100% !important;
+        height: 100% !important;
+        max-height: 100% !important;
+        border-radius: 0 !important;
+        top: 0 !important;
+        left: 0 !important;
+        transform: none !important;
+        position: fixed !important;
+    }
+
+    .add-highlight-modal-overlay,
+    .add-offer-modal-overlay,
+    .add-stars-modal-overlay,
+    .edit-academics-modal-overlay,
+    .edit-athletics-modal-overlay,
+    .edit-recruiting-modal-overlay,
+    .season-select-modal-overlay,
+    .connections-modal-overlay,
+    .switch-profile-modal-overlay {
+        align-items: stretch !important;
+        padding: 0 !important;
     }
 }
 

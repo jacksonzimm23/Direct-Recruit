@@ -104,10 +104,20 @@ async function updateMobileHeader() {
 
             // Set color based on logged-in user's role, not the page's profile-type class
             const roleColor = getRoleBorderColor(user.role, user.is_transfer_player, profile.college_division);
+            const roleBg = getRoleAvatarBg(user.role, user.is_transfer_player, profile.college_division);
             if (mobileUserRole) mobileUserRole.style.color = roleColor;
 
-            // Set role-colored border on mobile header avatar
-            if (mobileProfilePic) mobileProfilePic.style.border = `2px solid ${roleColor}`;
+            // Mobile header avatar: role-colored ring always; when NO photo, also tie the
+            // background fill + placeholder person icon to the profile type (mirrors the
+            // sidebar-footer behavior) instead of the hardcoded cerulean CSS default.
+            if (mobileProfilePic) {
+                mobileProfilePic.style.border = `2px solid ${roleColor}`;
+                if (!profileImgUrl) {
+                    mobileProfilePic.style.backgroundColor = roleBg;
+                    mobileProfilePic.style.color = roleColor;
+                    mobileProfilePic.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:20px;height:20px;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>`;
+                }
+            }
 
             // Also update mobile sidebar user info if present
             const mobileSidebarUserName = document.getElementById('mobileSidebarUserName');
@@ -119,10 +129,15 @@ async function updateMobileHeader() {
                 mobileSidebarUserRole.style.color = roleColor;
             }
             if (mobileSidebarAvatar) {
+                mobileSidebarAvatar.style.border = `2px solid ${roleColor}`;
                 if (profileImgUrl) {
                     mobileSidebarAvatar.innerHTML = `<img src="${profileImgUrl}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
+                } else {
+                    // No photo: role-colored fill + placeholder icon (matches header avatar)
+                    mobileSidebarAvatar.style.backgroundColor = roleBg;
+                    mobileSidebarAvatar.style.color = roleColor;
+                    mobileSidebarAvatar.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:20px;height:20px;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>`;
                 }
-                mobileSidebarAvatar.style.border = `2px solid ${roleColor}`;
             }
 
             // Fix mobile sidebar nav links to point to logged-in user's role folder
