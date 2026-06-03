@@ -55,9 +55,9 @@ if (document.getElementById('signinForm')) {
             // data.user.role on an undefined user is what produced the raw
             // "undefined is not an object (evaluating 'data.user.role')" crash.
             if (!data || !data.user || !data.user.role) {
-                // DIAGNOSTIC: surface what actually came back so we can see why `user` is missing
-                // on iOS (revert to a friendly message once the root cause is fixed).
-                throw new Error('Sign-in did not complete. data=' + JSON.stringify(data).slice(0, 200));
+                // Defensive: a malformed/empty success body should fail cleanly, not crash on
+                // data.user.role. (The iOS HTML-instead-of-JSON cause is fixed via CapacitorHttp.)
+                throw new Error('Sign-in did not complete. Please try again.');
             }
 
             // Honor ?next=<relative-path> on the signin URL so flows that bounce users

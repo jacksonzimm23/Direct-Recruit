@@ -23,6 +23,11 @@
 </head>
 <body>
     <!-- No nav - opened in new tab -->
+    <!-- iOS-only back button (native swipe-back is unreliable on these pages) -->
+    <a href="index.html" class="ios-only ios-back-btn" aria-label="Back">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+        Back
+    </a>
 
     <!-- Content -->
     <section class="legal-section support-section">
@@ -140,7 +145,7 @@
                     <p>The social network for college sports recruiting</p>
                 </div>
                 <div class="footer-links">
-                    <div class="footer-column">
+                    <div class="footer-column web-only">
                         <h4>Platform</h4>
                         <a href="features.html">Features</a>
                         <a href="pricing.html">Pricing</a>

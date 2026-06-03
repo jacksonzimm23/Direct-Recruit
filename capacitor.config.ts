@@ -26,6 +26,15 @@ const config: CapacitorConfig = {
   },
 
   plugins: {
+    // Route fetch()/XHR through native HTTP (URLSession) instead of the WebView.
+    // Without this, the WKWebView asset handler intercepts ALL https:// requests to
+    // the bundled origin (directrecruit.net) and returns the local index.html — so
+    // /api/* calls came back as HTML (200 text/html) instead of the real backend JSON,
+    // which broke sign-in on iOS. Native HTTP hits the real server and handles cookies
+    // via the iOS cookie store.
+    CapacitorHttp: {
+      enabled: true
+    },
     SplashScreen: {
       launchShowDuration: 1500,
       launchAutoHide: false,       // Phase 2b hides it programmatically
