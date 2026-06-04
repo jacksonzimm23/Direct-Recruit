@@ -18,16 +18,18 @@ var _capPluginsInited = false;
     // which redirects through view-profile.html), the bridge isn't reliably injected
     // when this runs, so .ios-app was never added and the header/content lost their
     // safe-area offset (tucked under the status bar). A retry loop can't fix a bridge
-    // that isn't present on that document.
+    // that isn't present on that document, so detect by origin instead — it's
+    // deterministic and available at first paint on every in-app page.
     //
-    // Instead, identify the app by its WebView origin, which is deterministic and
-    // available at first paint on every in-app page. capacitor.config.ts sets
-    // iosScheme 'https' with NO server.hostname, so the in-app origin is exactly
-    // https://localhost (no port). Production web is directrecruit.net; dev Live
-    // Server is http://localhost:5500 — neither matches, so this is iOS-app-only.
+    // The bundled iOS WebView serves from hostname "localhost" with NO port. Its
+    // scheme is "capacitor:" (confirmed at runtime: error sources are
+    // capacitor://localhost/...), though some builds report "https:" — accept either.
+    // Exclude the dev Live Server (http://localhost:5500 — has a port) and production
+    // (directrecruit.net — different hostname), so this matches the iOS app only.
     try {
         var loc = window.location;
-        if (loc.protocol === 'https:' && loc.hostname === 'localhost' && !loc.port) {
+        var inAppScheme = (loc.protocol === 'capacitor:' || loc.protocol === 'https:');
+        if (inAppScheme && loc.hostname === 'localhost' && !loc.port) {
             document.documentElement.classList.add('ios-app');
         }
     } catch (_) {}
