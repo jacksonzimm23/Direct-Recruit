@@ -98,6 +98,16 @@ function capacitorInit(cap) {
             StatusBar.setStyle({ style: 'DARK' }).catch(() => {});
             // setBackgroundColor is Android-only per Capacitor docs; iOS ignores it safely
             StatusBar.setBackgroundColor?.({ color: '#0a1128' }).catch(() => {});
+            // Re-assert that the status bar OVERLAYS the WebView on every page load.
+            // This is the source of env(safe-area-inset-top): when overlay is on the
+            // inset is the notch height (~59px); when it's off the WebView is laid out
+            // below the status bar and the inset collapses to 0. The config sets
+            // overlaysWebView:true at launch, but the native state reverts to false on
+            // some navigations (e.g. it was broken when viewing another profile,
+            // role-dependent), which zeroed the safe-area and tucked the header/content
+            // under the status bar. Re-asserting it here keeps the safe-area correct on
+            // every in-app page. (Confirmed on-device: calling this flipped env() 0->59px.)
+            StatusBar.setOverlaysWebView?.({ overlay: true }).catch(() => {});
         }
 
         // NOTE: SplashScreen.hide() is handled by the resilient hideSplash() loop in
