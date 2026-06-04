@@ -26,14 +26,44 @@
         }
     } catch (_) {}
 
-    // --- Native plugin init (StatusBar / SplashScreen / Push / RevenueCat) ---
+    // --- Splash screen: hide it no matter what ---
+    // launchAutoHide is false in capacitor.config.ts, so the splash ONLY goes away
+    // when SplashScreen.hide() is called. This MUST NOT depend on a bounded retry of
+    // the JS bridge — on a cold start the bridge can take longer than the retry window
+    // to inject, and if we give up the user is stuck on the splash forever. Keep
+    // trying for a long time, and hard-hide via a guaranteed timeout regardless.
+    var splashHidden = false;
+    function hideSplash() {
+        if (splashHidden) return;
+        var cap = window.Capacitor;
+        var SplashScreen = cap && cap.Plugins && cap.Plugins.SplashScreen;
+        if (SplashScreen && typeof SplashScreen.hide === 'function') {
+            splashHidden = true;
+            try { SplashScreen.hide().catch(function () {}); } catch (_) {}
+        }
+    }
+    // Poll for the bridge for up to ~10s, hiding the splash the moment it's available.
+    var splashTries = 0;
+    (function pollSplash() {
+        if (splashHidden) return;
+        hideSplash();
+        if (!splashHidden && splashTries++ < 200) setTimeout(pollSplash, 50);
+    })();
+    // Absolute backstop: hide once DOM is ready (bridge is essentially always up by then).
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', hideSplash, { once: true });
+    } else {
+        hideSplash();
+    }
+
+    // --- Native plugin init (StatusBar / Push / RevenueCat) ---
     // This still needs the real bridge, so keep waiting for window.Capacitor.
     let attempts = 0;
     function tryInit() {
         const cap = window.Capacitor;
         const ready = cap && typeof cap.isNativePlatform === 'function';
         if (!ready) {
-            if (attempts++ < 30) { setTimeout(tryInit, 50); return; }   // ~1.5s of retries
+            if (attempts++ < 200) { setTimeout(tryInit, 50); return; }   // ~10s of retries
             return; // not a native platform (web/desktop) — no-op
         }
         if (!cap.isNativePlatform()) return; // genuinely not native
@@ -54,7 +84,7 @@ function capacitorInit(cap) {
         document.documentElement.classList.add('ios-app');
 
         const plugins = cap.Plugins || {};
-        const { StatusBar, SplashScreen } = plugins;
+        const { StatusBar } = plugins;
 
         // StatusBar: light text on our dark theme
         if (StatusBar) {
@@ -63,17 +93,9 @@ function capacitorInit(cap) {
             StatusBar.setBackgroundColor?.({ color: '#0a1128' }).catch(() => {});
         }
 
-        // SplashScreen: hide after DOM is ready + 300ms buffer for first render
-        if (SplashScreen) {
-            const hide = () => setTimeout(() => {
-                SplashScreen.hide().catch(() => {});
-            }, 300);
-            if (document.readyState === 'loading') {
-                document.addEventListener('DOMContentLoaded', hide, { once: true });
-            } else {
-                hide();
-            }
-        }
+        // NOTE: SplashScreen.hide() is handled by the resilient hideSplash() loop in
+        // bootstrapCapacitorInit above (runs independently of this bridge-gated init,
+        // so the splash always hides even if plugin init is delayed on a cold start).
 
         // --- RevenueCat init (Phase 3b) ---
         // Fetch RC config from backend, configure the SDK, log in user if
