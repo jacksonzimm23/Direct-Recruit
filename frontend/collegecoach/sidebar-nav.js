@@ -6,13 +6,17 @@
     const sidebarNavContainer = document.querySelector('.sidebar-nav');
     if (!sidebarNavContainer) return;
 
-    // Determine if we're in the tabs folder or main collegecoach folder
     const currentPath = window.location.pathname;
-    const isInTabsFolder = currentPath.includes('/tabs/');
 
-    // Set correct relative paths based on location
-    const basePath = isInTabsFolder ? '../' : '';
-    const tabsPath = isInTabsFolder ? '' : 'tabs/';
+    // Build ABSOLUTE, origin-prefixed nav paths. Bare relative hrefs (e.g.
+    // "discover-players.html") do NOT navigate inside the iOS WKWebView
+    // (origin = https://localhost) — they silently fail. Full URLs navigate
+    // reliably on web and in the app. Role folder is read from /frontend/<role>/.
+    const roleMatch = currentPath.match(/\/frontend\/([^/]+)/);
+    const roleFolder = roleMatch ? roleMatch[1] : '';
+    const roleRoot = `${window.location.origin}/frontend/${roleFolder}/`;
+    const basePath = roleRoot;            // mainpage-*.html lives at the role root
+    const tabsPath = `${roleRoot}tabs/`;  // all tab pages live under tabs/
 
     // Get current page name for active state
     const pageName = currentPath.split('/').pop().replace('.html', '');
