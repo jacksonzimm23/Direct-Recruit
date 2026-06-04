@@ -4,6 +4,12 @@
 // Safe to load on mobile web and desktop — it's a no-op there.
 // MUST load BEFORE api.js / feed.js / any other scripts that might
 // rely on `.ios-app` for conditional behavior.
+
+// Declared before the bootstrap IIFE: the IIFE runs synchronously and can call
+// capacitorInit() during that same tick, which reads this flag — a `let` declared
+// AFTER the IIFE would be in its temporal dead zone and throw a ReferenceError.
+var _capPluginsInited = false;
+
 (function bootstrapCapacitorInit() {
     // --- .ios-app gate: detect the bundled iOS WebView SYNCHRONOUSLY by origin ---
     // The .ios-app class on <html> gates all iOS safe-area CSS. It used to be added
@@ -75,7 +81,6 @@
     tryInit();
 })();
 
-let _capPluginsInited = false;
 function capacitorInit(cap) {
     if (_capPluginsInited) return; // run the native plugin setup only once
     _capPluginsInited = true;
