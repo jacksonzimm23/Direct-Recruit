@@ -50,9 +50,12 @@ html.ios-app body { background-color: inherit; }
     }
 
     /* AI chat panels (Recruiting Assistant / Portal Intelligence) are
-       position: fixed with top: 50px instead of padding — adjust the top. */
-    .ios-app .main-content:has(.ra-layout),
-    .ios-app .main-content:has(.pi-layout) {
+       position: fixed with top: 50px instead of padding — adjust the top.
+       Scoped to the ACTIVE tab (see mobile-overrides.css): the RA/PI markup
+       stays in the DOM on discover/portal, so a bare :has() matched even when
+       the Find Players / Current Portal tab was showing. */
+    .ios-app .main-content:has(.dp-tab-content.active .ra-layout),
+    .ios-app .main-content:has(.tp-tab-content.active .pi-layout) {
         top: calc(50px + env(safe-area-inset-top, 0px)) !important;
     }
 

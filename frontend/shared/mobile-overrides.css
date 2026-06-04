@@ -799,9 +799,15 @@ html {
         min-height: calc(100vh - 90px) !important;
     }
 
-    /* AI chat pages (RA/PI) — fit between mobile header and bottom nav */
-    .main-content:has(.ra-layout),
-    .main-content:has(.pi-layout) {
+    /* AI chat pages (RA/PI) — fit between mobile header and bottom nav.
+       Scope to the ACTIVE tab: discover/portal pages keep the RA/PI tab markup
+       in the DOM (hidden), so a bare :has(.ra-layout) matched even when the
+       Find Players / Current Portal tab was showing — applying position:fixed +
+       top:50px ON TOP of the normal padding-top, which created a large fixed gap
+       above the subtabs. Only treat main-content as an AI chat page when that
+       tab is actually active/visible. */
+    .main-content:has(.dp-tab-content.active .ra-layout),
+    .main-content:has(.tp-tab-content.active .pi-layout) {
         position: fixed !important;
         top: 50px !important; /* below mobile header */
         bottom: 70px !important; /* above bottom nav */
