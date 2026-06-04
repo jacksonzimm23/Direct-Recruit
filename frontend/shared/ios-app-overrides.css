@@ -90,13 +90,23 @@ html.ios-app body { background-color: inherit; }
     .ios-app .pi-usage-header {
         padding-top: calc(1.25rem + env(safe-area-inset-top, 0px)) !important;
     }
-    /* AI RA saved modal (base 1rem) */
-    .ios-app .ra-saved-header {
+    /* AI RA saved modal + Edit Reply modal (base 1rem) */
+    .ios-app .ra-saved-header,
+    .ios-app .reply-edit-modal-header {
         padding-top: calc(1rem + env(safe-area-inset-top, 0px)) !important;
     }
     /* AI PI watchlist modal (base 20px) */
     .ios-app .pi-watchlist-header {
         padding-top: calc(20px + env(safe-area-inset-top, 0px)) !important;
+    }
+    /* Landing role-selection modals (coach/player type) — JS-injected by auth.js,
+       go full-screen on mobile with a flush-top header. Push the modal content's
+       top padding below the status bar. Scoped to these modals so the generic
+       .modal-header/.modal-content elsewhere is unaffected. Base padding 32px. */
+    .ios-app .coach-type-modal .modal-content,
+    .ios-app .player-type-modal .modal-content,
+    .ios-app .registration-modal .modal-content {
+        padding-top: calc(32px + env(safe-area-inset-top, 0px)) !important;
     }
 }
 
