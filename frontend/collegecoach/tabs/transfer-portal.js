@@ -336,7 +336,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             // Show/hide load more button
             if (hasMorePlayers) {
                 loadMoreContainer.style.display = 'flex';
-                loadMoreBtn.textContent = 'See More Players';
+                loadMoreBtn.textContent = 'See More';
                 loadMoreBtn.disabled = false;
             } else {
                 loadMoreContainer.style.display = 'none';
@@ -351,7 +351,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                 resultsCount.textContent = '0';
             }
             if (loadMoreBtn) {
-                loadMoreBtn.textContent = 'See More Players';
+                loadMoreBtn.textContent = 'See More';
                 loadMoreBtn.disabled = false;
             }
         }

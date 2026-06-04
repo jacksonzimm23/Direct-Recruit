@@ -80,7 +80,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // Update load more button visibility
             if (loadMoreBtn) {
                 if (hasMorePlayers) {
-                    loadMoreBtn.textContent = 'Load More Players';
+                    loadMoreBtn.textContent = 'See More';
                     loadMoreBtn.disabled = false;
                     loadMoreBtn.style.display = 'inline-block';
                 } else {
@@ -92,7 +92,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 playersGrid.innerHTML = '<p class="no-results-message">Unable to load players.</p>';
             }
             if (loadMoreBtn) {
-                loadMoreBtn.textContent = 'Load More Players';
+                loadMoreBtn.textContent = 'See More';
                 loadMoreBtn.disabled = false;
             }
         }
@@ -457,7 +457,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (loadMoreBtn) {
                     const loadMoreContainer = loadMoreBtn.parentElement;
                     if (hasMoreCoaches) {
-                        loadMoreBtn.textContent = 'Load More Coaches';
+                        loadMoreBtn.textContent = 'See More';
                         loadMoreBtn.disabled = false;
                         loadMoreBtn.style.display = 'inline-block';
                         if (loadMoreContainer) loadMoreContainer.style.display = 'flex';
@@ -472,7 +472,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 coachesGrid.innerHTML = '<p class="no-results-message">Unable to load coaches.</p>';
             }
             if (loadMoreBtn) {
-                loadMoreBtn.textContent = 'Load More Coaches';
+                loadMoreBtn.textContent = 'See More';
                 loadMoreBtn.disabled = false;
             }
         }

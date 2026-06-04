@@ -131,7 +131,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (loadMoreBtn) {
                 const loadMoreContainer = loadMoreBtn.parentElement;
                 if (hasMoreUsers) {
-                    loadMoreBtn.textContent = 'Load More';
+                    loadMoreBtn.textContent = 'See More';
                     loadMoreBtn.disabled = false;
                     loadMoreBtn.style.display = 'inline-block';
                     if (loadMoreContainer) loadMoreContainer.style.display = 'flex';
@@ -145,7 +145,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 usersGrid.innerHTML = '<p class="no-results-message">Unable to load users.</p>';
             }
             if (loadMoreBtn) {
-                loadMoreBtn.textContent = 'Load More';
+                loadMoreBtn.textContent = 'See More';
                 loadMoreBtn.disabled = false;
             }
         }

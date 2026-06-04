@@ -9981,7 +9981,7 @@ async function loadProfilePosts(loadMore = false) {
     } finally {
         if (loadMoreBtn) {
             loadMoreBtn.disabled = false;
-            loadMoreBtn.textContent = 'Load More Posts';
+            loadMoreBtn.textContent = 'See More';
         }
     }
 }
@@ -10057,7 +10057,7 @@ async function loadProfileReplies(loadMore = false) {
     } finally {
         if (loadMoreBtn) {
             loadMoreBtn.disabled = false;
-            loadMoreBtn.textContent = 'Load More Replies';
+            loadMoreBtn.textContent = 'See More';
         }
     }
 }
@@ -10137,7 +10137,7 @@ async function loadProfileLikes(loadMore = false) {
     } finally {
         if (loadMoreBtn) {
             loadMoreBtn.disabled = false;
-            loadMoreBtn.textContent = 'Load More';
+            loadMoreBtn.textContent = 'See More';
         }
     }
 }
