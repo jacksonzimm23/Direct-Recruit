@@ -5,13 +5,29 @@
 // MUST load BEFORE api.js / feed.js / any other scripts that might
 // rely on `.ios-app` for conditional behavior.
 (function bootstrapCapacitorInit() {
-    // The native Capacitor bridge (window.Capacitor) is injected by the WebView,
-    // but on a freshly-navigated page it may not be present yet when this script
-    // runs during <head> parsing. Previously we bailed permanently in that case,
-    // so .ios-app was never added — most visibly when navigating to another user's
-    // profile (header/content lost their safe-area offset and tucked under the
-    // status bar). Detect the platform with a few retries so .ios-app is applied
-    // as soon as the bridge is ready, regardless of navigation timing.
+    // --- .ios-app gate: detect the bundled iOS WebView SYNCHRONOUSLY by origin ---
+    // The .ios-app class on <html> gates all iOS safe-area CSS. It used to be added
+    // only once the native window.Capacitor bridge was readable — but on a
+    // window.location.replace()-navigated document (e.g. viewing another profile,
+    // which redirects through view-profile.html), the bridge isn't reliably injected
+    // when this runs, so .ios-app was never added and the header/content lost their
+    // safe-area offset (tucked under the status bar). A retry loop can't fix a bridge
+    // that isn't present on that document.
+    //
+    // Instead, identify the app by its WebView origin, which is deterministic and
+    // available at first paint on every in-app page. capacitor.config.ts sets
+    // iosScheme 'https' with NO server.hostname, so the in-app origin is exactly
+    // https://localhost (no port). Production web is directrecruit.net; dev Live
+    // Server is http://localhost:5500 — neither matches, so this is iOS-app-only.
+    try {
+        var loc = window.location;
+        if (loc.protocol === 'https:' && loc.hostname === 'localhost' && !loc.port) {
+            document.documentElement.classList.add('ios-app');
+        }
+    } catch (_) {}
+
+    // --- Native plugin init (StatusBar / SplashScreen / Push / RevenueCat) ---
+    // This still needs the real bridge, so keep waiting for window.Capacitor.
     let attempts = 0;
     function tryInit() {
         const cap = window.Capacitor;
@@ -23,19 +39,18 @@
         if (!cap.isNativePlatform()) return; // genuinely not native
         capacitorInit(cap);
     }
-    // Also re-check at DOMContentLoaded as a safety net (bridge is reliably ready by then)
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', () => {
-            if (!document.documentElement.classList.contains('ios-app')) tryInit();
-        }, { once: true });
+        document.addEventListener('DOMContentLoaded', tryInit, { once: true });
     }
     tryInit();
 })();
 
+let _capPluginsInited = false;
 function capacitorInit(cap) {
-    if (document.documentElement.classList.contains('ios-app')) return; // already initialized
+    if (_capPluginsInited) return; // run the native plugin setup only once
+    _capPluginsInited = true;
     try {
-        // Mark <html> for CSS scoping — as early as possible, before first paint
+        // Ensure the CSS gate is set (origin check above usually did this already).
         document.documentElement.classList.add('ios-app');
 
         const plugins = cap.Plugins || {};
