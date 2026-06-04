@@ -2868,7 +2868,7 @@ body.transfer-player-viewer .sidebar-user-avatar {
 
 .profile-toast {
     position: fixed;
-    bottom: 2rem;
+    bottom: calc(88px + env(safe-area-inset-bottom, 0px));
     left: 50%;
     transform: translateX(-50%) translateY(100px);
     padding: 0.75rem 1.5rem;
