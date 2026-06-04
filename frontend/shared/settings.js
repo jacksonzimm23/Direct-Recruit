@@ -2893,6 +2893,11 @@ async function executeSwitchProfile(profileData) {
     const errorEl = document.getElementById('switchConfirmError');
     const originalText = btn.textContent;
 
+    // In-app the bundle root is the frontend/ contents, so there is no '/frontend'
+    // path segment; on web there is. Mirror shared/api.js's prefix convention so
+    // these URLs resolve in BOTH the WKWebView and the browser.
+    const FE_BASE = window.location.origin + (window.location.pathname.startsWith('/frontend/') ? '/frontend' : '');
+
     btn.disabled = true;
     btn.textContent = 'Switching...';
     errorEl.style.display = 'none';
@@ -2911,7 +2916,7 @@ async function executeSwitchProfile(profileData) {
                 other: 'mainpage-other.html'
             };
             const mainpage = mainpageMap[folder] || 'mainpage-player.html';
-            const redirectUrl = `${window.location.origin}/frontend/${folder}/${mainpage}`;
+            const redirectUrl = `${FE_BASE}/${folder}/${mainpage}`;
 
             if (result.requires_payment) {
                 // Close the switch modal
@@ -2964,7 +2969,7 @@ async function executeSwitchProfile(profileData) {
                             result.payment_profile_type,
                             null,
                             'switch',
-                            window.location.origin + '/frontend/shared/payment-success-switch.html',
+                            FE_BASE + '/shared/payment-success-switch.html',
                             window.location.href
                         );
                         window.location.href = url;
@@ -3016,9 +3021,11 @@ function showCollegeCoachSwitchVerificationSplash() {
     const body = document.querySelector('.switch-modal-body');
     if (!body) return;
     // Full URL (origin + path), not a bare /frontend/... — iOS WKWebView (origin
-    // https://localhost) won't navigate on a bare root-relative path. origin is correct on
-    // web (directrecruit.net) and in the app (localhost).
-    const requestUrl = window.location.origin + '/frontend/landingpage/coach-signup-request.html?switch=1';
+    // https://localhost) won't navigate on a bare root-relative path. In-app the bundle
+    // root is the frontend/ contents, so there is no '/frontend' path segment; on web
+    // there is. Mirror shared/api.js's prefix convention so this resolves in BOTH envs.
+    const FE_BASE = window.location.origin + (window.location.pathname.startsWith('/frontend/') ? '/frontend' : '');
+    const requestUrl = FE_BASE + '/landingpage/coach-signup-request.html?switch=1';
     body.innerHTML = `
         <div style="padding: 1rem 0.5rem; text-align: center;">
             <div style="width:64px;height:64px;border-radius:50%;background:rgba(255,107,53,0.15);
@@ -3452,6 +3459,11 @@ async function handleSubscribe(profileFolder) {
     const btn = document.getElementById('subSubscribeBtn');
     if (btn) { btn.textContent = 'Redirecting...'; btn.disabled = true; }
 
+    // In-app the bundle root is the frontend/ contents, so there is no '/frontend'
+    // path segment; on web there is. Mirror shared/api.js's prefix convention so
+    // these URLs resolve in BOTH the WKWebView and the browser.
+    const FE_BASE = window.location.origin + (window.location.pathname.startsWith('/frontend/') ? '/frontend' : '');
+
     try {
         if (profileFolder === 'collegecoach') {
             // Coaches: the tier modal (shared between Stripe + iOS) handles branching
@@ -3484,7 +3496,7 @@ async function handleSubscribe(profileFolder) {
             // Web — existing Stripe flow
             const { url } = await API.payments.createCheckoutSession(
                 profileType, null, 'resubscribe',
-                window.location.origin + '/frontend/shared/payment-success-switch.html',
+                FE_BASE + '/shared/payment-success-switch.html',
                 window.location.href
             );
             localStorage.setItem('switchRedirectUrl', window.location.href);
@@ -3534,6 +3546,10 @@ function escapeHTML(str) {
 
 // ─── Tier Selection Modal for Profile Switch to College Coach ────────────────
 function showSwitchTierModal() {
+    // In-app the bundle root is the frontend/ contents, so there is no '/frontend'
+    // path segment; on web there is. Mirror shared/api.js's prefix convention so
+    // these URLs resolve in BOTH the WKWebView and the browser.
+    const FE_BASE = window.location.origin + (window.location.pathname.startsWith('/frontend/') ? '/frontend' : '');
     const overlay = document.createElement('div');
     overlay.id = 'switchTierModal';
     overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:10000;display:flex;align-items:center;justify-content:center;padding:20px;';
@@ -3583,7 +3599,7 @@ function showSwitchTierModal() {
                         // Navigate directly to the stored redirect URL (bypass payment-success-switch.html)
                         const redirectUrl = localStorage.getItem('switchRedirectUrl');
                         localStorage.removeItem('switchRedirectUrl');
-                        window.location.href = redirectUrl || (window.location.origin + '/frontend/collegecoach/mainpage-coach.html');
+                        window.location.href = redirectUrl || (FE_BASE + '/collegecoach/mainpage-coach.html');
                         return;
                     }
                     if (r.cancelled) {
@@ -3610,7 +3626,7 @@ function showSwitchTierModal() {
                     'collegecoach',
                     tier,
                     'switch',
-                    window.location.origin + '/frontend/shared/payment-success-switch.html',
+                    FE_BASE + '/shared/payment-success-switch.html',
                     window.location.href
                 );
                 window.location.href = url;

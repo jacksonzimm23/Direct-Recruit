@@ -509,12 +509,16 @@ document.addEventListener('DOMContentLoaded', async function() {
                 }
 
                 // Web — existing Stripe flow
+                // In-app the bundle root is the frontend/ contents, so there is no '/frontend'
+                // path segment; on web there is. Mirror shared/api.js's prefix convention so
+                // these URLs resolve in BOTH the WKWebView and the browser.
+                const FE_BASE = window.location.origin + (window.location.pathname.startsWith('/frontend/') ? '/frontend' : '');
                 const { url } = await API.payments.createCheckoutSession(
                     'hsplayer',
                     null,
                     'signup',
-                    window.location.origin + '/frontend/hsplayer/payment-success.html',
-                    window.location.origin + '/frontend/hsplayer/create-profile.html'
+                    FE_BASE + '/hsplayer/payment-success.html',
+                    FE_BASE + '/hsplayer/create-profile.html'
                 );
                 window.location.href = url;
             }

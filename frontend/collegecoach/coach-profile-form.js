@@ -972,12 +972,16 @@ function showTierSelectionModal() {
             try {
                 // Preserve invite token across Stripe redirect so the cancel URL lets the user retry with the same invite
                 const tokenQuery = validatedInviteToken ? ('?token=' + encodeURIComponent(validatedInviteToken)) : '';
+                // In-app the bundle root is the frontend/ contents, so there is no '/frontend'
+                // path segment; on web there is. Mirror shared/api.js's prefix convention so
+                // these URLs resolve in BOTH the WKWebView and the browser.
+                const FE_BASE = window.location.origin + (window.location.pathname.startsWith('/frontend/') ? '/frontend' : '');
                 const { url } = await API.payments.createCheckoutSession(
                     'collegecoach',
                     tier,
                     'signup',
-                    window.location.origin + '/frontend/collegecoach/payment-success.html' + tokenQuery,
-                    window.location.origin + '/frontend/collegecoach/create-coach-profile.html' + tokenQuery
+                    FE_BASE + '/collegecoach/payment-success.html' + tokenQuery,
+                    FE_BASE + '/collegecoach/create-coach-profile.html' + tokenQuery
                 );
                 window.location.href = url;
             } catch (error) {

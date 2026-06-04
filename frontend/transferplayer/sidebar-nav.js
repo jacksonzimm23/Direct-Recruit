@@ -11,10 +11,17 @@
     // Build ABSOLUTE, origin-prefixed nav paths. Bare relative hrefs (e.g.
     // "discover-players.html") do NOT navigate inside the iOS WKWebView
     // (origin = https://localhost) — they silently fail. Full URLs navigate
-    // reliably on web and in the app. Role folder is read from /frontend/<role>/.
-    const roleMatch = currentPath.match(/\/frontend\/([^/]+)/);
-    const roleFolder = roleMatch ? roleMatch[1] : '';
-    const roleRoot = `${window.location.origin}/frontend/${roleFolder}/`;
+    // reliably everywhere.
+    //
+    // The path may or may not include a "/frontend" segment:
+    //   web / EC2 / Live Server : /frontend/<role>/tabs/page.html  (prefix = /frontend)
+    //   Capacitor app bundle    : /<role>/tabs/page.html           (prefix = "")
+    // because webDir is "frontend" so its CONTENTS become the bundle root.
+    // Mirror the prefix convention in shared/mobile-web-redirect.js.
+    const fePrefix = currentPath.startsWith('/frontend/') ? '/frontend' : '';
+    const afterPrefix = fePrefix ? currentPath.slice(fePrefix.length) : currentPath;
+    const roleFolder = afterPrefix.split('/').filter(Boolean)[0] || '';
+    const roleRoot = `${window.location.origin}${fePrefix}/${roleFolder}/`;
     const basePath = roleRoot;            // mainpage-*.html lives at the role root
     const tabsPath = `${roleRoot}tabs/`;  // all tab pages live under tabs/
 

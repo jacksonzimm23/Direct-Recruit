@@ -179,6 +179,11 @@ function updateNavbarForLoggedInUser(user, profile) {
     const isTransferPlayer = userFolder === 'transferplayer';
     const isCollege = ['collegeplayer', 'collegecoach', 'transferplayer'].includes(userFolder);
 
+    // In-app the bundle root is the frontend/ contents, so there is no '/frontend'
+    // path segment; on web there is. Mirror shared/api.js's prefix convention so
+    // these URLs resolve in BOTH the WKWebView and the browser.
+    const FE_BASE = window.location.origin + (window.location.pathname.startsWith('/frontend/') ? '/frontend' : '');
+
     // Add body class for transfer player viewers to apply red theme
     if (isTransferPlayer) {
         document.body.classList.add('transfer-player-viewer');
@@ -236,20 +241,20 @@ function updateNavbarForLoggedInUser(user, profile) {
         if (role === 'player') {
             // Player nav items (same for HS and college players)
             navHTML = `
-                <a href="${window.location.origin}/frontend/${userFolder}/${mainPage}" class="nav-item ${feedActive}" id="feedNavItem">
+                <a href="${FE_BASE}/${userFolder}/${mainPage}" class="nav-item ${feedActive}" id="feedNavItem">
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
                         <polyline points="9 22 9 12 15 12 15 22"></polyline>
                     </svg>
                     <span>Feed</span>
                 </a>
-                <a href="${window.location.origin}/frontend/${userFolder}/tabs/discover-players.html" class="nav-item ${discoverActive}">
+                <a href="${FE_BASE}/${userFolder}/tabs/discover-players.html" class="nav-item ${discoverActive}">
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                     </svg>
                     <span>Discover</span>
                 </a>
-                <a href="${window.location.origin}/frontend/${userFolder}/tabs/my-profile.html" class="nav-item ${profileActive}" id="profileNavItem">
+                <a href="${FE_BASE}/${userFolder}/tabs/my-profile.html" class="nav-item ${profileActive}" id="profileNavItem">
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
                         <circle cx="12" cy="7" r="4"></circle>
@@ -257,21 +262,21 @@ function updateNavbarForLoggedInUser(user, profile) {
                     <span>My Profile</span>
                 </a>
                 ${(userFolder === 'hsplayer' || userFolder === 'transferplayer') ? `
-                <a href="${window.location.origin}/frontend/${userFolder}/tabs/ai-rep.html" class="nav-item nav-item-ai-rep">
+                <a href="${FE_BASE}/${userFolder}/tabs/ai-rep.html" class="nav-item nav-item-ai-rep">
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 16.8l-6.2 4.5 2.4-7.4L2 9.4h7.6z"/>
                     </svg>
                     <span>AI Rep</span>
                 </a>
                 ` : ''}
-                <a href="${window.location.origin}/frontend/${userFolder}/tabs/messages.html" class="nav-item ${messagesActive}" id="messagesNavItem">
+                <a href="${FE_BASE}/${userFolder}/tabs/messages.html" class="nav-item ${messagesActive}" id="messagesNavItem">
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
                     </svg>
                     <span>Messages</span>
                     <span class="notification-badge" style="display: none;"></span>
                 </a>
-                <a href="${window.location.origin}/frontend/${userFolder}/tabs/notifications.html" class="nav-item ${notificationsActive}">
+                <a href="${FE_BASE}/${userFolder}/tabs/notifications.html" class="nav-item ${notificationsActive}">
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
                         <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
@@ -280,7 +285,7 @@ function updateNavbarForLoggedInUser(user, profile) {
                     <span class="notification-badge" style="display: none;"></span>
                 </a>
                 ${isCollege ? `
-                <a href="${window.location.origin}/frontend/${userFolder}/tabs/transfer-portal.html" class="nav-item${isTransferPlayer ? ' nav-item-portal' : ''}" id="transferPortalNav">
+                <a href="${FE_BASE}/${userFolder}/tabs/transfer-portal.html" class="nav-item${isTransferPlayer ? ' nav-item-portal' : ''}" id="transferPortalNav">
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <circle cx="12" cy="12" r="10"></circle>
                         <path d="M8 12h8"></path>
@@ -290,7 +295,7 @@ function updateNavbarForLoggedInUser(user, profile) {
                     <span>Transfer Portal</span>
                 </a>
                 ` : ''}
-                <a href="${window.location.origin}/frontend/${userFolder}/tabs/settings.html" class="nav-item">
+                <a href="${FE_BASE}/${userFolder}/tabs/settings.html" class="nav-item">
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <circle cx="12" cy="12" r="3"></circle>
                         <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
@@ -301,35 +306,35 @@ function updateNavbarForLoggedInUser(user, profile) {
         } else if (role === 'coach') {
             // Coach nav items - different for HS vs college coaches
             navHTML = `
-                <a href="${window.location.origin}/frontend/${userFolder}/${mainPage}" class="nav-item ${feedActive}" id="feedNavItem">
+                <a href="${FE_BASE}/${userFolder}/${mainPage}" class="nav-item ${feedActive}" id="feedNavItem">
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
                         <polyline points="9 22 9 12 15 12 15 22"></polyline>
                     </svg>
                     <span>Feed</span>
                 </a>
-                <a href="${window.location.origin}/frontend/${userFolder}/tabs/discover-players.html" class="nav-item ${discoverActive}">
+                <a href="${FE_BASE}/${userFolder}/tabs/discover-players.html" class="nav-item ${discoverActive}">
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                     </svg>
                     <span>Discover</span>
                     ${userFolder === 'collegecoach' ? '<span class="nav-ai-badge">AI</span>' : ''}
                 </a>
-                <a href="${window.location.origin}/frontend/${userFolder}/tabs/my-profile.html" class="nav-item ${profileActive}" id="profileNavItem">
+                <a href="${FE_BASE}/${userFolder}/tabs/my-profile.html" class="nav-item ${profileActive}" id="profileNavItem">
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
                         <circle cx="12" cy="7" r="4"></circle>
                     </svg>
                     <span>My Profile</span>
                 </a>
-                <a href="${window.location.origin}/frontend/${userFolder}/tabs/messages.html" class="nav-item ${messagesActive}" id="messagesNavItem">
+                <a href="${FE_BASE}/${userFolder}/tabs/messages.html" class="nav-item ${messagesActive}" id="messagesNavItem">
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
                     </svg>
                     <span>Messages</span>
                     <span class="notification-badge" style="display: none;"></span>
                 </a>
-                <a href="${window.location.origin}/frontend/${userFolder}/tabs/notifications.html" class="nav-item ${notificationsActive}">
+                <a href="${FE_BASE}/${userFolder}/tabs/notifications.html" class="nav-item ${notificationsActive}">
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
                         <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
@@ -338,7 +343,7 @@ function updateNavbarForLoggedInUser(user, profile) {
                     <span class="notification-badge" style="display: none;"></span>
                 </a>
                 ${isCollege ? `
-                <a href="${window.location.origin}/frontend/${userFolder}/tabs/recruiting-board.html" class="nav-item" id="recruitingBoardNav">
+                <a href="${FE_BASE}/${userFolder}/tabs/recruiting-board.html" class="nav-item" id="recruitingBoardNav">
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
                         <line x1="9" y1="3" x2="9" y2="21"></line>
@@ -348,7 +353,7 @@ function updateNavbarForLoggedInUser(user, profile) {
                     </svg>
                     <span>Recruiting Board</span>
                 </a>
-                <a href="${window.location.origin}/frontend/${userFolder}/tabs/transfer-portal.html" class="nav-item" id="transferPortalNav">
+                <a href="${FE_BASE}/${userFolder}/tabs/transfer-portal.html" class="nav-item" id="transferPortalNav">
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <circle cx="12" cy="12" r="10"></circle>
                         <path d="M8 12h8"></path>
@@ -359,7 +364,7 @@ function updateNavbarForLoggedInUser(user, profile) {
                     ${userFolder === 'collegecoach' ? '<span class="nav-ai-badge">AI</span>' : ''}
                 </a>
                 ` : ''}
-                <a href="${window.location.origin}/frontend/${userFolder}/tabs/settings.html" class="nav-item">
+                <a href="${FE_BASE}/${userFolder}/tabs/settings.html" class="nav-item">
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <circle cx="12" cy="12" r="3"></circle>
                         <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
@@ -369,34 +374,34 @@ function updateNavbarForLoggedInUser(user, profile) {
             `;
         } else if (role === 'other') {
             navHTML = `
-                <a href="${window.location.origin}/frontend/other/mainpage-other.html" class="nav-item ${feedActive}" id="feedNavItem">
+                <a href="${FE_BASE}/other/mainpage-other.html" class="nav-item ${feedActive}" id="feedNavItem">
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
                         <polyline points="9 22 9 12 15 12 15 22"></polyline>
                     </svg>
                     <span>Feed</span>
                 </a>
-                <a href="${window.location.origin}/frontend/other/tabs/discover-players.html" class="nav-item ${discoverActive}">
+                <a href="${FE_BASE}/other/tabs/discover-players.html" class="nav-item ${discoverActive}">
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                     </svg>
                     <span>Discover</span>
                 </a>
-                <a href="${window.location.origin}/frontend/other/tabs/my-profile.html" class="nav-item ${profileActive}" id="profileNavItem">
+                <a href="${FE_BASE}/other/tabs/my-profile.html" class="nav-item ${profileActive}" id="profileNavItem">
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
                         <circle cx="12" cy="7" r="4"></circle>
                     </svg>
                     <span>My Profile</span>
                 </a>
-                <a href="${window.location.origin}/frontend/other/tabs/messages.html" class="nav-item ${messagesActive}" id="messagesNavItem">
+                <a href="${FE_BASE}/other/tabs/messages.html" class="nav-item ${messagesActive}" id="messagesNavItem">
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
                     </svg>
                     <span>Messages</span>
                     <span class="notification-badge" style="display: none;"></span>
                 </a>
-                <a href="${window.location.origin}/frontend/other/tabs/notifications.html" class="nav-item ${notificationsActive}">
+                <a href="${FE_BASE}/other/tabs/notifications.html" class="nav-item ${notificationsActive}">
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
                         <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
@@ -404,7 +409,7 @@ function updateNavbarForLoggedInUser(user, profile) {
                     <span>Notifications</span>
                     <span class="notification-badge" style="display: none;"></span>
                 </a>
-                <a href="${window.location.origin}/frontend/other/tabs/settings.html" class="nav-item">
+                <a href="${FE_BASE}/other/tabs/settings.html" class="nav-item">
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <circle cx="12" cy="12" r="3"></circle>
                         <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
@@ -643,6 +648,11 @@ function setupUserMenuDropdown(userFolder) {
     const userMenu = document.querySelector('.user-menu');
     if (!userMenu) return;
 
+    // In-app the bundle root is the frontend/ contents, so there is no '/frontend'
+    // path segment; on web there is. Mirror shared/api.js's prefix convention so
+    // these URLs resolve in BOTH the WKWebView and the browser.
+    const FE_BASE = window.location.origin + (window.location.pathname.startsWith('/frontend/') ? '/frontend' : '');
+
     // Remove existing listener by cloning and replacing (to avoid duplicate listeners)
     const newUserMenu = userMenu.cloneNode(true);
     userMenu.parentNode.replaceChild(newUserMenu, userMenu);
@@ -733,9 +743,9 @@ function setupUserMenuDropdown(userFolder) {
                     dropdown.remove();
                     showLogoutModal(userFolder);
                 } else if (action === 'profile') {
-                    window.location.href = `${window.location.origin}/frontend/${userFolder}/tabs/my-profile.html`;
+                    window.location.href = `${FE_BASE}/${userFolder}/tabs/my-profile.html`;
                 } else if (action === 'settings') {
-                    window.location.href = `${window.location.origin}/frontend/${userFolder}/tabs/settings.html`;
+                    window.location.href = `${FE_BASE}/${userFolder}/tabs/settings.html`;
                 }
 
                 dropdown.remove();
@@ -1520,6 +1530,11 @@ function updateProfileActions(hasPendingRequest = false) {
     const actionsContainer = document.querySelector('.profile-actions');
     if (!actionsContainer) return;
 
+    // In-app the bundle root is the frontend/ contents, so there is no '/frontend'
+    // path segment; on web there is. Mirror shared/api.js's prefix convention so
+    // these URLs resolve in BOTH the WKWebView and the browser.
+    const FE_BASE = window.location.origin + (window.location.pathname.startsWith('/frontend/') ? '/frontend' : '');
+
     // Store pending request status for follow button setup
     window.hasPendingFollowRequest = hasPendingRequest;
 
@@ -1561,7 +1576,7 @@ function updateProfileActions(hasPendingRequest = false) {
         const shareProfileBtn = document.querySelector('.btn-share-profile');
         if (shareProfileBtn) {
             shareProfileBtn.addEventListener('click', async function() {
-                const profileUrl = `${window.location.origin}/frontend/hscoach/tabs/my-profile.html?username=${currentProfile.username}`;
+                const profileUrl = `${FE_BASE}/hscoach/tabs/my-profile.html?username=${currentProfile.username}`;
                 try {
                     await navigator.clipboard.writeText(profileUrl);
                     showShareToast();
@@ -1624,7 +1639,7 @@ function updateProfileActions(hasPendingRequest = false) {
         const shareProfileBtn = document.querySelector('.btn-share-profile');
         if (shareProfileBtn) {
             shareProfileBtn.addEventListener('click', async function() {
-                const profileUrl = `${window.location.origin}/frontend/hscoach/tabs/my-profile.html?username=${currentProfile.username}`;
+                const profileUrl = `${FE_BASE}/hscoach/tabs/my-profile.html?username=${currentProfile.username}`;
                 try {
                     await navigator.clipboard.writeText(profileUrl);
                     showShareToast();
@@ -1682,6 +1697,11 @@ async function setupMessageButton() {
     const messageBtn = document.getElementById('messageBtn');
     if (!messageBtn || !viewingUserId) return;
 
+    // In-app the bundle root is the frontend/ contents, so there is no '/frontend'
+    // path segment; on web there is. Mirror shared/api.js's prefix convention so
+    // these URLs resolve in BOTH the WKWebView and the browser.
+    const FE_BASE = window.location.origin + (window.location.pathname.startsWith('/frontend/') ? '/frontend' : '');
+
     // Check message permissions
     try {
         const permissionResult = await API.get(`/follow/can-message/${viewingUserId}`);
@@ -1692,7 +1712,7 @@ async function setupMessageButton() {
             messageBtn.addEventListener('click', () => {
                 // Navigate to messages page with the userId to start/open conversation
                 const folder = loggedInUserFolder || 'hscoach';
-                window.location.href = `${window.location.origin}/frontend/${folder}/tabs/messages.html?userId=${viewingUserId}`;
+                window.location.href = `${FE_BASE}/${folder}/tabs/messages.html?userId=${viewingUserId}`;
             });
         } else {
             // Keep the button hidden (already hidden by default)
@@ -1704,7 +1724,7 @@ async function setupMessageButton() {
         messageBtn.style.display = '';
         messageBtn.addEventListener('click', () => {
             const folder = loggedInUserFolder || 'hscoach';
-            window.location.href = `${window.location.origin}/frontend/${folder}/tabs/messages.html?userId=${viewingUserId}`;
+            window.location.href = `${FE_BASE}/${folder}/tabs/messages.html?userId=${viewingUserId}`;
         });
     }
 }
@@ -1828,6 +1848,11 @@ function updateActiveNavItem() {
 }
 
 function setupUI() {
+    // In-app the bundle root is the frontend/ contents, so there is no '/frontend'
+    // path segment; on web there is. Mirror shared/api.js's prefix convention so
+    // these URLs resolve in BOTH the WKWebView and the browser.
+    const FE_BASE = window.location.origin + (window.location.pathname.startsWith('/frontend/') ? '/frontend' : '');
+
     // Sidebar toggle functionality - mainpage-coach.js handles the toggle event
     // This function only manages the sidebar visibility state
     const dashboardContainer = document.getElementById('dashboardContainer');
@@ -1981,7 +2006,7 @@ function setupUI() {
                 e.preventDefault();
                 // Navigate to logged-in user's profile using absolute path
                 if (loggedInUserFolder) {
-                    window.location.href = `${window.location.origin}/frontend/${loggedInUserFolder}/tabs/my-profile.html`;
+                    window.location.href = `${FE_BASE}/${loggedInUserFolder}/tabs/my-profile.html`;
                 } else {
                     // Fallback to relative path if folder not set
                     window.location.href = 'my-profile.html';
@@ -4868,7 +4893,11 @@ async function profileSharePost(postId, event) {
 
 function profileCopyPostLink(postId) {
     document.querySelector('.share-menu')?.remove();
-    const url = `${window.location.origin}/frontend/${getProfileFolder({ role: getUser()?.role || 'coach' })}/tabs/post-view.html?id=${postId}`;
+    // In-app the bundle root is the frontend/ contents, so there is no '/frontend'
+    // path segment; on web there is. Mirror shared/api.js's prefix convention so
+    // this URL resolves in BOTH the WKWebView and the browser.
+    const FE_BASE = window.location.origin + (window.location.pathname.startsWith('/frontend/') ? '/frontend' : '');
+    const url = `${FE_BASE}/${getProfileFolder({ role: getUser()?.role || 'coach' })}/tabs/post-view.html?id=${postId}`;
     navigator.clipboard.writeText(url).then(() => {
         showToast('Link copied to clipboard');
     }).catch(() => {

@@ -363,6 +363,11 @@ document.addEventListener('DOMContentLoaded', async function() {
     profileForm.addEventListener('submit', async function(e) {
         e.preventDefault();
 
+        // In-app the bundle root is the frontend/ contents, so there is no '/frontend'
+        // path segment; on web there is. Mirror shared/api.js's prefix convention so
+        // these URLs resolve in BOTH the WKWebView and the browser.
+        const FE_BASE = window.location.origin + (window.location.pathname.startsWith('/frontend/') ? '/frontend' : '');
+
         // Validate at least one position is selected
         if (selectedPositions.length === 0) {
             showToast('Please select at least one position.', 'warning');
@@ -541,8 +546,8 @@ document.addEventListener('DOMContentLoaded', async function() {
                     'transferplayer',
                     null,
                     'signup',
-                    window.location.origin + '/frontend/transferplayer/payment-success.html',
-                    window.location.origin + '/frontend/transferplayer/create-profile.html'
+                    FE_BASE + '/transferplayer/payment-success.html',
+                    FE_BASE + '/transferplayer/create-profile.html'
                 );
                 window.location.href = url;
             }

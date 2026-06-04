@@ -561,7 +561,11 @@ const authAPI = {
             // https://localhost) won't navigate on a bare root-relative path, so the redirect
             // silently no-op'd before (session cleared but page didn't change).
             clearAuth();
-            window.location.href = window.location.origin + '/frontend/landingpage/index.html';
+            // In-app the bundle root is the frontend/ contents, so there is no '/frontend'
+            // path segment; on web there is. Mirror shared/api.js's prefix convention so
+            // these URLs resolve in BOTH the WKWebView and the browser.
+            const FE_BASE = window.location.origin + (window.location.pathname.startsWith('/frontend/') ? '/frontend' : '');
+            window.location.href = FE_BASE + '/landingpage/index.html';
         }
     },
 
@@ -1422,7 +1426,11 @@ window.API_BASE_URL = API_BASE_URL;
 // Runs on every protected page. Redirects unpaid users on paid profile types.
 (function() {
     const PAID_FOLDERS = ['hsplayer', 'transferplayer', 'collegecoach'];
-    const paywallPath = window.location.origin + '/frontend/shared/subscription-required.html';
+    // In-app the bundle root is the frontend/ contents, so there is no '/frontend'
+    // path segment; on web there is. Mirror shared/api.js's prefix convention so
+    // these URLs resolve in BOTH the WKWebView and the browser.
+    const FE_BASE = window.location.origin + (window.location.pathname.startsWith('/frontend/') ? '/frontend' : '');
+    const paywallPath = FE_BASE + '/shared/subscription-required.html';
 
     // Skip if already on paywall, landing pages, or payment pages
     const path = window.location.pathname;
