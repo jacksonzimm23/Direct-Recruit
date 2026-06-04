@@ -167,11 +167,12 @@ document.addEventListener('DOMContentLoaded', async function() {
         const logoHtml = (typeof getSchoolLogoHTML === 'function') ? getSchoolLogoHTML(school, '../../assets', 14) : '';
         const schoolState = school + (state ? `, ${state}` : '');
         const line2Parts = [schoolState, shortDiv].filter(p => p);
-        // coach-card + data-is-college so the coach click handler (.coach-card /
-        // [data-is-college]) attaches on MOBILE — without these the mobile coach row
-        // matched no selector and tapping it did nothing (couldn't open the profile).
+        // data-is-college so the coach click handler matches this MOBILE row (the
+        // selector includes .discover-row[data-is-college]). Do NOT add .coach-card —
+        // that class has its own card styling and would change the row's look; the
+        // attribute is style-neutral.
         return `
-            <div class="discover-row coach-card" data-username="${coach.username || ''}" data-is-college="true">
+            <div class="discover-row" data-username="${coach.username || ''}" data-is-college="true">
                 <div class="discover-row-avatar coach-border" style="color: ${getRoleBorderColor('coach', false, coach.college_division)}; background: ${getRoleAvatarBg('coach', false, coach.college_division)}; border: 2px solid ${getRoleBorderColor('coach', false, coach.college_division)}">
                     ${profileImage ? `<img src="${profileImage}" alt="${displayName}">` : `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>`}
                 </div>
@@ -706,7 +707,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     // Attach click listeners to coach cards
     function attachCoachCardListeners() {
-        const coachCards = document.querySelectorAll('.coach-card, .discover-desktop-row[data-is-college]');
+        const coachCards = document.querySelectorAll('.coach-card, .discover-desktop-row[data-is-college], .discover-row[data-is-college]');
         coachCards.forEach(card => {
             card.style.cursor = 'pointer';
             card.addEventListener('click', function() {
