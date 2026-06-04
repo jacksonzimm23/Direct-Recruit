@@ -4,12 +4,37 @@
 // Safe to load on mobile web and desktop — it's a no-op there.
 // MUST load BEFORE api.js / feed.js / any other scripts that might
 // rely on `.ios-app` for conditional behavior.
-(function capacitorInit() {
-    try {
+(function bootstrapCapacitorInit() {
+    // The native Capacitor bridge (window.Capacitor) is injected by the WebView,
+    // but on a freshly-navigated page it may not be present yet when this script
+    // runs during <head> parsing. Previously we bailed permanently in that case,
+    // so .ios-app was never added — most visibly when navigating to another user's
+    // profile (header/content lost their safe-area offset and tucked under the
+    // status bar). Detect the platform with a few retries so .ios-app is applied
+    // as soon as the bridge is ready, regardless of navigation timing.
+    let attempts = 0;
+    function tryInit() {
         const cap = window.Capacitor;
-        if (!cap || typeof cap.isNativePlatform !== 'function') return;
-        if (!cap.isNativePlatform()) return;
+        const ready = cap && typeof cap.isNativePlatform === 'function';
+        if (!ready) {
+            if (attempts++ < 30) { setTimeout(tryInit, 50); return; }   // ~1.5s of retries
+            return; // not a native platform (web/desktop) — no-op
+        }
+        if (!cap.isNativePlatform()) return; // genuinely not native
+        capacitorInit(cap);
+    }
+    // Also re-check at DOMContentLoaded as a safety net (bridge is reliably ready by then)
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => {
+            if (!document.documentElement.classList.contains('ios-app')) tryInit();
+        }, { once: true });
+    }
+    tryInit();
+})();
 
+function capacitorInit(cap) {
+    if (document.documentElement.classList.contains('ios-app')) return; // already initialized
+    try {
         // Mark <html> for CSS scoping — as early as possible, before first paint
         document.documentElement.classList.add('ios-app');
 
@@ -324,4 +349,4 @@
     } catch (e) {
         console.error('[capacitorInit]', e);
     }
-})();
+}
