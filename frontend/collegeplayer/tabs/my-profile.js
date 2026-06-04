@@ -5572,8 +5572,9 @@ async function openProfileViewersModal() {
     // Show loading state
     modalBody.innerHTML = '<div class="follow-list-loading">Loading...</div>';
 
-    // Show modal
+    // Show modal + freeze background scroll (restored in closeProfileViewersModal)
     modal.classList.add('active');
+    document.body.style.overflow = 'hidden';
 
     try {
         if (typeof ensureSchoolLogosLoaded === 'function') await ensureSchoolLogosLoaded(_assetsPath);
@@ -5649,6 +5650,7 @@ function closeProfileViewersModal() {
     if (modal) {
         modal.classList.remove('active');
     }
+    document.body.style.overflow = ''; // Restore background scroll
 }
 
 // Navigate to a user's profile
