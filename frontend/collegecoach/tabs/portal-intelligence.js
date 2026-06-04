@@ -894,7 +894,9 @@ document.addEventListener('DOMContentLoaded', function() {
         if (history) {
             history.style.display = 'flex';
             history.style.position = 'fixed';
-            history.style.top = '0';
+            // Start below the in-app mobile header + iOS status bar (matches the
+            // .pi-layout container offset) so the "Chat History" header isn't cut off.
+            history.style.top = 'calc(50px + env(safe-area-inset-top, 0px))';
             history.style.left = '0';
             history.style.width = '68%';
             history.style.bottom = '0';
