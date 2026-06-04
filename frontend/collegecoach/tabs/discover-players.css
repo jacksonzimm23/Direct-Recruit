@@ -2292,8 +2292,12 @@
 }
 
 @media (max-width: 768px) {
+    /* Side margin 0 here: on the Find Players tab the .main-content has 1rem
+       horizontal padding, so 0 margin = 1rem total inset. On the AI tab the
+       container padding is 0, so a 1rem side margin is re-added below to keep
+       the subtabs the SAME (wider) width on both tabs. */
     .dp-subtabs {
-        margin: 0 1rem 0.4rem;
+        margin: 0 0 0.4rem;
     }
 
     .dp-subtab {

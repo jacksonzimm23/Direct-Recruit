@@ -1376,6 +1376,16 @@ html {
         padding: 0.25rem !important;
     }
 
+    /* On the AI tab, .main-content drops its 1rem horizontal padding (position:fixed
+       layout), so re-add a 1rem side margin to the subtabs there. Combined with the
+       0 side margin set in the page CSS for the non-AI tab (where the container keeps
+       its 1rem padding), the subtabs render at the SAME width on both tabs. */
+    .main-content:has(.dp-tab-content.active .ra-layout) .dp-subtabs,
+    .main-content:has(.tp-tab-content.active .pi-layout) .tp-subtabs {
+        margin-left: 1rem !important;
+        margin-right: 1rem !important;
+    }
+
     .dp-subtab,
     .tp-subtab {
         gap: 0.3rem !important;
