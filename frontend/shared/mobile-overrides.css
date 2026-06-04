@@ -821,6 +821,16 @@ html {
         overflow: hidden !important;
     }
 
+    /* Discover / Transfer Portal: in the padded (non-AI) tab layout, .main-content
+       uses padding-top 65px, which sits the subtabs 15px lower than on the AI tab
+       (fixed at top:50px). Match the AI-tab position so the subtabs section stays
+       put when toggling tabs. :not(:has(...active AI layout)) so this only applies
+       on the non-AI tab and never fights the AI tab's padding:0 fixed layout. */
+    .main-content:has(.dp-subtabs):not(:has(.dp-tab-content.active .ra-layout)),
+    .main-content:has(.tp-subtabs):not(:has(.tp-tab-content.active .pi-layout)) {
+        padding-top: 50px !important;
+    }
+
     .content-header {
         display: flex !important;
         position: relative !important;

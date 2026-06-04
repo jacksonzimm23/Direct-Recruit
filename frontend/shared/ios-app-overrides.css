@@ -59,6 +59,15 @@ html.ios-app body { background-color: inherit; }
         top: calc(50px + env(safe-area-inset-top, 0px)) !important;
     }
 
+    /* Discover / Transfer Portal padded (non-AI) tab: align subtabs with the AI-tab
+       position (50px) instead of the default 65px, including the safe-area inset.
+       :not(:has(...active AI layout)) so it only applies on the non-AI tab and never
+       fights the AI tab's fixed padding:0 layout. See mobile-overrides.css. */
+    .ios-app .main-content:has(.dp-subtabs):not(:has(.dp-tab-content.active .ra-layout)),
+    .ios-app .main-content:has(.tp-subtabs):not(:has(.tp-tab-content.active .pi-layout)) {
+        padding-top: calc(50px + env(safe-area-inset-top, 0px)) !important;
+    }
+
     /* ---- Modal headers: keep the X close button below the status bar ----
        Full-screen modals sit at top:0; their header positions the X via flex + header
        padding, so adding env(safe-area-inset-top) to the header's padding-top pushes the
