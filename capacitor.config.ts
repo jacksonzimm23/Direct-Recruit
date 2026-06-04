@@ -25,7 +25,11 @@ const config: CapacitorConfig = {
     // 'never' = CSS controls safe-area padding (Phase 2b)
     contentInset: 'never',
     allowsLinkPreview: false,
-    scrollEnabled: true
+    scrollEnabled: true,
+    // Makes the WKWebView inspectable from Safari's Develop menu even in
+    // release/TestFlight builds (defaults to false for release on iOS 16.4+).
+    // TODO: set back to false before App Store submission.
+    webContentsDebuggingEnabled: true
   },
 
   plugins: {
