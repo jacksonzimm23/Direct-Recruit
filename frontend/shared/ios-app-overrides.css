@@ -83,8 +83,20 @@ html.ios-app body { background-color: inherit; }
     .ios-app .season-select-modal-header,
     .ios-app .switch-modal-header,
     .ios-app .email-verification-modal-header,
-    .ios-app .forgot-password-modal-header {
+    .ios-app .forgot-password-modal-header,
+    /* AI Recruiting Assistant + Portal Intelligence full-screen modals (base 1.25rem) */
+    .ios-app .ra-usage-header,
+    .ios-app .ra-baselines-header,
+    .ios-app .pi-usage-header {
         padding-top: calc(1.25rem + env(safe-area-inset-top, 0px)) !important;
+    }
+    /* AI RA saved modal (base 1rem) */
+    .ios-app .ra-saved-header {
+        padding-top: calc(1rem + env(safe-area-inset-top, 0px)) !important;
+    }
+    /* AI PI watchlist modal (base 20px) */
+    .ios-app .pi-watchlist-header {
+        padding-top: calc(20px + env(safe-area-inset-top, 0px)) !important;
     }
 }
 
