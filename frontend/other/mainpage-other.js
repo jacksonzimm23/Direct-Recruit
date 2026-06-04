@@ -14,7 +14,8 @@ async function verifyUserType() {
             });
             if (correctFolder !== 'other') {
                 const pageName = response.user.role === 'coach' ? 'mainpage-coach.html' : 'mainpage-player.html';
-                window.location.href = `../${correctFolder}/${pageName}`;
+                // iOS WKWebView: bare-relative navs no-op; resolve to absolute URL against current page
+                window.location.href = new URL(`../${correctFolder}/${pageName}`, window.location.href).href;
                 return;
             }
         }
@@ -196,11 +197,11 @@ document.addEventListener('DOMContentLoaded', async function() {
                     } else if (action === 'profile') {
                         // Check if we're in tabs folder or main folder
                         const isInTabsFolder = window.location.pathname.includes('/tabs/');
-                        window.location.href = isInTabsFolder ? 'my-profile.html' : 'tabs/my-profile.html';
+                        window.location.href = new URL(isInTabsFolder ? 'my-profile.html' : 'tabs/my-profile.html', window.location.href).href;
                     } else if (action === 'settings') {
                         // Check if we're in tabs folder or main folder
                         const isInTabsFolder = window.location.pathname.includes('/tabs/');
-                        window.location.href = isInTabsFolder ? 'settings.html' : 'tabs/settings.html';
+                        window.location.href = new URL(isInTabsFolder ? 'settings.html' : 'tabs/settings.html', window.location.href).href;
                     }
 
                     dropdown.remove();
@@ -884,7 +885,7 @@ async function openMobileProfileViewersModal() {
                         const folder = getProfileFolder({ role, ...profile });
                         const isInTabs = window.location.pathname.includes('/tabs/');
                         const basePath = isInTabs ? '../../' : '../';
-                        window.location.href = `${basePath}${folder}/tabs/my-profile.html?username=${profile.username}&from=profile`;
+                        window.location.href = new URL(`${basePath}${folder}/tabs/my-profile.html?username=${profile.username}&from=profile`, window.location.href).href;
                     }
                 } catch (error) {
                     console.error('Error fetching profile:', error);

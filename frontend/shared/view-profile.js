@@ -15,7 +15,10 @@ document.addEventListener('DOMContentLoaded', async function() {
     try {
         // Check if user is authenticated (use API helper which knows the correct token key)
         if (!API.isAuthenticated()) {
-            window.location.href = '../landingpage/index.html';
+            // Resolve relative nav to an absolute URL so it works in the iOS WKWebView
+            // (bare/relative targets silently no-op there). new URL(rel, location.href)
+            // correctly preserves the /frontend prefix on web and its absence in-app.
+            window.location.href = new URL('../landingpage/index.html', window.location.href).href;
             return;
         }
 
@@ -54,7 +57,10 @@ document.addEventListener('DOMContentLoaded', async function() {
         if (fromParam) {
             targetUrl += `&from=${encodeURIComponent(fromParam)}`;
         }
-        window.location.replace(targetUrl);
+        // Resolve relative nav to an absolute URL so it works in the iOS WKWebView
+        // (bare/relative targets silently no-op there). new URL(rel, location.href)
+        // correctly preserves the /frontend prefix on web and its absence in-app.
+        window.location.replace(new URL(targetUrl, window.location.href).href);
 
     } catch (error) {
         // Don't redirect to login for all errors - only for auth errors

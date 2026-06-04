@@ -161,7 +161,10 @@ function showConfirmationModal() {
     const confirmBtn = document.getElementById('modalConfirmBtn');
     confirmBtn.addEventListener('click', () => {
         modalOverlay.remove();
-        window.location.href = 'settings.html#profile-type';
+        // Resolve relative nav to an absolute URL so it works in the iOS WKWebView
+        // (bare/relative targets silently no-op there). new URL(rel, location.href)
+        // correctly preserves the /frontend prefix on web and its absence in-app.
+        window.location.href = new URL('settings.html#profile-type', window.location.href).href;
     });
 
     // Close on overlay click

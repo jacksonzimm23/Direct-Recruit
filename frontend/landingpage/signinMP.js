@@ -12,20 +12,26 @@ document.addEventListener('DOMContentLoaded', function() {
             const remember = document.getElementById('remember').checked;
             
             // Redirect to main dashboard
-            window.location.href = 'mainpage.html';
+            // Resolve relative nav to an absolute URL so it works in the iOS WKWebView
+            // (bare/relative targets silently no-op there). new URL(rel, location.href)
+            // correctly preserves the /frontend prefix on web and its absence in-app.
+            window.location.href = new URL('mainpage.html', window.location.href).href;
         });
     }
-    
+
     // Google Sign In Handler
     const googleBtn = document.querySelector('.btn-social.google');
     if (googleBtn) {
         googleBtn.addEventListener('click', function() {
 
             // Redirect to main dashboard
-            window.location.href = 'mainpage.html';
+            // Resolve relative nav to an absolute URL so it works in the iOS WKWebView
+            // (bare/relative targets silently no-op there). new URL(rel, location.href)
+            // correctly preserves the /frontend prefix on web and its absence in-app.
+            window.location.href = new URL('mainpage.html', window.location.href).href;
         });
     }
-    
+
     // Add smooth animations
     const inputs = document.querySelectorAll('.form-group input');
     inputs.forEach(input => {

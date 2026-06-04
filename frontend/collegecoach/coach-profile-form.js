@@ -45,7 +45,10 @@ document.addEventListener('DOMContentLoaded', async function() {
         // come back here automatically after authenticating.
         if (isSwitchMode && typeof isAuthenticated === 'function' && !isAuthenticated()) {
             const nextUrl = encodeURIComponent(window.location.pathname + window.location.search);
-            window.location.href = '../landingpage/signin.html?next=' + nextUrl;
+            // Resolve relative nav to an absolute URL so it works in the iOS WKWebView
+            // (bare/relative targets silently no-op there). new URL(rel, location.href)
+            // preserves the /frontend prefix on web and its absence in-app.
+            window.location.href = new URL('../landingpage/signin.html?next=' + nextUrl, window.location.href).href;
             return;
         }
 
@@ -583,7 +586,10 @@ document.addEventListener('DOMContentLoaded', async function() {
                     // Same-price transition (or already paid same tier) — switch is done. Go to mainpage.
                     showToast('Switched to College Coach!', 'success');
                     setTimeout(() => {
-                        window.location.href = 'mainpage-coach.html';
+                        // Resolve relative nav to an absolute URL so it works in the iOS WKWebView
+                        // (bare/relative targets silently no-op there). new URL(rel, location.href)
+                        // preserves the /frontend prefix on web and its absence in-app.
+                        window.location.href = new URL('mainpage-coach.html', window.location.href).href;
                     }, 1200);
                 }
             } else if (isFreeMode) {
@@ -599,7 +605,10 @@ document.addEventListener('DOMContentLoaded', async function() {
                 // mainpage-coach.js catches anyone who slips past anyway.
                 await profileAPI.createCoachProfile(profileData);
                 localStorage.setItem('pendingVerificationEmail', email);
-                window.location.replace('verify-email.html');
+                // Resolve relative nav to an absolute URL so it works in the iOS WKWebView
+                // (bare/relative targets silently no-op there). new URL(rel, location.href)
+                // preserves the /frontend prefix on web and its absence in-app.
+                window.location.replace(new URL('verify-email.html', window.location.href).href);
             } else {
                 // New signups: store profile data and show tier selection
                 localStorage.setItem('pendingProfileData', JSON.stringify(profileData));
@@ -730,12 +739,15 @@ function showSuccessMessage(isUpdating) {
     form.style.pointerEvents = 'none';
 
     setTimeout(() => {
+        // Resolve relative nav to an absolute URL so it works in the iOS WKWebView
+        // (bare/relative targets silently no-op there). new URL(rel, location.href)
+        // preserves the /frontend prefix on web and its absence in-app.
         if (isUpdating) {
             // Updates redirect to mainpage
-            window.location.href = 'mainpage-coach.html';
+            window.location.href = new URL('mainpage-coach.html', window.location.href).href;
         } else {
             // New registrations redirect to email verification
-            window.location.href = 'verify-email.html';
+            window.location.href = new URL('verify-email.html', window.location.href).href;
         }
     }, 2000);
 }
@@ -937,10 +949,13 @@ function showTierSelectionModal() {
                             }
 
                             // Match web flow: switch -> mainpage, new signup -> verify-email
+                            // Resolve relative nav to an absolute URL so it works in the iOS WKWebView
+                            // (bare/relative targets silently no-op there). new URL(rel, location.href)
+                            // preserves the /frontend prefix on web and its absence in-app.
                             if (profileData && profileData._isSwitch) {
-                                window.location.href = 'mainpage-coach.html';
+                                window.location.href = new URL('mainpage-coach.html', window.location.href).href;
                             } else {
-                                window.location.href = 'verify-email.html';
+                                window.location.href = new URL('verify-email.html', window.location.href).href;
                             }
                         } catch (innerErr) {
                             console.error('Post-IAP profile setup error:', innerErr);

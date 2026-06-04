@@ -370,7 +370,8 @@ document.addEventListener('DOMContentLoaded', async function() {
             card.addEventListener('click', function() {
                 if (username) {
                     // Navigate to transfer player profile (transfer portal shows transfer players)
-                    window.location.href = `../../transferplayer/tabs/my-profile.html?username=${username}&from=transfer-portal`;
+                    // iOS WKWebView: wrap bare-relative nav in new URL(...) so it resolves to an absolute URL
+                    window.location.href = new URL(`../../transferplayer/tabs/my-profile.html?username=${username}&from=transfer-portal`, window.location.href).href;
                 } else {
                     showToast('Profile not available. User has not set up their profile yet.', 'warning');
                 }
@@ -383,7 +384,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                     e.stopPropagation();
                     if (username) {
                         // Navigate to transfer player profile (transfer portal shows transfer players)
-                        window.location.href = `../../transferplayer/tabs/my-profile.html?username=${username}&from=transfer-portal`;
+                        window.location.href = new URL(`../../transferplayer/tabs/my-profile.html?username=${username}&from=transfer-portal`, window.location.href).href;
                     } else {
                         showToast('Profile not available. User has not set up their profile yet.', 'warning');
                     }

@@ -14,7 +14,10 @@
         document.getElementById('statusTitle').textContent = 'Payment Successful!';
         document.getElementById('statusMessage').innerHTML = 'Redirecting to your dashboard... If not redirected, <a href="../landingpage/signin.html" class="ps-link">sign in here</a>.';
         setTimeout(() => {
-            window.location.href = '../landingpage/signin.html';
+            // Resolve relative nav to an absolute URL so it works in the iOS WKWebView
+            // (bare/relative targets silently no-op there). new URL(rel, location.href)
+            // correctly preserves the /frontend prefix on web and its absence in-app.
+            window.location.href = new URL('../landingpage/signin.html', window.location.href).href;
         }, 3000);
     }
 })();

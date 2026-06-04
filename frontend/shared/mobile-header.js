@@ -143,27 +143,33 @@ async function updateMobileHeader() {
             // Fix mobile sidebar nav links to point to logged-in user's role folder
             const userFolder = getProfileFolder({ role: user.role, is_transfer_player: user.is_transfer_player, college_division: profile.college_division });
 
-            // Check if we're on a different role's page
+            // Detect the CURRENT role folder. Path is /frontend/<role>/... on web
+            // but /<role>/... inside the Capacitor iOS app bundle. Detect either.
             const currentPath = window.location.pathname;
-            const pathParts = currentPath.split('/');
-            const frontendIdx = pathParts.indexOf('frontend');
-            if (frontendIdx !== -1 && pathParts[frontendIdx + 1] !== userFolder) {
-                // We're on a different role's page — rewrite mobile sidebar links
-                const correctBase = `../../${userFolder}/tabs/`;
-                const profileLink = document.getElementById('mobileSidebarProfileLink');
-                if (profileLink) profileLink.href = correctBase + 'my-profile.html';
+            const fe = currentPath.startsWith('/frontend/') ? '/frontend' : '';
+            const after = fe ? currentPath.slice(fe.length) : currentPath; // -> /<role>/...
+            const currentRole = after.split('/').filter(Boolean)[0] || '';
 
-                const sidebarNavItems = document.querySelectorAll('.mobile-sidebar-nav .mobile-sidebar-nav-item');
-                sidebarNavItems.forEach(item => {
-                    const href = item.getAttribute('href');
-                    if (!href || item.tagName === 'BUTTON') return;
-                    if (href.includes('my-profile.html')) {
-                        item.href = correctBase + 'my-profile.html';
-                    } else if (href.includes('settings.html')) {
-                        item.href = correctBase + 'settings.html';
-                    }
-                });
-            }
+            // If we're on a different role's page, links must target the logged-in
+            // user's folder; otherwise normalize to the current role's folder. Either
+            // way, build an ABSOLUTE base so the hrefs actually navigate in WKWebView
+            // (bare relative paths silently no-op inside the iOS app).
+            const targetRole = (currentRole && currentRole !== userFolder) ? userFolder : (currentRole || userFolder);
+            const correctBase = window.location.origin + fe + '/' + targetRole + '/tabs/';
+
+            const profileLink = document.getElementById('mobileSidebarProfileLink');
+            if (profileLink) profileLink.href = correctBase + 'my-profile.html';
+
+            const sidebarNavItems = document.querySelectorAll('.mobile-sidebar-nav .mobile-sidebar-nav-item');
+            sidebarNavItems.forEach(item => {
+                const href = item.getAttribute('href');
+                if (!href || item.tagName === 'BUTTON') return;
+                if (href.includes('my-profile.html')) {
+                    item.href = correctBase + 'my-profile.html';
+                } else if (href.includes('settings.html')) {
+                    item.href = correctBase + 'settings.html';
+                }
+            });
         }
     } catch (error) {
         console.error('Error updating mobile header:', error);

@@ -545,10 +545,16 @@ function showSuccessMessage(isUpdating) {
     setTimeout(() => {
         if (isUpdating) {
             // Updates redirect to mainpage
-            window.location.href = 'mainpage-player.html';
+            // Resolve relative nav to an absolute URL so it works in the iOS WKWebView
+            // (bare/relative targets silently no-op there). new URL(rel, location.href)
+            // correctly preserves the /frontend prefix on web and its absence in-app.
+            window.location.href = new URL('mainpage-player.html', window.location.href).href;
         } else {
             // New registrations redirect to email verification
-            window.location.href = 'verify-email.html';
+            // Resolve relative nav to an absolute URL so it works in the iOS WKWebView
+            // (bare/relative targets silently no-op there). new URL(rel, location.href)
+            // correctly preserves the /frontend prefix on web and its absence in-app.
+            window.location.href = new URL('verify-email.html', window.location.href).href;
         }
     }, 2000);
 }

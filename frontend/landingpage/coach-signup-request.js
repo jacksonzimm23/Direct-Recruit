@@ -84,7 +84,10 @@
         const isAuthed = (typeof isAuthenticated === 'function') ? isAuthenticated() : false;
         if (!isAuthed) {
             const next = encodeURIComponent(window.location.pathname + window.location.search);
-            window.location.href = 'signin.html?next=' + next;
+            // Resolve relative nav to an absolute URL so it works in the iOS WKWebView
+            // (bare/relative targets silently no-op there). new URL(rel, location.href)
+            // correctly preserves the /frontend prefix on web and its absence in-app.
+            window.location.href = new URL('signin.html?next=' + next, window.location.href).href;
             return;
         }
 

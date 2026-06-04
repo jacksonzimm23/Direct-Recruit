@@ -355,7 +355,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (username) {
                         // Navigate to appropriate player profile folder
                         const folder = playerType === 'college' ? 'collegeplayer' : 'hsplayer';
-                        window.location.href = `../../${folder}/tabs/my-profile.html?username=${username}&from=discover`;
+                        // iOS WKWebView: resolve bare-relative target to an absolute URL so it navigates
+                        window.location.href = new URL(`../../${folder}/tabs/my-profile.html?username=${username}&from=discover`, window.location.href).href;
                     } else {
                         showToast('Profile not available. User has not set up their profile yet.', 'warning');
                     }
@@ -369,7 +370,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (username) {
                     // Navigate to appropriate player profile folder
                     const folder = playerType === 'college' ? 'collegeplayer' : 'hsplayer';
-                    window.location.href = `../../${folder}/tabs/my-profile.html?username=${username}&from=discover`;
+                    window.location.href = new URL(`../../${folder}/tabs/my-profile.html?username=${username}&from=discover`, window.location.href).href;
                 }
             });
         });
@@ -528,7 +529,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (username) {
                     const isCollegeCoach = this.dataset.isCollege === 'true' || this.querySelector('.coach-badge')?.textContent?.includes('🎓');
                     const folder = isCollegeCoach ? 'collegecoach' : 'hscoach';
-                    window.location.href = `../../${folder}/tabs/my-profile.html?username=${username}&from=discover`;
+                    window.location.href = new URL(`../../${folder}/tabs/my-profile.html?username=${username}&from=discover`, window.location.href).href;
                 } else {
                     showToast('Profile not available. Coach has not set up their profile yet.', 'warning');
                 }
@@ -544,7 +545,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (username) {
                     const isCollegeCoach = this.dataset.isCollege === 'true';
                     const folder = isCollegeCoach ? 'collegecoach' : 'hscoach';
-                    window.location.href = `../../${folder}/tabs/my-profile.html?username=${username}&from=discover`;
+                    window.location.href = new URL(`../../${folder}/tabs/my-profile.html?username=${username}&from=discover`, window.location.href).href;
                 } else {
                     showToast('Profile not available. Coach has not set up their profile yet.', 'warning');
                 }

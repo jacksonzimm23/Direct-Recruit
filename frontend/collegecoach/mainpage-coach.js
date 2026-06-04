@@ -241,10 +241,11 @@ document.addEventListener('DOMContentLoaded', async function() {
                         showLogoutModal();
                     } else if (action === 'profile') {
                         const isInTabsFolder = window.location.pathname.includes('/tabs/');
-                        window.location.href = isInTabsFolder ? 'my-profile.html' : 'tabs/my-profile.html';
+                        // iOS WKWebView: bare-relative navs no-op; resolve to absolute against current page.
+                        window.location.href = new URL(isInTabsFolder ? 'my-profile.html' : 'tabs/my-profile.html', window.location.href).href;
                     } else if (action === 'settings') {
                         const isInTabsFolder = window.location.pathname.includes('/tabs/');
-                        window.location.href = isInTabsFolder ? 'settings.html' : 'tabs/settings.html';
+                        window.location.href = new URL(isInTabsFolder ? 'settings.html' : 'tabs/settings.html', window.location.href).href;
                     }
 
                     dropdown.remove();
@@ -327,13 +328,13 @@ async function verifyCoachType() {
         // email_verified=true. replace() prevents Back-button regression here.
         if (response.user && !response.user.email_verified) {
             localStorage.setItem('pendingVerificationEmail', response.user.email);
-            window.location.replace('verify-email.html');
+            window.location.replace(new URL('verify-email.html', window.location.href).href);
             return;
         }
         if (response.user && response.profile) {
             const correctFolder = getProfileFolder({ role: response.user.role, is_transfer_player: response.user.is_transfer_player, ...response.profile });
             if (correctFolder !== 'collegecoach') {
-                window.location.href = `../${correctFolder}/mainpage-coach.html`;
+                window.location.href = new URL(`../${correctFolder}/mainpage-coach.html`, window.location.href).href;
                 return;
             }
         }
@@ -1076,7 +1077,7 @@ async function openMobileProfileViewersModal() {
                         const folder = getProfileFolder({ role, ...profile });
                         const isInTabs = window.location.pathname.includes('/tabs/');
                         const basePath = isInTabs ? '../../' : '../';
-                        window.location.href = `${basePath}${folder}/tabs/my-profile.html?username=${profile.username}&from=profile`;
+                        window.location.href = new URL(`${basePath}${folder}/tabs/my-profile.html?username=${profile.username}&from=profile`, window.location.href).href;
                     }
                 } catch (error) {
                     console.error('Error fetching profile:', error);

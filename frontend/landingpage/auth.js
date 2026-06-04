@@ -24,7 +24,10 @@
         else if (meData.user.role === 'coach') pageName = 'mainpage-coach.html';
         else pageName = 'mainpage-other.html';
 
-        window.location.href = `../${folder}/${pageName}`;
+        // Resolve relative nav to an absolute URL so it works in the iOS WKWebView
+        // (bare/relative targets silently no-op there). new URL(rel, location.href)
+        // correctly preserves the /frontend prefix on web and its absence in-app.
+        window.location.href = new URL(`../${folder}/${pageName}`, window.location.href).href;
     } catch (e) {
         // Session invalid — clear stale preference and show login form
         localStorage.removeItem('dr_remember_me');
@@ -86,14 +89,17 @@ if (document.getElementById('signinForm')) {
                         ...meData.profile
                     });
                     const pageName = data.user.role === 'player' ? 'mainpage-player.html' : 'mainpage-coach.html';
-                    window.location.href = `../${folder}/${pageName}`;
+                    // Resolve relative nav to an absolute URL so it works in the iOS WKWebView
+                    // (bare/relative targets silently no-op there). new URL(rel, location.href)
+                    // correctly preserves the /frontend prefix on web and its absence in-app.
+                    window.location.href = new URL(`../${folder}/${pageName}`, window.location.href).href;
                 } catch (profileError) {
                     // If profile fetch fails, use safe defaults
                     const fallback = data.user.role === 'player' ? '../hsplayer/mainpage-player.html' : '../hscoach/mainpage-coach.html';
-                    window.location.href = fallback;
+                    window.location.href = new URL(fallback, window.location.href).href;
                 }
             } else if (data.user.role === 'other') {
-                window.location.href = '../other/mainpage-other.html';
+                window.location.href = new URL('../other/mainpage-other.html', window.location.href).href;
             }
         } catch (error) {
             // If email not verified, redirect to verify-email page
@@ -112,7 +118,7 @@ if (document.getElementById('signinForm')) {
                 } else {
                     folder = 'hsplayer';
                 }
-                window.location.href = `../${folder}/verify-email.html`;
+                window.location.href = new URL(`../${folder}/verify-email.html`, window.location.href).href;
                 return;
             }
             // Show inline error message instead of alert
@@ -137,18 +143,18 @@ function selectRole(role) {
         // Show coach type selection modal
         showCoachTypeModal();
     } else if (role === 'hscoach') {
-        window.location.href = '../hscoach/create-coach-profile.html';
+        window.location.href = new URL('../hscoach/create-coach-profile.html', window.location.href).href;
     } else if (role === 'collegecoach') {
         // College coach signup is invite-only — send to the contact form
-        window.location.href = 'coach-signup-request.html';
+        window.location.href = new URL('coach-signup-request.html', window.location.href).href;
     } else if (role === 'hsplayer') {
-        window.location.href = '../hsplayer/create-profile.html';
+        window.location.href = new URL('../hsplayer/create-profile.html', window.location.href).href;
     } else if (role === 'collegeplayer') {
-        window.location.href = '../collegeplayer/create-profile.html';
+        window.location.href = new URL('../collegeplayer/create-profile.html', window.location.href).href;
     } else if (role === 'transferplayer') {
-        window.location.href = '../transferplayer/create-profile.html';
+        window.location.href = new URL('../transferplayer/create-profile.html', window.location.href).href;
     } else if (role === 'other') {
-        window.location.href = '../other/create-profile.html';
+        window.location.href = new URL('../other/create-profile.html', window.location.href).href;
     }
 }
 
@@ -635,13 +641,13 @@ function showRegistrationModal(role) {
 
             // Redirect to profile creation
             if (role === 'hsplayer') {
-                window.location.href = '../hsplayer/create-profile.html';
+                window.location.href = new URL('../hsplayer/create-profile.html', window.location.href).href;
             } else if (role === 'collegeplayer') {
-                window.location.href = '../collegeplayer/create-profile.html';
+                window.location.href = new URL('../collegeplayer/create-profile.html', window.location.href).href;
             } else if (role === 'hscoach') {
-                window.location.href = '../hscoach/create-coach-profile.html';
+                window.location.href = new URL('../hscoach/create-coach-profile.html', window.location.href).href;
             } else if (role === 'collegecoach') {
-                window.location.href = '../collegecoach/create-coach-profile.html';
+                window.location.href = new URL('../collegecoach/create-coach-profile.html', window.location.href).href;
             }
         } catch (error) {
             showToast('Registration failed: ' + error.message, 'error');

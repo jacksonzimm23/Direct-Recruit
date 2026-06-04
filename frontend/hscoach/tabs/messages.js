@@ -500,7 +500,10 @@ function showThreadMoreMenu(event, userId, displayName) {
                 }
                 const ok = await window.confirmAndBlock({ userId, displayName });
                 if (ok) {
-                    window.location.href = '../mainpage-coach.html';
+                    // Resolve relative nav to an absolute URL so it works in the iOS WKWebView
+                    // (bare/relative targets silently no-op there). new URL(rel, location.href)
+                    // correctly preserves the /frontend prefix on web and its absence in-app.
+                    window.location.href = new URL('../mainpage-coach.html', window.location.href).href;
                 }
             }
         });
@@ -888,7 +891,10 @@ async function navigateToProfile(userId, role) {
             sessionStorage.setItem('messagesReturnConversationId', currentConversationId);
 
             const folder = getProfileFolder({ role, ...response.profile });
-            window.location.href = `../../${folder}/tabs/my-profile.html?username=${response.profile.username}&from=messages`;
+            // Resolve relative nav to an absolute URL so it works in the iOS WKWebView
+            // (bare/relative targets silently no-op there). new URL(rel, location.href)
+            // correctly preserves the /frontend prefix on web and its absence in-app.
+            window.location.href = new URL(`../../${folder}/tabs/my-profile.html?username=${response.profile.username}&from=messages`, window.location.href).href;
         }
     } catch (error) {
         console.error('Failed to get profile:', error);

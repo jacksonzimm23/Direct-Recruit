@@ -1445,7 +1445,7 @@ async function setupMessageButton() {
             messageBtn.style.display = '';
             messageBtn.addEventListener('click', () => {
                 // Navigate to messages with this user
-                window.location.href = `messages.html?userId=${viewingUserId}`;
+                window.location.href = new URL(`messages.html?userId=${viewingUserId}`, window.location.href).href;
             });
         } else {
             // Keep the button hidden (already hidden by default)
@@ -1456,7 +1456,7 @@ async function setupMessageButton() {
         // On error, show the button (fail open for better UX)
         messageBtn.style.display = '';
         messageBtn.addEventListener('click', () => {
-            window.location.href = `messages.html?userId=${viewingUserId}`;
+            window.location.href = new URL(`messages.html?userId=${viewingUserId}`, window.location.href).href;
         });
     }
 }
@@ -2063,7 +2063,7 @@ async function showFollowListModal(type) {
                 const folder = getProfileFolder({ role, is_transfer_player: isTransfer, college_division: division });
                 hideFollowListModal();
                 const currentFrom = new URLSearchParams(window.location.search).get('from') || 'profile';
-                window.location.href = `../../${folder}/tabs/my-profile.html?username=${username}&from=${currentFrom}`;
+                window.location.href = new URL(`../../${folder}/tabs/my-profile.html?username=${username}&from=${currentFrom}`, window.location.href).href;
             });
         });
 
@@ -2400,12 +2400,12 @@ function buildMediaGridHTML(mediaUrls, mediaType) {
 
 // Navigate to single post view
 function navigateToPost(postId) {
-    window.location.href = `post-view.html?id=${postId}&ref=profile`;
+    window.location.href = new URL(`post-view.html?id=${postId}&ref=profile`, window.location.href).href;
 }
 
 // Navigate to quote post single page
 function navigateToQuotePost(shareId) {
-    window.location.href = `post-view.html?share=${shareId}`;
+    window.location.href = new URL(`post-view.html?share=${shareId}`, window.location.href).href;
 }
 
 // Media slideshow functionality for profile pages
@@ -3803,7 +3803,7 @@ async function reportQuote(shareId) {
 function goToProfile(identifier, role, collegeDivision, userId, isTransfer) {
     // Check if clicking on own profile - just go to my-profile.html
     if (userId === currentUserId) {
-        window.location.href = 'my-profile.html';
+        window.location.href = new URL('my-profile.html', window.location.href).href;
         return;
     }
 
@@ -3815,7 +3815,7 @@ function goToProfile(identifier, role, collegeDivision, userId, isTransfer) {
         : `id=${userId}`;
 
     const navFrom = new URLSearchParams(window.location.search).get('from') || 'profile';
-    window.location.href = `../../${folder}/tabs/my-profile.html?${param}&from=${navFrom}`;
+    window.location.href = new URL(`../../${folder}/tabs/my-profile.html?${param}&from=${navFrom}`, window.location.href).href;
 }
 
 // Build meta info for post author (handles all profile types)
@@ -5999,7 +5999,7 @@ async function openProfileViewersModal() {
                         const profile = profileResponse.profile;
                         const folder = getProfileFolder({ role, ...profile });
                         const currentFrom = new URLSearchParams(window.location.search).get('from') || 'profile';
-                        window.location.href = `../../${folder}/tabs/my-profile.html?username=${profile.username}&from=${currentFrom}`;
+                        window.location.href = new URL(`../../${folder}/tabs/my-profile.html?username=${profile.username}&from=${currentFrom}`, window.location.href).href;
                     }
                 } catch (error) {
                     console.error('Error fetching profile:', error);

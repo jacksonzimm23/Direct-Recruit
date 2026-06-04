@@ -641,7 +641,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 // userType is already the folder name (hsplayer, collegeplayer, etc.)
                 const folder = userType || 'other';
-                window.location.href = `../../${folder}/tabs/my-profile.html?username=${username}&from=discover`;
+                // Resolve relative target to absolute so it navigates in iOS WKWebView (bare-relative no-ops there)
+                window.location.href = new URL(`../../${folder}/tabs/my-profile.html?username=${username}&from=discover`, window.location.href).href;
             };
 
             if (viewBtn) {

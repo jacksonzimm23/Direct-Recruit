@@ -498,19 +498,20 @@ document.addEventListener('DOMContentLoaded', function() {
         row.querySelector('.ra-btn-view-profile').addEventListener('click', (e) => {
             e.stopPropagation();
             sessionStorage.setItem('raScrollPosition', String(messagesContainer.scrollTop));
+            // iOS WKWebView: wrap bare-relative nav in new URL(...) so it resolves to an absolute URL
             if (player.username) {
-                window.location.href = `../../shared/view-profile.html?username=${player.username}&from=discover`;
+                window.location.href = new URL(`../../shared/view-profile.html?username=${player.username}&from=discover`, window.location.href).href;
             } else if (player.user_id) {
-                window.location.href = `../../shared/view-profile.html?userId=${player.user_id}&from=discover`;
+                window.location.href = new URL(`../../shared/view-profile.html?userId=${player.user_id}&from=discover`, window.location.href).href;
             }
         });
 
         row.addEventListener('click', () => {
             sessionStorage.setItem('raScrollPosition', String(messagesContainer.scrollTop));
             if (player.username) {
-                window.location.href = `../../shared/view-profile.html?username=${player.username}&from=discover`;
+                window.location.href = new URL(`../../shared/view-profile.html?username=${player.username}&from=discover`, window.location.href).href;
             } else if (player.user_id) {
-                window.location.href = `../../shared/view-profile.html?userId=${player.user_id}&from=discover`;
+                window.location.href = new URL(`../../shared/view-profile.html?userId=${player.user_id}&from=discover`, window.location.href).href;
             }
         });
 
@@ -1340,9 +1341,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (e.target.closest('.ra-saved-item-remove')) return;
                     sessionStorage.setItem('raSavedModalOpen', 'true');
                     if (player.username) {
-                        window.location.href = `../../shared/view-profile.html?username=${player.username}&from=discover`;
+                        window.location.href = new URL(`../../shared/view-profile.html?username=${player.username}&from=discover`, window.location.href).href;
                     } else if (player.user_id) {
-                        window.location.href = `../../shared/view-profile.html?userId=${player.user_id}&from=discover`;
+                        window.location.href = new URL(`../../shared/view-profile.html?userId=${player.user_id}&from=discover`, window.location.href).href;
                     }
                 });
 

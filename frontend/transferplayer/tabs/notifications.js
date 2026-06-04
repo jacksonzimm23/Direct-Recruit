@@ -419,7 +419,10 @@ function setupNotificationActions() {
             }
             const notification = allNotifications.find(n => String(n.id) === String(notificationId));
             if (notification && notification.title === 'AI Search Match') {
-                window.location.href = 'ai-rep.html';
+                // Resolve relative nav to an absolute URL so it works in the iOS WKWebView
+                // (bare/relative targets silently no-op there). new URL(rel, location.href)
+                // correctly preserves the /frontend prefix on web and its absence in-app.
+                window.location.href = new URL('ai-rep.html', window.location.href).href;
             }
         });
     });

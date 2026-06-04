@@ -524,10 +524,11 @@ document.addEventListener('DOMContentLoaded', function() {
         viewBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             sessionStorage.setItem('piScrollPosition', String(messagesContainer.scrollTop));
+            // Resolve relative nav against current page so it works in both web and iOS WKWebView
             if (player.username) {
-                window.location.href = `../../shared/view-profile.html?username=${player.username}&from=transfer-portal`;
+                window.location.href = new URL(`../../shared/view-profile.html?username=${player.username}&from=transfer-portal`, window.location.href).href;
             } else if (player.user_id) {
-                window.location.href = `../../shared/view-profile.html?userId=${player.user_id}&from=transfer-portal`;
+                window.location.href = new URL(`../../shared/view-profile.html?userId=${player.user_id}&from=transfer-portal`, window.location.href).href;
             }
         });
 
@@ -543,9 +544,9 @@ document.addEventListener('DOMContentLoaded', function() {
         card.addEventListener('click', () => {
             sessionStorage.setItem('piScrollPosition', String(messagesContainer.scrollTop));
             if (player.username) {
-                window.location.href = `../../shared/view-profile.html?username=${player.username}&from=transfer-portal`;
+                window.location.href = new URL(`../../shared/view-profile.html?username=${player.username}&from=transfer-portal`, window.location.href).href;
             } else if (player.user_id) {
-                window.location.href = `../../shared/view-profile.html?userId=${player.user_id}&from=transfer-portal`;
+                window.location.href = new URL(`../../shared/view-profile.html?userId=${player.user_id}&from=transfer-portal`, window.location.href).href;
             }
         });
 
@@ -812,9 +813,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     const username = item.dataset.username;
                     const userId = item.dataset.userId;
                     if (username) {
-                        window.location.href = `../../shared/view-profile.html?username=${username}&from=transfer-portal`;
+                        window.location.href = new URL(`../../shared/view-profile.html?username=${username}&from=transfer-portal`, window.location.href).href;
                     } else if (userId) {
-                        window.location.href = `../../shared/view-profile.html?userId=${userId}&from=transfer-portal`;
+                        window.location.href = new URL(`../../shared/view-profile.html?userId=${userId}&from=transfer-portal`, window.location.href).href;
                     }
                 });
             });

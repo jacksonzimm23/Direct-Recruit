@@ -273,7 +273,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 // Redirect to sign in after delay
                 setTimeout(() => {
-                    window.location.href = 'signin.html';
+                    // Resolve relative nav to an absolute URL so it works in the iOS WKWebView
+                    // (bare/relative targets silently no-op there). new URL(rel, location.href)
+                    // correctly preserves the /frontend prefix on web and its absence in-app.
+                    window.location.href = new URL('signin.html', window.location.href).href;
                 }, 2500);
             } else {
                 showResetError(data.error || 'Failed to reset password');

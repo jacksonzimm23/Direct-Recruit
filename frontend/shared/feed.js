@@ -61,7 +61,10 @@ class FeedManager {
     async loadCurrentUser() {
         try {
             if (!API.isAuthenticated()) {
-                window.location.href = '../landingpage/signin.html';
+                // Resolve relative nav to an absolute URL so it works in the iOS WKWebView
+                // (bare/relative targets silently no-op there). new URL(rel, location.href)
+                // correctly preserves the /frontend prefix on web and its absence in-app.
+                window.location.href = new URL('../landingpage/signin.html', window.location.href).href;
                 return;
             }
 
@@ -85,7 +88,10 @@ class FeedManager {
             }
         } catch (error) {
             // If API call fails (unauthorized), redirect to signin
-            window.location.href = '../landingpage/signin.html';
+            // Resolve relative nav to an absolute URL so it works in the iOS WKWebView
+            // (bare/relative targets silently no-op there). new URL(rel, location.href)
+            // correctly preserves the /frontend prefix on web and its absence in-app.
+            window.location.href = new URL('../landingpage/signin.html', window.location.href).href;
         }
     }
 
@@ -3221,9 +3227,12 @@ class FeedManager {
             // Determine if we're in tabs folder or not
             const currentPath = window.location.pathname;
             if (currentPath.includes('/tabs/')) {
-                window.location.href = 'my-profile.html';
+                // Resolve relative nav to an absolute URL so it works in the iOS WKWebView
+                // (bare/relative targets silently no-op there). new URL(rel, location.href)
+                // correctly preserves the /frontend prefix on web and its absence in-app.
+                window.location.href = new URL('my-profile.html', window.location.href).href;
             } else {
-                window.location.href = 'tabs/my-profile.html';
+                window.location.href = new URL('tabs/my-profile.html', window.location.href).href;
             }
             return;
         }
@@ -3251,10 +3260,13 @@ class FeedManager {
             const folder = getProfileFolder({ role, is_transfer_player: isTransfer, college_division: collegeDivision });
 
             // Navigate to the profile type's folder with cross-folder navigation
-            window.location.href = `${prefix}${folder}/tabs/my-profile.html?username=${username}&from=feed`;
+            // Resolve relative nav to an absolute URL so it works in the iOS WKWebView
+            // (bare/relative targets silently no-op there). new URL(rel, location.href)
+            // correctly preserves the /frontend prefix on web and its absence in-app.
+            window.location.href = new URL(`${prefix}${folder}/tabs/my-profile.html?username=${username}&from=feed`, window.location.href).href;
         } catch (error) {
             const folder = getProfileFolder({ role, is_transfer_player: isTransfer, college_division: collegeDivision });
-            window.location.href = `${prefix}${folder}/tabs/my-profile.html?username=${identifier}&from=feed`;
+            window.location.href = new URL(`${prefix}${folder}/tabs/my-profile.html?username=${identifier}&from=feed`, window.location.href).href;
         }
     }
 
@@ -4292,10 +4304,13 @@ class FeedManager {
         }
 
         // If shareId is provided (quote post), navigate with share parameter
+        // Resolve relative nav to an absolute URL so it works in the iOS WKWebView
+        // (bare/relative targets silently no-op there). new URL(rel, location.href)
+        // correctly preserves the /frontend prefix on web and its absence in-app.
         if (shareId) {
-            window.location.href = `${basePath}post-view.html?share=${shareId}&ref=feed`;
+            window.location.href = new URL(`${basePath}post-view.html?share=${shareId}&ref=feed`, window.location.href).href;
         } else {
-            window.location.href = `${basePath}post-view.html?id=${postId}&ref=feed`;
+            window.location.href = new URL(`${basePath}post-view.html?id=${postId}&ref=feed`, window.location.href).href;
         }
     }
 }

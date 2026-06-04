@@ -332,7 +332,8 @@ document.addEventListener('DOMContentLoaded', async function() {
             card.addEventListener('click', function() {
                 if (username) {
                     // Navigate to HS player profile folder (collegecoach discover page shows HS players)
-                    window.location.href = `../../hsplayer/tabs/my-profile.html?username=${username}&from=discover`;
+                    // Resolve relative path against current page so it works in WKWebView (bare-relative no-ops in app)
+                    window.location.href = new URL(`../../hsplayer/tabs/my-profile.html?username=${username}&from=discover`, window.location.href).href;
                 } else {
                     showToast('Profile not available. User has not set up their profile yet.', 'warning');
                 }
@@ -345,7 +346,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                     e.stopPropagation();
                     if (username) {
                         // Navigate to HS player profile folder (collegecoach discover page shows HS players)
-                        window.location.href = `../../hsplayer/tabs/my-profile.html?username=${username}&from=discover`;
+                        window.location.href = new URL(`../../hsplayer/tabs/my-profile.html?username=${username}&from=discover`, window.location.href).href;
                     } else {
                         showToast('Profile not available. User has not set up their profile yet.', 'warning');
                     }
@@ -731,7 +732,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                     // Navigate to appropriate coach profile folder
                     const isCollegeCoach = this.dataset.isCollege === 'true' || this.querySelector('.coach-badge')?.textContent?.includes('🎓');
                     const folder = isCollegeCoach ? 'collegecoach' : 'hscoach';
-                    window.location.href = `../../${folder}/tabs/my-profile.html?username=${username}&from=discover`;
+                    window.location.href = new URL(`../../${folder}/tabs/my-profile.html?username=${username}&from=discover`, window.location.href).href;
                 } else {
                     showToast('Profile not available. Coach has not set up their profile yet.', 'warning');
                 }

@@ -2023,7 +2023,10 @@ function setupUI() {
                     window.location.href = `${FE_BASE}/${loggedInUserFolder}/tabs/my-profile.html`;
                 } else {
                     // Fallback to relative path if folder not set
-                    window.location.href = 'my-profile.html';
+                    // Resolve relative nav to an absolute URL so it works in the iOS WKWebView
+                    // (bare/relative targets silently no-op there). new URL(rel, location.href)
+                    // correctly preserves the /frontend prefix on web and its absence in-app.
+                    window.location.href = new URL('my-profile.html', window.location.href).href;
                 }
             }
         });
@@ -2152,7 +2155,7 @@ function showIncompleteProfile() {
                 <p style="margin: 1rem 0 2rem; color: rgba(255,255,255,0.7);">
                     You haven't set up your profile yet. Complete your profile to connect with players!
                 </p>
-                <button onclick="window.location.href='../create-coach-profile.html'" style="padding: 1rem 2rem; background: var(--cerulean); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 1rem;">
+                <button onclick="window.location.href=new URL('../create-coach-profile.html', window.location.href).href" style="padding: 1rem 2rem; background: var(--cerulean); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 1rem;">
                     Complete Profile
                 </button>
             </div>
@@ -2169,7 +2172,7 @@ function showError(message) {
             <div style="text-align: center; padding: 4rem 2rem; color: #ff6b6b;">
                 <h2>Error</h2>
                 <p>${message}</p>
-                <button onclick="window.location.href='../mainpage-coach.html'" style="padding: 1rem 2rem; background: var(--cerulean); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 1rem; margin-top: 1rem;">
+                <button onclick="window.location.href=new URL('../mainpage-coach.html', window.location.href).href" style="padding: 1rem 2rem; background: var(--cerulean); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 1rem; margin-top: 1rem;">
                     Back to Feed
                 </button>
             </div>
@@ -2969,7 +2972,7 @@ async function openFollowListModal(type) {
                 const folder = getProfileFolder({ role, is_transfer_player: isTransfer, college_division: division });
                 closeFollowListModal();
                 const currentFrom = new URLSearchParams(window.location.search).get('from') || 'profile';
-                window.location.href = `../../${folder}/tabs/my-profile.html?username=${username}&from=${currentFrom}`;
+                window.location.href = new URL(`../../${folder}/tabs/my-profile.html?username=${username}&from=${currentFrom}`, window.location.href).href;
             });
         });
 
@@ -3269,7 +3272,7 @@ async function openProfileViewersModal() {
                         const profile = profileResponse.profile;
                         const folder = getProfileFolder({ role, ...profile });
                         const currentFrom = new URLSearchParams(window.location.search).get('from') || 'profile';
-                        window.location.href = `../../${folder}/tabs/my-profile.html?username=${profile.username}&from=${currentFrom}`;
+                        window.location.href = new URL(`../../${folder}/tabs/my-profile.html?username=${profile.username}&from=${currentFrom}`, window.location.href).href;
                     }
                 } catch (error) {
                     console.error('Error fetching profile:', error);
@@ -4456,12 +4459,12 @@ async function confirmDeleteReply(commentId, postId) {
 
 // Navigate to single post view
 function navigateToPost(postId) {
-    window.location.href = `post-view.html?id=${postId}&ref=profile`;
+    window.location.href = new URL(`post-view.html?id=${postId}&ref=profile`, window.location.href).href;
 }
 
 // Navigate to quote post single page
 function navigateToQuotePost(shareId) {
-    window.location.href = `post-view.html?share=${shareId}`;
+    window.location.href = new URL(`post-view.html?share=${shareId}`, window.location.href).href;
 }
 
 // Open media slideshow (simple lightbox for profile page)
@@ -5687,7 +5690,10 @@ async function reportQuote(shareId) {
 function goToProfile(identifier, role, collegeDivision, userId, isTransfer) {
     // Check if clicking on own profile - just go to my-profile.html
     if (userId === currentUserId) {
-        window.location.href = 'my-profile.html';
+        // Resolve relative nav to an absolute URL so it works in the iOS WKWebView
+        // (bare/relative targets silently no-op there). new URL(rel, location.href)
+        // correctly preserves the /frontend prefix on web and its absence in-app.
+        window.location.href = new URL('my-profile.html', window.location.href).href;
         return;
     }
 
@@ -5699,7 +5705,7 @@ function goToProfile(identifier, role, collegeDivision, userId, isTransfer) {
         : `id=${userId}`;
 
     const navFrom = new URLSearchParams(window.location.search).get('from') || 'profile';
-    window.location.href = `../../${folder}/tabs/my-profile.html?${param}&from=${navFrom}`;
+    window.location.href = new URL(`../../${folder}/tabs/my-profile.html?${param}&from=${navFrom}`, window.location.href).href;
 }
 
 // Load profile posts

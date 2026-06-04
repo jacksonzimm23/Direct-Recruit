@@ -17,7 +17,10 @@ document.addEventListener('DOMContentLoaded', function() {
         // No pending verification — for college coach, the actual signup file is
         // create-coach-profile.html (gated by an invite token). Switches don't even
         // reach this page (they skip email verification entirely).
-        window.location.href = 'create-coach-profile.html';
+        // Resolve relative nav to an absolute URL so it works in the iOS WKWebView
+        // (bare/relative targets silently no-op there). new URL(rel, location.href)
+        // correctly preserves the /frontend prefix on web and its absence in-app.
+        window.location.href = new URL('create-coach-profile.html', window.location.href).href;
         return;
     }
 
@@ -139,7 +142,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 // Redirect to login or main page after delay
                 setTimeout(() => {
-                    window.location.href = 'mainpage-coach.html';
+                    // Resolve relative nav to an absolute URL so it works in the iOS WKWebView
+                    // (bare/relative targets silently no-op there). new URL(rel, location.href)
+                    // correctly preserves the /frontend prefix on web and its absence in-app.
+                    window.location.href = new URL('mainpage-coach.html', window.location.href).href;
                 }, 2000);
             } else {
                 showError(data.error || 'Invalid verification code');

@@ -569,13 +569,19 @@ async function handleNotificationClick(card) {
     if (notification) {
         switch (notification.type) {
             case 'message':
-                window.location.href = 'messages.html';
+                // Resolve relative nav to an absolute URL so it works in the iOS WKWebView
+                // (bare/relative targets silently no-op there). new URL(rel, location.href)
+                // correctly preserves the /frontend prefix on web and its absence in-app.
+                window.location.href = new URL('messages.html', window.location.href).href;
                 break;
             case 'follow':
                 if (notification.related_user_username) {
                     // Navigate to the appropriate profile folder based on user type
                     const folder = getNotificationProfileFolder(notification);
-                    window.location.href = `../../${folder}/tabs/my-profile.html?username=${notification.related_user_username}&from=notifications`;
+                    // Resolve relative nav to an absolute URL so it works in the iOS WKWebView
+                    // (bare/relative targets silently no-op there). new URL(rel, location.href)
+                    // correctly preserves the /frontend prefix on web and its absence in-app.
+                    window.location.href = new URL(`../../${folder}/tabs/my-profile.html?username=${notification.related_user_username}&from=notifications`, window.location.href).href;
                 }
                 break;
             case 'interaction':
