@@ -2843,26 +2843,37 @@ function showSuccessMessage(message) {
     const toast = document.createElement('div');
     toast.className = 'success-toast';
     toast.textContent = message;
+    // Bottom-centered, above the mobile bottom nav (76px) + iOS home indicator
+    // (env(safe-area-inset-bottom) is 0 on web/desktop). Self-contained translateY
+    // slide so it doesn't depend on the horizontal slideIn/slideOut keyframes.
     toast.style.cssText = `
         position: fixed;
-        top: 20px;
-        right: 20px;
+        bottom: calc(88px + env(safe-area-inset-bottom, 0px));
+        left: 50%;
         background: #10b981;
         color: white;
         padding: 1rem 1.5rem;
         border-radius: 8px;
         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         z-index: 10000;
-        animation: slideIn 0.3s ease-out;
+        opacity: 0;
+        transform: translateX(-50%) translateY(20px);
+        transition: opacity 0.3s ease-out, transform 0.3s ease-out;
     `;
 
     document.body.appendChild(toast);
 
+    requestAnimationFrame(() => {
+        toast.style.opacity = '1';
+        toast.style.transform = 'translateX(-50%) translateY(0)';
+    });
+
     // Remove after 3 seconds
     setTimeout(() => {
-        toast.style.animation = 'slideOut 0.3s ease-out';
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateX(-50%) translateY(20px)';
         setTimeout(() => {
-            document.body.removeChild(toast);
+            if (toast.parentNode) document.body.removeChild(toast);
         }, 300);
     }, 3000);
 }
