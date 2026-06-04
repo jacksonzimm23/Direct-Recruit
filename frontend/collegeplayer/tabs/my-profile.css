@@ -4437,7 +4437,7 @@ body.transfer-player-viewer .sidebar-user-avatar {
 
     /* === SHARE TOAST === */
     .share-toast {
-        bottom: 100px;
+        bottom: calc(100px + env(safe-area-inset-bottom, 0px));
         left: 1rem;
         right: 1rem;
         transform: translateX(0) translateY(100px);

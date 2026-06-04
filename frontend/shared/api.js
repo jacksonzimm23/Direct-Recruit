@@ -40,25 +40,28 @@ function showToast(message, type = 'error', duration = 4000) {
     if (!container) {
         container = document.createElement('div');
         container.id = 'toast-container';
-        container.style.cssText = 'position:fixed;top:20px;right:20px;z-index:99999;display:flex;flex-direction:column;gap:8px;pointer-events:none;';
+        // Bottom-centered, above the mobile bottom nav (76px) + iOS home indicator
+        // (env(safe-area-inset-bottom); 0 on web/desktop). Keeps toasts clear of the
+        // top status bar and the bottom nav on every page.
+        container.style.cssText = 'position:fixed;bottom:calc(88px + env(safe-area-inset-bottom, 0px));left:50%;transform:translateX(-50%);z-index:99999;display:flex;flex-direction:column;align-items:center;gap:8px;pointer-events:none;';
         document.body.appendChild(container);
     }
 
     const toast = document.createElement('div');
     const bgColor = type === 'error' ? '#dc3545' : type === 'success' ? '#28a745' : '#ffc107';
     const textColor = type === 'warning' ? '#333' : '#fff';
-    toast.style.cssText = `background:${bgColor};color:${textColor};padding:12px 20px;border-radius:8px;font-size:14px;font-family:-apple-system,BlinkMacSystemFont,sans-serif;box-shadow:0 4px 12px rgba(0,0,0,0.15);pointer-events:auto;max-width:380px;word-wrap:break-word;opacity:0;transform:translateX(20px);transition:opacity 0.3s,transform 0.3s;`;
+    toast.style.cssText = `background:${bgColor};color:${textColor};padding:12px 20px;border-radius:8px;font-size:14px;font-family:-apple-system,BlinkMacSystemFont,sans-serif;box-shadow:0 4px 12px rgba(0,0,0,0.15);pointer-events:auto;max-width:380px;word-wrap:break-word;opacity:0;transform:translateY(20px);transition:opacity 0.3s,transform 0.3s;`;
     toast.textContent = message;
     container.appendChild(toast);
 
     requestAnimationFrame(() => {
         toast.style.opacity = '1';
-        toast.style.transform = 'translateX(0)';
+        toast.style.transform = 'translateY(0)';
     });
 
     setTimeout(() => {
         toast.style.opacity = '0';
-        toast.style.transform = 'translateX(20px)';
+        toast.style.transform = 'translateY(20px)';
         setTimeout(() => toast.remove(), 300);
     }, duration);
 }

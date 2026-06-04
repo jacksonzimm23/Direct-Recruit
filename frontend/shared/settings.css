@@ -631,8 +631,12 @@
 /* Notification Toast */
 .settings-notification {
     position: fixed;
-    top: 2rem;
-    right: 2rem;
+    /* Bottom-centered, above the mobile bottom nav (76px) + iOS home indicator.
+       env(safe-area-inset-bottom) is 0 on web/desktop. Centered via left:50% +
+       translateX(-50%), which the slide keyframes preserve. */
+    bottom: calc(88px + env(safe-area-inset-bottom, 0px));
+    left: 50%;
+    transform: translateX(-50%);
     background: rgba(26, 26, 46, 0.95);
     border: 1px solid rgba(18, 130, 162, 0.3);
     border-radius: 12px;
@@ -651,22 +655,22 @@
 
 @keyframes slideIn {
     from {
-        transform: translateX(100%);
+        transform: translateX(-50%) translateY(120%);
         opacity: 0;
     }
     to {
-        transform: translateX(0);
+        transform: translateX(-50%) translateY(0);
         opacity: 1;
     }
 }
 
 @keyframes slideOut {
     from {
-        transform: translateX(0);
+        transform: translateX(-50%) translateY(0);
         opacity: 1;
     }
     to {
-        transform: translateX(100%);
+        transform: translateX(-50%) translateY(120%);
         opacity: 0;
     }
 }
