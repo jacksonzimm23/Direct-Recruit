@@ -49,6 +49,17 @@ html.ios-app body { background-color: inherit; }
         padding-top: calc(60px + env(safe-area-inset-top, 0px)) !important;
     }
 
+    /* My Profile / viewing another profile: the content area is
+       <main class="main-content profile-content"> and my-profile.css forces
+       padding-top: 60px !important, which on a notched device sits the profile
+       header (avatar/name) under the status bar + fixed mobile header — clipping
+       it, especially when viewing another profile. Re-add the safe-area inset.
+       .main-content.profile-content (3 classes) outranks the inline
+       .viewing-other-profile .main-content rule so it applies in both states. */
+    .ios-app .main-content.profile-content {
+        padding-top: calc(60px + env(safe-area-inset-top, 0px)) !important;
+    }
+
     /* AI chat panels (Recruiting Assistant / Portal Intelligence) are
        position: fixed with top: 50px instead of padding — adjust the top.
        Scoped to the ACTIVE tab (see mobile-overrides.css): the RA/PI markup
