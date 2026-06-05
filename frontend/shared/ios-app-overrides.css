@@ -63,11 +63,27 @@ html.ios-app body { background-color: inherit; }
     /* Messages page: edge-to-edge on iOS. mobile-overrides.css applies
        .main-content { padding: 1rem } (loads after messages.css), insetting the
        whole messages page; zero the side padding so the list + thread reach the
-       screen edges. The messages page manages its own bottom spacing/height
-       (100dvh + internal scroll), so it's excluded from the navy-gap rule above. */
+       screen edges.
+       BOTTOM GAP FIX: an @supports block in mobile-overrides.css sets
+       .main-content { padding-bottom: calc(90px + env(safe-area-inset-bottom)) }.
+       The messages page is <main class="main-content messages-content">, so that
+       rule (same specificity, loaded later) overrode the per-role
+       .messages-content { padding-bottom:76px } and left a ~90px+ navy band below
+       the content. .ios-app .messages-content (specificity 0,2,0 > .main-content
+       0,1,0) loaded LAST wins decisively. The bottom nav is exactly 76px tall
+       (safe-area is inside its 76px via box-sizing:border-box), so reserve 76px. */
     .ios-app .messages-content {
         padding-left: 0 !important;
         padding-right: 0 !important;
+        /* DVH vs fixed-nav mismatch: .messages-content is height:100dvh (messages.css),
+           which on iOS STOPS at the top of the home-indicator band (visual viewport).
+           The fixed bottom nav is pinned to the PHYSICAL screen bottom and bakes the
+           safe-area inset INSIDE its 76px (box-sizing:border-box). So a flat 76px of
+           bottom padding inside the 100dvh box placed the content's bottom edge
+           env(safe-area-inset-bottom) ABOVE the nav top — that env()-sized navy band
+           was the persistent gap. Reserve only the nav height that sits ABOVE the dvh
+           floor: 76px - env(safe-area-inset-bottom). */
+        padding-bottom: calc(76px - env(safe-area-inset-bottom, 0px)) !important;
     }
 
     /* Drop the divider line that renders ABOVE the Recruiting Calendar on mobile:
