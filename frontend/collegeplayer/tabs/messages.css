@@ -967,11 +967,12 @@
     .messages-content {
         padding: 0 !important;
         padding-top: 60px !important;
-        /* Clear the fixed 76px bottom nav + iOS home-indicator safe area so the
-           list footer (Recruiting Calendar) and the thread composer end exactly
-           at the nav's top edge. Their own small padding-bottom adds the ~8px
-           snug gap (no extra env() there — the inset is already counted here). */
-        padding-bottom: calc(76px + env(safe-area-inset-bottom)) !important;
+        /* Clear the fixed bottom nav. The nav (.sidebar) is height:76px with
+           box-sizing:border-box and its own padding-bottom:env(safe-area-inset-bottom),
+           so the safe-area inset is ALREADY inside that 76px — the nav's total
+           occupied height is exactly 76px. Reserve 76px here (NOT 76px + env, which
+           double-counted the inset and left a navy gap above the nav on notched iPhones). */
+        padding-bottom: 76px !important;
         height: 100vh !important;
         height: 100dvh !important;
         box-sizing: border-box !important;
