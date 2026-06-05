@@ -75,15 +75,17 @@ html.ios-app body { background-color: inherit; }
     .ios-app .messages-content {
         padding-left: 0 !important;
         padding-right: 0 !important;
-        /* DVH vs fixed-nav mismatch: .messages-content is height:100dvh (messages.css),
-           which on iOS STOPS at the top of the home-indicator band (visual viewport).
-           The fixed bottom nav is pinned to the PHYSICAL screen bottom and bakes the
-           safe-area inset INSIDE its 76px (box-sizing:border-box). So a flat 76px of
-           bottom padding inside the 100dvh box placed the content's bottom edge
-           env(safe-area-inset-bottom) ABOVE the nav top — that env()-sized navy band
-           was the persistent gap. Reserve only the nav height that sits ABOVE the dvh
-           floor: 76px - env(safe-area-inset-bottom). */
-        padding-bottom: calc(76px - env(safe-area-inset-bottom, 0px)) !important;
+        /* Robust bottom clearance for the fixed 76px nav, device-independent.
+           Instead of guessing bottom PADDING against an ambiguous 100dvh (which
+           mispredicted twice — 76px left a gap, 76px−env hid the footer), make the
+           content BOX itself exactly the nav-height shorter than the dynamic
+           viewport: height = 100dvh − 76px, padding-bottom = 0. The nav is
+           position:fixed; bottom:0; height:76px (safe-area baked inside via
+           box-sizing:border-box), so the box's bottom edge lands exactly on the
+           nav's top edge on every iPhone regardless of home-indicator size — no
+           env() math, no gap, footer/composer fully visible. */
+        height: calc(100dvh - 76px) !important;
+        padding-bottom: 0 !important;
     }
 
     /* Drop the divider line that renders ABOVE the Recruiting Calendar on mobile:
