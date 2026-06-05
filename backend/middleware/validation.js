@@ -1,6 +1,29 @@
 const { body, validationResult } = require('express-validator');
+const validator = require('validator');
 const logger = require('../utils/logger');
 const sanitizeHtmlLib = require('sanitize-html');
+
+// Canonical email normalizer. Wraps the SAME validator.normalizeEmail() that
+// express-validator's .normalizeEmail() uses, so it is byte-identical to the
+// normalization validateRegistration applies. Registration stores accounts in
+// this normalized form (lowercased; for Gmail, dots + "+tags" stripped), so
+// every other auth path (login, forgot/reset/verify/resend) MUST normalize the
+// same way or case/dot variants fail to match — that was the login bug.
+// Returns '' for missing/non-string input so callers' own "email required"
+// checks still fire instead of throwing here.
+function normalizeEmail(email) {
+  if (typeof email !== 'string') return '';
+  const trimmed = email.trim();
+  // validator.normalizeEmail does NOT validate — it blindly transforms, so junk
+  // like "notanemail" comes back as "@notanemail". Only run it on input that
+  // actually validates as an email; otherwise return a clean trimmed-lowercase
+  // so callers' own "email required"/format checks reject it instead of a query
+  // ever seeing "@garbage". Empty string -> '' so `if (!email)` guards fire.
+  if (!trimmed) return '';
+  if (!validator.isEmail(trimmed)) return trimmed.toLowerCase();
+  const normalized = validator.normalizeEmail(trimmed);
+  return normalized === false ? trimmed.toLowerCase() : normalized;
+}
 
 // Strip ALL HTML tags. Plain text only — every frontend render path uses
 // escapeHtml() or textContent, so no markup is intentionally preserved.
@@ -272,5 +295,6 @@ module.exports = {
   handleValidationErrors,
   sanitizeBody,
   stripHtml,
-  escapeLikePattern
+  escapeLikePattern,
+  normalizeEmail
 };

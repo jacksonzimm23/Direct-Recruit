@@ -16,6 +16,7 @@ const { bumpRevokeCutoff } = require('../utils/tokenRevocation');
 const pool = require('../config/database');
 const logger = require('../utils/logger');
 const stripe = require('../utils/stripe');
+const { normalizeEmail } = require('../middleware/validation');
 
 // Cookie configuration (mirrored from auth.js — keep sameSite in sync with auth.js)
 const COOKIE_OPTIONS = {
@@ -147,9 +148,13 @@ router.get('/email/check-availability', authMiddleware, async (req, res) => {
 // IMPORTANT: This does NOT change Cognito until verification is complete
 router.post('/email/request-change', authMiddleware, authLimiter, async (req, res) => {
   try {
-    const { newEmail, password } = req.body;
+    const { password } = req.body;
+    // Normalize so the stored email matches what login will look up later
+    // (same normalization as registration/login). Validate format on the RAW
+    // input first so a malformed entry is rejected before normalization.
+    const rawEmail = req.body.newEmail;
 
-    if (!newEmail) {
+    if (!rawEmail) {
       return res.status(400).json({ error: 'New email is required' });
     }
 
@@ -159,9 +164,11 @@ router.post('/email/request-change', authMiddleware, authLimiter, async (req, re
 
     // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(newEmail)) {
+    if (!emailRegex.test(rawEmail)) {
       return res.status(400).json({ error: 'Invalid email format' });
     }
+
+    const newEmail = normalizeEmail(rawEmail);
 
     // Check if email is already in use in our database
     const existingUser = await User.findByEmail(newEmail);

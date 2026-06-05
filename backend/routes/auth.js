@@ -6,7 +6,7 @@ const CoachProfile = require('../models/CoachProfile');
 const OtherProfile = require('../models/OtherProfile');
 const jwt = require('jsonwebtoken');
 const { generateToken } = require('../utils/jwt');
-const { validateRegistration, validatePlayerProfile, validateCoachProfile, handleValidationErrors } = require('../middleware/validation');
+const { validateRegistration, validatePlayerProfile, validateCoachProfile, handleValidationErrors, normalizeEmail } = require('../middleware/validation');
 const { authMiddleware } = require('../middleware/auth');
 const { authLimiter, passwordResetLimiter } = require('../middleware/rateLimit');
 const { getSignedS3Url } = require('../utils/s3');
@@ -177,7 +177,8 @@ router.post('/register', authLimiter, validateRegistration, handleValidationErro
 // Verify email with code from Cognito
 router.post('/verify-email', authLimiter, async (req, res) => {
   try {
-    const { email, code } = req.body;
+    const { code } = req.body;
+    const email = normalizeEmail(req.body.email);
 
     if (!email || !code) {
       return res.status(400).json({ error: 'Email and verification code are required' });
@@ -222,7 +223,7 @@ router.post('/verify-email', authLimiter, async (req, res) => {
 // Resend verification code
 router.post('/resend-verification', authLimiter, async (req, res) => {
   try {
-    const { email } = req.body;
+    const email = normalizeEmail(req.body.email);
 
     if (!email) {
       return res.status(400).json({ error: 'Email is required' });
@@ -252,7 +253,11 @@ router.post('/resend-verification', authLimiter, async (req, res) => {
 // Login
 router.post('/login', authLimiter, async (req, res) => {
   try {
-    const { email, password, rememberMe } = req.body;
+    const { password, rememberMe } = req.body;
+    // Normalize to match how registration stored the email (and the Cognito
+    // username). Without this, "Jacksonzimm@..." won't match the stored
+    // "jacksonzimm@..." and login fails on a case-only difference.
+    const email = normalizeEmail(req.body.email);
 
     // First check if user exists in local database
     const user = await User.findByEmail(email);
@@ -363,7 +368,7 @@ router.post('/logout', async (req, res) => {
 // Forgot password - initiate reset
 router.post('/forgot-password', authLimiter, passwordResetLimiter, async (req, res) => {
   try {
-    const { email } = req.body;
+    const email = normalizeEmail(req.body.email);
 
     if (!email) {
       return res.status(400).json({ error: 'Email is required' });
@@ -391,7 +396,8 @@ router.post('/forgot-password', authLimiter, passwordResetLimiter, async (req, r
 // Reset password with code
 router.post('/reset-password', authLimiter, async (req, res) => {
   try {
-    const { email, code, newPassword } = req.body;
+    const { code, newPassword } = req.body;
+    const email = normalizeEmail(req.body.email);
 
     if (!email || !code || !newPassword) {
       return res.status(400).json({ error: 'Email, code, and new password are required' });
