@@ -44,6 +44,21 @@ html.ios-app body { background-color: inherit; }
         padding-top: calc(65px + env(safe-area-inset-top, 0px)) !important;
     }
 
+    /* Kill the navy gap above the bottom nav. mobile-overrides.css reserves
+       90/85/80px of bottom padding across the 768/480/375 breakpoints, and on iOS
+       also re-adds env(safe-area-inset-bottom) — but the fixed bottom nav is only
+       76px tall and already bakes the safe-area inset INTO that 76px
+       (box-sizing: border-box). So the wrapper reserved more space than the nav
+       occupies, and the extra showed as empty navy background. Match the nav's 76px
+       exactly (no extra env() — it's already inside the 76px). Higher specificity +
+       last load order means this one rule corrects every breakpoint at once.
+       EXCLUDE .recruiting-board-main: that page sets padding:0 and manages its own
+       bottom spacing (it's the one page WITHOUT the gap) — :not() keeps it as-is. */
+    .ios-app .main-content:not(.recruiting-board-main) {
+        padding-bottom: 76px !important;
+        min-height: calc(100dvh - 76px) !important;
+    }
+
     /* Messages: .messages-content uses padding-top: 60px (fills viewport) */
     .ios-app .messages-content {
         padding-top: calc(60px + env(safe-area-inset-top, 0px)) !important;
