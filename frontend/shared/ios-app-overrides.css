@@ -54,10 +54,26 @@ html.ios-app body { background-color: inherit; }
        last load order means this one rule corrects every breakpoint at once.
        EXCLUDE .recruiting-board-main: that page sets padding:0 and manages its own
        bottom spacing (it's the one page WITHOUT the gap) — :not() keeps it as-is. */
-    .ios-app .main-content:not(.recruiting-board-main) {
+    .ios-app .main-content:not(.recruiting-board-main):not(.messages-content) {
         padding-bottom: 76px !important;
         min-height: calc(100dvh - 76px) !important;
     }
+
+    /* Messages page: edge-to-edge on iOS. mobile-overrides.css applies
+       .main-content { padding: 1rem } (loads after messages.css), insetting the
+       whole messages page; zero the side padding so the list + thread reach the
+       screen edges. The messages page manages its own bottom spacing/height
+       (100dvh + internal scroll), so it's excluded from the navy-gap rule above. */
+    .ios-app .messages-content {
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+    }
+
+    /* Drop the divider line that renders ABOVE the Recruiting Calendar on mobile:
+       .conversations-list has a bottom border and .conversations-footer a top
+       border; stacked, they read as a stray line above the calendar button. */
+    .ios-app .conversations-list { border-bottom: none !important; }
+    .ios-app .conversations-footer { border-top: none !important; }
 
     /* Messages: .messages-content uses padding-top: 60px (fills viewport) */
     .ios-app .messages-content {

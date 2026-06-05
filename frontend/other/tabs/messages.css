@@ -558,12 +558,123 @@
 /* Message Input Container */
 .message-input-container {
     display: flex;
-    align-items: flex-end;
-    gap: 0.75rem;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
     padding: 1.25rem 1.5rem;
     border-top: 1px solid rgba(18, 130, 162, 0.2);
     background: rgba(254, 252, 251, 0.02);
 }
+
+/* Input row: textbox + attach-media button + send button */
+.message-input-row {
+    display: flex;
+    align-items: flex-end;
+    gap: 0.75rem;
+    width: 100%;
+}
+
+/* Attach-media (photo/video) button, sits between textbox and send */
+.message-attach-btn {
+    background: transparent;
+    border: none;
+    color: var(--cerulean);
+    padding: 0;
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.message-attach-btn:hover { background: rgba(18, 130, 162, 0.15); }
+.message-attach-btn svg { width: 22px; height: 22px; display: block; }
+
+/* Staged-attachment filename chips (row above the textbox; no inline thumbnail) */
+.attachment-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-bottom: 0.5rem;
+}
+.attachment-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    max-width: 100%;
+    padding: 0.35rem 0.4rem 0.35rem 0.65rem;
+    background: rgba(254, 252, 251, 0.05);
+    border: 1px solid rgba(18, 130, 162, 0.3);
+    border-radius: 10px;
+    color: var(--white);
+    font-size: 0.8rem;
+    font-family: 'Inter', sans-serif;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+.attachment-chip:hover { background: rgba(254, 252, 251, 0.09); }
+.attachment-chip .chip-icon { flex-shrink: 0; font-size: 0.95rem; line-height: 1; }
+.attachment-chip .chip-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 180px;
+}
+.attachment-chip .chip-remove {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border: none;
+    border-radius: 50%;
+    background: rgba(254, 252, 251, 0.12);
+    color: var(--white);
+    cursor: pointer;
+    padding: 0;
+}
+.attachment-chip .chip-remove:hover { background: rgba(239, 68, 68, 0.5); }
+.attachment-chip .chip-remove svg { width: 12px; height: 12px; }
+
+/* Tap-a-chip media preview. Full-screen on mobile (see @media), small/centered on desktop. */
+.attachment-preview-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 3000;
+    background: rgba(0, 0, 0, 0.85);
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+}
+.attachment-preview-overlay.active { display: flex; }
+.attachment-preview-overlay img,
+.attachment-preview-overlay video {
+    max-width: 90vw;
+    max-height: 80vh;
+    border-radius: 10px;
+    display: block;
+}
+.attachment-preview-overlay .preview-close {
+    position: absolute;
+    top: calc(1rem + env(safe-area-inset-top, 0px));
+    right: 1rem;
+    width: 40px;
+    height: 40px;
+    border: none;
+    border-radius: 50%;
+    background: rgba(254, 252, 251, 0.15);
+    color: var(--white);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.attachment-preview-overlay .preview-close svg { width: 20px; height: 20px; }
 
 .message-option-btn {
     background: transparent;

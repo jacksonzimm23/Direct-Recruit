@@ -716,20 +716,16 @@ function setupEventListeners() {
         }
     });
 
-    // File attachment button — hidden for v1 (images + video only)
-    const attachFileBtn = document.getElementById('attachFileBtn');
-    if (attachFileBtn) attachFileBtn.style.display = 'none';
-
-    // Image/video attachment button
-    const attachImageBtn = document.getElementById('attachImageBtn');
+    // Single attach-media (photo/video) button, to the right of the textbox
+    const attachMediaBtn = document.getElementById('attachMediaBtn');
     const imageInput = document.getElementById('imageInput');
     if (imageInput) {
         // Web picker: accept both images and videos so one button handles both
         imageInput.setAttribute('accept', 'image/*,video/*');
         imageInput.addEventListener('change', handleImageSelect);
     }
-    if (attachImageBtn) {
-        attachImageBtn.addEventListener('click', async () => {
+    if (attachMediaBtn) {
+        attachMediaBtn.addEventListener('click', async () => {
             const iOS = window.API && window.API.isIOSApp && window.API.isIOSApp();
             if (iOS && window.NativeCamera && window.NativeCamera.showMessageMediaSheet) {
                 await window.NativeCamera.showMessageMediaSheet(async (file, mediaType) => {
@@ -1050,66 +1046,78 @@ function processMediaFile(file, mediaType) {
     }
 }
 
+// Show the staged attachment as a filename chip above the textbox (no inline
+// thumbnail). Tapping the chip opens a small media preview; the × removes it.
 function showAttachmentPreview() {
-    const preview = document.getElementById('attachmentPreview');
-    if (!preview || !currentAttachment) return;
+    const chips = document.getElementById('attachmentChips');
+    if (!chips || !currentAttachment) return;
 
-    if (currentAttachment.type === 'image') {
-        preview.innerHTML = `
-            <div class="preview-item image-preview">
-                <img src="${currentAttachment.preview}" alt="Preview">
-                <button class="remove-attachment" onclick="removeAttachment()">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="18" y1="6" x2="6" y2="18"></line>
-                        <line x1="6" y1="6" x2="18" y2="18"></line>
-                    </svg>
-                </button>
-            </div>
-        `;
-    } else if (currentAttachment.type === 'video') {
-        preview.innerHTML = `
-            <div class="preview-item file-preview">
-                <div class="file-icon">🎥</div>
-                <span class="file-name">${truncateFileName(currentAttachment.name || 'video')}</span>
-                <button class="remove-attachment" onclick="removeAttachment()">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="18" y1="6" x2="6" y2="18"></line>
-                        <line x1="6" y1="6" x2="18" y2="18"></line>
-                    </svg>
-                </button>
-            </div>
-        `;
-    } else {
-        // File preview
-        const fileIcon = getFileIcon(currentAttachment.name);
-        preview.innerHTML = `
-            <div class="preview-item file-preview">
-                <div class="file-icon">${fileIcon}</div>
-                <span class="file-name">${truncateFileName(currentAttachment.name)}</span>
-                <button class="remove-attachment" onclick="removeAttachment()">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="18" y1="6" x2="6" y2="18"></line>
-                        <line x1="6" y1="6" x2="18" y2="18"></line>
-                    </svg>
-                </button>
-            </div>
-        `;
+    const icon = currentAttachment.type === 'video' ? '🎥' : '🖼️';
+    const name = truncateFileName(currentAttachment.name || currentAttachment.type);
+
+    chips.innerHTML = `
+        <div class="attachment-chip" onclick="previewAttachment()">
+            <span class="chip-icon">${icon}</span>
+            <span class="chip-name">${escapeHtml(name)}</span>
+            <button class="chip-remove" onclick="event.stopPropagation(); removeAttachment()" aria-label="Remove attachment">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+    `;
+    chips.style.display = 'flex';
+}
+
+// Small media preview when a chip is tapped. Full-screen overlay (mobile-safe).
+function previewAttachment() {
+    if (!currentAttachment) return;
+    let overlay = document.getElementById('attachmentPreviewOverlay');
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'attachmentPreviewOverlay';
+        overlay.className = 'attachment-preview-overlay';
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) closeAttachmentPreview();
+        });
+        document.body.appendChild(overlay);
     }
+    const closeBtn = `
+        <button class="preview-close" onclick="closeAttachmentPreview()" aria-label="Close preview">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+        </button>`;
+    if (currentAttachment.type === 'video') {
+        const src = currentAttachment.preview || URL.createObjectURL(currentAttachment.file);
+        overlay.innerHTML = `${closeBtn}<video src="${src}" controls autoplay playsinline></video>`;
+    } else {
+        const src = currentAttachment.preview || URL.createObjectURL(currentAttachment.file);
+        overlay.innerHTML = `${closeBtn}<img src="${src}" alt="Attachment preview">`;
+    }
+    overlay.classList.add('active');
+}
 
-    preview.style.display = 'flex';
+function closeAttachmentPreview() {
+    const overlay = document.getElementById('attachmentPreviewOverlay');
+    if (overlay) {
+        overlay.classList.remove('active');
+        overlay.innerHTML = '';
+    }
 }
 
 function removeAttachment() {
     currentAttachment = null;
-    const preview = document.getElementById('attachmentPreview');
-    if (preview) {
-        preview.innerHTML = '';
-        preview.style.display = 'none';
+    const chips = document.getElementById('attachmentChips');
+    if (chips) {
+        chips.innerHTML = '';
+        chips.style.display = 'none';
     }
-    // Clear file inputs
-    const fileInput = document.getElementById('fileInput');
+    closeAttachmentPreview();
+    // Clear file input
     const imageInput = document.getElementById('imageInput');
-    if (fileInput) fileInput.value = '';
     if (imageInput) imageInput.value = '';
 }
 
