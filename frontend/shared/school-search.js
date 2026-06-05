@@ -80,7 +80,13 @@ function getSchoolLogoHTML(schoolName, assetBasePath, size) {
     const school = _schoolLogosData[schoolName];
     if (!school || !school.logo) return '';
     const src = `${assetBasePath}/logos/${school.logo}`;
-    return `<img src="${src}" alt="" class="school-logo-icon" style="width:${size}px;height:${size}px;object-fit:contain;vertical-align:middle;margin-left:4px;border-radius:2px;">`;
+    // Solid white backing that hugs the logo's actual shape (not a square box).
+    // Zero-offset drop-shadows respect the PNG alpha channel and radiate evenly
+    // around the silhouette. Stacking the SAME zero-offset shadow several times
+    // compounds opacity on the exact same halo — so the edge reads as crisp
+    // white (not a dim, navy-tinted blur) with no overlapping/gray seams.
+    const halo = 'filter:drop-shadow(0 0 1px #fff) drop-shadow(0 0 1px #fff) drop-shadow(0 0 1px #fff);';
+    return `<img src="${src}" alt="" class="school-logo-icon" style="width:${size}px;height:${size}px;object-fit:contain;vertical-align:middle;margin-left:4px;border-radius:2px;${halo}">`;
 }
 
 const _fallbackSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"></path><path d="M6 12v5c3 3 9 3 12 0v-5"></path></svg>';
