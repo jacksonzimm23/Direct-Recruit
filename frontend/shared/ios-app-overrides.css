@@ -19,7 +19,8 @@ html.ios-app body { background-color: inherit; }
 }
 
 .ios-app .mobile-fab-post {
-    bottom: calc(85px + env(safe-area-inset-bottom, 0px)) !important;
+    /* Lowered toward the bottom-right, just above the 76px nav (was 85px). */
+    bottom: calc(80px + env(safe-area-inset-bottom, 0px)) !important;
 }
 
 .ios-app .mobile-filter-fab {

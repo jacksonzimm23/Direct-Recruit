@@ -693,13 +693,13 @@ function initMobilePostModal() {
             return;
         }
 
-        // Phase 4b-II: iOS action-sheet with Photos / Video
+        // iOS: standard Apple media picker (photos + videos, multi-select) via FilePicker.
         if (window.API && window.API.isIOSApp && window.API.isIOSApp()
-            && window.NativeCamera && window.NativeCamera.showPostMediaSheet) {
+            && window.NativeCamera && window.NativeCamera.pickMedia) {
             const remaining = maxMediaFiles - selectedFiles.length;
-            await window.NativeCamera.showPostMediaSheet(async (pickedFiles) => {
-                pickedFiles.slice(0, remaining).forEach(processMobileFile);
-            }, remaining);
+            const r = await window.NativeCamera.pickMedia({ multiple: true, limit: remaining });
+            if (r.error) { showToast('Media picker failed: ' + r.error, 'error'); return; }
+            (r.files || []).slice(0, remaining).forEach(processMobileFile);
             return;
         }
 

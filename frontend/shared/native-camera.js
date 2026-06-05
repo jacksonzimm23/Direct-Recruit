@@ -281,6 +281,57 @@
         });
     }
 
+    // Unified native picker (photos AND videos) via @capawesome/capacitor-file-picker.
+    // FilePicker.pickMedia shows the STANDARD iOS media picker — same Apple sheet the
+    // profile-photo flow gets, but including videos (the old @capacitor/camera path
+    // could not pick video, which is why messages/feed used a custom photo/video sheet).
+    // Returns { files: File[], cancelled, error }. opts: { multiple, limit }.
+    async function pickMedia(opts) {
+        opts = opts || {};
+        try {
+            const FilePicker = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.FilePicker;
+            if (!FilePicker) return { files: [], cancelled: false, error: 'FilePicker plugin not available' };
+
+            const result = await FilePicker.pickMedia({ multiple: !!opts.multiple });
+            let picked = (result && result.files) || [];
+            if (!picked.length) return { files: [], cancelled: true };
+            if (opts.limit) picked = picked.slice(0, opts.limit);
+
+            const files = [];
+            for (let i = 0; i < picked.length; i++) {
+                const f = picked[i];
+                const mime = f.mimeType || 'application/octet-stream';
+                const name = f.name || ('media-' + Date.now() + '-' + i);
+                try {
+                    let file;
+                    if (f.blob) {
+                        // Web returns a real Blob directly.
+                        file = new File([f.blob], name, { type: mime });
+                    } else if (f.path) {
+                        // iOS/Android: convert the native path to a WebView-fetchable URL.
+                        const src = (window.Capacitor && window.Capacitor.convertFileSrc)
+                            ? window.Capacitor.convertFileSrc(f.path)
+                            : f.path;
+                        const blob = await (await fetch(src)).blob();
+                        file = new File([blob], name, { type: mime });
+                    } else {
+                        continue;
+                    }
+                    files.push(file);
+                } catch (convErr) {
+                    console.error('[NativeCamera] pickMedia conversion failed:', convErr);
+                }
+            }
+            return { files: files, cancelled: false };
+        } catch (e) {
+            const msg = (e && e.message) || '';
+            if (msg.includes('cancel') || msg.includes('Cancel') || (e && e.code === 'USER_CANCELLED') || (e && e.code === 'OS-PLUGIN-FILEPICKER-0001')) {
+                return { files: [], cancelled: true };
+            }
+            return { files: [], cancelled: false, error: msg || 'Media picker failed' };
+        }
+    }
+
     // Expose globally — matches window.IAP / window.API patterns
     window.NativeCamera = {
         pickProfilePhoto: pickProfilePhoto,
@@ -290,6 +341,7 @@
         pickMessageImage: pickMessageImage,
         pickMessageVideo: pickMessageVideo,
         showMessageMediaSheet: showMessageMediaSheet,
+        pickMedia: pickMedia,
         base64ToFile: base64ToFile,
         webPathToFile: webPathToFile
     };

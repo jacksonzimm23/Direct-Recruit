@@ -19,6 +19,7 @@
     "@capacitor/push-notifications": "^8.0.3",
     "@capacitor/splash-screen": "^8.0.1",
     "@capacitor/status-bar": "^8.0.2",
+    "@capawesome/capacitor-file-picker": "^8.0.2",
     "@parse/node-apn": "^8.1.0",
     "@revenuecat/purchases-capacitor": "^10.4.0"
   },

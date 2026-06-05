@@ -772,10 +772,12 @@ function setupEventListeners() {
     if (attachMediaBtn) {
         attachMediaBtn.addEventListener('click', async () => {
             const iOS = window.API && window.API.isIOSApp && window.API.isIOSApp();
-            if (iOS && window.NativeCamera && window.NativeCamera.showMessageMediaSheet) {
-                await window.NativeCamera.showMessageMediaSheet(async (file, mediaType) => {
-                    processMediaFile(file, mediaType);
-                });
+            // iOS: standard Apple media picker (photos + videos) via FilePicker.
+            if (iOS && window.NativeCamera && window.NativeCamera.pickMedia) {
+                const r = await window.NativeCamera.pickMedia({ multiple: false });
+                if (r.error && window.showToast) { window.showToast('Media picker failed: ' + r.error, 'error'); return; }
+                const file = r.files && r.files[0];
+                if (file) processMediaFile(file, (file.type || '').startsWith('video/') ? 'video' : 'image');
             } else if (imageInput) {
                 imageInput.click();
             }

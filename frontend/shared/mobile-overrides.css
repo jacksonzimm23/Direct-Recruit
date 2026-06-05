@@ -893,7 +893,7 @@ html {
     .mobile-fab-post {
         display: flex !important;
         position: fixed !important;
-        bottom: 85px !important;
+        bottom: 80px !important;
         right: 1rem !important;
         width: 56px !important;
         height: 56px !important;
