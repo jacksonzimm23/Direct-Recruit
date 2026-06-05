@@ -255,8 +255,22 @@ async function selectConversation(conversationId) {
     if (threadHeader) threadHeader.style.display = 'flex';
     if (inputContainer) inputContainer.style.display = 'flex';
 
+    // Reveal the thread on mobile BEFORE loading messages. The scroll container
+    // (#messageThreadContent) lives inside #messageThread, which is display:none
+    // until .active — scrolling a hidden element is a no-op, which made reopening
+    // a conversation land at the top. Add .active first so it's visible/laid out.
+    const messageThread = document.getElementById('messageThread');
+    if (window.innerWidth <= 768 && messageThread) {
+        messageThread.classList.add('active');
+    }
+
     // Load messages (this also marks the conversation as read on the backend)
     await loadMessages(conversationId);
+
+    // Force the thread to the latest message after layout settles. innerHTML was
+    // just replaced (and images may still be sizing), so defer past the next
+    // paint — a synchronous scroll here uses a stale scrollHeight.
+    requestAnimationFrame(() => requestAnimationFrame(scrollToBottom));
 
     // Update the unread messages badge in the sidebar nav
     if (typeof updateUnreadMessagesBadge === 'function') {
@@ -267,12 +281,6 @@ async function selectConversation(conversationId) {
     const conv = conversations.find(c => c.id === conversationId);
     if (conv && conv.participants && conv.participants[0]) {
         updateThreadHeader(conv.participants[0]);
-    }
-
-    // Show message thread on mobile
-    const messageThread = document.getElementById('messageThread');
-    if (window.innerWidth <= 768 && messageThread) {
-        messageThread.classList.add('active');
     }
 }
 
