@@ -279,6 +279,11 @@ async function selectConversation(conversationId) {
 async function loadMessages(conversationId, markRead = true) {
     const messageThreadContent = document.getElementById('messageThreadContent');
 
+    // markRead=true means this is an initial open (not a poll). Reset the render
+    // signature so the thread always rebuilds + force-scrolls to the latest
+    // message when a conversation is opened.
+    if (markRead) lastRenderedSignature = null;
+
     try {
         const url = markRead
             ? `/messages/conversations/${conversationId}`
@@ -286,15 +291,36 @@ async function loadMessages(conversationId, markRead = true) {
         const response = await API.get(url);
         const messages = response.messages || [];
 
-        renderMessages(messages.reverse()); // Reverse to show oldest first
+        renderMessages(messages.reverse(), markRead); // Reverse to show oldest first; force-scroll on open
     } catch (error) {
         console.error('Failed to load messages:', error);
         messageThreadContent.innerHTML = '<div class="message-error">Failed to load messages</div>';
     }
 }
 
-function renderMessages(messages) {
+// Signature of the currently-rendered message set, so polling can skip the
+// destructive innerHTML rebuild when nothing changed (kills the every-5s flicker
+// + scroll reset). Reset to null whenever a different conversation is opened.
+let lastRenderedSignature = null;
+
+function messagesSignature(messages) {
+    if (!messages.length) return 'empty';
+    const last = messages[messages.length - 1];
+    return `${messages.length}|${last.id}|${last.created_at}`;
+}
+
+// forceScroll=true on initial open (always jump to latest). On a poll re-render,
+// only scroll to bottom if the user was already near the bottom — don't yank them
+// down while they're reading older messages.
+function renderMessages(messages, forceScroll = false) {
     const messageThreadContent = document.getElementById('messageThreadContent');
+    if (!messageThreadContent) return;
+
+    // Skip the rebuild entirely if the message set is unchanged (poll no-op).
+    const sig = messagesSignature(messages);
+    if (sig === lastRenderedSignature) return;
+    const hadContent = lastRenderedSignature !== null;
+    lastRenderedSignature = sig;
 
     if (messages.length === 0) {
         messageThreadContent.innerHTML = `
@@ -304,6 +330,9 @@ function renderMessages(messages) {
         `;
         return;
     }
+
+    // Capture whether the user was near the bottom BEFORE we rebuild.
+    const nearBottom = isNearBottom(messageThreadContent);
 
     let html = '';
     let lastDate = null;
@@ -323,9 +352,7 @@ function renderMessages(messages) {
         html += `
             <div class="message-group ${isSent ? 'sent' : 'received'}">
                 <div class="message-content">
-                    <div class="message-bubble ${isSent ? 'sent' : 'received'}">
-                        ${renderMessageBubbleContent(msg)}
-                    </div>
+                    ${renderMessageInner(msg, isSent)}
                     <div class="message-time">
                         ${formatMessageTime(msg.created_at)}
                     </div>
@@ -335,7 +362,12 @@ function renderMessages(messages) {
     });
 
     messageThreadContent.innerHTML = html;
-    scrollToBottom();
+
+    // Initial open OR a poll where the user was already at the bottom → scroll to
+    // the latest. If the user had scrolled up to read history, leave them be.
+    if (forceScroll || !hadContent || nearBottom) {
+        scrollToBottom();
+    }
 }
 
 function updateThreadHeader(participant) {
@@ -584,16 +616,22 @@ async function sendMessage() {
     }
 }
 
-function renderMessageBubbleContent(msg) {
+// Builds the inner HTML of a message's .message-content: media renders OUTSIDE
+// the colored bubble (so the blue background only wraps text), and the text
+// bubble is only emitted when there's actual text. A media-only message has no
+// bubble at all.
+function renderMessageInner(msg, isSent) {
     const parts = [];
     if (msg.media_url && msg.media_type === 'image') {
         const url = escapeHtml(msg.media_url);
-        parts.push(`<div class="message-media"><img src="${url}" alt="Attachment" onclick="window.open('${url}','_blank')" style="max-width:240px;max-height:240px;border-radius:8px;cursor:pointer;display:block;"></div>`);
+        parts.push(`<div class="message-media"><img src="${url}" alt="Attachment" onclick="window.open('${url}','_blank')"></div>`);
     } else if (msg.media_url && msg.media_type === 'video') {
         const url = escapeHtml(msg.media_url);
-        parts.push(`<div class="message-media"><video src="${url}" controls preload="metadata" style="max-width:240px;max-height:240px;border-radius:8px;display:block;"></video></div>`);
+        parts.push(`<div class="message-media"><video src="${url}" controls preload="metadata"></video></div>`);
     }
-    if (msg.content) parts.push(`<p>${escapeHtml(msg.content)}</p>`);
+    if (msg.content) {
+        parts.push(`<div class="message-bubble ${isSent ? 'sent' : 'received'}"><p>${escapeHtml(msg.content)}</p></div>`);
+    }
     return parts.join('');
 }
 
@@ -609,9 +647,7 @@ function appendMessage(msg) {
 
     messageGroup.innerHTML = `
         <div class="message-content">
-            <div class="message-bubble ${isSent ? 'sent' : 'received'}">
-                ${renderMessageBubbleContent(msg)}
-            </div>
+            ${renderMessageInner(msg, isSent)}
             <div class="message-time">
                 ${formatMessageTime(msg.created_at)}
             </div>
@@ -624,6 +660,7 @@ function appendMessage(msg) {
         messageThreadContent.appendChild(messageGroup);
     }
 
+    // appendMessage is only called when YOU send a message, so always scroll down.
     scrollToBottom();
 }
 
@@ -876,6 +913,13 @@ function scrollToBottom() {
     if (messageThreadContent) {
         messageThreadContent.scrollTop = messageThreadContent.scrollHeight;
     }
+}
+
+// True if the user is at/near the bottom of the thread (within ~120px). Used to
+// decide whether a poll re-render should auto-scroll to the newest message.
+function isNearBottom(el, threshold = 120) {
+    if (!el) return true;
+    return el.scrollHeight - el.scrollTop - el.clientHeight <= threshold;
 }
 
 function showEmptyState() {

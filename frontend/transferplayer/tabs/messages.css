@@ -472,6 +472,29 @@
     border-bottom-right-radius: 4px;
 }
 
+/* Media renders OUTSIDE the colored bubble — no background/padding, just the
+   media with rounded corners. Sits as its own row in the .message-content column
+   (a small gap above the text bubble when both are present). */
+.message-media {
+    display: block;
+    max-width: 240px;
+}
+
+.message-group.sent .message-media {
+    margin-left: auto; /* right-align sent media under the sender's column */
+}
+
+.message-media img,
+.message-media video {
+    max-width: 240px;
+    max-height: 240px;
+    width: auto;
+    height: auto;
+    border-radius: 12px;
+    display: block;
+    cursor: pointer;
+}
+
 .message-time {
     font-size: 0.75rem;
     color: rgba(254, 252, 251, 0.5);
