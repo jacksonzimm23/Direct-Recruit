@@ -245,14 +245,15 @@ document.addEventListener('DOMContentLoaded', function() {
     function getShortDivision(division) {
         if (!division) return '';
         const div = division.trim().toLowerCase();
-        if (div === 'fbs' || div === 'fcs') return 'D1';
+        // Preserve the FBS/FCS subdivision (was collapsed to bare "D1").
+        if (div.includes('fbs')) return 'D1 FBS';
+        if (div.includes('fcs')) return 'D1 FCS';
         if (div.startsWith('d1')) return 'D1';
         if (div === 'd2') return 'D2';
         if (div === 'd3') return 'D3';
         if (div === 'naia') return 'NAIA';
         if (div === 'juco') return 'JUCO';
         if (div.includes('division')) {
-            if (div.includes('fbs') || div.includes('fcs')) return 'D1';
             if (div.includes('iii') || div.includes('3')) return 'D3';
             if (div.includes('ii') || div.includes('2')) return 'D2';
             return 'D1';
