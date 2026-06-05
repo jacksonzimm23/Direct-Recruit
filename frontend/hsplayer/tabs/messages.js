@@ -267,10 +267,10 @@ async function selectConversation(conversationId) {
     // Load messages (this also marks the conversation as read on the backend)
     await loadMessages(conversationId);
 
-    // Force the thread to the latest message after layout settles. innerHTML was
-    // just replaced (and images may still be sizing), so defer past the next
-    // paint — a synchronous scroll here uses a stale scrollHeight.
-    requestAnimationFrame(() => requestAnimationFrame(scrollToBottom));
+    // Jump to the latest message on open. scrollToBottom() self-retries across
+    // frames + on media load, so it lands at the true bottom even though innerHTML
+    // was just replaced and images may still be sizing.
+    scrollToBottom();
 
     // Update the unread messages badge in the sidebar nav
     if (typeof updateUnreadMessagesBadge === 'function') {
@@ -919,10 +919,30 @@ function escapeHtml(text) {
 }
 
 function scrollToBottom() {
-    const messageThreadContent = document.getElementById('messageThreadContent');
-    if (messageThreadContent) {
-        messageThreadContent.scrollTop = messageThreadContent.scrollHeight;
-    }
+    const el = document.getElementById('messageThreadContent');
+    if (!el) return;
+
+    const jump = () => { el.scrollTop = el.scrollHeight; };
+
+    // Scroll now, then again over the next few frames. A single synchronous jump
+    // loses the race when innerHTML was just replaced (the new height isn't
+    // applied yet) or the thread was just revealed (display:none → flex), which
+    // is why opening a conversation landed at the top.
+    jump();
+    requestAnimationFrame(jump);
+    requestAnimationFrame(() => requestAnimationFrame(jump));
+    setTimeout(jump, 50);
+    setTimeout(jump, 200);
+
+    // Media grows the thread AFTER it's rendered — re-scroll as each image/video
+    // in the thread finishes loading so we end at the true bottom, not above it.
+    el.querySelectorAll('img, video').forEach((m) => {
+        const loaded = (m.tagName === 'IMG') ? m.complete : (m.readyState >= 1);
+        if (loaded) return;
+        const evt = (m.tagName === 'IMG') ? 'load' : 'loadedmetadata';
+        m.addEventListener(evt, jump, { once: true });
+        m.addEventListener('error', jump, { once: true });
+    });
 }
 
 // True if the user is at/near the bottom of the thread (within ~120px). Used to
