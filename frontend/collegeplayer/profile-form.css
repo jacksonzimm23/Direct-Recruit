@@ -981,3 +981,78 @@ input.input-success {
         gap: 0.75rem;
     }
 }
+
+/* ============================================================
+   Recruiting Fit — importance sliders + multi-select cap hint
+   (AI Fit-Matching, Plan 2). Cerulean theme.
+   ============================================================ */
+
+/* Cap hint shown when a capped multi-select (e.g. max 3 majors) is full */
+.major-cap-hint {
+    display: none;
+    font-size: 0.85rem;
+    color: var(--cerulean);
+    margin-top: 0.5rem;
+    font-weight: 600;
+}
+
+/* Disabled (cap-reached) checkboxes read as inactive */
+.checkbox-label input[type="checkbox"]:disabled {
+    cursor: not-allowed;
+}
+.checkbox-label input[type="checkbox"]:disabled + span {
+    opacity: 0.45;
+}
+
+/* Importance slider rows */
+.fit-slider-group {
+    margin-bottom: 1.5rem;
+}
+.fit-slider-row {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 0.5rem;
+}
+.fit-slider-row input[type="range"] {
+    flex: 1;
+    -webkit-appearance: none;
+    appearance: none;
+    height: 6px;
+    border-radius: 3px;
+    background: rgba(18, 130, 162, 0.25);
+    outline: none;
+    cursor: pointer;
+}
+.fit-slider-row input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--cerulean);
+    cursor: pointer;
+    border: 2px solid var(--white);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+.fit-slider-row input[type="range"]::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--cerulean);
+    cursor: pointer;
+    border: 2px solid var(--white);
+}
+.fit-slider-value {
+    min-width: 2.5rem;
+    text-align: center;
+    font-weight: 700;
+    color: var(--cerulean);
+}
+.fit-slider-ends {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.8rem;
+    color: rgba(254, 252, 251, 0.55);
+    margin-top: 0.25rem;
+}

@@ -2,6 +2,7 @@ const { body, validationResult } = require('express-validator');
 const validator = require('validator');
 const logger = require('../utils/logger');
 const sanitizeHtmlLib = require('sanitize-html');
+const MATCH = require('../utils/match-constants'); // AI Fit-Matching allowlists (Plan 2)
 
 // Canonical email normalizer. Wraps the SAME validator.normalizeEmail() that
 // express-validator's .normalizeEmail() uses, so it is byte-identical to the
@@ -185,6 +186,91 @@ const validatePffGrade = (value) => {
   return true;
 };
 
+// --- AI Fit-Matching field validators (Plan 2) ---
+// Categorical/array values are checked against the canonical allowlist Sets
+// derived in backend/utils/match-constants.js (lesson #113).
+
+const validateWeightedGpa = (value) => {
+  if (value === null || value === undefined || value === '') return true;
+  const g = parseFloat(value);
+  if (!Number.isFinite(g) || g < 0 || g > 6) throw new Error('Weighted GPA must be between 0 and 6');
+  return true;
+};
+
+const validateApIbCount = (value) => {
+  if (value === null || value === undefined || value === '') return true;
+  const n = parseInt(value, 10);
+  if (!Number.isInteger(n) || n < 0 || n > 40) throw new Error('AP/IB count must be between 0 and 40');
+  return true;
+};
+
+const validateHomeZip = (value) => {
+  if (value === null || value === undefined || value === '') return true;
+  if (!/^\d{5}$/.test(String(value))) throw new Error('Home ZIP must be a 5-digit code');
+  return true;
+};
+
+// Factory: value (or each array element) must be in the given allowlist Set.
+const inSet = (set, label) => (value) => {
+  if (value === null || value === undefined || value === '') return true;
+  const items = Array.isArray(value) ? value : [value];
+  for (const v of items) {
+    if (!set.has(v)) throw new Error(`Invalid ${label}: ${v}`);
+  }
+  return true;
+};
+
+const validateIntendedMajor = (value) => {
+  if (value === null || value === undefined) return true;
+  if (!Array.isArray(value)) throw new Error('intended_major must be an array');
+  if (value.length > 3) throw new Error('Select at most 3 majors');
+  return inSet(MATCH.VALID_MAJORS, 'major')(value);
+};
+
+const validateSliderRange = (value) => {
+  if (value === null || value === undefined || value === '') return true;
+  const n = parseInt(value, 10);
+  if (!Number.isInteger(n) || n < 1 || n > 5) throw new Error('Importance must be between 1 and 5');
+  return true;
+};
+
+// fit_preferences is a JSONB blob — validate its known keys (all optional).
+const validateFitPreferences = (value) => {
+  if (value === null || value === undefined) return true;
+  if (typeof value !== 'object' || Array.isArray(value)) {
+    throw new Error('fit_preferences must be an object');
+  }
+  ['importance_playing_time', 'importance_close_to_home',
+   'importance_academics_vs_football', 'importance_competition_level'].forEach(k => {
+    if (value[k] !== null && value[k] !== undefined) validateSliderRange(value[k]);
+  });
+  if (value.looking_for_text != null) {
+    if (typeof value.looking_for_text !== 'string') throw new Error('looking_for_text must be a string');
+    if (value.looking_for_text.length > 280) throw new Error('looking_for_text must be 280 characters or less');
+  }
+  return true;
+};
+
+// Reusable chain for the AI Fit-Matching player fields, spread into both the
+// create and update validator arrays (lesson #2 — same validation both paths).
+const fitMatchingPlayerValidators = [
+  body('weighted_gpa').optional({ nullable: true }).custom(validateWeightedGpa),
+  body('has_ap_ib').optional({ nullable: true }).isBoolean().withMessage('has_ap_ib must be boolean'),
+  body('ap_ib_count').optional({ nullable: true }).custom(validateApIbCount),
+  body('class_rank').optional({ nullable: true }).trim().isLength({ max: 50 }).withMessage('Class rank must be 50 characters or less'),
+  body('intended_major').optional({ nullable: true }).custom(validateIntendedMajor),
+  body('home_zip').optional({ nullable: true }).custom(validateHomeZip),
+  body('needs_financial_aid').optional({ nullable: true }).custom(inSet(MATCH.VALID_YES_NO_UNSURE, 'financial aid option')),
+  body('needs_scholarship').optional({ nullable: true }).custom(inSet(MATCH.VALID_YES_NO_UNSURE, 'scholarship option')),
+  body('pell_or_first_gen').optional({ nullable: true }).isBoolean().withMessage('pell_or_first_gen must be boolean'),
+  body('levels_open').optional({ nullable: true }).isArray().withMessage('levels_open must be an array'),
+  body('levels_open').optional({ nullable: true }).custom(inSet(MATCH.VALID_LEVELS, 'level')),
+  body('preferred_regions').optional({ nullable: true }).isArray().withMessage('preferred_regions must be an array'),
+  body('preferred_regions').optional({ nullable: true }).custom(inSet(MATCH.VALID_REGIONS, 'region')),
+  body('preferred_campus_setting').optional({ nullable: true }).custom(inSet(MATCH.VALID_CAMPUS_SETTINGS, 'campus setting')),
+  body('fit_preferences').optional({ nullable: true }).custom(validateFitPreferences),
+];
+
 // --- Registration validation ---
 
 const validateRegistration = [
@@ -211,6 +297,7 @@ const validatePlayerProfile = [
   body('track_100m').optional({ nullable: true }).isNumeric().withMessage('track_100m must be numeric'),
   body('track_200m').optional({ nullable: true }).isNumeric().withMessage('track_200m must be numeric'),
   body('pff_grade').optional({ nullable: true }).custom(validatePffGrade),
+  ...fitMatchingPlayerValidators,
 ];
 
 const validateCoachProfile = [
@@ -249,6 +336,7 @@ const validatePlayerProfileUpdate = [
   body('track_100m').optional({ nullable: true }).isNumeric().withMessage('track_100m must be numeric'),
   body('track_200m').optional({ nullable: true }).isNumeric().withMessage('track_200m must be numeric'),
   body('pff_grade').optional({ nullable: true }).custom(validatePffGrade),
+  ...fitMatchingPlayerValidators,
 ];
 
 const validateCoachProfileUpdate = [

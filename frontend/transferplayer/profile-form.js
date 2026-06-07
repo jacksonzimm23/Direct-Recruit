@@ -273,6 +273,48 @@ document.addEventListener('DOMContentLoaded', async function() {
         });
     }
 
+    // ── Recruiting Fit (AI Fit-Matching, Plan 2) ──
+    let majorPicker = null, levelsPicker = null, regionsPicker = null;
+    if (typeof initMatchMultiSelect === 'function' && typeof MATCH_CONSTANTS !== 'undefined') {
+        majorPicker = initMatchMultiSelect({
+            container: '#majorContainer', chips: '#selectedMajors',
+            groups: MATCH_CONSTANTS.MAJOR_GROUPS, max: 3,
+            capHintEl: '#majorCapHint', name: 'major'
+        });
+        levelsPicker = initMatchMultiSelect({
+            container: '#levelsContainer', chips: '#selectedLevels',
+            options: MATCH_CONSTANTS.LEVELS, name: 'levels_open'
+        });
+        regionsPicker = initMatchMultiSelect({
+            container: '#regionsContainer', chips: '#selectedRegions',
+            options: MATCH_CONSTANTS.REGIONS, name: 'preferred_regions'
+        });
+    }
+
+    // AP/IB count reveal
+    document.querySelectorAll('input[name="has_ap_ib"]').forEach(radio => {
+        radio.addEventListener('change', function () {
+            const show = this.value === 'yes';
+            const grp = document.getElementById('apIbCountGroup');
+            if (grp) grp.style.display = show ? '' : 'none';
+            if (!show) { const c = document.getElementById('apIbCount'); if (c) c.value = ''; }
+        });
+    });
+
+    // Importance sliders — live value display
+    [['impPlayingTime', 'impPlayingTimeVal'], ['impCloseToHome', 'impCloseToHomeVal'],
+     ['impAcademics', 'impAcademicsVal'], ['impCompetition', 'impCompetitionVal']].forEach(([sid, vid]) => {
+        const slider = document.getElementById(sid), out = document.getElementById(vid);
+        if (slider && out) slider.addEventListener('input', () => { out.textContent = slider.value; });
+    });
+
+    // "What I'm looking for" char counter
+    const lookingFor = document.getElementById('lookingFor');
+    const lookingForCount = document.getElementById('lookingForCount');
+    if (lookingFor && lookingForCount) {
+        lookingFor.addEventListener('input', () => { lookingForCount.textContent = lookingFor.value.length; });
+    }
+
     // PFF Grade — yes/no toggle reveals the numeric input
     document.querySelectorAll('input[name="has_pff_grade"]').forEach(radio => {
         radio.addEventListener('change', function () {
@@ -486,6 +528,53 @@ document.addEventListener('DOMContentLoaded', async function() {
                 ? (parseFloat(document.getElementById('track100m').value) || null) : null;
             profileData.track_200m = (playsOther && selectedSports.includes('Track and Field'))
                 ? (parseFloat(document.getElementById('track200m').value) || null) : null;
+
+            // ── Recruiting Fit fields (AI Fit-Matching, Plan 2) ──
+            const radioVal = (name) => {
+                const el = document.querySelector(`input[name="${name}"]:checked`);
+                return el ? el.value : null;
+            };
+            const numOrNull = (id) => {
+                const el = document.getElementById(id);
+                if (!el || el.value === '') return null;
+                const n = parseFloat(el.value);
+                return Number.isNaN(n) ? null : n;
+            };
+            const intOrNull = (id) => {
+                const el = document.getElementById(id);
+                if (!el || el.value === '') return null;
+                const n = parseInt(el.value, 10);
+                return Number.isNaN(n) ? null : n;
+            };
+            const hasApIb = radioVal('has_ap_ib') === 'yes';
+            const pellVal = radioVal('pell_or_first_gen');
+
+            profileData.weighted_gpa = numOrNull('weightedGpa');
+            profileData.sat_score = intOrNull('satScore');
+            profileData.act_score = intOrNull('actScore');
+            profileData.has_ap_ib = hasApIb;
+            profileData.ap_ib_count = hasApIb ? intOrNull('apIbCount') : null;
+            profileData.class_rank = (document.getElementById('classRank')?.value || '').trim() || null;
+            const majors = majorPicker ? majorPicker.getSelected() : [];
+            profileData.intended_major = majors.length ? majors : null;
+            profileData.home_zip = (document.getElementById('homeZip')?.value || '').trim() || null;
+            profileData.needs_financial_aid = radioVal('needs_financial_aid');
+            profileData.needs_scholarship = radioVal('needs_scholarship');
+            profileData.pell_or_first_gen = pellVal === null ? null : (pellVal === 'yes');
+            const levels = levelsPicker ? levelsPicker.getSelected() : [];
+            profileData.levels_open = levels.length ? levels : null;
+            const regions = regionsPicker ? regionsPicker.getSelected() : [];
+            profileData.preferred_regions = regions.length ? regions : null;
+            profileData.preferred_campus_setting = document.getElementById('campusSetting')?.value || null;
+
+            const lookingForVal = (document.getElementById('lookingFor')?.value || '').trim();
+            profileData.fit_preferences = {
+                importance_playing_time: intOrNull('impPlayingTime'),
+                importance_close_to_home: intOrNull('impCloseToHome'),
+                importance_academics_vs_football: intOrNull('impAcademics'),
+                importance_competition_level: intOrNull('impCompetition'),
+                looking_for_text: lookingForVal || null
+            };
 
             if (isUpdating) {
                 // Updates: create/update profile directly, no payment

@@ -293,7 +293,7 @@
                         </div>
 
                         <div class="form-group">
-                            <label for="gpa">GPA <span class="optional">(Optional)</span></label>
+                            <label for="gpa">Unweighted GPA <span class="optional">(Optional)</span></label>
                             <input
                                 type="number"
                                 id="gpa"
@@ -303,8 +303,52 @@
                                 step="0.01"
                                 placeholder="e.g., 3.75"
                             >
-                            <small class="form-hint">Enter your current GPA on a 4.0 scale</small>
+                            <small class="form-hint">Your GPA on a 4.0 scale</small>
                         </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="satScore">SAT Score <span class="optional">(Optional)</span></label>
+                            <input type="number" id="satScore" name="satScore" min="400" max="1600" step="10" placeholder="e.g., 1180">
+                        </div>
+                        <div class="form-group">
+                            <label for="actScore">ACT Score <span class="optional">(Optional)</span></label>
+                            <input type="number" id="actScore" name="actScore" min="1" max="36" step="1" placeholder="e.g., 26">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>AP / IB / Honors courses taken (in high school)? <span class="optional">(Optional)</span></label>
+                            <div class="radio-row">
+                                <label class="radio-label">
+                                    <input type="radio" name="has_ap_ib" value="no" checked>
+                                    <span>No</span>
+                                </label>
+                                <label class="radio-label">
+                                    <input type="radio" name="has_ap_ib" value="yes">
+                                    <span>Yes</span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="form-group" id="apIbCountGroup" style="display: none;">
+                            <label for="apIbCount">How many?</label>
+                            <input type="number" id="apIbCount" name="apIbCount" min="0" max="40" step="1" placeholder="e.g., 5">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="classRank">Class Rank <span class="optional">(Optional)</span></label>
+                        <input type="text" id="classRank" name="classRank" maxlength="50" placeholder="e.g., Top 10%">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Current Major <span class="optional">(Optional)</span></label>
+                        <p class="form-hint" style="margin-bottom: 0.75rem;">Select up to 3 majors</p>
+                        <div class="multi-select-container" id="majorContainer"></div>
+                        <small class="major-cap-hint" id="majorCapHint">Maximum of 3 majors selected</small>
+                        <div class="selected-items" id="selectedMajors"></div>
                     </div>
                 </div>
 
@@ -459,6 +503,14 @@
                                     <span>Long Snapper (LS)</span>
                                 </label>
                             </div>
+
+                            <div class="multi-select-group">
+                                <h4 class="group-label">Utility</h4>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" name="position" value="ATH">
+                                    <span>Athlete (ATH)</span>
+                                </label>
+                            </div>
                         </div>
                         <div class="selected-items" id="selectedPositions"></div>
                     </div>
@@ -490,6 +542,117 @@
                     </div>
                 </div>
 
+                <!-- Recruiting Fit Section -->
+                <div class="form-section">
+                    <h2 class="section-title">Recruiting Fit</h2>
+                    <p class="form-hint" style="margin-bottom: 1rem;">Optional — helps coaches find players who truly fit their program. The more you share, the better your matches.</p>
+
+                    <div class="form-group">
+                        <label for="homeZip">Home ZIP Code <span class="optional">(Optional)</span></label>
+                        <input type="text" id="homeZip" name="homeZip" inputmode="numeric" pattern="[0-9]{5}" maxlength="5" placeholder="e.g., 80401">
+                        <small class="form-hint">Helps coaches gauge distance and regional fit</small>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Will you need financial aid? <span class="optional">(Optional)</span></label>
+                            <div class="radio-row">
+                                <label class="radio-label"><input type="radio" name="needs_financial_aid" value="yes"><span>Yes</span></label>
+                                <label class="radio-label"><input type="radio" name="needs_financial_aid" value="no"><span>No</span></label>
+                                <label class="radio-label"><input type="radio" name="needs_financial_aid" value="unsure"><span>Unsure</span></label>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Do you need athletic scholarship money? <span class="optional">(Optional)</span></label>
+                            <div class="radio-row">
+                                <label class="radio-label"><input type="radio" name="needs_scholarship" value="yes"><span>Yes</span></label>
+                                <label class="radio-label"><input type="radio" name="needs_scholarship" value="no"><span>No</span></label>
+                                <label class="radio-label"><input type="radio" name="needs_scholarship" value="unsure"><span>Unsure</span></label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Are you Pell-eligible or a first-generation college student? <span class="optional">(Optional)</span></label>
+                        <div class="radio-row">
+                            <label class="radio-label"><input type="radio" name="pell_or_first_gen" value="yes"><span>Yes</span></label>
+                            <label class="radio-label"><input type="radio" name="pell_or_first_gen" value="no"><span>No</span></label>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Levels open to playing <span class="optional">(Optional)</span></label>
+                        <p class="form-hint" style="margin-bottom: 0.75rem;">Which division levels would you consider?</p>
+                        <div class="multi-select-container" id="levelsContainer"></div>
+                        <div class="selected-items" id="selectedLevels"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Preferred region(s) <span class="optional">(Optional)</span></label>
+                        <p class="form-hint" style="margin-bottom: 0.75rem;">Where would you like to play?</p>
+                        <div class="multi-select-container" id="regionsContainer"></div>
+                        <div class="selected-items" id="selectedRegions"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="campusSetting">Preferred campus setting <span class="optional">(Optional)</span></label>
+                        <select id="campusSetting" name="campusSetting">
+                            <option value="">No preference</option>
+                            <option value="urban">Urban</option>
+                            <option value="suburban">Suburban</option>
+                            <option value="rural">Rural</option>
+                            <option value="small-town">Small town</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>How important is each of these to you? <span class="optional">(Optional)</span></label>
+                        <p class="form-hint" style="margin-bottom: 1rem;">Slide from Not important (1) to Very important (5)</p>
+
+                        <div class="fit-slider-group">
+                            <label for="impPlayingTime">Early playing time</label>
+                            <div class="fit-slider-row">
+                                <input type="range" id="impPlayingTime" name="impPlayingTime" min="1" max="5" step="1" value="3">
+                                <span class="fit-slider-value" id="impPlayingTimeVal">3</span>
+                            </div>
+                            <div class="fit-slider-ends"><span>Not important</span><span>Very important</span></div>
+                        </div>
+
+                        <div class="fit-slider-group">
+                            <label for="impCloseToHome">Staying close to home</label>
+                            <div class="fit-slider-row">
+                                <input type="range" id="impCloseToHome" name="impCloseToHome" min="1" max="5" step="1" value="3">
+                                <span class="fit-slider-value" id="impCloseToHomeVal">3</span>
+                            </div>
+                            <div class="fit-slider-ends"><span>Not important</span><span>Very important</span></div>
+                        </div>
+
+                        <div class="fit-slider-group">
+                            <label for="impAcademics">Academics vs. football</label>
+                            <div class="fit-slider-row">
+                                <input type="range" id="impAcademics" name="impAcademics" min="1" max="5" step="1" value="3">
+                                <span class="fit-slider-value" id="impAcademicsVal">3</span>
+                            </div>
+                            <div class="fit-slider-ends"><span>Football-first</span><span>Academics-first</span></div>
+                        </div>
+
+                        <div class="fit-slider-group">
+                            <label for="impCompetition">Level of competition</label>
+                            <div class="fit-slider-row">
+                                <input type="range" id="impCompetition" name="impCompetition" min="1" max="5" step="1" value="3">
+                                <span class="fit-slider-value" id="impCompetitionVal">3</span>
+                            </div>
+                            <div class="fit-slider-ends"><span>Not important</span><span>Very important</span></div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="lookingFor">What I'm looking for in a program <span class="optional">(Optional)</span></label>
+                        <textarea id="lookingFor" name="lookingFor" maxlength="280" rows="3" placeholder="In a sentence or two, describe your ideal program (playing style, culture, goals)..."></textarea>
+                        <small class="form-hint"><span id="lookingForCount">0</span>/280</small>
+                    </div>
+                </div>
+
                 <!-- Submit Button -->
                 <div class="form-actions">
                     <button type="submit" class="btn-submit">
@@ -509,6 +672,8 @@
 
     <script src="../shared/api.js"></script>
     <script src="../shared/school-search.js"></script>
+    <script src="../shared/match-constants.js"></script>
+    <script src="../shared/match-ui.js"></script>
     <script src="profile-form.js"></script>
 </body>
 </html>
