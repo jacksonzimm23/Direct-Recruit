@@ -367,6 +367,207 @@
 
                 </div>
 
+                <!-- Program Profile (AI Fit-Matching, Plan 3) -->
+                <div class="form-section">
+                    <h2 class="section-title">Program Profile</h2>
+                    <p class="form-hint" style="margin-bottom: 1.25rem;">Optional — helps players see if your program fits them academically and financially.</p>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="admittedGpaMin">Typical admitted GPA — min <span class="optional">(Optional)</span></label>
+                            <input type="number" id="admittedGpaMin" name="admittedGpaMin" min="0" max="4" step="0.01" placeholder="e.g., 3.20">
+                        </div>
+                        <div class="form-group">
+                            <label for="admittedGpaMax">Typical admitted GPA — max <span class="optional">(Optional)</span></label>
+                            <input type="number" id="admittedGpaMax" name="admittedGpaMax" min="0" max="4" step="0.01" placeholder="e.g., 3.90">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Test-optional school? <span class="optional">(Optional)</span></label>
+                        <div class="radio-row">
+                            <label class="radio-label"><input type="radio" name="test_optional" value="yes"><span>Yes</span></label>
+                            <label class="radio-label"><input type="radio" name="test_optional" value="no"><span>No</span></label>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="satMin">Typical SAT — min <span class="optional">(Optional)</span></label>
+                            <input type="number" id="satMin" name="satMin" min="400" max="1600" step="10" placeholder="e.g., 1100">
+                        </div>
+                        <div class="form-group">
+                            <label for="satMax">Typical SAT — max <span class="optional">(Optional)</span></label>
+                            <input type="number" id="satMax" name="satMax" min="400" max="1600" step="10" placeholder="e.g., 1350">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="actMin">Typical ACT — min <span class="optional">(Optional)</span></label>
+                            <input type="number" id="actMin" name="actMin" min="1" max="36" step="1" placeholder="e.g., 22">
+                        </div>
+                        <div class="form-group">
+                            <label for="actMax">Typical ACT — max <span class="optional">(Optional)</span></label>
+                            <input type="number" id="actMax" name="actMax" min="1" max="36" step="1" placeholder="e.g., 30">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Top academic programs at the school <span class="optional">(Optional)</span></label>
+                        <p class="form-hint" style="margin-bottom: 0.75rem;">Programs your school is known for academically.</p>
+                        <div class="multi-select-container" id="topProgramsContainer"></div>
+                        <div class="selected-items" id="selectedTopPrograms"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Most common majors among football players <span class="optional">(Optional)</span></label>
+                        <p class="form-hint" style="margin-bottom: 0.75rem;">What your football players typically study.</p>
+                        <div class="multi-select-container" id="footballMajorsContainer"></div>
+                        <div class="selected-items" id="selectedFootballMajors"></div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="affordabilityBand">Net cost / affordability <span class="optional">(Optional)</span></label>
+                            <select id="affordabilityBand" name="affordabilityBand">
+                                <option value="">Select…</option>
+                                <option value="low">Low cost</option>
+                                <option value="mid">Mid cost</option>
+                                <option value="high">High cost</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="offersAthleticAid">Offers athletic aid? <span class="optional">(Optional)</span></label>
+                            <select id="offersAthleticAid" name="offersAthleticAid">
+                                <option value="">Select…</option>
+                                <option value="full">Full scholarships</option>
+                                <option value="partial">Partial / equivalency</option>
+                                <option value="none">No athletic aid</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="aidGenerosity">Aid generosity <span class="optional">(Optional)</span></label>
+                            <select id="aidGenerosity" name="aidGenerosity">
+                                <option value="">Select…</option>
+                                <option value="need-met">Meets full need</option>
+                                <option value="strong">Strong aid</option>
+                                <option value="limited">Limited aid</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <!-- Note: roster % serializes into the fit_preferences JSONB blob, not a column. -->
+                            <label for="rosterPctOnAid">Roster % on athletic aid <span class="optional">(Optional)</span></label>
+                            <select id="rosterPctOnAid" name="rosterPctOnAid">
+                                <option value="">Select…</option>
+                                <option value="none">None</option>
+                                <option value="some">Some</option>
+                                <option value="most">Most</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="campusSetting">Campus setting <span class="optional">(Optional)</span></label>
+                            <select id="campusSetting" name="campusSetting">
+                                <option value="">Select…</option>
+                                <option value="urban">Urban</option>
+                                <option value="suburban">Suburban</option>
+                                <option value="rural">Rural</option>
+                                <option value="small-town">Small town</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="distanceProfile">Distance profile we recruit <span class="optional">(Optional)</span></label>
+                            <select id="distanceProfile" name="distanceProfile">
+                                <option value="">Select…</option>
+                                <option value="local">Mostly local</option>
+                                <option value="regional">Regional</option>
+                                <option value="national">National</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="hsTierRecruited">High school tier we typically recruit <span class="optional">(Optional)</span></label>
+                        <select id="hsTierRecruited" name="hsTierRecruited">
+                            <option value="">Select…</option>
+                            <option value="elite">Elite programs</option>
+                            <option value="strong">Strong programs</option>
+                            <option value="developmental">Developmental</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Program Fit (AI Fit-Matching, Plan 3) -->
+                <div class="form-section">
+                    <h2 class="section-title">Program Fit</h2>
+                    <p class="form-hint" style="margin-bottom: 1.25rem;">Optional — tells the AI what kind of player thrives in your program.</p>
+
+                    <div class="form-group">
+                        <div class="fit-slider-group">
+                            <label for="devVsPlugAndPlay">Development vs. plug-and-play <span class="optional">(Optional)</span></label>
+                            <div class="fit-slider-row">
+                                <input type="range" id="devVsPlugAndPlay" name="devVsPlugAndPlay" min="1" max="5" step="1" value="3">
+                                <span class="fit-slider-value" id="devVsPlugAndPlayVal">3</span>
+                            </div>
+                            <div class="fit-slider-ends"><span>Develop raw talent</span><span>Plug-and-play ready</span></div>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="offensiveScheme">Offensive scheme <span class="optional">(Optional)</span></label>
+                            <select id="offensiveScheme" name="offensiveScheme">
+                                <option value="">Select…</option>
+                                <option value="Air Raid">Air Raid</option>
+                                <option value="Pro-Style">Pro-Style</option>
+                                <option value="Spread">Spread</option>
+                                <option value="Option">Option</option>
+                                <option value="RPO">RPO</option>
+                                <option value="Multiple">Multiple</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="defensiveScheme">Defensive scheme <span class="optional">(Optional)</span></label>
+                            <select id="defensiveScheme" name="defensiveScheme">
+                                <option value="">Select…</option>
+                                <option value="4-3">4-3</option>
+                                <option value="3-4">3-4</option>
+                                <option value="Multiple">Multiple</option>
+                                <option value="4-2-5">4-2-5</option>
+                                <option value="3-3-5">3-3-5</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="academicSupport">Academic support level <span class="optional">(Optional)</span></label>
+                        <select id="academicSupport" name="academicSupport">
+                            <option value="">Select…</option>
+                            <option value="none">None</option>
+                            <option value="standard">Standard</option>
+                            <option value="strong">Strong</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Religious / military / specialty affiliation <span class="optional">(Optional)</span></label>
+                        <div class="multi-select-container" id="affiliationContainer"></div>
+                        <div class="selected-items" id="selectedAffiliation"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="greatFitText">What a great fit looks like for us <span class="optional">(Optional)</span></label>
+                        <textarea id="greatFitText" name="greatFitText" maxlength="280" rows="3" placeholder="In a sentence or two, describe the kind of player who thrives here..."></textarea>
+                        <small class="form-hint"><span id="greatFitTextCount">0</span>/280</small>
+                    </div>
+                </div>
+
                 <!-- Submit Button -->
                 <div class="form-actions">
                     <button type="submit" class="btn-submit">
@@ -389,6 +590,8 @@
     <script src="../shared/school-search.js"></script>
     <script src="coach-profile-handler.js"></script>
     <script src="../shared/iap-products.js"></script>
+    <script src="../shared/match-constants.js"></script>
+    <script src="../shared/match-ui.js"></script>
     <script src="coach-profile-form.js"></script>
 </body>
 </html>

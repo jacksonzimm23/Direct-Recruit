@@ -8,17 +8,35 @@ class CoachProfile {
   static async create(userId, profileData) {
     const {
       first_name, last_name, username, team_name, college_division,
-      position_title, city, state, phone, bio, conference
+      position_title, city, state, phone, bio, conference,
+      // AI Fit-Matching "Program Profile" columns (Plan 3)
+      admitted_gpa_min, admitted_gpa_max, test_optional, sat_min, sat_max,
+      act_min, act_max, top_programs, football_player_majors,
+      affordability_band, offers_athletic_aid, aid_generosity,
+      campus_setting, distance_profile, hs_tier_recruited, fit_preferences
     } = profileData;
 
     const result = await pool.query(
       `INSERT INTO coach_profiles
       (user_id, first_name, last_name, username, team_name, college_division,
-       position_title, city, state, phone, bio, conference)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+       position_title, city, state, phone, bio, conference,
+       admitted_gpa_min, admitted_gpa_max, test_optional, sat_min, sat_max,
+       act_min, act_max, top_programs, football_player_majors,
+       affordability_band, offers_athletic_aid, aid_generosity,
+       campus_setting, distance_profile, hs_tier_recruited, fit_preferences)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12,
+       $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24,
+       $25, $26, $27, $28)
       RETURNING *`,
       [userId, first_name, last_name, username, team_name, college_division,
-       position_title, city, state, phone, bio, conference]
+       position_title, city, state, phone, bio, conference,
+       // TEXT[] arrays (top_programs, football_player_majors) pass raw — node-postgres
+       // handles JS arrays for TEXT[]. fit_preferences is JSONB → JSON.stringify (or '{}').
+       admitted_gpa_min, admitted_gpa_max, test_optional, sat_min, sat_max,
+       act_min, act_max, top_programs, football_player_majors,
+       affordability_band, offers_athletic_aid, aid_generosity,
+       campus_setting, distance_profile, hs_tier_recruited,
+       fit_preferences != null ? JSON.stringify(fit_preferences) : '{}']
     );
     return result.rows[0];
   }
@@ -31,8 +49,13 @@ class CoachProfile {
   static async update(userId, profileData) {
     const allowedColumns = new Set([
       'first_name', 'last_name', 'username', 'team_name', 'college_division',
-      'position_title', 'city', 'state', 'phone', 'bio', 'conference'
+      'position_title', 'city', 'state', 'phone', 'bio', 'conference',
       // profile_image_url removed — set via updateProfileImage() only (security #22)
+      // AI Fit-Matching "Program Profile" columns (Plan 3)
+      'admitted_gpa_min', 'admitted_gpa_max', 'test_optional', 'sat_min', 'sat_max',
+      'act_min', 'act_max', 'top_programs', 'football_player_majors',
+      'affordability_band', 'offers_athletic_aid', 'aid_generosity',
+      'campus_setting', 'distance_profile', 'hs_tier_recruited', 'fit_preferences'
     ]);
 
     // Plan 5A: detect team_name change so we can auto-cancel inbound
@@ -54,7 +77,10 @@ class CoachProfile {
     Object.keys(profileData).forEach(key => {
       if (profileData[key] !== undefined && allowedColumns.has(key)) {
         fields.push(`${key} = $${paramCount}`);
-        values.push(profileData[key]);
+        // fit_preferences is JSONB — node-postgres needs a JSON string, not a JS object.
+        values.push(key === 'fit_preferences' && profileData[key] != null
+          ? JSON.stringify(profileData[key])
+          : profileData[key]);
         paramCount++;
       }
     });

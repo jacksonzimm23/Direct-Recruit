@@ -455,6 +455,37 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
     };
 
+    // ── AI Fit-Matching: Program Profile / Program Fit pickers (Plan 3) ──
+    // Declared in this DOMContentLoaded scope so the submit handler closure can
+    // read them via .getSelected(). Mirrors the player create forms.
+    let topProgramsPicker = null, footballMajorsPicker = null, affiliationPicker = null;
+    if (typeof initMatchMultiSelect === 'function' && typeof MATCH_CONSTANTS !== 'undefined') {
+        topProgramsPicker = initMatchMultiSelect({
+            container: '#topProgramsContainer', chips: '#selectedTopPrograms',
+            groups: MATCH_CONSTANTS.MAJOR_GROUPS, name: 'top_programs'
+        });
+        footballMajorsPicker = initMatchMultiSelect({
+            container: '#footballMajorsContainer', chips: '#selectedFootballMajors',
+            groups: MATCH_CONSTANTS.MAJOR_GROUPS, name: 'football_player_majors'
+        });
+        affiliationPicker = initMatchMultiSelect({
+            container: '#affiliationContainer', chips: '#selectedAffiliation',
+            options: MATCH_CONSTANTS.AFFILIATIONS, name: 'affiliation'
+        });
+    }
+    // Slider live value display
+    const _devSlider = document.getElementById('devVsPlugAndPlay');
+    const _devSliderVal = document.getElementById('devVsPlugAndPlayVal');
+    if (_devSlider && _devSliderVal) {
+        _devSlider.addEventListener('input', () => { _devSliderVal.textContent = _devSlider.value; });
+    }
+    // Free-text char counter
+    const _greatFit = document.getElementById('greatFitText');
+    const _greatFitCount = document.getElementById('greatFitTextCount');
+    if (_greatFit && _greatFitCount) {
+        _greatFit.addEventListener('input', () => { _greatFitCount.textContent = _greatFit.value.length; });
+    }
+
     // Form submission handler
     form.addEventListener('submit', async function(e) {
         e.preventDefault();
@@ -553,6 +584,57 @@ document.addEventListener('DOMContentLoaded', async function() {
             profileData.state = document.getElementById('collegeState').value;
             profileData.college_division = document.getElementById('division').value;
             profileData.conference = document.getElementById('conference').value;
+
+            // ── AI Fit-Matching serialization (Plan 3) ──
+            const radioVal = (name) => {
+                const el = document.querySelector(`input[name="${name}"]:checked`);
+                return el ? el.value : null;
+            };
+            const numOrNull = (id) => {
+                const el = document.getElementById(id);
+                if (!el || el.value === '') return null;
+                const n = parseFloat(el.value);
+                return Number.isNaN(n) ? null : n;
+            };
+            const intOrNull = (id) => {
+                const el = document.getElementById(id);
+                if (!el || el.value === '') return null;
+                const n = parseInt(el.value, 10);
+                return Number.isNaN(n) ? null : n;
+            };
+
+            // Program Profile columns
+            profileData.admitted_gpa_min = numOrNull('admittedGpaMin');
+            profileData.admitted_gpa_max = numOrNull('admittedGpaMax');
+            const _testOpt = radioVal('test_optional');
+            profileData.test_optional = _testOpt === null ? null : (_testOpt === 'yes');
+            profileData.sat_min = intOrNull('satMin');
+            profileData.sat_max = intOrNull('satMax');
+            profileData.act_min = intOrNull('actMin');
+            profileData.act_max = intOrNull('actMax');
+            const _topPrograms = topProgramsPicker ? topProgramsPicker.getSelected() : [];
+            profileData.top_programs = _topPrograms.length ? _topPrograms : null;
+            const _fbMajors = footballMajorsPicker ? footballMajorsPicker.getSelected() : [];
+            profileData.football_player_majors = _fbMajors.length ? _fbMajors : null;
+            profileData.affordability_band  = document.getElementById('affordabilityBand').value || null;
+            profileData.offers_athletic_aid = document.getElementById('offersAthleticAid').value || null;
+            profileData.aid_generosity      = document.getElementById('aidGenerosity').value || null;
+            profileData.campus_setting      = document.getElementById('campusSetting').value || null;
+            profileData.distance_profile    = document.getElementById('distanceProfile').value || null;
+            profileData.hs_tier_recruited   = document.getElementById('hsTierRecruited').value || null;
+
+            // Program Fit → fit_preferences JSONB (roster % lives here per migration 046)
+            const _affiliation = affiliationPicker ? affiliationPicker.getSelected() : [];
+            const _greatFitVal = (document.getElementById('greatFitText')?.value || '').trim();
+            profileData.fit_preferences = {
+                roster_pct_on_aid:    document.getElementById('rosterPctOnAid').value || null,
+                dev_vs_plug_and_play: intOrNull('devVsPlugAndPlay'),
+                offensive_scheme:     document.getElementById('offensiveScheme').value || null,
+                defensive_scheme:     document.getElementById('defensiveScheme').value || null,
+                academic_support:     document.getElementById('academicSupport').value || null,
+                affiliation:          _affiliation.length ? _affiliation : null,
+                great_fit_text:       _greatFitVal || null
+            };
 
             // Invite token — required for new College Coach profiles (backend re-validates and overrides team_name)
             if (validatedInviteToken) {

@@ -155,6 +155,8 @@ input[type="text"],
 input[type="email"],
 input[type="password"],
 input[type="url"],
+input[type="number"],
+textarea,
 select {
     width: 100%;
     padding: 0.9rem 1.2rem;
@@ -170,7 +172,9 @@ select {
 input[type="text"]::placeholder,
 input[type="email"]::placeholder,
 input[type="password"]::placeholder,
-input[type="url"]::placeholder {
+input[type="url"]::placeholder,
+input[type="number"]::placeholder,
+textarea::placeholder {
     color: rgba(254, 252, 251, 0.4);
 }
 
@@ -178,11 +182,21 @@ input[type="text"]:focus,
 input[type="email"]:focus,
 input[type="password"]:focus,
 input[type="url"]:focus,
+input[type="number"]:focus,
+textarea:focus,
 select:focus {
     outline: none;
     border-color: var(--cerulean);
     background: rgba(254, 252, 251, 0.12);
     box-shadow: 0 0 0 3px rgba(18, 130, 162, 0.1);
+}
+
+/* Free-text textarea ("What a great fit looks like for us") — inherits the
+   input styling above, plus its own sizing/resize rules (Plan 3). */
+textarea {
+    min-height: 110px;
+    line-height: 1.5;
+    resize: vertical;
 }
 
 /* Select Dropdown */
@@ -640,4 +654,85 @@ input.match-error {
 
 .password-match.no-match {
     color: #ef4444;
+}
+
+/* ── AI Fit-Matching: Program Profile / Program Fit (Plan 3) ── */
+
+/* Yes/No radios (test-optional). Coach theme → orange accent. */
+.radio-row {
+    display: flex;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    margin-top: 0.5rem;
+}
+
+.radio-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    font-weight: 500;
+    padding: 0.5rem 0;
+    color: var(--white);
+}
+
+.radio-label input[type="radio"] {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--accent-orange);
+    cursor: pointer;
+}
+
+/* Importance slider (development vs. plug-and-play). */
+.fit-slider-group {
+    margin-bottom: 1.5rem;
+}
+.fit-slider-row {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 0.5rem;
+}
+.fit-slider-row input[type="range"] {
+    flex: 1;
+    -webkit-appearance: none;
+    appearance: none;
+    height: 6px;
+    border-radius: 3px;
+    background: rgba(18, 130, 162, 0.25);
+    outline: none;
+    cursor: pointer;
+    padding: 0;
+}
+.fit-slider-row input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--cerulean);
+    cursor: pointer;
+    border: 2px solid var(--white);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+.fit-slider-row input[type="range"]::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--cerulean);
+    cursor: pointer;
+    border: 2px solid var(--white);
+}
+.fit-slider-value {
+    min-width: 2.5rem;
+    text-align: center;
+    font-weight: 700;
+    color: var(--cerulean);
+}
+.fit-slider-ends {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.8rem;
+    color: rgba(254, 252, 251, 0.55);
+    margin-top: 0.25rem;
 }

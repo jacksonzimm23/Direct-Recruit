@@ -251,6 +251,40 @@ const validateFitPreferences = (value) => {
   return true;
 };
 
+// --- Coach "Program Profile" / "Program Fit" validators (Plan 3) ---
+
+// Typical admitted GPA — col is NUMERIC(3,2): 0–4, at most 2 decimals.
+// (player's validateWeightedGpa allows 0–6, so coach needs its own bound.)
+const validateAdmittedGpa = (value) => {
+  if (value === null || value === undefined || value === '') return true;
+  const g = parseFloat(value);
+  if (!Number.isFinite(g) || g < 0 || g > 4) throw new Error('Admitted GPA must be between 0 and 4');
+  if (!/^\d+(\.\d{1,2})?$/.test(String(value))) throw new Error('Admitted GPA may have at most 2 decimal places');
+  return true;
+};
+
+// coach fit_preferences is a JSONB blob — validate its known keys (all optional).
+const validateCoachFitPreferences = (value) => {
+  if (value === null || value === undefined) return true;
+  if (typeof value !== 'object' || Array.isArray(value)) {
+    throw new Error('fit_preferences must be an object');
+  }
+  if (value.dev_vs_plug_and_play != null) validateSliderRange(value.dev_vs_plug_and_play);
+  inSet(MATCH.VALID_ROSTER_PCT_ON_AID, 'roster % on aid')(value.roster_pct_on_aid);
+  inSet(MATCH.VALID_SCHEMES_OFFENSE, 'offensive scheme')(value.offensive_scheme);
+  inSet(MATCH.VALID_SCHEMES_DEFENSE, 'defensive scheme')(value.defensive_scheme);
+  inSet(MATCH.VALID_ACADEMIC_SUPPORT, 'academic support')(value.academic_support);
+  if (value.affiliation != null) {
+    if (!Array.isArray(value.affiliation)) throw new Error('affiliation must be an array');
+    inSet(MATCH.VALID_AFFILIATIONS, 'affiliation')(value.affiliation);
+  }
+  if (value.great_fit_text != null) {
+    if (typeof value.great_fit_text !== 'string') throw new Error('great_fit_text must be a string');
+    if (value.great_fit_text.length > 280) throw new Error('great_fit_text must be 280 characters or less');
+  }
+  return true;
+};
+
 // Reusable chain for the AI Fit-Matching player fields, spread into both the
 // create and update validator arrays (lesson #2 — same validation both paths).
 const fitMatchingPlayerValidators = [
@@ -269,6 +303,29 @@ const fitMatchingPlayerValidators = [
   body('preferred_regions').optional({ nullable: true }).custom(inSet(MATCH.VALID_REGIONS, 'region')),
   body('preferred_campus_setting').optional({ nullable: true }).custom(inSet(MATCH.VALID_CAMPUS_SETTINGS, 'campus setting')),
   body('fit_preferences').optional({ nullable: true }).custom(validateFitPreferences),
+];
+
+// Reusable chain for the AI Fit-Matching coach "Program Profile" / "Program Fit"
+// fields, spread into both the create and update coach validator arrays (lesson #2).
+const fitMatchingCoachValidators = [
+  body('admitted_gpa_min').optional({ nullable: true }).custom(validateAdmittedGpa),
+  body('admitted_gpa_max').optional({ nullable: true }).custom(validateAdmittedGpa),
+  body('test_optional').optional({ nullable: true }).isBoolean().withMessage('test_optional must be boolean'),
+  body('sat_min').optional({ nullable: true }).custom(validateSatScore),
+  body('sat_max').optional({ nullable: true }).custom(validateSatScore),
+  body('act_min').optional({ nullable: true }).custom(validateActScore),
+  body('act_max').optional({ nullable: true }).custom(validateActScore),
+  body('top_programs').optional({ nullable: true }).isArray().withMessage('top_programs must be an array'),
+  body('top_programs').optional({ nullable: true }).custom(inSet(MATCH.VALID_MAJORS, 'major')),
+  body('football_player_majors').optional({ nullable: true }).isArray().withMessage('football_player_majors must be an array'),
+  body('football_player_majors').optional({ nullable: true }).custom(inSet(MATCH.VALID_MAJORS, 'major')),
+  body('affordability_band').optional({ nullable: true }).custom(inSet(MATCH.VALID_AFFORDABILITY_BANDS, 'affordability band')),
+  body('offers_athletic_aid').optional({ nullable: true }).custom(inSet(MATCH.VALID_ATHLETIC_AID_OPTIONS, 'athletic aid option')),
+  body('aid_generosity').optional({ nullable: true }).custom(inSet(MATCH.VALID_AID_GENEROSITY, 'aid generosity')),
+  body('campus_setting').optional({ nullable: true }).custom(inSet(MATCH.VALID_CAMPUS_SETTINGS, 'campus setting')),
+  body('distance_profile').optional({ nullable: true }).custom(inSet(MATCH.VALID_DISTANCE_PROFILES, 'distance profile')),
+  body('hs_tier_recruited').optional({ nullable: true }).custom(inSet(MATCH.VALID_HS_TIERS, 'HS tier')),
+  body('fit_preferences').optional({ nullable: true }).custom(validateCoachFitPreferences),
 ];
 
 // --- Registration validation ---
@@ -308,6 +365,7 @@ const validateCoachProfile = [
   body('college_division').optional({ nullable: true }).trim(),
   body('position_title').optional({ nullable: true }).trim().isLength({ max: 100 }).withMessage('Position title must be 100 characters or less'),
   body('bio').optional({ nullable: true }).trim().isLength({ max: 1000 }).withMessage('Bio must be 1000 characters or less'),
+  ...fitMatchingCoachValidators,
 ];
 
 const validateOtherProfile = [
@@ -347,6 +405,7 @@ const validateCoachProfileUpdate = [
   body('college_division').optional({ nullable: true }).trim(),
   body('position_title').optional({ nullable: true }).trim().isLength({ max: 100 }).withMessage('Position title must be 100 characters or less'),
   body('bio').optional({ nullable: true }).trim().isLength({ max: 1000 }).withMessage('Bio must be 1000 characters or less'),
+  ...fitMatchingCoachValidators,
 ];
 
 const validateOtherProfileUpdate = [
