@@ -43,6 +43,7 @@ testing.md
 pipeline.md
 lessons.md
 appcheck.md
+match.md
 
 # Local cookie/test auth jars — never commit (contain real JWTs)
 cookies.txt
@@ -79,6 +80,9 @@ frontend/admin/
 
 # Remotion video project
 video/
+
+# Experiments / prototypes (scratch only — never push)
+experiments/
 
 # Package lock (optional - can be committed if you want reproducible builds)
 # package-lock.json
