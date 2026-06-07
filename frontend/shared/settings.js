@@ -2321,13 +2321,21 @@ function renderSwitchPlayerFitFields() {
             </div>
             <div class="fit-slider-ends"><span>${lowLbl}</span><span>${highLbl}</span></div>
         </div>`;
-    return `
-        <h4 class="switch-section-heading">Academics</h4>
-        <div class="switch-form-row">
+    // Weighted GPA exists only on the hsplayer create form; college/transfer omit it.
+    const weightedGpaField = selectedTargetType === 'hsplayer' ? `
             <div class="switch-form-group">
                 <label>Weighted GPA${opt}</label>
                 <input type="number" id="switchWeightedGpa" class="form-input" min="0" max="6" step="0.01" placeholder="e.g., 4.20">
-            </div>
+            </div>` : '';
+    // AP/IB label gains the "(in high school)?" qualifier on college/transfer (their
+    // create forms phrase it that way since the courses were taken in HS).
+    const apIbLabel = selectedTargetType === 'hsplayer'
+        ? 'AP / IB / Honors courses taken?'
+        : 'AP / IB / Honors courses taken (in high school)?';
+    return `
+        <h4 class="switch-section-heading">Academics</h4>
+        <div class="switch-form-row">
+            ${weightedGpaField}
             <div class="switch-form-group">
                 <label for="switchClassRank">Class Rank${opt}</label>
                 <input type="text" id="switchClassRank" class="form-input" maxlength="50" placeholder="e.g., 12 of 350, or Top 10%">
@@ -2345,7 +2353,7 @@ function renderSwitchPlayerFitFields() {
         </div>
         <div class="switch-form-row">
             <div class="switch-form-group">
-                <label>AP / IB / Honors courses taken?${opt}</label>
+                <label>${apIbLabel}${opt}</label>
                 <div class="switch-radio-row">
                     <label class="switch-radio-label"><input type="radio" name="switchHasApIb" value="no" checked><span>No</span></label>
                     <label class="switch-radio-label"><input type="radio" name="switchHasApIb" value="yes"><span>Yes</span></label>
@@ -2452,14 +2460,17 @@ function renderStep2() {
 
     if (targetRole === 'player') {
         const needsCollege = ['collegeplayer', 'transferplayer'].includes(selectedTargetType);
+        // Transfer players describe their PREVIOUS school/state/division/conference,
+        // matching the transferplayer create form's "Previous ..." labels.
+        const prev = selectedTargetType === 'transferplayer' ? 'Previous ' : '';
         fieldsHTML += `
             <div class="switch-form-group">
-                <label>${needsCollege ? 'College/University' : 'High School'} Name <span class="required">*</span></label>
+                <label>${prev}${needsCollege ? 'College/University' : 'High School'} Name <span class="required">*</span></label>
                 <input type="text" id="switchTeamName" placeholder="Enter school name" class="form-input">
             </div>
             <div class="switch-form-row">
                 <div class="switch-form-group">
-                    <label>State <span class="required">*</span></label>
+                    <label>${prev}State <span class="required">*</span></label>
                     <select id="switchState" class="form-input">
                         <option value="">Select State</option>
                         ${US_STATES.map(([abbr, name]) => `<option value="${abbr}">${name}</option>`).join('')}
@@ -2475,7 +2486,7 @@ function renderStep2() {
                 <p class="form-hint" style="margin-bottom: 0.5rem;">Select all positions you play</p>
                 <div class="switch-position-grid">
                     <div class="switch-pos-group">
-                        <h4 class="switch-pos-group-label">Offense - Skill</h4>
+                        <h4 class="switch-pos-group-label">Offense - Skill Positions</h4>
                         ${['QB|Quarterback', 'RB|Running Back', 'FB|Fullback', 'WR|Wide Receiver', 'TE|Tight End'].map(p => {
                             const [code, name] = p.split('|');
                             return `<label class="switch-pos-checkbox"><input type="checkbox" name="switchPosition" value="${code}"><span>${name} (${code})</span></label>`;
@@ -2496,7 +2507,7 @@ function renderStep2() {
                         }).join('')}
                     </div>
                     <div class="switch-pos-group">
-                        <h4 class="switch-pos-group-label">Defense - LBs</h4>
+                        <h4 class="switch-pos-group-label">Defense - Linebackers</h4>
                         ${['ILB|Inside Linebacker', 'OLB|Outside Linebacker'].map(p => {
                             const [code, name] = p.split('|');
                             return `<label class="switch-pos-checkbox"><input type="checkbox" name="switchPosition" value="${code}"><span>${name} (${code})</span></label>`;
@@ -2512,6 +2523,13 @@ function renderStep2() {
                     <div class="switch-pos-group">
                         <h4 class="switch-pos-group-label">Special Teams</h4>
                         ${['K|Kicker', 'P|Punter', 'LS|Long Snapper'].map(p => {
+                            const [code, name] = p.split('|');
+                            return `<label class="switch-pos-checkbox"><input type="checkbox" name="switchPosition" value="${code}"><span>${name} (${code})</span></label>`;
+                        }).join('')}
+                    </div>
+                    <div class="switch-pos-group">
+                        <h4 class="switch-pos-group-label">Utility</h4>
+                        ${['ATH|Athlete'].map(p => {
                             const [code, name] = p.split('|');
                             return `<label class="switch-pos-checkbox"><input type="checkbox" name="switchPosition" value="${code}"><span>${name} (${code})</span></label>`;
                         }).join('')}
@@ -2535,8 +2553,9 @@ function renderStep2() {
                 </div>
             </div>
             <div class="switch-form-group">
-                <label>GPA</label>
-                <input type="number" id="switchGPA" placeholder="e.g. 3.5" class="form-input" min="0" max="4" step="0.01">
+                <label for="switchGPA">Unweighted GPA <span class="optional">(Optional)</span></label>
+                <input type="number" id="switchGPA" placeholder="e.g., 3.75" class="form-input" min="0" max="4" step="0.01">
+                <small class="form-hint">Your GPA on a 4.0 scale</small>
             </div>
         `;
 
@@ -2544,31 +2563,52 @@ function renderStep2() {
             fieldsHTML += `
                 <div class="switch-form-row">
                     <div class="switch-form-group form-group">
-                        <label>Division <span class="required">*</span></label>
+                        <label>${prev}Division <span class="required">*</span></label>
                         <select id="switchDivision" class="form-input">
                             <option value="">Select Division</option>
                             ${DIVISION_OPTIONS.map(([val, label]) => `<option value="${val}">${label}</option>`).join('')}
                         </select>
                     </div>
                     <div class="switch-form-group">
-                        <label>Conference</label>
-                        <input type="text" id="switchConference" placeholder="e.g. SEC" class="form-input">
+                        <label>${prev}Conference <span class="optional">(Optional)</span></label>
+                        <input type="text" id="switchConference" placeholder="e.g., Big 12, SEC, ACC" class="form-input">
                     </div>
+                </div>
+                <div class="switch-form-group">
+                    <label for="switchJerseyNumber">Jersey Number <span class="optional">(Optional)</span></label>
+                    <input type="number" id="switchJerseyNumber" min="0" max="99" placeholder="e.g., 12" class="form-input">
                 </div>
             `;
         }
 
-        if (selectedTargetType === 'transferplayer') {
+        // Eligibility — collegeplayer ("Eligibility Remaining", optional) and
+        // transferplayer ("Years of Eligibility Remaining", required) both have it,
+        // with create-form-matching labels + option text ("N year(s)").
+        if (selectedTargetType === 'collegeplayer') {
             fieldsHTML += `
                 <div class="switch-form-group">
-                    <label>Eligibility (years remaining)</label>
+                    <label for="switchEligibility">Eligibility Remaining <span class="optional">(Optional)</span></label>
                     <select id="switchEligibility" class="form-input">
                         <option value="">Select</option>
-                        <option value="1">1</option>
-                        <option value="2">2</option>
-                        <option value="3">3</option>
-                        <option value="4">4</option>
-                        <option value="5">5</option>
+                        <option value="1">1 year</option>
+                        <option value="2">2 years</option>
+                        <option value="3">3 years</option>
+                        <option value="4">4 years</option>
+                        <option value="5">5 years</option>
+                    </select>
+                </div>
+            `;
+        } else if (selectedTargetType === 'transferplayer') {
+            fieldsHTML += `
+                <div class="switch-form-group">
+                    <label for="switchEligibility">Years of Eligibility Remaining <span class="required">*</span></label>
+                    <select id="switchEligibility" class="form-input">
+                        <option value="">Select</option>
+                        <option value="1">1 year</option>
+                        <option value="2">2 years</option>
+                        <option value="3">3 years</option>
+                        <option value="4">4 years</option>
+                        <option value="5">5 years</option>
                     </select>
                 </div>
             `;
@@ -2579,9 +2619,15 @@ function renderStep2() {
         // the word "and", not "&" — sanitize-html re-encodes "&" to "&amp;").
         if (['hsplayer', 'transferplayer'].includes(selectedTargetType)) {
             const SPORTS = ['Basketball','Baseball','Track and Field','Wrestling','Soccer','Lacrosse','Hockey','Volleyball','Tennis','Golf','Swimming','Rugby','Other'];
+            // Transfer players may have played in the past — match the transferplayer
+            // create form's past/present phrasing.
+            const isTransfer = selectedTargetType === 'transferplayer';
+            const playSportsLabel = isTransfer ? 'Do you (or did you) play other sports?' : 'Do you play other sports?';
+            const t100Label = isTransfer ? 'Current or past 100m time (seconds)' : '100m time (seconds)';
+            const t200Label = isTransfer ? 'Current or past 200m time (seconds)' : '200m time (seconds)';
             fieldsHTML += `
                 <div class="switch-form-group">
-                    <label>Do you play other sports?</label>
+                    <label>${playSportsLabel}</label>
                     <div class="switch-radio-row">
                         <label class="switch-radio-label">
                             <input type="radio" name="switchPlaysOtherSports" value="no" checked>
@@ -2613,11 +2659,11 @@ function renderStep2() {
                     <div id="switchTrackTimesBlock" style="display:none;">
                         <div class="switch-form-row">
                             <div class="switch-form-group">
-                                <label for="switchTrack100m">100m time (seconds)</label>
+                                <label for="switchTrack100m">${t100Label}</label>
                                 <input type="number" step="0.01" id="switchTrack100m" class="form-input" placeholder="e.g. 11.25">
                             </div>
                             <div class="switch-form-group">
-                                <label for="switchTrack200m">200m time (seconds)</label>
+                                <label for="switchTrack200m">${t200Label}</label>
                                 <input type="number" step="0.01" id="switchTrack200m" class="form-input" placeholder="e.g. 22.80">
                             </div>
                         </div>
@@ -2953,8 +2999,10 @@ function collectStep2Data() {
         if (['collegeplayer', 'transferplayer'].includes(selectedTargetType)) {
             data.college_division = document.getElementById('switchDivision')?.value;
             data.conference = document.getElementById('switchConference')?.value?.trim() || null;
+            data.number = parseInt(document.getElementById('switchJerseyNumber')?.value) || null;
         }
-        if (selectedTargetType === 'transferplayer') {
+        // Eligibility — collegeplayer + transferplayer both collect it.
+        if (['collegeplayer', 'transferplayer'].includes(selectedTargetType)) {
             data.eligibility = parseInt(document.getElementById('switchEligibility')?.value) || null;
         }
 
