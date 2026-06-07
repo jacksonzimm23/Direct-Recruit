@@ -118,6 +118,7 @@ input[type="email"],
 input[type="password"],
 input[type="url"],
 input[type="number"],
+textarea,
 select {
     width: 100%;
     padding: 0.875rem 1rem;
@@ -138,6 +139,7 @@ input[type="email"]:focus,
 input[type="password"]:focus,
 input[type="url"]:focus,
 input[type="number"]:focus,
+textarea:focus,
 select:focus {
     outline: none;
     border-color: var(--cerulean);
@@ -145,7 +147,16 @@ select:focus {
     box-shadow: 0 0 0 3px rgba(18, 130, 162, 0.1);
 }
 
-input::placeholder {
+/* Free-text textarea (e.g. "What I'm looking for in a program") —
+   inherits the input styling above, plus its own sizing/resize rules */
+textarea {
+    min-height: 110px;
+    line-height: 1.5;
+    resize: vertical;
+}
+
+input::placeholder,
+textarea::placeholder {
     color: rgba(254, 252, 251, 0.4);
 }
 
