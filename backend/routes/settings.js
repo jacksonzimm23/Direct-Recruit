@@ -17,6 +17,7 @@ const pool = require('../config/database');
 const logger = require('../utils/logger');
 const stripe = require('../utils/stripe');
 const { normalizeEmail } = require('../middleware/validation');
+const MATCH = require('../utils/match-constants'); // AI Fit-Matching allowlist Sets (Plan 4)
 
 // Cookie configuration (mirrored from auth.js — keep sameSite in sync with auth.js)
 const COOKIE_OPTIONS = {
@@ -1232,14 +1233,24 @@ router.post('/switch-profile', authMiddleware, async (req, res) => {
       };
       const pffGrade = isPffTarget ? parsePffGrade(profile_data.pff_grade) : null;
 
+      // AI Fit-Matching fields (Plan 4) — already allowlist/range-validated by
+      // validateProfileDataForType above. TEXT[] arrays pass raw; fit_preferences
+      // is JSONB → JSON.stringify (or '{}'). Mirrors PlayerProfile.create().
+      const pd = profile_data;
+      const fitPrefsPlayer = pd.fit_preferences != null ? JSON.stringify(pd.fit_preferences) : '{}';
+
       await client.query(
         `INSERT INTO player_profiles
         (user_id, first_name, last_name, username, team_name, state, graduation_year,
          position, height, weight, gpa, college_division, conference, number, eligibility,
          transfer, bio, profile_image_url, followers_count, following_count,
          profile_visibility, message_permissions,
-         other_sports, track_100m, track_200m, pff_grade)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26)`,
+         other_sports, track_100m, track_200m, pff_grade,
+         sat_score, act_score, weighted_gpa, has_ap_ib, ap_ib_count, class_rank, intended_major,
+         home_zip, needs_financial_aid, needs_scholarship, pell_or_first_gen, levels_open,
+         preferred_regions, preferred_campus_setting, fit_preferences)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26,
+         $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41)`,
         [
           req.userId,
           preservedData.first_name,
@@ -1266,19 +1277,47 @@ router.post('/switch-profile', authMiddleware, async (req, res) => {
           otherSports,
           track100,
           track200,
-          pffGrade
+          pffGrade,
+          pd.sat_score ?? null,
+          pd.act_score ?? null,
+          pd.weighted_gpa ?? null,
+          pd.has_ap_ib ?? null,
+          pd.ap_ib_count ?? null,
+          pd.class_rank ?? null,
+          pd.intended_major ?? null,
+          pd.home_zip ?? null,
+          pd.needs_financial_aid ?? null,
+          pd.needs_scholarship ?? null,
+          pd.pell_or_first_gen ?? null,
+          pd.levels_open ?? null,
+          pd.preferred_regions ?? null,
+          pd.preferred_campus_setting ?? null,
+          fitPrefsPlayer
         ]
       );
     } else if (targetRole === 'coach') {
       const collegeDivision = target_type === 'collegecoach'
         ? (profile_data.college_division || null) : null;
 
+      // AI Fit-Matching "Program Profile" / "Program Fit" fields (Plan 4) — only
+      // collegecoach has these; hscoach stores NULLs. Already validated above.
+      // TEXT[] arrays pass raw; fit_preferences JSONB → JSON.stringify (or '{}').
+      const isCollegeCoach = target_type === 'collegecoach';
+      const cd = profile_data;
+      const coachFit = (v) => isCollegeCoach ? (v ?? null) : null;
+      const fitPrefsCoach = (isCollegeCoach && cd.fit_preferences != null)
+        ? JSON.stringify(cd.fit_preferences) : '{}';
+
       await client.query(
         `INSERT INTO coach_profiles
         (user_id, first_name, last_name, username, team_name, college_division,
          position_title, state, phone, bio, conference, profile_image_url,
-         followers_count, following_count, profile_visibility, message_permissions)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)`,
+         followers_count, following_count, profile_visibility, message_permissions,
+         admitted_gpa_min, admitted_gpa_max, test_optional, sat_min, sat_max, act_min, act_max,
+         top_programs, football_player_majors, affordability_band, offers_athletic_aid,
+         aid_generosity, campus_setting, distance_profile, hs_tier_recruited, fit_preferences)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16,
+         $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32)`,
         [
           req.userId,
           preservedData.first_name,
@@ -1295,7 +1334,23 @@ router.post('/switch-profile', authMiddleware, async (req, res) => {
           preservedData.followers_count,
           preservedData.following_count,
           preservedData.profile_visibility,
-          preservedData.message_permissions
+          preservedData.message_permissions,
+          coachFit(cd.admitted_gpa_min),
+          coachFit(cd.admitted_gpa_max),
+          coachFit(cd.test_optional),
+          coachFit(cd.sat_min),
+          coachFit(cd.sat_max),
+          coachFit(cd.act_min),
+          coachFit(cd.act_max),
+          coachFit(cd.top_programs),
+          coachFit(cd.football_player_majors),
+          coachFit(cd.affordability_band),
+          coachFit(cd.offers_athletic_aid),
+          coachFit(cd.aid_generosity),
+          coachFit(cd.campus_setting),
+          coachFit(cd.distance_profile),
+          coachFit(cd.hs_tier_recruited),
+          fitPrefsCoach
         ]
       );
     } else if (targetRole === 'other') {
@@ -1456,6 +1511,85 @@ router.post('/switch-profile', authMiddleware, async (req, res) => {
   }
 });
 
+// --- AI Fit-Matching inline validators (Plan 4) ---
+// The switch endpoint uses this custom validator instead of express-validator,
+// so we re-check the fit fields here in the same inline style. All fit fields
+// are OPTIONAL — validate ONLY when present. Mirrors backend/middleware/validation.js.
+function _isBlank(v) { return v === null || v === undefined || v === ''; }
+function _numInRange(v, lo, hi) {
+  const n = parseFloat(v);
+  return Number.isFinite(n) && n >= lo && n <= hi;
+}
+function _intInRange(v, lo, hi) {
+  const n = parseInt(v, 10);
+  return Number.isInteger(n) && n >= lo && n <= hi;
+}
+// Returns an error string, or null if the fit fields are valid.
+function validateFitFieldsForType(targetType, data) {
+  const inAllowlist = (v, set, label) => {
+    if (_isBlank(v)) return null;
+    const items = Array.isArray(v) ? v : [v];
+    for (const item of items) { if (!set.has(item)) return `Invalid ${label}: ${item}`; }
+    return null;
+  };
+  const targetRole = User.getBaseRole(targetType);
+
+  if (targetRole === 'player') {
+    if (!_isBlank(data.weighted_gpa) && !_numInRange(data.weighted_gpa, 0, 6)) return 'Weighted GPA must be between 0 and 6';
+    if (!_isBlank(data.sat_score) && !_intInRange(data.sat_score, 400, 1600)) return 'SAT score must be between 400 and 1600';
+    if (!_isBlank(data.act_score) && !_intInRange(data.act_score, 1, 36)) return 'ACT score must be between 1 and 36';
+    if (!_isBlank(data.ap_ib_count) && !_intInRange(data.ap_ib_count, 0, 40)) return 'AP/IB count must be between 0 and 40';
+    if (!_isBlank(data.class_rank) && String(data.class_rank).length > 50) return 'Class rank must be 50 characters or less';
+    if (!_isBlank(data.home_zip) && !/^\d{5}$/.test(String(data.home_zip))) return 'Home ZIP must be a 5-digit code';
+    if (Array.isArray(data.intended_major) && data.intended_major.length > 3) return 'Select at most 3 majors';
+    let err =
+      inAllowlist(data.intended_major, MATCH.VALID_MAJORS, 'major') ||
+      inAllowlist(data.needs_financial_aid, MATCH.VALID_YES_NO_UNSURE, 'financial aid option') ||
+      inAllowlist(data.needs_scholarship, MATCH.VALID_YES_NO_UNSURE, 'scholarship option') ||
+      inAllowlist(data.levels_open, MATCH.VALID_LEVELS, 'level') ||
+      inAllowlist(data.preferred_regions, MATCH.VALID_REGIONS, 'region') ||
+      inAllowlist(data.preferred_campus_setting, MATCH.VALID_CAMPUS_SETTINGS, 'campus setting');
+    if (err) return err;
+    const fp = data.fit_preferences;
+    if (fp != null) {
+      if (typeof fp !== 'object' || Array.isArray(fp)) return 'fit_preferences must be an object';
+      for (const k of ['importance_playing_time', 'importance_close_to_home', 'importance_academics_vs_football', 'importance_competition_level']) {
+        if (!_isBlank(fp[k]) && !_intInRange(fp[k], 1, 5)) return 'Importance must be between 1 and 5';
+      }
+      if (fp.looking_for_text != null && String(fp.looking_for_text).length > 280) return 'looking_for_text must be 280 characters or less';
+    }
+  } else if (targetType === 'collegecoach') {
+    if (!_isBlank(data.admitted_gpa_min) && !_numInRange(data.admitted_gpa_min, 0, 4)) return 'Admitted GPA must be between 0 and 4';
+    if (!_isBlank(data.admitted_gpa_max) && !_numInRange(data.admitted_gpa_max, 0, 4)) return 'Admitted GPA must be between 0 and 4';
+    for (const k of ['sat_min', 'sat_max']) { if (!_isBlank(data[k]) && !_intInRange(data[k], 400, 1600)) return 'SAT score must be between 400 and 1600'; }
+    for (const k of ['act_min', 'act_max']) { if (!_isBlank(data[k]) && !_intInRange(data[k], 1, 36)) return 'ACT score must be between 1 and 36'; }
+    let err =
+      inAllowlist(data.top_programs, MATCH.VALID_MAJORS, 'major') ||
+      inAllowlist(data.football_player_majors, MATCH.VALID_MAJORS, 'major') ||
+      inAllowlist(data.affordability_band, MATCH.VALID_AFFORDABILITY_BANDS, 'affordability band') ||
+      inAllowlist(data.offers_athletic_aid, MATCH.VALID_ATHLETIC_AID_OPTIONS, 'athletic aid option') ||
+      inAllowlist(data.aid_generosity, MATCH.VALID_AID_GENEROSITY, 'aid generosity') ||
+      inAllowlist(data.campus_setting, MATCH.VALID_CAMPUS_SETTINGS, 'campus setting') ||
+      inAllowlist(data.distance_profile, MATCH.VALID_DISTANCE_PROFILES, 'distance profile') ||
+      inAllowlist(data.hs_tier_recruited, MATCH.VALID_HS_TIERS, 'HS tier');
+    if (err) return err;
+    const fp = data.fit_preferences;
+    if (fp != null) {
+      if (typeof fp !== 'object' || Array.isArray(fp)) return 'fit_preferences must be an object';
+      if (!_isBlank(fp.dev_vs_plug_and_play) && !_intInRange(fp.dev_vs_plug_and_play, 1, 5)) return 'Development vs plug-and-play must be between 1 and 5';
+      err =
+        inAllowlist(fp.roster_pct_on_aid, MATCH.VALID_ROSTER_PCT_ON_AID, 'roster % on aid') ||
+        inAllowlist(fp.offensive_scheme, MATCH.VALID_SCHEMES_OFFENSE, 'offensive scheme') ||
+        inAllowlist(fp.defensive_scheme, MATCH.VALID_SCHEMES_DEFENSE, 'defensive scheme') ||
+        inAllowlist(fp.academic_support, MATCH.VALID_ACADEMIC_SUPPORT, 'academic support') ||
+        inAllowlist(fp.affiliation, MATCH.VALID_AFFILIATIONS, 'affiliation');
+      if (err) return err;
+      if (fp.great_fit_text != null && String(fp.great_fit_text).length > 280) return 'great_fit_text must be 280 characters or less';
+    }
+  }
+  return null;
+}
+
 // Validate required fields for a target profile type
 function validateProfileDataForType(targetType, data) {
   const targetRole = User.getBaseRole(targetType);
@@ -1488,6 +1622,10 @@ function validateProfileDataForType(targetType, data) {
     }
   }
   // 'other' has no required fields beyond username
+
+  // AI Fit-Matching fields (Plan 4) — all optional, validated only when present.
+  const fitError = validateFitFieldsForType(targetType, data);
+  if (fitError) return fitError;
 
   return null;
 }

@@ -2094,6 +2094,10 @@ const POSITION_OPTIONS = [
 
 let switchSchoolSearch = null;
 
+// AI Fit-Matching pickers for the switch modal (Plan 4). Reset each time
+// attachStep2Listeners() runs so controllers don't leak across type re-renders.
+let switchFitPickers = {};
+
 const DIVISION_OPTIONS = [
     ['D1 FBS', 'D1 FBS (Football Bowl Subdivision)'],
     ['D1 FCS', 'D1 FCS (Football Championship Subdivision)'],
@@ -2289,6 +2293,114 @@ function goToStep2() {
         }
     }
 }
+
+// --- AI Fit-Matching markup builders for the switch modal (Plan 4) ---
+// Option/checkbox values are drawn from MATCH_CONSTANTS so they stay string-identical
+// to the create forms (lesson #4/#19). Returns '' if MATCH_CONSTANTS isn't loaded.
+function _switchSelectOptions(values, placeholder) {
+    return `<option value="">${placeholder}</option>` +
+        values.map(v => `<option value="${v}">${v}</option>`).join('');
+}
+function renderSwitchPlayerFitFields() {
+    if (typeof MATCH_CONSTANTS === 'undefined') return '';
+    const C = MATCH_CONSTANTS;
+    const yesNoUnsure = (name) => `
+        <div class="switch-radio-row">
+            <label class="switch-radio-label"><input type="radio" name="${name}" value="yes"><span>Yes</span></label>
+            <label class="switch-radio-label"><input type="radio" name="${name}" value="no"><span>No</span></label>
+            <label class="switch-radio-label"><input type="radio" name="${name}" value="unsure"><span>Unsure</span></label>
+        </div>`;
+    const slider = (id, label, lowLbl, highLbl) => `
+        <div class="switch-form-group">
+            <label>${label}</label>
+            <div style="display:flex;align-items:center;gap:1rem;">
+                <input type="range" id="${id}" min="1" max="5" step="1" value="3" style="flex:1;">
+                <span id="${id}Val" style="min-width:1.5rem;text-align:center;font-weight:700;">3</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:0.8rem;color:rgba(255,255,255,0.55);"><span>${lowLbl}</span><span>${highLbl}</span></div>
+        </div>`;
+    return `
+        <h4 class="switch-section-heading">Recruiting Fit <span style="font-weight:400;opacity:0.6;">(Optional)</span></h4>
+        <div class="switch-form-row">
+            <div class="switch-form-group">
+                <label>Weighted GPA</label>
+                <input type="number" id="switchWeightedGpa" class="form-input" min="0" max="6" step="0.01" placeholder="e.g. 4.20">
+            </div>
+            <div class="switch-form-group">
+                <label>Class Rank</label>
+                <input type="text" id="switchClassRank" class="form-input" maxlength="50" placeholder="e.g. 12/300">
+            </div>
+        </div>
+        <div class="switch-form-row">
+            <div class="switch-form-group">
+                <label>SAT Score</label>
+                <input type="number" id="switchSatScore" class="form-input" min="400" max="1600" step="10" placeholder="400–1600">
+            </div>
+            <div class="switch-form-group">
+                <label>ACT Score</label>
+                <input type="number" id="switchActScore" class="form-input" min="1" max="36" step="1" placeholder="1–36">
+            </div>
+        </div>
+        <div class="switch-form-group">
+            <label>AP / IB / Honors courses taken?</label>
+            <div class="switch-radio-row">
+                <label class="switch-radio-label"><input type="radio" name="switchHasApIb" value="no" checked><span>No</span></label>
+                <label class="switch-radio-label"><input type="radio" name="switchHasApIb" value="yes"><span>Yes</span></label>
+            </div>
+        </div>
+        <div class="switch-form-group" id="switchApIbCountGroup" style="display:none;">
+            <label>Number of AP/IB/Honors courses</label>
+            <input type="number" id="switchApIbCount" class="form-input" min="0" max="40" step="1" placeholder="e.g. 5">
+        </div>
+        <div class="switch-form-group">
+            <label>Intended Major(s)</label>
+            <p class="form-hint" style="margin-bottom:0.5rem;">Select up to 3</p>
+            <div class="multi-select-container" id="switchMajorContainer"></div>
+            <small class="major-cap-hint" id="switchMajorCapHint" style="display:none;">Maximum of 3 majors selected</small>
+            <div class="selected-items" id="switchSelectedMajors"></div>
+        </div>
+        <div class="switch-form-group">
+            <label>Home ZIP Code</label>
+            <input type="text" id="switchHomeZip" class="form-input" inputmode="numeric" pattern="[0-9]{5}" maxlength="5" placeholder="5-digit ZIP">
+        </div>
+        <div class="switch-form-group"><label>Will you need financial aid?</label>${yesNoUnsure('switchNeedsFinancialAid')}</div>
+        <div class="switch-form-group"><label>Do you need athletic scholarship money?</label>${yesNoUnsure('switchNeedsScholarship')}</div>
+        <div class="switch-form-group">
+            <label>Pell-eligible / first-gen?</label>
+            <div class="switch-radio-row">
+                <label class="switch-radio-label"><input type="radio" name="switchPellFirstGen" value="no"><span>No</span></label>
+                <label class="switch-radio-label"><input type="radio" name="switchPellFirstGen" value="yes"><span>Yes</span></label>
+            </div>
+        </div>
+        <div class="switch-form-group">
+            <label>Levels open to playing</label>
+            <div class="multi-select-container" id="switchLevelsContainer"></div>
+            <div class="selected-items" id="switchSelectedLevels"></div>
+        </div>
+        <div class="switch-form-group">
+            <label>Preferred region(s)</label>
+            <div class="multi-select-container" id="switchRegionsContainer"></div>
+            <div class="selected-items" id="switchSelectedRegions"></div>
+        </div>
+        <div class="switch-form-group">
+            <label>Preferred campus setting</label>
+            <select id="switchCampusSetting" class="form-input">${_switchSelectOptions(C.CAMPUS_SETTINGS, 'No preference')}</select>
+        </div>
+        ${slider('switchImpPlayingTime', 'Importance: early playing time', 'Not important', 'Very important')}
+        ${slider('switchImpCloseToHome', 'Importance: close to home', 'Not important', 'Very important')}
+        ${slider('switchImpAcademics', 'Importance: academics vs football', 'All football', 'All academics')}
+        ${slider('switchImpCompetition', 'Importance: level of competition', 'Not important', 'Very important')}
+        <div class="switch-form-group">
+            <label>What I'm looking for in a program</label>
+            <textarea id="switchLookingFor" class="form-input" rows="3" maxlength="280" placeholder="In a sentence or two, describe your ideal program..."></textarea>
+            <small class="form-hint"><span id="switchLookingForCount">0</span>/280</small>
+        </div>
+    `;
+}
+// NOTE: coach "Program Profile" fields are NOT built here for the switch modal —
+// switching to collegecoach is invite-gated and never reaches step 2 (see goToStep2).
+// Those fields live on create-coach-profile.html (Plan 3) and flow through the
+// invite-redemption switch path, which POST /switch-profile persists (backend, Plan 4).
 
 function renderStep2() {
     const target = switchProfileInfo.targets.find(t => t.type === selectedTargetType);
@@ -2516,6 +2628,10 @@ function renderStep2() {
                 </div>
             `;
         }
+
+        // AI Fit-Matching "Recruiting Fit" fields — identical across all 3 player
+        // targets (Plan 4). Pickers/sliders are wired in attachStep2Listeners().
+        fieldsHTML += renderSwitchPlayerFitFields();
     } else if (targetRole === 'coach') {
         const isCollege = selectedTargetType === 'collegecoach';
         fieldsHTML += `
@@ -2579,6 +2695,11 @@ function renderStep2() {
                     </div>
                 </div>
             `;
+            // NOTE: AI Fit-Matching "Program Profile" fields are NOT rendered here.
+            // Switching TO collegecoach is invite-gated — goToStep2() redirects to the
+            // invite splash before this step-2 form ever shows. The coach fit fields are
+            // collected on create-coach-profile.html (Plan 3, isSwitchMode) and flow
+            // through POST /switch-profile, which DOES persist them (backend, Plan 4).
         }
     } else {
         // 'other' type — minimal fields
@@ -2703,6 +2824,49 @@ function attachStep2Listeners() {
         applyPffGradePrefill();
     }
 
+    // --- AI Fit-Matching pickers / sliders / counters (Plan 4) ---
+    // Reset so controllers from a previous target type don't leak across re-renders.
+    // FRESH INPUT: no prefill — pickers start empty, sliders default 3.
+    switchFitPickers = {};
+    const targetRole = getBaseRoleFromType(selectedTargetType);
+    const hasMatchUI = typeof initMatchMultiSelect === 'function' && typeof MATCH_CONSTANTS !== 'undefined';
+
+    const wireSlider = (id) => {
+        const s = document.getElementById(id), out = document.getElementById(id + 'Val');
+        if (s && out) s.addEventListener('input', () => { out.textContent = s.value; });
+    };
+    const wireCounter = (taId, countId) => {
+        const ta = document.getElementById(taId), c = document.getElementById(countId);
+        if (ta && c) ta.addEventListener('input', () => { c.textContent = ta.value.length; });
+    };
+
+    if (targetRole === 'player') {
+        if (hasMatchUI) {
+            switchFitPickers.major = initMatchMultiSelect({
+                container: '#switchMajorContainer', chips: '#switchSelectedMajors',
+                groups: MATCH_CONSTANTS.MAJOR_GROUPS, max: 3, capHintEl: '#switchMajorCapHint', name: 'switch_major'
+            });
+            switchFitPickers.levels = initMatchMultiSelect({
+                container: '#switchLevelsContainer', chips: '#switchSelectedLevels',
+                options: MATCH_CONSTANTS.LEVELS, name: 'switch_levels'
+            });
+            switchFitPickers.regions = initMatchMultiSelect({
+                container: '#switchRegionsContainer', chips: '#switchSelectedRegions',
+                options: MATCH_CONSTANTS.REGIONS, name: 'switch_regions'
+            });
+        }
+        // AP/IB count reveal
+        document.querySelectorAll('input[name="switchHasApIb"]').forEach(r => r.addEventListener('change', function () {
+            const grp = document.getElementById('switchApIbCountGroup');
+            if (grp) grp.style.display = this.value === 'yes' ? '' : 'none';
+            if (this.value !== 'yes') { const c = document.getElementById('switchApIbCount'); if (c) c.value = ''; }
+        }));
+        ['switchImpPlayingTime', 'switchImpCloseToHome', 'switchImpAcademics', 'switchImpCompetition'].forEach(wireSlider);
+        wireCounter('switchLookingFor', 'switchLookingForCount');
+    }
+    // (collegecoach fit fields are handled on create-coach-profile.html, not here —
+    //  switching to collegecoach is invite-gated and never reaches this step.)
+
     document.getElementById('switchNextBtn2').addEventListener('click', () => {
         const error = validateStep2();
         if (error) {
@@ -2798,6 +2962,39 @@ function collectStep2Data() {
                 ? (parseFloat(document.getElementById('switchPffGrade')?.value) || null)
                 : null;
         }
+
+        // AI Fit-Matching "Recruiting Fit" fields (Plan 4) — same shape the create
+        // route persists (mirrors hsplayer/profile-form.js serialization).
+        const sRadio = (name) => { const el = document.querySelector(`input[name="${name}"]:checked`); return el ? el.value : null; };
+        const sNum = (id) => { const el = document.getElementById(id); if (!el || el.value === '') return null; const n = parseFloat(el.value); return Number.isNaN(n) ? null : n; };
+        const sInt = (id) => { const el = document.getElementById(id); if (!el || el.value === '') return null; const n = parseInt(el.value, 10); return Number.isNaN(n) ? null : n; };
+        const hasApIb = sRadio('switchHasApIb') === 'yes';
+        const pell = sRadio('switchPellFirstGen');
+        data.sat_score = sInt('switchSatScore');
+        data.act_score = sInt('switchActScore');
+        data.weighted_gpa = sNum('switchWeightedGpa');
+        data.has_ap_ib = hasApIb;
+        data.ap_ib_count = hasApIb ? sInt('switchApIbCount') : null;
+        data.class_rank = (document.getElementById('switchClassRank')?.value || '').trim() || null;
+        const majors = switchFitPickers.major ? switchFitPickers.major.getSelected() : [];
+        data.intended_major = majors.length ? majors : null;
+        data.home_zip = (document.getElementById('switchHomeZip')?.value || '').trim() || null;
+        data.needs_financial_aid = sRadio('switchNeedsFinancialAid');
+        data.needs_scholarship = sRadio('switchNeedsScholarship');
+        data.pell_or_first_gen = pell === null ? null : (pell === 'yes');
+        const levels = switchFitPickers.levels ? switchFitPickers.levels.getSelected() : [];
+        data.levels_open = levels.length ? levels : null;
+        const regions = switchFitPickers.regions ? switchFitPickers.regions.getSelected() : [];
+        data.preferred_regions = regions.length ? regions : null;
+        data.preferred_campus_setting = document.getElementById('switchCampusSetting')?.value || null;
+        const lookingFor = (document.getElementById('switchLookingFor')?.value || '').trim();
+        data.fit_preferences = {
+            importance_playing_time: sInt('switchImpPlayingTime'),
+            importance_close_to_home: sInt('switchImpCloseToHome'),
+            importance_academics_vs_football: sInt('switchImpAcademics'),
+            importance_competition_level: sInt('switchImpCompetition'),
+            looking_for_text: lookingFor || null
+        };
     } else if (targetRole === 'coach') {
         data.team_name = document.getElementById('switchTeamName')?.value?.trim();
         data.state = document.getElementById('switchState')?.value;
@@ -2806,6 +3003,8 @@ function collectStep2Data() {
         if (selectedTargetType === 'collegecoach') {
             data.college_division = document.getElementById('switchDivision')?.value;
             data.conference = document.getElementById('switchConference')?.value?.trim() || null;
+            // collegecoach fit fields are NOT collected here — that switch goes through
+            // create-coach-profile.html (Plan 3), which serializes them into profileData.
         }
     } else {
         data.subheader = document.getElementById('switchSubheader')?.value?.trim() || null;
