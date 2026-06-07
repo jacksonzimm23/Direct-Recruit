@@ -2295,15 +2295,17 @@ function goToStep2() {
 }
 
 // --- AI Fit-Matching markup builders for the switch modal (Plan 4) ---
-// Option/checkbox values are drawn from MATCH_CONSTANTS so they stay string-identical
+// Multi-select values are drawn from MATCH_CONSTANTS so they stay string-identical
 // to the create forms (lesson #4/#19). Returns '' if MATCH_CONSTANTS isn't loaded.
-function _switchSelectOptions(values, placeholder) {
-    return `<option value="">${placeholder}</option>` +
-        values.map(v => `<option value="${v}">${v}</option>`).join('');
-}
 function renderSwitchPlayerFitFields() {
     if (typeof MATCH_CONSTANTS === 'undefined') return '';
-    const C = MATCH_CONSTANTS;
+    const opt = ' <span class="optional">(Optional)</span>';
+    // Major label is tense-specific, mirroring each create-profile form:
+    // hsplayer "Intended Major(s)", collegeplayer "Current Major",
+    // transferplayer "Current / Intended Major".
+    const majorLabel = selectedTargetType === 'collegeplayer'
+        ? 'Current Major'
+        : (selectedTargetType === 'transferplayer' ? 'Current / Intended Major' : 'Intended Major(s)');
     const yesNoUnsure = (name) => `
         <div class="switch-radio-row">
             <label class="switch-radio-label"><input type="radio" name="${name}" value="yes"><span>Yes</span></label>
@@ -2311,88 +2313,108 @@ function renderSwitchPlayerFitFields() {
             <label class="switch-radio-label"><input type="radio" name="${name}" value="unsure"><span>Unsure</span></label>
         </div>`;
     const slider = (id, label, lowLbl, highLbl) => `
-        <div class="switch-form-group">
-            <label>${label}</label>
-            <div style="display:flex;align-items:center;gap:1rem;">
-                <input type="range" id="${id}" min="1" max="5" step="1" value="3" style="flex:1;">
-                <span id="${id}Val" style="min-width:1.5rem;text-align:center;font-weight:700;">3</span>
+        <div class="fit-slider-group">
+            <label for="${id}">${label}</label>
+            <div class="fit-slider-row">
+                <input type="range" id="${id}" min="1" max="5" step="1" value="3">
+                <span class="fit-slider-value" id="${id}Val">3</span>
             </div>
-            <div style="display:flex;justify-content:space-between;font-size:0.8rem;color:rgba(255,255,255,0.55);"><span>${lowLbl}</span><span>${highLbl}</span></div>
+            <div class="fit-slider-ends"><span>${lowLbl}</span><span>${highLbl}</span></div>
         </div>`;
     return `
-        <h4 class="switch-section-heading">Recruiting Fit <span style="font-weight:400;opacity:0.6;">(Optional)</span></h4>
+        <h4 class="switch-section-heading">Academics</h4>
         <div class="switch-form-row">
             <div class="switch-form-group">
-                <label>Weighted GPA</label>
-                <input type="number" id="switchWeightedGpa" class="form-input" min="0" max="6" step="0.01" placeholder="e.g. 4.20">
+                <label>Weighted GPA${opt}</label>
+                <input type="number" id="switchWeightedGpa" class="form-input" min="0" max="6" step="0.01" placeholder="e.g., 4.20">
             </div>
             <div class="switch-form-group">
-                <label>Class Rank</label>
-                <input type="text" id="switchClassRank" class="form-input" maxlength="50" placeholder="e.g. 12/300">
+                <label for="switchClassRank">Class Rank${opt}</label>
+                <input type="text" id="switchClassRank" class="form-input" maxlength="50" placeholder="e.g., 12 of 350, or Top 10%">
             </div>
         </div>
         <div class="switch-form-row">
             <div class="switch-form-group">
-                <label>SAT Score</label>
-                <input type="number" id="switchSatScore" class="form-input" min="400" max="1600" step="10" placeholder="400–1600">
+                <label for="switchSatScore">SAT Score${opt}</label>
+                <input type="number" id="switchSatScore" class="form-input" min="400" max="1600" step="10" placeholder="e.g., 1180">
             </div>
             <div class="switch-form-group">
-                <label>ACT Score</label>
-                <input type="number" id="switchActScore" class="form-input" min="1" max="36" step="1" placeholder="1–36">
+                <label for="switchActScore">ACT Score${opt}</label>
+                <input type="number" id="switchActScore" class="form-input" min="1" max="36" step="1" placeholder="e.g., 26">
+            </div>
+        </div>
+        <div class="switch-form-row">
+            <div class="switch-form-group">
+                <label>AP / IB / Honors courses taken?${opt}</label>
+                <div class="switch-radio-row">
+                    <label class="switch-radio-label"><input type="radio" name="switchHasApIb" value="no" checked><span>No</span></label>
+                    <label class="switch-radio-label"><input type="radio" name="switchHasApIb" value="yes"><span>Yes</span></label>
+                </div>
+            </div>
+            <div class="switch-form-group" id="switchApIbCountGroup" style="display:none;">
+                <label for="switchApIbCount">How many?</label>
+                <input type="number" id="switchApIbCount" class="form-input" min="0" max="40" step="1" placeholder="e.g., 5">
             </div>
         </div>
         <div class="switch-form-group">
-            <label>AP / IB / Honors courses taken?</label>
-            <div class="switch-radio-row">
-                <label class="switch-radio-label"><input type="radio" name="switchHasApIb" value="no" checked><span>No</span></label>
-                <label class="switch-radio-label"><input type="radio" name="switchHasApIb" value="yes"><span>Yes</span></label>
-            </div>
-        </div>
-        <div class="switch-form-group" id="switchApIbCountGroup" style="display:none;">
-            <label>Number of AP/IB/Honors courses</label>
-            <input type="number" id="switchApIbCount" class="form-input" min="0" max="40" step="1" placeholder="e.g. 5">
-        </div>
-        <div class="switch-form-group">
-            <label>Intended Major(s)</label>
-            <p class="form-hint" style="margin-bottom:0.5rem;">Select up to 3</p>
+            <label>${majorLabel}${opt}</label>
+            <p class="form-hint" style="margin-bottom:0.5rem;">Select up to 3 majors you're interested in studying</p>
             <div class="multi-select-container" id="switchMajorContainer"></div>
-            <small class="major-cap-hint" id="switchMajorCapHint" style="display:none;">Maximum of 3 majors selected</small>
+            <small class="major-cap-hint" id="switchMajorCapHint">Maximum of 3 majors selected</small>
             <div class="selected-items" id="switchSelectedMajors"></div>
         </div>
+
+        <h4 class="switch-section-heading">Recruiting Fit</h4>
+        <p class="form-hint" style="margin-bottom:0.75rem;">Optional — helps coaches find players who truly fit their program. The more you share, the better your matches.</p>
         <div class="switch-form-group">
-            <label>Home ZIP Code</label>
-            <input type="text" id="switchHomeZip" class="form-input" inputmode="numeric" pattern="[0-9]{5}" maxlength="5" placeholder="5-digit ZIP">
+            <label for="switchHomeZip">Home ZIP Code${opt}</label>
+            <input type="text" id="switchHomeZip" class="form-input" inputmode="numeric" pattern="[0-9]{5}" maxlength="5" placeholder="e.g., 80401">
+            <small class="form-hint">Helps coaches gauge distance and regional fit</small>
         </div>
-        <div class="switch-form-group"><label>Will you need financial aid?</label>${yesNoUnsure('switchNeedsFinancialAid')}</div>
-        <div class="switch-form-group"><label>Do you need athletic scholarship money?</label>${yesNoUnsure('switchNeedsScholarship')}</div>
+        <div class="switch-form-row">
+            <div class="switch-form-group"><label>Will you need financial aid?${opt}</label>${yesNoUnsure('switchNeedsFinancialAid')}</div>
+            <div class="switch-form-group"><label>Do you need athletic scholarship money?${opt}</label>${yesNoUnsure('switchNeedsScholarship')}</div>
+        </div>
         <div class="switch-form-group">
-            <label>Pell-eligible / first-gen?</label>
+            <label>Are you Pell-eligible or a first-generation college student?${opt}</label>
             <div class="switch-radio-row">
-                <label class="switch-radio-label"><input type="radio" name="switchPellFirstGen" value="no"><span>No</span></label>
                 <label class="switch-radio-label"><input type="radio" name="switchPellFirstGen" value="yes"><span>Yes</span></label>
+                <label class="switch-radio-label"><input type="radio" name="switchPellFirstGen" value="no"><span>No</span></label>
             </div>
         </div>
         <div class="switch-form-group">
-            <label>Levels open to playing</label>
+            <label>Levels open to playing${opt}</label>
+            <p class="form-hint" style="margin-bottom:0.5rem;">Which division levels would you consider?</p>
             <div class="multi-select-container" id="switchLevelsContainer"></div>
             <div class="selected-items" id="switchSelectedLevels"></div>
         </div>
         <div class="switch-form-group">
-            <label>Preferred region(s)</label>
+            <label>Preferred region(s)${opt}</label>
+            <p class="form-hint" style="margin-bottom:0.5rem;">Where would you like to play?</p>
             <div class="multi-select-container" id="switchRegionsContainer"></div>
             <div class="selected-items" id="switchSelectedRegions"></div>
         </div>
         <div class="switch-form-group">
-            <label>Preferred campus setting</label>
-            <select id="switchCampusSetting" class="form-input">${_switchSelectOptions(C.CAMPUS_SETTINGS, 'No preference')}</select>
+            <label for="switchCampusSetting">Preferred campus setting${opt}</label>
+            <select id="switchCampusSetting" class="form-input">
+                <option value="">No preference</option>
+                <option value="urban">Urban</option>
+                <option value="suburban">Suburban</option>
+                <option value="rural">Rural</option>
+                <option value="small-town">Small town</option>
+            </select>
         </div>
-        ${slider('switchImpPlayingTime', 'Importance: early playing time', 'Not important', 'Very important')}
-        ${slider('switchImpCloseToHome', 'Importance: close to home', 'Not important', 'Very important')}
-        ${slider('switchImpAcademics', 'Importance: academics vs football', 'All football', 'All academics')}
-        ${slider('switchImpCompetition', 'Importance: level of competition', 'Not important', 'Very important')}
         <div class="switch-form-group">
-            <label>What I'm looking for in a program</label>
-            <textarea id="switchLookingFor" class="form-input" rows="3" maxlength="280" placeholder="In a sentence or two, describe your ideal program..."></textarea>
+            <label>How important is each of these to you?${opt}</label>
+            <p class="form-hint" style="margin-bottom:0.75rem;">Slide from Not important (1) to Very important (5)</p>
+            ${slider('switchImpPlayingTime', 'Early playing time', 'Not important', 'Very important')}
+            ${slider('switchImpCloseToHome', 'Staying close to home', 'Not important', 'Very important')}
+            ${slider('switchImpAcademics', 'Academics vs. football', 'Football-first', 'Academics-first')}
+            ${slider('switchImpCompetition', 'Level of competition', 'Not important', 'Very important')}
+        </div>
+        <div class="switch-form-group">
+            <label for="switchLookingFor">What I'm looking for in a program${opt}</label>
+            <textarea id="switchLookingFor" class="form-input" rows="3" maxlength="280" placeholder="In a sentence or two, describe your ideal program (playing style, culture, goals)..."></textarea>
             <small class="form-hint"><span id="switchLookingForCount">0</span>/280</small>
         </div>
     `;

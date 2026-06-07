@@ -2585,6 +2585,224 @@
     .switch-sport-grid {
         grid-template-columns: 1fr;
     }
+
+    .switch-form .multi-select-container {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ============================================
+   SWITCH MODAL — AI Fit-Matching components
+   (match-ui.js renders these; styled to match the
+   create-profile forms but scoped to .switch-form so
+   the create forms are untouched.)
+   ============================================ */
+
+.switch-section-heading {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #ccd6f6;
+    margin: 1.5rem 0 0.25rem;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(100, 116, 152, 0.15);
+}
+
+/* Multi-select (majors / levels / regions) */
+.switch-form .multi-select-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.4rem 0.75rem;
+    background: rgba(10, 17, 40, 0.4);
+    border: 1px solid rgba(100, 116, 152, 0.2);
+    border-radius: 8px;
+    padding: 0.75rem;
+    max-height: 240px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Each group spans both container columns, then lays its own options out
+   in a 2-col grid for density (matches the create form's grouped majors). */
+.switch-form .multi-select-group {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.25rem 0.75rem;
+    align-items: start;
+}
+
+.switch-form .group-label {
+    grid-column: 1 / -1;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: #1282a2;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin: 0.5rem 0 0.15rem;
+    padding-bottom: 0.25rem;
+    border-bottom: 1px solid rgba(18, 130, 162, 0.2);
+}
+
+.switch-form .multi-select-group:first-child .group-label {
+    margin-top: 0;
+}
+
+.switch-form .checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.25rem 0.4rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    color: #8892b0;
+    transition: background 0.15s, color 0.15s;
+}
+
+.switch-form .checkbox-label:hover {
+    background: rgba(100, 116, 152, 0.12);
+    color: #ccd6f6;
+}
+
+.switch-form .checkbox-label input[type="checkbox"] {
+    width: 14px;
+    height: 14px;
+    accent-color: #1282a2;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.switch-form .checkbox-label input[type="checkbox"]:checked + span {
+    color: #ccd6f6;
+    font-weight: 500;
+}
+
+.switch-form .checkbox-label input[type="checkbox"]:disabled {
+    cursor: not-allowed;
+}
+.switch-form .checkbox-label input[type="checkbox"]:disabled + span {
+    opacity: 0.45;
+}
+
+/* Selected chips */
+.switch-form .selected-items {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin-top: 0.5rem;
+    min-height: 0;
+}
+
+.switch-form .selected-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.2rem 0.5rem;
+    background: rgba(18, 130, 162, 0.15);
+    border: 1px solid rgba(18, 130, 162, 0.3);
+    border-radius: 12px;
+    color: #1282a2;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.switch-form .remove-item {
+    background: none;
+    border: none;
+    color: #1282a2;
+    font-size: 0.85rem;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0;
+    margin-left: 0.1rem;
+    opacity: 0.7;
+    transition: opacity 0.15s;
+}
+
+.switch-form .remove-item:hover {
+    opacity: 1;
+}
+
+.switch-form .major-cap-hint {
+    display: none;
+    font-size: 0.75rem;
+    color: #1282a2;
+    margin-top: 0.4rem;
+    font-weight: 600;
+}
+
+/* Importance sliders */
+.switch-form .fit-slider-group {
+    margin-bottom: 1rem;
+}
+
+.switch-form .fit-slider-group > label {
+    display: block;
+    font-size: 0.8rem;
+    color: #8892b0;
+    font-weight: 500;
+    margin-bottom: 0.25rem;
+}
+
+.switch-form .fit-slider-row {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.switch-form .fit-slider-row input[type="range"] {
+    flex: 1;
+    -webkit-appearance: none;
+    appearance: none;
+    height: 6px;
+    border-radius: 3px;
+    background: rgba(18, 130, 162, 0.25);
+    outline: none;
+    cursor: pointer;
+    padding: 0;
+}
+
+.switch-form .fit-slider-row input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #1282a2;
+    cursor: pointer;
+    border: 2px solid #fefcfb;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+
+.switch-form .fit-slider-row input[type="range"]::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #1282a2;
+    cursor: pointer;
+    border: 2px solid #fefcfb;
+}
+
+.switch-form .fit-slider-value {
+    min-width: 1.75rem;
+    text-align: center;
+    font-weight: 700;
+    color: #1282a2;
+}
+
+.switch-form .fit-slider-ends {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.72rem;
+    color: rgba(254, 252, 251, 0.5);
+    margin-top: 0.25rem;
+}
+
+/* "(Optional)" marker inside switch labels */
+.switch-form .optional {
+    color: #5a6a8a;
+    font-weight: 400;
+    font-size: 0.78rem;
 }
 
 /* ============================================
