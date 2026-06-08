@@ -180,6 +180,16 @@ class CoachProfile {
     return { coaches, hasMore };
   }
 
+  // All active college coaches (full row, so all program/fit columns are present).
+  // Used by the AI Rep "Best-Fit Schools" engine to score every school's program
+  // against a player. No pagination — the route groups + ranks the results.
+  static async getAllCollege() {
+    const result = await pool.query(
+      'SELECT cp.* FROM coach_profiles cp JOIN users u ON cp.user_id = u.id WHERE u.is_active = true AND cp.college_division IS NOT NULL'
+    );
+    return result.rows;
+  }
+
   static async findByUsername(username) {
     const result = await pool.query('SELECT cp.*, u.role FROM coach_profiles cp JOIN users u ON cp.user_id = u.id WHERE cp.username = $1', [username]);
     return result.rows[0];

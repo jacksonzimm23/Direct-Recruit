@@ -1866,6 +1866,10 @@ function updateActiveNavItem() {
         } else if (fromPage === 'feed') {
             // Came from feed page - highlight Feed
             feedNavItem.classList.add('active');
+        } else if (fromPage === 'ai-rep') {
+            // A player reached this coach profile from their AI Rep "Best-Fit
+            // Schools". The coach sidebar has no AI Rep item, so highlight nothing
+            // (the Back button returns them to AI Rep).
         } else {
             // Default: Viewing someone else's profile (from feed) - highlight Feed
             feedNavItem.classList.add('active');

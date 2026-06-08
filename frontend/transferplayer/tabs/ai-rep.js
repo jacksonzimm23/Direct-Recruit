@@ -1,28 +1,21 @@
 // AI Rep Page - Dynamic (connected to backend)
 
 (async function initAiRep() {
-    const BATCH_SIZE = 5;
-    let currentPeriod = '7d';
-    let currentOffset = 0;
-    let totalCount = 0;
+    const BATCH_SIZE = 10;
+    let schoolsOffset = 0;
+    let schoolsCache = []; // accumulates loaded schools (for modal lookup by index)
 
     // DOM references
-    const matchList = document.getElementById('aiRepMatchList');
-    const showMoreBtn = document.getElementById('aiRepShowMore');
-    const badge = document.getElementById('aiRepBadge');
-    const periodFilter = document.getElementById('aiRepPeriodFilter');
-    const loadingEl = document.getElementById('aiRepLoading');
-    const matchSection = document.getElementById('aiRepMatchSection');
+    const schoolList = document.getElementById('aiRepSchoolList');
+    const schoolsLoading = document.getElementById('aiRepSchoolsLoading');
+    const schoolsEmpty = document.getElementById('aiRepSchoolsEmpty');
+    const schoolsEmptyBtn = document.getElementById('aiRepSchoolsEmptyBtn');
+    const schoolsShowMore = document.getElementById('aiRepSchoolsShowMore');
     const profileSection = document.getElementById('aiRepProfileSection');
-    const divCard = document.getElementById('aiRepDivCard');
-    const attrCard = document.getElementById('aiRepAttrCard');
     const completionPct = document.getElementById('aiRepCompletionPct');
     const progressFill = document.getElementById('aiRepProgressFill');
     const recommendations = document.getElementById('aiRepRecommendations');
     const allComplete = document.getElementById('aiRepAllComplete');
-    const topAttributes = document.getElementById('aiRepTopAttributes');
-
-    const periodLabels = { '7d': 'this week', '30d': 'this month', 'all': 'all time' };
 
     // Animate entrance for hero + static cards
     const heroEl = document.querySelector('.ai-rep-hero');
@@ -31,130 +24,105 @@
         setTimeout(() => heroEl.classList.add('ai-rep-visible'), 80);
     }
 
-    // ============ MATCH FEED ============
+    // ============ BEST-FIT SCHOOLS ============
 
-    async function loadMatches(reset) {
+    async function loadBestFitSchools(reset) {
         if (reset) {
-            currentOffset = 0;
-            matchList.innerHTML = '';
-        }
-
-        // Show loading on first load only
-        if (reset) {
-            loadingEl.style.display = 'flex';
-
-            showMoreBtn.style.display = 'none';
-            divCard.style.display = 'none';
-            attrCard.style.display = 'none';
+            schoolsOffset = 0;
+            schoolsCache = [];
+            schoolList.innerHTML = '';
+            schoolsEmpty.style.display = 'none';
+            schoolsShowMore.style.display = 'none';
+            schoolsLoading.style.display = 'flex';
         }
 
         try {
-            const data = await API.aiRep.getMatches(currentPeriod, currentOffset, BATCH_SIZE);
-            totalCount = data.totalCount;
+            const data = await API.aiRep.getBestFitSchools(schoolsOffset, BATCH_SIZE);
+            schoolsLoading.style.display = 'none';
 
-            // Hide loading
-            loadingEl.style.display = 'none';
+            const schools = data.schools || [];
 
-            // Update badge
-            badge.textContent = `${totalCount} match${totalCount !== 1 ? 'es' : ''} ${periodLabels[currentPeriod]}`;
-
-            if (totalCount === 0) {
-                // Hide entire match feed section — don't discourage players with 0 matches
-                matchSection.style.display = 'none';
+            if (reset && schools.length === 0) {
+                schoolsEmpty.style.display = '';
                 return;
             }
 
-            // Has matches — show section
-            matchSection.style.display = '';
-            divCard.style.display = '';
-            attrCard.style.display = '';
+            // Ensure logos are ready, then render rows.
+            if (typeof ensureSchoolLogosLoaded === 'function') {
+                try { await ensureSchoolLogosLoaded('../../assets'); } catch (e) { /* logos optional */ }
+            }
 
-            // Render match cards
-            data.matches.forEach(match => {
-                matchList.insertAdjacentHTML('beforeend', renderMatchCard(match));
+            schools.forEach(school => {
+                const idx = schoolsCache.length;
+                schoolsCache.push(school);
+                schoolList.insertAdjacentHTML('beforeend', renderSchoolRow(school, idx));
             });
 
-            // Animate new cards in
-            animateNewCards();
-
-            // Show/hide show more
-            const loaded = currentOffset + data.matches.length;
-            showMoreBtn.style.display = loaded < totalCount ? 'flex' : 'none';
-
-            // Update division chart and top attributes (only on reset)
-            if (reset) {
-                renderDivisionChart(data.divisionDistribution);
-                renderTopAttributes(data.topAttributes);
-            }
+            animateNewRows();
+            schoolsShowMore.style.display = data.hasMore ? 'flex' : 'none';
         } catch (err) {
-            console.error('Failed to load AI Rep matches:', err);
-            loadingEl.style.display = 'none';
-            badge.textContent = 'Error loading matches';
+            console.error('Failed to load best-fit schools:', err);
+            schoolsLoading.style.display = 'none';
+            if (reset) schoolsEmpty.style.display = '';
         }
     }
 
-    function renderMatchCard(match) {
-        const date = new Date(match.created_at).toLocaleDateString('en-US', {
-            month: 'short', day: 'numeric', year: 'numeric'
-        });
-        const tags = match.matched_on.map(label =>
-            `<span class="ai-rep-tag-match">${escapeHtml(label)}</span>`
-        ).join('');
-        const matchedOnHTML = tags
-            ? `<div class="ai-rep-match-body">
-                   <span class="ai-rep-criteria-label">Matched on</span>
-                   <div class="ai-rep-tags">${tags}</div>
-               </div>`
+    function renderSchoolRow(school, idx) {
+        const logo = (typeof getSchoolLogoHTML === 'function')
+            ? getSchoolLogoHTML(school.team_name, '../../assets', 36) : '';
+        const div = school.college_division ? escapeHtml(school.college_division) : '';
+        const badge = (typeof FitDisplay !== 'undefined')
+            ? FitDisplay.badgeHTML(school.score != null ? school.score : null, {})
             : '';
-
         return `
-        <div class="ai-rep-match-card ai-rep-animate-in">
-            <div class="ai-rep-match-card-header">
-                <div class="ai-rep-match-headline">
-                    <span class="ai-rep-division-badge">${escapeHtml(match.coach_division)}</span>
-                    <span class="ai-rep-match-text">A ${escapeHtml(match.coach_division)} coach matched with your profile</span>
-                </div>
-                <span class="ai-rep-match-date">${date}</span>
-            </div>
-            ${matchedOnHTML}
-        </div>`;
+        <button type="button" class="ai-rep-school-row ai-rep-animate-in" data-school-idx="${idx}">
+            <span class="ai-rep-school-logo">${logo}</span>
+            <span class="ai-rep-school-info">
+                <span class="ai-rep-school-name">${escapeHtml(school.team_name)}</span>
+                ${div ? `<span class="ai-rep-school-div">${div}</span>` : ''}
+            </span>
+            ${badge}
+        </button>`;
     }
 
-    function renderDivisionChart(distribution) {
-        const divisions = ['D1 FBS', 'D1 FCS', 'D2', 'D3', 'NAIA', 'NJCAA'];
-        const maxCount = Math.max(...divisions.map(d => distribution[d] || 0), 1);
-
-        divisions.forEach(div => {
-            const row = document.querySelector(`.ai-rep-bar-row[data-division="${div}"]`);
-            if (!row) return;
-            const count = distribution[div] || 0;
-            const pct = (count / maxCount) * 100;
-            row.querySelector('.ai-rep-bar-fill').style.width = pct + '%';
-            row.querySelector('.ai-rep-bar-value').textContent = count;
+    function animateNewRows() {
+        const rows = schoolList.querySelectorAll('.ai-rep-animate-in:not(.ai-rep-visible)');
+        rows.forEach((el, i) => {
+            setTimeout(() => el.classList.add('ai-rep-visible'), 60 + (i * 40));
         });
-
-        // Animate bars
-        divCard.classList.add('ai-rep-animate-in');
-        setTimeout(() => divCard.classList.add('ai-rep-visible'), 100);
     }
 
-    function renderTopAttributes(attributes) {
-        if (!attributes.length) {
-            topAttributes.innerHTML = '<span class="ai-rep-tag-attribute" style="opacity:0.5">No data yet</span>';
-            return;
-        }
-        topAttributes.innerHTML = attributes.map(attr =>
-            `<span class="ai-rep-tag-attribute">${attr.label} (${attr.percent}%)</span>`
-        ).join('');
-
-        attrCard.classList.add('ai-rep-animate-in');
-        setTimeout(() => attrCard.classList.add('ai-rep-visible'), 150);
+    // Open the school modal (Match + Staff tabs) for a clicked row.
+    function openSchoolModal(idx) {
+        const school = schoolsCache[idx];
+        if (!school || typeof FitInfoModal === 'undefined') return;
+        FitInfoModal.open({
+            mode: 'school',
+            schoolName: school.team_name,
+            division: school.college_division,
+            score: school.score,
+            matches: (school.dimensions || []).map(d => ({ label: d.label, detail: d.detail })),
+            staff: school.staff || [],
+            coachCount: school.coachCount,
+            coachHref: (username) =>
+                new URL(`../../collegecoach/tabs/my-profile.html?username=${encodeURIComponent(username)}&from=ai-rep`, window.location.href).href
+        });
     }
 
-    function animateNewCards() {
-        const cards = matchList.querySelectorAll('.ai-rep-animate-in:not(.ai-rep-visible)');
-        cards.forEach((el, i) => {
-            setTimeout(() => el.classList.add('ai-rep-visible'), 80 + (i * 50));
+    // Delegate row clicks (rows are added dynamically + paged).
+    schoolList.addEventListener('click', (e) => {
+        const row = e.target.closest('.ai-rep-school-row');
+        if (row) openSchoolModal(parseInt(row.dataset.schoolIdx, 10));
+    });
+
+    schoolsShowMore.addEventListener('click', () => {
+        schoolsOffset += BATCH_SIZE;
+        loadBestFitSchools(false);
+    });
+
+    if (schoolsEmptyBtn) {
+        schoolsEmptyBtn.addEventListener('click', () => {
+            if (profileSection) profileSection.scrollIntoView({ behavior: 'smooth' });
         });
     }
 
@@ -173,19 +141,18 @@
                 allComplete.style.display = 'flex';
             } else {
                 allComplete.style.display = 'none';
-                recommendations.innerHTML = data.incompleteFields.map((field, i) => {
+                const recruitingSections = data.recruitingSections || [];
+                // Recruiting-profile sections are always HIGH and sort to the top;
+                // basic/discovery fields keep their original position-based tiers.
+                const recruitingIncomplete = data.incompleteFields.filter(f => recruitingSections.includes(f));
+                const basicIncomplete = data.incompleteFields.filter(f => !recruitingSections.includes(f));
+
+                const recHTML = recruitingIncomplete.map(field => renderRec(field, 'high')).join('');
+                const basicHTML = basicIncomplete.map((field, i) => {
                     const priority = i === 0 ? 'high' : i < 3 ? 'med' : 'low';
-                    const priorityLabel = priority.toUpperCase();
-                    const reason = getFieldReason(field);
-                    return `
-                    <div class="ai-rep-rec ai-rep-rec-${priority}">
-                        <span class="ai-rep-rec-badge">${priorityLabel}</span>
-                        <div class="ai-rep-rec-content">
-                            <div class="ai-rep-rec-field">${field}</div>
-                            <div class="ai-rep-rec-reason">${reason}</div>
-                        </div>
-                    </div>`;
+                    return renderRec(field, priority);
                 }).join('');
+                recommendations.innerHTML = recHTML + basicHTML;
             }
 
             // Animate profile section
@@ -198,12 +165,24 @@
         }
     }
 
+    // Render one recommendation row at a given priority tier.
+    function renderRec(field, priority) {
+        const priorityLabel = priority.toUpperCase();
+        const reason = getFieldReason(field);
+        return `
+        <div class="ai-rep-rec ai-rep-rec-${priority}">
+            <span class="ai-rep-rec-badge">${priorityLabel}</span>
+            <div class="ai-rep-rec-content">
+                <div class="ai-rep-rec-field">${field}</div>
+                <div class="ai-rep-rec-reason">${reason}</div>
+            </div>
+        </div>`;
+    }
+
     function getFieldReason(field) {
         const reasons = {
             'Highlights/Film': 'Coaches frequently filter by film availability. Adding highlights significantly increases your search visibility.',
             'Stats': 'Coaches can search by game statistics. Adding your stats helps you appear in performance-based searches.',
-            'GPA': 'Many coaches include academic filters in their searches. Adding your GPA opens up more results.',
-            'Academic Test Scores': 'Coaches can filter by test scores. Add your ACT, SAT, or both to appear in academic-focused searches.',
             'Offers': 'Coaches can filter by offer count and division. Listing your offers boosts your profile ranking.',
             'Position': 'Position is one of the most common search filters. Make sure your position is set.',
             'Height': 'Height is a top search filter for coaches. Adding it helps you appear in size-based searches.',
@@ -213,24 +192,18 @@
             'Bio': 'A complete bio adds to your profile score and helps coaches learn about you.',
             'Profile Photo': 'Profiles with photos rank higher in search results.',
             'College Division': 'Setting your college division helps coaches searching for transfer players at specific levels.',
-            'Eligibility': 'Coaches searching the portal filter by remaining eligibility. Adding yours increases visibility.'
+            'Eligibility': 'Coaches searching the portal filter by remaining eligibility. Adding yours increases visibility.',
+            // Recruiting-profile sections — finish the section to power AI Match.
+            'Academics': 'Finish your Academics section in your recruiting profile to power your AI Match and Best-Fit Schools.',
+            'Major & Goals': 'Finish your Major & Goals section in your recruiting profile so we can match you with schools strong in what you want to study.',
+            'Financial Fit': 'Finish your Financial Fit section in your recruiting profile so we can match you with programs that can support you.',
+            'Level & Location': 'Finish your Level & Location section in your recruiting profile so we can find schools at the levels and places you\'re open to.',
+            'Priorities': 'Finish your Priorities section in your recruiting profile so we can rank schools by what matters most to you.'
         };
         return reasons[field] || 'Adding this information helps coaches find you in AI searches.';
     }
 
-    // ============ EVENT LISTENERS ============
-
-    periodFilter.addEventListener('change', () => {
-        currentPeriod = periodFilter.value;
-        loadMatches(true);
-    });
-
-    showMoreBtn.addEventListener('click', () => {
-        currentOffset += BATCH_SIZE;
-        loadMatches(false);
-    });
-
     // ============ INITIAL LOAD ============
 
-    await Promise.all([loadMatches(true), loadProfileCompletion()]);
+    await Promise.all([loadBestFitSchools(true), loadProfileCompletion()]);
 })();

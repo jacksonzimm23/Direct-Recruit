@@ -10,8 +10,15 @@
 // score + computed match reasons via FitInfoModal.open({ score, matches }).
 //
 // PUBLIC API (window.FitInfoModal):
-//   open(opts) — opts.score (number), opts.playerName (string, optional),
+//   open(opts) — PLAYER mode (default, coach viewing a player):
+//                opts.score (number), opts.playerName (string, optional),
 //                opts.matches ([{ label, detail }], optional — defaults to sample)
+//              — SCHOOL mode (opts.mode === 'school', player viewing a school; Plan 7C):
+//                opts.score, opts.schoolName, opts.division, opts.matches
+//                ([{label,detail}] reworded school→player), opts.staff
+//                ([{first_name,last_name,username,position_title,profile_image_url}]),
+//                opts.coachCount (number — when > staff.length, show "some private" note),
+//                opts.coachHref (fn(username) -> url for the coach profile link).
 //   close()
 // ============================================================
 
@@ -50,8 +57,25 @@
     return '<div class="fim-key">' + rows + '</div>';
   }
 
+  // Build the rows for the "what matches" list from [{label, detail}].
+  function _matchRowsHTML(matches) {
+    return matches.map(function (m) {
+      return '<div class="fim-match-row">' +
+        '<svg class="fim-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>' +
+        '<div class="fim-match-text"><span class="fim-match-label">' + _esc(m.label) + '</span>' +
+        '<span class="fim-match-detail">' + _esc(m.detail) + '</span></div>' +
+        '</div>';
+    }).join('');
+  }
+
   function open(opts) {
     opts = opts || {};
+    if (opts.mode === 'school') return _openSchool(opts);
+    return _openPlayer(opts);
+  }
+
+  // --- PLAYER mode (coach viewing a player) — unchanged from Plan 6/B ---
+  function _openPlayer(opts) {
     var score = (opts.score != null) ? opts.score
       : (_hasFit() ? FitDisplay.PLACEHOLDER_SCORE : null);
     var matches = (opts.matches && opts.matches.length) ? opts.matches : SAMPLE_MATCHES;
@@ -103,15 +127,7 @@
 
           // --- match breakdown ---
           '<div class="fim-section-label">What this player matches you on</div>' +
-          '<div class="fim-matches">' +
-            matches.map(function (m) {
-              return '<div class="fim-match-row">' +
-                '<svg class="fim-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>' +
-                '<div class="fim-match-text"><span class="fim-match-label">' + _esc(m.label) + '</span>' +
-                '<span class="fim-match-detail">' + _esc(m.detail) + '</span></div>' +
-                '</div>';
-            }).join('') +
-          '</div>' +
+          '<div class="fim-matches">' + _matchRowsHTML(matches) + '</div>' +
 
           '<p class="fim-disclaimer">AI Match is a guide to help surface best fit recruits. ' +
           'It complements your own evaluation and never replaces it.</p>' +
@@ -119,9 +135,105 @@
         '</div>' +
       '</div>';
 
+    _mount(overlay);
+  }
+
+  // --- SCHOOL mode (player viewing a best-fit school) — Plan 7C, tabbed ---
+  function _openSchool(opts) {
+    var score = (opts.score != null) ? opts.score : null;
+    var matches = (opts.matches && opts.matches.length) ? opts.matches : [];
+    var staff = opts.staff || [];
+    var tier = (_hasFit() && score != null) ? FitDisplay.tierOf(score) : { color: '#1282a2', label: '' };
+    var showPct = _hasFit() && FitDisplay.FIT_SHOW_PERCENT;
+    var scoreText = (score == null) ? 'N/A' : (String(score) + (showPct ? '%' : ''));
+    var schoolName = opts.schoolName ? _esc(opts.schoolName) : 'This school';
+    var division = opts.division ? _esc(opts.division) : '';
+    var logoHTML = (typeof getSchoolLogoHTML === 'function' && opts.schoolName)
+      ? getSchoolLogoHTML(opts.schoolName, '../../assets', 32) : '';
+    var privateNote = (opts.coachCount && opts.coachCount > staff.length)
+      ? '<p class="fim-staff-note">Some staff keep their profiles private.</p>' : '';
+
+    var staffHTML = staff.length
+      ? staff.map(function (c) {
+          var name = _esc(((c.first_name || '') + ' ' + (c.last_name || '')).trim() || c.username || 'Coach');
+          var title = c.position_title ? '<span class="fim-staff-title">' + _esc(c.position_title) + '</span>' : '';
+          var avatar = c.profile_image_url
+            ? '<img class="fim-staff-avatar" src="' + _esc(c.profile_image_url) + '" alt="">'
+            : '<span class="fim-staff-avatar fim-staff-avatar--empty"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></span>';
+          var href = (typeof opts.coachHref === 'function' && c.username) ? opts.coachHref(c.username) : null;
+          var inner = avatar + '<div class="fim-staff-text"><span class="fim-staff-name">' + name + '</span>' + title + '</div>';
+          return href
+            ? '<a class="fim-staff-row" href="' + _esc(href) + '">' + inner + '</a>'
+            : '<div class="fim-staff-row">' + inner + '</div>';
+        }).join('')
+      : '<p class="fim-staff-empty">No staff to show for this program yet.</p>';
+
+    close();
+
+    var overlay = document.createElement('div');
+    overlay.className = 'fim-overlay';
+    overlay.id = OVERLAY_ID;
+    overlay.innerHTML =
+      '<div class="fim-modal fim-modal--school" role="dialog" aria-modal="true" aria-label="School AI Match">' +
+        '<div class="fim-header">' +
+          '<div class="fim-school-head">' + logoHTML +
+            '<div class="fim-school-headtext"><h2 class="fim-title">' + schoolName + '</h2>' +
+            (division ? '<span class="fim-school-div">' + division + '</span>' : '') + '</div>' +
+          '</div>' +
+          '<button class="fim-close" id="fimCloseBtn" aria-label="Close">' +
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">' +
+            '<line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>' +
+          '</button>' +
+        '</div>' +
+
+        '<div class="fim-tabs" role="tablist">' +
+          '<button class="fim-tab active" data-tab="fimMatchPane" type="button">Match</button>' +
+          '<button class="fim-tab" data-tab="fimStaffPane" type="button">Staff</button>' +
+        '</div>' +
+
+        '<div class="fim-body">' +
+          // --- Match tab ---
+          '<div class="fim-tab-pane active" id="fimMatchPane">' +
+            '<div class="fim-scoreline">' +
+              '<span class="fim-score" style="color:' + tier.color + '">' + _esc(scoreText) + '</span>' +
+              '<span class="fim-rating" style="color:' + tier.color + '">' + _esc(tier.label) + '</span>' +
+            '</div>' +
+            '<p class="fim-scoresub">' + schoolName + ' is a <strong>' + _esc(scoreText) + '</strong>' +
+              (tier.label ? ' <strong>' + _esc(tier.label) + '</strong>' : '') + ' for you.</p>' +
+            '<div class="fim-section-label">Rating scale</div>' +
+            _tierKeyHTML() +
+            '<div class="fim-section-label">What this school offers that matches you</div>' +
+            '<div class="fim-matches">' + _matchRowsHTML(matches) + '</div>' +
+            '<p class="fim-disclaimer">AI Match is a guide to help you find programs that fit you ' +
+            'on and off the field. It complements your own research, never replaces it.</p>' +
+          '</div>' +
+          // --- Staff tab ---
+          '<div class="fim-tab-pane" id="fimStaffPane">' +
+            '<div class="fim-section-label">Coaching staff</div>' +
+            '<div class="fim-staff-list">' + staffHTML + '</div>' +
+            privateNote +
+          '</div>' +
+        '</div>' +
+      '</div>';
+
+    _mount(overlay);
+
+    // Tab switching (mirror the data-tab/.active pattern used elsewhere).
+    overlay.querySelectorAll('.fim-tab').forEach(function (tab) {
+      tab.addEventListener('click', function () {
+        overlay.querySelectorAll('.fim-tab').forEach(function (t) { t.classList.remove('active'); });
+        overlay.querySelectorAll('.fim-tab-pane').forEach(function (p) { p.classList.remove('active'); });
+        tab.classList.add('active');
+        var pane = overlay.querySelector('#' + tab.dataset.tab);
+        if (pane) pane.classList.add('active');
+      });
+    });
+  }
+
+  // Append overlay + wire close handlers (shared by both modes).
+  function _mount(overlay) {
     document.body.appendChild(overlay);
     document.body.style.overflow = 'hidden';
-
     overlay.addEventListener('click', function (e) {
       if (e.target === overlay) close();
     });

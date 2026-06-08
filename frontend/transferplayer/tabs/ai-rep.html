@@ -14,6 +14,8 @@
     <link rel="stylesheet" href="../../landingpage/styles.css">
     <link rel="stylesheet" href="../mainpage-player.css">
     <link rel="stylesheet" href="ai-rep.css">
+    <link rel="stylesheet" href="../../shared/fit-display.css">
+    <link rel="stylesheet" href="../../shared/fit-info-modal.css">
     <link rel="stylesheet" href="../../shared/mobile-overrides.css?v=3">
     <link rel="stylesheet" href="../../shared/ios-app-overrides.css?v=1">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -148,86 +150,43 @@
                     </div>
                 </div>
 
-                <!-- Section 1: Match Feed -->
-                <div class="ai-rep-section" id="aiRepMatchSection">
+                <!-- Section 1: Best-Fit Schools -->
+                <div class="ai-rep-section" id="aiRepSchoolsSection">
                     <div class="ai-rep-section-header">
                         <h2 class="ai-rep-section-title">
                             <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
-                                <circle cx="11" cy="11" r="8"/>
-                                <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                                <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
+                                <path d="M6 12v5c3 3 9 3 12 0v-5"/>
                             </svg>
-                            Match Feed
+                            Best-Fit Schools
                         </h2>
-                        <div class="ai-rep-section-controls">
-                            <span class="ai-rep-badge" id="aiRepBadge">Loading...</span>
-                            <select id="aiRepPeriodFilter" class="ai-rep-period-filter">
-                                <option value="7d">Last 7 days</option>
-                                <option value="30d">Last 30 days</option>
-                                <option value="all">All Time</option>
-                            </select>
-                        </div>
                     </div>
+                    <p class="ai-rep-section-sub">Schools whose programs best fit you, on and off the field. Tap a school to see why and meet the staff.</p>
 
                     <!-- Loading State -->
-                    <div class="ai-rep-loading" id="aiRepLoading">
+                    <div class="ai-rep-loading" id="aiRepSchoolsLoading">
                         <div class="ai-rep-loading-dots">
                             <span></span><span></span><span></span>
                         </div>
-                        <p>Loading matches...</p>
+                        <p>Finding your best-fit schools...</p>
                     </div>
 
-                    <!-- Match Cards Container -->
-                    <div class="ai-rep-match-list" id="aiRepMatchList"></div>
+                    <!-- Schools List -->
+                    <div class="ai-rep-school-list" id="aiRepSchoolList"></div>
 
-                    <button class="ai-rep-show-more" id="aiRepShowMore" style="display:none">
+                    <!-- Empty State (nudges to Profile Optimization) -->
+                    <div class="ai-rep-school-empty" id="aiRepSchoolsEmpty" style="display:none">
+                        <p>No strong school matches yet.</p>
+                        <p class="ai-rep-school-empty-sub">Complete your recruiting profile below to unlock your best-fit schools.</p>
+                        <button type="button" class="ai-rep-school-empty-btn" id="aiRepSchoolsEmptyBtn">Improve my profile</button>
+                    </div>
+
+                    <button class="ai-rep-show-more" id="aiRepSchoolsShowMore" style="display:none">
                         <span>Show More</span>
                         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
                             <polyline points="6 9 12 15 18 9"></polyline>
                         </svg>
                     </button>
-
-                    <!-- Division Distribution -->
-                    <div class="ai-rep-card" id="aiRepDivCard">
-                        <h3 class="ai-rep-card-title">Division Distribution</h3>
-                        <div class="ai-rep-bar-chart" id="aiRepDivChart">
-                            <div class="ai-rep-bar-row" data-division="D1 FBS">
-                                <span class="ai-rep-bar-label">D1 FBS</span>
-                                <div class="ai-rep-bar-track"><div class="ai-rep-bar-fill" style="width: 0%"></div></div>
-                                <span class="ai-rep-bar-value">0</span>
-                            </div>
-                            <div class="ai-rep-bar-row" data-division="D1 FCS">
-                                <span class="ai-rep-bar-label">D1 FCS</span>
-                                <div class="ai-rep-bar-track"><div class="ai-rep-bar-fill" style="width: 0%"></div></div>
-                                <span class="ai-rep-bar-value">0</span>
-                            </div>
-                            <div class="ai-rep-bar-row" data-division="D2">
-                                <span class="ai-rep-bar-label">D2</span>
-                                <div class="ai-rep-bar-track"><div class="ai-rep-bar-fill" style="width: 0%"></div></div>
-                                <span class="ai-rep-bar-value">0</span>
-                            </div>
-                            <div class="ai-rep-bar-row" data-division="D3">
-                                <span class="ai-rep-bar-label">D3</span>
-                                <div class="ai-rep-bar-track"><div class="ai-rep-bar-fill" style="width: 0%"></div></div>
-                                <span class="ai-rep-bar-value">0</span>
-                            </div>
-                            <div class="ai-rep-bar-row" data-division="NAIA">
-                                <span class="ai-rep-bar-label">NAIA</span>
-                                <div class="ai-rep-bar-track"><div class="ai-rep-bar-fill" style="width: 0%"></div></div>
-                                <span class="ai-rep-bar-value">0</span>
-                            </div>
-                            <div class="ai-rep-bar-row" data-division="NJCAA">
-                                <span class="ai-rep-bar-label">NJCAA</span>
-                                <div class="ai-rep-bar-track"><div class="ai-rep-bar-fill" style="width: 0%"></div></div>
-                                <span class="ai-rep-bar-value">0</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Top Attributes -->
-                    <div class="ai-rep-card" id="aiRepAttrCard">
-                        <h3 class="ai-rep-card-title">Top Attributes Driving Exposure</h3>
-                        <div class="ai-rep-tags" id="aiRepTopAttributes"></div>
-                    </div>
                 </div>
 
                 <!-- Section 2: Profile Optimization -->
@@ -364,6 +323,8 @@
 
     <script src="../../shared/api.js"></script>
     <script src="../../shared/school-search.js"></script>
+    <script src="../../shared/fit-display.js"></script>
+    <script src="../../shared/fit-info-modal.js"></script>
     <script src="../../shared/mobile-header.js?v=4"></script>
     <script src="../sidebar-nav.js"></script>
     <script src="../sidebar-footer.js"></script>

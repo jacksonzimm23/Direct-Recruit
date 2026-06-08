@@ -3,46 +3,14 @@ const router = express.Router();
 const { authMiddleware, requireRole } = require('../middleware/auth');
 const pool = require('../config/database');
 const User = require('../models/User');
+const PlayerProfile = require('../models/PlayerProfile');
+const CoachProfile = require('../models/CoachProfile');
+const { computeFit, tierOf } = require('../utils/fit-score');
+const { getSignedS3Url } = require('../utils/s3');
 const logger = require('../utils/logger');
 
 // All routes require authenticated player
 router.use(authMiddleware, requireRole('player'));
-
-// Map raw active_filters names to display labels
-const FILTER_LABEL_MAP = {
-  position: 'Position',
-  state: 'State',
-  min_height: 'Height',
-  max_height: 'Height',
-  min_weight: 'Weight',
-  max_weight: 'Weight',
-  min_gpa: 'GPA',
-  max_gpa: 'GPA',
-  min_sat_score: 'Test Scores',
-  max_sat_score: 'Test Scores',
-  min_act_score: 'Test Scores',
-  max_act_score: 'Test Scores',
-  graduation_year: 'Grad Year',
-  max_graduation_year: 'Grad Year',
-  college_division: 'College Division',
-  eligibility: 'Eligibility',
-  max_eligibility: 'Eligibility',
-  has_highlights: 'Highlights/Film',
-  offer_filters: 'Offers',
-  stat_filters: 'Stats',
-  other_sports: 'Other Sports',
-  plays_other_sports: 'Other Sports',
-  track_100m_max: 'Track Times',
-  track_200m_max: 'Track Times',
-  pff_grade_min: 'PFF Grade',
-  pff_grade_max: 'PFF Grade'
-};
-
-// Filters to exclude from display
-const EXCLUDED_FILTERS = new Set(['searchTerm', 'signal_types', 'days']);
-
-// All 6 divisions in display order
-const ALL_DIVISIONS = ['D1 FBS', 'D1 FCS', 'D2', 'D3', 'NAIA', 'NJCAA'];
 
 // Normalize legacy division values (e.g., "FBS" → "D1 FBS")
 function normalizeDivision(div) {
@@ -52,126 +20,119 @@ function normalizeDivision(div) {
   return div;
 }
 
-// Convert active_filters array to deduplicated display labels
-function filtersToLabels(activeFilters) {
-  if (!activeFilters || !activeFilters.length) return [];
-  const seen = new Set();
-  const labels = [];
-  for (const f of activeFilters) {
-    if (EXCLUDED_FILTERS.has(f)) continue;
-    const label = FILTER_LABEL_MAP[f];
-    if (label && !seen.has(label)) {
-      seen.add(label);
-      labels.push(label);
-    }
-  }
-  return labels;
-}
+// Per-dimension detail copy, reworded school→player (privacy-safe: no thresholds/PII).
+// Keyed by the fit-score DIMENSIONS keys.
+const SCHOOL_DIM_DETAIL = {
+  academic:    'Your academics fit this program’s profile',
+  level:       'Recruits at the level you’re open to',
+  major:       'They support your intended major',
+  geographic:  'Located in a region you’re open to',
+  financial:   'Their aid can meet your financial needs',
+  environment: 'Campus setting matches your preference',
+  development: 'Their development approach fits how you want to be used'
+};
 
-// Build date filter clause and param
-function buildDateFilter(period, paramIndex) {
-  if (period === '7d') return { clause: `AND created_at >= NOW() - INTERVAL '7 days'`, params: [] };
-  if (period === '30d') return { clause: `AND created_at >= NOW() - INTERVAL '30 days'`, params: [] };
-  return { clause: '', params: [] }; // 'all'
-}
+// ============ GET /api/ai-rep/best-fit-schools ============
+// Player-facing mirror of the coach AI Match: rank the SCHOOLS that best fit this
+// player. Runs computeFit(player, coach) over every college coach, drops coaches
+// below the display floor, groups passing coaches by team, averages their scores
+// (and per-dimension scores) per school, keeps schools >= 70, ranks, paginates.
+// Each school carries a privacy-filtered Staff list (coaches whose profile is not
+// private). No coach names appear in the ranked list itself — only inside a school.
+const SCHOOL_MIN_SCORE = 70;
 
-// ============ GET /api/ai-rep/matches ============
-router.get('/matches', async (req, res) => {
+router.get('/best-fit-schools', async (req, res) => {
   try {
-    // Require active subscription for AI Rep
     const subInfo = await User.getSubscriptionInfo(req.userId);
     if (!subInfo || !['active', 'past_due', 'comp'].includes(subInfo.subscription_status)) {
       return res.status(403).json({ error: 'Active subscription required' });
     }
 
-    const userId = req.userId;
-    const period = ['7d', '30d', 'all'].includes(req.query.period) ? req.query.period : '7d';
     const offset = Math.max(0, parseInt(req.query.offset) || 0);
-    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit) || 5));
+    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit) || 10));
 
-    const playerContainment = JSON.stringify([{ player_id: userId }]);
-    const dateFilter = buildDateFilter(period);
+    const player = await PlayerProfile.findByUserId(req.userId);
+    if (!player) {
+      return res.status(404).json({ error: 'Profile not found' });
+    }
 
-    // Query 1: Paginated matches with total count
-    const matchesResult = await pool.query(
-      `WITH filtered AS (
-        SELECT id, coach_division, active_filters, created_at
-        FROM ai_analytics
-        WHERE result_players @> $1::jsonb
-          AND ai_type = 'recruit_assistant'
-          ${dateFilter.clause}
-        ORDER BY created_at DESC
-      )
-      SELECT *, COUNT(*) OVER() AS total_count
-      FROM filtered
-      LIMIT $2 OFFSET $3`,
-      [playerContainment, limit, offset]
-    );
+    const coaches = await CoachProfile.getAllCollege();
 
-    const totalCount = matchesResult.rows.length > 0
-      ? parseInt(matchesResult.rows[0].total_count)
-      : 0;
+    // Group passing coaches by team (skip coaches below the fit floor or with no team).
+    const byTeam = new Map();
+    for (const coach of coaches) {
+      if (!coach.team_name) continue;
+      const fit = computeFit(player, coach);
+      if (fit.score == null) continue; // below display floor
+      const key = coach.team_name.trim();
+      if (!byTeam.has(key)) byTeam.set(key, []);
+      byTeam.get(key).push({ coach, fit });
+    }
 
-    const matches = matchesResult.rows.map(row => ({
-      id: row.id,
-      coach_division: normalizeDivision(row.coach_division) || 'Unknown',
-      matched_on: filtersToLabels(row.active_filters),
-      created_at: row.created_at
-    }));
+    // Build one school object per team.
+    const schools = [];
+    for (const [teamName, entries] of byTeam) {
+      const avgScore = Math.round(entries.reduce((a, e) => a + e.fit.score, 0) / entries.length);
+      if (avgScore < SCHOOL_MIN_SCORE) continue;
 
-    // Query 2: Division distribution (same period filter)
-    const divResult = await pool.query(
-      `SELECT coach_division, COUNT(*)::int AS count
-       FROM ai_analytics
-       WHERE result_players @> $1::jsonb
-         AND ai_type = 'recruit_assistant'
-         ${dateFilter.clause}
-       GROUP BY coach_division`,
-      [playerContainment]
-    );
-
-    const divisionDistribution = {};
-    for (const d of ALL_DIVISIONS) divisionDistribution[d] = 0;
-    for (const row of divResult.rows) {
-      const normalized = normalizeDivision(row.coach_division);
-      if (normalized && divisionDistribution.hasOwnProperty(normalized)) {
-        divisionDistribution[normalized] += row.count;
+      // Most common division among passing coaches (fallback: first non-null).
+      const divCounts = {};
+      for (const e of entries) {
+        const d = normalizeDivision(e.coach.college_division);
+        if (d) divCounts[d] = (divCounts[d] || 0) + 1;
       }
-    }
+      const college_division = Object.entries(divCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || null;
 
-    // Query 3: Top attributes (unnest active_filters, count, exclude irrelevant)
-    const attrResult = await pool.query(
-      `SELECT filter_name, COUNT(*)::int AS count
-       FROM ai_analytics, unnest(active_filters) AS filter_name
-       WHERE result_players @> $1::jsonb
-         AND ai_type = 'recruit_assistant'
-         ${dateFilter.clause}
-         AND filter_name NOT IN ('searchTerm', 'signal_types', 'days')
-       GROUP BY filter_name
-       ORDER BY count DESC`,
-      [playerContainment]
-    );
-
-    // Deduplicate min_height/max_height → Height, min_weight/max_weight → Weight
-    const labelCounts = {};
-    for (const row of attrResult.rows) {
-      const label = FILTER_LABEL_MAP[row.filter_name];
-      if (!label) continue;
-      labelCounts[label] = (labelCounts[label] || 0) + row.count;
-    }
-
-    const topAttributes = Object.entries(labelCounts)
-      .sort((a, b) => b[1] - a[1])
-      .map(([label, count]) => ({
-        label,
-        count,
-        percent: totalCount > 0 ? Math.round((count / totalCount) * 100) : 0
+      // Merge dimensions: average score across coaches where each dim is present.
+      const dimAgg = new Map(); // key -> { label, sum, n }
+      for (const e of entries) {
+        for (const d of e.fit.dimensions) {
+          if (!d.present) continue;
+          if (!dimAgg.has(d.key)) dimAgg.set(d.key, { label: d.label, sum: 0, n: 0 });
+          const agg = dimAgg.get(d.key);
+          agg.sum += d.score;
+          agg.n += 1;
+        }
+      }
+      const dimensions = [...dimAgg.entries()].map(([key, agg]) => ({
+        key,
+        label: agg.label,
+        present: true,
+        score: agg.sum / agg.n,
+        detail: SCHOOL_DIM_DETAIL[key] || agg.label
       }));
 
-    res.json({ matches, totalCount, divisionDistribution, topAttributes });
+      // Privacy-filtered staff (exclude private coaches; sign avatars; never email).
+      const visible = entries.filter(e => e.coach.profile_visibility !== 'private');
+      const staff = await Promise.all(visible.map(async (e) => ({
+        first_name: e.coach.first_name,
+        last_name: e.coach.last_name,
+        username: e.coach.username,
+        position_title: e.coach.position_title || null,
+        profile_image_url: e.coach.profile_image_url
+          ? await getSignedS3Url(e.coach.profile_image_url)
+          : null
+      })));
+
+      schools.push({
+        team_name: teamName,
+        college_division,
+        score: avgScore,
+        tier: tierOf(avgScore),
+        coachCount: entries.length,
+        dimensions,
+        staff
+      });
+    }
+
+    schools.sort((a, b) => b.score - a.score);
+    const page = schools.slice(offset, offset + limit);
+    const hasMore = offset + limit < schools.length;
+
+    res.json({ schools: page, hasMore });
   } catch (error) {
-    logger.error('AI Rep matches error:', error);
-    res.status(500).json({ error: 'Failed to load matches' });
+    logger.error('AI Rep best-fit-schools error:', error);
+    res.status(500).json({ error: 'Failed to load best-fit schools' });
   }
 });
 
@@ -212,12 +173,10 @@ router.get('/profile-completion', async (req, res) => {
     );
     const hasStats = statsResult.rows[0].count > 0;
 
-    // Build field checklist ordered by priority (most impactful first)
+    // Basic / discovery fields — individual rows (keep as-is, position-based priority).
     const fields = [
       { label: 'Highlights/Film', complete: hasHighlights },
       { label: 'Stats', complete: hasStats },
-      { label: 'GPA', complete: !!profile.gpa },
-      { label: 'Academic Test Scores', complete: !!profile.sat_score || !!profile.act_score },
       { label: 'Offers', complete: !!profile.offers && profile.offers.trim() !== '' },
       { label: 'Position', complete: !!profile.position },
       { label: 'Height', complete: !!profile.height },
@@ -234,6 +193,33 @@ router.get('/profile-completion', async (req, res) => {
       fields.push({ label: 'Eligibility', complete: profile.eligibility != null });
     }
 
+    // Recruiting-profile (fit) SECTIONS — one row per recruiting-profile subtab the
+    // player edits, instead of per-field, so the list stays short. A section is
+    // complete only when ALL of its required fields are filled (optional/edge fields
+    // like class rank, AP/IB, weighted GPA, looking-for text, Pell, ZIP, athletics
+    // do NOT block completion). These power AI Match / Best-Fit Schools and are always
+    // surfaced at HIGH priority by the frontend. Plan 7D.
+    const arrHas = (v) => Array.isArray(v) && v.length > 0;
+    let fitPrefs = profile.fit_preferences;
+    if (typeof fitPrefs === 'string') { try { fitPrefs = JSON.parse(fitPrefs); } catch (e) { fitPrefs = {}; } }
+    fitPrefs = fitPrefs || {};
+    const sliderSet = (k) => fitPrefs[k] != null && fitPrefs[k] !== '';
+
+    const recruitingFields = [
+      // Academics: GPA + at least one test score.
+      { label: 'Academics', complete: !!profile.gpa && (!!profile.sat_score || !!profile.act_score) },
+      // Major & Goals: intended major.
+      { label: 'Major & Goals', complete: arrHas(profile.intended_major) },
+      // Financial Fit: both aid questions answered.
+      { label: 'Financial Fit', complete: !!profile.needs_financial_aid && !!profile.needs_scholarship },
+      // Level & Location: levels + regions + campus setting all set.
+      { label: 'Level & Location', complete: arrHas(profile.levels_open) && arrHas(profile.preferred_regions) && !!profile.preferred_campus_setting },
+      // Priorities: all four importance sliders rated.
+      { label: 'Priorities', complete: sliderSet('importance_playing_time') && sliderSet('importance_close_to_home') && sliderSet('importance_academics_vs_football') && sliderSet('importance_competition_level') }
+    ];
+    const recruitingSectionLabels = recruitingFields.map(f => f.label);
+    fields.push(...recruitingFields);
+
     const completedFields = fields.filter(f => f.complete).map(f => f.label);
     const incompleteFields = fields.filter(f => !f.complete).map(f => f.label);
     const completionPercent = Math.round((completedFields.length / fields.length) * 100);
@@ -242,6 +228,8 @@ router.get('/profile-completion', async (req, res) => {
       completionPercent,
       completedFields,
       incompleteFields,
+      // Which incomplete labels are recruiting-profile SECTIONS (frontend marks HIGH).
+      recruitingSections: recruitingSectionLabels,
       playerType: isTransfer ? 'transfer' : 'hs'
     });
   } catch (error) {

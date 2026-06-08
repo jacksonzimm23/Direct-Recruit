@@ -41,7 +41,11 @@
         'messages': 'messages',
         'feed': 'mainpage-coach',
         'profile': 'my-profile',
-        'transfer-portal': 'transfer-portal'
+        'transfer-portal': 'transfer-portal',
+        // A player viewing a coach profile from their AI Rep "Best-Fit Schools".
+        // The coach sidebar has no AI Rep item, so highlight nothing (sentinel that
+        // matches no nav page) rather than defaulting to the wrong tab.
+        'ai-rep': '__none__'
     };
 
     // Use fromPage for active state if viewing another user's profile
