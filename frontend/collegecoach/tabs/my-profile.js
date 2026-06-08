@@ -1937,7 +1937,10 @@ function setupUI() {
         }
         if (recruitingPane) {
             recruitingPane.style.display = '';
-            displayRecruitingInfo(currentProfile);
+            // AI Fit-Matching program subtabs
+            populateRecruitingProfile(currentProfile);
+            setupRecruitingSubnav();
+            if (isOwnProfile) setupRecruitingProfileEditing();
         }
     } else {
         // Explicitly hide for high school coaches
@@ -2190,42 +2193,6 @@ function showError(message) {
         `;
         // Show content since we're done loading
         mainContent.classList.add('profile-loaded');
-    }
-}
-
-function displayRecruitingInfo(profile) {
-    // Display recruiting positions from cc_pos field
-    const positionsContainer = document.getElementById('recruitingPositions');
-    if (positionsContainer) {
-        if (profile.cc_pos && profile.cc_pos.trim() !== '') {
-            if (profile.cc_pos.toLowerCase() === 'all positions') {
-                positionsContainer.innerHTML = '<span class="recruiting-position-tag">All Positions</span>';
-            } else {
-                // Split by comma and display each position as a tag
-                const positions = profile.cc_pos.split(',').map(p => p.trim()).filter(p => p);
-                positionsContainer.innerHTML = positions
-                    .map(pos => `<span class="recruiting-position-tag">${pos}</span>`)
-                    .join('');
-            }
-        } else {
-            positionsContainer.innerHTML = '<span class="recruiting-position-tag">All Positions</span>';
-        }
-    }
-
-    // Display recruiting areas from cc_areas field
-    const areasContainer = document.getElementById('recruitingAreas');
-    if (areasContainer) {
-        if (profile.cc_areas && profile.cc_areas.trim() !== '') {
-            areasContainer.innerHTML = `<p>${escapeHtml(profile.cc_areas)}</p>`;
-        } else {
-            areasContainer.innerHTML = '<p>Nationwide</p>';
-        }
-    }
-
-    // Show/hide edit button based on ownership
-    const editRecruitingBtn = document.getElementById('editRecruitingBtn');
-    if (editRecruitingBtn && isOwnProfile) {
-        editRecruitingBtn.classList.add('show-button');
     }
 }
 
@@ -3002,176 +2969,6 @@ function closeFollowListModal() {
 
 // Initialize the follow list modal when DOM is ready
 document.addEventListener('DOMContentLoaded', setupFollowListModal);
-
-// ==========================================
-// EDIT RECRUITING MODAL FUNCTIONS
-// ==========================================
-
-function setupEditRecruitingModal() {
-    const editRecruitingBtn = document.getElementById('editRecruitingBtn');
-    const modal = document.getElementById('editRecruitingModal');
-    const overlay = document.getElementById('editRecruitingModalOverlay');
-    const closeBtn = document.getElementById('editRecruitingModalClose');
-    const cancelBtn = document.getElementById('btnRecruitingCancel');
-    const saveBtn = document.getElementById('btnRecruitingSave');
-    const allPositionsCheckbox = document.getElementById('recruitAllPositions');
-    const positionsContainer = document.getElementById('recruitingPositionsContainer');
-
-    // Open modal
-    if (editRecruitingBtn) {
-        editRecruitingBtn.addEventListener('click', () => {
-            populateRecruitingForm();
-            modal.classList.add('active');
-            document.body.style.overflow = 'hidden';
-        });
-    }
-
-    // Close modal handlers
-    if (overlay) {
-        overlay.addEventListener('click', hideRecruitingModal);
-    }
-    if (closeBtn) {
-        closeBtn.addEventListener('click', hideRecruitingModal);
-    }
-    if (cancelBtn) {
-        cancelBtn.addEventListener('click', hideRecruitingModal);
-    }
-
-    // Close on Escape key
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape' && modal && modal.classList.contains('active')) {
-            hideRecruitingModal();
-        }
-    });
-
-    // All Positions toggle behavior
-    if (allPositionsCheckbox && positionsContainer) {
-        allPositionsCheckbox.addEventListener('change', function() {
-            if (this.checked) {
-                // Disable and uncheck all individual position checkboxes
-                positionsContainer.classList.add('disabled');
-                const checkboxes = positionsContainer.querySelectorAll('input[name="ccPosition"]');
-                checkboxes.forEach(cb => {
-                    cb.checked = false;
-                });
-            } else {
-                // Enable individual position checkboxes
-                positionsContainer.classList.remove('disabled');
-            }
-        });
-    }
-
-    // Save button
-    if (saveBtn) {
-        saveBtn.addEventListener('click', saveRecruitingChanges);
-    }
-}
-
-function hideRecruitingModal() {
-    const modal = document.getElementById('editRecruitingModal');
-    if (modal) {
-        modal.classList.remove('active');
-        document.body.style.overflow = '';
-    }
-}
-
-function populateRecruitingForm() {
-    if (!currentProfile) return;
-
-    const allPositionsCheckbox = document.getElementById('recruitAllPositions');
-    const positionsContainer = document.getElementById('recruitingPositionsContainer');
-    const areasInput = document.getElementById('recruitingAreasInput');
-
-    // Reset all checkboxes
-    const positionCheckboxes = document.querySelectorAll('input[name="ccPosition"]');
-    positionCheckboxes.forEach(cb => cb.checked = false);
-
-    // Check if "All Positions" or populate individual positions
-    if (!currentProfile.cc_pos || currentProfile.cc_pos.trim() === '' || currentProfile.cc_pos.toLowerCase() === 'all positions') {
-        // All Positions selected
-        if (allPositionsCheckbox) {
-            allPositionsCheckbox.checked = true;
-            positionsContainer.classList.add('disabled');
-        }
-    } else {
-        // Individual positions selected
-        if (allPositionsCheckbox) {
-            allPositionsCheckbox.checked = false;
-            positionsContainer.classList.remove('disabled');
-        }
-
-        // Parse comma-separated positions and check the corresponding checkboxes
-        const selectedPositions = currentProfile.cc_pos.split(',').map(p => p.trim());
-        positionCheckboxes.forEach(cb => {
-            if (selectedPositions.includes(cb.value)) {
-                cb.checked = true;
-            }
-        });
-    }
-
-    // Populate recruiting areas
-    if (areasInput) {
-        areasInput.value = currentProfile.cc_areas || '';
-    }
-}
-
-async function saveRecruitingChanges() {
-    const saveBtn = document.getElementById('btnRecruitingSave');
-    const originalText = saveBtn.textContent;
-
-    try {
-        saveBtn.textContent = 'Saving...';
-        saveBtn.disabled = true;
-
-        const allPositionsCheckbox = document.getElementById('recruitAllPositions');
-        const areasInput = document.getElementById('recruitingAreasInput');
-
-        let cc_pos = '';
-
-        if (allPositionsCheckbox && allPositionsCheckbox.checked) {
-            cc_pos = 'All Positions';
-        } else {
-            // Get all checked position checkboxes
-            const checkedPositions = document.querySelectorAll('input[name="ccPosition"]:checked');
-            const positions = Array.from(checkedPositions).map(cb => cb.value);
-            cc_pos = positions.join(',');
-        }
-
-        const cc_areas = areasInput ? areasInput.value.trim() : '';
-
-        // Send update request
-        const response = await API.put('/profile', {
-            cc_pos: cc_pos,
-            cc_areas: cc_areas
-        });
-
-        if (response.success || response.profile) {
-            // Update currentProfile
-            currentProfile.cc_pos = cc_pos;
-            currentProfile.cc_areas = cc_areas;
-
-            // Refresh the recruiting display
-            displayRecruitingInfo(currentProfile);
-
-            // Close modal
-            hideRecruitingModal();
-
-            // Show success message
-            showSuccessMessage('Recruiting information updated successfully!');
-        } else {
-            throw new Error(response.message || 'Failed to update recruiting information');
-        }
-    } catch (error) {
-        console.error('Error saving recruiting info:', error);
-        showToast('Failed to save recruiting information: ' + error.message, 'error');
-    } finally {
-        saveBtn.textContent = originalText;
-        saveBtn.disabled = false;
-    }
-}
-
-// Initialize recruiting modal when DOM is ready
-document.addEventListener('DOMContentLoaded', setupEditRecruitingModal);
 
 // ==================== PROFILE VIEWERS MODAL ====================
 
@@ -7086,3 +6883,232 @@ document.addEventListener('DOMContentLoaded', function() {
     if (overlay) overlay.addEventListener('click', hideChangeTeamModal);
     if (submitBtn) submitBtn.addEventListener('click', submitChangeTeam);
 });
+
+
+// ============================================
+// RECRUITING PROFILE TAB — Program subtabs (AI Fit-Matching)
+// ============================================
+
+let rpTopProgramsPicker = null, rpFootballMajorsPicker = null, rpAffiliationPicker = null;
+
+function rpParseFitPrefs(profile) {
+    const fp = profile && profile.fit_preferences;
+    if (fp == null) return {};
+    if (typeof fp === 'object') return fp;
+    try { return JSON.parse(fp) || {}; } catch (e) { return {}; }
+}
+function rpSetText(elId, value) {
+    const el = document.getElementById(elId);
+    if (el) el.textContent = (value == null || value === '') ? '—' : value;
+}
+// Capitalize a stored lowercase enum value for DISPLAY only (e.g. 'partial' → 'Partial',
+// 'need-met' → 'Need-met'). Stored values stay lowercase for matching/allowlists.
+function rpTitleCase(value) {
+    if (value == null || value === '') return value;
+    const s = String(value);
+    return s.charAt(0).toUpperCase() + s.slice(1);
+}
+function rpRange(min, max) {
+    const a = (min == null || min === '') ? null : min;
+    const b = (max == null || max === '') ? null : max;
+    if (a == null && b == null) return '—';
+    if (a != null && b != null) return a + ' – ' + b;
+    return a != null ? (a + '+') : ('up to ' + b);
+}
+function rpRenderTags(elId, arr) {
+    const el = document.getElementById(elId);
+    if (!el) return;
+    el.innerHTML = '';
+    const vals = Array.isArray(arr) ? arr.filter(v => v != null && v !== '') : [];
+    if (!vals.length) { const s = document.createElement('span'); s.className = 'info-value'; s.textContent = '—'; el.appendChild(s); return; }
+    vals.forEach(v => { const s = document.createElement('span'); s.className = 'recruiting-tag'; s.textContent = v; el.appendChild(s); });
+}
+
+// Populate the 5 program subtabs from the coach profile.
+function populateRecruitingProfile(profile) {
+    if (!profile) return;
+    const fp = rpParseFitPrefs(profile);
+    // Admissions
+    rpSetText('rpAdmittedGpa', rpRange(profile.admitted_gpa_min, profile.admitted_gpa_max));
+    rpSetText('rpTestOptional', profile.test_optional === true ? 'Yes' : (profile.test_optional === false ? 'No' : '—'));
+    rpSetText('rpSatRange', rpRange(profile.sat_min, profile.sat_max));
+    rpSetText('rpActRange', rpRange(profile.act_min, profile.act_max));
+    // Academics & Majors
+    rpRenderTags('rpTopPrograms', profile.top_programs);
+    rpRenderTags('rpFootballMajors', profile.football_player_majors);
+    rpSetText('rpAcademicSupport', rpTitleCase(fp.academic_support));
+    // Cost & Aid
+    rpSetText('rpAffordabilityBand', rpTitleCase(profile.affordability_band));
+    rpSetText('rpOffersAthleticAid', rpTitleCase(profile.offers_athletic_aid));
+    rpSetText('rpAidGenerosity', rpTitleCase(profile.aid_generosity));
+    rpSetText('rpRosterPctOnAid', rpTitleCase(fp.roster_pct_on_aid));
+    // Program & Location
+    rpSetText('rpCampusSetting', rpTitleCase(profile.campus_setting));
+    rpSetText('rpDistanceProfile', rpTitleCase(profile.distance_profile));
+    rpSetText('rpHsTier', rpTitleCase(profile.hs_tier_recruited));
+    rpRenderTags('rpAffiliation', fp.affiliation);
+    // Scheme & Fit
+    rpSetText('rpOffensiveScheme', fp.offensive_scheme);
+    rpSetText('rpDefensiveScheme', fp.defensive_scheme);
+    rpSetText('rpDevVsPlug', (fp.dev_vs_plug_and_play == null || fp.dev_vs_plug_and_play === '') ? '—' : (fp.dev_vs_plug_and_play + ' / 5'));
+    rpSetText('rpGreatFit', fp.great_fit_text);
+}
+
+function setupRecruitingSubnav() {
+    const sel = document.getElementById('recruitingSubtabSelect');
+    if (!sel || sel._rpWired) return;
+    sel._rpWired = true;
+    sel.addEventListener('change', function () {
+        document.querySelectorAll('#recruiting .recruiting-subtab-pane').forEach(p => {
+            p.classList.toggle('active', p.dataset.subtab === this.value);
+        });
+    });
+}
+
+function rpOpenModal(id) { const m = document.getElementById(id); if (m) { m.classList.add('active'); document.body.style.overflow = 'hidden'; } }
+function rpCloseModal(id) { const m = document.getElementById(id); if (m) { m.classList.remove('active'); document.body.style.overflow = ''; } }
+function rpNumOrNull(id) { const e = document.getElementById(id); if (!e || e.value === '') return null; const n = parseFloat(e.value); return Number.isNaN(n) ? null : n; }
+function rpIntOrNull(id) { const e = document.getElementById(id); if (!e || e.value === '') return null; const n = parseInt(e.value, 10); return Number.isNaN(n) ? null : n; }
+function rpRadioVal(name) { const e = document.querySelector('input[name="' + name + '"]:checked'); return e ? e.value : null; }
+
+async function rpSavePayload(payload, modalId) {
+    try {
+        const response = await API.put('/profile', payload);
+        if (response.success || response.profile) {
+            Object.assign(currentProfile, payload);
+            populateRecruitingProfile(currentProfile);
+            rpCloseModal(modalId);
+            if (typeof showToast === 'function') showToast('Saved', 'success');
+        } else { showToast(response.message || 'Failed to save', 'error'); }
+    } catch (err) { console.error('RP save error:', err); showToast('Failed to save. Please try again.', 'error'); }
+}
+
+function setupRecruitingProfileEditing() {
+    if (window._rpEditingWired) return;
+    window._rpEditingWired = true;
+    const haveMatchUI = typeof initMatchMultiSelect === 'function' && typeof MATCH_CONSTANTS !== 'undefined';
+    document.querySelectorAll('.btn-edit-recruiting-section').forEach(b => b.classList.add('show-button'));
+    const wireClose = (modalId) => {
+        const ov = document.getElementById(modalId + 'Overlay'); if (ov) ov.addEventListener('click', () => rpCloseModal(modalId));
+        const cl = document.getElementById(modalId + 'Close'); if (cl) cl.addEventListener('click', () => rpCloseModal(modalId));
+    };
+    const onClick = (id, fn) => { const e = document.getElementById(id); if (e) e.addEventListener('click', fn); };
+
+    // ---- Admissions ----
+    onClick('editRpAdmissionsBtn', () => {
+        const p = currentProfile;
+        document.getElementById('editRpAdmittedGpaMin').value = p.admitted_gpa_min == null ? '' : p.admitted_gpa_min;
+        document.getElementById('editRpAdmittedGpaMax').value = p.admitted_gpa_max == null ? '' : p.admitted_gpa_max;
+        const to = p.test_optional === true ? 'yes' : (p.test_optional === false ? 'no' : null);
+        document.querySelectorAll('input[name="editRpTestOptional"]').forEach(r => { r.checked = (r.value === to); });
+        document.getElementById('editRpSatMin').value = p.sat_min == null ? '' : p.sat_min;
+        document.getElementById('editRpSatMax').value = p.sat_max == null ? '' : p.sat_max;
+        document.getElementById('editRpActMin').value = p.act_min == null ? '' : p.act_min;
+        document.getElementById('editRpActMax').value = p.act_max == null ? '' : p.act_max;
+        rpOpenModal('editRpAdmissionsModal');
+    });
+    onClick('btnEditRpAdmissionsCancel', () => rpCloseModal('editRpAdmissionsModal'));
+    wireClose('editRpAdmissionsModal');
+    onClick('btnEditRpAdmissionsSave', () => {
+        const to = rpRadioVal('editRpTestOptional');
+        rpSavePayload({
+            admitted_gpa_min: rpNumOrNull('editRpAdmittedGpaMin'), admitted_gpa_max: rpNumOrNull('editRpAdmittedGpaMax'),
+            test_optional: to == null ? null : (to === 'yes'),
+            sat_min: rpIntOrNull('editRpSatMin'), sat_max: rpIntOrNull('editRpSatMax'),
+            act_min: rpIntOrNull('editRpActMin'), act_max: rpIntOrNull('editRpActMax')
+        }, 'editRpAdmissionsModal');
+    });
+
+    // ---- Academics & Majors ----
+    onClick('editRpAcadMajorsBtn', () => {
+        const p = currentProfile, fp = rpParseFitPrefs(p);
+        ['editRpTopProgramsContainer', 'editRpFootballMajorsContainer'].forEach(id => { const c = document.getElementById(id); if (c) c.innerHTML = ''; });
+        if (haveMatchUI) {
+            rpTopProgramsPicker = initMatchMultiSelect({ container: '#editRpTopProgramsContainer', chips: '#editRpTopProgramsChips', groups: MATCH_CONSTANTS.MAJOR_GROUPS, name: 'rp_top', preselected: p.top_programs || [] });
+            rpFootballMajorsPicker = initMatchMultiSelect({ container: '#editRpFootballMajorsContainer', chips: '#editRpFootballMajorsChips', groups: MATCH_CONSTANTS.MAJOR_GROUPS, name: 'rp_fbm', preselected: p.football_player_majors || [] });
+        }
+        document.getElementById('editRpAcademicSupport').value = fp.academic_support || '';
+        rpOpenModal('editRpAcadMajorsModal');
+    });
+    onClick('btnEditRpAcadMajorsCancel', () => rpCloseModal('editRpAcadMajorsModal'));
+    wireClose('editRpAcadMajorsModal');
+    onClick('btnEditRpAcadMajorsSave', () => {
+        const top = rpTopProgramsPicker ? rpTopProgramsPicker.getSelected() : (currentProfile.top_programs || []);
+        const fbm = rpFootballMajorsPicker ? rpFootballMajorsPicker.getSelected() : (currentProfile.football_player_majors || []);
+        const fp = Object.assign({}, rpParseFitPrefs(currentProfile), { academic_support: document.getElementById('editRpAcademicSupport').value || null });
+        rpSavePayload({ top_programs: top.length ? top : null, football_player_majors: fbm.length ? fbm : null, fit_preferences: fp }, 'editRpAcadMajorsModal');
+    });
+
+    // ---- Cost & Aid ----
+    onClick('editRpCostAidBtn', () => {
+        const p = currentProfile, fp = rpParseFitPrefs(p);
+        document.getElementById('editRpAffordabilityBand').value = p.affordability_band || '';
+        document.getElementById('editRpOffersAthleticAid').value = p.offers_athletic_aid || '';
+        document.getElementById('editRpAidGenerosity').value = p.aid_generosity || '';
+        document.getElementById('editRpRosterPctOnAid').value = fp.roster_pct_on_aid || '';
+        rpOpenModal('editRpCostAidModal');
+    });
+    onClick('btnEditRpCostAidCancel', () => rpCloseModal('editRpCostAidModal'));
+    wireClose('editRpCostAidModal');
+    onClick('btnEditRpCostAidSave', () => {
+        const fp = Object.assign({}, rpParseFitPrefs(currentProfile), { roster_pct_on_aid: document.getElementById('editRpRosterPctOnAid').value || null });
+        rpSavePayload({
+            affordability_band: document.getElementById('editRpAffordabilityBand').value || null,
+            offers_athletic_aid: document.getElementById('editRpOffersAthleticAid').value || null,
+            aid_generosity: document.getElementById('editRpAidGenerosity').value || null,
+            fit_preferences: fp
+        }, 'editRpCostAidModal');
+    });
+
+    // ---- Program & Location ----
+    onClick('editRpProgramLocationBtn', () => {
+        const p = currentProfile, fp = rpParseFitPrefs(p);
+        document.getElementById('editRpCampusSetting').value = p.campus_setting || '';
+        document.getElementById('editRpDistanceProfile').value = p.distance_profile || '';
+        document.getElementById('editRpHsTier').value = p.hs_tier_recruited || '';
+        const cont = document.getElementById('editRpAffiliationContainer'); if (cont) cont.innerHTML = '';
+        if (haveMatchUI) {
+            rpAffiliationPicker = initMatchMultiSelect({ container: '#editRpAffiliationContainer', chips: '#editRpAffiliationChips', options: MATCH_CONSTANTS.AFFILIATIONS, name: 'rp_affiliation', preselected: fp.affiliation || [] });
+        }
+        rpOpenModal('editRpProgramLocationModal');
+    });
+    onClick('btnEditRpProgramLocationCancel', () => rpCloseModal('editRpProgramLocationModal'));
+    wireClose('editRpProgramLocationModal');
+    onClick('btnEditRpProgramLocationSave', () => {
+        const aff = rpAffiliationPicker ? rpAffiliationPicker.getSelected() : (rpParseFitPrefs(currentProfile).affiliation || []);
+        const fp = Object.assign({}, rpParseFitPrefs(currentProfile), { affiliation: aff.length ? aff : null });
+        rpSavePayload({
+            campus_setting: document.getElementById('editRpCampusSetting').value || null,
+            distance_profile: document.getElementById('editRpDistanceProfile').value || null,
+            hs_tier_recruited: document.getElementById('editRpHsTier').value || null,
+            fit_preferences: fp
+        }, 'editRpProgramLocationModal');
+    });
+
+    // ---- Scheme & Fit ----
+    const gf = document.getElementById('editRpGreatFit'), gfc = document.getElementById('editRpGreatFitCount');
+    if (gf && gfc) gf.addEventListener('input', () => { gfc.textContent = gf.value.length; });
+    const dev = document.getElementById('editRpDevVsPlug'), devV = document.getElementById('editRpDevVsPlugVal');
+    if (dev && devV) dev.addEventListener('input', () => { devV.textContent = dev.value; });
+    onClick('editRpSchemeFitBtn', () => {
+        const fp = rpParseFitPrefs(currentProfile);
+        document.getElementById('editRpOffensiveScheme').value = fp.offensive_scheme || '';
+        document.getElementById('editRpDefensiveScheme').value = fp.defensive_scheme || '';
+        const dv = (fp.dev_vs_plug_and_play == null || fp.dev_vs_plug_and_play === '') ? 3 : fp.dev_vs_plug_and_play;
+        if (dev) dev.value = dv; if (devV) devV.textContent = dv;
+        if (gf) gf.value = fp.great_fit_text || ''; if (gfc) gfc.textContent = (fp.great_fit_text || '').length;
+        rpOpenModal('editRpSchemeFitModal');
+    });
+    onClick('btnEditRpSchemeFitCancel', () => rpCloseModal('editRpSchemeFitModal'));
+    wireClose('editRpSchemeFitModal');
+    onClick('btnEditRpSchemeFitSave', () => {
+        const greatFit = (document.getElementById('editRpGreatFit').value || '').trim();
+        const fp = Object.assign({}, rpParseFitPrefs(currentProfile), {
+            offensive_scheme: document.getElementById('editRpOffensiveScheme').value || null,
+            defensive_scheme: document.getElementById('editRpDefensiveScheme').value || null,
+            dev_vs_plug_and_play: rpIntOrNull('editRpDevVsPlug'),
+            great_fit_text: greatFit || null
+        });
+        rpSavePayload({ fit_preferences: fp }, 'editRpSchemeFitModal');
+    });
+}

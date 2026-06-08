@@ -8172,3 +8172,334 @@ input[type="file"]::file-selector-button:hover {
 .edit-modal.with-media .feed-modal-body {
     overflow-y: auto;
 }
+
+/* ============================================================
+   RECRUITING PROFILE TAB (AI Fit-Matching) — Plan 5/6
+   ============================================================ */
+
+/* Coach-only match banner (stub) */
+.recruiting-match-banner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 0.25rem;
+    padding: 1.5rem 1rem;
+    margin-bottom: 1.25rem;
+    background: linear-gradient(135deg, rgba(18, 130, 162, 0.18), rgba(18, 130, 162, 0.06));
+    border: 2px solid rgba(18, 130, 162, 0.35);
+    border-radius: 14px;
+}
+.recruiting-match-banner .rmb-score {
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: var(--cerulean);
+    line-height: 1;
+}
+.recruiting-match-banner .rmb-sub {
+    font-size: 0.85rem;
+    color: rgba(254, 252, 251, 0.6);
+}
+
+/* Owner disclaimer */
+.recruiting-disclaimer {
+    margin: 0 0 1.25rem;
+    padding: 0.75rem 1rem;
+    background: rgba(18, 130, 162, 0.08);
+    border-left: 3px solid var(--cerulean);
+    border-radius: 8px;
+    color: rgba(254, 252, 251, 0.75);
+    font-size: 0.85rem;
+}
+
+/* Subtab dropdown */
+.recruiting-subnav {
+    margin-bottom: 1.25rem;
+}
+.recruiting-subtab-select {
+    width: 100%;
+    padding: 0.875rem 1rem;
+    background: rgba(254, 252, 251, 0.05);
+    border: 2px solid rgba(18, 130, 162, 0.3);
+    border-radius: 10px;
+    color: var(--white);
+    font-size: 1rem;
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    cursor: pointer;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%231282a2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 1rem center;
+    background-size: 1.25rem;
+    padding-right: 2.75rem;
+}
+.recruiting-subtab-select:focus {
+    outline: none;
+    border-color: var(--cerulean);
+    background-color: rgba(254, 252, 251, 0.08);
+}
+.recruiting-subtab-select option {
+    background: var(--penn-blue);
+    color: var(--white);
+}
+
+/* Subtab panes */
+.recruiting-subtab-pane {
+    display: none;
+}
+.recruiting-subtab-pane.active {
+    display: block;
+}
+.recruiting-subtab-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+}
+.btn-edit-recruiting-section {
+    display: none;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.5rem 1rem;
+    background: rgba(18, 130, 162, 0.12);
+    border: 1px solid rgba(18, 130, 162, 0.3);
+    border-radius: 8px;
+    color: var(--cerulean);
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.btn-edit-recruiting-section.show-button {
+    display: inline-flex;
+}
+.btn-edit-recruiting-section:hover {
+    background: rgba(18, 130, 162, 0.2);
+}
+.btn-edit-recruiting-section svg {
+    width: 15px;
+    height: 15px;
+}
+
+/* Read-only blocks for stacked (non-grid) fields + free text */
+.info-item-block {
+    margin-bottom: 1.25rem;
+}
+.info-item-block:last-child {
+    margin-bottom: 0;
+}
+.info-freetext {
+    line-height: 1.6;
+    white-space: pre-wrap;
+}
+
+/* Chips for array values */
+.recruiting-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.4rem;
+}
+.recruiting-tag {
+    display: inline-block;
+    padding: 0.35rem 0.75rem;
+    background: rgba(18, 130, 162, 0.15);
+    border: 1px solid rgba(18, 130, 162, 0.35);
+    border-radius: 16px;
+    color: var(--cerulean);
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+/* ===== Recruiting edit modals (shared chrome — class family is already in
+   mobile-overrides.css + ios-app-overrides.css lists for full-screen/safe-area) ===== */
+.edit-recruiting-modal {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    z-index: 10000;
+}
+.edit-recruiting-modal.active { display: block; }
+.edit-recruiting-modal-overlay {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(4px);
+}
+.edit-recruiting-modal-content {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    background: var(--oxford-blue);
+    border: 2px solid rgba(18, 130, 162, 0.3);
+    border-radius: 16px;
+    width: 90%;
+    max-width: 600px;
+    max-height: 85vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+.edit-recruiting-modal-header {
+    padding: 1.5rem 2rem;
+    border-bottom: 2px solid rgba(18, 130, 162, 0.2);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.edit-recruiting-modal-header h2 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--white);
+    margin: 0;
+}
+.edit-recruiting-modal-close {
+    background: none;
+    border: none;
+    color: var(--white);
+    cursor: pointer;
+    padding: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    transition: background 0.2s;
+}
+.edit-recruiting-modal-close:hover { background: rgba(255, 255, 255, 0.1); }
+.edit-recruiting-modal-close svg { width: 24px; height: 24px; }
+.edit-recruiting-modal-body {
+    padding: 2rem;
+    overflow-y: auto;
+    flex: 1;
+    color: var(--white);
+}
+.edit-recruiting-modal-body form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+.edit-recruiting-modal-footer {
+    padding: 1.5rem 2rem;
+    border-top: 2px solid rgba(18, 130, 162, 0.2);
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+}
+.edit-recruiting-modal-body input[type="text"],
+.edit-recruiting-modal-body input[type="number"],
+.edit-recruiting-modal-body textarea,
+.edit-recruiting-modal-body select {
+    width: 100%;
+    padding: 0.875rem 1rem;
+    background: rgba(254, 252, 251, 0.05);
+    border: 2px solid rgba(18, 130, 162, 0.3);
+    border-radius: 8px;
+    color: var(--white);
+    font-size: 0.95rem;
+    font-family: 'Inter', sans-serif;
+}
+.edit-recruiting-modal-body textarea {
+    min-height: 90px;
+    line-height: 1.5;
+    resize: vertical;
+}
+.edit-recruiting-modal-body input:focus,
+.edit-recruiting-modal-body textarea:focus,
+.edit-recruiting-modal-body select:focus {
+    outline: none;
+    border-color: var(--cerulean);
+    background: rgba(254, 252, 251, 0.08);
+}
+/* Field labels only — must NOT clobber .checkbox-label / .radio-label, whose
+   own flex layout provides the checkbox-to-text gap + alignment. Without this
+   exclusion, display:block here overrode .checkbox-label's display:flex and the
+   checkbox sat flush against its text (mismatch vs the coach modals). */
+.edit-recruiting-modal-body label:not(.checkbox-label):not(.radio-label) {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    color: var(--white);
+}
+
+/* Unscoped radio rows for the new modals (athletics' are scoped to its form) */
+.edit-recruiting-modal-body .radio-row {
+    display: flex;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+}
+.edit-recruiting-modal-body .radio-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    font-weight: 500;
+    margin: 0;
+}
+.edit-recruiting-modal-body .radio-label input[type="radio"] {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--cerulean);
+    cursor: pointer;
+}
+.edit-recruiting-modal-body .major-cap-hint {
+    display: none;
+    font-size: 0.85rem;
+    color: var(--cerulean);
+    margin-top: 0.5rem;
+    font-weight: 600;
+}
+
+/* Importance sliders inside the Priorities modal */
+.edit-recruiting-modal-body .fit-slider-group { margin-bottom: 0.5rem; }
+.edit-recruiting-modal-body .fit-slider-row {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 0.5rem;
+}
+.edit-recruiting-modal-body .fit-slider-row input[type="range"] {
+    flex: 1;
+    -webkit-appearance: none;
+    appearance: none;
+    height: 6px;
+    border-radius: 3px;
+    background: rgba(18, 130, 162, 0.25);
+    outline: none;
+    cursor: pointer;
+    padding: 0;
+}
+.edit-recruiting-modal-body .fit-slider-row input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--cerulean);
+    cursor: pointer;
+    border: 2px solid var(--white);
+}
+.edit-recruiting-modal-body .fit-slider-row input[type="range"]::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--cerulean);
+    cursor: pointer;
+    border: 2px solid var(--white);
+}
+.edit-recruiting-modal-body .fit-slider-value {
+    min-width: 2rem;
+    text-align: center;
+    font-weight: 700;
+    color: var(--cerulean);
+}
+.edit-recruiting-modal-body .fit-slider-ends {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.78rem;
+    color: rgba(254, 252, 251, 0.5);
+    margin-top: 0.25rem;
+}

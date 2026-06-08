@@ -1117,89 +1117,6 @@
     }
 }
 
-/* Recruiting Tab Styles */
-.recruiting-section {
-    padding: 0;
-}
-
-.recruiting-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1.5rem;
-}
-
-.recruiting-header .section-title {
-    margin: 0;
-}
-
-.btn-edit-recruiting {
-    display: none;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.75rem 1.25rem;
-    background: var(--cerulean);
-    border: none;
-    border-radius: 8px;
-    color: var(--white);
-    font-size: 0.95rem;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    font-family: 'Inter', sans-serif;
-}
-
-.btn-edit-recruiting.show-button {
-    display: flex;
-}
-
-.btn-edit-recruiting:hover {
-    background: var(--accent-orange);
-    transform: translateY(-2px);
-}
-
-.btn-edit-recruiting svg {
-    width: 18px;
-    height: 18px;
-}
-
-.subsection-title {
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: var(--white);
-    margin-bottom: 1rem;
-}
-
-/* Recruiting Positions Display - Orange Tags */
-.recruiting-positions-display {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.75rem;
-}
-
-.recruiting-position-tag {
-    display: inline-block;
-    padding: 0.5rem 1rem;
-    background: rgba(224, 122, 95, 0.2);
-    border: 2px solid var(--accent-orange);
-    border-radius: 8px;
-    color: var(--accent-orange);
-    font-size: 0.95rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-/* Recruiting Areas Text Display */
-.recruiting-areas-text {
-    color: rgba(254, 252, 251, 0.85);
-    line-height: 1.6;
-}
-
-.recruiting-areas-text p {
-    margin: 0;
-}
-
 /* Edit Recruiting Modal */
 .edit-recruiting-modal {
     display: none;
@@ -1286,49 +1203,12 @@
     color: var(--white);
 }
 
-#editRecruitingForm {
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-}
-
 .edit-recruiting-modal-footer {
     padding: 1.5rem 2rem;
     border-top: 2px solid rgba(18, 130, 162, 0.2);
     display: flex;
     gap: 1rem;
     justify-content: flex-end;
-}
-
-/* All Positions Toggle */
-.all-positions-toggle {
-    margin-bottom: 1rem;
-    padding: 1rem;
-    background: rgba(224, 122, 95, 0.1);
-    border: 2px solid rgba(224, 122, 95, 0.3);
-    border-radius: 10px;
-}
-
-.all-positions-checkbox {
-    background: transparent !important;
-    border: none !important;
-    padding: 0 !important;
-    margin: 0 !important;
-}
-
-.all-positions-checkbox span {
-    font-weight: 700;
-    color: var(--accent-orange) !important;
-}
-
-.all-positions-checkbox input[type="checkbox"] {
-    accent-color: var(--accent-orange);
-}
-
-/* Disable position checkboxes when All Positions is selected */
-#recruitingPositionsContainer.disabled {
-    opacity: 0.5;
-    pointer-events: none;
 }
 
 /* Legacy recruiting-tags class (for backwards compatibility) */
@@ -4709,3 +4589,98 @@ body.transfer-player-viewer .sidebar-user-avatar {
 .edit-modal.with-media .feed-modal-body {
     overflow-y: auto;
 }
+
+/* ============================================================
+   RECRUITING PROFILE TAB — program subtabs (AI Fit-Matching)
+   (coach theme — orange accents; .edit-recruiting-modal* + .recruiting-tag
+    already defined above)
+   ============================================================ */
+
+.recruiting-subnav { margin-bottom: 1.25rem; }
+.recruiting-subtab-select {
+    width: 100%;
+    padding: 0.875rem 1rem;
+    background: rgba(254, 252, 251, 0.05);
+    border: 2px solid rgba(255, 107, 53, 0.3);
+    border-radius: 10px;
+    color: var(--white);
+    font-size: 1rem;
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    cursor: pointer;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23ff6b35'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 1rem center;
+    background-size: 1.25rem;
+    padding-right: 2.75rem;
+}
+.recruiting-subtab-select:focus { outline: none; border-color: var(--accent-orange); }
+.recruiting-subtab-select option { background: var(--penn-blue); color: var(--white); }
+
+.recruiting-subtab-pane { display: none; }
+.recruiting-subtab-pane.active { display: block; }
+.recruiting-subtab-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+}
+.btn-edit-recruiting-section {
+    display: none;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.5rem 1rem;
+    background: rgba(255, 107, 53, 0.12);
+    border: 1px solid rgba(255, 107, 53, 0.3);
+    border-radius: 8px;
+    color: var(--accent-orange);
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.btn-edit-recruiting-section.show-button { display: inline-flex; }
+.btn-edit-recruiting-section:hover { background: rgba(255, 107, 53, 0.2); }
+.btn-edit-recruiting-section svg { width: 15px; height: 15px; }
+
+.info-item-block { margin-bottom: 1.25rem; }
+.info-item-block:last-child { margin-bottom: 0; }
+.info-freetext { line-height: 1.6; white-space: pre-wrap; }
+.recruiting-tags { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.4rem; }
+
+/* Dev-vs-plug slider in the Scheme & Fit edit modal (coach theme) */
+.edit-recruiting-modal-body .fit-slider-row {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 0.5rem;
+}
+.edit-recruiting-modal-body .fit-slider-row input[type="range"] {
+    flex: 1;
+    -webkit-appearance: none;
+    appearance: none;
+    height: 6px;
+    border-radius: 3px;
+    background: rgba(255, 107, 53, 0.25);
+    outline: none;
+    cursor: pointer;
+    padding: 0;
+}
+.edit-recruiting-modal-body .fit-slider-row input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px; height: 20px; border-radius: 50%;
+    background: var(--accent-orange); cursor: pointer; border: 2px solid var(--white);
+}
+.edit-recruiting-modal-body .fit-slider-row input[type="range"]::-moz-range-thumb {
+    width: 20px; height: 20px; border-radius: 50%;
+    background: var(--accent-orange); cursor: pointer; border: 2px solid var(--white);
+}
+.edit-recruiting-modal-body .fit-slider-value { min-width: 2rem; text-align: center; font-weight: 700; color: var(--accent-orange); }
+.edit-recruiting-modal-body .fit-slider-ends { display: flex; justify-content: space-between; font-size: 0.78rem; color: rgba(254,252,251,0.5); margin-top: 0.25rem; }
+.edit-recruiting-modal-body .radio-row { display: flex; gap: 1.5rem; flex-wrap: wrap; }
+.edit-recruiting-modal-body .radio-label { display: inline-flex; align-items: center; gap: 0.5rem; cursor: pointer; font-weight: 500; margin: 0; }
+.edit-recruiting-modal-body .radio-label input[type="radio"] { width: 18px; height: 18px; accent-color: var(--accent-orange); cursor: pointer; }

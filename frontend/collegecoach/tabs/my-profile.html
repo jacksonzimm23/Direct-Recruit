@@ -248,7 +248,7 @@
                     <button class="profile-tab" data-tab="posts">Posts</button>
                     <button class="profile-tab" data-tab="replies">Replies</button>
                     <button class="profile-tab" data-tab="likes">Likes</button>
-                    <button class="profile-tab" data-tab="recruiting" id="recruitingTab" style="display: none;">Recruiting</button>
+                    <button class="profile-tab" data-tab="recruiting" id="recruitingTab" style="display: none;">Recruiting Profile</button>
                 </div>
                 <button class="tabs-scroll-arrow tabs-scroll-arrow-right" id="tabsScrollRight" aria-label="Scroll tabs right">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -370,30 +370,106 @@
 
                 <!-- Recruiting Tab -->
                 <div class="tab-pane" id="recruiting" style="display: none;">
-                    <div class="recruiting-section">
-                        <div class="recruiting-header">
-                            <h2 class="section-title">Recruiting Information</h2>
-                            <button class="btn-edit-recruiting" id="editRecruitingBtn">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                                </svg>
+                    <!-- Program Profile (AI Fit-Matching) -->
+                    <div class="recruiting-subnav" style="margin-top:1.5rem;">
+                        <select id="recruitingSubtabSelect" class="recruiting-subtab-select">
+                            <option value="rpAdmissions">Admissions</option>
+                            <option value="rpAcadMajors">Academics &amp; Majors</option>
+                            <option value="rpCostAid">Cost &amp; Aid</option>
+                            <option value="rpProgramLocation">Program &amp; Location</option>
+                            <option value="rpSchemeFit">Scheme &amp; Fit</option>
+                        </select>
+                    </div>
+
+                    <!-- Subtab: Admissions -->
+                    <div class="recruiting-subtab-pane active" data-subtab="rpAdmissions" id="rpAdmissions">
+                        <div class="recruiting-subtab-header">
+                            <h2 class="section-title">Admissions</h2>
+                            <button class="btn-edit-recruiting-section" id="editRpAdmissionsBtn">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                                 Edit
                             </button>
                         </div>
-
                         <div class="info-card">
-                            <h3 class="subsection-title">Positions Recruiting</h3>
-                            <div id="recruitingPositions" class="recruiting-positions-display">
-                                <span class="recruiting-position-tag">Loading...</span>
+                            <div class="info-grid">
+                                <div class="info-item"><div class="info-label">Admitted GPA range</div><div class="info-value" id="rpAdmittedGpa">—</div></div>
+                                <div class="info-item"><div class="info-label">Test-optional</div><div class="info-value" id="rpTestOptional">—</div></div>
+                                <div class="info-item"><div class="info-label">SAT range</div><div class="info-value" id="rpSatRange">—</div></div>
+                                <div class="info-item"><div class="info-label">ACT range</div><div class="info-value" id="rpActRange">—</div></div>
                             </div>
                         </div>
+                    </div>
 
+                    <!-- Subtab: Academics & Majors -->
+                    <div class="recruiting-subtab-pane" data-subtab="rpAcadMajors" id="rpAcadMajors">
+                        <div class="recruiting-subtab-header">
+                            <h2 class="section-title">Academics &amp; Majors</h2>
+                            <button class="btn-edit-recruiting-section" id="editRpAcadMajorsBtn">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                                Edit
+                            </button>
+                        </div>
                         <div class="info-card">
-                            <h3 class="subsection-title">Recruiting Areas</h3>
-                            <div id="recruitingAreas" class="recruiting-areas-text">
-                                <p>Loading...</p>
+                            <div class="info-item-block"><div class="info-label">Top academic programs</div><div class="recruiting-tags" id="rpTopPrograms"><span class="info-value">—</span></div></div>
+                            <div class="info-item-block"><div class="info-label">Common majors among football players</div><div class="recruiting-tags" id="rpFootballMajors"><span class="info-value">—</span></div></div>
+                            <div class="info-item-block"><div class="info-label">Academic support level</div><div class="info-value" id="rpAcademicSupport">—</div></div>
+                        </div>
+                    </div>
+
+                    <!-- Subtab: Cost & Aid -->
+                    <div class="recruiting-subtab-pane" data-subtab="rpCostAid" id="rpCostAid">
+                        <div class="recruiting-subtab-header">
+                            <h2 class="section-title">Cost &amp; Aid</h2>
+                            <button class="btn-edit-recruiting-section" id="editRpCostAidBtn">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                                Edit
+                            </button>
+                        </div>
+                        <div class="info-card">
+                            <div class="info-grid">
+                                <div class="info-item"><div class="info-label">Affordability band</div><div class="info-value" id="rpAffordabilityBand">—</div></div>
+                                <div class="info-item"><div class="info-label">Offers athletic aid</div><div class="info-value" id="rpOffersAthleticAid">—</div></div>
+                                <div class="info-item"><div class="info-label">Aid generosity</div><div class="info-value" id="rpAidGenerosity">—</div></div>
+                                <div class="info-item"><div class="info-label">Roster % on athletic aid</div><div class="info-value" id="rpRosterPctOnAid">—</div></div>
                             </div>
+                        </div>
+                    </div>
+
+                    <!-- Subtab: Program & Location -->
+                    <div class="recruiting-subtab-pane" data-subtab="rpProgramLocation" id="rpProgramLocation">
+                        <div class="recruiting-subtab-header">
+                            <h2 class="section-title">Program &amp; Location</h2>
+                            <button class="btn-edit-recruiting-section" id="editRpProgramLocationBtn">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                                Edit
+                            </button>
+                        </div>
+                        <div class="info-card">
+                            <div class="info-grid">
+                                <div class="info-item"><div class="info-label">Campus setting</div><div class="info-value" id="rpCampusSetting">—</div></div>
+                                <div class="info-item"><div class="info-label">Distance profile recruited</div><div class="info-value" id="rpDistanceProfile">—</div></div>
+                                <div class="info-item"><div class="info-label">HS tier recruited</div><div class="info-value" id="rpHsTier">—</div></div>
+                                <div class="info-item"><div class="info-label">Affiliation</div><div class="recruiting-tags" id="rpAffiliation"><span class="info-value">—</span></div></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Subtab: Scheme & Fit -->
+                    <div class="recruiting-subtab-pane" data-subtab="rpSchemeFit" id="rpSchemeFit">
+                        <div class="recruiting-subtab-header">
+                            <h2 class="section-title">Scheme &amp; Fit</h2>
+                            <button class="btn-edit-recruiting-section" id="editRpSchemeFitBtn">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                                Edit
+                            </button>
+                        </div>
+                        <div class="info-card">
+                            <div class="info-grid">
+                                <div class="info-item"><div class="info-label">Offensive scheme</div><div class="info-value" id="rpOffensiveScheme">—</div></div>
+                                <div class="info-item"><div class="info-label">Defensive scheme</div><div class="info-value" id="rpDefensiveScheme">—</div></div>
+                                <div class="info-item"><div class="info-label">Development vs. plug-and-play</div><div class="info-value" id="rpDevVsPlug">—</div></div>
+                            </div>
+                            <div class="info-item-block" style="margin-top:1rem;"><div class="info-label">What a great fit looks like for us</div><div class="info-value info-freetext" id="rpGreatFit">—</div></div>
                         </div>
                     </div>
                 </div>
@@ -680,145 +756,102 @@
         </div>
     </div>
 
-    <!-- Edit Recruiting Modal -->
-    <div class="edit-recruiting-modal" id="editRecruitingModal">
-        <div class="edit-recruiting-modal-overlay" id="editRecruitingModalOverlay"></div>
+    <!-- ===== Recruiting Profile (Program) per-subtab edit modals (AI Fit-Matching) ===== -->
+
+    <!-- Edit RP: Admissions -->
+    <div class="edit-recruiting-modal" id="editRpAdmissionsModal">
+        <div class="edit-recruiting-modal-overlay" id="editRpAdmissionsModalOverlay"></div>
         <div class="edit-recruiting-modal-content">
-            <div class="edit-recruiting-modal-header">
-                <h2>Edit Recruiting Information</h2>
-                <button class="edit-recruiting-modal-close" id="editRecruitingModalClose">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="18" y1="6" x2="6" y2="18"></line>
-                        <line x1="6" y1="6" x2="18" y2="18"></line>
-                    </svg>
-                </button>
-            </div>
+            <div class="edit-recruiting-modal-header"><h2>Edit Admissions</h2><button class="edit-recruiting-modal-close" id="editRpAdmissionsModalClose"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button></div>
             <div class="edit-recruiting-modal-body">
-                <form id="editRecruitingForm">
-                    <!-- Positions Recruiting -->
-                    <div class="form-group">
-                        <label>Position(s) Recruiting</label>
-                        <p class="form-hint" style="margin-bottom: 0.75rem;">Select all positions you are recruiting</p>
-
-                        <!-- All Positions Toggle -->
-                        <div class="all-positions-toggle">
-                            <label class="checkbox-label all-positions-checkbox">
-                                <input type="checkbox" id="recruitAllPositions" name="recruitAllPositions">
-                                <span>All Positions</span>
-                            </label>
-                        </div>
-
-                        <div class="multi-select-container" id="recruitingPositionsContainer">
-                            <div class="multi-select-group">
-                                <h4 class="group-label">Offense - Skill Positions</h4>
-                                <label class="checkbox-label">
-                                    <input type="checkbox" name="ccPosition" value="QB">
-                                    <span>Quarterback (QB)</span>
-                                </label>
-                                <label class="checkbox-label">
-                                    <input type="checkbox" name="ccPosition" value="RB">
-                                    <span>Running Back (RB)</span>
-                                </label>
-                                <label class="checkbox-label">
-                                    <input type="checkbox" name="ccPosition" value="FB">
-                                    <span>Fullback (FB)</span>
-                                </label>
-                                <label class="checkbox-label">
-                                    <input type="checkbox" name="ccPosition" value="WR">
-                                    <span>Wide Receiver (WR)</span>
-                                </label>
-                                <label class="checkbox-label">
-                                    <input type="checkbox" name="ccPosition" value="TE">
-                                    <span>Tight End (TE)</span>
-                                </label>
-                            </div>
-
-                            <div class="multi-select-group">
-                                <h4 class="group-label">Offense - Line</h4>
-                                <label class="checkbox-label">
-                                    <input type="checkbox" name="ccPosition" value="OT">
-                                    <span>Offensive Tackle (OT)</span>
-                                </label>
-                                <label class="checkbox-label">
-                                    <input type="checkbox" name="ccPosition" value="OG">
-                                    <span>Offensive Guard (OG)</span>
-                                </label>
-                                <label class="checkbox-label">
-                                    <input type="checkbox" name="ccPosition" value="C">
-                                    <span>Center (C)</span>
-                                </label>
-                            </div>
-
-                            <div class="multi-select-group">
-                                <h4 class="group-label">Defense - Line</h4>
-                                <label class="checkbox-label">
-                                    <input type="checkbox" name="ccPosition" value="DE">
-                                    <span>Defensive End (DE)</span>
-                                </label>
-                                <label class="checkbox-label">
-                                    <input type="checkbox" name="ccPosition" value="DT">
-                                    <span>Defensive Tackle (DT)</span>
-                                </label>
-                                <label class="checkbox-label">
-                                    <input type="checkbox" name="ccPosition" value="NT">
-                                    <span>Nose Tackle (NT)</span>
-                                </label>
-                            </div>
-
-                            <div class="multi-select-group">
-                                <h4 class="group-label">Defense - Linebackers</h4>
-                                <label class="checkbox-label">
-                                    <input type="checkbox" name="ccPosition" value="ILB">
-                                    <span>Inside Linebacker (ILB)</span>
-                                </label>
-                                <label class="checkbox-label">
-                                    <input type="checkbox" name="ccPosition" value="OLB">
-                                    <span>Outside Linebacker (OLB)</span>
-                                </label>
-                            </div>
-
-                            <div class="multi-select-group">
-                                <h4 class="group-label">Defense - Secondary</h4>
-                                <label class="checkbox-label">
-                                    <input type="checkbox" name="ccPosition" value="CB">
-                                    <span>Cornerback (CB)</span>
-                                </label>
-                                <label class="checkbox-label">
-                                    <input type="checkbox" name="ccPosition" value="S">
-                                    <span>Safety (S)</span>
-                                </label>
-                            </div>
-
-                            <div class="multi-select-group">
-                                <h4 class="group-label">Special Teams</h4>
-                                <label class="checkbox-label">
-                                    <input type="checkbox" name="ccPosition" value="K">
-                                    <span>Kicker (K)</span>
-                                </label>
-                                <label class="checkbox-label">
-                                    <input type="checkbox" name="ccPosition" value="P">
-                                    <span>Punter (P)</span>
-                                </label>
-                                <label class="checkbox-label">
-                                    <input type="checkbox" name="ccPosition" value="LS">
-                                    <span>Long Snapper (LS)</span>
-                                </label>
-                            </div>
-                        </div>
+                <form id="editRpAdmissionsForm">
+                    <div class="form-row" style="display:flex;gap:1rem;">
+                        <div class="form-group" style="flex:1;"><label for="editRpAdmittedGpaMin">Admitted GPA — min</label><input type="number" id="editRpAdmittedGpaMin" min="0" max="4" step="0.01" placeholder="e.g., 3.20"></div>
+                        <div class="form-group" style="flex:1;"><label for="editRpAdmittedGpaMax">Admitted GPA — max</label><input type="number" id="editRpAdmittedGpaMax" min="0" max="4" step="0.01" placeholder="e.g., 3.90"></div>
                     </div>
-
-                    <!-- Recruiting Areas -->
-                    <div class="form-group">
-                        <label for="recruitingAreasInput">Recruiting Areas</label>
-                        <textarea id="recruitingAreasInput" name="cc_areas" rows="4" placeholder="e.g., Texas, California, Florida, Nationwide..."></textarea>
-                        <small class="form-hint">Enter the states or regions you recruit from</small>
+                    <div class="form-group"><label>Test-optional school?</label><div class="radio-row"><label class="radio-label"><input type="radio" name="editRpTestOptional" value="yes"><span>Yes</span></label><label class="radio-label"><input type="radio" name="editRpTestOptional" value="no"><span>No</span></label></div></div>
+                    <div class="form-row" style="display:flex;gap:1rem;">
+                        <div class="form-group" style="flex:1;"><label for="editRpSatMin">SAT — min</label><input type="number" id="editRpSatMin" min="400" max="1600" step="10" placeholder="e.g., 1100"></div>
+                        <div class="form-group" style="flex:1;"><label for="editRpSatMax">SAT — max</label><input type="number" id="editRpSatMax" min="400" max="1600" step="10" placeholder="e.g., 1350"></div>
+                    </div>
+                    <div class="form-row" style="display:flex;gap:1rem;">
+                        <div class="form-group" style="flex:1;"><label for="editRpActMin">ACT — min</label><input type="number" id="editRpActMin" min="1" max="36" step="1" placeholder="e.g., 22"></div>
+                        <div class="form-group" style="flex:1;"><label for="editRpActMax">ACT — max</label><input type="number" id="editRpActMax" min="1" max="36" step="1" placeholder="e.g., 30"></div>
                     </div>
                 </form>
             </div>
-            <div class="edit-recruiting-modal-footer">
-                <button class="btn-modal-cancel" id="btnRecruitingCancel">Cancel</button>
-                <button class="btn-modal-save" id="btnRecruitingSave">Save Changes</button>
+            <div class="edit-recruiting-modal-footer"><button class="btn-modal-cancel" id="btnEditRpAdmissionsCancel">Cancel</button><button class="btn-modal-save" id="btnEditRpAdmissionsSave">Save Changes</button></div>
+        </div>
+    </div>
+
+    <!-- Edit RP: Academics & Majors -->
+    <div class="edit-recruiting-modal" id="editRpAcadMajorsModal">
+        <div class="edit-recruiting-modal-overlay" id="editRpAcadMajorsModalOverlay"></div>
+        <div class="edit-recruiting-modal-content">
+            <div class="edit-recruiting-modal-header"><h2>Edit Academics &amp; Majors</h2><button class="edit-recruiting-modal-close" id="editRpAcadMajorsModalClose"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button></div>
+            <div class="edit-recruiting-modal-body">
+                <form id="editRpAcadMajorsForm">
+                    <div class="form-group"><label>Top academic programs at the school</label><div class="multi-select-container" id="editRpTopProgramsContainer"></div><div class="selected-items" id="editRpTopProgramsChips"></div></div>
+                    <div class="form-group"><label>Most common majors among football players</label><div class="multi-select-container" id="editRpFootballMajorsContainer"></div><div class="selected-items" id="editRpFootballMajorsChips"></div></div>
+                    <div class="form-group"><label for="editRpAcademicSupport">Academic support level</label><select id="editRpAcademicSupport"><option value="">Select…</option><option value="none">None</option><option value="standard">Standard</option><option value="strong">Strong</option></select></div>
+                </form>
             </div>
+            <div class="edit-recruiting-modal-footer"><button class="btn-modal-cancel" id="btnEditRpAcadMajorsCancel">Cancel</button><button class="btn-modal-save" id="btnEditRpAcadMajorsSave">Save Changes</button></div>
+        </div>
+    </div>
+
+    <!-- Edit RP: Cost & Aid -->
+    <div class="edit-recruiting-modal" id="editRpCostAidModal">
+        <div class="edit-recruiting-modal-overlay" id="editRpCostAidModalOverlay"></div>
+        <div class="edit-recruiting-modal-content">
+            <div class="edit-recruiting-modal-header"><h2>Edit Cost &amp; Aid</h2><button class="edit-recruiting-modal-close" id="editRpCostAidModalClose"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button></div>
+            <div class="edit-recruiting-modal-body">
+                <form id="editRpCostAidForm">
+                    <div class="form-group"><label for="editRpAffordabilityBand">Net cost / affordability</label><select id="editRpAffordabilityBand"><option value="">Select…</option><option value="low">Low cost</option><option value="mid">Mid cost</option><option value="high">High cost</option></select></div>
+                    <div class="form-group"><label for="editRpOffersAthleticAid">Offers athletic aid?</label><select id="editRpOffersAthleticAid"><option value="">Select…</option><option value="full">Full scholarships</option><option value="partial">Partial / equivalency</option><option value="none">No athletic aid</option></select></div>
+                    <div class="form-group"><label for="editRpAidGenerosity">Aid generosity</label><select id="editRpAidGenerosity"><option value="">Select…</option><option value="need-met">Meets full need</option><option value="strong">Strong aid</option><option value="limited">Limited aid</option></select></div>
+                    <div class="form-group"><label for="editRpRosterPctOnAid">Roster % on athletic aid</label><select id="editRpRosterPctOnAid"><option value="">Select…</option><option value="none">None</option><option value="some">Some</option><option value="most">Most</option></select></div>
+                </form>
+            </div>
+            <div class="edit-recruiting-modal-footer"><button class="btn-modal-cancel" id="btnEditRpCostAidCancel">Cancel</button><button class="btn-modal-save" id="btnEditRpCostAidSave">Save Changes</button></div>
+        </div>
+    </div>
+
+    <!-- Edit RP: Program & Location -->
+    <div class="edit-recruiting-modal" id="editRpProgramLocationModal">
+        <div class="edit-recruiting-modal-overlay" id="editRpProgramLocationModalOverlay"></div>
+        <div class="edit-recruiting-modal-content">
+            <div class="edit-recruiting-modal-header"><h2>Edit Program &amp; Location</h2><button class="edit-recruiting-modal-close" id="editRpProgramLocationModalClose"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button></div>
+            <div class="edit-recruiting-modal-body">
+                <form id="editRpProgramLocationForm">
+                    <div class="form-group"><label for="editRpCampusSetting">Campus setting</label><select id="editRpCampusSetting"><option value="">Select…</option><option value="urban">Urban</option><option value="suburban">Suburban</option><option value="rural">Rural</option><option value="small-town">Small town</option></select></div>
+                    <div class="form-group"><label for="editRpDistanceProfile">Distance profile we recruit</label><select id="editRpDistanceProfile"><option value="">Select…</option><option value="local">Mostly local</option><option value="regional">Regional</option><option value="national">National</option></select></div>
+                    <div class="form-group"><label for="editRpHsTier">High school tier we typically recruit</label><select id="editRpHsTier"><option value="">Select…</option><option value="elite">Elite programs</option><option value="strong">Strong programs</option><option value="developmental">Developmental</option></select></div>
+                    <div class="form-group"><label>Religious / military / specialty affiliation</label><div class="multi-select-container" id="editRpAffiliationContainer"></div><div class="selected-items" id="editRpAffiliationChips"></div></div>
+                </form>
+            </div>
+            <div class="edit-recruiting-modal-footer"><button class="btn-modal-cancel" id="btnEditRpProgramLocationCancel">Cancel</button><button class="btn-modal-save" id="btnEditRpProgramLocationSave">Save Changes</button></div>
+        </div>
+    </div>
+
+    <!-- Edit RP: Scheme & Fit -->
+    <div class="edit-recruiting-modal" id="editRpSchemeFitModal">
+        <div class="edit-recruiting-modal-overlay" id="editRpSchemeFitModalOverlay"></div>
+        <div class="edit-recruiting-modal-content">
+            <div class="edit-recruiting-modal-header"><h2>Edit Scheme &amp; Fit</h2><button class="edit-recruiting-modal-close" id="editRpSchemeFitModalClose"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button></div>
+            <div class="edit-recruiting-modal-body">
+                <form id="editRpSchemeFitForm">
+                    <div class="form-group"><label for="editRpOffensiveScheme">Offensive scheme</label><select id="editRpOffensiveScheme"><option value="">Select…</option><option value="Air Raid">Air Raid</option><option value="Pro-Style">Pro-Style</option><option value="Spread">Spread</option><option value="Option">Option</option><option value="RPO">RPO</option><option value="Multiple">Multiple</option></select></div>
+                    <div class="form-group"><label for="editRpDefensiveScheme">Defensive scheme</label><select id="editRpDefensiveScheme"><option value="">Select…</option><option value="4-3">4-3</option><option value="3-4">3-4</option><option value="Multiple">Multiple</option><option value="4-2-5">4-2-5</option><option value="3-3-5">3-3-5</option></select></div>
+                    <div class="form-group">
+                        <label for="editRpDevVsPlug">Development vs. plug-and-play</label>
+                        <div class="fit-slider-row"><input type="range" id="editRpDevVsPlug" min="1" max="5" step="1" value="3"><span class="fit-slider-value" id="editRpDevVsPlugVal">3</span></div>
+                        <div class="fit-slider-ends"><span>Develop raw talent</span><span>Plug-and-play ready</span></div>
+                    </div>
+                    <div class="form-group"><label for="editRpGreatFit">What a great fit looks like for us</label><textarea id="editRpGreatFit" maxlength="280" rows="3" placeholder="Describe the kind of player who thrives here..."></textarea><small class="form-hint"><span id="editRpGreatFitCount">0</span>/280</small></div>
+                </form>
+            </div>
+            <div class="edit-recruiting-modal-footer"><button class="btn-modal-cancel" id="btnEditRpSchemeFitCancel">Cancel</button><button class="btn-modal-save" id="btnEditRpSchemeFitSave">Save Changes</button></div>
         </div>
     </div>
 
@@ -905,6 +938,8 @@
     <script src="../../shared/report-modal.js"></script>
     <script src="../../shared/block-helpers.js"></script>
     <script src="../../shared/profile-more-menu.js"></script>
+    <script src="../../shared/match-constants.js"></script>
+    <script src="../../shared/match-ui.js"></script>
     <script src="my-profile.js"></script>
 </body>
 </html>

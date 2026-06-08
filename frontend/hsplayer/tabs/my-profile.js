@@ -1113,7 +1113,11 @@ function removeSensitiveElementsForOtherProfile() {
         'deleteStatsConfirmModal',
         'addHighlightModal',
         'deleteHighlightConfirmModal',
-        'editAcademicsModal',
+        'editRpAcademicsModal',
+        'editRpMajorGoalsModal',
+        'editRpFinancialModal',
+        'editRpLevelLocationModal',
+        'editRpPrioritiesModal',
         'profileViewersModal'
     ];
 
@@ -1131,8 +1135,7 @@ function removeSensitiveElementsForOtherProfile() {
         'addOfferBtn',
         'addStatsBtn',
         'addSeasonHighlightBtn',
-        'addGameHighlightBtn',
-        'editAcademicsBtn'
+        'addGameHighlightBtn'
     ];
 
     editButtons.forEach(btnId => {
@@ -2608,37 +2611,57 @@ function setupUI() {
     // Control tab visibility based on profile type
     const statsTab = document.querySelector('.profile-tab[data-tab="stats"]');
     const highlightsTab = document.querySelector('.profile-tab[data-tab="highlights"]');
-    const academicsTab = document.querySelector('.profile-tab[data-tab="academics"]');
     const statsPane = document.getElementById('stats');
     const highlightsPane = document.getElementById('highlights');
-    const academicsPane = document.getElementById('academics');
+    // Recruiting Profile tab (AI Fit-Matching)
+    const rpTab = document.querySelector('.profile-tab[data-tab="recruiting-profile"]');
+    const rpPane = document.getElementById('recruiting-profile');
 
     if (currentProfileType === 'coach') {
         // Hide ALL player-specific tabs when viewing a coach profile
         if (statsTab) statsTab.style.display = 'none';
         if (highlightsTab) highlightsTab.style.display = 'none';
-        if (academicsTab) academicsTab.style.display = 'none';
         if (statsPane) statsPane.style.display = 'none';
         if (highlightsPane) highlightsPane.style.display = 'none';
-        if (academicsPane) academicsPane.style.display = 'none';
+        if (rpTab) rpTab.style.display = 'none';
+        if (rpPane) rpPane.style.display = 'none';
     } else if (currentProfileType === 'player') {
         // For player profiles, show all tabs
         if (statsTab) statsTab.style.display = '';
         if (highlightsTab) highlightsTab.style.display = '';
-        if (academicsTab) academicsTab.style.display = '';
         if (statsPane) statsPane.style.display = '';
         if (highlightsPane) highlightsPane.style.display = '';
-        if (academicsPane) academicsPane.style.display = '';
 
-        // But hide academics from non-college-coaches when viewing others' profiles
-        if (!isOwnProfile && !isCollegeCoach) {
-            if (academicsTab) academicsTab.style.display = 'none';
-            if (academicsPane) academicsPane.style.display = 'none';
-        }
-
-        // Update academics display with profile data
-        if (typeof updateAcademicsDisplay === 'function') {
-            updateAcademicsDisplay(currentProfile);
+        // Recruiting Profile — visible only to the owner + college coaches.
+        // When visible, it becomes the FIRST tab and the default-active pane.
+        const canSeeRP = isOwnProfile || isCollegeCoach;
+        if (canSeeRP && rpTab && rpPane) {
+            rpTab.style.display = '';
+            rpPane.style.display = '';
+            // Move the tab to first position
+            const tabsWrap = document.getElementById('profileTabs');
+            if (tabsWrap && tabsWrap.firstElementChild !== rpTab) {
+                tabsWrap.insertBefore(rpTab, tabsWrap.firstElementChild);
+            }
+            // Make it the default-active tab + pane (exactly one active)
+            document.querySelectorAll('.profile-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+            rpTab.classList.add('active');
+            rpPane.classList.add('active');
+            // Populate read-only display
+            populateRecruitingProfile(currentProfile);
+            // Coach-viewing-player only: show stub match banner
+            const banner = document.getElementById('recruitingMatchBanner');
+            if (banner) banner.style.display = (isCollegeCoach && !isOwnProfile) ? '' : 'none';
+            if (isCollegeCoach && !isOwnProfile) renderMatchScore(null, currentProfile);
+            // Owner only: show disclaimer + enable per-subtab edit buttons
+            const disclaimer = document.getElementById('recruitingDisclaimer');
+            if (disclaimer) disclaimer.style.display = isOwnProfile ? '' : 'none';
+            if (isOwnProfile) setupRecruitingProfileEditing();
+            setupRecruitingSubnav();
+        } else if (rpTab && rpPane) {
+            rpTab.style.display = 'none';
+            rpPane.style.display = 'none';
         }
 
         // Update athletics display with profile data
@@ -2982,7 +3005,7 @@ function populateEditForm() {
 
     document.getElementById('editWeight').value = currentProfile.weight || '';
     document.getElementById('editGraduationYear').value = currentProfile.graduation_year || '';
-    document.getElementById('editGPA').value = currentProfile.gpa || '';
+    // GPA moved to Recruiting Profile › Academics (no longer in the main edit modal)
 
     // Populate HS player fields (no toggle — use Settings to switch profile type)
     const highSchoolName = document.getElementById('editHighSchool');
@@ -3160,7 +3183,6 @@ async function saveProfileChanges() {
             height: heightTotalInches,
             weight: document.getElementById('editWeight').value ? parseInt(document.getElementById('editWeight').value) : null,
             graduation_year: document.getElementById('editGraduationYear').value ? parseInt(document.getElementById('editGraduationYear').value) : null,
-            gpa: document.getElementById('editGPA').value ? parseFloat(document.getElementById('editGPA').value) : null,
             bio: document.getElementById('editBio').value,
             email: document.getElementById('editEmail').value,
             phone: phoneDigits,
@@ -3206,9 +3228,9 @@ async function saveProfileChanges() {
             // Refresh the profile display
             displayProfile(currentProfile, 'player');
 
-            // Update academics display if GPA was changed
-            if (typeof updateAcademicsDisplay === 'function') {
-                updateAcademicsDisplay(currentProfile);
+            // Keep the Recruiting Profile tab in sync (if present/visible)
+            if (typeof populateRecruitingProfile === 'function') {
+                populateRecruitingProfile(currentProfile);
             }
 
             // Update athletics display
@@ -6588,129 +6610,301 @@ document.addEventListener('DOMContentLoaded', () => {
 // ACADEMICS TAB FUNCTIONALITY
 // ============================================
 
-function updateAcademicsDisplay(profile) {
-    const gpaEl = document.getElementById('academicsGPA');
-    const satEl = document.getElementById('academicsSAT');
-    const actEl = document.getElementById('academicsACT');
+// ============================================
+// RECRUITING PROFILE TAB (AI Fit-Matching)
+// ============================================
 
-    // Handle GPA - could be string or number from database
-    if (gpaEl) {
-        if (profile.gpa !== null && profile.gpa !== undefined && profile.gpa !== '') {
-            const gpaNum = parseFloat(profile.gpa);
-            gpaEl.textContent = isNaN(gpaNum) ? '--' : gpaNum.toFixed(2);
+// Stored multi-select controllers for the edit modals (created on open)
+let rpMajorPicker = null, rpLevelsPicker = null, rpRegionsPicker = null;
+
+// Parse fit_preferences which may arrive as a JSON string or an object.
+function rpParseFitPrefs(profile) {
+    const fp = profile && profile.fit_preferences;
+    if (fp == null) return {};
+    if (typeof fp === 'object') return fp;
+    try { return JSON.parse(fp) || {}; } catch (e) { return {}; }
+}
+
+// Render an array of values as chips into a container (textContent — never raw HTML).
+function rpRenderTags(elId, arr) {
+    const el = document.getElementById(elId);
+    if (!el) return;
+    el.innerHTML = '';
+    const vals = Array.isArray(arr) ? arr.filter(v => v != null && v !== '') : [];
+    if (!vals.length) {
+        const span = document.createElement('span');
+        span.className = 'info-value';
+        span.textContent = '—';
+        el.appendChild(span);
+        return;
+    }
+    vals.forEach(v => {
+        const span = document.createElement('span');
+        span.className = 'recruiting-tag';
+        span.textContent = v;
+        el.appendChild(span);
+    });
+}
+
+function rpSetText(elId, value) {
+    const el = document.getElementById(elId);
+    if (el) el.textContent = (value == null || value === '') ? '—' : value;
+}
+
+// Capitalize a stored lowercase enum value for DISPLAY only (e.g. 'yes' → 'Yes',
+// 'small-town' → 'Small-town'). Stored values stay lowercase for matching/allowlists.
+function rpTitleCase(value) {
+    if (value == null || value === '') return value;
+    const s = String(value);
+    return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+// Stub for the coach-only match score. Plan 7 replaces this body with the real
+// deterministic + AI fit score computed from the viewing coach's program profile.
+function renderMatchScore(viewerCoachProfile, playerProfile) {
+    const scoreEl = document.getElementById('rmbScore');
+    if (scoreEl) scoreEl.textContent = '—%';
+}
+
+// Populate all read-only subtab fields from the loaded profile.
+function populateRecruitingProfile(profile) {
+    if (!profile) return;
+    const fp = rpParseFitPrefs(profile);
+
+    // Academics
+    if (profile.gpa != null && profile.gpa !== '') {
+        const n = parseFloat(profile.gpa);
+        rpSetText('rpUnweightedGpa', isNaN(n) ? '—' : n.toFixed(2));
+    } else rpSetText('rpUnweightedGpa', null);
+    if (profile.weighted_gpa != null && profile.weighted_gpa !== '') {
+        const w = parseFloat(profile.weighted_gpa);
+        rpSetText('rpWeightedGpa', isNaN(w) ? '—' : w.toFixed(2));
+    } else rpSetText('rpWeightedGpa', null);
+    rpSetText('rpSat', profile.sat_score);
+    rpSetText('rpAct', profile.act_score);
+    rpSetText('rpApIb', profile.has_ap_ib ? ('Yes' + (profile.ap_ib_count ? ` (${profile.ap_ib_count} courses)` : '')) : (profile.has_ap_ib === false ? 'No' : '—'));
+    rpSetText('rpClassRank', profile.class_rank);
+
+    // Major & Goals
+    rpRenderTags('rpMajor', profile.intended_major);
+    rpSetText('rpLookingFor', fp.looking_for_text);
+
+    // Financial Fit
+    rpSetText('rpNeedsAid', rpTitleCase(profile.needs_financial_aid));
+    rpSetText('rpNeedsScholarship', rpTitleCase(profile.needs_scholarship));
+    rpSetText('rpPellFirstGen', profile.pell_or_first_gen === true ? 'Yes' : (profile.pell_or_first_gen === false ? 'No' : '—'));
+    rpSetText('rpHomeZip', profile.home_zip);
+
+    // Level & Location
+    rpRenderTags('rpLevelsOpen', profile.levels_open);
+    rpRenderTags('rpPreferredRegions', profile.preferred_regions);
+    rpSetText('rpCampusSetting', rpTitleCase(profile.preferred_campus_setting));
+
+    // Priorities (sliders → "N / 5")
+    const slider = (v) => (v == null || v === '') ? '—' : `${v} / 5`;
+    rpSetText('rpImpPlayingTime', slider(fp.importance_playing_time));
+    rpSetText('rpImpCloseToHome', slider(fp.importance_close_to_home));
+    rpSetText('rpImpAcademics', slider(fp.importance_academics_vs_football));
+    rpSetText('rpImpCompetition', slider(fp.importance_competition_level));
+
+    // Athletics (other sports + track times) — absorbed into Priorities & Athletics subtab
+    if (typeof updateAthleticsDisplay === 'function') updateAthleticsDisplay(profile);
+}
+
+// Subtab dropdown → swap visible subtab pane (scoped to the RP pane).
+function setupRecruitingSubnav() {
+    const sel = document.getElementById('recruitingSubtabSelect');
+    if (!sel || sel._rpWired) return;
+    sel._rpWired = true;
+    sel.addEventListener('change', function () {
+        document.querySelectorAll('#recruiting-profile .recruiting-subtab-pane').forEach(p => {
+            p.classList.toggle('active', p.dataset.subtab === this.value);
+        });
+    });
+}
+
+// Generic modal open/close helpers
+function rpOpenModal(id) {
+    const m = document.getElementById(id);
+    if (m) { m.classList.add('active'); document.body.style.overflow = 'hidden'; }
+}
+function rpCloseModal(id) {
+    const m = document.getElementById(id);
+    if (m) { m.classList.remove('active'); document.body.style.overflow = ''; }
+}
+function rpNumOrNull(id) { const e = document.getElementById(id); if (!e || e.value === '') return null; const n = parseFloat(e.value); return Number.isNaN(n) ? null : n; }
+function rpIntOrNull(id) { const e = document.getElementById(id); if (!e || e.value === '') return null; const n = parseInt(e.value, 10); return Number.isNaN(n) ? null : n; }
+function rpRadioVal(name) { const e = document.querySelector(`input[name="${name}"]:checked`); return e ? e.value : null; }
+
+// After a successful save: merge into currentProfile, re-render, close.
+async function rpSavePayload(payload, modalId) {
+    try {
+        const response = await API.put('/profile', payload);
+        if (response.success || response.profile) {
+            Object.assign(currentProfile, payload);
+            populateRecruitingProfile(currentProfile);
+            if ('gpa' in payload) displayProfile(currentProfile, 'player'); // header shows GPA
+            rpCloseModal(modalId);
+            if (typeof showToast === 'function') showToast('Saved', 'success');
         } else {
-            gpaEl.textContent = '--';
+            showToast(response.message || 'Failed to save', 'error');
         }
-    }
-    if (satEl) satEl.textContent = profile.sat_score || '--';
-    if (actEl) actEl.textContent = profile.act_score || '--';
-}
-
-function showEditAcademicsModal() {
-    const modal = document.getElementById('editAcademicsModal');
-    if (!modal || !currentProfile) return;
-
-    // Populate form with current values
-    document.getElementById('editAcademicsGPA').value = currentProfile.gpa || '';
-    document.getElementById('editAcademicsSAT').value = currentProfile.sat_score || '';
-    document.getElementById('editAcademicsACT').value = currentProfile.act_score || '';
-
-    modal.classList.add('active');
-    document.body.style.overflow = 'hidden';
-}
-
-function hideEditAcademicsModal() {
-    const modal = document.getElementById('editAcademicsModal');
-    if (modal) {
-        modal.classList.remove('active');
-        document.body.style.overflow = '';
+    } catch (err) {
+        console.error('RP save error:', err);
+        showToast('Failed to save. Please try again.', 'error');
     }
 }
 
-async function saveAcademicsChanges() {
-    const gpa = document.getElementById('editAcademicsGPA').value;
-    const satScore = document.getElementById('editAcademicsSAT').value;
-    const actScore = document.getElementById('editAcademicsACT').value;
+// Wire all 5 edit modals (owner-only). Called from the visibility block.
+function setupRecruitingProfileEditing() {
+    if (window._rpEditingWired) return;
+    window._rpEditingWired = true;
+    const haveMatchUI = typeof initMatchMultiSelect === 'function' && typeof MATCH_CONSTANTS !== 'undefined';
 
-    // Validate inputs
-    if (gpa && (parseFloat(gpa) < 0 || parseFloat(gpa) > 5)) {
-        showToast('GPA must be between 0 and 5', 'warning');
-        return;
-    }
-    if (satScore && (parseInt(satScore) < 400 || parseInt(satScore) > 1600)) {
-        showToast('SAT score must be between 400 and 1600', 'warning');
-        return;
-    }
-    if (actScore && (parseInt(actScore) < 1 || parseInt(actScore) > 36)) {
-        showToast('ACT score must be between 1 and 36', 'warning');
-        return;
-    }
+    // Reveal the per-subtab Edit buttons
+    document.querySelectorAll('.btn-edit-recruiting-section').forEach(b => b.classList.add('show-button'));
 
-    const academicsData = {
-        gpa: gpa ? parseFloat(gpa) : null,
-        sat_score: satScore ? parseInt(satScore) : null,
-        act_score: actScore ? parseInt(actScore) : null
+    // Generic close wiring for a modal id
+    const wireClose = (modalId) => {
+        document.getElementById(modalId + 'Overlay')?.addEventListener('click', () => rpCloseModal(modalId));
+        document.getElementById(modalId + 'Close')?.addEventListener('click', () => rpCloseModal(modalId));
     };
 
-    try {
-        const response = await API.put('/profile', academicsData);
-        if (response.success || response.profile) {
-            // Update currentProfile with new values
-            currentProfile.gpa = academicsData.gpa;
-            currentProfile.sat_score = academicsData.sat_score;
-            currentProfile.act_score = academicsData.act_score;
+    // ---- Academics ----
+    document.getElementById('editRpAcademicsBtn')?.addEventListener('click', () => {
+        const p = currentProfile;
+        document.getElementById('editRpUnweightedGpa').value = p.gpa ?? '';
+        document.getElementById('editRpWeightedGpa').value = p.weighted_gpa ?? '';
+        document.getElementById('editRpSat').value = p.sat_score ?? '';
+        document.getElementById('editRpAct').value = p.act_score ?? '';
+        const hasAp = p.has_ap_ib === true;
+        (document.querySelector(`input[name="editRpHasApIb"][value="${hasAp ? 'yes' : 'no'}"]`) || {}).checked = true;
+        document.getElementById('editRpApIbCountGroup').style.display = hasAp ? '' : 'none';
+        document.getElementById('editRpApIbCount').value = p.ap_ib_count ?? '';
+        document.getElementById('editRpClassRank').value = p.class_rank ?? '';
+        rpOpenModal('editRpAcademicsModal');
+    });
+    document.querySelectorAll('input[name="editRpHasApIb"]').forEach(r => r.addEventListener('change', function () {
+        const grp = document.getElementById('editRpApIbCountGroup');
+        grp.style.display = this.value === 'yes' ? '' : 'none';
+        if (this.value !== 'yes') document.getElementById('editRpApIbCount').value = '';
+    }));
+    document.getElementById('btnEditRpAcademicsCancel')?.addEventListener('click', () => rpCloseModal('editRpAcademicsModal'));
+    wireClose('editRpAcademicsModal');
+    document.getElementById('btnEditRpAcademicsSave')?.addEventListener('click', () => {
+        const hasAp = rpRadioVal('editRpHasApIb') === 'yes';
+        rpSavePayload({
+            gpa: rpNumOrNull('editRpUnweightedGpa'),
+            weighted_gpa: rpNumOrNull('editRpWeightedGpa'),
+            sat_score: rpIntOrNull('editRpSat'),
+            act_score: rpIntOrNull('editRpAct'),
+            has_ap_ib: hasAp,
+            ap_ib_count: hasAp ? rpIntOrNull('editRpApIbCount') : null,
+            class_rank: (document.getElementById('editRpClassRank').value || '').trim() || null
+        }, 'editRpAcademicsModal');
+    });
 
-            // Update academics tab display
-            updateAcademicsDisplay(currentProfile);
-
-            // Refresh profile header display
-            displayProfile(currentProfile, 'player');
-
-            // Close modal
-            hideEditAcademicsModal();
-        } else {
-            showToast(response.message || 'Failed to save academic information', 'error');
+    // ---- Major & Goals ----
+    const lfCounter = document.getElementById('editRpLookingForCount');
+    document.getElementById('editRpLookingFor')?.addEventListener('input', function () { if (lfCounter) lfCounter.textContent = this.value.length; });
+    document.getElementById('editRpMajorGoalsBtn')?.addEventListener('click', () => {
+        const p = currentProfile, fp = rpParseFitPrefs(p);
+        const cont = document.getElementById('editRpMajorContainer');
+        if (cont) cont.innerHTML = '';
+        if (haveMatchUI) {
+            rpMajorPicker = initMatchMultiSelect({
+                container: '#editRpMajorContainer', chips: '#editRpMajorChips',
+                groups: MATCH_CONSTANTS.MAJOR_GROUPS, max: 3, capHintEl: '#editRpMajorCapHint',
+                name: 'rp_major', preselected: p.intended_major || []
+            });
         }
-    } catch (error) {
-        console.error('Error saving academics:', error);
-        showToast('Failed to save academic information. Please try again.', 'error');
-    }
-}
+        document.getElementById('editRpLookingFor').value = fp.looking_for_text || '';
+        if (lfCounter) lfCounter.textContent = (fp.looking_for_text || '').length;
+        rpOpenModal('editRpMajorGoalsModal');
+    });
+    document.getElementById('btnEditRpMajorGoalsCancel')?.addEventListener('click', () => rpCloseModal('editRpMajorGoalsModal'));
+    wireClose('editRpMajorGoalsModal');
+    document.getElementById('btnEditRpMajorGoalsSave')?.addEventListener('click', () => {
+        const majors = rpMajorPicker ? rpMajorPicker.getSelected() : (currentProfile.intended_major || []);
+        const lf = (document.getElementById('editRpLookingFor').value || '').trim();
+        const fp = { ...rpParseFitPrefs(currentProfile), looking_for_text: lf || null };
+        rpSavePayload({ intended_major: majors.length ? majors : null, fit_preferences: fp }, 'editRpMajorGoalsModal');
+    });
 
-function setupAcademicsModal() {
-    const editAcademicsBtn = document.getElementById('editAcademicsBtn');
-    const modal = document.getElementById('editAcademicsModal');
-    const overlay = document.getElementById('editAcademicsModalOverlay');
-    const closeBtn = document.getElementById('editAcademicsModalClose');
-    const cancelBtn = document.getElementById('btnEditAcademicsCancel');
-    const saveBtn = document.getElementById('btnEditAcademicsSave');
+    // ---- Financial Fit ----
+    document.getElementById('editRpFinancialBtn')?.addEventListener('click', () => {
+        const p = currentProfile;
+        const setRadio = (name, val) => { const el = val != null && document.querySelector(`input[name="${name}"][value="${val}"]`); if (el) el.checked = true; else document.querySelectorAll(`input[name="${name}"]`).forEach(r => r.checked = false); };
+        setRadio('editRpNeedsAid', p.needs_financial_aid);
+        setRadio('editRpNeedsScholarship', p.needs_scholarship);
+        setRadio('editRpPellFirstGen', p.pell_or_first_gen === true ? 'yes' : (p.pell_or_first_gen === false ? 'no' : null));
+        document.getElementById('editRpHomeZip').value = p.home_zip ?? '';
+        rpOpenModal('editRpFinancialModal');
+    });
+    document.getElementById('btnEditRpFinancialCancel')?.addEventListener('click', () => rpCloseModal('editRpFinancialModal'));
+    wireClose('editRpFinancialModal');
+    document.getElementById('btnEditRpFinancialSave')?.addEventListener('click', () => {
+        const pell = rpRadioVal('editRpPellFirstGen');
+        const zip = (document.getElementById('editRpHomeZip').value || '').trim();
+        if (zip && !/^\d{5}$/.test(zip)) { showToast('Home ZIP must be a 5-digit code', 'warning'); return; }
+        rpSavePayload({
+            needs_financial_aid: rpRadioVal('editRpNeedsAid'),
+            needs_scholarship: rpRadioVal('editRpNeedsScholarship'),
+            pell_or_first_gen: pell == null ? null : (pell === 'yes'),
+            home_zip: zip || null
+        }, 'editRpFinancialModal');
+    });
 
-    // Show edit button only for own profile
-    if (editAcademicsBtn && isOwnProfile) {
-        editAcademicsBtn.classList.add('show-button');
-        editAcademicsBtn.addEventListener('click', showEditAcademicsModal);
-    }
-
-    // Close modal handlers
-    if (overlay) overlay.addEventListener('click', hideEditAcademicsModal);
-    if (closeBtn) closeBtn.addEventListener('click', hideEditAcademicsModal);
-    if (cancelBtn) cancelBtn.addEventListener('click', hideEditAcademicsModal);
-
-    // Save button handler
-    if (saveBtn) saveBtn.addEventListener('click', saveAcademicsChanges);
-}
-
-// Initialize academics when DOM is loaded
-document.addEventListener('DOMContentLoaded', () => {
-    // Setup academics modal after a short delay to ensure profile is loaded
-    setTimeout(() => {
-        setupAcademicsModal();
-        // Update academics display with current profile data
-        if (currentProfile) {
-            updateAcademicsDisplay(currentProfile);
+    // ---- Level & Location ----
+    document.getElementById('editRpLevelLocationBtn')?.addEventListener('click', () => {
+        const p = currentProfile;
+        ['editRpLevelsContainer', 'editRpRegionsContainer'].forEach(id => { const c = document.getElementById(id); if (c) c.innerHTML = ''; });
+        if (haveMatchUI) {
+            rpLevelsPicker = initMatchMultiSelect({ container: '#editRpLevelsContainer', chips: '#editRpLevelsChips', options: MATCH_CONSTANTS.LEVELS, name: 'rp_levels', preselected: p.levels_open || [] });
+            rpRegionsPicker = initMatchMultiSelect({ container: '#editRpRegionsContainer', chips: '#editRpRegionsChips', options: MATCH_CONSTANTS.REGIONS, name: 'rp_regions', preselected: p.preferred_regions || [] });
         }
-    }, 500);
-});
+        document.getElementById('editRpCampusSetting').value = p.preferred_campus_setting || '';
+        rpOpenModal('editRpLevelLocationModal');
+    });
+    document.getElementById('btnEditRpLevelLocationCancel')?.addEventListener('click', () => rpCloseModal('editRpLevelLocationModal'));
+    wireClose('editRpLevelLocationModal');
+    document.getElementById('btnEditRpLevelLocationSave')?.addEventListener('click', () => {
+        const levels = rpLevelsPicker ? rpLevelsPicker.getSelected() : (currentProfile.levels_open || []);
+        const regions = rpRegionsPicker ? rpRegionsPicker.getSelected() : (currentProfile.preferred_regions || []);
+        rpSavePayload({
+            levels_open: levels.length ? levels : null,
+            preferred_regions: regions.length ? regions : null,
+            preferred_campus_setting: document.getElementById('editRpCampusSetting').value || null
+        }, 'editRpLevelLocationModal');
+    });
+
+    // ---- Priorities ----
+    [['editRpImpPlayingTime', 'editRpImpPlayingTimeVal'], ['editRpImpCloseToHome', 'editRpImpCloseToHomeVal'], ['editRpImpAcademics', 'editRpImpAcademicsVal'], ['editRpImpCompetition', 'editRpImpCompetitionVal']].forEach(([sid, vid]) => {
+        const s = document.getElementById(sid), o = document.getElementById(vid);
+        if (s && o) s.addEventListener('input', () => { o.textContent = s.value; });
+    });
+    document.getElementById('editRpPrioritiesBtn')?.addEventListener('click', () => {
+        const fp = rpParseFitPrefs(currentProfile);
+        const set = (sid, vid, v) => { const s = document.getElementById(sid), o = document.getElementById(vid); const val = (v == null || v === '') ? 3 : v; if (s) s.value = val; if (o) o.textContent = val; };
+        set('editRpImpPlayingTime', 'editRpImpPlayingTimeVal', fp.importance_playing_time);
+        set('editRpImpCloseToHome', 'editRpImpCloseToHomeVal', fp.importance_close_to_home);
+        set('editRpImpAcademics', 'editRpImpAcademicsVal', fp.importance_academics_vs_football);
+        set('editRpImpCompetition', 'editRpImpCompetitionVal', fp.importance_competition_level);
+        rpOpenModal('editRpPrioritiesModal');
+    });
+    document.getElementById('btnEditRpPrioritiesCancel')?.addEventListener('click', () => rpCloseModal('editRpPrioritiesModal'));
+    wireClose('editRpPrioritiesModal');
+    document.getElementById('btnEditRpPrioritiesSave')?.addEventListener('click', () => {
+        const fp = {
+            ...rpParseFitPrefs(currentProfile),
+            importance_playing_time: rpIntOrNull('editRpImpPlayingTime'),
+            importance_close_to_home: rpIntOrNull('editRpImpCloseToHome'),
+            importance_academics_vs_football: rpIntOrNull('editRpImpAcademics'),
+            importance_competition_level: rpIntOrNull('editRpImpCompetition')
+        };
+        rpSavePayload({ fit_preferences: fp }, 'editRpPrioritiesModal');
+    });
+}
 
 
 // ============================================
@@ -6754,7 +6948,7 @@ function updateAthleticsDisplay(profile) {
         if (has200) document.getElementById('athleticsTrack200').textContent = `${parseFloat(profile.track_200m).toFixed(2)}s`;
     }
 
-    const editBtn = document.getElementById('editAthleticsBtn');
+    const editBtn = document.getElementById('editRpAthleticsBtn');
     if (editBtn) {
         if (isOwnProfile) editBtn.classList.add('show-button');
         else editBtn.classList.remove('show-button');
@@ -6894,7 +7088,8 @@ async function saveAthleticsChanges() {
 }
 
 function setupAthleticsModal() {
-    const editBtn = document.getElementById('editAthleticsBtn');
+    // Athletics now lives in the Recruiting Profile › Priorities & Athletics subtab.
+    const editBtn = document.getElementById('editRpAthleticsBtn');
     const overlay = document.getElementById('editAthleticsModalOverlay');
     const closeBtn = document.getElementById('editAthleticsModalClose');
     const cancelBtn = document.getElementById('btnEditAthleticsCancel');

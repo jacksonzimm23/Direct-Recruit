@@ -241,6 +241,7 @@
                     </svg>
                 </button>
                 <div class="profile-tabs" id="profileTabs">
+                    <button class="profile-tab" data-tab="recruiting-profile" id="recruitingProfileTab" style="display: none;">Recruiting Profile</button>
                     <button class="profile-tab active" data-tab="overview">Overview</button>
                     <button class="profile-tab" data-tab="posts">Posts</button>
                     <button class="profile-tab" data-tab="replies">Replies</button>
@@ -248,8 +249,6 @@
                     <button class="profile-tab" data-tab="offers">Offers</button>
                     <button class="profile-tab" data-tab="stats">Stats</button>
                     <button class="profile-tab" data-tab="highlights">Highlights</button>
-                    <button class="profile-tab" data-tab="athletics">Athletics</button>
-                    <button class="profile-tab" data-tab="academics">Academics</button>
                 </div>
                 <button class="tabs-scroll-arrow tabs-scroll-arrow-right" id="tabsScrollRight" aria-label="Scroll tabs right">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -260,6 +259,140 @@
 
             <!-- Tab Content -->
             <div class="profile-tab-content">
+                <!-- Recruiting Profile Tab (AI Fit-Matching) — first tab; shown to coaches + owner -->
+                <div class="tab-pane" id="recruiting-profile">
+                    <!-- Coach-only match banner (stub; real score in Plan 7) -->
+                    <div class="recruiting-match-banner" id="recruitingMatchBanner" style="display: none;">
+                        <div class="rmb-score" id="rmbScore">—%</div>
+                        <div class="rmb-sub" id="rmbSub">Match score coming soon — calculated from your program profile</div>
+                    </div>
+                    <!-- Owner-only disclaimer -->
+                    <p class="recruiting-disclaimer" id="recruitingDisclaimer" style="display: none;">Only college coaches can see this section. This is how your recruiting profile appears to them.</p>
+
+                    <!-- Subtab dropdown -->
+                    <div class="recruiting-subnav">
+                        <select id="recruitingSubtabSelect" class="recruiting-subtab-select">
+                            <option value="rpAcademics">Academics</option>
+                            <option value="rpMajorGoals">Major &amp; Goals</option>
+                            <option value="rpFinancial">Financial Fit</option>
+                            <option value="rpLevelLocation">Level &amp; Location</option>
+                            <option value="rpPriorities">Priorities &amp; Athletics</option>
+                        </select>
+                    </div>
+
+                    <!-- Subtab: Academics -->
+                    <div class="recruiting-subtab-pane active" data-subtab="rpAcademics" id="rpAcademics">
+                        <div class="recruiting-subtab-header">
+                            <h2 class="section-title">Academics</h2>
+                            <button class="btn-edit-recruiting-section" id="editRpAcademicsBtn">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                                Edit
+                            </button>
+                        </div>
+                        <div class="info-card">
+                            <div class="info-grid">
+                                <div class="info-item"><div class="info-label">Unweighted GPA</div><div class="info-value" id="rpUnweightedGpa">—</div></div>
+                                <div class="info-item"><div class="info-label">Weighted GPA</div><div class="info-value" id="rpWeightedGpa">—</div></div>
+                                <div class="info-item"><div class="info-label">SAT Score</div><div class="info-value" id="rpSat">—</div></div>
+                                <div class="info-item"><div class="info-label">ACT Score</div><div class="info-value" id="rpAct">—</div></div>
+                                <div class="info-item"><div class="info-label">AP / IB / Honors</div><div class="info-value" id="rpApIb">—</div></div>
+                                <div class="info-item"><div class="info-label">Class Rank</div><div class="info-value" id="rpClassRank">—</div></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Subtab: Major & Goals -->
+                    <div class="recruiting-subtab-pane" data-subtab="rpMajorGoals" id="rpMajorGoals">
+                        <div class="recruiting-subtab-header">
+                            <h2 class="section-title">Major &amp; Goals</h2>
+                            <button class="btn-edit-recruiting-section" id="editRpMajorGoalsBtn">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                                Edit
+                            </button>
+                        </div>
+                        <div class="info-card">
+                            <div class="info-item-block"><div class="info-label">Intended Major(s)</div><div class="recruiting-tags" id="rpMajor"><span class="info-value">—</span></div></div>
+                            <div class="info-item-block"><div class="info-label">What I'm looking for in a program</div><div class="info-value info-freetext" id="rpLookingFor">—</div></div>
+                        </div>
+                    </div>
+
+                    <!-- Subtab: Financial Fit -->
+                    <div class="recruiting-subtab-pane" data-subtab="rpFinancial" id="rpFinancial">
+                        <div class="recruiting-subtab-header">
+                            <h2 class="section-title">Financial Fit</h2>
+                            <button class="btn-edit-recruiting-section" id="editRpFinancialBtn">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                                Edit
+                            </button>
+                        </div>
+                        <div class="info-card">
+                            <div class="info-grid">
+                                <div class="info-item"><div class="info-label">Needs financial aid</div><div class="info-value" id="rpNeedsAid">—</div></div>
+                                <div class="info-item"><div class="info-label">Needs athletic scholarship</div><div class="info-value" id="rpNeedsScholarship">—</div></div>
+                                <div class="info-item"><div class="info-label">Pell-eligible / first-gen</div><div class="info-value" id="rpPellFirstGen">—</div></div>
+                                <div class="info-item"><div class="info-label">Home ZIP Code</div><div class="info-value" id="rpHomeZip">—</div></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Subtab: Level & Location -->
+                    <div class="recruiting-subtab-pane" data-subtab="rpLevelLocation" id="rpLevelLocation">
+                        <div class="recruiting-subtab-header">
+                            <h2 class="section-title">Level &amp; Location</h2>
+                            <button class="btn-edit-recruiting-section" id="editRpLevelLocationBtn">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                                Edit
+                            </button>
+                        </div>
+                        <div class="info-card">
+                            <div class="info-item-block"><div class="info-label">Levels open to playing</div><div class="recruiting-tags" id="rpLevelsOpen"><span class="info-value">—</span></div></div>
+                            <div class="info-item-block"><div class="info-label">Preferred region(s)</div><div class="recruiting-tags" id="rpPreferredRegions"><span class="info-value">—</span></div></div>
+                            <div class="info-item-block"><div class="info-label">Preferred campus setting</div><div class="info-value" id="rpCampusSetting">—</div></div>
+                        </div>
+                    </div>
+
+                    <!-- Subtab: Priorities & Athletics -->
+                    <div class="recruiting-subtab-pane" data-subtab="rpPriorities" id="rpPriorities">
+                        <div class="recruiting-subtab-header">
+                            <h2 class="section-title">Priorities</h2>
+                            <button class="btn-edit-recruiting-section" id="editRpPrioritiesBtn">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                                Edit
+                            </button>
+                        </div>
+                        <div class="info-card">
+                            <div class="info-grid">
+                                <div class="info-item"><div class="info-label">Early playing time</div><div class="info-value" id="rpImpPlayingTime">—</div></div>
+                                <div class="info-item"><div class="info-label">Staying close to home</div><div class="info-value" id="rpImpCloseToHome">—</div></div>
+                                <div class="info-item"><div class="info-label">Academics vs. football</div><div class="info-value" id="rpImpAcademics">—</div></div>
+                                <div class="info-item"><div class="info-label">Level of competition</div><div class="info-value" id="rpImpCompetition">—</div></div>
+                            </div>
+                        </div>
+
+                        <!-- Athletics (other sports + track times) — absorbed from the old Athletics tab -->
+                        <div class="recruiting-subtab-header" style="margin-top:1.5rem;">
+                            <h2 class="section-title">Athletics</h2>
+                            <button class="btn-edit-recruiting-section" id="editRpAthleticsBtn">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                                Edit
+                            </button>
+                        </div>
+                        <div class="info-card">
+                            <div class="athletics-other-sports">
+                                <div class="info-label">Other Sports</div>
+                                <div class="sport-chips" id="athleticsSportsChips"></div>
+                            </div>
+                            <div class="athletics-track" id="athleticsTrackRow" style="display: none;">
+                                <div class="info-label">Track Times</div>
+                                <div class="info-grid track-times-grid">
+                                    <div class="info-item" id="athleticsTrack100Item"><div class="info-label">100m</div><div class="info-value" id="athleticsTrack100">--</div></div>
+                                    <div class="info-item" id="athleticsTrack200Item"><div class="info-label">200m</div><div class="info-value" id="athleticsTrack200">--</div></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Overview Tab -->
                 <div class="tab-pane active" id="overview">
                     <!-- Top Row: Offers and Hudl Side by Side -->
@@ -436,72 +569,7 @@
                 </div>
 
                 <!-- Athletics Tab -->
-                <div class="tab-pane" id="athletics">
-                    <div class="athletics-section">
-                        <div class="athletics-header">
-                            <h2 class="section-title">Athletics</h2>
-                            <button class="btn-edit-athletics" id="editAthleticsBtn">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                                </svg>
-                                Edit
-                            </button>
-                        </div>
-                        <div class="info-card">
-                            <div class="athletics-other-sports">
-                                <div class="info-label">Other Sports</div>
-                                <div class="sport-chips" id="athleticsSportsChips"></div>
-                            </div>
-                            <div class="athletics-track" id="athleticsTrackRow" style="display: none;">
-                                <div class="info-label">Track Times</div>
-                                <div class="info-grid track-times-grid">
-                                    <div class="info-item" id="athleticsTrack100Item">
-                                        <div class="info-label">100m</div>
-                                        <div class="info-value" id="athleticsTrack100">--</div>
-                                    </div>
-                                    <div class="info-item" id="athleticsTrack200Item">
-                                        <div class="info-label">200m</div>
-                                        <div class="info-value" id="athleticsTrack200">--</div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
 
-                <!-- Academics Tab -->
-                <div class="tab-pane" id="academics">
-                    <div class="academics-section">
-                        <p class="academics-disclaimer">Only college coaches can view your academic information.</p>
-                        <div class="academics-header">
-                            <h2 class="section-title">Academic Information</h2>
-                            <button class="btn-edit-academics" id="editAcademicsBtn">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                                </svg>
-                                Edit
-                            </button>
-                        </div>
-                        <div class="info-card">
-                            <div class="info-grid academics-grid">
-                                <div class="info-item">
-                                    <div class="info-label">GPA</div>
-                                    <div class="info-value" id="academicsGPA">--</div>
-                                </div>
-                                <div class="info-item">
-                                    <div class="info-label">SAT Score</div>
-                                    <div class="info-value" id="academicsSAT">--</div>
-                                </div>
-                                <div class="info-item">
-                                    <div class="info-label">ACT Score</div>
-                                    <div class="info-value" id="academicsACT">--</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
             </div>
         </main>
 
@@ -695,10 +763,6 @@
                         <div class="form-group">
                             <label for="editGraduationYear">Class (Graduation Year)</label>
                             <input type="number" id="editGraduationYear" name="graduation_year" placeholder="e.g., 2025" min="2020" max="2035">
-                        </div>
-                        <div class="form-group">
-                            <label for="editGPA">GPA</label>
-                            <input type="number" id="editGPA" name="gpa" placeholder="e.g., 3.8" step="0.01" min="0" max="4.0">
                         </div>
                     </div>
 
@@ -1278,41 +1342,214 @@
         </div>
     </div>
 
-    <!-- Edit Academics Modal -->
-    <div class="edit-academics-modal" id="editAcademicsModal">
-        <div class="edit-academics-modal-overlay" id="editAcademicsModalOverlay"></div>
-        <div class="edit-academics-modal-content">
-            <div class="edit-academics-modal-header">
-                <h2>Edit Academic Information</h2>
-                <button class="edit-academics-modal-close" id="editAcademicsModalClose">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="18" y1="6" x2="6" y2="18"></line>
-                        <line x1="6" y1="6" x2="18" y2="18"></line>
-                    </svg>
-                </button>
+    <!-- ===== Recruiting Profile per-subtab edit modals (AI Fit-Matching) ===== -->
+
+    <!-- Edit RP: Academics -->
+    <div class="edit-recruiting-modal" id="editRpAcademicsModal">
+        <div class="edit-recruiting-modal-overlay" id="editRpAcademicsModalOverlay"></div>
+        <div class="edit-recruiting-modal-content">
+            <div class="edit-recruiting-modal-header">
+                <h2>Edit Academics</h2>
+                <button class="edit-recruiting-modal-close" id="editRpAcademicsModalClose"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
             </div>
-            <div class="edit-academics-modal-body">
-                <form id="editAcademicsForm">
+            <div class="edit-recruiting-modal-body">
+                <form id="editRpAcademicsForm">
                     <div class="form-group">
-                        <label for="editAcademicsGPA">GPA</label>
-                        <input type="number" id="editAcademicsGPA" name="gpa" placeholder="e.g., 3.8" step="0.01" min="0" max="5.0">
-                        <small class="form-hint">Enter your GPA (0.00 - 5.00 scale)</small>
+                        <label for="editRpUnweightedGpa">Unweighted GPA</label>
+                        <input type="number" id="editRpUnweightedGpa" step="0.01" min="0" max="5" placeholder="e.g., 3.75">
+                        <small class="form-hint">Your GPA on a 4.0 scale</small>
                     </div>
                     <div class="form-group">
-                        <label for="editAcademicsSAT">SAT Score</label>
-                        <input type="number" id="editAcademicsSAT" name="sat_score" placeholder="e.g., 1250" min="400" max="1600">
-                        <small class="form-hint">Enter your SAT score (400 - 1600)</small>
+                        <label for="editRpWeightedGpa">Weighted GPA</label>
+                        <input type="number" id="editRpWeightedGpa" step="0.01" min="0" max="6" placeholder="e.g., 4.20">
                     </div>
                     <div class="form-group">
-                        <label for="editAcademicsACT">ACT Score</label>
-                        <input type="number" id="editAcademicsACT" name="act_score" placeholder="e.g., 28" min="1" max="36">
-                        <small class="form-hint">Enter your ACT score (1 - 36)</small>
+                        <label for="editRpSat">SAT Score</label>
+                        <input type="number" id="editRpSat" min="400" max="1600" step="10" placeholder="e.g., 1180">
+                    </div>
+                    <div class="form-group">
+                        <label for="editRpAct">ACT Score</label>
+                        <input type="number" id="editRpAct" min="1" max="36" step="1" placeholder="e.g., 26">
+                    </div>
+                    <div class="form-group">
+                        <label>AP / IB / Honors courses taken?</label>
+                        <div class="radio-row">
+                            <label class="radio-label"><input type="radio" name="editRpHasApIb" value="no" checked><span>No</span></label>
+                            <label class="radio-label"><input type="radio" name="editRpHasApIb" value="yes"><span>Yes</span></label>
+                        </div>
+                    </div>
+                    <div class="form-group" id="editRpApIbCountGroup" style="display:none;">
+                        <label for="editRpApIbCount">How many?</label>
+                        <input type="number" id="editRpApIbCount" min="0" max="40" step="1" placeholder="e.g., 5">
+                    </div>
+                    <div class="form-group">
+                        <label for="editRpClassRank">Class Rank</label>
+                        <input type="text" id="editRpClassRank" maxlength="50" placeholder="e.g., 12 of 350, or Top 10%">
                     </div>
                 </form>
             </div>
-            <div class="edit-academics-modal-footer">
-                <button class="btn-modal-cancel" id="btnEditAcademicsCancel">Cancel</button>
-                <button class="btn-modal-save" id="btnEditAcademicsSave">Save Changes</button>
+            <div class="edit-recruiting-modal-footer">
+                <button class="btn-modal-cancel" id="btnEditRpAcademicsCancel">Cancel</button>
+                <button class="btn-modal-save" id="btnEditRpAcademicsSave">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit RP: Major & Goals -->
+    <div class="edit-recruiting-modal" id="editRpMajorGoalsModal">
+        <div class="edit-recruiting-modal-overlay" id="editRpMajorGoalsModalOverlay"></div>
+        <div class="edit-recruiting-modal-content">
+            <div class="edit-recruiting-modal-header">
+                <h2>Edit Major &amp; Goals</h2>
+                <button class="edit-recruiting-modal-close" id="editRpMajorGoalsModalClose"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+            </div>
+            <div class="edit-recruiting-modal-body">
+                <form id="editRpMajorGoalsForm">
+                    <div class="form-group">
+                        <label id="editRpMajorLabel">Intended Major(s)</label>
+                        <p class="form-hint" style="margin-bottom:0.5rem;">Select up to 3 majors you're interested in studying</p>
+                        <div class="multi-select-container" id="editRpMajorContainer"></div>
+                        <small class="major-cap-hint" id="editRpMajorCapHint" style="display:none;">Maximum of 3 majors selected</small>
+                        <div class="selected-items" id="editRpMajorChips"></div>
+                    </div>
+                    <div class="form-group">
+                        <label for="editRpLookingFor">What I'm looking for in a program</label>
+                        <textarea id="editRpLookingFor" maxlength="280" rows="3" placeholder="In a sentence or two, describe your ideal program (playing style, culture, goals)..."></textarea>
+                        <small class="form-hint"><span id="editRpLookingForCount">0</span>/280</small>
+                    </div>
+                </form>
+            </div>
+            <div class="edit-recruiting-modal-footer">
+                <button class="btn-modal-cancel" id="btnEditRpMajorGoalsCancel">Cancel</button>
+                <button class="btn-modal-save" id="btnEditRpMajorGoalsSave">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit RP: Financial Fit -->
+    <div class="edit-recruiting-modal" id="editRpFinancialModal">
+        <div class="edit-recruiting-modal-overlay" id="editRpFinancialModalOverlay"></div>
+        <div class="edit-recruiting-modal-content">
+            <div class="edit-recruiting-modal-header">
+                <h2>Edit Financial Fit</h2>
+                <button class="edit-recruiting-modal-close" id="editRpFinancialModalClose"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+            </div>
+            <div class="edit-recruiting-modal-body">
+                <form id="editRpFinancialForm">
+                    <div class="form-group">
+                        <label>Will you need financial aid?</label>
+                        <div class="radio-row">
+                            <label class="radio-label"><input type="radio" name="editRpNeedsAid" value="yes"><span>Yes</span></label>
+                            <label class="radio-label"><input type="radio" name="editRpNeedsAid" value="no"><span>No</span></label>
+                            <label class="radio-label"><input type="radio" name="editRpNeedsAid" value="unsure"><span>Unsure</span></label>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Do you need athletic scholarship money?</label>
+                        <div class="radio-row">
+                            <label class="radio-label"><input type="radio" name="editRpNeedsScholarship" value="yes"><span>Yes</span></label>
+                            <label class="radio-label"><input type="radio" name="editRpNeedsScholarship" value="no"><span>No</span></label>
+                            <label class="radio-label"><input type="radio" name="editRpNeedsScholarship" value="unsure"><span>Unsure</span></label>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Are you Pell-eligible or a first-generation college student?</label>
+                        <div class="radio-row">
+                            <label class="radio-label"><input type="radio" name="editRpPellFirstGen" value="yes"><span>Yes</span></label>
+                            <label class="radio-label"><input type="radio" name="editRpPellFirstGen" value="no"><span>No</span></label>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="editRpHomeZip">Home ZIP Code</label>
+                        <input type="text" id="editRpHomeZip" inputmode="numeric" pattern="[0-9]{5}" maxlength="5" placeholder="e.g., 80401">
+                        <small class="form-hint">Helps coaches gauge distance and regional fit</small>
+                    </div>
+                </form>
+            </div>
+            <div class="edit-recruiting-modal-footer">
+                <button class="btn-modal-cancel" id="btnEditRpFinancialCancel">Cancel</button>
+                <button class="btn-modal-save" id="btnEditRpFinancialSave">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit RP: Level & Location -->
+    <div class="edit-recruiting-modal" id="editRpLevelLocationModal">
+        <div class="edit-recruiting-modal-overlay" id="editRpLevelLocationModalOverlay"></div>
+        <div class="edit-recruiting-modal-content">
+            <div class="edit-recruiting-modal-header">
+                <h2>Edit Level &amp; Location</h2>
+                <button class="edit-recruiting-modal-close" id="editRpLevelLocationModalClose"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+            </div>
+            <div class="edit-recruiting-modal-body">
+                <form id="editRpLevelLocationForm">
+                    <div class="form-group">
+                        <label>Levels open to playing</label>
+                        <p class="form-hint" style="margin-bottom:0.5rem;">Which division levels would you consider?</p>
+                        <div class="multi-select-container" id="editRpLevelsContainer"></div>
+                        <div class="selected-items" id="editRpLevelsChips"></div>
+                    </div>
+                    <div class="form-group">
+                        <label>Preferred region(s)</label>
+                        <p class="form-hint" style="margin-bottom:0.5rem;">Where would you like to play?</p>
+                        <div class="multi-select-container" id="editRpRegionsContainer"></div>
+                        <div class="selected-items" id="editRpRegionsChips"></div>
+                    </div>
+                    <div class="form-group">
+                        <label for="editRpCampusSetting">Preferred campus setting</label>
+                        <select id="editRpCampusSetting">
+                            <option value="">No preference</option>
+                            <option value="urban">Urban</option>
+                            <option value="suburban">Suburban</option>
+                            <option value="rural">Rural</option>
+                            <option value="small-town">Small town</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="edit-recruiting-modal-footer">
+                <button class="btn-modal-cancel" id="btnEditRpLevelLocationCancel">Cancel</button>
+                <button class="btn-modal-save" id="btnEditRpLevelLocationSave">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit RP: Priorities -->
+    <div class="edit-recruiting-modal" id="editRpPrioritiesModal">
+        <div class="edit-recruiting-modal-overlay" id="editRpPrioritiesModalOverlay"></div>
+        <div class="edit-recruiting-modal-content">
+            <div class="edit-recruiting-modal-header">
+                <h2>Edit Priorities</h2>
+                <button class="edit-recruiting-modal-close" id="editRpPrioritiesModalClose"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+            </div>
+            <div class="edit-recruiting-modal-body">
+                <form id="editRpPrioritiesForm">
+                    <p class="form-hint" style="margin-bottom:0.75rem;">Slide from Not important (1) to Very important (5)</p>
+                    <div class="fit-slider-group">
+                        <label for="editRpImpPlayingTime">Early playing time</label>
+                        <div class="fit-slider-row"><input type="range" id="editRpImpPlayingTime" min="1" max="5" step="1" value="3"><span class="fit-slider-value" id="editRpImpPlayingTimeVal">3</span></div>
+                        <div class="fit-slider-ends"><span>Not important</span><span>Very important</span></div>
+                    </div>
+                    <div class="fit-slider-group">
+                        <label for="editRpImpCloseToHome">Staying close to home</label>
+                        <div class="fit-slider-row"><input type="range" id="editRpImpCloseToHome" min="1" max="5" step="1" value="3"><span class="fit-slider-value" id="editRpImpCloseToHomeVal">3</span></div>
+                        <div class="fit-slider-ends"><span>Not important</span><span>Very important</span></div>
+                    </div>
+                    <div class="fit-slider-group">
+                        <label for="editRpImpAcademics">Academics vs. football</label>
+                        <div class="fit-slider-row"><input type="range" id="editRpImpAcademics" min="1" max="5" step="1" value="3"><span class="fit-slider-value" id="editRpImpAcademicsVal">3</span></div>
+                        <div class="fit-slider-ends"><span>Football-first</span><span>Academics-first</span></div>
+                    </div>
+                    <div class="fit-slider-group">
+                        <label for="editRpImpCompetition">Level of competition</label>
+                        <div class="fit-slider-row"><input type="range" id="editRpImpCompetition" min="1" max="5" step="1" value="3"><span class="fit-slider-value" id="editRpImpCompetitionVal">3</span></div>
+                        <div class="fit-slider-ends"><span>Not important</span><span>Very important</span></div>
+                    </div>
+                </form>
+            </div>
+            <div class="edit-recruiting-modal-footer">
+                <button class="btn-modal-cancel" id="btnEditRpPrioritiesCancel">Cancel</button>
+                <button class="btn-modal-save" id="btnEditRpPrioritiesSave">Save Changes</button>
             </div>
         </div>
     </div>
@@ -1518,6 +1755,8 @@
     <script src="../mainpage-player.js"></script>
     <script src="../../shared/tabs-scroll-arrows.js"></script>
     <script src="../../shared/stats-table-scroll.js"></script>
+    <script src="../../shared/match-constants.js"></script>
+    <script src="../../shared/match-ui.js"></script>
     <script src="my-profile.js"></script>
 </body>
 </html>
