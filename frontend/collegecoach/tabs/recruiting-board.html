@@ -14,6 +14,7 @@
     <link rel="stylesheet" href="../../landingpage/styles.css">
     <link rel="stylesheet" href="../mainpage-coach.css">
     <link rel="stylesheet" href="recruiting-board.css">
+    <link rel="stylesheet" href="../../shared/fit-info-modal.css">
     <link rel="stylesheet" href="../../shared/mobile-overrides.css?v=4">
     <link rel="stylesheet" href="../../shared/ios-app-overrides.css?v=1">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -151,15 +152,6 @@
                         <path d="M3 12h4l3-9 4 18 3-9h4"></path>
                     </svg>
                     <span>Pipeline</span>
-                    <span class="rb-subtab-badge" style="display: none;"></span>
-                </button>
-                <button class="rb-subtab" data-tab="team-pool">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M3 6h18"></path>
-                        <path d="M3 12h18"></path>
-                        <path d="M3 18h18"></path>
-                    </svg>
-                    <span>Team Pool</span>
                     <span class="rb-subtab-badge" style="display: none;"></span>
                 </button>
                 <button class="rb-subtab" data-tab="shared-boards">
@@ -492,106 +484,6 @@
                     <h2>No Boards Yet</h2>
                     <p>Create the first recruiting board for this group.</p>
                     <button class="sg-empty-cta" id="sgCreateFirstBoardBtn">Create First Board</button>
-                </div>
-            </div>
-
-            <!-- Team Pool Tab (Plan 3) -->
-            <div class="rb-tab-content" id="teamPoolTab">
-                <div id="teamPoolNoTeam" class="rb-pool-empty-state" style="display: none;">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="56" height="56">
-                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                        <circle cx="12" cy="7" r="4"></circle>
-                    </svg>
-                    <h2>Add your team name first</h2>
-                    <p>Your school's pool is tied to your team in My Profile.</p>
-                    <a class="rb-pool-empty-cta" href="my-profile.html">Go to My Profile</a>
-                </div>
-
-                <div class="rb-pool-header" id="teamPoolHeader" style="display: none;">
-                    <div class="rb-pool-school-row">
-                        <div class="rb-pool-school-logo" id="teamPoolLogo"></div>
-                        <div class="rb-pool-school-text">
-                            <div class="rb-tab-title-row">
-                                <h2 class="rb-pool-school-name" id="teamPoolSchoolName"></h2>
-                                <button class="rb-info-btn" data-info-for="team-pool" aria-label="How Team Pool works" title="How this works" type="button">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-                                        <circle cx="12" cy="12" r="10"></circle>
-                                        <line x1="12" y1="11" x2="12" y2="17"></line>
-                                        <line x1="12" y1="7" x2="12.01" y2="7"></line>
-                                    </svg>
-                                </button>
-                            </div>
-                            <p class="rb-pool-submission-count" id="teamPoolCount">0 submissions</p>
-                        </div>
-                        <div class="rb-pool-header-actions">
-                            <button id="poolCopyLinkBtn" class="rb-pool-copy-link-btn" title="Copy your team's public questionnaire link">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-                                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                                </svg>
-                                <span>Copy Questionnaire Link</span>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Filters — Discover-style, compact (Plan 3.5) -->
-                <div class="rb-pool-filters-container" id="teamPoolFilters" style="display: none;">
-                    <div class="rb-pool-filters-header">
-                        <button class="rb-pool-filters-toggle" id="poolFiltersToggle" type="button" aria-expanded="true" title="Show/hide filters">
-                            <svg class="rb-pool-filters-toggle-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <polyline points="6 9 12 15 18 9"></polyline>
-                            </svg>
-                            <h3 class="rb-pool-filters-title">Filter Recruits</h3>
-                        </button>
-                        <button class="rb-pool-filters-reset" id="poolFiltersReset">Reset All</button>
-                    </div>
-                    <div class="rb-pool-filters-grid">
-                        <div class="rb-pool-filter-group">
-                            <label for="poolPosition">Position</label>
-                            <select class="rb-pool-filter-select" id="poolPosition">
-                                <option value="">All Positions</option>
-                            </select>
-                        </div>
-                        <div class="rb-pool-filter-group">
-                            <label for="poolGradYear">Graduation Year</label>
-                            <select class="rb-pool-filter-select" id="poolGradYear">
-                                <option value="">All Years</option>
-                            </select>
-                        </div>
-                        <div class="rb-pool-filter-group">
-                            <label for="poolState">State</label>
-                            <select class="rb-pool-filter-select" id="poolState">
-                                <option value="">All States</option>
-                            </select>
-                        </div>
-                        <div class="rb-pool-filter-group rb-pool-slider-group">
-                            <label>Height</label>
-                            <input type="range" class="rb-pool-filter-slider" id="poolHeightSlider" min="60" max="84" value="60" step="1">
-                            <div class="rb-pool-slider-label">Min: <span id="poolHeightValue">5'0"</span></div>
-                        </div>
-                        <div class="rb-pool-filter-group rb-pool-slider-group">
-                            <label>Weight (lbs)</label>
-                            <input type="range" class="rb-pool-filter-slider" id="poolWeightSlider" min="100" max="400" value="100" step="5">
-                            <div class="rb-pool-slider-label">Min: <span id="poolWeightValue">100</span> lbs</div>
-                        </div>
-                        <div class="rb-pool-filter-group rb-pool-slider-group">
-                            <label>GPA</label>
-                            <input type="range" class="rb-pool-filter-slider" id="poolGpaSlider" min="0" max="40" value="0" step="1">
-                            <div class="rb-pool-slider-label">Min: <span id="poolGpaValue">0.0</span></div>
-                        </div>
-                    </div>
-                    <div class="rb-pool-filters-actions">
-                        <button class="rb-pool-filters-apply" id="poolFiltersApply">Apply Filters</button>
-                        <div class="rb-pool-results-count">Showing <span id="poolResultsCount">0</span> recruits</div>
-                    </div>
-                </div>
-
-                <div class="rb-pool-list" id="teamPoolList" style="display: none;"></div>
-                <div class="rb-pool-loading" id="teamPoolLoading" style="display: none;">Loading…</div>
-                <div class="rb-pool-empty" id="teamPoolEmpty" style="display: none;">
-                    <p>No submissions yet.</p>
-                    <p class="rb-pool-empty-hint">Copy your questionnaire link above and send it to recruits to start collecting submissions.</p>
                 </div>
             </div>
 
@@ -968,47 +860,6 @@
         </div>
     </div>
 
-    <!-- Invites Modal — incoming group invites with inline Accept/Decline -->
-    <!-- Pool Entry Detail Modal — Plan 3 -->
-    <div class="recruiting-board-modal collab-modal sg-modal pool-detail-modal" id="poolDetailModal">
-        <div class="recruiting-board-modal-overlay" id="poolDetailOverlay"></div>
-        <div class="recruiting-board-modal-content sg-modal-content">
-            <div class="recruiting-board-modal-header collab-header pool-detail-header">
-                <div class="pool-detail-avatar" id="poolDetailAvatar">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                        <circle cx="12" cy="7" r="4"></circle>
-                    </svg>
-                </div>
-                <h3 class="sg-info-title-row pool-detail-title">
-                    <span id="poolDetailName">Recruit</span>
-                    <span class="pool-detail-badge dr" id="poolDetailDrBadge" style="display: none;">DR Member</span>
-                    <span class="pool-detail-badge resubmitted" id="poolDetailResubmittedBadge" style="display: none;"></span>
-                </h3>
-                <button class="modal-close-btn" id="poolDetailClose">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="18" y1="6" x2="6" y2="18"></line>
-                        <line x1="6" y1="6" x2="18" y2="18"></line>
-                    </svg>
-                </button>
-            </div>
-            <div class="recruiting-board-modal-body">
-                <div class="pool-detail-tabs">
-                    <button class="pool-detail-tab active" data-pool-tab="questionnaire">Questionnaire</button>
-                    <button class="pool-detail-tab" data-pool-tab="history">Submission History</button>
-                    <button class="pool-detail-tab" data-pool-tab="dr-profile" id="poolDetailDrTabBtn" style="display: none;">DR Profile</button>
-                </div>
-                <div class="pool-detail-tab-content active" data-pool-tab-content="questionnaire" id="poolDetailQuestionnaire"></div>
-                <div class="pool-detail-tab-content" data-pool-tab-content="history" id="poolDetailHistory"></div>
-                <div class="pool-detail-tab-content" data-pool-tab-content="dr-profile" id="poolDetailDrProfile"></div>
-            </div>
-            <div class="recruiting-board-modal-footer">
-                <button class="btn-cancel" id="poolDetailCloseBtn">Close</button>
-                <button class="btn-submit" id="poolDetailAddPipelineBtn" style="display: none;">Add to Pipeline</button>
-            </div>
-        </div>
-    </div>
-
     <!-- Evaluation Modal — Plan 4 -->
     <div class="recruiting-board-modal collab-modal sg-modal eval-modal" id="evaluationModal">
         <div class="recruiting-board-modal-overlay" id="evaluationModalOverlay"></div>
@@ -1023,8 +874,6 @@
                 <div class="eval-title">
                     <div class="eval-name-row">
                         <span id="evalName">Recruit</span>
-                        <span class="eval-badge dr" id="evalDrBadge" style="display: none;">DR</span>
-                        <span class="eval-badge source" id="evalPoolBadge" style="display: none;">Pool</span>
                     </div>
                     <div class="eval-subheader" id="evalSubheader"></div>
                 </div>
@@ -1046,39 +895,82 @@
                     <button class="eval-tab" data-eval-tab="final-grade" id="evalFinalGradeTabBtn" style="display: none;">Final Grade</button>
                 </div>
 
-                <!-- Info tab content — populated by openEvaluationModal -->
+                <!-- Info tab content — recruit's AI Match + recruiting profile,
+                     populated by populateEvalInfoTab() in openEvaluationModal. -->
                 <div class="eval-tab-content active" data-eval-tab-content="info">
-                    <!-- Shown on board entries whose pool data was redacted on a
-                         team switch. The recruit's name + the coach's own
-                         grade still survive; everything else was gathered at
-                         a different school and is no longer available. -->
-                    <div id="evalRedactedBanner" class="eval-redacted-banner" style="display: none;">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-                            <circle cx="12" cy="12" r="10"></circle>
-                            <line x1="12" y1="11" x2="12" y2="17"></line>
-                            <line x1="12" y1="7" x2="12.01" y2="7"></line>
-                        </svg>
-                        <div class="eval-redacted-banner-text">
-                            <p class="eval-redacted-banner-title">Info gathered at a different school</p>
-                            <p class="eval-redacted-banner-body">This recruit's questionnaire and prior evaluations were collected by a different school and are no longer available. Send them a new questionnaire to collect updated info for your school.</p>
+                    <p class="eval-rp-loading" id="evalRpLoading" style="display: none;">Loading recruit profile…</p>
+
+                    <!-- AI Match score + fit (top) -->
+                    <div class="eval-rp-match" id="evalMatchBlock" style="display: none;">
+                        <div class="eval-rp-match-label">AI Match</div>
+                        <div class="eval-rp-match-score" id="evalMatchScore">—</div>
+                        <div class="eval-rp-match-sub" id="evalMatchSub"></div>
+                    </div>
+                    <p class="eval-rp-match-empty" id="evalMatchEmpty" style="display: none;">Not yet rated</p>
+
+                    <!-- Recruiting-profile subtab dropdown -->
+                    <div class="eval-rp-subnav" id="evalRpSubnav" style="display: none;">
+                        <select id="evalRpSubtabSelect" class="eval-rp-subtab-select">
+                            <option value="evalRpAcademics">Academics</option>
+                            <option value="evalRpMajorGoals">Major &amp; Goals</option>
+                            <option value="evalRpFinancial">Financial Fit</option>
+                            <option value="evalRpLevelLocation">Level &amp; Location</option>
+                            <option value="evalRpPriorities">Priorities &amp; Athletics</option>
+                        </select>
+                    </div>
+
+                    <div class="eval-rp-pane active" data-eval-rp-subtab="evalRpAcademics" id="evalRpAcademics">
+                        <div class="eval-rp-card"><div class="eval-rp-grid">
+                            <div class="eval-rp-item"><div class="eval-rp-label">Unweighted GPA</div><div class="eval-rp-value" id="evalRpUnweightedGpa">—</div></div>
+                            <div class="eval-rp-item"><div class="eval-rp-label">Weighted GPA</div><div class="eval-rp-value" id="evalRpWeightedGpa">—</div></div>
+                            <div class="eval-rp-item"><div class="eval-rp-label">SAT Score</div><div class="eval-rp-value" id="evalRpSat">—</div></div>
+                            <div class="eval-rp-item"><div class="eval-rp-label">ACT Score</div><div class="eval-rp-value" id="evalRpAct">—</div></div>
+                            <div class="eval-rp-item"><div class="eval-rp-label">AP / IB / Honors</div><div class="eval-rp-value" id="evalRpApIb">—</div></div>
+                            <div class="eval-rp-item"><div class="eval-rp-label">Class Rank</div><div class="eval-rp-value" id="evalRpClassRank">—</div></div>
+                        </div></div>
+                    </div>
+
+                    <div class="eval-rp-pane" data-eval-rp-subtab="evalRpMajorGoals" id="evalRpMajorGoals">
+                        <div class="eval-rp-card">
+                            <div class="eval-rp-item-block"><div class="eval-rp-label">Intended Major(s)</div><div class="eval-rp-tags" id="evalRpMajor"><span class="eval-rp-value">—</span></div></div>
+                            <div class="eval-rp-item-block"><div class="eval-rp-label">What they're looking for in a program</div><div class="eval-rp-value eval-rp-freetext" id="evalRpLookingFor">—</div></div>
                         </div>
-                        <button type="button" class="eval-redacted-banner-cta" id="evalRedactedSendQuestionnaireBtn">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                            </svg>
-                            <span>Copy Questionnaire Link</span>
-                        </button>
                     </div>
-                    <div id="evalProfileSection" style="display: none;">
-                        <h4 class="eval-info-section-title">Direct Recruit Profile</h4>
-                        <a id="evalProfileLink" class="eval-profile-link">View full profile →</a>
+
+                    <div class="eval-rp-pane" data-eval-rp-subtab="evalRpFinancial" id="evalRpFinancial">
+                        <div class="eval-rp-card"><div class="eval-rp-grid">
+                            <div class="eval-rp-item"><div class="eval-rp-label">Needs financial aid</div><div class="eval-rp-value" id="evalRpNeedsAid">—</div></div>
+                            <div class="eval-rp-item"><div class="eval-rp-label">Needs athletic scholarship</div><div class="eval-rp-value" id="evalRpNeedsScholarship">—</div></div>
+                            <div class="eval-rp-item"><div class="eval-rp-label">Pell-eligible / first-gen</div><div class="eval-rp-value" id="evalRpPellFirstGen">—</div></div>
+                            <div class="eval-rp-item"><div class="eval-rp-label">Home ZIP Code</div><div class="eval-rp-value" id="evalRpHomeZip">—</div></div>
+                        </div></div>
                     </div>
-                    <div id="evalQuestionnaireSection" style="display: none;">
-                        <h4 class="eval-info-section-title">Questionnaire</h4>
-                        <div id="evalQuestionnaireBody"></div>
+
+                    <div class="eval-rp-pane" data-eval-rp-subtab="evalRpLevelLocation" id="evalRpLevelLocation">
+                        <div class="eval-rp-card">
+                            <div class="eval-rp-item-block"><div class="eval-rp-label">Levels open to playing</div><div class="eval-rp-tags" id="evalRpLevelsOpen"><span class="eval-rp-value">—</span></div></div>
+                            <div class="eval-rp-item-block"><div class="eval-rp-label">Preferred region(s)</div><div class="eval-rp-tags" id="evalRpPreferredRegions"><span class="eval-rp-value">—</span></div></div>
+                            <div class="eval-rp-item-block"><div class="eval-rp-label">Preferred campus setting</div><div class="eval-rp-value" id="evalRpCampusSetting">—</div></div>
+                        </div>
                     </div>
-                    <p class="eval-info-empty" id="evalInfoEmpty" style="display: none;">No questionnaire or profile info available.</p>
+
+                    <div class="eval-rp-pane" data-eval-rp-subtab="evalRpPriorities" id="evalRpPriorities">
+                        <div class="eval-rp-card"><div class="eval-rp-grid">
+                            <div class="eval-rp-item"><div class="eval-rp-label">Early playing time</div><div class="eval-rp-value" id="evalRpImpPlayingTime">—</div></div>
+                            <div class="eval-rp-item"><div class="eval-rp-label">Staying close to home</div><div class="eval-rp-value" id="evalRpImpCloseToHome">—</div></div>
+                            <div class="eval-rp-item"><div class="eval-rp-label">Academics vs. football</div><div class="eval-rp-value" id="evalRpImpAcademics">—</div></div>
+                            <div class="eval-rp-item"><div class="eval-rp-label">Level of competition</div><div class="eval-rp-value" id="evalRpImpCompetition">—</div></div>
+                        </div></div>
+                        <div class="eval-rp-card" style="margin-top: 1rem;">
+                            <div class="eval-rp-item-block"><div class="eval-rp-label">Other sports</div><div class="eval-rp-tags" id="evalRpOtherSports"><span class="eval-rp-value">—</span></div></div>
+                            <div class="eval-rp-grid">
+                                <div class="eval-rp-item"><div class="eval-rp-label">100m</div><div class="eval-rp-value" id="evalRpTrack100">—</div></div>
+                                <div class="eval-rp-item"><div class="eval-rp-label">200m</div><div class="eval-rp-value" id="evalRpTrack200">—</div></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <p class="eval-rp-error" id="evalRpError" style="display: none;"></p>
                 </div>
 
                 <!-- Evaluation tab content — merged list of every coach's grade
@@ -1500,6 +1392,8 @@
     </div>
 
     <script src="../../shared/api.js"></script>
+    <script src="../../shared/fit-display.js"></script>
+    <script src="../../shared/fit-info-modal.js"></script>
     <script src="../../shared/modal-utils.js"></script>
     <script src="../../shared/school-search.js"></script>
     <script src="../../shared/mobile-header.js?v=4"></script>

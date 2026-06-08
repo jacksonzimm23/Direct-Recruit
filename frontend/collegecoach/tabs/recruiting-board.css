@@ -2110,15 +2110,12 @@ body.touch-dragging {
     display: block;
 }
 
-/* When the Pipeline OR Team Pool tab is active, hide the shared board
-   controls + field (they live outside .rb-tab-content as page-level siblings).
-   Neither subtab uses the football field. */
+/* When the Pipeline tab is active, hide the shared board controls + field
+   (they live outside .rb-tab-content as page-level siblings). The Pipeline
+   subtab doesn't use the football field. */
 body.rb-tab-pipeline .recruiting-board-main .board-controls,
 body.rb-tab-pipeline .recruiting-board-main .remove-mode-indicator,
-body.rb-tab-pipeline .recruiting-board-main .football-field-container,
-body.rb-tab-team-pool .recruiting-board-main .board-controls,
-body.rb-tab-team-pool .recruiting-board-main .remove-mode-indicator,
-body.rb-tab-team-pool .recruiting-board-main .football-field-container {
+body.rb-tab-pipeline .recruiting-board-main .football-field-container {
     display: none !important;
 }
 
@@ -6414,4 +6411,165 @@ body.rb-shared-no-boards .recruiting-board-main .football-field-container {
         align-self: stretch;
         justify-content: center;
     }
+}
+
+/* ============================================================
+   Pipeline modal Info tab — AI Match + recruiting profile.
+   Mirrors the player recruiting-profile look, scoped to .eval-rp-*.
+   ============================================================ */
+.eval-rp-match {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 0.4rem;
+    padding: 1.4rem 1rem;
+    margin-bottom: 1.25rem;
+    background: linear-gradient(135deg, rgba(18, 130, 162, 0.18), rgba(18, 130, 162, 0.06));
+    border: 2px solid rgba(18, 130, 162, 0.35);
+    border-radius: 14px;
+}
+.eval-rp-match-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #fefcfb;
+}
+.eval-rp-match-score {
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: #1282a2;
+    line-height: 1;
+}
+.eval-rp-match-sub {
+    position: relative;
+    display: inline-flex;
+    align-self: center;
+    align-items: center;
+}
+.eval-rp-match-rating {
+    font-size: 1rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+.eval-rp-match-info {
+    position: absolute;
+    left: 100%;
+    margin-left: 0.4rem;
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    color: #1282a2;
+    display: inline-flex;
+    align-items: center;
+    transition: opacity 0.15s ease;
+}
+.eval-rp-match-info:hover { opacity: 0.8; }
+.eval-rp-match-info svg { width: 18px; height: 18px; }
+.eval-rp-match-dims {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    width: 100%;
+    margin-top: 0.85rem;
+    text-align: left;
+}
+.eval-rp-dim {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 0.75rem;
+    padding: 0.45rem 0.7rem;
+    background: rgba(254, 252, 251, 0.03);
+    border-radius: 8px;
+}
+.eval-rp-dim-label { font-size: 0.85rem; font-weight: 700; color: #fefcfb; }
+.eval-rp-dim-detail { font-size: 0.8rem; color: rgba(254, 252, 251, 0.6); text-align: right; }
+.eval-rp-dim-empty { font-size: 0.85rem; color: rgba(254, 252, 251, 0.55); font-style: italic; margin: 0.5rem 0 0; }
+.eval-rp-match-empty {
+    text-align: center;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: rgba(254, 252, 251, 0.55);
+    padding: 1rem 0;
+    margin: 0 0 1rem;
+}
+.eval-rp-subnav { margin-bottom: 1.25rem; }
+.eval-rp-subtab-select {
+    width: 100%;
+    padding: 0.875rem 1rem;
+    background: rgba(254, 252, 251, 0.05);
+    border: 2px solid rgba(18, 130, 162, 0.3);
+    border-radius: 10px;
+    color: #fefcfb;
+    font-size: 1rem;
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    cursor: pointer;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%231282a2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 1rem center;
+    background-size: 1.25rem;
+    padding-right: 2.75rem;
+}
+.eval-rp-subtab-select:focus {
+    outline: none;
+    border-color: #1282a2;
+    background-color: rgba(254, 252, 251, 0.08);
+}
+.eval-rp-subtab-select option { background: #0a1a3f; color: #fefcfb; }
+.eval-rp-pane { display: none; }
+.eval-rp-pane.active { display: block; }
+.eval-rp-card {
+    background: rgba(254, 252, 251, 0.03);
+    border: 1px solid rgba(18, 130, 162, 0.2);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+}
+.eval-rp-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+}
+.eval-rp-item { display: flex; flex-direction: column; gap: 0.5rem; }
+.eval-rp-label {
+    font-size: 0.85rem;
+    color: rgba(254, 252, 251, 0.6);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+.eval-rp-value { font-size: 1.1rem; color: #fefcfb; font-weight: 700; }
+.eval-rp-item-block { margin-bottom: 1.25rem; }
+.eval-rp-item-block:last-child { margin-bottom: 0; }
+.eval-rp-freetext { line-height: 1.6; white-space: pre-wrap; font-weight: 600; }
+.eval-rp-tags { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.4rem; }
+.eval-rp-tag {
+    display: inline-block;
+    padding: 0.35rem 0.75rem;
+    background: rgba(18, 130, 162, 0.15);
+    border: 1px solid rgba(18, 130, 162, 0.35);
+    border-radius: 16px;
+    color: #1282a2;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+.eval-rp-loading, .eval-rp-error {
+    text-align: center;
+    color: rgba(254, 252, 251, 0.6);
+    font-size: 0.9rem;
+    padding: 1rem 0;
+    margin: 0;
+}
+.eval-rp-error { color: #f59e0b; }
+@media (max-width: 768px) {
+    .eval-rp-grid { grid-template-columns: 1fr; gap: 1rem; }
+    .eval-rp-match-score { font-size: 2.1rem; }
 }

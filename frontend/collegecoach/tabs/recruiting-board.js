@@ -55,7 +55,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                 <p>Your personal short list of recruits you're actively evaluating. This is where you grade players and decide who's worth promoting to a board.</p>
                 <h4>How to use it</h4>
                 <ol>
-                    <li>Add recruits from the Team Pool or directly from a player's profile.</li>
+                    <li>Add recruits directly from a player's profile or the Discover and AI tools.</li>
                     <li>Click a recruit to open their evaluation card. Set a grade from 0 to 100, pick a color tag, and add notes.</li>
                     <li>Use the filters at the top to slice your pipeline by position, grad year, state, or measurables.</li>
                     <li>When you're ready to commit, promote them to a Personal Board or Shared Board. Their evaluation history travels with them.</li>
@@ -68,27 +68,6 @@ document.addEventListener('DOMContentLoaded', async function() {
                 </ul>
                 <h4>Color tags</h4>
                 <p>Dark Green, Light Green, Yellow, Orange, Red, Dark Red. Your school sets the meaning. Use them consistently.</p>
-            `,
-        },
-        'team-pool': {
-            title: 'How Team Pool Works',
-            body: `
-                <p><strong>What it is</strong></p>
-                <p>Your school's shared inbox of recruits who filled out your team's questionnaire. Every coach at your school sees the same pool.</p>
-                <h4>How to use it</h4>
-                <ol>
-                    <li>Click Copy Questionnaire Link and share it with recruits (email, DMs, camp flyers, your school's recruiting page).</li>
-                    <li>When a recruit submits, they appear here automatically. Re-submissions update their info, and you'll see a submission count.</li>
-                    <li>Use the filters (position, grad year, state, height, weight, GPA) to narrow the list.</li>
-                    <li>Click any recruit to open their full submission, including transcript, contact info, and their DR profile if they have one.</li>
-                    <li>Hit Add to Pipeline to start evaluating them.</li>
-                </ol>
-                <h4>Good to know</h4>
-                <ul>
-                    <li>&#10003; "In my pipeline" means you've already added this recruit.</li>
-                    <li>&#10003; "In another coach's pipeline" means another coach at your school is already on them.</li>
-                    <li>Recruits without a DR account won't have a profile picture. That's normal.</li>
-                </ul>
             `,
         },
         'shared-boards': {
@@ -176,36 +155,6 @@ document.addEventListener('DOMContentLoaded', async function() {
     if (_rbInfoOverlay) _rbInfoOverlay.addEventListener('click', closeInfoModal);
     if (_rbInfoClose) _rbInfoClose.addEventListener('click', closeInfoModal);
     if (_rbInfoGotIt) _rbInfoGotIt.addEventListener('click', closeInfoModal);
-
-    // "Copy Questionnaire Link" inside the team-switch redacted banner. Same
-    // per-school link the Team Pool tab uses — cached after first fetch so
-    // repeated clicks don't hammer the API.
-    let _redactedQuestionnaireUrl = null;
-    const _redactedCopyBtn = document.getElementById('evalRedactedSendQuestionnaireBtn');
-    if (_redactedCopyBtn) {
-        _redactedCopyBtn.addEventListener('click', async () => {
-            try {
-                if (!_redactedQuestionnaireUrl) {
-                    const linkData = await API.get('/recruiting-board/my-questionnaire');
-                    _redactedQuestionnaireUrl = (linkData && linkData.public_url) || null;
-                }
-                if (!_redactedQuestionnaireUrl) {
-                    if (typeof showToast === 'function') {
-                        showToast('Could not load your questionnaire link. Try the Team Pool tab.', 'error');
-                    }
-                    return;
-                }
-                await navigator.clipboard.writeText(_redactedQuestionnaireUrl);
-                if (typeof showToast === 'function') {
-                    showToast('Questionnaire link copied to clipboard', 'success');
-                }
-            } catch (_) {
-                if (typeof showToast === 'function') {
-                    showToast('Could not copy. Open the Team Pool tab and copy the link manually.', 'error');
-                }
-            }
-        });
-    }
 
     // Track if board has unsaved changes
     let hasUnsavedChanges = false;
@@ -315,9 +264,8 @@ document.addEventListener('DOMContentLoaded', async function() {
             content.classList.toggle('active', content.id === targetId);
         });
         // Body class drives visibility of the shared football field / controls.
-        // Hidden on Pipeline AND Team Pool — neither subtab uses the field.
+        // Hidden on Pipeline — that subtab doesn't use the field.
         document.body.classList.toggle('rb-tab-pipeline', tabName === 'pipeline');
-        document.body.classList.toggle('rb-tab-team-pool', tabName === 'team-pool');
         localStorage.setItem('lastViewedRecruitingBoardSubtab', tabName);
 
         if (tabName === 'shared-boards') {
@@ -351,13 +299,6 @@ document.addEventListener('DOMContentLoaded', async function() {
                 const specsField = document.getElementById('specsField');
                 if (specsField) specsField.innerHTML = '';
                 showPersonalEmptyState();
-            }
-        }
-        if (tabName === 'team-pool') {
-            if (!teamPoolInitialized) {
-                await initializeTeamPoolTab();
-            } else {
-                await refreshTeamPool();
             }
         }
         if (tabName === 'pipeline') {
@@ -428,7 +369,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         // rule governs the shared football field while we're on this tab.
         // Otherwise a lingering rb-shared-* / rb-tab-* class (or the absence of
         // rb-personal-empty) could leave another tab's board visible here.
-        document.body.classList.remove('rb-shared-empty', 'rb-shared-no-boards', 'rb-tab-pipeline', 'rb-tab-team-pool');
+        document.body.classList.remove('rb-shared-empty', 'rb-shared-no-boards', 'rb-tab-pipeline');
         document.body.classList.add('rb-personal-empty');
         if (pbEmptyState) pbEmptyState.style.display = 'flex';
         const selectorRow = document.querySelector('.pb-board-selector-row');
@@ -457,7 +398,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         // Same defensive cleanup as loadSharedGroupBoard — clear any stale
         // field-hiding body classes so the football field is guaranteed
         // visible while a real board is being rendered.
-        document.body.classList.remove('rb-shared-no-boards', 'rb-shared-empty', 'rb-personal-empty', 'rb-tab-pipeline', 'rb-tab-team-pool');
+        document.body.classList.remove('rb-shared-no-boards', 'rb-shared-empty', 'rb-personal-empty', 'rb-tab-pipeline');
 
         try {
             const configData = await API.get(`/recruiting-board/personal/${boardId}/config`);
@@ -859,7 +800,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         // invited coach accepts and lands on a group that has boards, the
         // earlier `rb-shared-no-boards` state from initial load can persist
         // and keep the field hidden).
-        document.body.classList.remove('rb-shared-no-boards', 'rb-shared-empty', 'rb-personal-empty', 'rb-tab-pipeline', 'rb-tab-team-pool');
+        document.body.classList.remove('rb-shared-no-boards', 'rb-shared-empty', 'rb-personal-empty', 'rb-tab-pipeline');
 
         try {
             const cfg = await API.get(`/recruiting-board/groups/${currentSharedGroupId}/boards/${boardId}/config`);
@@ -3368,22 +3309,9 @@ document.addEventListener('DOMContentLoaded', async function() {
         });
     }
 
-    // ==================== Team Pool (Plan 3) ====================
-    // Per-school recruit pool. Reads pool_entries from the questionnaire keyed
-    // on the coach's normalized team_name. Browse-only in Plan 3 — Plan 4
-    // adds "Add to My Pipeline".
-
-    let teamPoolInitialized = false;
-    // Single-handle min-only filters (Plan 3.5 — matches Discover Players UX).
-    // `position` is now a single string (not array) since the dropdown is single-select.
-    let teamPoolFilters = {
-        position: '',
-        grad_year: '',
-        state: '',
-        min_height: null,
-        min_weight: null,
-        min_gpa: null
-    };
+    // ==================== Shared lookups (used by Pipeline filters) ====================
+    // POOL_POSITIONS + US_STATES + inchesToHeight remain in use by the Pipeline
+    // filter dropdowns and the eval-modal subheader (Team Pool itself removed).
 
     const POOL_POSITIONS = [
         ['QB','Quarterback'],['RB','Running Back'],['FB','Fullback'],
@@ -3412,425 +3340,6 @@ document.addEventListener('DOMContentLoaded', async function() {
         const ft = Math.floor(inches / 12);
         const inch = inches % 12;
         return `${ft}'${inch}"`;
-    }
-
-    async function initializeTeamPoolTab() {
-        const noTeamEl = document.getElementById('teamPoolNoTeam');
-        const headerEl = document.getElementById('teamPoolHeader');
-        const filtersEl = document.getElementById('teamPoolFilters');
-        const listEl = document.getElementById('teamPoolList');
-        const loadingEl = document.getElementById('teamPoolLoading');
-        const emptyEl = document.getElementById('teamPoolEmpty');
-
-        loadingEl.style.display = 'block';
-        noTeamEl.style.display = 'none';
-        headerEl.style.display = 'none';
-        filtersEl.style.display = 'none';
-        listEl.style.display = 'none';
-        emptyEl.style.display = 'none';
-
-        // Resolve coach's team_name via /auth/me
-        let me;
-        try {
-            me = await API.auth.getCurrentUser();
-        } catch (err) {
-            loadingEl.style.display = 'none';
-            noTeamEl.style.display = 'flex';
-            return;
-        }
-        const teamName = (me && me.profile && me.profile.team_name) || null;
-        if (!teamName) {
-            loadingEl.style.display = 'none';
-            noTeamEl.style.display = 'flex';
-            return;
-        }
-
-        // Render school header (logo + name)
-        try {
-            if (typeof ensureSchoolLogosLoaded === 'function') {
-                await ensureSchoolLogosLoaded('../../assets');
-            }
-        } catch (_) { /* logos are best-effort */ }
-        const logoWrap = document.getElementById('teamPoolLogo');
-        if (typeof getSchoolLogoHTML === 'function') {
-            logoWrap.innerHTML = getSchoolLogoHTML(teamName, '../../assets', 56) || '';
-        }
-        document.getElementById('teamPoolSchoolName').textContent = teamName;
-
-        // Wire the Copy Questionnaire Link button (moved from Pipeline tab in 3.5).
-        // Fetch the link once on init; cache it for the button click handler.
-        try {
-            const linkData = await API.get('/recruiting-board/my-questionnaire');
-            const copyBtn = document.getElementById('poolCopyLinkBtn');
-            if (copyBtn && linkData && linkData.public_url) {
-                copyBtn.addEventListener('click', async () => {
-                    try {
-                        await navigator.clipboard.writeText(linkData.public_url);
-                        if (typeof showToast === 'function') {
-                            showToast('Questionnaire link copied to clipboard', 'success');
-                        }
-                    } catch (_) {
-                        if (typeof showToast === 'function') {
-                            showToast('Could not copy. Select the URL manually.', 'error');
-                        }
-                    }
-                });
-            }
-        } catch (_) {
-            // Hide the button if we can't load the link (rare — should not happen
-            // since we already verified team_name is set above).
-            const copyBtn = document.getElementById('poolCopyLinkBtn');
-            if (copyBtn) copyBtn.style.display = 'none';
-        }
-
-        // Position dropdown (single-select, matches Discover Players UX)
-        const positionSel = document.getElementById('poolPosition');
-        POOL_POSITIONS.forEach(([code, label]) => {
-            const opt = document.createElement('option');
-            opt.value = code;
-            opt.textContent = `${label} (${code})`;
-            positionSel.appendChild(opt);
-        });
-
-        // Graduation year dropdown
-        const yearSel = document.getElementById('poolGradYear');
-        for (let y = 2024; y <= 2032; y++) {
-            const opt = document.createElement('option');
-            opt.value = String(y); opt.textContent = String(y);
-            yearSel.appendChild(opt);
-        }
-
-        // State dropdown
-        const stateSel = document.getElementById('poolState');
-        US_STATES.forEach(([abbr, name]) => {
-            const opt = document.createElement('option');
-            opt.value = abbr; opt.textContent = name;
-            stateSel.appendChild(opt);
-        });
-
-        // Sliders — single-handle min-only. INPUT events just update the
-        // display label; the actual filter doesn't fire until "Apply Filters".
-        const heightSlider = document.getElementById('poolHeightSlider');
-        const heightValue = document.getElementById('poolHeightValue');
-        heightSlider.addEventListener('input', () => {
-            heightValue.textContent = inchesToHeight(Number(heightSlider.value));
-        });
-
-        const weightSlider = document.getElementById('poolWeightSlider');
-        const weightValue = document.getElementById('poolWeightValue');
-        weightSlider.addEventListener('input', () => {
-            weightValue.textContent = weightSlider.value;
-        });
-
-        const gpaSlider = document.getElementById('poolGpaSlider');
-        const gpaValue = document.getElementById('poolGpaValue');
-        gpaSlider.addEventListener('input', () => {
-            // GPA slider stores 0-40 internally for step=1; display divides by 10.
-            gpaValue.textContent = (Number(gpaSlider.value) / 10).toFixed(1);
-        });
-
-        // Apply Filters button — reads all inputs and refreshes
-        document.getElementById('poolFiltersApply').addEventListener('click', () => {
-            const heightMin = Number(heightSlider.value);
-            const weightMin = Number(weightSlider.value);
-            const gpaMinTenths = Number(gpaSlider.value);
-            teamPoolFilters = {
-                position: positionSel.value || '',
-                grad_year: yearSel.value || '',
-                state: stateSel.value || '',
-                // Only send min_* if the user moved off the bottom (matches Discover)
-                min_height: heightMin > Number(heightSlider.min) ? heightMin : null,
-                min_weight: weightMin > Number(weightSlider.min) ? weightMin : null,
-                min_gpa: gpaMinTenths > 0 ? (gpaMinTenths / 10) : null
-            };
-            refreshTeamPool();
-        });
-
-        // Reset All button — clears every input and refreshes
-        document.getElementById('poolFiltersReset').addEventListener('click', () => {
-            positionSel.value = '';
-            yearSel.value = '';
-            stateSel.value = '';
-            heightSlider.value = heightSlider.min;
-            weightSlider.value = weightSlider.min;
-            gpaSlider.value = 0;
-            heightValue.textContent = inchesToHeight(Number(heightSlider.min));
-            weightValue.textContent = weightSlider.min;
-            gpaValue.textContent = '0.0';
-            teamPoolFilters = {
-                position: '', grad_year: '', state: '',
-                min_height: null, min_weight: null, min_gpa: null
-            };
-            refreshTeamPool();
-        });
-
-        // Filter panel collapse toggle — same UX as the Pipeline tab.
-        wireFilterPanelToggle({
-            containerId: 'teamPoolFilters',
-            toggleBtnId: 'poolFiltersToggle',
-            storageKey: 'poolFiltersHidden',
-        });
-
-        teamPoolInitialized = true;
-
-        // Reveal UI + first load
-        headerEl.style.display = 'block';
-        filtersEl.style.display = 'block';
-        await refreshTeamPool();
-    }
-
-    async function refreshTeamPool() {
-        const listEl = document.getElementById('teamPoolList');
-        const loadingEl = document.getElementById('teamPoolLoading');
-        const emptyEl = document.getElementById('teamPoolEmpty');
-        const countEl = document.getElementById('teamPoolCount');
-
-        loadingEl.style.display = 'block';
-        listEl.style.display = 'none';
-        emptyEl.style.display = 'none';
-
-        try {
-            const data = await API.pool.list(teamPoolFilters);
-            loadingEl.style.display = 'none';
-            countEl.textContent = `${data.total} submission${data.total === 1 ? '' : 's'}`;
-            // Also update the filter-results count footer
-            const resultsCountEl = document.getElementById('poolResultsCount');
-            if (resultsCountEl) resultsCountEl.textContent = data.total;
-
-            if (!data.entries || data.entries.length === 0) {
-                emptyEl.style.display = 'flex';
-                listEl.innerHTML = '';
-                return;
-            }
-
-            listEl.style.display = 'flex';
-            listEl.innerHTML = '';
-            for (const entry of data.entries) {
-                listEl.appendChild(buildPoolRow(entry));
-            }
-        } catch (err) {
-            loadingEl.style.display = 'none';
-            if (typeof showToast === 'function') {
-                showToast(err && err.message ? err.message : 'Failed to load pool', 'error');
-            }
-        }
-    }
-
-    function buildPoolRow(entry) {
-        // Gray when no DR account, cerulean when linked (Plan 3.5).
-        const hasAccount = !!entry.linked_player_user_id;
-        const accentColor = hasAccount ? '#1282a2' : '#9ca3af';
-        const ringBg = hasAccount
-            ? 'rgba(18, 130, 162, 0.18)'
-            : 'rgba(156, 163, 175, 0.18)';
-
-        const fullName = `${entry.first_name || ''} ${entry.last_name || ''}`.trim() || 'Unknown';
-
-        // Subheader = hsplayer format: Position • Height • Weight • GradYear
-        const meta = [];
-        if (entry.positions && entry.positions.length) meta.push(entry.positions.join('/'));
-        if (entry.height_inches) meta.push(inchesToHeight(entry.height_inches));
-        if (entry.weight_lbs) meta.push(`${entry.weight_lbs} lbs`);
-        if (entry.graduation_year) meta.push(String(entry.graduation_year));
-        const subheader = meta.join(' • ');
-
-        // Avatar: only show a profile image when a DR account is linked
-        // AND that account has one. Questionnaire-only entries always show
-        // the silhouette fallback (Plan 3.5 — no questionnaire profile pics).
-        const avatarInner = (hasAccount && entry.profile_image_url)
-            ? `<img src="${escapeHtml(entry.profile_image_url)}" alt="" class="rb-pool-row-avatar-img">`
-            : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                 <circle cx="12" cy="7" r="4"></circle>
-               </svg>`;
-
-        // Badges (DR member + Plan 4 cross-coach checkmark). Resubmission
-        // badge intentionally omitted from the row — a new submission
-        // already bumps the recruit to the top of the list (sorted by
-        // last_submitted_at DESC), and the detail modal still surfaces the
-        // full submission history.
-        const badges = [];
-        if (entry.is_in_any_pipeline_at_school) {
-            badges.push('<span class="rb-pool-row-check" title="Already in a coach’s pipeline at this school">✓</span>');
-        }
-        if (hasAccount) {
-            badges.push('<span class="rb-pool-row-badge dr">DR Member</span>');
-        }
-
-        // Plan 4 "Add to My Pipeline" action button (or disabled "In Your Pipeline")
-        const actionBtnHtml = entry.is_in_my_pipeline
-            ? '<button class="rb-pool-row-action in-pipeline" disabled>In Your Pipeline</button>'
-            : '<button class="rb-pool-row-action add-pipeline" type="button">Add to Pipeline</button>';
-
-        const row = document.createElement('div');
-        row.className = 'rb-pool-row';
-        row.dataset.entryId = entry.id;
-        row.innerHTML = `
-            <div class="rb-pool-row-avatar" style="border-color: ${accentColor}; background: ${ringBg}; color: ${accentColor};">
-                ${avatarInner}
-            </div>
-            <div class="rb-pool-row-info">
-                <div class="rb-pool-row-name">
-                    ${escapeHtml(fullName)}
-                    ${badges.join('')}
-                </div>
-                <div class="rb-pool-row-meta" style="color: ${accentColor};">${escapeHtml(subheader)}</div>
-            </div>
-            <div class="rb-pool-row-actions">${actionBtnHtml}</div>
-        `;
-        row.addEventListener('click', () => openPoolDetailModal(entry.id));
-        const actionBtn = row.querySelector('.rb-pool-row-action.add-pipeline');
-        if (actionBtn) {
-            actionBtn.addEventListener('click', (ev) => {
-                ev.stopPropagation();
-                addPoolEntryToPipeline(entry.id, { rowEl: row });
-            });
-        }
-        return row;
-    }
-
-    // Plan 4 — Add a pool entry to the coach's pipeline, optimistically update
-    // the row's checkmark + button + (if the modal is open for this entry)
-    // the modal footer button too. Re-fetches pool data is not required; the
-    // local row mutation matches what the next refreshTeamPool would produce.
-    async function addPoolEntryToPipeline(entryId, { rowEl = null, modalBtn = null } = {}) {
-        try {
-            await API.pipeline.addFromPool(entryId);
-            if (typeof showToast === 'function') showToast('Added to your pipeline', 'success');
-
-            // Optimistic in-place update on the matching row (find it if not provided)
-            const targetRow = rowEl || document.querySelector(`.rb-pool-row[data-entry-id="${entryId}"]`);
-            if (targetRow) {
-                const nameEl = targetRow.querySelector('.rb-pool-row-name');
-                if (nameEl && !nameEl.querySelector('.rb-pool-row-check')) {
-                    nameEl.insertAdjacentHTML('afterbegin',
-                        '<span class="rb-pool-row-check" title="Already in a coach’s pipeline at this school">✓</span>');
-                }
-                const actionsEl = targetRow.querySelector('.rb-pool-row-actions');
-                if (actionsEl) {
-                    actionsEl.innerHTML = '<button class="rb-pool-row-action in-pipeline" disabled>In Your Pipeline</button>';
-                }
-            }
-            // Sync the modal footer button if it's open for this entry
-            const modalEntryEl = document.getElementById('poolDetailAddPipelineBtn');
-            if (modalEntryEl && currentPoolModalEntryId === entryId) {
-                modalEntryEl.outerHTML = '<button class="btn-submit" id="poolDetailAddPipelineBtn" disabled>In Your Pipeline</button>';
-            }
-        } catch (err) {
-            const status = err && err.status;
-            const msg = (err && err.message) || 'Failed to add to pipeline';
-            if (typeof showToast === 'function') {
-                showToast(msg, status === 409 ? 'warning' : 'error');
-            }
-        }
-    }
-
-    // Tracks which pool entry the detail modal currently has open — used by
-    // the modal-footer Add-to-Pipeline button + the optimistic sync inside
-    // addPoolEntryToPipeline so external triggers (pool card click) also
-    // update the modal button if it's showing the same entry.
-    let currentPoolModalEntryId = null;
-
-    // ---------- Pool Entry Detail Modal ----------
-    async function openPoolDetailModal(entryId) {
-        const modal = document.getElementById('poolDetailModal');
-        const nameEl = document.getElementById('poolDetailName');
-        const drBadge = document.getElementById('poolDetailDrBadge');
-        const resubBadge = document.getElementById('poolDetailResubmittedBadge');
-        const drTabBtn = document.getElementById('poolDetailDrTabBtn');
-        const avatarEl = document.getElementById('poolDetailAvatar');
-        const qBody = document.getElementById('poolDetailQuestionnaire');
-        const histBody = document.getElementById('poolDetailHistory');
-        const drBody = document.getElementById('poolDetailDrProfile');
-        const addPipelineBtn = document.getElementById('poolDetailAddPipelineBtn');
-        if (!modal) return;
-        currentPoolModalEntryId = entryId;
-
-        const silhouetteSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>';
-
-        // Reset state
-        nameEl.textContent = 'Loading…';
-        drBadge.style.display = 'none';
-        resubBadge.style.display = 'none';
-        drTabBtn.style.display = 'none';
-        qBody.innerHTML = '<p class="pool-detail-loading">Loading…</p>';
-        histBody.innerHTML = '';
-        drBody.innerHTML = '';
-        if (avatarEl) {
-            avatarEl.style.borderColor = '#9ca3af';
-            avatarEl.style.background = 'rgba(156, 163, 175, 0.18)';
-            avatarEl.style.color = '#9ca3af';
-            avatarEl.innerHTML = silhouetteSvg;
-        }
-
-        // Show modal + reset to first inner tab
-        modal.classList.add('active');
-        switchPoolDetailTab('questionnaire');
-
-        try {
-            const data = await API.pool.getEntry(entryId);
-            const entry = data.entry || {};
-            const submissions = data.submissions || [];
-            const dr = data.dr_profile || null;
-            const latest = submissions.length ? submissions[submissions.length - 1].submission_data : {};
-            const personal = latest.personal || {};
-
-            const fullName = `${personal.first_name || ''} ${personal.last_name || ''}`.trim() || entry.email || 'Recruit';
-            nameEl.textContent = fullName;
-
-            const hasAccount = !!entry.linked_player_user_id;
-            const accentColor = hasAccount ? '#1282a2' : '#9ca3af';
-            const ringBg = hasAccount
-                ? 'rgba(18, 130, 162, 0.18)'
-                : 'rgba(156, 163, 175, 0.18)';
-            if (avatarEl) {
-                avatarEl.style.borderColor = accentColor;
-                avatarEl.style.background = ringBg;
-                avatarEl.style.color = accentColor;
-                avatarEl.innerHTML = (hasAccount && entry.profile_image_url)
-                    ? `<img src="${escapeHtml(entry.profile_image_url)}" alt="" class="pool-detail-avatar-img">`
-                    : silhouetteSvg;
-            }
-
-            if (hasAccount) {
-                drBadge.style.display = 'inline-flex';
-                drTabBtn.style.display = 'inline-flex';
-            }
-            if (entry.submission_count && entry.submission_count > 1) {
-                resubBadge.style.display = 'inline-flex';
-                resubBadge.textContent = `Resubmitted ${entry.submission_count}x`;
-            }
-
-            qBody.innerHTML = renderQuestionnaireView(latest, entry.transcript_url || null);
-            histBody.innerHTML = renderSubmissionHistory(submissions);
-            drBody.innerHTML = dr ? renderDrProfile(dr) : '<p class="pool-detail-empty">No Direct Recruit profile linked.</p>';
-
-            // Plan 4 — modal footer "Add to Pipeline" button. Renders as
-            // disabled "In Your Pipeline" when this coach already has them.
-            // The button element is recreated rather than just disabled so
-            // the click listener attached below is always fresh.
-            const footer = document.querySelector('#poolDetailModal .recruiting-board-modal-footer');
-            const existingBtn = document.getElementById('poolDetailAddPipelineBtn');
-            if (footer && existingBtn) {
-                if (entry.is_in_my_pipeline) {
-                    existingBtn.outerHTML = '<button class="btn-submit" id="poolDetailAddPipelineBtn" disabled>In Your Pipeline</button>';
-                } else {
-                    existingBtn.outerHTML = '<button class="btn-submit" id="poolDetailAddPipelineBtn">Add to Pipeline</button>';
-                    const freshBtn = document.getElementById('poolDetailAddPipelineBtn');
-                    freshBtn.addEventListener('click', () => addPoolEntryToPipeline(entryId));
-                }
-                // Make sure it's visible (the HTML starts with display: none)
-                document.getElementById('poolDetailAddPipelineBtn').style.display = '';
-            }
-        } catch (err) {
-            qBody.innerHTML = `<p class="pool-detail-error">${escapeHtml((err && err.message) || 'Failed to load entry')}</p>`;
-        }
-    }
-
-    function closePoolDetailModal() {
-        const modal = document.getElementById('poolDetailModal');
-        if (modal) modal.classList.remove('active');
-        currentPoolModalEntryId = null;
     }
 
     // ====================================================================
@@ -4308,12 +3817,8 @@ document.addEventListener('DOMContentLoaded', async function() {
                  <circle cx="12" cy="7" r="4"></circle>
                </svg>`;
 
+        // Source/DR badges removed — all pipeline recruits are DR accounts now.
         const badges = [];
-        if (hasAccount) badges.push('<span class="pipeline-badge dr">DR</span>');
-        // Pool badge only when the recruit came in via the team pool. We don't
-        // emit a "Direct add" sibling badge — that source is implicit when DR
-        // is shown without Pool.
-        if (recruit.source === 'pool') badges.push('<span class="pipeline-badge source">Pool</span>');
 
         // Grade pill — color-tinted when graded, neutral when not
         const colorHex = COLOR_HEX[recruit.color_tag] || null;
@@ -4772,7 +4277,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             if (emptyEl) {
                 emptyEl.style.display = 'flex';
                 // Make sure the empty panel content reflects the true-empty state
-                emptyEl.innerHTML = '<p>Your pipeline is empty.</p><p class="rb-pipeline-empty-hint">Add recruits from the Team Pool, or visit a player\'s profile and click "Add to Pipeline".</p>';
+                emptyEl.innerHTML = '<p>Your pipeline is empty.</p><p class="rb-pipeline-empty-hint">Visit a player\'s profile and click "Add to Pipeline" to start evaluating recruits.</p>';
             }
             return;
         }
@@ -5012,32 +4517,22 @@ document.addEventListener('DOMContentLoaded', async function() {
         if (!modal) return;
 
         const hasAccount = !!recruit.linked_player_user_id;
-        // Match buildPipelineRow: transfer recruits get red treatment +
-        // YOE in the subheader. DR-linked non-transfer = cerulean.
-        // Questionnaire-only = neutral gray.
+        // All pipeline recruits are DR accounts now. Transfer recruits get red
+        // treatment + YOE in the subheader; non-transfer = cerulean.
         const isTransfer = hasAccount && !!recruit.is_transfer;
         let accentColor, ringBg;
         if (isTransfer) {
             accentColor = '#b91c1c';
             ringBg = 'rgba(185, 28, 28, 0.18)';
-        } else if (hasAccount) {
+        } else {
             accentColor = '#1282a2';
             ringBg = 'rgba(18, 130, 162, 0.18)';
-        } else {
-            accentColor = '#9ca3af';
-            ringBg = 'rgba(156, 163, 175, 0.18)';
         }
 
         const fullName = `${recruit.first_name || ''} ${recruit.last_name || ''}`.trim() || 'Unknown';
 
-        // Header — name on top with compact DR badge, subheader below.
+        // Header — name on top, subheader below.
         document.getElementById('evalName').textContent = fullName;
-        const drBadge = document.getElementById('evalDrBadge');
-        drBadge.style.display = hasAccount ? 'inline-flex' : 'none';
-        // Pool badge fires only when the recruit was added via the team pool
-        // (questionnaire-sourced). DR-direct recruits show DR alone.
-        const poolBadge = document.getElementById('evalPoolBadge');
-        if (poolBadge) poolBadge.style.display = recruit.source === 'pool' ? 'inline-flex' : 'none';
 
         const subParts = [];
         if (recruit.positions && recruit.positions.length) subParts.push(recruit.positions.join('/'));
@@ -5067,82 +4562,10 @@ document.addEventListener('DOMContentLoaded', async function() {
                  <circle cx="12" cy="7" r="4"></circle>
                </svg>`;
 
-        // Info tab — shows the recruit's available data so the coach doesn't
-        // have to leave the modal. Two sections:
-        //   - DR Profile link (only if recruit has a DR account; opens the
-        //     full /shared/view-profile.html page in a new tab)
-        //   - Questionnaire (only if recruit has questionnaire data — pool-
-        //     sourced recruits)
-        // For questionnaire-only recruits, only the Questionnaire section
-        // renders. For DR-only recruits (added from a profile), only the
-        // link renders. For recruits with both, both render with the DR
-        // link above the questionnaire data.
-        const qSection = document.getElementById('evalQuestionnaireSection');
-        const pSection = document.getElementById('evalProfileSection');
-        const emptyMsg = document.getElementById('evalInfoEmpty');
-        const redactedBanner = document.getElementById('evalRedactedBanner');
-        const hasQuestionnaire = recruit.source === 'pool';
-        // Team-switch redaction: board entry was pool-sourced at the old
-        // school. Show the friendly banner instead of a stale questionnaire
-        // view or a "Failed to load" error.
-        const isRedacted = recruit._redactedFromOldSchool === true;
-
-        if (hasAccount) {
-            pSection.style.display = 'block';
-            const profileLink = document.getElementById('evalProfileLink');
-            // Same-tab nav so the browser Back button returns the coach to
-            // the recruiting board with the eval modal re-opened. ?from=
-            // tells the player-side sidebar-nav.js which nav item to mark
-            // active (recruiting-board) once that's added to the player
-            // sidebar map. The replaceState below encodes which recruit's
-            // modal to re-open on Back.
-            profileLink.href = `../../shared/view-profile.html?userId=${encodeURIComponent(recruit.linked_player_user_id)}&from=recruiting-board`;
-        } else {
-            pSection.style.display = 'none';
-        }
-
-        if (isRedacted) {
-            // Banner shows. Skip the questionnaire fetch entirely — there's
-            // nothing to load (pool_entry_id was nulled out at switch time).
-            if (redactedBanner) redactedBanner.style.display = 'flex';
-            qSection.style.display = 'none';
-        } else if (hasQuestionnaire) {
-            if (redactedBanner) redactedBanner.style.display = 'none';
-            qSection.style.display = 'block';
-            const qBodyEl = document.getElementById('evalQuestionnaireBody');
-            // Pipeline-source recruits arrive with submission_data already
-            // shipped by the backend. Board-source recruits (from the football
-            // field) do not — lazy-fetch the latest submission via /my-pool.
-            if (recruit.submission_data) {
-                qBodyEl.innerHTML = renderQuestionnaireView(recruit.submission_data, recruit.transcript_url || null);
-            } else if (recruit._source === 'board' && recruit.pool_entry_id) {
-                qBodyEl.innerHTML = '<p class="pool-detail-loading">Loading…</p>';
-                API.get(`/recruiting-board/my-pool/${recruit.pool_entry_id}`).then(res => {
-                    const submissions = (res && res.submissions) || [];
-                    const latest = submissions.length ? submissions[submissions.length - 1].submission_data : {};
-                    recruit.submission_data = latest;
-                    // The detail endpoint signs entry.transcript_url from the
-                    // latest submission — use it directly so the link works.
-                    const txUrl = (res && res.entry && res.entry.transcript_url) || null;
-                    recruit.transcript_url = txUrl;
-                    qBodyEl.innerHTML = renderQuestionnaireView(latest, txUrl);
-                }).catch(() => {
-                    qBodyEl.innerHTML = '<p class="pool-detail-error">Failed to load questionnaire.</p>';
-                });
-            } else {
-                qBodyEl.innerHTML = renderQuestionnaireView({});
-            }
-        } else {
-            if (redactedBanner) redactedBanner.style.display = 'none';
-            qSection.style.display = 'none';
-        }
-
-        if (emptyMsg) {
-            // The redacted banner counts as content too — don't show the
-            // "no questionnaire or profile info available" fallback when
-            // the banner is visible.
-            emptyMsg.style.display = (hasAccount || hasQuestionnaire || isRedacted) ? 'none' : 'block';
-        }
+        // Info tab — recruit's AI Match score + fit at top, then their full
+        // recruiting profile (Academics / Major & Goals / Financial Fit /
+        // Level & Location / Priorities) in a subtab dropdown. Fetched on open.
+        populateEvalInfoTab(recruit);
 
         // Phase 3 — merged Evaluation + History tab. Fetch the cross-coach
         // evaluations (live, including soft-deleted historicals), populate the
@@ -5153,14 +4576,17 @@ document.addEventListener('DOMContentLoaded', async function() {
         await loadBoardPromotionsForModal(recruit);
         updateFooterButtonsForPipelineState();
 
-        // Always reset to the Info tab on open
+        // Always reset to the Info tab on open + the recruiting subtab to Academics.
         switchEvalTab('info');
+        const _rpSel = document.getElementById('evalRpSubtabSelect');
+        if (_rpSel) _rpSel.value = 'evalRpAcademics';
+        document.querySelectorAll('#evaluationModal .eval-rp-pane').forEach(p =>
+            p.classList.toggle('active', p.id === 'evalRpAcademics'));
 
         // Force a hard height ceiling + internal scroll on the modal body so
-        // the "Show questionnaire / profile info" panel can expand without
-        // pushing the modal off-screen. Setting via inline style guarantees
-        // we win over any cached/competing CSS — the rule lives in
-        // recruiting-board.css too but inline is the belt-and-suspenders.
+        // the recruiting-profile panel can expand without pushing the modal
+        // off-screen. Setting via inline style guarantees we win over any
+        // cached/competing CSS.
         const modalContent = modal.querySelector('.recruiting-board-modal-content');
         const modalBody = modal.querySelector('.recruiting-board-modal-body');
         if (modalContent) {
@@ -5177,6 +4603,148 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
 
         modal.classList.add('active');
+    }
+
+    // ===== Pipeline modal Info tab: AI Match + recruiting profile (Plan: board cleanup) =====
+    // Fetches the recruit's fit score + full recruiting profile on modal open and
+    // renders the AI Match block (top) + the recruiting-profile subtabs. Mirrors the
+    // player-side populateRecruitingProfile / renderMatchScore (those live in the
+    // player my-profile.js files and aren't loaded here, so this is self-contained).
+    async function populateEvalInfoTab(recruit) {
+        const matchBlock = document.getElementById('evalMatchBlock');
+        const matchEmpty = document.getElementById('evalMatchEmpty');
+        const subnav     = document.getElementById('evalRpSubnav');
+        const loadingEl  = document.getElementById('evalRpLoading');
+        const errorEl    = document.getElementById('evalRpError');
+        const panes      = document.querySelectorAll('#evaluationModal .eval-rp-pane');
+
+        if (matchBlock) matchBlock.style.display = 'none';
+        if (matchEmpty) matchEmpty.style.display = 'none';
+        if (subnav)     subnav.style.display = 'none';
+        if (errorEl)    errorEl.style.display = 'none';
+        panes.forEach(p => { p.style.display = ''; });
+        if (loadingEl)  loadingEl.style.display = 'block';
+
+        const uid = recruit && recruit.linked_player_user_id;
+        const fullName = `${recruit.first_name || ''} ${recruit.last_name || ''}`.trim();
+        if (!uid) {
+            if (loadingEl) loadingEl.style.display = 'none';
+            panes.forEach(p => { p.style.display = 'none'; });
+            if (matchEmpty) { matchEmpty.style.display = 'block'; matchEmpty.textContent = 'No linked profile.'; }
+            return;
+        }
+
+        const [fitRes, profRes] = await Promise.allSettled([
+            API.profile.getFit(uid),
+            API.profile.getPlayerProfile(uid),
+        ]);
+
+        const fit = (fitRes.status === 'fulfilled') ? (fitRes.value && fitRes.value.fit) : null;
+        renderEvalMatch(fit, fullName);
+
+        if (loadingEl) loadingEl.style.display = 'none';
+        if (profRes.status === 'fulfilled' && profRes.value && profRes.value.profile) {
+            populateEvalRecruitingProfile(profRes.value.profile);
+            if (subnav) subnav.style.display = 'block';
+            if (profRes.value.accessLevel === 'limited' && errorEl) {
+                errorEl.style.display = 'block';
+                errorEl.textContent = 'This recruit keeps parts of their profile private — some fields may be hidden.';
+            }
+        } else {
+            panes.forEach(p => { p.style.display = 'none'; });
+            if (errorEl) { errorEl.style.display = 'block'; errorEl.textContent = "Could not load this recruit's profile."; }
+        }
+    }
+
+    function renderEvalMatch(fit, playerName) {
+        const matchBlock = document.getElementById('evalMatchBlock');
+        const matchEmpty = document.getElementById('evalMatchEmpty');
+        const scoreEl = document.getElementById('evalMatchScore');
+        const subEl   = document.getElementById('evalMatchSub');
+        if (!matchBlock) return;
+
+        const score = fit ? fit.score : null;
+        const tier  = (score != null && typeof FitDisplay !== 'undefined') ? FitDisplay.tierOf(score) : null;
+
+        if (score == null) {
+            matchBlock.style.display = 'none';
+            if (matchEmpty) { matchEmpty.style.display = 'block'; matchEmpty.textContent = 'Not yet rated'; }
+            return;
+        }
+        if (matchEmpty) matchEmpty.style.display = 'none';
+        matchBlock.style.display = 'flex';
+
+        const showPct = (typeof FitDisplay !== 'undefined') && FitDisplay.FIT_SHOW_PERCENT;
+        scoreEl.textContent = String(score) + (showPct ? '%' : '');
+        if (tier) scoreEl.style.color = tier.color;
+
+        const matches = (fit && Array.isArray(fit.dimensions))
+            ? fit.dimensions.filter(d => d.present).map(d => ({ label: d.label, detail: d.detail, score: d.score }))
+            : [];
+
+        if (subEl) {
+            const label = tier ? tier.label : '';
+            const color = tier ? tier.color : 'var(--text-secondary, #64748b)';
+            subEl.innerHTML =
+                `<span class="eval-rp-match-rating" style="color:${color}">${escapeHtml(label)}</span>` +
+                `<button type="button" class="eval-rp-match-info" id="evalMatchInfoBtn" aria-label="About AI Match" title="About AI Match"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="11" x2="12" y2="17"></line><line x1="12" y1="7" x2="12.01" y2="7"></line></svg></button>`;
+            const infoBtn = document.getElementById('evalMatchInfoBtn');
+            if (infoBtn && typeof FitInfoModal !== 'undefined') {
+                infoBtn.addEventListener('click', () => FitInfoModal.open({ score, playerName, matches }));
+            }
+        }
+        // Per-dimension breakdown is NOT shown inline — the ⓘ opens the AI Match
+        // modal which already lists every present dimension. (Avoids duplication.)
+    }
+
+    function populateEvalRecruitingProfile(profile) {
+        if (!profile) return;
+        const fp = evalRpParseFitPrefs(profile);
+
+        evalRpSetText('evalRpUnweightedGpa', evalRpGpa(profile.gpa));
+        evalRpSetText('evalRpWeightedGpa',   evalRpGpa(profile.weighted_gpa));
+        evalRpSetText('evalRpSat', profile.sat_score);
+        evalRpSetText('evalRpAct', profile.act_score);
+        evalRpSetText('evalRpApIb', profile.has_ap_ib
+            ? ('Yes' + (profile.ap_ib_count ? ` (${profile.ap_ib_count} courses)` : ''))
+            : (profile.has_ap_ib === false ? 'No' : null));
+        evalRpSetText('evalRpClassRank', profile.class_rank);
+
+        evalRpRenderTags('evalRpMajor', profile.intended_major);
+        evalRpSetText('evalRpLookingFor', fp.looking_for_text);
+
+        evalRpSetText('evalRpNeedsAid', evalRpTitleCase(profile.needs_financial_aid));
+        evalRpSetText('evalRpNeedsScholarship', evalRpTitleCase(profile.needs_scholarship));
+        evalRpSetText('evalRpPellFirstGen', profile.pell_or_first_gen === true ? 'Yes' : (profile.pell_or_first_gen === false ? 'No' : null));
+        evalRpSetText('evalRpHomeZip', profile.home_zip);
+
+        evalRpRenderTags('evalRpLevelsOpen', profile.levels_open);
+        evalRpRenderTags('evalRpPreferredRegions', profile.preferred_regions);
+        evalRpSetText('evalRpCampusSetting', evalRpTitleCase(profile.preferred_campus_setting));
+
+        const slider = (v) => (v == null || v === '') ? null : `${v} / 5`;
+        evalRpSetText('evalRpImpPlayingTime', slider(fp.importance_playing_time));
+        evalRpSetText('evalRpImpCloseToHome', slider(fp.importance_close_to_home));
+        evalRpSetText('evalRpImpAcademics',   slider(fp.importance_academics_vs_football));
+        evalRpSetText('evalRpImpCompetition', slider(fp.importance_competition_level));
+
+        const rawSports = Array.isArray(profile.other_sports) ? profile.other_sports : [];
+        const sports = rawSports.map(s => (typeof s === 'string' && s.startsWith('other:')) ? s.slice(6) : s);
+        evalRpRenderTags('evalRpOtherSports', sports);
+        evalRpSetText('evalRpTrack100', profile.track_100m ? `${parseFloat(profile.track_100m).toFixed(2)}s` : null);
+        evalRpSetText('evalRpTrack200', profile.track_200m ? `${parseFloat(profile.track_200m).toFixed(2)}s` : null);
+    }
+
+    function evalRpGpa(v) { if (v == null || v === '') return null; const n = parseFloat(v); return isNaN(n) ? null : n.toFixed(2); }
+    function evalRpParseFitPrefs(p) { const fp = p && p.fit_preferences; if (fp == null) return {}; if (typeof fp === 'object') return fp; try { return JSON.parse(fp) || {}; } catch (e) { return {}; } }
+    function evalRpSetText(id, v) { const el = document.getElementById(id); if (el) el.textContent = (v == null || v === '') ? '—' : v; }
+    function evalRpTitleCase(v) { if (v == null || v === '') return v; const s = String(v); return s.charAt(0).toUpperCase() + s.slice(1); }
+    function evalRpRenderTags(id, arr) {
+        const el = document.getElementById(id); if (!el) return;
+        el.innerHTML = '';
+        const vals = Array.isArray(arr) ? arr.filter(v => v != null && v !== '') : [];
+        if (!vals.length) { const s = document.createElement('span'); s.className = 'eval-rp-value'; s.textContent = '—'; el.appendChild(s); return; }
+        vals.forEach(v => { const s = document.createElement('span'); s.className = 'eval-rp-tag'; s.textContent = v; el.appendChild(s); });
     }
 
     // Phase 3: switch between Info / Evaluation / Final Grade tabs inside the
@@ -5236,28 +4804,6 @@ document.addEventListener('DOMContentLoaded', async function() {
                 if (currentPipelineRecruits.length === 0 && emptyEl) {
                     emptyEl.style.display = 'flex';
                     if (listEl) listEl.style.display = 'none';
-                }
-            }
-
-            // Sync the pool tab's matching row if it's mounted (both sources)
-            if (result.pool_entry_id) {
-                const poolRow = document.querySelector(`.rb-pool-row[data-entry-id="${result.pool_entry_id}"]`);
-                if (poolRow) {
-                    // I no longer have them → button flips back to "Add to Pipeline"
-                    const actionsEl = poolRow.querySelector('.rb-pool-row-actions');
-                    if (actionsEl) {
-                        actionsEl.innerHTML = '<button class="rb-pool-row-action add-pipeline" type="button">Add to Pipeline</button>';
-                        const newBtn = actionsEl.querySelector('.rb-pool-row-action.add-pipeline');
-                        if (newBtn) newBtn.addEventListener('click', (ev) => {
-                            ev.stopPropagation();
-                            addPoolEntryToPipeline(result.pool_entry_id, { rowEl: poolRow });
-                        });
-                    }
-                    // Cross-coach checkmark clears only if no one else at the school has them
-                    if (!result.still_in_any_pipeline_at_school) {
-                        const checkEl = poolRow.querySelector('.rb-pool-row-check');
-                        if (checkEl) checkEl.remove();
-                    }
                 }
             }
 
@@ -6296,215 +5842,6 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     // ---- end Phase 3 unified-modal block ----
 
-    function switchPoolDetailTab(tabKey) {
-        document.querySelectorAll('.pool-detail-tab').forEach(b => {
-            b.classList.toggle('active', b.dataset.poolTab === tabKey);
-        });
-        document.querySelectorAll('.pool-detail-tab-content').forEach(c => {
-            c.classList.toggle('active', c.dataset.poolTabContent === tabKey);
-        });
-    }
-
-    function poolField(label, value) {
-        if (value == null || value === '' || (Array.isArray(value) && value.length === 0)) return '';
-        const display = Array.isArray(value) ? value.join(', ') : value;
-        return `<div class="pool-detail-field">
-            <span class="pool-detail-field-label">${escapeHtml(label)}</span>
-            <span class="pool-detail-field-value">${escapeHtml(String(display))}</span>
-        </div>`;
-    }
-
-    function poolSection(title, body) {
-        if (!body || !body.trim()) return '';
-        return `<section class="pool-detail-section">
-            <h4 class="pool-detail-section-title">${escapeHtml(title)}</h4>
-            <div class="pool-detail-section-body">${body}</div>
-        </section>`;
-    }
-
-    function renderQuestionnaireView(d, transcriptUrl) {
-        d = d || {};
-        const personal = d.personal || {};
-        const address = d.address || {};
-        const parents = Array.isArray(d.parents) ? d.parents : [];
-        const family = d.family || {};
-        const academic = d.academic || {};
-        const athletic = d.athletic || {};
-        const film = d.film || {};
-
-        // Personal
-        const personalBody =
-            poolField('Email', personal.email) +
-            poolField('Phone', personal.mobile_phone) +
-            poolField('Birth date', personal.birth_date) +
-            poolField('Facebook', personal.facebook_username) +
-            poolField('Twitter / X', personal.twitter_username) +
-            poolField('Hobbies', personal.hobbies);
-
-        // Address
-        const addrParts = [address.line_1, address.line_2, address.city].filter(Boolean).join(', ');
-        const addrSecond = [address.state, address.zip].filter(Boolean).join(' ');
-        const addressBody =
-            poolField('Address', addrParts || null) +
-            poolField('State / Zip', addrSecond || null);
-
-        // Parents
-        let parentsBody = '';
-        if (parents.length) {
-            parentsBody = parents.map((p, i) => {
-                const pname = `${p.first_name || ''} ${p.last_name || ''}`.trim() || `Parent ${i + 1}`;
-                return `<div class="pool-detail-parent-block">
-                    <div class="pool-detail-parent-name">${escapeHtml(pname)}</div>
-                    ${poolField('Email', p.email)}
-                    ${poolField('Phone', p.phone)}
-                    ${poolField('Employment', p.employment)}
-                    ${poolField('College', p.college)}
-                </div>`;
-            }).join('');
-        }
-
-        // Family
-        const familyBody = poolField('Siblings', family.siblings);
-
-        // Academic. The transcript link (when present) is rendered as a
-        // distinct row so it stands out from the field grid. We prefer the
-        // explicit transcriptUrl arg the caller hands us (already a signed
-        // S3 URL) over digging into academic.transcript_s3_keys — those keys
-        // are raw S3 paths and won't work in an <a href>.
-        let transcriptRow = '';
-        if (transcriptUrl) {
-            transcriptRow = `<div class="pool-field pool-field-transcript">
-                <span class="pool-field-label">Transcript</span>
-                <a class="pool-detail-transcript-link" href="${escapeHtml(transcriptUrl)}" target="_blank" rel="noopener" download>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
-                    <span>View transcript (PDF)</span>
-                </a>
-            </div>`;
-        }
-        const academicBody =
-            poolField('High School', academic.high_school) +
-            poolField('Graduation Year', academic.graduation_year) +
-            poolField('GPA', academic.gpa != null ? Number(academic.gpa).toFixed(2) : null) +
-            poolField('Intended Major', academic.intended_major) +
-            poolField('NCAA Registered', academic.ncaa_registered ? 'Yes' : null) +
-            poolField('NCAA ID', academic.ncaa_id) +
-            poolField('SAT', academic.sat_score) +
-            poolField('ACT', academic.act_score) +
-            poolField('Academic Honors', academic.honors) +
-            transcriptRow;
-
-        // Athletic
-        const heightDisp = athletic.height_inches ? inchesToHeight(athletic.height_inches) : null;
-        const athleticBody =
-            poolField('Position(s)', athletic.positions) +
-            poolField('Height', heightDisp) +
-            poolField('Weight', athletic.weight_lbs ? `${athletic.weight_lbs} lbs` : null) +
-            poolField('100m', athletic.track_100m ? `${athletic.track_100m}s` : null) +
-            poolField('200m', athletic.track_200m ? `${athletic.track_200m}s` : null) +
-            poolField('Power Clean', athletic.power_clean_lbs ? `${athletic.power_clean_lbs} lbs` : null) +
-            poolField('Bench', athletic.bench_lbs ? `${athletic.bench_lbs} lbs` : null) +
-            poolField('Squat', athletic.squat_lbs ? `${athletic.squat_lbs} lbs` : null) +
-            poolField('Athletic Honors', athletic.honors) +
-            poolField('Other Sports', athletic.other_sports);
-
-        // Film
-        let filmBody = '';
-        if (Array.isArray(film.video_urls) && film.video_urls.length) {
-            filmBody = film.video_urls.map(u =>
-                `<a class="pool-detail-link" href="${escapeHtml(u)}" target="_blank" rel="noopener">${escapeHtml(u)}</a>`
-            ).join('<br>');
-        }
-
-        return [
-            poolSection('Personal Information', personalBody),
-            poolSection('Address', addressBody),
-            poolSection('Parents / Guardians', parentsBody),
-            poolSection('Family', familyBody),
-            poolSection('Academic', academicBody),
-            poolSection('Athletic', athleticBody),
-            poolSection('Film & Recruiting Videos', filmBody)
-        ].filter(Boolean).join('') || '<p class="pool-detail-empty">No data submitted.</p>';
-    }
-
-    function renderSubmissionHistory(submissions) {
-        if (!submissions || !submissions.length) {
-            return '<p class="pool-detail-empty">No submissions yet.</p>';
-        }
-        return submissions.map((s, idx) => {
-            const isFirst = idx === 0;
-            const isLatest = idx === submissions.length - 1;
-            const tag = isLatest ? 'Latest' : (isFirst ? 'First' : `#${idx + 1}`);
-            const ts = s.submitted_at ? new Date(s.submitted_at).toLocaleString() : '—';
-            return `<div class="pool-detail-history-item">
-                <div class="pool-detail-history-header">
-                    <span class="pool-detail-history-tag">${escapeHtml(tag)}</span>
-                    <span class="pool-detail-history-time">${escapeHtml(ts)}</span>
-                </div>
-                <details class="pool-detail-history-details">
-                    <summary>View submission</summary>
-                    <div class="pool-detail-history-body">${renderQuestionnaireView(s.submission_data || {})}</div>
-                </details>
-            </div>`;
-        }).join('');
-    }
-
-    function renderDrProfile(dr) {
-        const name = `${dr.first_name || ''} ${dr.last_name || ''}`.trim() || 'DR Member';
-        const avatarSrc = dr.profile_image_url || '';
-        const folder = (typeof getProfileFolder === 'function')
-            ? getProfileFolder({
-                role: 'player',
-                is_transfer_player: dr.transfer === 'y',
-                transfer: dr.transfer,
-                college_division: dr.college_division
-            })
-            : 'hsplayer';
-        const profileUrl = `../../${folder}/tabs/my-profile.html${dr.username ? '?username=' + encodeURIComponent(dr.username) : ''}`;
-
-        const heightDisp = dr.height ? inchesToHeight(dr.height) : null;
-        const fields =
-            poolField('Username', dr.username) +
-            poolField('Position', dr.position) +
-            poolField('Height', heightDisp) +
-            poolField('Weight', dr.weight ? `${dr.weight} lbs` : null) +
-            poolField('Graduation Year', dr.graduation_year) +
-            poolField('GPA', dr.gpa != null ? Number(dr.gpa).toFixed(2) : null) +
-            poolField('Team', dr.team_name) +
-            poolField('Division', dr.college_division) +
-            poolField('Location', [dr.city, dr.state].filter(Boolean).join(', ') || null);
-
-        const avatarBlock = avatarSrc
-            ? `<img src="${escapeHtml(avatarSrc)}" alt="" class="pool-detail-dr-avatar">`
-            : `<div class="pool-detail-dr-avatar pool-detail-dr-avatar-fallback">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                      <circle cx="12" cy="7" r="4"></circle>
-                  </svg>
-              </div>`;
-
-        return `<div class="pool-detail-dr-header">
-            ${avatarBlock}
-            <div class="pool-detail-dr-name-block">
-                <div class="pool-detail-dr-name">${escapeHtml(name)}</div>
-                <a class="pool-detail-dr-link" href="${escapeHtml(profileUrl)}">View Full DR Profile →</a>
-            </div>
-        </div>
-        <div class="pool-detail-section-body">${fields}</div>`;
-    }
-
-    // Wire pool detail modal handlers once on init
-    (function wirePoolDetailModal() {
-        const closeBtn = document.getElementById('poolDetailClose');
-        const footerCloseBtn = document.getElementById('poolDetailCloseBtn');
-        const overlay = document.getElementById('poolDetailOverlay');
-        if (closeBtn) closeBtn.addEventListener('click', closePoolDetailModal);
-        if (footerCloseBtn) footerCloseBtn.addEventListener('click', closePoolDetailModal);
-        if (overlay) overlay.addEventListener('click', closePoolDetailModal);
-        document.querySelectorAll('.pool-detail-tab').forEach(btn => {
-            btn.addEventListener('click', () => switchPoolDetailTab(btn.dataset.poolTab));
-        });
-    })();
-
     // Wire evaluation modal handlers once on init (Plan 4 + Phase 3 unified)
     (function wireEvaluationModal() {
         const closeBtn = document.getElementById('evaluationModalClose');
@@ -6516,35 +5853,16 @@ document.addEventListener('DOMContentLoaded', async function() {
         const promotionSelect = document.getElementById('evalFinalGradePromotionSelect');
         const finalGradeSlider = document.getElementById('evalFinalGrade');
         const finalGradeSaveBtn = document.getElementById('evalFinalGradeSaveBtn');
-        const profileLink = document.getElementById('evalProfileLink');
 
         if (closeBtn) closeBtn.addEventListener('click', closeEvaluationModal);
         if (overlay) overlay.addEventListener('click', closeEvaluationModal);
 
-        // Before navigating to the player's profile (same-tab), encode the
-        // open recruit's identity into our URL so the browser Back button
-        // returns here AND auto-reopens the eval modal for that recruit.
-        // Uses replaceState so we don't add a junk history entry.
-        if (profileLink) {
-            profileLink.addEventListener('click', () => {
-                if (!currentEvalRecruit) return;
-                const params = new URLSearchParams(window.location.search);
-                const activeBtn = document.querySelector('.rb-subtab.active');
-                const subtab = (activeBtn && activeBtn.dataset.tab)
-                    || localStorage.getItem('lastViewedRecruitingBoardSubtab')
-                    || 'pipeline';
-                params.set('subtab', subtab);
-                if (currentEvalRecruit.pool_entry_id) {
-                    params.set('modal_pool_entry_id', currentEvalRecruit.pool_entry_id);
-                    params.delete('modal_player_user_id');
-                } else if (currentEvalRecruit.linked_player_user_id) {
-                    params.set('modal_player_user_id', currentEvalRecruit.linked_player_user_id);
-                    params.delete('modal_pool_entry_id');
-                }
-                const newUrl = `${window.location.pathname}?${params.toString()}`;
-                window.history.replaceState({}, '', newUrl);
-            });
-        }
+        // Recruiting-profile subtab dropdown (Info tab) — swap the visible pane.
+        const rpSel = document.getElementById('evalRpSubtabSelect');
+        if (rpSel) rpSel.addEventListener('change', function () {
+            document.querySelectorAll('#evaluationModal .eval-rp-pane').forEach(p =>
+                p.classList.toggle('active', p.dataset.evalRpSubtab === this.value));
+        });
 
         // Footer delete button is dynamic: Remove from Pipeline OR Add to
         // Pipeline depending on the viewer's _inMyPipeline state.
