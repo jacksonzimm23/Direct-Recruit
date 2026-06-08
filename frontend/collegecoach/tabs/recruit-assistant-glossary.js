@@ -1019,6 +1019,111 @@ const RA_GLOSSARY = {
     },
 
     // ========================================================
+    // 13b. RECRUITING-PROFILE (FIT) FIELD TERMS — Plan 7E
+    // Phrase -> canonical player fit-field values (match-constants.js).
+    // Kept in sync with the backend glossary twin.
+    // ========================================================
+    majorTerms: {
+        'engineering':            ['Mechanical Engineering', 'Civil Engineering', 'Electrical Engineering', 'General Engineering'],
+        'mechanical engineering': ['Mechanical Engineering'],
+        'civil engineering':      ['Civil Engineering'],
+        'electrical engineering': ['Electrical Engineering'],
+        'computer science':       ['Computer Science'],
+        'cs':                     ['Computer Science'],
+        'coding':                 ['Computer Science', 'Information Technology'],
+        'it':                     ['Information Technology'],
+        'data science':           ['Data Science'],
+        'business':               ['Business Administration', 'Finance', 'Marketing', 'Accounting', 'Management', 'Economics', 'Entrepreneurship'],
+        'finance':                ['Finance'],
+        'marketing':              ['Marketing'],
+        'accounting':             ['Accounting'],
+        'economics':              ['Economics'],
+        'sports management':      ['Sports Management'],
+        'communications':         ['Communications'],
+        'journalism':             ['Journalism'],
+        'kinesiology':            ['Kinesiology / Exercise Science'],
+        'exercise science':       ['Kinesiology / Exercise Science'],
+        'athletic training':      ['Athletic Training'],
+        'sports medicine':        ['Sports Medicine'],
+        'nursing':                ['Nursing'],
+        'pre-med':                ['Pre-Med / Health Sciences'],
+        'premed':                 ['Pre-Med / Health Sciences'],
+        'pre-law':                ['Pre-Law'],
+        'prelaw':                 ['Pre-Law'],
+        'psychology':             ['Psychology'],
+        'criminal justice':       ['Criminal Justice'],
+        'political science':      ['Political Science'],
+        'education':              ['Education', 'Physical Education'],
+        'biology':                ['Biology'],
+        'chemistry':              ['Chemistry'],
+        'environmental science':  ['Environmental Science'],
+        'math':                   ['Mathematics'],
+        'mathematics':            ['Mathematics'],
+        'english':                ['English'],
+        'history':                ['History'],
+        'graphic design':         ['Art / Graphic Design'],
+        'art':                    ['Art / Graphic Design'],
+        'music':                  ['Music'],
+        'agriculture':            ['Agriculture'],
+        'architecture':           ['Architecture'],
+        'aviation':               ['Aviation'],
+        'undecided':              ['Undecided'],
+        databaseColumn: 'intended_major'
+    },
+    levelTerms: {
+        'open to d1':      ['D1 FBS', 'D1 FCS'],
+        'open to fbs':     ['D1 FBS'],
+        'open to fcs':     ['D1 FCS'],
+        'open to d2':      ['D2'],
+        'open to d3':      ['D3'],
+        'open to naia':    ['NAIA'],
+        'open to njcaa':   ['NJCAA'],
+        'open to juco':    ['NJCAA'],
+        'open to any level': ['D1 FBS', 'D1 FCS', 'D2', 'D3', 'NAIA', 'NJCAA'],
+        databaseColumn: 'levels_open'
+    },
+    regionTerms: {
+        'northeast':      ['Northeast'],
+        'east coast':     ['Northeast', 'Southeast'],
+        'southeast':      ['Southeast'],
+        'the south':      ['Southeast', 'South Central'],
+        'midwest':        ['Midwest'],
+        'south central':  ['South Central'],
+        'texas area':     ['South Central'],
+        'west':           ['West'],
+        'mountain west':  ['West'],
+        'west coast':     ['Pacific'],
+        'pacific':        ['Pacific'],
+        'california area':['Pacific'],
+        databaseColumn: 'preferred_regions'
+    },
+    campusTerms: {
+        'urban':        'urban',
+        'big city':     'urban',
+        'city school':  'urban',
+        'suburban':     'suburban',
+        'suburb':       'suburban',
+        'small town':   'small-town',
+        'small-town':   'small-town',
+        'college town': 'small-town',
+        'rural':        'rural',
+        'country':      'rural',
+        databaseColumn: 'preferred_campus_setting'
+    },
+    aidTerms: {
+        'needs financial aid':       { needs_financial_aid: 'yes' },
+        'needs aid':                 { needs_financial_aid: 'yes' },
+        'doesn\'t need aid':         { needs_financial_aid: 'no' },
+        'no aid needed':             { needs_financial_aid: 'no' },
+        'needs a scholarship':       { needs_scholarship: 'yes' },
+        'needs scholarship':         { needs_scholarship: 'yes' },
+        'scholarship player':        { needs_scholarship: 'yes' },
+        'walk-on':                   { needs_scholarship: 'no' },
+        'walk on':                   { needs_scholarship: 'no' },
+        databaseColumns: ['needs_financial_aid', 'needs_scholarship']
+    },
+
+    // ========================================================
     // 14. SEARCH ENDPOINTS REFERENCE
     // ========================================================
     // These are the backend API endpoints available for player search.

@@ -2,6 +2,7 @@ const pool = require('../config/database');
 const { playerPopularityExpr } = require('../utils/popularity-score');
 const { escapeLikePattern } = require('../middleware/validation');
 const { blockedUserFilter } = require('../utils/blockFilter');
+const { computeFit } = require('../utils/fit-score');
 
 // Composite stat keys that sum multiple JSONB fields (e.g., "total_tds" = pass_tds + rush_tds + rec_tds)
 const COMPOSITE_STAT_KEYS = {
@@ -27,6 +28,37 @@ const VALID_STAT_KEYS = new Set([
 // `;` which crashed the query with "syntax error at or near `;`". This
 // allowlist normalises any unexpected value back to '>=' (the safe default).
 const VALID_STAT_OPERATORS = new Set(['>=', '<=', '>', '<', '=']);
+
+// ---- Fit-aware re-ranking (Plan 7E), shared by RA (PlayerProfile) and PI (PortalSignal) ----
+// Given a relevance-ordered candidate WINDOW + the viewing coach, attach computeFit
+// to each row and re-sort by a relevance-dominant blend so better fits surface, then
+// return the requested page slice. Deterministic total order (blend, then a numeric
+// primary key, then id) keeps offset pagination stable across "show more".
+const FIT_BLEND = { relevance: 0.7, fit: 0.3, neutral: 0.5 }; // calibration knobs
+function rerankByFit(rows, coach, offset, limit, primaryKey) {
+  // primaryKey = the SQL numeric ordering column on each row (e.g. 'relevance_score').
+  let maxPrimary = 0;
+  for (const r of rows) {
+    const v = Number(r[primaryKey]) || 0;
+    if (v > maxPrimary) maxPrimary = v;
+  }
+  const scored = rows.map(r => {
+    if (!r.fit) r.fit = computeFit(r, coach); // attach here; route helper won't recompute
+    const relNorm = maxPrimary > 0 ? (Number(r[primaryKey]) || 0) / maxPrimary : 0;
+    const fitForSort = (r.fit && r.fit.score != null ? r.fit.score : FIT_BLEND.neutral * 99) / 99;
+    const blended = FIT_BLEND.relevance * relNorm + FIT_BLEND.fit * fitForSort;
+    return { r, blended, primary: Number(r[primaryKey]) || 0 };
+  });
+  scored.sort((a, b) => {
+    if (b.blended !== a.blended) return b.blended - a.blended;
+    if (b.primary !== a.primary) return b.primary - a.primary;
+    return String(a.r.id) < String(b.r.id) ? -1 : (String(a.r.id) > String(b.r.id) ? 1 : 0);
+  });
+  const page = scored.slice(offset, offset + limit).map(s => s.r);
+  const hasMore = scored.length > offset + limit;
+  return { players: page, hasMore };
+}
+const MAX_FIT_WINDOW = 200; // ceiling on over-fetch; deep pages fall back to relevance-only
 
 // Build a dynamic SQL scoring expression based on which filters are active.
 // Returns { expr: string, paramCount: number }.
@@ -619,8 +651,11 @@ class PlayerProfile {
 
   // AI-powered search — searches HS players and transfer players only (never college)
   // Supports full filter set including game stat filters via JSONB
-  static async searchByAiFilters(filters, excludeUserId, limit = 20, offset = 0) {
+  static async searchByAiFilters(filters, excludeUserId, limit = 20, offset = 0, coach = null) {
     // VALID_STAT_KEYS + COMPOSITE_STAT_KEYS are module-level (also used by PortalSignal).
+    // `coach` (optional): when supplied, AI Match fit is always a ranking factor —
+    // results are over-fetched in relevance order, scored with computeFit, then
+    // blended-sorted so better fits surface (Plan 7E). null = relevance-only.
 
     const values = [];
     let paramCount = 1;
@@ -864,6 +899,45 @@ class PlayerProfile {
       paramCount++;
     }
 
+    // ---- Recruiting-profile (fit) FIELDS as direct filters (Plan 7E) ----
+    // These are PLAYER fields the coach searches on directly (distinct from the
+    // coach's own program fields the fit ENGINE reads). TEXT[] cols use `&&`
+    // (any-of overlap) — deliberately UNLIKE other_sports' `@>` (all-of) above:
+    // "open to D2 or D3" means EITHER, not BOTH. GIN-indexed (migration 046).
+    const fitArrayOverlap = (col, vals) => {
+      const placeholders = vals.map(() => {
+        const p = `$${paramCount}`;
+        paramCount++;
+        return p;
+      });
+      whereClauses.push(`pp.${col} && ARRAY[${placeholders.join(', ')}]::text[]`);
+      vals.forEach(v => values.push(v));
+    };
+    if (Array.isArray(filters.intended_major) && filters.intended_major.length > 0) {
+      fitArrayOverlap('intended_major', filters.intended_major);
+    }
+    if (Array.isArray(filters.levels_open) && filters.levels_open.length > 0) {
+      fitArrayOverlap('levels_open', filters.levels_open);
+    }
+    if (Array.isArray(filters.preferred_regions) && filters.preferred_regions.length > 0) {
+      fitArrayOverlap('preferred_regions', filters.preferred_regions);
+    }
+    if (filters.preferred_campus_setting) {
+      whereClauses.push(`pp.preferred_campus_setting = $${paramCount}`);
+      values.push(filters.preferred_campus_setting);
+      paramCount++;
+    }
+    if (filters.needs_financial_aid) {
+      whereClauses.push(`pp.needs_financial_aid = $${paramCount}`);
+      values.push(filters.needs_financial_aid);
+      paramCount++;
+    }
+    if (filters.needs_scholarship) {
+      whereClauses.push(`pp.needs_scholarship = $${paramCount}`);
+      values.push(filters.needs_scholarship);
+      paramCount++;
+    }
+
     // Offer filters (count and/or division)
     if (filters.offer_filters) {
       const of = filters.offer_filters;
@@ -988,6 +1062,21 @@ class PlayerProfile {
       orderClause = `ORDER BY relevance_score DESC`;
     }
 
+    // Fit-aware ranking (Plan 7E): when a coach is present AND this isn't an explicit
+    // name lookup, over-fetch a relevance-ordered window, then blend-sort by fit in JS.
+    // Name searches stay similarity-first (don't let fit reorder a direct lookup).
+    const useFit = coach && !filters.searchTerm && offset < MAX_FIT_WINDOW;
+    if (useFit) {
+      const windowSize = Math.min(offset + limit + 1, MAX_FIT_WINDOW);
+      const query = `SELECT ${selectCols} ${fromClause}
+        WHERE ${whereClauses.join(' AND ')}
+        ${orderClause}
+        LIMIT $${paramCount}`;
+      values.push(windowSize);
+      const result = await pool.query(query, values);
+      return rerankByFit(result.rows, coach, offset, limit, 'relevance_score');
+    }
+
     const query = `SELECT ${selectCols} ${fromClause}
       WHERE ${whereClauses.join(' AND ')}
       ${orderClause}
@@ -1006,4 +1095,7 @@ class PlayerProfile {
 module.exports = PlayerProfile;
 module.exports.VALID_STAT_KEYS = VALID_STAT_KEYS;
 module.exports.VALID_STAT_OPERATORS = VALID_STAT_OPERATORS;
+// Shared fit-aware re-ranking (Plan 7E) — reused by PortalSignal for PI parity.
+module.exports.rerankByFit = rerankByFit;
+module.exports.MAX_FIT_WINDOW = MAX_FIT_WINDOW;
 module.exports.COMPOSITE_STAT_KEYS = COMPOSITE_STAT_KEYS;

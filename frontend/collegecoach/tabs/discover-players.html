@@ -432,28 +432,28 @@
                                     </svg>
                                 </div>
                                 <h2>AI Recruiting Assistant</h2>
-                                <p>Describe the type of player you're looking for and I'll help you find them.</p>
+                                <p>Describe your ideal recruit by position, size, stats, grades, intended major, the levels and regions they're open to, even aid needs. I'll find them and rank by best fit to your program.</p>
                                 <div class="ra-suggestions">
-                                    <button class="ra-suggestion" data-prompt="Find me a 6'2+ QB from Texas with a 3.5+ GPA">
+                                    <button class="ra-suggestion" data-prompt="Find me 6'2+ CBs from Texas who run track, have a 3.5+ GPA, and best fit my program">
                                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                             <circle cx="11" cy="11" r="8"></circle>
                                             <path d="m21 21-4.35-4.35"></path>
                                         </svg>
-                                        Find me a 6'2+ QB from Texas with a 3.5+ GPA
+                                        6'2+ CBs from Texas who run track, 3.5+ GPA, best fit my program
                                     </button>
-                                    <button class="ra-suggestion" data-prompt="Show me defensive backs from Florida, class of 2026">
+                                    <button class="ra-suggestion" data-prompt="Show me class of 2026 receivers who want to study engineering and are open to my level">
                                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                             <circle cx="11" cy="11" r="8"></circle>
                                             <path d="m21 21-4.35-4.35"></path>
                                         </svg>
-                                        Show me defensive backs from Florida, class of 2026
+                                        Class of 2026 WRs who want to study engineering, open to my level
                                     </button>
-                                    <button class="ra-suggestion" data-prompt="Find transfer portal WRs with at least 2 years of eligibility">
+                                    <button class="ra-suggestion" data-prompt="Find transfer portal QBs with 2+ years eligibility, 3000+ career passing yards, who need a scholarship">
                                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                             <circle cx="11" cy="11" r="8"></circle>
                                             <path d="m21 21-4.35-4.35"></path>
                                         </svg>
-                                        Find transfer portal WRs with 2+ years eligibility
+                                        Transfer QBs, 2+ yrs eligibility, 3,000+ passing yards, need a scholarship
                                     </button>
                                 </div>
                             </div>
@@ -471,7 +471,7 @@
                                 </button>
                             </div>
                             <div class="ra-input-disclaimer">
-                                Recruiting Assistant uses AI to match players — results are suggestions, not guarantees.
+                                Recruiting Assistant uses AI to match players. Results are suggestions, not guarantees.
                             </div>
                         </div>
                     </div>
@@ -609,7 +609,9 @@
     <script src="../sidebar-footer.js"></script>
     <script src="../mainpage-coach.js?v=4"></script>
     <script src="discover-players.js"></script>
-    <script src="recruit-assistant-glossary.js"></script>
+    <!-- recruit-assistant-glossary.js intentionally NOT loaded: the AI uses the
+         server-side copy (backend/utils/recruit-assistant-glossary.js); this frontend
+         twin is a kept-in-sync reference only and must not ship to users. -->
     <script src="discover-recruit-assistant.js?v=2"></script>
 </body>
 </html>

@@ -4,6 +4,32 @@ if (process.env.NODE_ENV !== 'production' && !process.env.ANTHROPIC_API_KEY) { m
 const Anthropic = require('@anthropic-ai/sdk').default;
 const RA_GLOSSARY = require('./recruit-assistant-glossary');
 const { stripHtml } = require('../middleware/validation');
+const MATCH = require('./match-constants');
+
+// Canonical-value allowlists for the recruiting-profile (fit) FIELD filters (Plan 7E).
+// Claude must emit values string-identical to these or the SQL overlap/equality
+// silently matches nothing — so we drop any non-canonical value before it reaches
+// the model (lesson #113). Sourced from match-constants so they can never drift.
+function sanitizeFitFieldFilters(filters) {
+  if (!filters || typeof filters !== 'object') return;
+  const keepArr = (key, validSet) => {
+    if (Array.isArray(filters[key])) {
+      const cleaned = filters[key].filter(v => validSet.has(v));
+      if (cleaned.length) filters[key] = cleaned; else delete filters[key];
+    } else if (filters[key] != null) {
+      delete filters[key]; // wrong type
+    }
+  };
+  const keepScalar = (key, validSet) => {
+    if (filters[key] != null && !validSet.has(filters[key])) delete filters[key];
+  };
+  keepArr('intended_major', MATCH.VALID_MAJORS);
+  keepArr('levels_open', MATCH.VALID_LEVELS);
+  keepArr('preferred_regions', MATCH.VALID_REGIONS);
+  keepScalar('preferred_campus_setting', MATCH.VALID_CAMPUS_SETTINGS);
+  keepScalar('needs_financial_aid', MATCH.VALID_YES_NO_UNSURE);
+  keepScalar('needs_scholarship', MATCH.VALID_YES_NO_UNSURE);
+}
 
 const client = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -35,6 +61,8 @@ function validateRaResponse(obj) {
   if (filters !== null && (typeof filters !== 'object' || Array.isArray(filters))) return null;
   if (filters === null && message === null) return null;
 
+  if (filters) sanitizeFitFieldFilters(filters); // drop non-canonical fit-field values (Plan 7E)
+
   return { filters, summary, reasoning, message };
 }
 
@@ -47,6 +75,8 @@ function validatePiResponse(obj) {
 
   if (signal_filters !== null && (typeof signal_filters !== 'object' || Array.isArray(signal_filters))) return null;
   if (signal_filters === null && message === null) return null;
+
+  if (signal_filters) sanitizeFitFieldFilters(signal_filters); // drop non-canonical fit-field values (Plan 7E)
 
   return { signal_filters, summary, reasoning, message };
 }
@@ -94,6 +124,12 @@ When the coach describes players they're looking for, respond with ONLY a valid 
     "track_200m_max": null,
     "pff_grade_min": null,
     "pff_grade_max": null,
+    "intended_major": null,
+    "levels_open": null,
+    "preferred_regions": null,
+    "preferred_campus_setting": null,
+    "needs_financial_aid": null,
+    "needs_scholarship": null,
     "offer_filters": {
       "min_count": 5,
       "max_count": null,
@@ -133,6 +169,12 @@ When the coach describes players they're looking for, respond with ONLY a valid 
 - track_200m_max: Same as track_100m_max but for 200m time. Set ONLY on explicit time phrases ("sub-22 200m", "under 22 in the 200", "22.5 200 time").
 - pff_grade_min / pff_grade_max: Lower and upper bounds on PFF grade (0-100, higher = better). BOTH are independent and nullable. PFF only exists for TRANSFER PORTAL players — leave BOTH null if player_type is "hs" and note in reasoning. Fire pff_grade_min on FLOOR phrasing ("70+", "above 80", "PFF over 85") OR vague-min tiers ("good"→70, "high"→75, "great"→80, "elite"→85, "average"→60). Fire pff_grade_max on CEILING phrasing ("below 70", "under 60", "PFF of 65 or less", "at most 70") OR vague-max tiers ("backup"→65, "below average"→60, "weak"→55, "poor"→55, "bad"→50). For RANGE queries ("PFF 50-60", "between 70 and 80", "PFF 70 to 80"), set BOTH min and max — this is the critical case. Explicit numbers always win over vague mappings. Do not emit 0 — use null.
 - offer_filters: Filter by player offers. An object with three optional fields: "min_count" (minimum number of offers, e.g., 5 means 5+ offers), "max_count" (maximum number of offers, e.g., 2 means at most 2 offers — used for "sleeper"/"hidden gem" searches), and "division" (only count offers from this division, e.g., "D1 FBS"). If division is null, count ALL offers regardless of division. If both min_count and division are set, it means "at least N offers from that division." Players with NO offers also pass the max_count filter. Set offer_filters to null if coach doesn't mention offers. Use the glossary's offerTerms for natural language mappings.
+- intended_major: Array of the player's intended college majors. Use ONLY when the coach asks about what players want to STUDY ("wants to study engineering", "interested in business", "pre-med kids"). Match to canonical major names (emit EXACT strings). Use the glossary's majorTerms for phrase→major mappings. Canonical majors: ${JSON.stringify([...MATCH.VALID_MAJORS])}. null if not mentioned.
+- levels_open: Array of divisions the PLAYER is open to playing at ("open to D2", "would consider D3 or NAIA"). Emit EXACT division strings. Canonical: ${JSON.stringify(MATCH.LEVELS)}. NOTE: this is the player's openness, distinct from college_division (a transfer player's CURRENT division). null if not mentioned.
+- preferred_regions: Array of US regions the player is open to ("wants to stay in the Southeast", "open to the west coast"). Emit EXACT region strings. Canonical: ${JSON.stringify(MATCH.REGIONS)}. Use glossary regionTerms. null if not mentioned.
+- preferred_campus_setting: Single value for the campus environment the player prefers ("wants a big-city school", "prefers a rural campus"). One of: ${JSON.stringify(MATCH.CAMPUS_SETTINGS)}. Use glossary campusTerms. null if not mentioned.
+- needs_financial_aid: The player's financial-aid need. One of "yes", "no", "unsure". Use when the coach asks about aid need ("needs financial aid", "doesn't need aid"). Use glossary aidTerms. null if not mentioned.
+- needs_scholarship: The player's athletic-scholarship need. One of "yes", "no", "unsure" ("needs a scholarship", "walk-on type"). null if not mentioned.
 - searchTerm: For name/username search only
 - stat_filters: Array of stat conditions. Each has stat_key (from glossary statsByPosition), operator (>=, <=, >, <, =), value, season_year (0=career totals across all games, -1=most recent season only, or a specific year like 2024), per_game (boolean, default false), and positions array.
   - Default to season_year: 0 (career) and per_game: false unless the coach specifies otherwise

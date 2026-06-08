@@ -6688,7 +6688,7 @@ async function renderMatchScore(viewerCoachProfile, playerProfile) {
 
     // Match details for the modal, from the present dimensions only.
     const matches = (fit && Array.isArray(fit.dimensions))
-        ? fit.dimensions.filter(d => d.present).map(d => ({ label: d.label, detail: d.detail }))
+        ? fit.dimensions.filter(d => d.present).map(d => ({ label: d.label, detail: d.detail, score: d.score }))
         : null;
 
     // Subtitle: fit rating + info button (replaces the old "coming soon" text)

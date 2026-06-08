@@ -57,11 +57,29 @@
     return '<div class="fim-key">' + rows + '</div>';
   }
 
-  // Build the rows for the "what matches" list from [{label, detail}].
+  // SVG path bodies for the three match-strength icons.
+  var _ICON_CHECK = '<polyline points="20 6 9 17 4 12"></polyline>';                 // strong (green)
+  var _ICON_PARTIAL = '<circle cx="12" cy="12" r="9"></circle><line x1="8" y1="12" x2="16" y2="12"></line>'; // medium (yellow) ~
+  var _ICON_X = '<line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>';     // weak (red)
+
+  // Flat green / yellow / red by score thirds. Each band has a distinct icon shape
+  // so it reads even without color. No score (e.g. sample data) -> green check.
+  var _MATCH_GREEN = '#1f9d4d';
+  var _MATCH_YELLOW = '#eab308';
+  var _MATCH_RED = '#ef4444';
+  function _matchIcon(score) {
+    if (score == null) return { path: _ICON_CHECK, color: _MATCH_GREEN };
+    if (score >= 0.67) return { path: _ICON_CHECK, color: _MATCH_GREEN };   // strong
+    if (score >= 0.34) return { path: _ICON_PARTIAL, color: _MATCH_YELLOW }; // medium
+    return { path: _ICON_X, color: _MATCH_RED };                            // weak
+  }
+
+  // Build the rows for the "what matches" list from [{label, detail, score?}].
   function _matchRowsHTML(matches) {
     return matches.map(function (m) {
+      var ic = _matchIcon(m.score);
       return '<div class="fim-match-row">' +
-        '<svg class="fim-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>' +
+        '<svg class="fim-check" style="color:' + ic.color + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">' + ic.path + '</svg>' +
         '<div class="fim-match-text"><span class="fim-match-label">' + _esc(m.label) + '</span>' +
         '<span class="fim-match-detail">' + _esc(m.detail) + '</span></div>' +
         '</div>';

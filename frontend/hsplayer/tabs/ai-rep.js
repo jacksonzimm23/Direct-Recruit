@@ -101,7 +101,7 @@
             schoolName: school.team_name,
             division: school.college_division,
             score: school.score,
-            matches: (school.dimensions || []).map(d => ({ label: d.label, detail: d.detail })),
+            matches: (school.dimensions || []).map(d => ({ label: d.label, detail: d.detail, score: d.score })),
             staff: school.staff || [],
             coachCount: school.coachCount,
             coachHref: (username) =>

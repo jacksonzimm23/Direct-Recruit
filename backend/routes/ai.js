@@ -79,7 +79,10 @@ async function addSignedUrlsToProfiles(players, coach) {
       player.profile_image_url = await getSignedS3Url(player.profile_image_url);
     }
     // AI Match score for this coach<->player pair (null when below the display floor).
-    if (coach) {
+    // Attach AI Match fit. The search models now attach player.fit during fit-aware
+    // ranking (Plan 7E), so only compute here if absent (watchlist/saved paths, which
+    // don't go through the ranking model). Avoids double computation on search results.
+    if (coach && !player.fit) {
       player.fit = computeFit(player, coach);
     }
     // Strip email — never leak to coaches via AI search/watchlist/saved-players results.
@@ -228,14 +231,15 @@ router.post('/search', async (req, res) => {
       return res.status(400).json({ error: 'Filters are required' });
     }
 
+    const coachProfile = await CoachProfile.findByUserId(req.userId);
     const result = await PlayerProfile.searchByAiFilters(
       filters,
       req.userId,
       5,
-      offset || 0
+      offset || 0,
+      coachProfile
     );
 
-    const coachProfile = await CoachProfile.findByUserId(req.userId);
     result.players = await addSignedUrlsToProfiles(result.players, coachProfile);
 
     return res.json({
@@ -258,11 +262,13 @@ router.post('/pi-search', async (req, res) => {
       return res.status(400).json({ error: 'Signal filters are required' });
     }
 
+    const coachProfile = await CoachProfile.findByUserId(req.userId);
     const result = await PortalSignal.queryBySignalFilters(
       signal_filters,
       req.userId,
       5,
-      offset || 0
+      offset || 0,
+      coachProfile
     );
 
     // Save S3 keys before signing
@@ -271,7 +277,6 @@ router.post('/pi-search', async (req, res) => {
       if (p.profile_image_url) playerImageKeys[p.user_id] = p.profile_image_url;
     });
 
-    const coachProfile = await CoachProfile.findByUserId(req.userId);
     result.players = await addSignedUrlsToProfiles(result.players, coachProfile);
 
     return res.json({
@@ -399,12 +404,13 @@ router.post('/chats/:chatId/message', validateUUID('chatId'), async (req, res) =
       });
     }
 
-    // 8. Execute the search with AI-generated filters
+    // 8. Execute the search with AI-generated filters (coach passed for fit ranking)
     const result = await PlayerProfile.searchByAiFilters(
       aiResponse.filters,
       req.userId,
       5,
-      0
+      0,
+      coachProfile
     );
 
     // 9. Add signed URLs to player profile images + AI Match fit
@@ -643,12 +649,13 @@ router.post('/chats/:chatId/pi-message', validateUUID('chatId'), async (req, res
       });
     }
 
-    // 8. Execute the signal query with AI-generated filters
+    // 8. Execute the signal query with AI-generated filters (coach passed for fit ranking)
     const result = await PortalSignal.queryBySignalFilters(
       aiResponse.signal_filters,
       req.userId,
       5,
-      0
+      0,
+      coachProfile
     );
 
     // 9. Save S3 keys before signing (for metadata persistence)
@@ -771,7 +778,7 @@ router.post('/chats/:chatId/show-more', validateUUID('chatId'), async (req, res)
     let result, responseText, metadata;
 
     if (ai_type === 'recruit_assistant' && filters) {
-      result = await PlayerProfile.searchByAiFilters(filters, req.userId, 5, offset);
+      result = await PlayerProfile.searchByAiFilters(filters, req.userId, 5, offset, coachProfile);
       result.players = await addSignedUrlsToProfiles(result.players, coachProfile);
 
       const playerCount = result.players.length;
@@ -809,7 +816,7 @@ router.post('/chats/:chatId/show-more', validateUUID('chatId'), async (req, res)
       };
 
     } else if (ai_type === 'portal_intelligence' && signal_filters) {
-      result = await PortalSignal.queryBySignalFilters(signal_filters, req.userId, 5, offset);
+      result = await PortalSignal.queryBySignalFilters(signal_filters, req.userId, 5, offset, coachProfile);
 
       // Save S3 keys before signing
       const playerImageKeys = {};

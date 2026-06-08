@@ -74,21 +74,36 @@
    On a flex row that holds a fit-badge (Discover HS + Transfer Portal cards),
    the badge is flex-shrink:0 so it never moves; the info column must absorb ALL
    overflow so no long field (long school name, long stats line) can push, wrap,
-   or collide with the badge — it just truncates with "…". The text lines already
+   or collide with the badge. It just truncates with "…". The text lines already
    ellipsize; these rules harden the container and force the transfer stats lines
    (which normally wrap) to single-line ellipsis when a badge is present. Scoped
-   via :has() so non-badge rows are untouched. */
-.discover-desktop-row:has(.fit-badge) > .discover-desktop-info,
-.discover-row:has(.fit-badge) > .discover-row-info {
+   via :has() so non-badge rows are untouched.
+   The ROW itself also gets min-width:0 + overflow:hidden so it can never grow
+   past its panel and clip the badge off-screen (the cutoff bug). */
+.discover-desktop-row:has(.fit-badge),
+.discover-row:has(.fit-badge) {
     min-width: 0;
     overflow: hidden;
 }
+.discover-desktop-row:has(.fit-badge) > .discover-desktop-info,
+.discover-row:has(.fit-badge) > .discover-row-info {
+    min-width: 0;
+    flex: 1 1 auto;
+    overflow: hidden;
+}
+/* Every text line inside a badge row must single-line ellipsis (covers line2/line3
+   and the Last Season / Career stat lines, which normally wrap). */
+.discover-desktop-row:has(.fit-badge) .discover-desktop-name,
+.discover-desktop-row:has(.fit-badge) .discover-desktop-line2,
+.discover-desktop-row:has(.fit-badge) .discover-desktop-line3,
 .discover-desktop-row:has(.fit-badge) .discover-desktop-stats-line,
-.discover-row:has(.fit-badge) .discover-row-details.discover-row-stats-line {
+.discover-row:has(.fit-badge) .discover-row-name,
+.discover-row:has(.fit-badge) .discover-row-details {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     word-wrap: normal;
+    min-width: 0;
 }
 
 /* ---------- FULL-WIDTH BAR layout: label · bar · number ----------
@@ -139,6 +154,8 @@
     }
     .discover-desktop-row:has(.fit-badge) > .discover-desktop-info,
     .discover-row:has(.fit-badge) > .discover-row-info {
-        flex: 1;
+        flex: 1 1 100%;     /* full width above the wrapped badge bar */
+        min-width: 0;       /* still allow text lines to ellipsis, never overflow */
+        overflow: hidden;
     }
 }

@@ -1,7 +1,7 @@
 const pool = require('../config/database');
 const { PORTAL_KEYWORDS } = require('../utils/portal-intelligence');
-// Reuse stat allowlists from PlayerProfile so RA and PI accept identical stat keys.
-const { VALID_STAT_KEYS, VALID_STAT_OPERATORS, COMPOSITE_STAT_KEYS } = require('./PlayerProfile');
+// Reuse stat allowlists + fit re-ranking from PlayerProfile so RA and PI behave identically.
+const { VALID_STAT_KEYS, VALID_STAT_OPERATORS, COMPOSITE_STAT_KEYS, rerankByFit, MAX_FIT_WINDOW } = require('./PlayerProfile');
 
 class PortalSignal {
   /**
@@ -18,7 +18,9 @@ class PortalSignal {
    * @param {number} offset - Pagination offset
    * @returns {{ players: Array, hasMore: boolean }}
    */
-  static async queryBySignalFilters(filters, excludeUserId, limit = 10, offset = 0) {
+  static async queryBySignalFilters(filters, excludeUserId, limit = 10, offset = 0, coach = null) {
+    // `coach` (optional): when supplied, AI Match fit is a ranking factor on the
+    // signal-flagged candidates (Plan 7E), mirroring RA. null = recency order.
     const signalTypes = filters.signal_types || ['bio_and_film', 'portal_keywords', 'browsing_coaches'];
     const days = parseInt(filters.days, 10) || 14;
     const values = [];
@@ -245,6 +247,43 @@ class PortalSignal {
       paramCount++;
     }
 
+    // ---- Recruiting-profile (fit) FIELDS as direct filters (Plan 7E) ----
+    // Mirrors PlayerProfile.searchByAiFilters so RA and PI behave identically.
+    // TEXT[] cols use `&&` (any-of overlap); VARCHAR cols use equality.
+    const fitArrayOverlap = (col, vals) => {
+      const placeholders = vals.map(() => {
+        const p = `$${paramCount}`;
+        paramCount++;
+        return p;
+      });
+      whereClauses.push(`pp.${col} && ARRAY[${placeholders.join(', ')}]::text[]`);
+      vals.forEach(v => values.push(v));
+    };
+    if (Array.isArray(filters.intended_major) && filters.intended_major.length > 0) {
+      fitArrayOverlap('intended_major', filters.intended_major);
+    }
+    if (Array.isArray(filters.levels_open) && filters.levels_open.length > 0) {
+      fitArrayOverlap('levels_open', filters.levels_open);
+    }
+    if (Array.isArray(filters.preferred_regions) && filters.preferred_regions.length > 0) {
+      fitArrayOverlap('preferred_regions', filters.preferred_regions);
+    }
+    if (filters.preferred_campus_setting) {
+      whereClauses.push(`pp.preferred_campus_setting = $${paramCount}`);
+      values.push(filters.preferred_campus_setting);
+      paramCount++;
+    }
+    if (filters.needs_financial_aid) {
+      whereClauses.push(`pp.needs_financial_aid = $${paramCount}`);
+      values.push(filters.needs_financial_aid);
+      paramCount++;
+    }
+    if (filters.needs_scholarship) {
+      whereClauses.push(`pp.needs_scholarship = $${paramCount}`);
+      values.push(filters.needs_scholarship);
+      paramCount++;
+    }
+
     // Stat filters — EXISTS subquery into player_games + player_game_stats.
     // Mirrors the logic in PlayerProfile.searchByAiFilters so RA and PI behave
     // identically for stat queries. Each filter becomes its own EXISTS clause,
@@ -308,30 +347,56 @@ class PortalSignal {
     // Build the query — select players with signal flags, then filter to only those with at least one signal
     const havingCondition = signalConditions.map(s => s).join(' OR ');
 
-    const query = `
-      SELECT
-        pp.*,
-        ${signalSelects.join(',\n        ')}
-      FROM player_profiles pp
-      JOIN users u ON pp.user_id = u.id
-      WHERE ${whereClauses.join(' AND ')}
-        AND u.is_active = true
-      ORDER BY pp.updated_at DESC
-      LIMIT $${paramCount} OFFSET $${paramCount + 1}
-    `;
-    values.push(limit * 5, offset); // Over-fetch to filter in-app
-    paramCount += 2;
+    // Fit-aware ranking (Plan 7E): when a coach is present, over-fetch a window from
+    // offset 0 (recency order), post-filter to signal-flagged players, then blend-sort
+    // by fit and slice. Without a coach, keep the original offset-based over-fetch.
+    const useFit = coach && offset < MAX_FIT_WINDOW;
+    if (useFit) {
+      const query = `
+        SELECT
+          pp.*,
+          ${signalSelects.join(',\n        ')}
+        FROM player_profiles pp
+        JOIN users u ON pp.user_id = u.id
+        WHERE ${whereClauses.join(' AND ')}
+          AND u.is_active = true
+        ORDER BY pp.updated_at DESC
+        LIMIT $${paramCount}
+      `;
+      values.push(MAX_FIT_WINDOW); // window from offset 0 so fit ordering is global
+      paramCount += 1;
+      const result = await pool.query(query, values);
+      const flagged = result.rows.filter(row => signalConditions.some(s => row[s] === true));
+      // recency is the SQL primary order; use a synthetic numeric key for the blend
+      flagged.forEach((r, i) => { r._recency_rank = flagged.length - i; });
+      var { players, hasMore } = rerankByFit(flagged, coach, offset, limit, '_recency_rank');
+      players.forEach(p => { delete p._recency_rank; });
+    } else {
+      const query = `
+        SELECT
+          pp.*,
+          ${signalSelects.join(',\n        ')}
+        FROM player_profiles pp
+        JOIN users u ON pp.user_id = u.id
+        WHERE ${whereClauses.join(' AND ')}
+          AND u.is_active = true
+        ORDER BY pp.updated_at DESC
+        LIMIT $${paramCount} OFFSET $${paramCount + 1}
+      `;
+      values.push(limit * 5, offset); // Over-fetch to filter in-app
+      paramCount += 2;
 
-    const result = await pool.query(query, values);
+      const result = await pool.query(query, values);
 
-    // Filter to only players who have at least one active signal
-    const flaggedPlayers = result.rows.filter(row => {
-      return signalConditions.some(signal => row[signal] === true);
-    });
+      // Filter to only players who have at least one active signal
+      const flaggedPlayers = result.rows.filter(row => {
+        return signalConditions.some(signal => row[signal] === true);
+      });
 
-    // Trim to limit + 1 for hasMore detection
-    const hasMore = flaggedPlayers.length > limit;
-    const players = hasMore ? flaggedPlayers.slice(0, limit) : flaggedPlayers;
+      // Trim to limit + 1 for hasMore detection
+      var hasMore = flaggedPlayers.length > limit;
+      var players = hasMore ? flaggedPlayers.slice(0, limit) : flaggedPlayers;
+    }
 
     // Enrich each player with signal_types array and signal_details
     const enrichedPlayers = await Promise.all(players.map(async (player) => {

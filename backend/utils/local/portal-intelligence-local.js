@@ -4,6 +4,9 @@
  * Production is NOT affected — this file is only loaded when NODE_ENV !== 'production'.
  */
 
+// Reuse the RA mock's fit-field phrase detector so PI parses the same NL (Plan 7E).
+const { detectFitFieldFilters } = require('./ai-local');
+
 // Must export PORTAL_KEYWORDS — imported by PortalSignal.js model
 const PORTAL_KEYWORDS = [
   'transfer', 'portal', 'eligible', 'eligibility',
@@ -35,33 +38,38 @@ async function getPortalIntelligence(messages, coachState, coachDivision) {
   }
 
   // Return a sample signal filter response
+  const signal_filters = {
+    signal_types: ['bio_and_film', 'portal_keywords', 'browsing_coaches'],
+    position: null,
+    state: null,
+    college_division: coachDivision || null,
+    min_height: null,
+    max_height: null,
+    min_weight: null,
+    max_weight: null,
+    min_gpa: null,
+    max_gpa: null,
+    min_sat_score: null,
+    max_sat_score: null,
+    min_act_score: null,
+    max_act_score: null,
+    graduation_year: null,
+    max_graduation_year: null,
+    eligibility: null,
+    max_eligibility: null,
+    track_100m_max: null,
+    track_200m_max: null,
+    pff_grade_min: null,
+    pff_grade_max: null,
+    stat_filters: [],
+    days: 14
+  };
+
+  // Plan 7E: detect fit-field phrases so PI's new NL filters are testable locally.
+  detectFitFieldFilters(content, signal_filters);
+
   return {
-    signal_filters: {
-      signal_types: ['bio_and_film', 'portal_keywords', 'browsing_coaches'],
-      position: null,
-      state: null,
-      college_division: coachDivision || null,
-      min_height: null,
-      max_height: null,
-      min_weight: null,
-      max_weight: null,
-      min_gpa: null,
-      max_gpa: null,
-      min_sat_score: null,
-      max_sat_score: null,
-      min_act_score: null,
-      max_act_score: null,
-      graduation_year: null,
-      max_graduation_year: null,
-      eligibility: null,
-      max_eligibility: null,
-      track_100m_max: null,
-      track_200m_max: null,
-      pff_grade_min: null,
-      pff_grade_max: null,
-      stat_filters: [],
-      days: 14
-    },
+    signal_filters,
     summary: '[LOCAL DEV] Sample search: All signal types, last 14 days',
     reasoning: '[LOCAL DEV - hardcoded sample response. Real AI is disabled. Connect an Anthropic API key in .env to enable real AI.]',
     _meta

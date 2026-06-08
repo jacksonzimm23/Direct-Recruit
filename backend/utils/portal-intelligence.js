@@ -4,6 +4,7 @@ if (process.env.NODE_ENV !== 'production' && !process.env.ANTHROPIC_PI_API_KEY) 
 const Anthropic = require('@anthropic-ai/sdk').default;
 const RA_GLOSSARY = require('./recruit-assistant-glossary');
 const { wrapUserMessage, validatePiResponse, stripHtml } = require('./ai');
+const MATCH = require('./match-constants');
 
 const piClient = new Anthropic({
   apiKey: process.env.ANTHROPIC_PI_API_KEY,
@@ -69,6 +70,12 @@ When the coach asks about portal predictions or player signals, respond with ONL
     "track_200m_max": null,
     "pff_grade_min": null,
     "pff_grade_max": null,
+    "intended_major": null,
+    "levels_open": null,
+    "preferred_regions": null,
+    "preferred_campus_setting": null,
+    "needs_financial_aid": null,
+    "needs_scholarship": null,
     "stat_filters": [],
     "days": 14
   },
@@ -90,6 +97,12 @@ When the coach asks about portal predictions or player signals, respond with ONL
 - eligibility / max_eligibility: Integer years remaining. Exact count → only eligibility. Range → both bounds.
 - track_100m_max / track_200m_max: Upper bound in seconds (faster = lower = more elite). Fire ONLY on explicit numeric thresholds ("sub-11 100m"). Never on vague terms ("burner", "fast").
 - pff_grade_min / pff_grade_max: Lower and upper bounds on PFF grade (0-100). BOTH nullable and independent. Fire pff_grade_min on FLOOR phrasing ("70+ PFF", "PFF above 80") or vagueMinTerms ("good"→70, "elite"→85). Fire pff_grade_max on CEILING phrasing ("below 70 PFF", "under 60", "at most 65") or vagueMaxTerms ("backup"→65, "below average"→60, "weak"→55, "poor"→55, "bad"→50). For RANGE queries ("PFF 50-60", "between 70 and 80"), set BOTH bounds — this is critical. Explicit numbers override vague mappings. Players with no grade on file are excluded when either filter is set. Do not emit 0 — use null.
+- intended_major: Array of the player's intended college majors ("wants to study engineering"). Emit EXACT canonical strings: ${JSON.stringify([...MATCH.VALID_MAJORS])}. Use glossary majorTerms. null if not mentioned.
+- levels_open: Array of divisions the PLAYER is open to ("open to D2"). EXACT strings: ${JSON.stringify(MATCH.LEVELS)}. Distinct from college_division (the player's CURRENT division). null if not mentioned.
+- preferred_regions: Array of US regions the player is open to ("west coast"). EXACT strings: ${JSON.stringify(MATCH.REGIONS)}. Use glossary regionTerms. null if not mentioned.
+- preferred_campus_setting: Single campus-environment preference. One of: ${JSON.stringify(MATCH.CAMPUS_SETTINGS)}. Use glossary campusTerms. null if not mentioned.
+- needs_financial_aid: "yes" | "no" | "unsure" — the player's financial-aid need. Use glossary aidTerms. null if not mentioned.
+- needs_scholarship: "yes" | "no" | "unsure" — the player's athletic-scholarship need. null if not mentioned.
 - stat_filters: Array of stat conditions on college game stats. Each entry has stat_key (from glossary statsByPosition / statAliases — e.g. "pass_yds", "tackles", "total_tds"), operator (">=", "<=", ">", "<", "="), value, season_year (0=career totals, -1=most recent season, or specific year like 2024), per_game (boolean, default false — true ONLY when coach says "in a game" / "per game"), and positions array. Default to season_year: 0 and per_game: false. For RANGE queries on stats ("2500-3500 pass yds", "tackles between 50 and 80"), emit TWO entries with the SAME stat_key/season_year/per_game/positions but operator ">=" and "<=" with the respective bounds. Never silently drop the upper bound. Set to [] when no stat filtering is requested.
 - days: Lookback window in days. Default 14. The coach might say "last week" (7), "last month" (30), "last 2 weeks" (14), etc.
 
@@ -109,7 +122,12 @@ ${JSON.stringify({
   stateAliases: RA_GLOSSARY.stateAliases,
   pffGradeTerms: RA_GLOSSARY.pffGradeTerms,
   statsByPosition: RA_GLOSSARY.statsByPosition,
-  statAliases: RA_GLOSSARY.statAliases
+  statAliases: RA_GLOSSARY.statAliases,
+  majorTerms: RA_GLOSSARY.majorTerms,
+  levelTerms: RA_GLOSSARY.levelTerms,
+  regionTerms: RA_GLOSSARY.regionTerms,
+  campusTerms: RA_GLOSSARY.campusTerms,
+  aidTerms: RA_GLOSSARY.aidTerms
 }, null, 2)}
 
 ## Division Aliases (Quick Reference)
