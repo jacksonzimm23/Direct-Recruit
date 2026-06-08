@@ -9,6 +9,7 @@ const { getPortalIntelligence } = require('../utils/portal-intelligence');
 const PortalSignal = require('../models/PortalSignal');
 const PortalWatchlist = require('../models/PortalWatchlist');
 const { getSignedS3Url } = require('../utils/s3');
+const { computeFit } = require('../utils/fit-score');
 const PlayerGameStats = require('../models/PlayerGameStats');
 const AiAnalytics = require('../models/AiAnalytics');
 const RaSavedPlayers = require('../models/RaSavedPlayers');
@@ -68,11 +69,18 @@ function extractActiveFilters(filters) {
   return active;
 }
 
-// Helper: add signed URLs to player profiles (same pattern as profile.js)
-async function addSignedUrlsToProfiles(players) {
+// Helper: add signed URLs to player profiles (same pattern as profile.js).
+// When `coach` is supplied, also attach the AI Match fit (Plan 7). The whole ai.js
+// router is coach-gated, so the viewer is always a coach — callers just pass the
+// already-loaded CoachProfile so we don't re-query per call site.
+async function addSignedUrlsToProfiles(players, coach) {
   return Promise.all(players.map(async (player) => {
     if (player.profile_image_url) {
       player.profile_image_url = await getSignedS3Url(player.profile_image_url);
+    }
+    // AI Match score for this coach<->player pair (null when below the display floor).
+    if (coach) {
+      player.fit = computeFit(player, coach);
     }
     // Strip email — never leak to coaches via AI search/watchlist/saved-players results.
     // The vestigial player_profiles.email column comes through any pp.* SELECT. (Security #32.)
@@ -227,7 +235,8 @@ router.post('/search', async (req, res) => {
       offset || 0
     );
 
-    result.players = await addSignedUrlsToProfiles(result.players);
+    const coachProfile = await CoachProfile.findByUserId(req.userId);
+    result.players = await addSignedUrlsToProfiles(result.players, coachProfile);
 
     return res.json({
       players: result.players,
@@ -262,7 +271,8 @@ router.post('/pi-search', async (req, res) => {
       if (p.profile_image_url) playerImageKeys[p.user_id] = p.profile_image_url;
     });
 
-    result.players = await addSignedUrlsToProfiles(result.players);
+    const coachProfile = await CoachProfile.findByUserId(req.userId);
+    result.players = await addSignedUrlsToProfiles(result.players, coachProfile);
 
     return res.json({
       players: result.players,
@@ -397,8 +407,8 @@ router.post('/chats/:chatId/message', validateUUID('chatId'), async (req, res) =
       0
     );
 
-    // 9. Add signed URLs to player profile images
-    result.players = await addSignedUrlsToProfiles(result.players);
+    // 9. Add signed URLs to player profile images + AI Match fit
+    result.players = await addSignedUrlsToProfiles(result.players, coachProfile);
 
     // 10. Build response text (clean, coach-facing — no internal reasoning)
     const playerCount = result.players.length;
@@ -428,7 +438,8 @@ router.post('/chats/:chatId/message', validateUUID('chatId'), async (req, res) =
         graduation_year: p.graduation_year,
         transfer: p.transfer,
         offers: p.offers || null,
-        relevance_score: p.relevance_score || null
+        relevance_score: p.relevance_score || null,
+        fit_score: p.fit ? p.fit.score : null
       };
 
       // Fetch game/career stats for this player
@@ -646,8 +657,8 @@ router.post('/chats/:chatId/pi-message', validateUUID('chatId'), async (req, res
       if (p.profile_image_url) playerImageKeys[p.user_id] = p.profile_image_url;
     });
 
-    // 10. Add signed URLs to player profile images
-    result.players = await addSignedUrlsToProfiles(result.players);
+    // 10. Add signed URLs to player profile images + AI Match fit
+    result.players = await addSignedUrlsToProfiles(result.players, coachProfile);
 
     // 11. Build response text
     const playerCount = result.players.length;
@@ -672,7 +683,8 @@ router.post('/chats/:chatId/pi-message', validateUUID('chatId'), async (req, res
       college_division: p.college_division,
       signal_types: p.signal_types,
       signal_details: p.signal_details,
-      profile_image_key: playerImageKeys[p.user_id] || null
+      profile_image_key: playerImageKeys[p.user_id] || null,
+      fit_score: p.fit ? p.fit.score : null
     }));
 
     await AiChat.addMessage(chatId, req.userId, 'assistant', stripHtml(responseText), {
@@ -753,11 +765,14 @@ router.post('/chats/:chatId/show-more', validateUUID('chatId'), async (req, res)
     // Save user message
     await AiChat.addMessage(chatId, req.userId, 'user', 'Show me more');
 
+    // Coach profile for AI Match fit on the additional player cards.
+    const coachProfile = await CoachProfile.findByUserId(req.userId);
+
     let result, responseText, metadata;
 
     if (ai_type === 'recruit_assistant' && filters) {
       result = await PlayerProfile.searchByAiFilters(filters, req.userId, 5, offset);
-      result.players = await addSignedUrlsToProfiles(result.players);
+      result.players = await addSignedUrlsToProfiles(result.players, coachProfile);
 
       const playerCount = result.players.length;
       if (playerCount === 0) {
@@ -773,7 +788,8 @@ router.post('/chats/:chatId/show-more', validateUUID('chatId'), async (req, res)
           position: p.position, height: p.height, weight: p.weight, gpa: p.gpa,
           state: p.state, team_name: p.team_name, college_division: p.college_division,
           eligibility: p.eligibility, graduation_year: p.graduation_year,
-          transfer: p.transfer, relevance_score: p.relevance_score || null
+          transfer: p.transfer, relevance_score: p.relevance_score || null,
+          fit_score: p.fit ? p.fit.score : null
         };
         try {
           const games = await PlayerGameStats.getByUserId(p.user_id);
@@ -800,7 +816,7 @@ router.post('/chats/:chatId/show-more', validateUUID('chatId'), async (req, res)
       result.players.forEach(p => {
         if (p.profile_image_url) playerImageKeys[p.user_id] = p.profile_image_url;
       });
-      result.players = await addSignedUrlsToProfiles(result.players);
+      result.players = await addSignedUrlsToProfiles(result.players, coachProfile);
 
       const playerCount = result.players.length;
       if (playerCount === 0) {
@@ -815,7 +831,8 @@ router.post('/chats/:chatId/show-more', validateUUID('chatId'), async (req, res)
         weight: p.weight, gpa: p.gpa, team_name: p.team_name,
         college_division: p.college_division, signal_types: p.signal_types,
         signal_details: p.signal_details,
-        profile_image_key: playerImageKeys[p.user_id] || null
+        profile_image_key: playerImageKeys[p.user_id] || null,
+        fit_score: p.fit ? p.fit.score : null
       }));
 
       metadata = {
@@ -851,7 +868,8 @@ router.post('/chats/:chatId/show-more', validateUUID('chatId'), async (req, res)
 router.get('/watchlist', async (req, res) => {
   try {
     let players = await PortalWatchlist.getWatchlist(req.userId);
-    players = await addSignedUrlsToProfiles(players);
+    const coachProfile = await CoachProfile.findByUserId(req.userId);
+    players = await addSignedUrlsToProfiles(players, coachProfile);
     const count = players.length;
     res.json({ players, count, max: 50 });
   } catch (error) {
@@ -926,7 +944,8 @@ router.delete('/watchlist', async (req, res) => {
 router.get('/saved', async (req, res) => {
   try {
     let players = await RaSavedPlayers.getSavedPlayers(req.userId);
-    players = await addSignedUrlsToProfiles(players);
+    const coachProfile = await CoachProfile.findByUserId(req.userId);
+    players = await addSignedUrlsToProfiles(players, coachProfile);
     const count = players.length;
     res.json({ players, count, max: 50 });
   } catch (error) {

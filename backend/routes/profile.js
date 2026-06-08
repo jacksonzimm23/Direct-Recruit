@@ -15,6 +15,7 @@ const { authMiddleware, requireRole, validateUUID } = require('../middleware/aut
 const { validationResult } = require('express-validator');
 const { validatePlayerProfile, validateCoachProfile, validateOtherProfile, validatePlayerProfileUpdate, validateCoachProfileUpdate, validateOtherProfileUpdate, handleValidationErrors } = require('../middleware/validation');
 const { getSignedS3Url } = require('../utils/s3');
+const { computeFit } = require('../utils/fit-score');
 const { apiLimiter, availabilityLimiter, availabilityDailyLimiter } = require('../middleware/rateLimit');
 const AiEngagement = require('../models/AiEngagement');
 const logger = require('../utils/logger');
@@ -402,6 +403,25 @@ router.get('/player/:userId', authMiddleware, validateUUID('userId'), async (req
   }
 });
 
+// Get AI Match fit for a player, from the requesting coach's program (Plan 7).
+// Coach-only: powers the recruiting-profile banner + "what this player matches you on" modal.
+router.get('/fit/:playerUserId', authMiddleware, validateUUID('playerUserId'), requireRole('coach'), async (req, res) => {
+  try {
+    const coach = await CoachProfile.findByUserId(req.userId);
+    if (!coach) {
+      return res.status(404).json({ error: 'Coach profile not found' });
+    }
+    const player = await PlayerProfile.findByUserId(req.params.playerUserId);
+    if (!player) {
+      return res.status(404).json({ error: 'Player profile not found' });
+    }
+    res.json({ fit: computeFit(player, coach) });
+  } catch (error) {
+    logger.error('Get fit error:', error);
+    res.status(500).json({ error: 'Failed to compute fit' });
+  }
+});
+
 // Get Coach Profile
 router.get('/coach/:userId', authMiddleware, validateUUID('userId'), async (req, res) => {
   try {
@@ -473,6 +493,11 @@ router.get('/discover/hsplayers', authMiddleware, async (req, res) => {
     const offset = Math.max(parseInt(req.query.offset) || 0, 0);
 
     const result = await PlayerProfile.searchHSPlayers(filters, limit, offset);
+    // AI Match fit (Plan 7): attach when the viewer is a college coach.
+    const viewerCoach = await CoachProfile.findByUserId(req.userId);
+    if (viewerCoach) {
+      result.players.forEach(p => { p.fit = computeFit(p, viewerCoach); });
+    }
     result.players = await addSignedUrlsToProfiles(result.players);
     res.json({ players: result.players, hasMore: result.hasMore });
   } catch (error) {
@@ -522,6 +547,11 @@ router.get('/discover/transferplayers', authMiddleware, async (req, res) => {
     const offset = Math.max(parseInt(req.query.offset) || 0, 0);
 
     const result = await PlayerProfile.searchTransferPlayers(filters, limit, offset);
+    // AI Match fit (Plan 7): attach when the viewer is a college coach.
+    const viewerCoach = await CoachProfile.findByUserId(req.userId);
+    if (viewerCoach) {
+      result.players.forEach(p => { p.fit = computeFit(p, viewerCoach); });
+    }
     result.players = await addSignedUrlsToProfiles(result.players);
     res.json({ players: result.players, hasMore: result.hasMore });
   } catch (error) {

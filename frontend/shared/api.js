@@ -612,6 +612,11 @@ const profileAPI = {
         return await apiRequest(`/profile/other/${userId}`);
     },
 
+    // AI Match fit for a player from the requesting coach's program (Plan 7). Coach-only.
+    getFit: async (playerUserId) => {
+        return await apiRequest(`/profile/fit/${playerUserId}`);
+    },
+
     searchPlayers: async (filters) => {
         const params = new URLSearchParams(filters);
         return await apiRequest(`/profile/search/players?${params}`);

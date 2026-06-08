@@ -7607,29 +7607,47 @@ function rpTitleCase(value) {
 // (number only, no fill bar) + fit rating (Strong/Good/...) + ⓘ button that opens
 // the AI Match explainer modal. Plan 7 swaps FitDisplay.PLACEHOLDER_SCORE for the
 // real score and passes computed match reasons to FitInfoModal.open({score, matches}).
-function renderMatchScore(viewerCoachProfile, playerProfile) {
+async function renderMatchScore(viewerCoachProfile, playerProfile) {
     const scoreEl = document.getElementById('rmbScore');
     if (!scoreEl) return;
     if (typeof FitDisplay === 'undefined') { scoreEl.textContent = '—'; return; }
-    const score = FitDisplay.PLACEHOLDER_SCORE;
-    const tier = FitDisplay.tierOf(score);
-    scoreEl.textContent = String(score) + (FitDisplay.FIT_SHOW_PERCENT ? '%' : '');
-    scoreEl.style.color = tier.color;
+
+    const playerName = playerProfile
+        ? `${playerProfile.first_name || ''} ${playerProfile.last_name || ''}`.trim()
+        : '';
+
+    // Fetch the real AI Match fit for the viewing coach <-> this player (Plan 7).
+    let fit = null;
+    try {
+        const res = await API.profile.getFit(playerProfile.user_id);
+        fit = res && res.fit;
+    } catch (e) {
+        // network/permission error -> fall back to the "not yet rated" state below
+    }
+
+    const score = fit ? fit.score : null;        // null => below the display floor
+    const tier = score != null ? FitDisplay.tierOf(score) : null;
+    scoreEl.textContent = score != null ? (String(score) + (FitDisplay.FIT_SHOW_PERCENT ? '%' : '')) : '—';
+    if (tier) scoreEl.style.color = tier.color;
+
+    // Match details for the modal, from the present dimensions only.
+    const matches = (fit && Array.isArray(fit.dimensions))
+        ? fit.dimensions.filter(d => d.present).map(d => ({ label: d.label, detail: d.detail }))
+        : null;
 
     // Subtitle: fit rating + info button (replaces the old "coming soon" text)
     const subEl = document.getElementById('rmbSub');
     if (subEl) {
-        const playerName = playerProfile
-            ? `${playerProfile.first_name || ''} ${playerProfile.last_name || ''}`.trim()
-            : '';
+        const ratingLabel = tier ? tier.label : 'Not yet rated';
+        const ratingColor = tier ? tier.color : 'var(--text-secondary, #64748b)';
         subEl.innerHTML =
-            `<span class="rmb-rating" style="color:${tier.color}">${tier.label}</span>` +
+            `<span class="rmb-rating" style="color:${ratingColor}">${ratingLabel}</span>` +
             `<button class="rmb-info-btn" id="rmbInfoBtn" aria-label="About AI Match" title="About AI Match" type="button">` +
             `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="11" x2="12" y2="17"></line><line x1="12" y1="7" x2="12.01" y2="7"></line></svg>` +
             `</button>`;
         const infoBtn = document.getElementById('rmbInfoBtn');
         if (infoBtn && typeof FitInfoModal !== 'undefined') {
-            infoBtn.addEventListener('click', () => FitInfoModal.open({ score, playerName }));
+            infoBtn.addEventListener('click', () => FitInfoModal.open({ score, playerName, matches }));
         }
     }
 }

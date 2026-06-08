@@ -235,7 +235,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                     ${lastSeasonHtml}
                     ${careerHtml}
                 </div>
-                ${typeof FitDisplay !== 'undefined' ? FitDisplay.badgeHTML(FitDisplay.PLACEHOLDER_SCORE, { playerId: player.user_id }) : ''}
+                ${typeof FitDisplay !== 'undefined' ? FitDisplay.badgeHTML(player.fit ? player.fit.score : (player.fit_score != null ? player.fit_score : null), { playerId: player.user_id }) : ''}
             </div>`;
         }
 
@@ -253,7 +253,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                 ${lastSeasonHtml}
                 ${careerHtml}
             </div>
-            ${typeof FitDisplay !== 'undefined' ? FitDisplay.badgeHTML(FitDisplay.PLACEHOLDER_SCORE, { playerId: player.user_id }) : ''}
+            ${typeof FitDisplay !== 'undefined' ? FitDisplay.badgeHTML(player.fit ? player.fit.score : (player.fit_score != null ? player.fit_score : null), { playerId: player.user_id }) : ''}
         </div>`;
     }
 
