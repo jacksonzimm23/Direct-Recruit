@@ -9218,11 +9218,35 @@ function rpTitleCase(value) {
     return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
-// Stub for the coach-only match score. Plan 7 replaces this body with the real
-// deterministic + AI fit score computed from the viewing coach's program profile.
+// Coach-only AI Match score on the recruiting-profile banner. PLAN 6 = placeholder
+// (number only, no fill bar) + fit rating (Strong/Good/...) + ⓘ button that opens
+// the AI Match explainer modal. Plan 7 swaps FitDisplay.PLACEHOLDER_SCORE for the
+// real score and passes computed match reasons to FitInfoModal.open({score, matches}).
 function renderMatchScore(viewerCoachProfile, playerProfile) {
     const scoreEl = document.getElementById('rmbScore');
-    if (scoreEl) scoreEl.textContent = '—%';
+    if (!scoreEl) return;
+    if (typeof FitDisplay === 'undefined') { scoreEl.textContent = '—'; return; }
+    const score = FitDisplay.PLACEHOLDER_SCORE;
+    const tier = FitDisplay.tierOf(score);
+    scoreEl.textContent = String(score) + (FitDisplay.FIT_SHOW_PERCENT ? '%' : '');
+    scoreEl.style.color = tier.color;
+
+    // Subtitle: fit rating + info button (replaces the old "coming soon" text)
+    const subEl = document.getElementById('rmbSub');
+    if (subEl) {
+        const playerName = playerProfile
+            ? `${playerProfile.first_name || ''} ${playerProfile.last_name || ''}`.trim()
+            : '';
+        subEl.innerHTML =
+            `<span class="rmb-rating" style="color:${tier.color}">${tier.label}</span>` +
+            `<button class="rmb-info-btn" id="rmbInfoBtn" aria-label="About AI Match" title="About AI Match" type="button">` +
+            `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="11" x2="12" y2="17"></line><line x1="12" y1="7" x2="12.01" y2="7"></line></svg>` +
+            `</button>`;
+        const infoBtn = document.getElementById('rmbInfoBtn');
+        if (infoBtn && typeof FitInfoModal !== 'undefined') {
+            infoBtn.addEventListener('click', () => FitInfoModal.open({ score, playerName }));
+        }
+    }
 }
 
 // Populate all read-only subtab fields from the loaded profile.

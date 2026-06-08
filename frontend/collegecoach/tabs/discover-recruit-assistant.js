@@ -472,6 +472,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div class="ra-row-line2 ${isTransfer ? 'color-red' : 'color-cerulean'}">${line2}</div>
                 <div class="ra-row-line3">${line3}</div>
             </div>
+            ${typeof FitDisplay !== 'undefined' ? FitDisplay.badgeHTML(FitDisplay.PLACEHOLDER_SCORE, { playerId: player.user_id }) : ''}
             <div class="ra-row-actions">
                 <button class="ra-btn-save-player" data-player-id="${player.user_id || ''}" data-saved="false" title="Save player for later">
                     <svg class="ra-save-icon-outline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">

@@ -502,6 +502,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 </svg>
                 ${escapeHtml(school)}${division ? ` (${division})` : ''}
             </div>
+            ${typeof FitDisplay !== 'undefined' ? FitDisplay.badgeHTML(FitDisplay.PLACEHOLDER_SCORE, { playerId: player.user_id, variant: 'bar' }) : ''}
             <div class="pi-signal-badges">${signalBadges}</div>
             ${signalDetailsHtml ? `<div class="pi-signal-details">${signalDetailsHtml}</div>` : ''}
             <div class="pi-card-actions">

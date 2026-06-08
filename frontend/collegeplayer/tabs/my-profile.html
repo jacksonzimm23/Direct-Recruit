@@ -14,6 +14,7 @@
     <link rel="stylesheet" href="../../landingpage/styles.css">
     <link rel="stylesheet" href="../mainpage-player.css">
     <link rel="stylesheet" href="my-profile.css">
+    <link rel="stylesheet" href="../../shared/fit-info-modal.css">
     <link rel="stylesheet" href="../../shared/image-cropper.css">
     <link rel="stylesheet" href="../../shared/school-search.css">
     <link rel="stylesheet" href="../../shared/mobile-overrides.css?v=2">
@@ -268,7 +269,8 @@
                 <!-- Recruiting Profile Tab (AI Fit-Matching) — first tab; shown to coaches + owner -->
                 <div class="tab-pane" id="recruiting-profile">
                     <div class="recruiting-match-banner" id="recruitingMatchBanner" style="display: none;">
-                        <div class="rmb-score" id="rmbScore">—%</div>
+                        <div class="rmb-label">AI Match</div>
+                        <div class="rmb-score" id="rmbScore">—</div>
                         <div class="rmb-sub" id="rmbSub">Match score coming soon — calculated from your program profile</div>
                     </div>
                     <p class="recruiting-disclaimer" id="recruitingDisclaimer" style="display: none;">Only college coaches can see this section. This is how your recruiting profile appears to them.</p>
@@ -571,6 +573,8 @@
     </div>
 
     <script src="../../shared/api.js"></script>
+    <script src="../../shared/fit-display.js"></script>
+    <script src="../../shared/fit-info-modal.js"></script>
     <script src="../../shared/modal-utils.js"></script>
     <script src="../../shared/mobile-header.js?v=4"></script>
     <!-- ===== Recruiting Profile per-subtab edit modals (AI Fit-Matching) ===== -->

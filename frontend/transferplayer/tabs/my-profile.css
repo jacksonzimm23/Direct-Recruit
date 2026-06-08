@@ -8694,16 +8694,50 @@ input[type="file"]::file-selector-button:hover {
     border: 2px solid rgba(18, 130, 162, 0.35);
     border-radius: 14px;
 }
+.recruiting-match-banner .rmb-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--white);
+}
 .recruiting-match-banner .rmb-score {
     font-size: 2.5rem;
     font-weight: 800;
-    color: var(--cerulean);
+    color: var(--cerulean);   /* fallback; JS sets tier color inline */
     line-height: 1;
 }
 .recruiting-match-banner .rmb-sub {
     font-size: 0.85rem;
     color: rgba(254, 252, 251, 0.6);
+    /* Rating stays centered on the banner; the ⓘ is positioned to its right
+       without shifting the centering. */
+    position: relative;
+    display: inline-flex;
+    align-self: center;
+    align-items: center;
 }
+.recruiting-match-banner .rmb-rating {
+    font-size: 1rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+.recruiting-match-banner .rmb-info-btn {
+    position: absolute;
+    left: 100%;
+    margin-left: 0.4rem;
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    color: var(--cerulean);
+    display: inline-flex;
+    align-items: center;
+    transition: color 0.15s ease;
+}
+.recruiting-match-banner .rmb-info-btn:hover { color: var(--cerulean); opacity: 0.8; }
+.recruiting-match-banner .rmb-info-btn svg { width: 18px; height: 18px; }
 
 /* Owner disclaimer */
 .recruiting-disclaimer {

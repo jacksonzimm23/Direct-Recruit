@@ -154,6 +154,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                     <div class="discover-row-details player-details-color">${line2Parts.join(' &bull; ')}</div>
                     <div class="discover-row-details discover-row-line3">${schoolState}${schoolState ? ' &bull; ' : ''}${offersHtml}</div>
                 </div>
+                ${typeof FitDisplay !== 'undefined' ? FitDisplay.badgeHTML(FitDisplay.PLACEHOLDER_SCORE, { playerId: player.user_id }) : ''}
             </div>`;
     }
 
@@ -218,6 +219,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                     <div class="discover-desktop-line2 color-cerulean">${line2Parts.join(' &bull; ')}</div>
                     <div class="discover-desktop-line3">${schoolState}${schoolState ? ' &bull; ' : ''}${offersHtml}</div>
                 </div>
+                ${typeof FitDisplay !== 'undefined' ? FitDisplay.badgeHTML(FitDisplay.PLACEHOLDER_SCORE, { playerId: player.user_id }) : ''}
             </div>`;
     }
 

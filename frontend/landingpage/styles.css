@@ -7,6 +7,15 @@
     --white: #fefcfb;
     --accent-orange: #ff6b35;
     --accent-red: #e63946;
+
+    /* AI Match fit-score tiers (6-tier scale, best -> worst). Used by
+       frontend/shared/fit-display.js / .css for the "AI MATCH" badge. */
+    --fit-6: #1f9d4d;   /* 90-99  deep green  */
+    --fit-5: #86efac;   /* 75-89  mint green  */
+    --fit-4: #eab308;   /* 60-74  gold        */
+    --fit-3: #f97316;   /* 45-59  orange      */
+    --fit-2: #ef4444;   /* 30-44  red         */
+    --fit-1: #7f1d1d;   /* <30    dark maroon */
 }
 
 /* Reset and Base Styles */

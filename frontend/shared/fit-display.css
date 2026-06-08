@@ -1,0 +1,144 @@
+/* ============================================================
+   FIT DISPLAY — "AI Match" badge styling (design #5: bar + spark)
+   Paired with frontend/shared/fit-display.js. Tier colors
+   (--fit-1..--fit-6) live in landingpage/styles.css :root.
+
+   Two layouts from one markup:
+     - DEFAULT 'auto' badge: compact horizontal (label+num on top, bar below),
+       sits to the RIGHT of player info on desktop; on mobile (<=768px) it
+       reflows to a slim FULL-WIDTH bar UNDER the info (label · bar · number).
+     - 'bar' variant (.fit-badge--bar): ALWAYS the full-width bar layout, for
+       vertical/stacked cards (Portal Intelligence) where there's no row to sit beside.
+   The badge goes INSIDE the card under the info block — no separator line; the
+   card's own border stays the divider between two cards.
+   ============================================================ */
+
+/* ---------- Shared bits ---------- */
+.fit-badge .fit-label {
+    font-weight: 700;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+    color: var(--white);
+    white-space: nowrap;
+}
+.fit-badge .fit-num {
+    font-weight: 800;
+    line-height: 1;
+}
+.fit-badge .fit-num .fit-pct {
+    font-weight: 700;
+    opacity: .8;
+    margin-left: 1px;
+}
+.fit-badge .fit-track {
+    position: relative;
+    border-radius: 4px;
+    background: rgba(254, 252, 251, .08);
+}
+.fit-badge .fit-fill {
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    border-radius: 4px;
+    box-shadow: 0 0 8px -1px currentColor;   /* currentColor = tier color (inline) */
+}
+.fit-badge .fit-spark {
+    position: absolute;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    background: var(--white);
+    box-shadow: 0 0 6px 1px currentColor, 0 0 0 2px rgba(255, 255, 255, .15);
+}
+
+/* ---------- DESKTOP 'auto': compact horizontal, label+num over bar ---------- */
+.fit-badge {
+    flex-shrink: 0;                 /* mobile-priority rule: never get squeezed */
+    width: 104px;
+    margin-left: auto;              /* push to the right of the info block */
+    display: grid;
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+        "label num"
+        "track track";
+    align-items: baseline;
+    column-gap: .4rem;
+    row-gap: .35rem;
+}
+.fit-badge .fit-label { grid-area: label; font-size: .56rem; }
+.fit-badge .fit-num   { grid-area: num; font-size: 1rem; justify-self: end; }
+.fit-badge .fit-num .fit-pct { font-size: .66rem; }
+.fit-badge .fit-track { grid-area: track; height: 6px; }
+.fit-badge .fit-spark { width: 9px; height: 9px; }
+
+/* ---------- Badge-fixed / info-ellipsizes guarantee (desktop rows) ----------
+   On a flex row that holds a fit-badge (Discover HS + Transfer Portal cards),
+   the badge is flex-shrink:0 so it never moves; the info column must absorb ALL
+   overflow so no long field (long school name, long stats line) can push, wrap,
+   or collide with the badge — it just truncates with "…". The text lines already
+   ellipsize; these rules harden the container and force the transfer stats lines
+   (which normally wrap) to single-line ellipsis when a badge is present. Scoped
+   via :has() so non-badge rows are untouched. */
+.discover-desktop-row:has(.fit-badge) > .discover-desktop-info,
+.discover-row:has(.fit-badge) > .discover-row-info {
+    min-width: 0;
+    overflow: hidden;
+}
+.discover-desktop-row:has(.fit-badge) .discover-desktop-stats-line,
+.discover-row:has(.fit-badge) .discover-row-details.discover-row-stats-line {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    word-wrap: normal;
+}
+
+/* ---------- FULL-WIDTH BAR layout: label · bar · number ----------
+   The 'bar' variant always uses this (vertical/stacked cards like PI). The
+   default badge also adopts it on mobile via the media query below. */
+.fit-badge--bar {
+    width: 100%;
+    margin-left: 0;
+    margin-top: .55rem;
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    grid-template-columns: none;
+    grid-template-areas: none;
+}
+.fit-badge--bar .fit-label { order: 1; font-size: .6rem; flex-shrink: 0; }
+.fit-badge--bar .fit-track { order: 2; flex: 1; height: 7px; }
+.fit-badge--bar .fit-num   { order: 3; font-size: 1.05rem; flex-shrink: 0; min-width: 2.6ch; text-align: right; justify-self: auto; }
+.fit-badge--bar .fit-num .fit-pct { font-size: .72rem; }
+.fit-badge--bar .fit-spark { width: 10px; height: 10px; }
+
+/* ---------- MOBILE (<=768px): default badge becomes the full-width bar ---------- */
+@media (max-width: 768px) {
+    .fit-badge {
+        width: 100%;
+        flex: 1 0 100%;             /* in a flex-wrap card row, drops to its own line */
+        margin-left: 0;
+        margin-top: .55rem;
+        display: flex;
+        align-items: center;
+        gap: .6rem;
+        grid-template-columns: none;
+        grid-template-areas: none;
+    }
+    .fit-badge .fit-label { order: 1; font-size: .6rem; flex-shrink: 0; }
+    .fit-badge .fit-track { order: 2; flex: 1; height: 7px; }
+    .fit-badge .fit-num   { order: 3; font-size: 1.05rem; flex-shrink: 0; min-width: 2.6ch; text-align: right; justify-self: auto; }
+    .fit-badge .fit-num .fit-pct { font-size: .72rem; }
+    .fit-badge .fit-spark { width: 10px; height: 10px; }
+
+    /* Host-card wrap: the badge is `flex:1 0 100%` so it must be allowed to wrap
+       onto its own line under the player info. The RA row already flex-wraps on
+       mobile; the Discover + Transfer-Portal rows do not, so enable it ONLY for
+       rows that actually contain a badge (scoped via :has, no effect elsewhere). */
+    .discover-desktop-row:has(.fit-badge),
+    .discover-row:has(.fit-badge) {
+        flex-wrap: wrap;
+    }
+    .discover-desktop-row:has(.fit-badge) > .discover-desktop-info,
+    .discover-row:has(.fit-badge) > .discover-row-info {
+        flex: 1;
+    }
+}

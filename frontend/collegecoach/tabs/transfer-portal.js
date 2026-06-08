@@ -235,6 +235,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                     ${lastSeasonHtml}
                     ${careerHtml}
                 </div>
+                ${typeof FitDisplay !== 'undefined' ? FitDisplay.badgeHTML(FitDisplay.PLACEHOLDER_SCORE, { playerId: player.user_id }) : ''}
             </div>`;
         }
 
@@ -252,6 +253,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                 ${lastSeasonHtml}
                 ${careerHtml}
             </div>
+            ${typeof FitDisplay !== 'undefined' ? FitDisplay.badgeHTML(FitDisplay.PLACEHOLDER_SCORE, { playerId: player.user_id }) : ''}
         </div>`;
     }
 
