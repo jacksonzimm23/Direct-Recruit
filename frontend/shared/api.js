@@ -361,7 +361,25 @@ window.escapeJsAttr = escapeJsAttr;
 // window.location.origin is NOT directrecruit.net — we must call the real host
 // absolutely. The cross-origin call is then routed natively by CapacitorHttp.
 // On web/localhost, keep deriving from the current origin as before.
-const _isNativeApp = !!(window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function' && window.Capacitor.isNativePlatform());
+// Native detection MUST be race-free. window.Capacitor is injected asynchronously by the
+// WKWebView and is frequently undefined when this module parses on a cold/fast launch
+// (especially the login page). A false reading here permanently disables token storage
+// (setAuthToken) AND Bearer injection (apiRequest) for the whole document — so the JWT is
+// silently dropped at login and every post-login request fails with the CapacitorHttp
+// interceptor "Load failed" error (the intermittent login bug). Detect by WebView ORIGIN
+// instead — deterministic at parse time, identical to the .ios-app gate in
+// capacitor-init.js. The bundled iOS WebView serves from hostname "localhost" with NO port
+// (scheme capacitor:/https:). This excludes dev Live Server (localhost:5500 — has a port)
+// and prod (directrecruit.net — different hostname). The bridge call is kept as a
+// belt-and-suspenders fallback for any platform that doesn't match the origin shape.
+const _isNativeApp = (function () {
+    try {
+        const loc = window.location;
+        const inAppScheme = (loc.protocol === 'capacitor:' || loc.protocol === 'https:');
+        if (inAppScheme && loc.hostname === 'localhost' && !loc.port) return true;
+    } catch (_) {}
+    return !!(window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function' && window.Capacitor.isNativePlatform());
+})();
 const API_BASE_URL = _isNativeApp
     ? 'https://directrecruit.net/api'
     : (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'

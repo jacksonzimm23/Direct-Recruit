@@ -1363,8 +1363,11 @@ router.post('/switch-profile', authMiddleware, async (req, res) => {
       );
     } else if (targetRole === 'other') {
       await client.query(
+        // "Other" profiles store the avatar in profile_picture_url, NOT
+        // profile_image_url (see models/OtherProfile.js). Prod's other_profiles
+        // has no profile_image_url column, so inserting into it 500s on EC2.
         `INSERT INTO other_profiles
-        (user_id, first_name, last_name, username, bio, profile_image_url,
+        (user_id, first_name, last_name, username, bio, profile_picture_url,
          followers_count, following_count, profile_visibility, message_permissions)
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
         [
