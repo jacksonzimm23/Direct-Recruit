@@ -21,7 +21,7 @@
     "@capacitor/status-bar": "^8.0.2",
     "@capawesome/capacitor-file-picker": "^8.0.2",
     "@parse/node-apn": "^8.1.0",
-    "@revenuecat/purchases-capacitor": "^10.4.0"
+    "@revenuecat/purchases-capacitor": "^13.1.5"
   },
   "devDependencies": {
     "@capacitor/assets": "^3.0.5",
