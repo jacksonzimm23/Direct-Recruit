@@ -13,6 +13,25 @@
 (function () {
     let _configCache = null;
 
+    // Ensure RevenueCat is identified with the REAL user UUID before any purchase or
+    // restore. Without this, a cold iOS launch (where capacitor-init.js's logIn may have
+    // lost the /me race) leaves RevenueCat on an anonymous id ($RCAnonymousID). The
+    // purchase then webhooks with a non-UUID app_user_id, fails validation server-side,
+    // and the DB never flips to active — stranding the user on the paywall. Re-asserting
+    // identity here makes the purchase attributable to the user so the webhook + reconcile
+    // both work. Uses API.auth.getCurrentUser (routes to the prod host + sends the Bearer
+    // token) rather than a raw fetch, so it works inside the iOS WebView.
+    async function ensureRevenueCatIdentity(Purchases) {
+        try {
+            const me = (window.API && window.API.auth)
+                ? await window.API.auth.getCurrentUser().catch(function () { return null; })
+                : null;
+            if (me && me.user && me.user.id) {
+                await Purchases.logIn({ appUserID: me.user.id });
+            }
+        } catch (_) { /* fall through — the backend reconcile endpoint is the backstop */ }
+    }
+
     async function loadConfig() {
         if (_configCache) return _configCache;
         // Use the shared API base (absolute https://directrecruit.net/api in the app) so the
@@ -50,6 +69,10 @@
 
             const Purchases = window.Capacitor?.Plugins?.Purchases;
             if (!Purchases) return { success: false, error: 'RevenueCat plugin not available' };
+
+            // Attribute the purchase to the real user UUID (not $RCAnonymousID) so the
+            // webhook can match it server-side. Critical on cold iOS launches.
+            await ensureRevenueCatIdentity(Purchases);
 
             // Fetch offerings to find the package matching this product.
             // Apple's purchase sheet will appear when we call purchasePackage.
@@ -119,6 +142,10 @@
         try {
             const Purchases = window.Capacitor?.Plugins?.Purchases;
             if (!Purchases) return { success: false, error: 'RevenueCat plugin not available' };
+
+            // Identify as the real user first so restored transactions re-associate with
+            // the UUID (not an anonymous id), letting the webhook/reconcile flip the DB.
+            await ensureRevenueCatIdentity(Purchases);
 
             const result = await Purchases.restorePurchases();
             const customerInfo = result?.customerInfo || result || {};

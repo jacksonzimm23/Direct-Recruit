@@ -8,6 +8,11 @@ document.addEventListener('DOMContentLoaded', async function() {
     // Verify user is on the correct coach page, redirect if needed
     await verifyCoachType();
 
+    // If the global paywall IIFE (shared/api.js) is redirecting this unpaid user to
+    // the paywall, stop here so the background calls below don't fire into a navigating
+    // page (those aborts show as noisy "Load failed" errors on iOS). Harmless, saves work.
+    if (window.__paywallRedirecting) return;
+
     // Update sidebar footer with coach info (will fetch fresh data from API)
     await updateSidebarFooter();
 

@@ -5,6 +5,12 @@ document.addEventListener('DOMContentLoaded', async function() {
     // Verify user is on the correct player page, redirect if needed
     await verifyPlayerType();
 
+    // If the global paywall IIFE (shared/api.js) has decided this unpaid user must be
+    // redirected to the paywall, stop here — don't fire the background calls below
+    // (sidebar/badges/feed). The navigation would abort them mid-flight, surfacing as
+    // noisy "Load failed" console errors on iOS. Harmless, but this skips the wasted work.
+    if (window.__paywallRedirecting) return;
+
     // Update sidebar footer with user info
     await updateSidebarFooter();
 

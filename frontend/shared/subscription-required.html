@@ -175,6 +175,24 @@
                 // collegecoach: leave empty (tier buttons carry per-tier prices)
             })();
 
+            // After a successful IAP purchase/restore the user must LEAVE this paywall.
+            // Reloading subscription-required.html is a no-op — it's in the global paywall
+            // IIFE's skip-list (api.js), so a reload never reads the grace key nor
+            // navigates anywhere. Instead, explicitly navigate to the role mainpage; the
+            // mainpage IIFE then sees subscription_status='active' (set by the reconcile
+            // call / webhook) OR honors the iap_pending_activation grace key for ~60s.
+            function mainpageFor(f) {
+                const FE_BASE = window.location.origin + (window.location.pathname.startsWith('/frontend/') ? '/frontend' : '');
+                const file = (f === 'collegecoach') ? 'mainpage-coach.html' : 'mainpage-player.html';
+                return FE_BASE + '/' + f + '/' + file;
+            }
+            function onIapActivated() {
+                // Grace key lets the mainpage IIFE admit the user immediately, before the
+                // RevenueCat webhook / reconcile has necessarily propagated.
+                localStorage.setItem('iap_pending_activation', JSON.stringify({ at: Date.now(), userId: me.user.id }));
+                window.location.href = mainpageFor(folder);
+            }
+
             // Phase 3c: shared handler — branches to IAP on iOS, Stripe on web.
             // profileType: 'hsplayer'|'transferplayer'|'collegecoach'; tier: null for players, 'starter'|'pro'|'elite' for coaches
             async function handleSubscribeClick(profileType, tier, onError) {
@@ -182,13 +200,13 @@
                     try {
                         const r = await window.IAP.purchaseTier(profileType, tier);
                         if (r.success) {
-                            localStorage.setItem('iap_pending_activation', JSON.stringify({
-                                at: Date.now(),
-                                userId: me.user.id
-                            }));
-                            // Reload the paywall page; the IIFE honors the grace key
-                            // and falls through to the user's mainpage.
-                            window.location.reload();
+                            // Best-effort server-side reconcile: re-checks RevenueCat with
+                            // the trusted user UUID and flips subscription_status='active',
+                            // so the user is durably active even if the webhook is delayed
+                            // or attributed the purchase to an anonymous id. Non-blocking.
+                            try { await API.payments.reconcileIap(r.customerInfo); } catch (_) {}
+                            // Set grace key + navigate to the role mainpage (NOT a paywall reload).
+                            onIapActivated();
                             return;
                         }
                         if (r.cancelled) { onError && onError(null); return; }
@@ -270,9 +288,12 @@
                         const r = await window.IAP.restorePurchases();
                         if (r.success && r.hasActive) {
                             showToast('Purchases restored successfully.', 'success');
-                            // Give RevenueCat's webhook a moment to update the backend, then
-                            // reload — the IIFE in api.js sees active status and releases them.
-                            setTimeout(() => window.location.reload(), 1500);
+                            // Reconcile server-side, then set the grace key (previously MISSING
+                            // on this path) and navigate to the mainpage. A bare reload here was
+                            // a no-op (paywall is in the IIFE skip-list) — that's why restore
+                            // reported success but left the user stuck.
+                            try { await API.payments.reconcileIap(r.customerInfo); } catch (_) {}
+                            onIapActivated();
                             return;
                         }
                         if (r.success && !r.hasActive) {

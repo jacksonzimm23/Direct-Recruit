@@ -1181,6 +1181,16 @@ const paymentsAPI = {
     },
     reactivateSubscription: async () => {
         return await apiRequest('/payments/reactivate', { method: 'POST' });
+    },
+    // iOS only: after a successful IAP purchase/restore, ask the backend to re-check
+    // RevenueCat (server-to-server, keyed off the trusted user UUID) and flip
+    // subscription_status='active' — webhook-independent activation. The customerInfo
+    // arg is informational; the server decides authoritatively from RevenueCat.
+    reconcileIap: async (customerInfo) => {
+        return await apiRequest('/payments/iap-reconcile', {
+            method: 'POST',
+            body: JSON.stringify({ customerInfo: customerInfo || null })
+        });
     }
 };
 
@@ -1528,7 +1538,13 @@ window.API_BASE_URL = API_BASE_URL;
                 } catch (_) { /* ignore; fall through */ }
             }
 
-            // Unpaid user on paid profile — redirect to paywall
+            // Unpaid user on paid profile — redirect to paywall.
+            // Flag the redirect so the mainpage's own init (which runs on the same
+            // DOMContentLoaded) bails out instead of firing background calls that the
+            // navigation will abort — those aborts show up as noisy "Load failed" /
+            // "access control checks" console errors on iOS. Cosmetic, but this also
+            // skips the redundant /auth/me + badge/feed round-trips.
+            window.__paywallRedirecting = true;
             window.location.href = paywallPath;
         } catch (e) {
             // If /me fails, don't block — auth middleware handles unauthorized

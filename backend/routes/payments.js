@@ -422,8 +422,12 @@ async function revenueCatWebhookHandler(req, res) {
       return res.sendStatus(200);
     }
     if (!UUID_REGEX.test(app_user_id)) {
-      logger.warn(`[RevenueCat webhook] malformed app_user_id: ${app_user_id}`);
-      return res.status(400).send('invalid app_user_id');
+      // Almost always an anonymous RevenueCat id ($RCAnonymousID:...) from a purchase
+      // made before the app identified the user. ACK with 200 (not 400) so RevenueCat
+      // stops retrying for ~72h — the client-side iap-reconcile + logIn-before-purchase
+      // are what actually activate these users. Nothing to do here.
+      logger.warn(`[RevenueCat webhook] non-UUID app_user_id (likely anonymous): ${app_user_id} — acking`);
+      return res.sendStatus(200);
     }
 
     // 6. Verify user exists — silent 200 on miss to prevent enumeration
@@ -493,6 +497,58 @@ router.get('/revenuecat-config', authMiddleware, (req, res) => {
       coach_elite: process.env.IAP_PRODUCT_COACH_ELITE || ''
     }
   });
+});
+
+// POST /api/payments/iap-reconcile
+// Webhook-independent activation. The iOS app calls this right after a successful IAP
+// purchase/restore. It re-checks the user's entitlement DIRECTLY with RevenueCat's REST
+// API (server-to-server, using the SECRET api key) keyed off req.userId — the JWT-trusted
+// UUID — and flips subscription_status. This makes activation reliable even when the
+// webhook is delayed or the purchase was attributed to an anonymous RevenueCat id, and it
+// does NOT trust any client-sent status (the request body is ignored for the decision).
+router.post('/iap-reconcile', authMiddleware, async (req, res) => {
+  try {
+    const rcSecret = process.env.REVENUECAT_SECRET_API_KEY;
+    if (!rcSecret) {
+      logger.error('[iap-reconcile] REVENUECAT_SECRET_API_KEY not set');
+      return res.status(500).json({ error: 'IAP reconcile not configured' });
+    }
+
+    // Look up the subscriber by our user UUID (the appUserID we logged into RevenueCat).
+    const rcRes = await fetch(`https://api.revenuecat.com/v1/subscribers/${encodeURIComponent(req.userId)}`, {
+      headers: { Authorization: `Bearer ${rcSecret}` }
+    });
+    if (!rcRes.ok) {
+      logger.warn(`[iap-reconcile] RevenueCat lookup failed: ${rcRes.status}`);
+      return res.status(502).json({ error: 'RevenueCat lookup failed' });
+    }
+    const body = await rcRes.json();
+
+    // Find an unexpired subscription. RevenueCat returns subscriptions keyed by product id.
+    const subs = (body.subscriber && body.subscriber.subscriptions) || {};
+    const now = Date.now();
+    let activeProductId = null;
+    for (const [productId, s] of Object.entries(subs)) {
+      const exp = s && s.expires_date ? new Date(s.expires_date).getTime() : 0;
+      if (exp > now) { activeProductId = productId; break; }
+    }
+    if (!activeProductId) {
+      return res.json({ activated: false });
+    }
+
+    const tier = mapRevenueCatProductToTier(activeProductId);
+    if (!tier) {
+      logger.error(`[iap-reconcile] unknown product ${activeProductId} for user ${req.userId}`);
+      return res.json({ activated: false });
+    }
+
+    await User.updateSubscription(req.userId, { status: 'active', tier, source: 'apple_iap' });
+    logger.info(`[iap-reconcile] activated user=${req.userId} tier=${tier}`);
+    res.json({ activated: true, tier });
+  } catch (e) {
+    logger.error(`[iap-reconcile] ${e.message}`);
+    res.status(500).json({ error: 'reconcile failed' });
+  }
 });
 
 // Export both the router and the webhook handlers
