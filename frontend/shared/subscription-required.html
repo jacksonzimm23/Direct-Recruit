@@ -91,6 +91,10 @@
                      through. iOS-only (.ios-only) — web/Stripe has no Apple-ID restore. -->
                 <button class="paywall-btn paywall-btn-secondary ios-only" id="paywallRestoreBtn">Restore Purchases</button>
                 <button class="paywall-btn paywall-btn-ghost" id="paywallLogoutBtn">Log Out</button>
+                <!-- A gated user must always be able to delete their account, even
+                     without paying. Routes to the Security section of Settings where
+                     the existing password-confirmed delete flow lives. -->
+                <button class="paywall-btn paywall-btn-ghost" id="paywallDeleteBtn">Delete Account</button>
             </div>
 
             <!-- FTC auto-renewal disclosure — on the same screen as the Subscribe button,
@@ -263,6 +267,18 @@
             document.getElementById('paywallSwitchBtn').addEventListener('click', () => {
                 window.location.href = '/frontend/' + folder + '/tabs/settings.html';
             });
+
+            // Delete account button — routes to Settings → Security (#security), where
+            // the existing password-confirmed delete flow lives. A gated user can always
+            // delete their account. The base path handles web (/frontend) vs iOS (no
+            // prefix); #security auto-opens that section (see settings.js).
+            const deleteBtn = document.getElementById('paywallDeleteBtn');
+            if (deleteBtn) {
+                deleteBtn.addEventListener('click', () => {
+                    const feBase = window.location.origin + (window.location.pathname.startsWith('/frontend/') ? '/frontend' : '');
+                    window.location.href = feBase + '/' + folder + '/tabs/settings.html#security';
+                });
+            }
 
             // Logout button
             document.getElementById('paywallLogoutBtn').addEventListener('click', async () => {

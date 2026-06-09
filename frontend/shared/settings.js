@@ -117,11 +117,18 @@ function initializeSettingsNavigation() {
         });
     });
 
-    // Auto-navigate to a section via URL hash (e.g., settings.html#profile-type)
-    if (window.location.hash === '#profile-type') {
-        const profileTypeBtn = document.querySelector('.settings-nav-btn[data-section="profileType"]');
-        if (profileTypeBtn) {
-            profileTypeBtn.click();
+    // Auto-navigate to a section via URL hash (e.g., settings.html#profile-type).
+    // #security is used by the paywall's "Delete Account" link so a gated user can
+    // reach the delete flow directly without hunting through the nav.
+    const hashSectionMap = {
+        '#profile-type': 'profileType',
+        '#security': 'security'
+    };
+    const targetSection = hashSectionMap[window.location.hash];
+    if (targetSection) {
+        const navBtn = document.querySelector(`.settings-nav-btn[data-section="${targetSection}"]`);
+        if (navBtn) {
+            navBtn.click();
         }
     }
 }
@@ -470,12 +477,18 @@ async function handleDeleteAccount() {
     clearDeleteAccountError();
 
     try {
+        // iOS Bearer fallback: this raw fetch must carry the stored token (the cookie
+        // path is unreliable in the WebView). API.isIOSApp()-gated so web is unaffected.
+        // Without it, account deletion 401s in the iOS app (cookie not re-attached).
+        const _delHeaders = { 'Content-Type': 'application/json' };
+        if (window.API && API.isIOSApp && API.isIOSApp() && API.getAuthToken) {
+            const _t = API.getAuthToken();
+            if (_t) _delHeaders.Authorization = 'Bearer ' + _t;
+        }
         const response = await fetch(`${API_BASE_URL}/settings/account/delete`, {
             method: 'DELETE',
             credentials: 'include',
-            headers: {
-                'Content-Type': 'application/json'
-            },
+            headers: _delHeaders,
             body: JSON.stringify({ password })
         });
 
