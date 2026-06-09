@@ -15,6 +15,18 @@
     if (/[?&](token|code|reset|invite)=/i.test(qs)) return;
 
     var path = window.location.pathname;
+
+    // Belt-and-suspenders: the College Coach invite + team-switch pages MUST work in
+    // mobile Safari (the invite token only validates on web, and a coach completes
+    // account creation + email verification here before being sent to the app to pay).
+    // The ?token= check above should already exempt them, but email clients sometimes
+    // wrap/normalize the link and can drop the query before this runs — so also exempt
+    // these pages by path so an invited coach is never bounced to "Get the App"
+    // mid-onboarding and locked out.
+    if (path.indexOf('create-coach-profile.html') !== -1 ||
+        path.indexOf('confirm-team-switch.html') !== -1 ||
+        path.indexOf('verify-email.html') !== -1) return;
+
     var prefix = path.startsWith('/frontend/') ? '/frontend' : '';
     var target = isIOS
       ? prefix + '/landingpage/get-the-app.html'

@@ -83,7 +83,8 @@ const MIGRATIONS = [
   'add-reports-and-blocks.sql',
   'add-share-content-type.sql',
   'add-user-suspension.sql',
-  'add-fit-matching-fields.sql'
+  'add-fit-matching-fields.sql',
+  'add-pending-cancel-sub.sql'
 ];
 
 async function applyManualFixes() {

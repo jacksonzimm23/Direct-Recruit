@@ -138,12 +138,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 localStorage.removeItem('pendingVerificationEmail');
                 localStorage.removeItem('resendCooldown');
 
-                // Redirect to login or main page after delay
+                // Verify-then-pay: hsplayer is a PAID type, so after verifying go to the
+                // paywall (shared/subscription-required.html) to subscribe — NOT the
+                // mainpage (the global IIFE would redirect there anyway; routing
+                // explicitly avoids a mainpage flash). After payment, the user is unlocked.
                 setTimeout(() => {
-                    // Resolve relative nav to an absolute URL so it works in the iOS WKWebView
-                    // (bare/relative targets silently no-op there). new URL(rel, location.href)
-                    // correctly preserves the /frontend prefix on web and its absence in-app.
-                    window.location.href = new URL('mainpage-player.html', window.location.href).href;
+                    // Absolute URL so it resolves in the iOS WKWebView (bare/relative no-op there).
+                    const FE_BASE = window.location.origin + (window.location.pathname.startsWith('/frontend/') ? '/frontend' : '');
+                    window.location.href = FE_BASE + '/shared/subscription-required.html';
                 }, 2000);
             } else {
                 showError(data.error || 'Invalid verification code');

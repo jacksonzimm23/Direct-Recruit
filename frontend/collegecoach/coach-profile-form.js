@@ -505,8 +505,16 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
 
         const submitBtn = form.querySelector('button[type="submit"]');
-        const originalText = submitBtn.textContent;
-        const isUpdating = originalText === 'Update Profile';
+        const submitLabel = document.getElementById('submitBtnLabel');
+        const originalText = submitLabel ? submitLabel.textContent : submitBtn.textContent;
+        // Edit mode is flagged on the body by loadExistingProfile(); fall back to label text.
+        const isUpdating = document.body.dataset.editMode === 'true' || originalText.trim() === 'Update Profile';
+
+        // Write button text into the label span so the SVG icon is preserved.
+        const setBtnText = (text) => {
+            if (submitLabel) submitLabel.textContent = text;
+            else submitBtn.textContent = text;
+        };
 
         // Skip new-account validation in switch mode — user already has username/email/password.
         const skipNewAccountChecks = isUpdating || isSwitchMode;
@@ -546,7 +554,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
 
         submitBtn.disabled = true;
-        submitBtn.textContent = isUpdating ? 'Updating Profile...' : 'Creating Account...';
+        setBtnText(isUpdating ? 'Updating Profile...' : 'Creating Account...');
 
         let userCreated = false;
         try {
@@ -567,7 +575,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                 userCreated = true;
             }
 
-            submitBtn.textContent = isSwitchMode ? 'Switching profile...' : (isUpdating ? 'Updating Profile...' : 'Creating Profile...');
+            setBtnText(isSwitchMode ? 'Switching profile...' : (isUpdating ? 'Updating Profile...' : 'Creating Profile...'));
 
             // Step 2: Build profile data from form
             const profileData = {
@@ -656,14 +664,15 @@ document.addEventListener('DOMContentLoaded', async function() {
                     /* inviteToken */ validatedInviteToken
                 );
                 if (result && result.requires_payment) {
-                    // User is moving from a free type (or different paid tier) to collegecoach —
-                    // need a Stripe checkout. The switch transaction has ALREADY run server-side,
-                    // so flag the pending data as switch-origin so payment-success.js doesn't
-                    // try to create the profile a second time.
-                    const switchPending = { ...profileData, _isSwitch: true };
-                    localStorage.setItem('pendingProfileData', JSON.stringify(switchPending));
-                    submitBtn.textContent = 'Choose your plan...';
-                    showTierSelectionModal();
+                    // Verify-then-pay model: the switch has committed server-side and
+                    // the user is now a College Coach with subscription_status='none'.
+                    // They are already a verified account, so send them to the PAYWALL
+                    // to subscribe (Stripe web / Apple IAP iOS) rather than taking
+                    // payment from this page. An unpaid switched account is a normal
+                    // gated account — not broken.
+                    showToast('Switched to College Coach! Subscribe to unlock coach features.', 'success');
+                    const FE_BASE = window.location.origin + (window.location.pathname.startsWith('/frontend/') ? '/frontend' : '');
+                    window.location.href = FE_BASE + '/shared/subscription-required.html';
                 } else {
                     // Same-price transition (or already paid same tier) — switch is done. Go to mainpage.
                     showToast('Switched to College Coach!', 'success');
@@ -692,10 +701,18 @@ document.addEventListener('DOMContentLoaded', async function() {
                 // preserves the /frontend prefix on web and its absence in-app.
                 window.location.replace(new URL('verify-email.html', window.location.href).href);
             } else {
-                // New signups: store profile data and show tier selection
-                localStorage.setItem('pendingProfileData', JSON.stringify(profileData));
-                submitBtn.textContent = 'Choose your plan...';
-                showTierSelectionModal();
+                // New signups (verify-then-pay model): account was just created by
+                // authAPI.register above. Create the coach profile NOW, server-side
+                // (subscription_status='none'), so the data is permanent. Payment is
+                // NOT taken here — after the user verifies their email they land on the
+                // paywall (shared/subscription-required.html), whose tier picker handles
+                // Stripe (web) / Apple IAP (iOS). Unpaid = a normal verified account
+                // that sees the paywall.
+                setBtnText('Creating Profile...');
+                await profileAPI.createCoachProfile(profileData);
+                localStorage.removeItem('pendingProfileData');
+                localStorage.setItem('pendingVerificationEmail', email);
+                window.location.href = new URL('verify-email.html', window.location.href).href;
             }
         } catch (error) {
             console.error('Profile error:', error);
@@ -708,7 +725,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             }
 
             submitBtn.disabled = false;
-            submitBtn.textContent = originalText;
+            setBtnText(originalText);
         }
     });
 
@@ -926,9 +943,13 @@ async function loadExistingProfile() {
                     }
                 });
 
-                // Change submit button text
-                const submitBtn = document.querySelector('.btn-primary[type="submit"]');
-                if (submitBtn) submitBtn.textContent = 'Update Profile';
+                // Edit mode: relabel the button and ensure the inline plan section is hidden
+                // (no purchase when editing an existing profile).
+                document.body.dataset.editMode = 'true';
+                const submitLabel = document.getElementById('submitBtnLabel');
+                if (submitLabel) submitLabel.textContent = 'Update Profile';
+                const tierSection = document.getElementById('tierSection');
+                if (tierSection) tierSection.style.display = 'none';
             }
         }
     } catch (error) {
@@ -937,44 +958,44 @@ async function loadExistingProfile() {
 }
 
 // ─── Tier Selection Modal ────────────────────────────────────────────────────
+// Renders the 3 tier cards INLINE at the bottom of the create-profile page
+// (replaces the old centered modal — see memory: no centered popups on mobile).
+// The coach lands here after the form is validated/submitted; this is the
+// plan-selection step before payment + email verification.
 function showTierSelectionModal() {
-    const overlay = document.createElement('div');
-    overlay.id = 'tierModal';
-    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:10000;display:flex;align-items:center;justify-content:center;padding:20px;';
+    const section = document.getElementById('tierSection');
+    const grid = document.getElementById('tierGrid');
+    if (!section || !grid) return;
 
-    overlay.innerHTML = `
-        <div style="background:#0a1128;border-radius:16px;max-width:900px;width:100%;padding:40px 32px;position:relative;max-height:90vh;overflow-y:auto;">
-            <button id="tierModalClose" style="position:absolute;top:calc(16px + env(safe-area-inset-top, 0px));right:16px;background:none;border:none;color:rgba(255,255,255,0.5);font-size:24px;cursor:pointer;">&times;</button>
-            <h2 style="color:#fff;text-align:center;font-size:24px;font-weight:700;margin:0 0 8px;">Choose Your Plan</h2>
-            <p style="color:rgba(255,255,255,0.45);text-align:center;font-size:14px;margin:0 0 32px;">Select a subscription tier to get started.</p>
-            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;">
-                ${tierCard('Starter', '20', [
-                    'AI Recruiting Assistant',
-                    'Portal Intelligence',
-                    'Recruiting Board',
-                    '4M AI tokens/month',
-                    'Direct messaging'
-                ], false, 'coach_starter')}
-                ${tierCard('Pro', '50', [
-                    'Everything in Starter',
-                    '10M AI tokens/month (2.5x)',
-                    'Saved players & portal watchlist',
-                    'Custom baseline metrics',
-                    'Priority support'
-                ], true, 'coach_pro')}
-                ${tierCard('Elite', '100', [
-                    'Everything in Pro',
-                    '20M AI tokens/month (5x)',
-                    'Team collaboration tools',
-                    'Unlimited saved players',
-                    'Dedicated support'
-                ], false, 'coach_elite')}
-            </div>
-        </div>
+    grid.innerHTML = `
+        ${tierCard('Starter', '20', [
+            'AI Recruiting Assistant',
+            'Portal Intelligence',
+            'Recruiting Board',
+            '4M AI tokens/month',
+            'Direct messaging'
+        ], false, 'coach_starter')}
+        ${tierCard('Pro', '50', [
+            'Everything in Starter',
+            '10M AI tokens/month (2.5x)',
+            'Saved players & portal watchlist',
+            'Custom baseline metrics',
+            'Priority support'
+        ], true, 'coach_pro')}
+        ${tierCard('Elite', '100', [
+            'Everything in Pro',
+            '20M AI tokens/month (5x)',
+            'Team collaboration tools',
+            'Unlimited saved players',
+            'Dedicated support'
+        ], false, 'coach_elite')}
     `;
 
-    document.body.appendChild(overlay);
-    if (window.ModalUtils) ModalUtils.lockBodyScroll();
+    // Reveal the section and scroll it into view so it reads as the next step.
+    section.style.display = 'block';
+    section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+    const overlay = section; // keep variable name below for the [data-tier] wiring
 
     // Apple Guideline 3.1.1: replace hardcoded USD prices with Apple's
     // localized priceString once RevenueCat offerings come back.
@@ -990,16 +1011,8 @@ function showTierSelectionModal() {
         });
     }
 
-    // Close button
-    document.getElementById('tierModalClose').addEventListener('click', () => {
-        overlay.remove();
-        if (window.ModalUtils) ModalUtils.unlockBodyScroll();
-        const submitBtn = document.querySelector('.btn-primary[type="submit"]');
-        if (submitBtn) {
-            submitBtn.disabled = false;
-            submitBtn.textContent = 'Create Coach Profile';
-        }
-    });
+    // (Removed: modal close button — the inline section has no close; the user
+    // either picks a plan or edits the form above it.)
 
     // Tier select buttons
     overlay.querySelectorAll('[data-tier]').forEach(btn => {
@@ -1042,24 +1055,24 @@ function showTierSelectionModal() {
                         } catch (innerErr) {
                             console.error('Post-IAP profile setup error:', innerErr);
                             showToast('Profile setup failed after purchase: ' + innerErr.message, 'error');
-                            btn.textContent = 'Select';
+                            btn.textContent = 'Subscribe Now';
                             btn.disabled = false;
                         }
                         return;
                     }
                     if (r.cancelled) {
-                        btn.textContent = 'Select';
+                        btn.textContent = 'Subscribe Now';
                         btn.disabled = false;
                         return;
                     }
                     showToast('Purchase failed: ' + (r.error || 'unknown'), 'error');
-                    btn.textContent = 'Select';
+                    btn.textContent = 'Subscribe Now';
                     btn.disabled = false;
                     return;
                 } catch (iosErr) {
                     console.error('IAP error:', iosErr);
                     showToast('Purchase failed: ' + iosErr.message, 'error');
-                    btn.textContent = 'Select';
+                    btn.textContent = 'Subscribe Now';
                     btn.disabled = false;
                     return;
                 }
@@ -1084,7 +1097,7 @@ function showTierSelectionModal() {
             } catch (error) {
                 console.error('Checkout error:', error);
                 showToast('Failed to start checkout: ' + error.message, 'error');
-                btn.textContent = 'Select';
+                btn.textContent = 'Subscribe Now';
                 btn.disabled = false;
             }
         });
@@ -1116,8 +1129,9 @@ function tierCard(name, price, features, isPopular, tierKey) {
                 <span style="font-size:32px;font-weight:800;color:#fff;"${priceAttr}>$${price}</span>
                 <span style="font-size:14px;color:rgba(255,255,255,0.4);"${suffixAttr}>/month</span>
             </div>
-            <ul style="list-style:none;padding:0;margin:0 0 20px;text-align:left;flex:1;">${featureList}</ul>
-            <button data-tier="${name.toLowerCase()}" style="background:#ff6b35;color:#fff;border:none;border-radius:8px;padding:12px;font-size:14px;font-weight:600;cursor:pointer;width:100%;font-family:'Inter',sans-serif;">Select</button>
+            <ul style="list-style:none;padding:0;margin:0 0 16px;text-align:left;flex:1;">${featureList}</ul>
+            <p style="font-size:12px;color:rgba(255,255,255,0.5);line-height:1.4;margin:0 0 12px;">Auto-renews monthly until cancelled.</p>
+            <button data-tier="${name.toLowerCase()}" style="background:#ff6b35;color:#fff;border:none;border-radius:8px;padding:12px;font-size:14px;font-weight:600;cursor:pointer;width:100%;font-family:'Inter',sans-serif;">Subscribe Now</button>
         </div>
     `;
 }

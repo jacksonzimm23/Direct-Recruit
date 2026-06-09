@@ -13,6 +13,7 @@
     <title>Create Player Profile - Direct Recruit</title>
     <link rel="stylesheet" href="../landingpage/styles.css">
     <link rel="stylesheet" href="profile-form.css">
+    <link rel="stylesheet" href="../shared/ios-app-overrides.css?v=1">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -33,7 +34,7 @@
             </a>
 
             <div class="form-header">
-                <h1>Create Your Player Profile</h1>
+                <h1>Create Your HS Player Profile</h1>
                 <p>Showcase your talent and connect directly with college coaches.</p>
             </div>
 
@@ -690,10 +691,13 @@
                     </div>
                 </div>
 
-                <!-- Submit Button -->
+                <!-- Submit Button. Verify-then-pay: this creates the account + profile
+                     and goes to email verification; payment happens later on the paywall
+                     (shared/subscription-required.html), where the FTC auto-renewal
+                     disclosure lives alongside the real Subscribe button. -->
                 <div class="form-actions">
-                    <button type="submit" class="btn-submit">
-                        Create Player Profile
+                    <button type="submit" class="btn-submit" id="submitBtn">
+                        <span id="submitBtnLabel">Create Profile</span>
                         <svg class="btn-icon" viewBox="0 0 20 20" fill="currentColor">
                             <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd"/>
                         </svg>

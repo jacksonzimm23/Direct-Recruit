@@ -69,9 +69,31 @@
     gap: 1rem;
 }
 
+/* Match the player create-profile container width on mobile: reduce the
+   container padding at the same breakpoints (768/480) so the content area is
+   as wide as the player form instead of staying inset at the desktop 2.5rem. */
+@media (max-width: 768px) {
+    .coach-request-section {
+        padding: 1.5rem 1rem 2rem;
+    }
+    .coach-request-container {
+        padding: 2rem 1.5rem;
+    }
+}
+
 @media (max-width: 520px) {
     .coach-request-form .form-row {
         grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 480px) {
+    .coach-request-container {
+        padding: 1.5rem 1rem;
+    }
+    .back-button {
+        padding: 0.6rem 1rem;
+        font-size: 0.9rem;
     }
 }
 
@@ -97,19 +119,25 @@
     font-size: 0.85rem;
 }
 
+/* Input styling aligned to the player create-profile baseline (profile-form.css)
+   so the request-access form matches the player/coach create forms at identical
+   size/visuals, including the -webkit-appearance:none iOS reset. */
 .coach-request-form input,
 .coach-request-form textarea,
 .coach-request-form select {
     width: 100%;
-    background: rgba(10, 17, 40, 0.5);
-    border: 1.5px solid rgba(18, 130, 162, 0.35);
-    border-radius: 10px;
-    padding: 0.75rem 1rem;
+    background: rgba(254, 252, 251, 0.05);
+    border: 2px solid rgba(18, 130, 162, 0.3);
+    border-radius: 8px;
+    padding: 0.875rem 1rem;
     color: var(--white);
-    font-size: 1rem;
-    font-family: inherit;
-    transition: border-color 0.2s ease, background 0.2s ease;
+    font-size: 0.95rem;
+    font-family: 'Inter', sans-serif;
+    transition: all 0.3s ease;
     box-sizing: border-box;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
 }
 
 .coach-request-form input:focus,
@@ -117,7 +145,8 @@
 .coach-request-form select:focus {
     outline: none;
     border-color: #1282a2;
-    background: rgba(10, 17, 40, 0.8);
+    background: rgba(254, 252, 251, 0.08);
+    box-shadow: 0 0 0 3px rgba(18, 130, 162, 0.1);
 }
 
 .coach-request-form select option {
@@ -290,9 +319,11 @@
 }
 
 @media (max-width: 768px) {
+    /* Match the player create-profile back button: compact + left-aligned,
+       NOT full-width/centered (this rule was the visual mismatch). */
     .back-button {
-        width: 100%;
-        justify-content: center;
+        padding: 0.6rem 1rem;
+        font-size: 0.9rem;
     }
 }
 

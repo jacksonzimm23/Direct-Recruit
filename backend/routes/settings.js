@@ -1110,20 +1110,24 @@ router.post('/switch-profile', authMiddleware, async (req, res) => {
         tier: null
       }, client);
     } else if (isStripeSub && isTargetPaid && isCurrentPaid && !isSamePricePair) {
-      // Paid → different Paid: cancel old Stripe sub, frontend will start a new one
-      try {
-        await stripe.cancelSubscription(user.stripe_subscription_id);
-      } catch (stripeErr) {
-        logger.error(`Stripe cancel failed during profile switch: ${stripeErr.message}`);
-        const e = new Error('Subscription cancellation failed. Please try again or contact support.');
-        e.code = 'STRIPE_CANCEL_FAILED';
-        throw e;
-      }
-      await User.updateSubscription(req.userId, {
-        subscriptionId: null,
-        status: 'none',
-        tier: null
-      }, client);
+      // Paid → different Paid (cross-type, e.g. hsplayer $10 -> collegecoach $20+).
+      // Verify-then-pay: do NOT cancel the old Stripe sub at switch time — that
+      // stripped access if the user abandoned the new payment. Instead:
+      //   - set subscription_status='none' so the paywall makes them pay for the NEW product,
+      //   - stash the OLD Stripe sub id in pending_cancel_stripe_sub_id, and
+      //   - the payments webhook cancels that old sub once the NEW sub activates.
+      // If they abandon, the old Stripe sub is still alive (no money lost) and the
+      // stashed id lets support/a sweep reconcile it. No double-charge: they only
+      // pay again once they actively subscribe to the new product on the paywall.
+      await client.query(
+        `UPDATE users
+            SET subscription_status = 'none',
+                subscription_tier = NULL,
+                stripe_subscription_id = NULL,
+                pending_cancel_stripe_sub_id = $1
+          WHERE id = $2`,
+        [user.stripe_subscription_id, req.userId]
+      );
     }
     // hsplayer ↔ transferplayer (same $10 price): keep subscription, no action.
     // Free → Paid: no current sub to cancel; frontend redirects to checkout.

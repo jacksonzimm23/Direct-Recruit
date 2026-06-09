@@ -220,6 +220,29 @@ class User {
     return result.rows[0] || null;
   }
 
+  // Verify-then-pay (cross-type paid->paid switch): atomically read AND clear the
+  // OLD Stripe subscription id that a profile switch stashed for later cancellation.
+  // Returns the old sub id (or null). The payments webhook calls this once the NEW
+  // subscription activates, then cancels that old sub via Stripe. Clearing it in the
+  // same statement makes the webhook idempotent — a duplicate webhook reads null and
+  // skips. A CTE captures the prior value (plain UPDATE...RETURNING gives the new row).
+  static async takePendingCancelSubId(userId) {
+    const result = await pool.query(
+      `WITH prev AS (
+         SELECT id, pending_cancel_stripe_sub_id AS old_sub_id
+           FROM users
+          WHERE id = $1 AND pending_cancel_stripe_sub_id IS NOT NULL
+          FOR UPDATE
+       ), cleared AS (
+         UPDATE users SET pending_cancel_stripe_sub_id = NULL
+          WHERE id IN (SELECT id FROM prev)
+       )
+       SELECT old_sub_id FROM prev`,
+      [userId]
+    );
+    return result.rows[0] ? result.rows[0].old_sub_id : null;
+  }
+
   // Delete user and all associated data
   // PostgreSQL CASCADE constraints handle most related data automatically
   static async delete(userId) {

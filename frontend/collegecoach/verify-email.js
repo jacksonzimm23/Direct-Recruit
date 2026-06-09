@@ -140,12 +140,26 @@ document.addEventListener('DOMContentLoaded', function() {
                 localStorage.removeItem('pendingVerificationEmail');
                 localStorage.removeItem('resendCooldown');
 
-                // Redirect to login or main page after delay
+                // A College Coach typically reaches this page via the emailed invite link
+                // opened in MOBILE SAFARI (the invite token only validates on web). They
+                // just created + verified their account here. But payment on iOS must go
+                // through Apple IAP INSIDE the app — not Stripe-web on a phone browser. So
+                // if we're in mobile Safari (iOS/Android UA, NOT the Capacitor app), send
+                // them to "Get the App": they download it, log in (already verified), hit
+                // the in-app paywall, and subscribe via IAP. In the app OR on desktop, go
+                // to the mainpage and let the global paywall IIFE (shared/api.js) sort
+                // access — comp-access coaches pass through, unpaid coaches see the paywall.
+                const ua = navigator.userAgent || '';
+                const isMobileUA = /iPhone|iPad|iPod|Android/i.test(ua);
+                const inApp = document.documentElement.classList.contains('ios-app') || !!window.Capacitor;
                 setTimeout(() => {
-                    // Resolve relative nav to an absolute URL so it works in the iOS WKWebView
-                    // (bare/relative targets silently no-op there). new URL(rel, location.href)
-                    // correctly preserves the /frontend prefix on web and its absence in-app.
-                    window.location.href = new URL('mainpage-coach.html', window.location.href).href;
+                    if (isMobileUA && !inApp) {
+                        // Mobile web → download the app to subscribe (Apple IAP).
+                        // ?verified=coach lets get-the-app show an "account ready" message.
+                        window.location.href = new URL('../landingpage/get-the-app.html?verified=coach', window.location.href).href;
+                    } else {
+                        window.location.href = new URL('mainpage-coach.html', window.location.href).href;
+                    }
                 }, 2000);
             } else {
                 showError(data.error || 'Invalid verification code');

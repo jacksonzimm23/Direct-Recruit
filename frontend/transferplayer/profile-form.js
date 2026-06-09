@@ -7,6 +7,9 @@ document.addEventListener('DOMContentLoaded', async function() {
     const schoolTypeInput = document.getElementById('schoolType');
     const profileForm = document.getElementById('playerProfileForm');
 
+    // Verify-then-pay: the submit button reads "Create Profile" (static, set in HTML).
+    // Pricing + the FTC auto-renewal disclosure live on the paywall now.
+
     // Initialize school search with logo + auto-division
     const schoolSearch = initSchoolSearch({
         nameInput: '#previousCollegeName',
@@ -417,8 +420,16 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
 
         const submitBtn = profileForm.querySelector('button[type="submit"]');
-        const originalText = submitBtn.textContent;
-        const isUpdating = originalText === 'Update Profile';
+        const submitLabel = document.getElementById('submitBtnLabel');
+        const originalText = submitLabel ? submitLabel.textContent : submitBtn.textContent;
+        // Edit mode is flagged on the body by loadExistingProfile(); fall back to label text.
+        const isUpdating = document.body.dataset.editMode === 'true' || originalText.trim() === 'Update Profile';
+
+        // Write button text into the label span so the SVG icon is preserved.
+        const setBtnText = (text) => {
+            if (submitLabel) submitLabel.textContent = text;
+            else submitBtn.textContent = text;
+        };
 
         // Validate username is available (only for new profiles, not updates)
         if (!isUpdating && !isUsernameAvailable) {
@@ -456,7 +467,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
 
         submitBtn.disabled = true;
-        submitBtn.textContent = isUpdating ? 'Updating Profile...' : 'Creating Account...';
+        setBtnText(isUpdating ? 'Updating Profile...' : 'Creating Account...');
 
         let userCreated = false;
         try {
@@ -475,7 +486,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                 userCreated = true;
             }
 
-            submitBtn.textContent = isUpdating ? 'Updating Profile...' : 'Creating Profile...';
+            setBtnText(isUpdating ? 'Updating Profile...' : 'Creating Profile...');
 
             // Step 2: Build profile data from form
             const heightFt = parseInt(document.getElementById('heightFt').value) || 0;
@@ -581,67 +592,18 @@ document.addEventListener('DOMContentLoaded', async function() {
                 await profileAPI.createPlayerProfile(profileData);
                 showSuccessMessage(isUpdating);
             } else {
-                // New signups: store profile data, then pay
-                localStorage.setItem('pendingProfileData', JSON.stringify(profileData));
-                submitBtn.textContent = 'Redirecting to payment...';
+                // New signups (verify-then-pay model): account was just created by
+                // authAPI.register above. Create the profile NOW, server-side, so the
+                // data is permanent/device-independent. Payment is NOT taken here —
+                // after the user verifies their email they land on the paywall
+                // (shared/subscription-required.html), which handles Stripe (web) /
+                // Apple IAP (iOS). Unpaid = a normal verified account that sees the paywall.
+                setBtnText('Creating Profile...');
+                await profileAPI.createPlayerProfile(profileData);
+                localStorage.removeItem('pendingProfileData');
 
-                // Phase 3c: iOS branch — use IAP instead of Stripe
-                if (API.isIOSApp()) {
-                    try {
-                        const r = await window.IAP.purchaseTier('transferplayer', null);
-                        if (r.success) {
-                            // Mirror payment-success.js logic inline (iOS never reaches that page via URL)
-                            try {
-                                await profileAPI.createPlayerProfile(profileData);
-                                localStorage.removeItem('pendingProfileData');
-
-                                // Grace period for paywall IIFE on next page
-                                const me = await API.auth.getCurrentUser().catch(() => null);
-                                if (me && me.user && me.user.id) {
-                                    localStorage.setItem('iap_pending_activation', JSON.stringify({
-                                        at: Date.now(), userId: me.user.id
-                                    }));
-                                }
-
-                                // Resolve relative nav to an absolute URL so it works in the iOS WKWebView
-                                // (bare/relative targets silently no-op there). new URL(rel, location.href)
-                                // correctly preserves the /frontend prefix on web and its absence in-app.
-                                window.location.href = new URL('verify-email.html', window.location.href).href;
-                            } catch (innerErr) {
-                                console.error('Post-IAP profile setup error:', innerErr);
-                                showToast('Profile setup failed after purchase: ' + innerErr.message, 'error');
-                                submitBtn.disabled = false;
-                                submitBtn.textContent = originalText;
-                            }
-                            return;
-                        }
-                        if (r.cancelled) {
-                            submitBtn.disabled = false;
-                            submitBtn.textContent = originalText;
-                            return;
-                        }
-                        showToast('Purchase failed: ' + (r.error || 'unknown'), 'error');
-                        submitBtn.disabled = false;
-                        submitBtn.textContent = originalText;
-                        return;
-                    } catch (iosErr) {
-                        console.error('IAP error:', iosErr);
-                        showToast('Purchase failed: ' + iosErr.message, 'error');
-                        submitBtn.disabled = false;
-                        submitBtn.textContent = originalText;
-                        return;
-                    }
-                }
-
-                // Web — existing Stripe flow
-                const { url } = await API.payments.createCheckoutSession(
-                    'transferplayer',
-                    null,
-                    'signup',
-                    FE_BASE + '/transferplayer/payment-success.html',
-                    FE_BASE + '/transferplayer/create-profile.html'
-                );
-                window.location.href = url;
+                // Resolve relative nav to an absolute URL so it works in the iOS WKWebView.
+                window.location.href = new URL('verify-email.html', window.location.href).href;
             }
         } catch (error) {
             console.error('Profile error:', error);
@@ -654,7 +616,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             }
 
             submitBtn.disabled = false;
-            submitBtn.textContent = originalText;
+            setBtnText(originalText);
         }
     });
 });
@@ -790,9 +752,13 @@ async function loadExistingProfile() {
                     }
                 });
 
-                // Change submit button text
-                const submitBtn = document.querySelector('.btn-primary[type="submit"]');
-                if (submitBtn) submitBtn.textContent = 'Update Profile';
+                // Edit mode: relabel the button and hide the subscription disclosure
+                // (no purchase happens when editing an existing profile).
+                document.body.dataset.editMode = 'true';
+                const submitLabel = document.getElementById('submitBtnLabel');
+                if (submitLabel) submitLabel.textContent = 'Update Profile';
+                const disclosure = document.getElementById('subscribeDisclosure');
+                if (disclosure) disclosure.style.display = 'none';
             }
         }
     } catch (error) {

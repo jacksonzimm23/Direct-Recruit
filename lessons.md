@@ -1177,112 +1177,94 @@ DO NOT run seed
     **Backfill:** already-corrupted rows were repaired by `backend/migrations/045_backfill_school_amp_encoding.sql` (prod) + `backend/scripts/backfill-school-amp-encoding.sql` (local one-shot, NOT in the seed MIGRATIONS array since a fresh seed has no corruption). Scope was the three school columns that flow through admin-lock → invite → profile: `coach_signup_requests.locked_school`, `coach_invites.school`, `coach_profiles.team_name`. The decode is idempotent (guarded by `LIKE '%&amp;%'` etc.). Bios / post content were intentionally left untouched. **Key files:** `backend/middleware/validation.js` (`stripHtml` + `decodeBasicEntities`).
 
 
+## AI Match / Fit-Matching (match.md) — the big picture
+
+115. **`match.md` is the gitignored master spec for the entire AI Match fit-matching feature — read it first before touching anything fit-related.** It lives at the repo root, is excluded from git (under "Sensitive business docs" in `.gitignore`), and is the single source of truth for the whole multi-plan effort. It is self-contained: its "Resume / Status" block at the top tells you exactly where work left off, and you execute it plan-by-plan (`[ ]` → `[x]`). Do not reconstruct fit decisions from code archaeology — the *why* lives in match.md, the *what* lives in the code. They drift if you ignore the spec.
+
+    **What the feature actually is (and why it is a lot of new data).** The whole point is to move the platform from **filtering** (binary: does a player pass the WHERE clause) to **two-sided fit matching** (continuous: how well does THIS player fit THIS specific program, AND would they actually come and thrive). That is a fundamentally bigger ask than a search filter, and it is *deliberately* why we collect so much more profile information than a normal recruiting site. The new data is almost all **off-the-field** signals — the things that decide whether a recruit commits and stays, not just whether they are talented on tape:
+
+    - Academics (unweighted/weighted GPA, SAT/ACT, AP/IB, class rank)
+    - Intended major / academic goals
+    - Levels the player is open to playing (D1 FBS … NJCAA)
+    - Preferred regions + home location, and preferred campus setting (urban/suburban/small-town/rural)
+    - Financial fit (needs financial aid, needs athletic scholarship, Pell/first-gen)
+    - Priority sliders (early playing time, staying close to home, academics-vs-football, level of competition) + a free-text "what I'm looking for"
+
+    Every player field has a **matched coach counterpart** (the core design idea — see the matched-pairs table in match.md): player intended major ↔ coach top programs / football-player majors; player GPA/test scores ↔ coach typical admitted ranges + test-optional; player aid needs ↔ coach aid generosity / affordability; player levels-open ↔ coach division; player region ↔ coach region / distance profile; player campus preference ↔ coach campus setting; player priority sliders ↔ coach dev-vs-plug-and-play. The engine scores each matched pair and combines them.
+
+    **The two audiences it serves (same engine, pointed both directions).** This is the key conceptual win: ONE pure symmetric function `computeFit(player, coach)` (`backend/utils/fit-score.js`) powers BOTH sides, so the number is always consistent no matter who is looking:
+    - **Coaches** see a real AI Match score + per-dimension breakdown on every player surface (RA / Discover / Transfer Portal / Portal Intelligence cards, the recruiting-profile banner + modal). It surfaces prospects who would genuinely fit and commit, not just measure up athletically.
+    - **Players** see their **Best-Fit Schools** in the AI Rep (logo + name + division + averaged AI Match, ranked, ≥70 only), with a per-school modal explaining what the program offers that matches them, plus a Staff tab to reach the coaches. This is the player-facing reason to fill out all that extra off-the-field data: it tells them which schools actually fit them off the field.
+
+    **Plan 7 phases (all shipped) — the shape of the build, so you know where each piece lives:**
+    - **A — engine:** `backend/utils/fit-score.js`. Deterministic, pure, no I/O. The `DIMENSIONS` array is the single source of truth (7 dims: academic, level, major, geographic, financial, environment, development; tiered weights; floor = ≥3 present dims AND ≥1 core; `score:null` below floor). This is the popularity-score.js pattern. NEVER duplicate this math elsewhere (see the SQL-ranking lesson below).
+    - **B — coach surfaces:** attach `player.fit = computeFit(player, coach)` via `addSignedUrlsToProfiles(players, coach)` in `routes/ai.js` + the discover endpoints in `routes/profile.js`; new `GET /profile/fit/:playerUserId` (coach-gated) for the banner/modal.
+    - **C — player Best-Fit Schools:** `CoachProfile.getAllCollege()` + `GET /api/ai-rep/best-fit-schools` (group passing coaches by team, average, ≥70, privacy-filtered Staff list); replaced the old filter-derived "Match Feed". Tabbed school modal via `FitInfoModal` `mode:'school'`.
+    - **D — Profile Optimization nudge:** `/api/ai-rep/profile-completion` shows incomplete recruiting-profile SUBTABS (Academics, Major & Goals, Financial Fit, Level & Location, Priorities) as one HIGH-priority row each, so a player who hasn't filled the off-field data is told to, and learns it powers their AI Match.
+    - **E — fit-aware AI search:** fit is ALWAYS a ranking factor in RA + PI (better fit ranks higher, blended with relevance), and the recruiting-profile fields became natural-language filters ("wants to study engineering", "open to D2", "needs a scholarship").
+
+    **Hard-won sub-lessons from building it (each could have been its own bug):**
+    - **Single source of truth for the math.** Fit lives ONLY in `DIMENSIONS` (fit-score.js). When E needed fit to influence SQL ordering, the temptation was to re-implement the weighting in SQL — rejected. Instead: over-fetch a relevance window, run `computeFit` in JS over the window, blend (relevance-dominant) and re-sort with a total-order comparator (`blended`, then primary key, then `id`) so offset pagination stays stable across "show more". `rerankByFit` is exported from `PlayerProfile.js` and reused by `PortalSignal.js` so RA and PI behave identically.
+    - **Canonical strings or nothing.** The fit fields are TEXT[]/VARCHAR with canonical vocabularies in `match-constants.js` (`VALID_MAJORS/REGIONS/CAMPUS_SETTINGS/LEVELS/YES_NO_UNSURE`). The AI must emit string-identical values or the SQL `&&`/`=` silently matches nothing. Guard rails: inject the canonical lists into the prompts via `JSON.stringify`, map phrases→canonical in the glossary, and allowlist in `validateRaResponse`/`validatePiResponse` (lesson #113 generalized). The TEXT[] fit filters use `&&` (any-of), deliberately UNLIKE `other_sports`' `@>` (all-of) — "open to D2 or D3" means EITHER.
+    - **The glossary is twinned + the AI's copy is server-only.** `backend/utils/recruit-assistant-glossary.js` is what the LLM actually reads (in the prompt). The `frontend/collegecoach/tabs/recruit-assistant-glossary.js` twin is a kept-in-sync reference that is intentionally NOT loaded by any page (its `<script>` tag was removed) so it never ships to users. Keep both in sync, but only the backend one is load-bearing.
+    - **Sparse fit data is the normal state, not an error.** `computeFit` returns `score:null` below the floor, the badge renders "—", and in fit-aware ranking null fit is treated as a NEUTRAL 0.5 (so it neither sinks nor floats — relevance decides). On real/prod data, Best-Fit Schools and high scores are SCARCE until users fill the off-field fields; that scarcity is what makes a high score mean something. Don't "fix" an empty list — it usually means the data isn't there yet (which is what Plan D's nudge addresses).
+    - **Privacy / soft details only.** Per-dimension `detail` strings describe the match in soft terms ("Academics line up with your admitted profile", "Open to your division") — never raw PII (home ZIP, raw aid wording) or a school's raw thresholds. Baked into each scorer's `detail`. Staff lists exclude `profile_visibility = 'private'` coaches and never include email.
+    - **The UI hooks were built BEFORE the engine on purpose** (Plan 6 before Plan 7, owner decision) — `FitDisplay` (`fit-display.js`, the 6-tier badge + `tierOf` + TIERS) and `FitInfoModal` (`fit-info-modal.js`) shipped with placeholder `87`, then Plan 7 wired real numbers in. The badge is `flex-shrink:0` and the info column ellipsizes (`:has(.fit-badge)` scoping) so a long card row never pushes the AI MATCH badge off-screen — keep that invariant on any card that shows fit.
+
+    **HOW THE SCORE IS ACTUALLY COMPUTED (`computeFit` math — the record, since match.md is gone).**
+    Each of the 7 dimensions returns `{ present, score (0–1), detail }` and is `present:false` when EITHER
+    the player or coach is missing that data. The final score is a **weighted average over PRESENT
+    dimensions only**, scaled to 0–99: `score = round( Σ(dimScore × weight) / Σ(weight) × 99 )`.
+    - **Tiered weights** (`W` in fit-score.js): HIGH = 3.0 (Academic, Level) · MEDIUM = 2.0 (Major,
+      Geographic) · LOW = 1.0 (Financial, Environment, Development). Gatekeepers (can you even play here,
+      can you get in) weigh most; soft/cultural fit weighs least.
+    - **Display floor:** show a score only if **≥3 dimensions present AND ≥1 core dimension present**
+      (core = Academic OR Level). Otherwise `score:null` → "—"/Not yet rated. Handles cold-start so a
+      near-empty profile doesn't get a misleadingly precise number.
+    - **Per-dimension scoring rules (the actual curves):**
+      - *Academic:* player GPA/SAT/ACT vs coach admitted ranges. At/above the top of the band = 1.0;
+        within band ramps **0.8→1.0** by position-in-band (a player comfortably above scores higher than
+        one sitting at the floor — this is what spread the curve during calibration); below floor ramps
+        down from 0.8 by distance. `test_optional` softens a missing/weak test score toward neutral.
+        Sub-parts (gpa, sat, act) averaged over whichever are present.
+      - *Major:* intended major ∈ coach `football_player_majors` = 1.0; ∈ `top_programs` only = 0.65; no
+        overlap = 0.1.
+      - *Level:* coach division ∈ player `levels_open` = 1.0 else 0.0 (binary gatekeeper).
+      - *Geographic:* region(coach.state) ∈ player `preferred_regions` = 1.0; if `distance_profile:national`
+        a miss softens to 0.6; otherwise a miss = 0.15. (STATE_ABBR map normalizes "MS"→"Mississippi"
+        before the REGION_BY_STATE lookup — abbreviation bug fixed in Phase A.)
+      - *Financial:* no-need = neutral 1.0; needs-scholarship × `offers_athletic_aid` (full 1.0 / partial
+        0.6 / none 0.1); needs-aid × `aid_generosity`/`affordability_band` (need-met 1.0 … limited 0.4);
+        "unsure" ≈ 0.7.
+      - *Environment:* exact campus-setting match = 1.0; else step down a continuum
+        (urban–suburban–small-town–rural) by adjacency distance (≈ 1 − dist×0.33).
+      - *Development:* player playing-time/competition priority sliders vs coach `dev_vs_plug_and_play`
+        (JSONB); soft alignment, low weight.
+    - **6-tier scale** (shared single source = `FitDisplay.TIERS`, mirrored in `fit-score.js TIERS` +
+      `tierOf`): Elite 90+ · Strong 75–89 · Good 60–74 · Fair 45–59 · Low 30–44 · Poor <30.
+    - **Per-dimension icon/color in the modal** uses flat thirds by the dim's 0–1 score: green check ≥0.67,
+      yellow partial 0.34–0.66, red ✕ <0.34 (so "Different campus setting" reads red, not a green check).
+
+    **THE CALIBRATION DISTRIBUTION (how the curve was tuned, and why these numbers are defensible).**
+    Phase A was calibrated against **519 seeded players** (a temp local-only generator,
+    `backend/scripts/_seed-fit-random.js`, populated valid random fit data on every player so the engine
+    could be measured on a realistic spread — NOT in the seed MIGRATIONS array; demo/calibration only).
+    Result distribution after the position-within-band + partial-major softening:
+    **median ≈ 54, p90 ≈ 76, max ≈ 92, a deliberately SCARCE 90+ tail, and 0 below floor once data is present.**
+    The intent (owner-approved): make a high score MEAN something — most pairs land Fair/Good, Strong is
+    earned, Elite is rare. If a recalibration ever flattens or inflates this (everyone 80+), the curve is
+    broken; re-check the band ramps and weights against a fresh ~500-row run. Real/prod data will look
+    even scarcer than the seed until users actually fill the off-field fields.
+
+    **E ranking blend (separate from the score itself).** Fit-aware ordering in RA/PI does NOT change the
+    score — it blends the displayed `relevance_score` with fit for SORT ONLY: `blended = 0.7×relNorm +
+    0.3×fitForSort`, null fit treated as NEUTRAL 0.5. Relevance-dominant on purpose (a clearly better
+    keyword/stat match still wins; fit breaks ties and nudges). Knobs are the `FIT_BLEND` constants in
+    `PlayerProfile.js` if you ever want fit to weigh more.
 
 
 
 
 
-# App Store Submission Checklist — Direct Recruit iOS
-
-ORDER OF FIXES (after #5 which is done):
-
-#7  App Store ID placeholder         — SKIP for now (do after first Apple approval)
-#9  Cookie sameSite verification     — TEST FIRST (likely no-op after #5; plan only if it fails)
 
 
-#10 Content moderation               — PLAN NEEDED (depends on #2; profanity lib, admin queue, suspension flow)
-
-Then: NICE TO HAVE items + Pre-Submission Verification + Apple account setup.
-
-## MEDIUM — Likely Required for Approval
-
-### [ ] 9. Cookie auth may break cross-origin on iOS
-auth.js:25 sameSite: 'strict' — won't attach cookies from capacitor://localhost to directrecruit.net.
-Pick one:
-- [ ] Option A: Change to sameSite: 'none' + secure: true (review CSRF)
-- [ ] Option B: Add Authorization: Bearer header fallback — return JWT in login body, store in Keychain via @capacitor-community/secure-storage on iOS, server reads cookie OR header
-- [ ] If fix #5 Option A was used, this may resolve itself — verify
-- [ ] Test login persistence across iOS app launches
-
-## NICE TO HAVE
-
-- [ ] Exclude landingpage/pricing.html, features.html, marketing footers from iOS via .ios-app CSS or build exclusion
-- [ ] Surface privacy + terms inside Settings on iOS
-- [ ] Add Authorization: Bearer fallback for iOS (cleaner long-term than cookies)
-- [ ] Verify CSP connect-src in server.js:142 includes Capacitor origins
-- [ ] Verify rate-limit handles cell-IP source from WebView
-- [ ] Test iap_pending_activation grace key clears in 60s prod
-- [ ] Add age verification beyond ToS attestation (parent email loop)
-- [ ] Settings → Notifications toggle UI for push types
-
----
-
-## Pre-Submission Verification
-
-After all CRITICAL items done:
-- [ ] npx cap sync ios, archive in Xcode
-- [ ] Test on real iPhone with sandbox Apple ID
-- [ ] Full IAP flow: subscribe → cancel → restore → re-subscribe
-- [ ] Report + block flow end-to-end on real device
-- [ ] Account deletion on real device (reviewers WILL test)
-- [ ] Mobile Safari redirect on real iPhone, multiple URLs
-- [ ] Push notifications arrive in production
-- [ ] Push permission prompt fires on first login
-- [ ] Confirm PrivacyInfo.xcprivacy is in iOS bundle (required May 2024+)
-- [ ] Fill App Privacy questionnaire in App Store Connect
-- [ ] Prepare review notes: test account creds, NCAA recruiting context
-
----
-
-## Apple Account Setup (one-time)
-
-- [ ] Apple Developer Program active ($99/yr)
-- [ ] App Store Connect app record created, bundle ID matches ios/App/App.xcodeproj
-- [ ] Create IAP products in App Store Connect:
-  - [ ] player_monthly_10 (matches IAP_PRODUCT_PLAYER env)
-  - [ ] coach_starter_monthly_20
-  - [ ] coach_pro_monthly_50
-  - [ ] coach_elite_monthly_100
-- [ ] Each IAP product: name, description, price tier, screenshot, review notes
-- [ ] RevenueCat dashboard: project + iOS app + matching product IDs
-- [ ] RevenueCat webhook URL → https://directrecruit.net/api/payments/revenuecat-webhook
-- [ ] Set prod env vars:
-  - [ ] REVENUECAT_IOS_API_KEY
-  - [ ] REVENUECAT_WEBHOOK_AUTH_HEADER
-  - [ ] IAP_PRODUCT_PLAYER
-  - [ ] IAP_PRODUCT_COACH_STARTER
-  - [ ] IAP_PRODUCT_COACH_PRO
-  - [ ] IAP_PRODUCT_COACH_ELITE
-- [ ] pm2 restart direct-recruit --update-env after env changes
-- [ ] App screenshots (6.7" required)
-- [ ] App icon 1024×1024
-- [ ] Privacy Policy URL set in App Store Connect
-- [ ] Support URL set in App Store Connect
-- [ ] App Review test account credentials ready
-
----
-
-## Getting Paid — IAP Payout Setup
-
-In App Store Connect → Agreements, Tax, and Banking:
-- [ ] Accept Paid Apps Agreement
-- [ ] Add U.S. bank account (routing + account number)
-- [ ] Complete W-9 (U.S. tax)
-- [ ] Complete international tax forms for any territory you sell in
-- [ ] Confirm contact + financial info populated
-- [ ] Apply for Small Business Program (15% rate vs 30%) at developer.apple.com/app-store/small-business-program/
-- Apple pays monthly, ~30-45 days after fiscal month end, to your bank
-- Renewals: Apple handles charges, RevenueCat webhook updates subscription_status in DB — no manual work
-
----
-
-## Submission Steps
-
-1. [ ] Xcode → Product → Archive
-2. [ ] Window → Organizer → select archive → Distribute App → App Store Connect → Upload
-3. [ ] Wait ~15 min for processing
-4. [ ] App Store Connect → app → + Version → fill version notes
-5. [ ] Select uploaded build
-6. [ ] Submit for Review
-7. [ ] Expect 24-48 hr review turnaround
-8. [ ] If rejected: read notes carefully, fix, resubmit

@@ -151,26 +151,32 @@ label {
 }
 
 /* Form Inputs */
+/* Input styling aligned to the player create-profile baseline (profile-form.css)
+   so coach and player forms render at identical size/visuals, including the
+   -webkit-appearance:none iOS reset that stops Safari drawing native chrome. */
 input[type="text"],
 input[type="email"],
 input[type="password"],
 input[type="url"],
+input[type="number"],
+textarea,
 select {
     width: 100%;
-    padding: 0.9rem 1.2rem;
-    font-size: 1rem;
-    font-family: inherit;
-    background: rgba(254, 252, 251, 0.08);
+    padding: 0.875rem 1rem;
+    background: rgba(254, 252, 251, 0.05);
     border: 2px solid rgba(18, 130, 162, 0.3);
-    border-radius: 10px;
+    border-radius: 8px;
     color: var(--white);
+    font-size: 0.95rem;
+    font-family: 'Inter', sans-serif;
     transition: all 0.3s ease;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
 }
 
-input[type="text"]::placeholder,
-input[type="email"]::placeholder,
-input[type="password"]::placeholder,
-input[type="url"]::placeholder {
+input::placeholder,
+textarea::placeholder {
     color: rgba(254, 252, 251, 0.4);
 }
 
@@ -178,10 +184,12 @@ input[type="text"]:focus,
 input[type="email"]:focus,
 input[type="password"]:focus,
 input[type="url"]:focus,
+input[type="number"]:focus,
+textarea:focus,
 select:focus {
     outline: none;
     border-color: var(--cerulean);
-    background: rgba(254, 252, 251, 0.12);
+    background: rgba(254, 252, 251, 0.08);
     box-shadow: 0 0 0 3px rgba(18, 130, 162, 0.1);
 }
 
@@ -572,9 +580,11 @@ input.input-success {
         height: 18px;
     }
 
+    /* Match the player create-profile back button: compact + left-aligned,
+       NOT full-width/centered (that was the visual mismatch). */
     .back-button {
-        width: 100%;
-        justify-content: center;
+        padding: 0.6rem 1rem;
+        font-size: 0.9rem;
     }
 }
 

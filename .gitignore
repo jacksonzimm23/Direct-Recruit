@@ -43,6 +43,7 @@ testing.md
 pipeline.md
 lessons.md
 appcheck.md
+appstore.md
 match.md
 
 # Local cookie/test auth jars — never commit (contain real JWTs)

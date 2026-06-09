@@ -3167,6 +3167,32 @@ async function executeSwitchProfile(profileData) {
     // these URLs resolve in BOTH the WKWebView and the browser.
     const FE_BASE = window.location.origin + (window.location.pathname.startsWith('/frontend/') ? '/frontend' : '');
 
+    // Plan B5 — iOS paid→free billing gate. An Apple IAP subscription can only be
+    // cancelled by the user in iOS Settings (there is no backend RevenueCat cancel
+    // API). If an apple_iap user with an active sub switches FROM a paid type TO a
+    // free one, the backend cannot cancel the sub, so Apple keeps billing them.
+    // Warn them BEFORE the switch so they can cancel in iOS Settings first.
+    const PAID = ['hsplayer', 'transferplayer', 'collegecoach'];
+    const targetIsFree = !PAID.includes(selectedTargetType);
+    if (API.isIOSApp() && switchProfileInfo && switchProfileInfo.is_current_paid && targetIsFree) {
+        let source = null, status = null;
+        try {
+            const sub = await API.payments.getSubscriptionStatus();
+            source = sub && sub.source;
+            status = sub && sub.status;
+        } catch (_) { /* if we can't tell, fall through to the warning to be safe */ }
+        if (source === 'apple_iap' && status === 'active') {
+            const proceed = confirm(
+                'Your subscription is billed through Apple. Switching to a free profile will NOT cancel it — '
+                + 'you must cancel it yourself in iOS Settings → Apple ID → Subscriptions, or you will keep being charged.\n\n'
+                + 'Switch anyway?'
+            );
+            if (!proceed) {
+                return; // user backed out; no switch
+            }
+        }
+    }
+
     btn.disabled = true;
     btn.textContent = 'Switching...';
     errorEl.style.display = 'none';
@@ -3188,66 +3214,17 @@ async function executeSwitchProfile(profileData) {
             const redirectUrl = `${FE_BASE}/${folder}/${mainpage}`;
 
             if (result.requires_payment) {
-                // Close the switch modal
+                // Verify-then-pay model: the switch has committed server-side and the
+                // user is now on the paid profile type with subscription_status='none'.
+                // They are an existing, already-verified account, so send them to the
+                // PAYWALL (shared/subscription-required.html) to subscribe — Stripe (web)
+                // / Apple IAP (iOS), handled there. We do NOT take payment from settings.
+                // An unpaid switched account is a normal gated account, not broken.
                 closeSwitchProfileModal();
-
-                // Store redirect URL for after payment
-                localStorage.setItem('switchRedirectUrl', redirectUrl);
-
-                if (result.payment_profile_type === 'collegecoach') {
-                    // Coach needs tier selection first (tier modal branches iOS vs Stripe)
-                    showSwitchTierModal();
-                } else {
-                    // Player switch: iOS uses IAP, web uses Stripe
-                    btn.textContent = 'Redirecting to payment...';
-
-                    // Phase 3c: iOS branch
-                    if (API.isIOSApp()) {
-                        try {
-                            const r = await window.IAP.purchaseTier(result.payment_profile_type, null);
-                            if (r.success) {
-                                const me = await API.auth.getCurrentUser().catch(() => null);
-                                if (me && me.user && me.user.id) {
-                                    localStorage.setItem('iap_pending_activation', JSON.stringify({
-                                        at: Date.now(), userId: me.user.id
-                                    }));
-                                }
-                                localStorage.removeItem('switchRedirectUrl');
-                                window.location.href = redirectUrl;
-                                return;
-                            }
-                            if (r.cancelled) {
-                                showToast('Profile switched but payment was cancelled. Subscribe from your dashboard.', 'warning');
-                                window.location.href = redirectUrl;
-                                return;
-                            }
-                            showToast('Purchase failed: ' + (r.error || 'unknown'), 'error');
-                            window.location.href = redirectUrl;
-                            return;
-                        } catch (iosErr) {
-                            console.error('IAP error:', iosErr);
-                            showToast('Profile switched but payment failed. Subscribe from your dashboard.', 'warning');
-                            window.location.href = redirectUrl;
-                            return;
-                        }
-                    }
-
-                    // Web — existing Stripe flow
-                    try {
-                        const { url } = await API.payments.createCheckoutSession(
-                            result.payment_profile_type,
-                            null,
-                            'switch',
-                            FE_BASE + '/shared/payment-success-switch.html',
-                            window.location.href
-                        );
-                        window.location.href = url;
-                    } catch (payError) {
-                        console.error('Checkout error:', payError);
-                        showToast('Profile switched but payment setup failed. You can complete payment from your dashboard.', 'warning');
-                        window.location.href = redirectUrl;
-                    }
-                }
+                btn.textContent = 'Switched! Redirecting...';
+                showToast('Switched to ' + (result.payment_profile_type || 'paid') + '. Subscribe to unlock its features.', 'success');
+                window.location.href = FE_BASE + '/shared/subscription-required.html';
+                return;
             } else {
                 // No payment needed — show success and redirect
                 btn.textContent = 'Success! Redirecting...';

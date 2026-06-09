@@ -61,6 +61,13 @@
 
             <!-- Right: Get the app CTA -->
             <div class="v2-splash-right">
+                <!-- Coach post-verification banner (?verified=coach). An invited College
+                     Coach completes account creation + email verification in mobile Safari,
+                     then is sent here to download the app and subscribe via Apple IAP. -->
+                <div id="coachVerifiedBanner" style="display:none;background:rgba(18,130,162,0.12);border:1px solid rgba(18,130,162,0.4);border-radius:10px;padding:14px 16px;margin-bottom:16px;">
+                    <p style="color:#fff;font-weight:700;margin:0 0 4px;font-size:15px;">Your coach account is verified ✓</p>
+                    <p style="color:rgba(255,255,255,0.7);margin:0;font-size:13px;line-height:1.5;">Download the app and sign in with the email you just verified to subscribe and start recruiting.</p>
+                </div>
                 <h1 class="v2-splash-heading">Direct Recruit is better in the app.</h1>
                 <p class="v2-splash-roles">For Players &middot; For Coaches &middot; For Everyone</p>
                 <a href="https://apps.apple.com/app/direct-recruit/idPLACEHOLDER" class="get-app-badge" aria-label="Download on the App Store">
@@ -79,5 +86,12 @@
             <span>&copy; 2026 Direct Recruit</span>
         </div>
     </footer>
+    <script>
+        // Show the "account verified" banner for coaches arriving post-verification.
+        if (/[?&]verified=coach\b/i.test(window.location.search)) {
+            var b = document.getElementById('coachVerifiedBanner');
+            if (b) b.style.display = 'block';
+        }
+    </script>
 </body>
 </html>

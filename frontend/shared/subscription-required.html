@@ -13,18 +13,49 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <style>
         .paywall-section { display:flex;align-items:center;justify-content:center;min-height:calc(100vh - 70px);padding:40px 20px; }
-        .paywall-container { text-align:center;max-width:520px; }
+        .paywall-container { text-align:center;max-width:520px;width:100%; }
         .paywall-icon { width:64px;height:64px;margin:0 auto 24px;color:#ff6b35; }
         .paywall-title { color:#fff;font-size:24px;font-weight:700;margin:0 0 12px; }
         .paywall-message { color:rgba(255,255,255,0.55);font-size:15px;line-height:1.7;margin:0 0 32px; }
-        .paywall-actions { display:flex;flex-direction:column;gap:12px;max-width:320px;margin:0 auto; }
-        .paywall-btn { display:flex;align-items:center;justify-content:center;padding:14px 24px;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;border:none;transition:all 0.2s; }
+        .paywall-actions { display:flex;flex-direction:column;gap:12px;max-width:320px;margin:0 auto;width:100%; }
+        .paywall-btn { display:flex;align-items:center;justify-content:center;width:100%;box-sizing:border-box;padding:14px 24px;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;border:none;transition:all 0.2s; }
         .paywall-btn-primary { background:#1282a2;color:#fff; }
         .paywall-btn-primary:hover { background:#0f6f8c; }
         .paywall-btn-secondary { background:rgba(255,255,255,0.05);color:#ccd6f6;border:1px solid rgba(100,116,152,0.3); }
         .paywall-btn-secondary:hover { background:rgba(255,255,255,0.1); }
         .paywall-btn-ghost { background:none;color:#8892b0;border:none;font-size:13px; }
         .paywall-btn-ghost:hover { color:#ccd6f6; }
+
+        /* FTC auto-renewal disclosure */
+        .paywall-disclosure { max-width:360px;margin:20px auto 0;text-align:center; }
+        .paywall-price { color:#1282a2;font-size:18px;font-weight:800;margin:0 0 6px;min-height:18px; }
+        .paywall-price:empty { display:none; }
+        .paywall-terms { color:rgba(255,255,255,0.55);font-size:13px;line-height:1.5;margin:0 0 6px; }
+        .paywall-legal { color:rgba(255,255,255,0.4);font-size:12px;line-height:1.5;margin:0; }
+        .paywall-legal a { color:#1282a2;text-decoration:underline; }
+
+        /* Plan A2 — mobile / iOS layout. 100vh mis-measures inside the iOS WKWebView
+           (ignores the dynamic toolbar) and the fixed .navbar + status bar can tuck
+           content underneath. Use 100dvh and add safe-area insets. Scoped to small
+           screens; .ios-app rules only apply inside the Capacitor WebView. */
+        @media (max-width: 768px) {
+            .paywall-section {
+                min-height: calc(100dvh - 70px);
+                padding: 32px 20px;
+            }
+            .paywall-title { font-size: 22px; }
+            .paywall-message { font-size: 14px; }
+        }
+        /* iOS app: push the whole paywall below the status bar (the fixed navbar from
+           styles.css overlaps it otherwise) and use the full dynamic viewport height. */
+        html.ios-app .paywall-section {
+            min-height: 100dvh;
+            padding-top: calc(40px + env(safe-area-inset-top, 0px));
+            padding-bottom: calc(40px + env(safe-area-inset-bottom, 0px));
+        }
+        html.ios-app .navbar {
+            padding-top: env(safe-area-inset-top, 0px);
+        }
     </style>
     <script src="capacitor-init.js"></script>
 </head>
@@ -54,7 +85,31 @@
             <div class="paywall-actions">
                 <button class="paywall-btn paywall-btn-primary" id="paywallSubscribeBtn">Subscribe Now</button>
                 <button class="paywall-btn paywall-btn-secondary" id="paywallSwitchBtn">Switch Profile Type</button>
+                <!-- Apple Guideline 3.1.1: Restore Purchases must be reachable on iOS even
+                     while gated. A user who already subscribed (reinstall / new device /
+                     state drift) would otherwise be trapped on this paywall with no way
+                     through. iOS-only (.ios-only) — web/Stripe has no Apple-ID restore. -->
+                <button class="paywall-btn paywall-btn-secondary ios-only" id="paywallRestoreBtn">Restore Purchases</button>
                 <button class="paywall-btn paywall-btn-ghost" id="paywallLogoutBtn">Log Out</button>
+            </div>
+
+            <!-- FTC auto-renewal disclosure — on the same screen as the Subscribe button,
+                 where payment actually happens. Price line is populated by JS:
+                 Apple's localized price on iOS, the hardcoded Stripe price on web.
+                 Hidden by JS while showing the multi-tier coach picker (each tier card
+                 carries its own price; the renewal terms + links below still apply). -->
+            <div class="paywall-disclosure" id="paywallDisclosure">
+                <div class="paywall-price" id="paywallPrice"></div>
+                <p class="paywall-terms">
+                    Auto-renews monthly until cancelled.
+                    <span class="web-only">Cancel anytime in your account settings.</span>
+                    <span class="ios-only">Cancel anytime in your Apple ID subscription settings.</span>
+                </p>
+                <p class="paywall-legal">
+                    By subscribing you agree to our
+                    <a href="../landingpage/terms-of-service.html">Terms of Use</a> and
+                    <a href="../landingpage/privacy-policy.html">Privacy Policy</a>.
+                </p>
             </div>
         </div>
     </section>
@@ -66,19 +121,59 @@
         const PAID_FOLDERS = ['hsplayer', 'transferplayer', 'collegecoach'];
 
         try {
-            const me = await API.auth.getCurrentUser();
+            // Plan A1: do NOT log the user out if /auth/me hiccups. The user already
+            // authenticated to reach this page (the global paywall IIFE in api.js let
+            // them through). A transient /me failure — notably the iOS WKWebView
+            // sameSite cookie issue (lessons.md #9) — must not bounce them to signin
+            // (which reads as an instant logout). Only go to signin if there is
+            // genuinely no token at all. Otherwise fall back to the cached user so the
+            // correct paid-type Subscribe button still renders.
+            let me = null;
+            try {
+                me = await API.auth.getCurrentUser();
+            } catch (_) { /* fall through to cached user below */ }
+
             if (!me || !me.user) {
-                window.location.href = '../landingpage/signin.html';
-                return;
+                if (!API.isAuthenticated()) {
+                    // No session at all — genuinely logged out.
+                    window.location.href = '../landingpage/signin.html';
+                    return;
+                }
+                // Authenticated but /me is unavailable — trust the session and render
+                // the paywall from the cached user (set at login / last /me).
+                const cached = API.getUser();
+                me = { user: cached || {}, profile: null };
             }
 
             // lesson 69: getProfileFolder needs college_division from me.profile —
             // me.user alone returns the wrong folder for college coaches/players.
+            // me.user.college_division is the cached fallback when me.profile is absent.
             const folder = getProfileFolder({
                 role: me.user.role,
                 is_transfer_player: me.user.is_transfer_player,
-                college_division: me.profile && me.profile.college_division
+                college_division: (me.profile && me.profile.college_division) || me.user.college_division
             });
+
+            // FTC disclosure price line. Players are a single $10 plan → show the price
+            // here (Apple's localized price on iOS, hardcoded Stripe price on web).
+            // collegecoach has 3 tiers → leave this empty; each tier button shows its own
+            // price, and the renewal terms + Terms/Privacy below still apply.
+            (async function populateDisclosurePrice() {
+                const priceEl = document.getElementById('paywallPrice');
+                if (!priceEl) return;
+                if (folder === 'hsplayer' || folder === 'transferplayer') {
+                    if (API.isIOSApp() && window.IAP?.getOfferingsPriceMap) {
+                        try {
+                            const map = await window.IAP.getOfferingsPriceMap();
+                            if (map && map.player) { priceEl.textContent = map.player + '/month'; return; }
+                        } catch (_) { /* fall through — show nothing rather than a wrong price */ }
+                        priceEl.textContent = ''; // iOS without a reliable price: Apple's sheet shows it
+                    } else {
+                        priceEl.textContent = '$10/month'; // web (Stripe)
+                    }
+                }
+                // collegecoach: leave empty (tier buttons carry per-tier prices)
+            })();
 
             // Phase 3c: shared handler — branches to IAP on iOS, Stripe on web.
             // profileType: 'hsplayer'|'transferplayer'|'collegecoach'; tier: null for players, 'starter'|'pro'|'elite' for coaches
@@ -155,6 +250,46 @@
             document.getElementById('paywallLogoutBtn').addEventListener('click', async () => {
                 await API.auth.logout();
             });
+
+            // Restore Purchases (iOS only — Apple Guideline 3.1.1). Re-syncs an existing
+            // Apple subscription so a previously-paid user (reinstall / new device / state
+            // drift) isn't trapped on this paywall. Mirrors handleRestorePurchases in
+            // settings.js: on success, RevenueCat's webhook flips subscription_status and
+            // the reload lets the global paywall IIFE pass them through to their dashboard.
+            const restoreBtn = document.getElementById('paywallRestoreBtn');
+            if (restoreBtn) {
+                restoreBtn.addEventListener('click', async () => {
+                    if (!window.IAP || !window.IAP.restorePurchases) {
+                        showToast('Restore is only available in the app.', 'error');
+                        return;
+                    }
+                    const orig = restoreBtn.textContent;
+                    restoreBtn.disabled = true;
+                    restoreBtn.textContent = 'Restoring...';
+                    try {
+                        const r = await window.IAP.restorePurchases();
+                        if (r.success && r.hasActive) {
+                            showToast('Purchases restored successfully.', 'success');
+                            // Give RevenueCat's webhook a moment to update the backend, then
+                            // reload — the IIFE in api.js sees active status and releases them.
+                            setTimeout(() => window.location.reload(), 1500);
+                            return;
+                        }
+                        if (r.success && !r.hasActive) {
+                            showToast('No active subscription found for your Apple ID.', 'error');
+                        } else {
+                            showToast('Restore failed: ' + (r.error || 'unknown'), 'error');
+                        }
+                        restoreBtn.disabled = false;
+                        restoreBtn.textContent = orig;
+                    } catch (e) {
+                        console.error('Restore error:', e);
+                        showToast('Restore failed: ' + (e.message || 'unknown'), 'error');
+                        restoreBtn.disabled = false;
+                        restoreBtn.textContent = orig;
+                    }
+                });
+            }
 
             async function showTierSelection() {
                 const container = document.querySelector('.paywall-actions');

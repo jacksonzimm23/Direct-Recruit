@@ -269,6 +269,22 @@ async function webhookHandler(req, res) {
             await User.updateStripeCustomerId(userId, session.customer);
           }
 
+          // Verify-then-pay (cross-type paid->paid switch): if this user switched FROM
+          // a different paid product, the switch stashed their OLD Stripe sub id rather
+          // than cancelling it (so they kept access / weren't double-charged while
+          // deciding). Now that the NEW sub is active, cancel the OLD one. Idempotent:
+          // takePendingCancelSubId clears the id in the same statement, so a duplicate
+          // webhook reads null and skips. Best-effort — never fail the webhook on this.
+          try {
+            const oldSubId = await User.takePendingCancelSubId(userId);
+            if (oldSubId && oldSubId !== session.subscription) {
+              await stripe.cancelSubscription(oldSubId);
+              logger.info(`Cancelled prior subscription ${oldSubId} for user ${userId} after paid->paid switch`);
+            }
+          } catch (cancelErr) {
+            logger.error(`Failed to cancel prior subscription for user ${userId}: ${cancelErr.message}`);
+          }
+
           logger.info(`Subscription activated for user ${userId}: tier=${tier}`);
         }
         break;

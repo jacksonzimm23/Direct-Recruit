@@ -151,6 +151,9 @@ label {
 }
 
 /* Form Inputs */
+/* Input styling aligned to the player create-profile baseline (profile-form.css)
+   so coach and player forms render at identical size/visuals, including the
+   -webkit-appearance:none iOS reset that stops Safari drawing native chrome. */
 input[type="text"],
 input[type="email"],
 input[type="password"],
@@ -159,14 +162,17 @@ input[type="number"],
 textarea,
 select {
     width: 100%;
-    padding: 0.9rem 1.2rem;
-    font-size: 1rem;
-    font-family: inherit;
-    background: rgba(254, 252, 251, 0.08);
+    padding: 0.875rem 1rem;
+    background: rgba(254, 252, 251, 0.05);
     border: 2px solid rgba(18, 130, 162, 0.3);
-    border-radius: 10px;
+    border-radius: 8px;
     color: var(--white);
+    font-size: 0.95rem;
+    font-family: 'Inter', sans-serif;
     transition: all 0.3s ease;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
 }
 
 input[type="text"]::placeholder,
@@ -187,7 +193,7 @@ textarea:focus,
 select:focus {
     outline: none;
     border-color: var(--cerulean);
-    background: rgba(254, 252, 251, 0.12);
+    background: rgba(254, 252, 251, 0.08);
     box-shadow: 0 0 0 3px rgba(18, 130, 162, 0.1);
 }
 
@@ -325,6 +331,88 @@ select optgroup {
 
 .selected-pill button:hover {
     transform: scale(1.2);
+}
+
+/* Shared match-ui multi-select chips (majors / programs / affiliation).
+   initMatchMultiSelect (shared/match-ui.js) renders .selected-item + .remove-item,
+   NOT .selected-pill — so without these they fell back to unstyled default buttons.
+   Match the .selected-pill styling above so every chip on the form looks identical. */
+.selected-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: var(--cerulean);
+    color: var(--white);
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    animation: pillAppear 0.3s ease;
+}
+
+.remove-item {
+    background: none;
+    border: none;
+    color: var(--white);
+    cursor: pointer;
+    font-size: 1.2rem;
+    line-height: 1;
+    padding: 0;
+    margin-left: 0.25rem;
+    transition: transform 0.2s ease;
+}
+
+.remove-item:hover {
+    transform: scale(1.2);
+}
+
+/* ── Inline plan selection (revealed after form submit; replaces the old modal) ── */
+.tier-section {
+    margin-top: 2.5rem;
+    padding-top: 2rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.tier-section-title {
+    color: var(--white);
+    text-align: center;
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 0 0 0.5rem;
+}
+
+.tier-section-sub {
+    color: rgba(255, 255, 255, 0.45);
+    text-align: center;
+    font-size: 0.9rem;
+    margin: 0 0 2rem;
+}
+
+.tier-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+}
+
+.tier-section-legal {
+    color: rgba(255, 255, 255, 0.5);
+    text-align: center;
+    font-size: 0.75rem;
+    line-height: 1.5;
+    margin: 1.5rem auto 0;
+    max-width: 640px;
+}
+
+.tier-section-legal a {
+    color: var(--cerulean);
+    text-decoration: underline;
+}
+
+/* Stack tier cards on narrow screens (mobile / iOS) */
+@media (max-width: 768px) {
+    .tier-grid {
+        grid-template-columns: 1fr;
+    }
 }
 
 /* Form Hint */
@@ -586,9 +674,11 @@ input.input-success {
         height: 18px;
     }
 
+    /* Match the player create-profile back button: compact + left-aligned,
+       NOT full-width/centered (that was the visual mismatch). */
     .back-button {
-        width: 100%;
-        justify-content: center;
+        padding: 0.6rem 1rem;
+        font-size: 0.9rem;
     }
 }
 
@@ -613,7 +703,8 @@ input.input-success {
         font-size: 1.1rem;
     }
 
-    .selected-pill {
+    .selected-pill,
+    .selected-item {
         font-size: 0.85rem;
         padding: 0.4rem 0.85rem;
     }
