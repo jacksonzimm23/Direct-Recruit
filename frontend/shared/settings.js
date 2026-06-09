@@ -668,12 +668,17 @@ async function handlePasswordChange(button) {
     button.disabled = true;
 
     try {
+        // iOS Bearer fallback: this raw fetch must carry the stored token (the cookie
+        // path is unreliable in the WebView). API.isIOSApp()-gated so web is unaffected.
+        const _pwHeaders = { 'Content-Type': 'application/json' };
+        if (window.API && API.isIOSApp && API.isIOSApp() && API.getAuthToken) {
+            const _t = API.getAuthToken();
+            if (_t) _pwHeaders.Authorization = 'Bearer ' + _t;
+        }
         const response = await fetch(`${API_BASE_URL}/settings/password/change`, {
             method: 'POST',
             credentials: 'include',
-            headers: {
-                'Content-Type': 'application/json'
-            },
+            headers: _pwHeaders,
             body: JSON.stringify({ currentPassword, newPassword })
         });
 
@@ -682,6 +687,10 @@ async function handlePasswordChange(button) {
         if (!response.ok) {
             throw new Error(data.error || 'Failed to change password');
         }
+
+        // The password change rotates the JWT (revokes old sessions). Persist the new
+        // token so the iOS session survives — otherwise the next request 401s.
+        if (data.token && window.API && API.setAuthToken) API.setAuthToken(data.token);
 
         showNotification('Password updated successfully! A confirmation email has been sent.', 'success');
 
@@ -3201,6 +3210,9 @@ async function executeSwitchProfile(profileData) {
         const result = await API.settings.switchProfile(selectedTargetType, profileData);
 
         if (result.success) {
+            // iOS Bearer fallback: the switch rotates the JWT (new role). Persist the
+            // new token or iOS keeps sending the old-role token after the switch.
+            if (result.token && API.setAuthToken) API.setAuthToken(result.token);
             const folder = result.redirect_folder;
             const mainpageMap = {
                 hsplayer: 'mainpage-player.html',

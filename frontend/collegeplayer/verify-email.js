@@ -134,6 +134,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Success!
                 showSuccess();
 
+                // iOS Bearer fallback: verify-email auto-logs-in, so persist the token.
+                if (window.API && API.setAuthToken) API.setAuthToken(data.token);
+
                 // Clear pending verification
                 localStorage.removeItem('pendingVerificationEmail');
                 localStorage.removeItem('resendCooldown');

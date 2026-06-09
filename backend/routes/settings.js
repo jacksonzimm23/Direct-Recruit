@@ -437,7 +437,10 @@ router.post('/password/change', authMiddleware, async (req, res) => {
     email.sendPasswordChangeConfirmation(currentUser.email)
       .catch(err => logger.error('Failed to send password change confirmation email:', err.name));
 
-    res.json({ message: 'Password changed successfully' });
+    // Return the rotated token so iOS (Bearer fallback) updates its stored token —
+    // otherwise the password change would log iOS users out (their old token is
+    // invalidated). Web ignores this and uses the refreshed cookie.
+    res.json({ message: 'Password changed successfully', token: newToken });
   } catch (error) {
     logger.error('Password change error:', error.name);
     res.status(500).json({ error: 'Failed to change password' });
@@ -621,7 +624,8 @@ router.post('/password/forgot/set', authMiddleware, async (req, res) => {
     email.sendPasswordChangeConfirmation(pendingReset.email)
       .catch(err => logger.error('Failed to send password reset confirmation email:', err.name));
 
-    res.json({ message: 'Password reset successfully' });
+    // Return rotated token for iOS Bearer fallback (see password-change note).
+    res.json({ message: 'Password reset successfully', token: newToken });
   } catch (error) {
     logger.error('Password reset set error:', error.name);
     res.status(500).json({ error: 'Failed to reset password' });
@@ -1496,6 +1500,10 @@ router.post('/switch-profile', authMiddleware, async (req, res) => {
       requires_payment: requiresPayment,
       payment_profile_type: requiresPayment ? target_type : null,
       redirect_folder: folder,
+      // Rotated token carries the NEW role — iOS (Bearer fallback) MUST update its
+      // stored token here or it keeps sending the old-role token after a switch.
+      // Web uses the refreshed cookie. (Also resolves the post-switch JWT staleness.)
+      token: newToken,
       message: requiresPayment
         ? `Profile switched to ${PROFILE_TYPE_LABELS[target_type]}. Please complete payment to activate your account.`
         : `Profile switched to ${PROFILE_TYPE_LABELS[target_type]} successfully.`

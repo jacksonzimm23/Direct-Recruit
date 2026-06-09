@@ -370,6 +370,11 @@ const API_BASE_URL = _isNativeApp
 
 // Storage keys
 const USER_KEY = 'user_data';
+// iOS Bearer-token fallback. The native WebView (origin https://localhost) cannot
+// reliably re-attach the cross-origin HttpOnly auth cookie to CapacitorHttp requests
+// to directrecruit.net, so on iOS we ALSO store the JWT here and send it as
+// Authorization: Bearer. Web never stores/sends this (cookie-only) — gated by _isNativeApp.
+const TOKEN_KEY = 'dr_auth_token';
 
 // Get stored user data
 function getUser() {
@@ -382,10 +387,22 @@ function setUser(user) {
     localStorage.setItem(USER_KEY, JSON.stringify(user));
 }
 
+// iOS Bearer token: store only inside the native app. No-op on web.
+function setAuthToken(token) {
+    if (_isNativeApp && token) {
+        try { localStorage.setItem(TOKEN_KEY, token); } catch (_) {}
+    }
+}
+function getAuthToken() {
+    try { return localStorage.getItem(TOKEN_KEY); } catch (_) { return null; }
+}
+
 // Clear auth data (user data from localStorage, cookie cleared by backend)
 function clearAuth() {
     localStorage.removeItem(USER_KEY);
     localStorage.removeItem('dr_remember_me');
+    // Drop the iOS Bearer token so a revoked token isn't re-sent after logout.
+    try { localStorage.removeItem(TOKEN_KEY); } catch (_) {}
 }
 
 // Check if user is authenticated (based on cached user data)
@@ -411,6 +428,17 @@ async function apiRequest(endpoint, options = {}) {
         },
         ...options
     };
+
+    // iOS Bearer fallback: attach the stored JWT so authenticated requests work
+    // even when the native WebView can't re-attach the cross-origin HttpOnly cookie.
+    // Web (_isNativeApp false) never has a stored token, so this is a no-op there and
+    // the cookie continues to be the sole credential. authMiddleware accepts either.
+    if (_isNativeApp) {
+        const _t = getAuthToken();
+        if (_t && !config.headers.Authorization) {
+            config.headers.Authorization = 'Bearer ' + _t;
+        }
+    }
 
     try {
         const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
@@ -472,6 +500,7 @@ const authAPI = {
         });
 
         setUser(data.user);
+        setAuthToken(data.token); // iOS Bearer fallback (no-op on web)
         return data;
     },
 
@@ -482,6 +511,7 @@ const authAPI = {
         });
 
         setUser(data.user);
+        setAuthToken(data.token); // iOS Bearer fallback (no-op on web)
         if (rememberMe) {
             localStorage.setItem('dr_remember_me', 'true');
         } else {
@@ -1423,7 +1453,11 @@ const API = {
     setUser,
     clearAuth,
     isAuthenticated,
-    isIOSApp
+    isIOSApp,
+    // iOS Bearer fallback — exposed so raw-fetch flows (verify-email, switch-profile)
+    // can persist a freshly-issued/rotated token. No-op on web.
+    setAuthToken,
+    getAuthToken
 };
 
 // Make API available globally

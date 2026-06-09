@@ -166,7 +166,12 @@ router.post('/register', authLimiter, validateRegistration, handleValidationErro
         email: user.email,
         role: user.role
       },
-      requiresVerification: !cognitoResult.userConfirmed
+      requiresVerification: !cognitoResult.userConfirmed,
+      // iOS Bearer fallback: the native WebView can't reliably re-attach the
+      // cross-origin HttpOnly cookie (CapacitorHttp cookie-jar bug), so the app
+      // stores this token and sends it as Authorization: Bearer. Web ignores it
+      // and keeps using the cookie. authMiddleware accepts either (auth.js:25/86).
+      token
     });
   } catch (error) {
     logger.error('Registration error:', error.name);
@@ -203,7 +208,9 @@ router.post('/verify-email', authLimiter, async (req, res) => {
           email: user.email,
           role: user.role,
           profile_completed: user.profile_completed
-        }
+        },
+        // iOS Bearer fallback (see /register note). Verify-then-pay auto-logs-in here.
+        token
       });
     } else {
       res.json({ message: 'Email verified successfully' });
@@ -331,7 +338,11 @@ router.post('/login', authLimiter, async (req, res) => {
         email: user.email,
         role: user.role,
         profile_completed: user.profile_completed
-      }
+      },
+      // iOS Bearer fallback (see /register note). This is the call that was failing
+      // on iOS — login set the cookie but the WebView couldn't re-attach it on the
+      // next request; the app now stores this token and sends it as a Bearer header.
+      token
     });
   } catch (error) {
     logger.error('Login error:', error);
