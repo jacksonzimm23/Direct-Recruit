@@ -6,12 +6,16 @@
 // Depends on fit-display.js (FitDisplay.tierOf / TIERS / FIT_SHOW_PERCENT) and
 // fit-info-modal.css. Load order: api.js -> fit-display.js -> fit-info-modal.js.
 //
-// PLAN 6 = hardcoded sample data so the owner can see it. PLAN 7 passes the real
-// score + computed match reasons via FitInfoModal.open({ score, matches }).
+// The real score + computed match reasons are passed in via
+// FitInfoModal.open({ score, matches }). When score is null (the player hasn't
+// filled out enough recruiting-profile info to be rated against the viewing
+// coach's program), the player-mode modal shows a "not enough profile
+// information yet" explanation instead of a number — never a placeholder.
 //
 // PUBLIC API (window.FitInfoModal):
 //   open(opts) — PLAYER mode (default, coach viewing a player):
-//                opts.score (number), opts.playerName (string, optional),
+//                opts.score (number|null — null renders the not-yet-rated state),
+//                opts.playerName (string, optional),
 //                opts.matches ([{ label, detail }], optional — defaults to sample)
 //              — SCHOOL mode (opts.mode === 'school', player viewing a school; Plan 7C):
 //                opts.score, opts.schoolName, opts.division, opts.matches
@@ -25,8 +29,9 @@
 (function () {
   var OVERLAY_ID = 'fitInfoOverlay';
 
-  // Hardcoded sample "what this player matches you on" rows (Plan 6 placeholder).
-  // Plan 7 replaces via opts.matches. Each row: { label, detail }.
+  // Fallback "what this player matches you on" rows, used only if a scored
+  // player is opened without an explicit opts.matches array. Real calls pass the
+  // computed per-dimension matches. Each row: { label, detail }.
   var SAMPLE_MATCHES = [
     { label: 'Academics',        detail: 'GPA falls within your typical admitted range' },
     { label: 'Major',            detail: 'Interested in a major your program is strong in' },
@@ -92,15 +97,55 @@
     return _openPlayer(opts);
   }
 
-  // --- PLAYER mode (coach viewing a player) — unchanged from Plan 6/B ---
+  // --- PLAYER mode (coach viewing a player) ---
   function _openPlayer(opts) {
-    var score = (opts.score != null) ? opts.score
-      : (_hasFit() ? FitDisplay.PLACEHOLDER_SCORE : null);
+    var score = (opts.score != null) ? opts.score : null;  // null => not enough data to rate
+    var hasScore = (score != null);
     var matches = (opts.matches && opts.matches.length) ? opts.matches : SAMPLE_MATCHES;
-    var tier = _hasFit() ? FitDisplay.tierOf(score) : { color: '#1282a2', label: '' };
+    var tier = (_hasFit() && hasScore) ? FitDisplay.tierOf(score) : { color: '#1282a2', label: '' };
     var showPct = _hasFit() && FitDisplay.FIT_SHOW_PERCENT;
-    var scoreText = (score == null) ? 'N/A' : (String(score) + (showPct ? '%' : ''));
+    var scoreText = (String(score) + (showPct ? '%' : ''));
     var who = opts.playerName ? _esc(opts.playerName) : 'This player';
+
+    // When the player hasn't filled out enough recruiting-profile information to
+    // be compared against your program, there is no score. Explain that instead
+    // of showing a number (no placeholder — lesson: never fake a fit score).
+    var scoreSectionHTML = hasScore
+      ? (
+          // --- score + rating ---
+          '<div class="fim-scoreline">' +
+            '<span class="fim-score" style="color:' + tier.color + '">' + _esc(scoreText) + '</span>' +
+            '<span class="fim-rating" style="color:' + tier.color + '">' + _esc(tier.label) + '</span>' +
+          '</div>' +
+          '<p class="fim-scoresub">' + who + ' has an AI Match score of <strong>' +
+            _esc(scoreText) + '</strong>' + (tier.label ? ', a <strong>' + _esc(tier.label) + '</strong>' : '') +
+            ' for your program.</p>' +
+
+          // --- 6-tier key ---
+          '<div class="fim-section-label">Rating scale</div>' +
+          _tierKeyHTML() +
+
+          // --- match breakdown ---
+          '<div class="fim-section-label">What this player matches you on</div>' +
+          '<div class="fim-matches">' + _matchRowsHTML(matches) + '</div>' +
+
+          '<p class="fim-disclaimer">AI Match is a guide to help surface best fit recruits. ' +
+          'It complements your own evaluation and never replaces it.</p>'
+        )
+      : (
+          // --- not-yet-rated empty state ---
+          '<div class="fim-noscore">' +
+            '<div class="fim-noscore-icon">' +
+              '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+              '<circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>' +
+            '</div>' +
+            '<div class="fim-noscore-title">Not enough profile information yet</div>' +
+            '<p class="fim-noscore-text">' + who + ' hasn’t filled out enough of their recruiting ' +
+            'profile (academics, intended major, the levels and locations they’re open to, ' +
+            'campus preference, and financial fit) for us to calculate an AI Match score for ' +
+            'your program. As they complete more of their profile, a score will appear here.</p>' +
+          '</div>'
+        );
 
     close(); // ensure only one
 
@@ -130,25 +175,8 @@
             'to be a great long term fit, not just talented on tape.</p>' +
           '</div>' +
 
-          // --- score + rating ---
-          '<div class="fim-scoreline">' +
-            '<span class="fim-score" style="color:' + tier.color + '">' + _esc(scoreText) + '</span>' +
-            '<span class="fim-rating" style="color:' + tier.color + '">' + _esc(tier.label) + '</span>' +
-          '</div>' +
-          '<p class="fim-scoresub">' + who + ' has an AI Match score of <strong>' +
-            _esc(scoreText) + '</strong>' + (tier.label ? ', a <strong>' + _esc(tier.label) + '</strong>' : '') +
-            ' for your program.</p>' +
-
-          // --- 6-tier key ---
-          '<div class="fim-section-label">Rating scale</div>' +
-          _tierKeyHTML() +
-
-          // --- match breakdown ---
-          '<div class="fim-section-label">What this player matches you on</div>' +
-          '<div class="fim-matches">' + _matchRowsHTML(matches) + '</div>' +
-
-          '<p class="fim-disclaimer">AI Match is a guide to help surface best fit recruits. ' +
-          'It complements your own evaluation and never replaces it.</p>' +
+          // --- score + rating (or not-yet-rated empty state) ---
+          scoreSectionHTML +
 
         '</div>' +
       '</div>';

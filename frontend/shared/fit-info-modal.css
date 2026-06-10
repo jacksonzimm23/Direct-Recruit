@@ -137,6 +137,37 @@
     line-height: 1.5;
 }
 
+/* not-yet-rated empty state (player has no AI Match score) */
+.fim-noscore {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    margin: 1.6rem 0 0.5rem;
+    padding: 1.75rem 1.25rem;
+    border: 1px solid rgba(254, 252, 251, 0.1);
+    border-radius: 12px;
+    background: rgba(254, 252, 251, 0.03);
+}
+.fim-noscore-icon {
+    color: rgba(254, 252, 251, 0.45);
+    margin-bottom: 0.85rem;
+}
+.fim-noscore-icon svg { width: 40px; height: 40px; }
+.fim-noscore-title {
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: var(--white, #fefcfb);
+    margin-bottom: 0.5rem;
+}
+.fim-noscore-text {
+    margin: 0;
+    font-size: 0.88rem;
+    line-height: 1.55;
+    color: rgba(254, 252, 251, 0.7);
+    max-width: 30rem;
+}
+
 /* ---------- School mode (Plan 7C): header + tabs + staff ---------- */
 .fim-school-head { display: flex; align-items: center; gap: 0.75rem; min-width: 0; }
 .fim-school-head img,

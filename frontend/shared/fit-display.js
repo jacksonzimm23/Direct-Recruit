@@ -29,7 +29,10 @@
 
 (function () {
   var FIT_SHOW_PERCENT = false;   // owner: '%' is "maybe" — flip here only
-  var PLACEHOLDER_SCORE = 87;     // Plan 6 sample; Plan 7 replaces with real score
+  // Retired Plan-6 sample score. Plan 7 ships real scores everywhere, so this is
+  // now null — any lingering caller renders the honest "—"/not-rated state rather
+  // than a fake number. Kept on the public API only for backward compatibility.
+  var PLACEHOLDER_SCORE = null;
 
   // 6-tier scale (best -> worst). Cutoffs are placeholders (Plan 7 calibrates).
   // `color` is a CSS custom-property ref so the palette stays in styles.css :root.
