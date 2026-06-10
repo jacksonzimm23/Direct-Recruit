@@ -217,7 +217,11 @@
 }
 
 @media (max-width: 768px) {
-    .profile-info-row {
+    /* Stack About / PFF / Contact in one column on mobile. The .pff-hidden
+       selector is included so its 2-column desktop rule (higher specificity)
+       doesn't override this when the player has no PFF grade. */
+    .profile-info-row,
+    .profile-info-row.pff-hidden {
         grid-template-columns: 1fr;
         padding: 0 1rem;
     }
@@ -8041,7 +8045,10 @@ input[type="file"]::file-selector-button:hover {
     }
 
     /* === ABOUT & CONTACT INFO SECTION === */
-    .profile-info-row {
+    /* .pff-hidden included so its higher-specificity 2-column desktop rule
+       doesn't keep About/Contact side-by-side when there's no PFF grade. */
+    .profile-info-row,
+    .profile-info-row.pff-hidden {
         grid-template-columns: 1fr;
         gap: 1rem;
         margin-bottom: 1rem;
