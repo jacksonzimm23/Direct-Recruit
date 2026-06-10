@@ -423,25 +423,54 @@ function openDeleteAccountModal() {
         }
         clearDeleteAccountError();
 
-        // Apple-billing warning: the server cannot cancel an Apple subscription
-        // when the account is deleted — only the user can, on their device.
-        // Without this note they would keep being charged for a dead account.
+        // Subscription notice (state-aware): if a live subscription is still
+        // billing, show the plan, how it's paid, and what deletion does to it.
+        // Stripe subs are cancelled automatically by the delete endpoint; Apple
+        // subs CANNOT be cancelled server-side — only the user can, on-device —
+        // so that branch warns and deep-links to Apple's subscription manager.
         (async () => {
             try {
-                if (document.getElementById('deleteAppleSubWarning')) return;
+                if (document.getElementById('deleteSubNotice')) return;
                 const sub = await API.payments.getSubscriptionStatus();
-                if (sub && sub.source === 'apple_iap' && (sub.status === 'active' || sub.status === 'past_due')) {
-                    const anchor = modal.querySelector('.delete-account-warning-box');
-                    if (anchor) {
-                        const warn = document.createElement('div');
-                        warn.id = 'deleteAppleSubWarning';
-                        warn.className = 'delete-account-warning-box';
-                        warn.style.marginTop = '10px';
-                        warn.innerHTML = '<strong>Deleting your account does NOT cancel your Apple subscription.</strong> Cancel it in Settings &gt; Apple ID &gt; Subscriptions, or you will keep being charged.';
-                        anchor.insertAdjacentElement('afterend', warn);
-                    }
+                const billing = sub && (sub.status === 'active' || sub.status === 'past_due') && !sub.cancelAtPeriodEnd;
+                if (!billing || (sub.source !== 'stripe' && sub.source !== 'apple_iap')) return;
+
+                const anchor = modal.querySelector('.delete-account-warning-box');
+                if (!anchor) return;
+
+                const isApple = sub.source === 'apple_iap';
+                const plan = (typeof PLAN_DISPLAY !== 'undefined' && PLAN_DISPLAY[sub.tier]) || null;
+                // Apple Guideline 3.1.1: don't show $ prices inside the iOS app.
+                const planLabel = plan ? (API.isIOSApp() ? plan.name : plan.name + ' (' + plan.price + ')') : 'Subscription';
+                const paidVia = isApple ? 'Apple (iOS App Store)' : 'Card (Stripe)';
+
+                const box = document.createElement('div');
+                box.id = 'deleteSubNotice';
+                box.style.cssText = 'margin-top:10px;padding:12px 14px;border-radius:8px;text-align:left;'
+                    + (isApple
+                        ? 'border:1px solid rgba(239,68,68,0.45);background:rgba(239,68,68,0.08);'
+                        : 'border:1px solid rgba(18,130,162,0.45);background:rgba(18,130,162,0.08);');
+                box.innerHTML =
+                    '<p style="margin:0 0 6px;color:#ccd6f6;font-size:0.85rem;"><strong>Active plan:</strong> '
+                    + planLabel + ' &middot; <strong>Paid via:</strong> ' + paidVia + '</p>'
+                    + (isApple
+                        ? '<p style="margin:0;color:#fca5a5;font-size:0.85rem;line-height:1.5;"><strong>Deleting your account does NOT cancel your Apple subscription.</strong> Cancel it in Settings &gt; Apple ID &gt; Subscriptions, or you will keep being charged.</p>'
+                        : '<p style="margin:0;color:#8892b0;font-size:0.85rem;line-height:1.5;">Your subscription will be <strong style="color:#ccd6f6;">discontinued automatically</strong> when your account is deleted. No further charges.</p>');
+                if (isApple) {
+                    const appleBtn = document.createElement('button');
+                    appleBtn.id = 'deleteManageAppleBtn';
+                    appleBtn.type = 'button';
+                    appleBtn.textContent = 'Cancel in Apple Subscriptions';
+                    appleBtn.style.cssText = 'margin-top:10px;padding:8px 14px;border-radius:8px;border:1px solid rgba(239,68,68,0.6);background:transparent;color:#fca5a5;font-size:0.85rem;cursor:pointer;font-family:inherit;';
+                    appleBtn.addEventListener('click', () => {
+                        // Same deep link as the Subscription tab's "Manage in Apple
+                        // Subscriptions" button (works in the WKWebView and Safari).
+                        window.open('https://apps.apple.com/account/subscriptions', '_blank');
+                    });
+                    box.appendChild(appleBtn);
                 }
-            } catch (_) { /* warning is best-effort */ }
+                anchor.insertAdjacentElement('afterend', box);
+            } catch (_) { /* notice is best-effort */ }
         })();
 
         // Focus password input
