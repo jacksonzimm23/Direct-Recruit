@@ -87,11 +87,17 @@ class FeedManager {
                 avatar.style.backgroundColor = getRoleAvatarBg(response.user.role, response.user.is_transfer_player, response.profile.college_division);
             }
         } catch (error) {
-            // If API call fails (unauthorized), redirect to signin
-            // Resolve relative nav to an absolute URL so it works in the iOS WKWebView
-            // (bare/relative targets silently no-op there). new URL(rel, location.href)
-            // correctly preserves the /frontend prefix on web and its absence in-app.
-            window.location.href = new URL('../landingpage/signin.html', window.location.href).href;
+            // Only a real 401/403 means the session is invalid. A navigation (e.g. the
+            // paywall redirect in shared/api.js) aborts in-flight fetches — in WKWebView
+            // those surface as TypeError with no .status — and bouncing to signin here
+            // would hijack that redirect and strand unpaid users on the login screen.
+            if (window.__paywallRedirecting) return;
+            if (error && (error.status === 401 || error.status === 403)) {
+                // Resolve relative nav to an absolute URL so it works in the iOS WKWebView
+                // (bare/relative targets silently no-op there). new URL(rel, location.href)
+                // correctly preserves the /frontend prefix on web and its absence in-app.
+                window.location.href = new URL('../landingpage/signin.html', window.location.href).href;
+            }
         }
     }
 

@@ -1,14 +1,25 @@
 // Sign In Form Handler
 // Uses API_BASE_URL from shared/api.js
 
+// Unpaid users on paid profile types must land on the paywall straight from signin.
+// Routing them to the mainpage first set up a navigation race on iOS: the global
+// paywall IIFE's redirect (shared/api.js) aborted the page's in-flight fetches and
+// feed.js's error handler bounced the user back to signin. Mirrors PAID_FOLDERS +
+// the status allowlist in that IIFE.
+const PAYWALL_PAID_FOLDERS = ['hsplayer', 'transferplayer', 'collegecoach'];
+function needsPaywall(folder, user) {
+    return PAYWALL_PAID_FOLDERS.includes(folder) &&
+        !['active', 'past_due', 'comp'].includes(user && user.subscription_status);
+}
+
 // Auto-login: if user previously chose "Remember me" and cookie is still valid, redirect to dashboard
 (async function checkExistingSession() {
     if (localStorage.getItem('dr_remember_me') !== 'true') return;
 
     try {
-        const meResponse = await fetch(`${API_BASE_URL}/auth/me`, { credentials: 'include' });
-        if (!meResponse.ok) throw new Error('No valid session');
-        const meData = await meResponse.json();
+        // apiRequest (shared/api.js) attaches the iOS Bearer token; a plain fetch sends
+        // only the cookie, which is unreliable in the WKWebView. Throws on 401.
+        const meData = await apiRequest('/auth/me');
         // Guard: a 200 with no user (e.g. cookie not sent in an iOS WebView) must not crash the
         // page on load — fall through to the catch and show the normal sign-in form.
         if (!meData || !meData.user || !meData.user.role) throw new Error('No valid session');
@@ -19,6 +30,12 @@
             is_transfer_player: meData.user.is_transfer_player,
             ...meData.profile
         });
+
+        if (needsPaywall(folder, meData.user)) {
+            window.location.href = new URL('../shared/subscription-required.html', window.location.href).href;
+            return;
+        }
+
         let pageName;
         if (meData.user.role === 'player') pageName = 'mainpage-player.html';
         else if (meData.user.role === 'coach') pageName = 'mainpage-coach.html';
@@ -81,13 +98,20 @@ if (document.getElementById('signinForm')) {
             // Redirect to correct role folder after login
             if (data.user.role === 'player' || data.user.role === 'coach') {
                 try {
-                    const meResponse = await fetch(`${API_BASE_URL}/auth/me`, { credentials: 'include' });
-                    const meData = await meResponse.json();
+                    // apiRequest attaches the iOS Bearer token (plain fetch sends only the
+                    // cookie, which is unreliable in the WKWebView). Throws on 401.
+                    const meData = await apiRequest('/auth/me');
                     const folder = getProfileFolder({
                         role: meData.user.role,
                         is_transfer_player: meData.user.is_transfer_player,
                         ...meData.profile
                     });
+
+                    if (needsPaywall(folder, meData.user)) {
+                        window.location.href = new URL('../shared/subscription-required.html', window.location.href).href;
+                        return;
+                    }
+
                     const pageName = data.user.role === 'player' ? 'mainpage-player.html' : 'mainpage-coach.html';
                     // Resolve relative nav to an absolute URL so it works in the iOS WKWebView
                     // (bare/relative targets silently no-op there). new URL(rel, location.href)
