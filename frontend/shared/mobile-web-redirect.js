@@ -2,6 +2,9 @@
 // iOS Capacitor app exempted via window.Capacitor. Email-driven flows with
 // token-style query params skip the redirect so links from Cognito / coach
 // invites / password resets still work on mobile Safari.
+// IMPORTANT: a twin copy of this logic lives in the mobileWebRedirect() IIFE
+// at the top of shared/api.js (which loads on EVERY page). Any exemption added
+// here MUST also be added there, or api.js will redirect the page anyway.
 (function () {
   try {
     if (window.Capacitor) return;

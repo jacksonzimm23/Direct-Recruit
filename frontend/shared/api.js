@@ -18,6 +18,17 @@
         if (path.endsWith('/get-the-app.html')) return;
         if (path.endsWith('/coming-soon-android.html')) return;
 
+        // Email-driven flows (Cognito codes, coach invites, password resets) must work
+        // on mobile web. Mirror of shared/mobile-web-redirect.js — keep the two in sync.
+        const qs = window.location.search || '';
+        if (/[?&](token|code|reset|invite)=/i.test(qs)) return;
+
+        // College Coach invite onboarding completes on mobile web (account creation +
+        // email verification) before the coach is sent to the app to subscribe via IAP.
+        if (path.includes('create-coach-profile.html') ||
+            path.includes('confirm-team-switch.html') ||
+            path.includes('verify-email.html')) return;
+
         // Resolve redirect target relative to whether we're served from EC2
         // (paths like /hsplayer/mainpage-hsplayer.html) or Live Server
         // (paths like /frontend/hsplayer/mainpage-hsplayer.html).
