@@ -143,6 +143,27 @@ class User {
 
   static PAID_TYPES = ['collegecoach', 'hsplayer', 'transferplayer'];
 
+  // Entitlement↔profile-type validation: which subscription tiers may activate
+  // which profile subtype. A still-active product the user bought for a
+  // DIFFERENT profile type (e.g. a $10 player IAP on a collegecoach account)
+  // must never unlock the current one. Used by the RevenueCat webhook,
+  // /iap-reconcile, the Stripe checkout/webhook paths, and profile switching.
+  static ALLOWED_TIERS_BY_SUBTYPE = {
+    hsplayer: ['player'],
+    transferplayer: ['player'],            // same product as hsplayer — interchangeable
+    collegecoach: ['starter', 'pro', 'elite']
+    // collegeplayer / hscoach / other: absent → no paid tiers
+  };
+
+  // Role fallback: the coach signup flow purchases BEFORE the profile row is
+  // created, so when subtype is null we validate against the account role.
+  static allowedTiersFor({ subtype, role }) {
+    if (subtype) return User.ALLOWED_TIERS_BY_SUBTYPE[subtype] || [];
+    if (role === 'player') return ['player'];
+    if (role === 'coach') return ['starter', 'pro', 'elite'];
+    return [];
+  }
+
   static getSubtypeFromProfile(role, profile) {
     if (role === 'coach') {
       return (profile.college_division && User.COLLEGE_DIVISIONS.includes(profile.college_division)) ? 'collegecoach' : 'hscoach';
@@ -159,6 +180,37 @@ class User {
     if (['hsplayer', 'collegeplayer', 'transferplayer'].includes(subtype)) return 'player';
     if (['hscoach', 'collegecoach'].includes(subtype)) return 'coach';
     return 'other';
+  }
+
+  // Returns { role, subtype } for a user. subtype is null when the profile row
+  // doesn't exist yet — the coach signup flow purchases the IAP BEFORE the
+  // profile row is created, so subscription validation must fall back to a
+  // role-based check in that window. Accepts a pg client so webhook/reconcile
+  // callers can run it inside a row-locked transaction.
+  static async getSubtypeAndRole(userId, client = pool) {
+    const userRes = await client.query('SELECT role FROM users WHERE id = $1', [userId]);
+    const role = userRes.rows[0]?.role || null;
+    if (!role) return { role: null, subtype: null };
+
+    let profile = null;
+    if (role === 'player') {
+      const r = await client.query(
+        'SELECT transfer, college_division FROM player_profiles WHERE user_id = $1',
+        [userId]
+      );
+      profile = r.rows[0] || null;
+    } else if (role === 'coach') {
+      const r = await client.query(
+        'SELECT college_division FROM coach_profiles WHERE user_id = $1',
+        [userId]
+      );
+      profile = r.rows[0] || null;
+    } else {
+      const r = await client.query('SELECT 1 FROM other_profiles WHERE user_id = $1', [userId]);
+      profile = r.rows[0] || null;
+    }
+
+    return { role, subtype: profile ? User.getSubtypeFromProfile(role, profile) : null };
   }
 
   // ─── Stripe Subscription Methods ──────────────────────────────────────────

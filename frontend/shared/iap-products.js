@@ -151,7 +151,13 @@
             const customerInfo = result?.customerInfo || result || {};
             const entitlements = customerInfo?.entitlements?.active || {};
             const hasActive = Object.keys(entitlements).length > 0;
-            return { success: true, hasActive: hasActive, customerInfo: customerInfo };
+            // Which products the active entitlements belong to — display only.
+            // The SERVER decides what activates (/iap-reconcile validates the
+            // product against the user's current profile type).
+            const products = Object.values(entitlements)
+                .map(function (e) { return e && e.productIdentifier; })
+                .filter(Boolean);
+            return { success: true, hasActive: hasActive, products: products, customerInfo: customerInfo };
         } catch (e) {
             return { success: false, error: (e && e.message) || 'Restore failed' };
         }

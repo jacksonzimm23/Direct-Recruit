@@ -6,6 +6,16 @@ const { authMiddleware, UUID_REGEX } = require('../middleware/auth');
 const stripe = require('../utils/stripe');
 const logger = require('../utils/logger');
 const redisClient = require('../config/redis');
+const pool = require('../config/database');
+
+// ─── Entitlement ↔ profile-type validation ───────────────────────────────────
+// A subscription tier may only activate an account whose CURRENT profile type
+// it belongs to. Without this, any still-active product (e.g. an old $10
+// player IAP) would unlock whatever profile the user has now (e.g. a college
+// coach with AI token budgets). The single source of truth lives in the User
+// model (User.ALLOWED_TIERS_BY_SUBTYPE / User.allowedTiersFor — also used by
+// the profile-switch endpoint); this is a local alias for brevity.
+const allowedTiersFor = (args) => User.allowedTiersFor(args);
 
 // Map profile types to their Stripe Price IDs
 const PRICE_MAP = {
@@ -79,6 +89,22 @@ router.post('/create-checkout-session', authMiddleware, async (req, res) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
+    // Entitlement↔profile validation: the selected plan must match the caller's
+    // ACTUAL profile type — an hsplayer must not be able to buy a coach tier
+    // (or vice versa). Role fallback covers the pay-before-profile signup gap.
+    const resolvedTier = TIER_MAP[priceKey];
+    const { role, subtype } = await User.getSubtypeAndRole(req.userId);
+    if (!allowedTiersFor({ subtype, role }).includes(resolvedTier)) {
+      return res.status(400).json({ error: 'Selected plan does not match your profile type. Switch your profile type first.' });
+    }
+
+    // Already subscribed through Apple — block stacking a second (Stripe)
+    // subscription on top; Apple billing can only be managed on the iOS device.
+    const subInfo = await User.getSubscriptionInfo(req.userId);
+    if (subInfo && subInfo.subscription_source === 'apple_iap' && subInfo.subscription_status === 'active') {
+      return res.status(400).json({ error: 'You are subscribed through the iOS app. Manage your subscription on your iOS device.' });
+    }
+
     // Create or retrieve Stripe customer
     let customerId = await User.getStripeCustomerId(req.userId);
     if (!customerId) {
@@ -86,9 +112,6 @@ router.post('/create-checkout-session', authMiddleware, async (req, res) => {
       customerId = customer.id;
       await User.updateStripeCustomerId(req.userId, customerId);
     }
-
-    // Create checkout session
-    const resolvedTier = TIER_MAP[profileType === 'collegecoach' ? `collegecoach_${tier}` : profileType];
     const session = await stripe.createCheckoutSession({
       customerId,
       priceId,
@@ -151,6 +174,12 @@ router.post('/cancel', authMiddleware, async (req, res) => {
     const info = await User.getSubscriptionInfo(req.userId);
     if (!info || !info.stripe_subscription_id) {
       return res.status(400).json({ error: 'No active subscription to cancel' });
+    }
+
+    // Apple subs can't be cancelled server-side — the stored id is a RevenueCat
+    // transaction id, not a Stripe sub id. Only the user can cancel, on-device.
+    if (info.subscription_source === 'apple_iap') {
+      return res.status(400).json({ error: 'This subscription is managed through Apple. Cancel it in Settings > Apple ID > Subscriptions on your iOS device.' });
     }
 
     if (info.subscription_status !== 'active') {
@@ -254,6 +283,17 @@ async function webhookHandler(req, res) {
               logger.warn(`Could not determine tier from subscription, defaulting to pro: ${err.message}`);
               tier = 'pro';
             }
+          }
+
+          // Defense in depth: the session's profileType/tier was fixed at
+          // checkout-creation time; the profile may have switched since (or the
+          // session was forged via API abuse). Never activate a tier the CURRENT
+          // profile type can't hold. Money was taken — leave the pending-cancel
+          // stash intact and resolve via support.
+          const { role: curRole, subtype: curSubtype } = await User.getSubtypeAndRole(userId);
+          if (!allowedTiersFor({ subtype: curSubtype, role: curRole }).includes(tier)) {
+            logger.error(`[Stripe webhook] PRODUCT/PROFILE MISMATCH: user=${userId} subtype=${curSubtype || curRole} tier=${tier} session=${session.id} — NOT activating`);
+            break;
           }
 
           await User.updateSubscription(userId, {
@@ -416,6 +456,24 @@ async function revenueCatWebhookHandler(req, res) {
       }
     }
 
+    // 4.5 TRANSFER: the entitlement moved between RevenueCat app-user-ids (e.g.
+    // a Restore Purchases on a different account with the same Apple ID).
+    // Deactivate the losing side so two accounts never ride one subscription.
+    // The gaining side is NOT auto-activated here — TRANSFER carries no product
+    // info; their own (validated) restore/reconcile establishes it.
+    if (type === 'TRANSFER') {
+      const from = Array.isArray(payload.transferred_from) ? payload.transferred_from : [];
+      for (const fromId of from) {
+        if (!UUID_REGEX.test(fromId)) continue; // anonymous RC ids — nothing stored for them
+        const fromInfo = await User.getSubscriptionInfo(fromId);
+        if (fromInfo && fromInfo.subscription_source === 'apple_iap') {
+          await User.updateSubscription(fromId, { status: 'cancelled', source: 'apple_iap' });
+          logger.warn(`[RevenueCat webhook] TRANSFER: deactivated user=${fromId} (entitlement moved to another account)`);
+        }
+      }
+      return res.sendStatus(200);
+    }
+
     // 5. UUID validation on app_user_id
     if (!app_user_id) {
       logger.warn(`[RevenueCat webhook] missing app_user_id (event ${eventId})`);
@@ -437,40 +495,89 @@ async function revenueCatWebhookHandler(req, res) {
       return res.sendStatus(200);
     }
 
-    const tier = mapRevenueCatProductToTier(product_id);
-
     switch (type) {
       case 'INITIAL_PURCHASE':
       case 'RENEWAL':
+      case 'UNCANCELLATION':
       case 'PRODUCT_CHANGE': {
-        if (!tier) {
-          logger.error(`[RevenueCat webhook] unknown product_id: ${product_id}`);
+        // PRODUCT_CHANGE: payload.product_id is the product being changed FROM;
+        // the target product arrives in new_product_id.
+        const effectiveProductId = type === 'PRODUCT_CHANGE'
+          ? (payload.new_product_id || product_id)
+          : product_id;
+        const effTier = mapRevenueCatProductToTier(effectiveProductId);
+        if (!effTier) {
+          logger.error(`[RevenueCat webhook] unknown product_id: ${effectiveProductId}`);
           return res.sendStatus(200);
         }
-        await User.updateSubscription(app_user_id, {
-          subscriptionId: original_transaction_id,
-          status: 'active',
-          tier,
-          source: 'apple_iap'
-        });
-        logger.info(`[RevenueCat webhook] ${type}: user=${app_user_id} tier=${tier}`);
+
+        // Entitlement↔profile validation inside a row-locked txn. FOR UPDATE on
+        // the users row serializes against profile-switch (which locks the same
+        // row in its transaction), so a renewal landing mid-switch validates
+        // against the POST-switch profile, never a half-switched one.
+        const client = await pool.connect();
+        try {
+          await client.query('BEGIN');
+          await client.query('SELECT id FROM users WHERE id = $1 FOR UPDATE', [app_user_id]);
+          const { role, subtype } = await User.getSubtypeAndRole(app_user_id, client);
+          if (!allowedTiersFor({ subtype, role }).includes(effTier)) {
+            await client.query('ROLLBACK');
+            // Ack 200 — RevenueCat must not retry. Recovery is the user's own
+            // validated restore/reconcile after they fix their profile type.
+            logger.warn(`[RevenueCat webhook] PRODUCT/PROFILE MISMATCH: user=${app_user_id} subtype=${subtype || role} product=${effectiveProductId} tier=${effTier} — NOT activating`);
+            return res.sendStatus(200);
+          }
+          await User.updateSubscription(app_user_id, {
+            subscriptionId: original_transaction_id,
+            status: 'active',
+            tier: effTier,
+            source: 'apple_iap'
+          }, client);
+          await client.query('COMMIT');
+        } catch (txErr) {
+          await client.query('ROLLBACK').catch(() => {});
+          throw txErr;
+        } finally {
+          client.release();
+        }
+        logger.info(`[RevenueCat webhook] ${type}: user=${app_user_id} tier=${effTier}`);
         break;
       }
       case 'CANCELLATION':
-      case 'EXPIRATION': {
-        await User.updateSubscription(app_user_id, {
-          status: 'cancelled',
-          source: 'apple_iap'
-        });
-        logger.info(`[RevenueCat webhook] ${type}: user=${app_user_id}`);
-        break;
-      }
+      case 'EXPIRATION':
       case 'BILLING_ISSUE': {
-        await User.updateSubscription(app_user_id, {
-          status: 'past_due',
-          source: 'apple_iap'
-        });
-        logger.warn(`[RevenueCat webhook] BILLING_ISSUE: user=${app_user_id}`);
+        // Downgrade guards: only act when the event refers to the subscription
+        // we are actually honoring — source must be apple_iap (never clobber a
+        // Stripe or comp user) AND the event's product must map to the CURRENT
+        // tier (an old player product expiring must not kill a coach's live sub).
+        const evTier = mapRevenueCatProductToTier(product_id);
+        const info = await User.getSubscriptionInfo(app_user_id);
+        if (!info || info.subscription_source !== 'apple_iap') {
+          logger.info(`[RevenueCat webhook] ${type} ignored: user=${app_user_id} source=${(info && info.subscription_source) || 'none'}`);
+          return res.sendStatus(200);
+        }
+        if (!evTier || evTier !== info.subscription_tier) {
+          logger.info(`[RevenueCat webhook] ${type} ignored: user=${app_user_id} product=${product_id} (tier ${evTier}) != current tier ${info.subscription_tier}`);
+          return res.sendStatus(200);
+        }
+
+        if (type === 'CANCELLATION') {
+          // Auto-renew turned off: paid-through access continues until the
+          // EXPIRATION event (mirrors Stripe's cancel_at_period_end). Only a
+          // refund/revocation by Apple support ends access immediately.
+          if (payload.cancel_reason !== 'CUSTOMER_SUPPORT') {
+            logger.info(`[RevenueCat webhook] CANCELLATION (auto-renew off): user=${app_user_id} — access until expiration`);
+            return res.sendStatus(200);
+          }
+          await User.updateSubscription(app_user_id, { status: 'cancelled', source: 'apple_iap' });
+          logger.info(`[RevenueCat webhook] CANCELLATION (refund): user=${app_user_id} — access revoked`);
+        } else if (type === 'EXPIRATION') {
+          await User.updateSubscription(app_user_id, { status: 'cancelled', source: 'apple_iap' });
+          logger.info(`[RevenueCat webhook] EXPIRATION: user=${app_user_id}`);
+        } else {
+          await User.updateSubscription(app_user_id, { status: 'past_due', source: 'apple_iap' });
+          logger.warn(`[RevenueCat webhook] BILLING_ISSUE: user=${app_user_id}`);
+        }
         break;
       }
       default:
@@ -524,27 +631,58 @@ router.post('/iap-reconcile', authMiddleware, async (req, res) => {
     }
     const body = await rcRes.json();
 
-    // Find an unexpired subscription. RevenueCat returns subscriptions keyed by product id.
+    // Collect unexpired subscriptions (RevenueCat keys them by product id).
     const subs = (body.subscriber && body.subscriber.subscriptions) || {};
     const now = Date.now();
-    let activeProductId = null;
+    const candidates = [];
     for (const [productId, s] of Object.entries(subs)) {
       const exp = s && s.expires_date ? new Date(s.expires_date).getTime() : 0;
-      if (exp > now) { activeProductId = productId; break; }
+      if (exp > now) {
+        candidates.push({ productId, tier: mapRevenueCatProductToTier(productId), expires: exp });
+      }
     }
-    if (!activeProductId) {
-      return res.json({ activated: false });
-    }
-
-    const tier = mapRevenueCatProductToTier(activeProductId);
-    if (!tier) {
-      logger.error(`[iap-reconcile] unknown product ${activeProductId} for user ${req.userId}`);
-      return res.json({ activated: false });
+    if (candidates.length === 0) {
+      return res.json({ activated: false, reason: 'no_active' });
     }
 
-    await User.updateSubscription(req.userId, { status: 'active', tier, source: 'apple_iap' });
-    logger.info(`[iap-reconcile] activated user=${req.userId} tier=${tier}`);
-    res.json({ activated: true, tier });
+    // Entitlement↔profile validation inside a row-locked txn (serializes against
+    // profile-switch). Only a product allowed for the user's CURRENT profile
+    // type may activate — an old player plan must not unlock a coach account.
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      await client.query('SELECT id FROM users WHERE id = $1 FOR UPDATE', [req.userId]);
+      const { role, subtype } = await User.getSubtypeAndRole(req.userId, client);
+      const allowed = allowedTiersFor({ subtype, role });
+
+      // Latest-expiring allowed product wins: deterministic, and prefers the
+      // newest sub when an old mismatched one is also still active.
+      const match = candidates
+        .filter((c) => c.tier && allowed.includes(c.tier))
+        .sort((a, b) => b.expires - a.expires)[0];
+
+      if (!match) {
+        await client.query('ROLLBACK');
+        const newest = candidates.slice().sort((a, b) => b.expires - a.expires)[0];
+        logger.warn(`[iap-reconcile] PRODUCT/PROFILE MISMATCH: user=${req.userId} subtype=${subtype || role} active=[${candidates.map((c) => c.productId).join(', ')}] — NOT activating`);
+        return res.json({
+          activated: false,
+          reason: 'product_mismatch',
+          foundTier: newest ? newest.tier : null,
+          allowedTiers: allowed
+        });
+      }
+
+      await User.updateSubscription(req.userId, { status: 'active', tier: match.tier, source: 'apple_iap' }, client);
+      await client.query('COMMIT');
+      logger.info(`[iap-reconcile] activated user=${req.userId} tier=${match.tier}`);
+      return res.json({ activated: true, tier: match.tier });
+    } catch (txErr) {
+      await client.query('ROLLBACK').catch(() => {});
+      throw txErr;
+    } finally {
+      client.release();
+    }
   } catch (e) {
     logger.error(`[iap-reconcile] ${e.message}`);
     res.status(500).json({ error: 'reconcile failed' });
@@ -555,3 +693,4 @@ router.post('/iap-reconcile', authMiddleware, async (req, res) => {
 module.exports = router;
 module.exports.webhookHandler = webhookHandler;
 module.exports.revenueCatWebhookHandler = revenueCatWebhookHandler;
+module.exports.allowedTiersFor = allowedTiersFor; // exported for test scripts

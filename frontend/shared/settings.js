@@ -423,6 +423,27 @@ function openDeleteAccountModal() {
         }
         clearDeleteAccountError();
 
+        // Apple-billing warning: the server cannot cancel an Apple subscription
+        // when the account is deleted — only the user can, on their device.
+        // Without this note they would keep being charged for a dead account.
+        (async () => {
+            try {
+                if (document.getElementById('deleteAppleSubWarning')) return;
+                const sub = await API.payments.getSubscriptionStatus();
+                if (sub && sub.source === 'apple_iap' && (sub.status === 'active' || sub.status === 'past_due')) {
+                    const anchor = modal.querySelector('.delete-account-warning-box');
+                    if (anchor) {
+                        const warn = document.createElement('div');
+                        warn.id = 'deleteAppleSubWarning';
+                        warn.className = 'delete-account-warning-box';
+                        warn.style.marginTop = '10px';
+                        warn.innerHTML = '<strong>Deleting your account does NOT cancel your Apple subscription.</strong> Cancel it in Settings &gt; Apple ID &gt; Subscriptions, or you will keep being charged.';
+                        anchor.insertAdjacentElement('afterend', warn);
+                    }
+                }
+            } catch (_) { /* warning is best-effort */ }
+        })();
+
         // Focus password input
         setTimeout(() => {
             if (passwordInput) passwordInput.focus();
@@ -3189,14 +3210,17 @@ async function executeSwitchProfile(profileData) {
     // these URLs resolve in BOTH the WKWebView and the browser.
     const FE_BASE = window.location.origin + (window.location.pathname.startsWith('/frontend/') ? '/frontend' : '');
 
-    // Plan B5 — iOS paid→free billing gate. An Apple IAP subscription can only be
+    // Plan B5 — iOS Apple-billing gate. An Apple IAP subscription can only be
     // cancelled by the user in iOS Settings (there is no backend RevenueCat cancel
-    // API). If an apple_iap user with an active sub switches FROM a paid type TO a
-    // free one, the backend cannot cancel the sub, so Apple keeps billing them.
-    // Warn them BEFORE the switch so they can cancel in iOS Settings first.
+    // API). Warn BEFORE the switch whenever the current Apple plan won't carry to
+    // the target type — paid→free AND cross-type paid→paid alike (the old plan
+    // keeps billing while the new type needs its own purchase). The
+    // hsplayer↔transferplayer pair shares one product, so it carries: no warning.
     const PAID = ['hsplayer', 'transferplayer', 'collegecoach'];
     const targetIsFree = !PAID.includes(selectedTargetType);
-    if (API.isIOSApp() && switchProfileInfo && switchProfileInfo.is_current_paid && targetIsFree) {
+    const samePricePair = ['hsplayer', 'transferplayer'].includes(switchProfileInfo && switchProfileInfo.current_type) &&
+                          ['hsplayer', 'transferplayer'].includes(selectedTargetType);
+    if (API.isIOSApp() && switchProfileInfo && switchProfileInfo.is_current_paid && !samePricePair) {
         let source = null, status = null;
         try {
             const sub = await API.payments.getSubscriptionStatus();
@@ -3204,11 +3228,15 @@ async function executeSwitchProfile(profileData) {
             status = sub && sub.status;
         } catch (_) { /* if we can't tell, fall through to the warning to be safe */ }
         if (source === 'apple_iap' && status === 'active') {
-            const proceed = confirm(
-                'Your subscription is billed through Apple. Switching to a free profile will NOT cancel it — '
-                + 'you must cancel it yourself in iOS Settings → Apple ID → Subscriptions, or you will keep being charged.\n\n'
-                + 'Switch anyway?'
-            );
+            const proceed = await showConfirmModal({
+                title: 'Apple subscription stays active',
+                message: targetIsFree
+                    ? 'Your subscription is billed through Apple. Switching to a free profile will NOT cancel it. Cancel it yourself in Settings > Apple ID > Subscriptions, or you will keep being charged.'
+                    : 'Your current Apple plan keeps billing until YOU cancel it in Settings > Apple ID > Subscriptions. Your new profile type requires purchasing its own plan.',
+                confirmText: 'Switch Anyway',
+                cancelText: 'Go Back',
+                danger: true
+            });
             if (!proceed) {
                 return; // user backed out; no switch
             }
@@ -3604,9 +3632,22 @@ function renderSubscriptionUI(container, sub, profileFolder) {
     // Guideline 3.1.3). Stripe cancel/change buttons are replaced by a deep
     // link to Apple's subscription center. (`isIOS` is computed above.)
 
+    // Source-aware management: a subscription can only be managed on the rail
+    // it was created on — Stripe subs on the web, Apple subs on the iOS device.
+    // Viewing from the other side gets an informational note instead of
+    // buttons that would fail (server rejects cross-rail cancel/change anyway).
+    const managedElsewhere = isActive && (
+        (isIOS && sub.source === 'stripe') ||
+        (!isIOS && sub.source === 'apple_iap')
+    );
+
     // Buttons
     html += '<div class="sub-actions">';
-    if (isActive && !sub.cancelAtPeriodEnd) {
+    if (managedElsewhere) {
+        html += sub.source === 'apple_iap'
+            ? '<p class="sub-cancel-note">Subscribed via the iOS app. Manage or cancel your subscription on your iOS device (Settings &gt; Apple ID &gt; Subscriptions, or the Direct Recruit app).</p>'
+            : '<p class="sub-cancel-note">Subscribed on the web. Manage your subscription from a desktop browser at directrecruit.net.</p>';
+    } else if (isActive && !sub.cancelAtPeriodEnd) {
         if (isIOS) {
             html += '<button class="btn-primary" id="subManageAppleBtn">Manage in Apple Subscriptions</button>';
             html += '<p class="sub-cancel-note" style="margin-top:12px;">Plan changes and cancellation are managed through Apple.</p>';
@@ -3672,9 +3713,30 @@ async function handleRestorePurchases(btn) {
     try {
         const r = await window.IAP.restorePurchases();
         if (r.success) {
-            showToast('Purchases restored successfully.', 'success');
-            // Give RevenueCat's webhook a moment to update the backend before reload
-            setTimeout(() => window.location.reload(), 1500);
+            // Server-authoritative: /iap-reconcile validates the restored product
+            // against the CURRENT profile type before activating anything — an
+            // old player plan must not unlock a coach account (or vice versa).
+            let rec = null;
+            try {
+                rec = await API.payments.reconcileIap(r.customerInfo);
+            } catch (_) {
+                showToast('Couldn\'t verify your subscription. Check your connection and try again.', 'error');
+                btn.disabled = false;
+                btn.textContent = originalText;
+                return;
+            }
+            if (rec && rec.activated) {
+                showToast('Purchases restored successfully.', 'success');
+                setTimeout(() => window.location.reload(), 1500);
+                return;
+            }
+            if (rec && rec.reason === 'product_mismatch') {
+                showToast('Your Apple subscription is for a different profile type. Switch to that profile type to use it, or cancel it in Settings > Apple ID > Subscriptions to stop billing.', 'warning', 12000);
+            } else {
+                showToast('No active subscription found for your Apple ID.', 'error');
+            }
+            btn.disabled = false;
+            btn.textContent = originalText;
             return;
         }
         showToast('Restore failed: ' + (r.error || 'unknown'), 'error');

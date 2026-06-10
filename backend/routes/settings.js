@@ -1077,27 +1077,20 @@ router.post('/switch-profile', authMiddleware, async (req, res) => {
     // Security #17: handle Stripe subscription transitions INSIDE the
     // transaction so a failed Stripe call rolls back the entire profile
     // switch instead of leaving the user with a free profile + an active
-    // subscription. Apple IAP users (subscription_source='apple_iap') are
-    // skipped because we cannot cancel via Stripe — the column stores a
-    // RevenueCat transaction id. Apple users have to cancel via iOS Settings;
-    // the RevenueCat webhook will reconcile.
-    //
-    // FOLLOW-UP (out of scope for #17): an Apple IAP user switching from a
-    // paid coach profile to a free profile keeps paying for an unused sub.
-    // Need a frontend "cancel via iOS Settings first" gate or a server-side
-    // check that warns them.
+    // subscription.
     const isStripeSub = user.subscription_source === 'stripe' && user.stripe_subscription_id;
 
-    // Stripe path: cancel sub and clear our DB columns. Both ops are inside
-    // the transaction so a Stripe failure rolls back the whole switch.
-    //
-    // Apple IAP path: do nothing. We can't cancel via Stripe (the column
-    // stores a RevenueCat txid). Leaving the DB row untouched means the user
-    // keeps subscription_status='active' / source='apple_iap' until they
-    // cancel via iOS Settings — at which point the RevenueCat webhook fires
-    // CANCELLATION and reconciles. Trade-off: if they don't cancel via iOS,
-    // they keep paying for an unused sub. Surfacing this to the user before
-    // the switch is a frontend UX follow-up, out of scope for #17.
+    // Apple IAP and comp subscriptions can't be cancelled server-side (Apple:
+    // only the user can, in iOS Settings; comp: nothing billed). If the current
+    // tier isn't valid for the TARGET type, clear our entitlement columns so
+    // the new profile is properly gated — otherwise the stale 'active' row
+    // rides through the paywall on a type it never paid for. A still-billing
+    // Apple sub can always re-activate later via the (product-validated)
+    // restore/reconcile/webhook when the user returns to a matching type.
+    // The frontend warns Apple users their billing continues until they cancel.
+    const isAppleOrCompSub = user.subscription_source === 'apple_iap' || user.subscription_source === 'comp';
+    const targetAllowedTiers = User.ALLOWED_TIERS_BY_SUBTYPE[target_type] || [];
+
     if (isStripeSub && isCurrentPaid && !isTargetPaid) {
       // Paid → Free: cancel Stripe subscription + clear DB columns
       try {
@@ -1132,10 +1125,26 @@ router.post('/switch-profile', authMiddleware, async (req, res) => {
           WHERE id = $2`,
         [user.stripe_subscription_id, req.userId]
       );
+    } else if (
+      isAppleOrCompSub &&
+      user.subscription_status && user.subscription_status !== 'none' &&
+      !targetAllowedTiers.includes(user.subscription_tier)
+    ) {
+      // Apple/comp entitlement that doesn't fit the target type (paid→free,
+      // cross-type paid→paid, or a stale row from before validation existed):
+      // clear it. hsplayer↔transferplayer naturally keeps theirs ('player' is
+      // valid for both). Note: for Apple, this does NOT stop their billing —
+      // only the user can cancel, in Settings > Apple ID > Subscriptions.
+      await User.updateSubscription(req.userId, {
+        subscriptionId: null,
+        status: 'none',
+        tier: null,
+        source: null
+      }, client);
     }
-    // hsplayer ↔ transferplayer (same $10 price): keep subscription, no action.
-    // Free → Paid: no current sub to cancel; frontend redirects to checkout.
-    // Apple IAP user switching anywhere: DB columns untouched, webhook reconciles.
+    // hsplayer ↔ transferplayer (same $10 price / same IAP product): keep
+    // subscription, no action. Free → Paid: no current sub to cancel; frontend
+    // redirects to checkout / the paywall.
 
     // Archive coach_signup_requests when switching AWAY from collegecoach so
     // the approval row is hidden from the admin dashboard and the user can

@@ -206,11 +206,18 @@
                     try {
                         const r = await window.IAP.purchaseTier(profileType, tier);
                         if (r.success) {
-                            // Best-effort server-side reconcile: re-checks RevenueCat with
-                            // the trusted user UUID and flips subscription_status='active',
-                            // so the user is durably active even if the webhook is delayed
-                            // or attributed the purchase to an anonymous id. Non-blocking.
-                            try { await API.payments.reconcileIap(r.customerInfo); } catch (_) {}
+                            // Server-side reconcile: re-checks RevenueCat with the trusted
+                            // user UUID, validates product↔profile-type, and flips
+                            // subscription_status='active'. A NETWORK failure stays
+                            // optimistic (the product is correct by construction — we just
+                            // bought THIS profile type's product — and the webhook will
+                            // land), but an explicit mismatch verdict must not grant access.
+                            let rec = null;
+                            try { rec = await API.payments.reconcileIap(r.customerInfo); } catch (_) {}
+                            if (rec && rec.activated === false && rec.reason === 'product_mismatch') {
+                                onError && onError('Your purchase doesn\'t match this profile type. Please contact support.');
+                                return;
+                            }
                             // Set grace key + navigate to the role mainpage (NOT a paywall reload).
                             onIapActivated();
                             return;
@@ -265,9 +272,12 @@
                 }
             });
 
-            // Switch profile button
+            // Switch profile button. Base path handles web-with-prefix (Live Server),
+            // web-without-prefix (EC2), and the iOS bundle (no /frontend segment) —
+            // the old hardcoded '/frontend/' prefix was a dead link in the app.
             document.getElementById('paywallSwitchBtn').addEventListener('click', () => {
-                window.location.href = '/frontend/' + folder + '/tabs/settings.html';
+                const feBase = window.location.origin + (window.location.pathname.startsWith('/frontend/') ? '/frontend' : '');
+                window.location.href = feBase + '/' + folder + '/tabs/settings.html';
             });
 
             // Delete account button — routes to Settings → Security (#security), where
@@ -289,9 +299,10 @@
 
             // Restore Purchases (iOS only — Apple Guideline 3.1.1). Re-syncs an existing
             // Apple subscription so a previously-paid user (reinstall / new device / state
-            // drift) isn't trapped on this paywall. Mirrors handleRestorePurchases in
-            // settings.js: on success, RevenueCat's webhook flips subscription_status and
-            // the reload lets the global paywall IIFE pass them through to their dashboard.
+            // drift) isn't trapped on this paywall. The /iap-reconcile response is the
+            // authority: it validates the restored product against the CURRENT profile
+            // type, so a mismatched product (e.g. an old player plan on a coach account)
+            // explains itself instead of granting access.
             const restoreBtn = document.getElementById('paywallRestoreBtn');
             if (restoreBtn) {
                 restoreBtn.addEventListener('click', async () => {
@@ -304,21 +315,34 @@
                     restoreBtn.textContent = 'Restoring...';
                     try {
                         const r = await window.IAP.restorePurchases();
-                        if (r.success && r.hasActive) {
-                            showToast('Purchases restored successfully.', 'success');
-                            // Reconcile server-side, then set the grace key (previously MISSING
-                            // on this path) and navigate to the mainpage. A bare reload here was
-                            // a no-op (paywall is in the IIFE skip-list) — that's why restore
-                            // reported success but left the user stuck.
-                            try { await API.payments.reconcileIap(r.customerInfo); } catch (_) {}
-                            onIapActivated();
+                        if (r.success) {
+                            // Server-authoritative: /iap-reconcile validates that the restored
+                            // product matches the CURRENT profile type — an old $10 player plan
+                            // must not unlock a coach account. Only navigate when it activates.
+                            let rec = null;
+                            try {
+                                rec = await API.payments.reconcileIap(r.customerInfo);
+                            } catch (_) {
+                                showToast('Couldn\'t verify your subscription. Check your connection and try again.', 'error');
+                                restoreBtn.disabled = false;
+                                restoreBtn.textContent = orig;
+                                return;
+                            }
+                            if (rec && rec.activated) {
+                                showToast('Purchases restored successfully.', 'success');
+                                onIapActivated();
+                                return;
+                            }
+                            if (rec && rec.reason === 'product_mismatch') {
+                                showToast('Your Apple subscription is for a different profile type and can\'t unlock this one. Subscribe to the right plan below, or use Switch Profile Type. To stop billing for the old plan, cancel it in Settings > Apple ID > Subscriptions.', 'warning', 12000);
+                            } else {
+                                showToast('No active subscription found for your Apple ID.', 'error');
+                            }
+                            restoreBtn.disabled = false;
+                            restoreBtn.textContent = orig;
                             return;
                         }
-                        if (r.success && !r.hasActive) {
-                            showToast('No active subscription found for your Apple ID.', 'error');
-                        } else {
-                            showToast('Restore failed: ' + (r.error || 'unknown'), 'error');
-                        }
+                        showToast('Restore failed: ' + (r.error || 'unknown'), 'error');
                         restoreBtn.disabled = false;
                         restoreBtn.textContent = orig;
                     } catch (e) {
@@ -365,6 +389,20 @@
                     });
                     container.appendChild(btn);
                 });
+            }
+
+            // Auto-restore (iOS): a user with a legitimate matching Apple sub
+            // (reinstall, state drift) shouldn't have to find the Restore button.
+            // Safe because /iap-reconcile validates product↔profile-type — a
+            // mismatched product never activates. Silent on failure; the manual
+            // Subscribe/Restore buttons remain the fallback.
+            if (API.isIOSApp()) {
+                try {
+                    const rec = await API.payments.reconcileIap(null);
+                    if (rec && rec.activated) {
+                        onIapActivated();
+                    }
+                } catch (_) { /* silent */ }
             }
 
         } catch (e) {
