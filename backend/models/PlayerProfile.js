@@ -3,6 +3,7 @@ const { playerPopularityExpr } = require('../utils/popularity-score');
 const { escapeLikePattern } = require('../middleware/validation');
 const { blockedUserFilter } = require('../utils/blockFilter');
 const { computeFit } = require('../utils/fit-score');
+const { fullNameExpr, searchTermParams, searchScoreExpr } = require('../utils/search-score');
 
 // Composite stat keys that sum multiple JSONB fields (e.g., "total_tds" = pass_tds + rush_tds + rec_tds)
 const COMPOSITE_STAT_KEYS = {
@@ -331,7 +332,8 @@ class PlayerProfile {
   // Caller passes (filters, limit, offset); we fetch limit+1 rows and return
   // {players, hasMore} so route can pass hasMore through to frontend.
   static async search(filters, limit = 50, offset = 0) {
-    let query = 'SELECT pp.* FROM player_profiles pp JOIN users u ON pp.user_id = u.id WHERE u.is_active = true';
+    let select = 'SELECT pp.*';
+    let query = ' FROM player_profiles pp JOIN users u ON pp.user_id = u.id WHERE u.is_active = true';
     const values = [];
     let paramCount = 1;
 
@@ -359,19 +361,23 @@ class PlayerProfile {
       paramCount++;
     }
     if (filters.searchTerm) {
-      query += ` AND (similarity(pp.first_name, $${paramCount}) > 0.2 OR similarity(pp.last_name, $${paramCount}) > 0.2 OR similarity(pp.username, $${paramCount}) > 0.2 OR pp.first_name ILIKE $${paramCount + 1} OR pp.last_name ILIKE $${paramCount + 1} OR pp.username ILIKE $${paramCount + 1})`;
-      values.push(filters.searchTerm, `%${escapeLikePattern(filters.searchTerm)}%`);
-      paramCount += 2;
+      const p = { term: paramCount, substr: paramCount + 1, prefix: paramCount + 2, word: paramCount + 3 };
+      values.push(...searchTermParams(filters.searchTerm));
+      paramCount += 4;
+      const fullName = fullNameExpr('pp');
+      select += `, ${searchScoreExpr(['pp.first_name', 'pp.last_name', 'pp.username', fullName], p)} AS search_score`;
+      query += ` AND (similarity(pp.first_name, $${p.term}) > 0.2 OR similarity(pp.last_name, $${p.term}) > 0.2 OR similarity(pp.username, $${p.term}) > 0.2 OR similarity(${fullName}, $${p.term}) > 0.2 OR pp.first_name ILIKE $${p.substr} OR pp.last_name ILIKE $${p.substr} OR pp.username ILIKE $${p.substr} OR ${fullName} ILIKE $${p.substr})`;
     }
 
     if (filters.searchTerm) {
-      query += ` ORDER BY GREATEST(similarity(pp.first_name, $${paramCount}), similarity(pp.last_name, $${paramCount}), similarity(pp.username, $${paramCount})) DESC, pp.created_at DESC LIMIT $${paramCount + 1} OFFSET $${paramCount + 2}`;
-      values.push(filters.searchTerm, limit + 1, offset);
+      // Keys must match compareSearchResults in utils/search-score.js — see invariant there.
+      query += ` ORDER BY search_score DESC, COALESCE(pp.followers_count, 0) DESC, pp.created_at DESC, pp.user_id LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
+      values.push(limit + 1, offset);
     } else {
       query += ` ORDER BY pp.created_at DESC LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
       values.push(limit + 1, offset);
     }
-    const result = await pool.query(query, values);
+    const result = await pool.query(select + query, values);
     const players = result.rows.slice(0, limit);
     const hasMore = result.rows.length > limit;
     return { players, hasMore };

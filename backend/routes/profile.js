@@ -16,6 +16,7 @@ const { validationResult } = require('express-validator');
 const { validatePlayerProfile, validateCoachProfile, validateOtherProfile, validatePlayerProfileUpdate, validateCoachProfileUpdate, validateOtherProfileUpdate, handleValidationErrors } = require('../middleware/validation');
 const { getSignedS3Url } = require('../utils/s3');
 const { computeFit } = require('../utils/fit-score');
+const { compareSearchResults } = require('../utils/search-score');
 const { apiLimiter, availabilityLimiter, availabilityDailyLimiter } = require('../middleware/rateLimit');
 const AiEngagement = require('../models/AiEngagement');
 const logger = require('../utils/logger');
@@ -633,11 +634,13 @@ router.get('/search', authMiddleware, async (req, res) => {
       addSignedUrlsToProfiles(otherRes.others)
     ]);
 
+    // Re-sort across the three sources by relevance — without this, all
+    // players rank above all coaches/others regardless of match quality.
     const combined = [
       ...playerRes.players.map(p => ({ ...p, role: 'player' })),
       ...coachRes.coaches.map(c => ({ ...c, role: 'coach' })),
       ...otherRes.others.map(o => ({ ...o, role: 'other' }))
-    ];
+    ].sort(compareSearchResults);
 
     const results = combined.slice(offset, offset + limit);
     const hasMore = combined.length > offset + limit

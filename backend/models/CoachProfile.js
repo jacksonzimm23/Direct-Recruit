@@ -1,6 +1,7 @@
 const pool = require('../config/database');
 const { escapeLikePattern } = require('../middleware/validation');
 const { blockedUserFilter } = require('../utils/blockFilter');
+const { fullNameExpr, searchTermParams, searchScoreExpr } = require('../utils/search-score');
 // Plan 5A: team_name changes auto-cancel inbound pipeline hand-offs.
 // Required at call time to avoid a circular import on module load.
 
@@ -139,7 +140,8 @@ class CoachProfile {
   // Caller passes (filters, limit, offset); we fetch limit+1 rows and return
   // {coaches, hasMore} so route can pass hasMore through to frontend.
   static async search(filters, limit = 50, offset = 0) {
-    let query = 'SELECT cp.* FROM coach_profiles cp JOIN users u ON cp.user_id = u.id WHERE u.is_active = true';
+    let select = 'SELECT cp.*';
+    let query = ' FROM coach_profiles cp JOIN users u ON cp.user_id = u.id WHERE u.is_active = true';
     const values = [];
     let paramCount = 1;
 
@@ -162,19 +164,25 @@ class CoachProfile {
       paramCount++;
     }
     if (filters.searchTerm) {
-      query += ` AND (similarity(cp.first_name, $${paramCount}) > 0.2 OR similarity(cp.last_name, $${paramCount}) > 0.2 OR similarity(cp.username, $${paramCount}) > 0.2 OR similarity(cp.team_name, $${paramCount}) > 0.2 OR cp.first_name ILIKE $${paramCount + 1} OR cp.last_name ILIKE $${paramCount + 1} OR cp.username ILIKE $${paramCount + 1} OR cp.team_name ILIKE $${paramCount + 1})`;
-      values.push(filters.searchTerm, `%${escapeLikePattern(filters.searchTerm)}%`);
-      paramCount += 2;
+      const p = { term: paramCount, substr: paramCount + 1, prefix: paramCount + 2, word: paramCount + 3 };
+      values.push(...searchTermParams(filters.searchTerm));
+      paramCount += 4;
+      const fullName = fullNameExpr('cp');
+      select += `, ${searchScoreExpr(['cp.first_name', 'cp.last_name', 'cp.username', 'cp.team_name', fullName], p)} AS search_score`;
+      query += ` AND (similarity(cp.first_name, $${p.term}) > 0.2 OR similarity(cp.last_name, $${p.term}) > 0.2 OR similarity(cp.username, $${p.term}) > 0.2 OR similarity(cp.team_name, $${p.term}) > 0.2 OR similarity(${fullName}, $${p.term}) > 0.2 OR cp.first_name ILIKE $${p.substr} OR cp.last_name ILIKE $${p.substr} OR cp.username ILIKE $${p.substr} OR cp.team_name ILIKE $${p.substr} OR ${fullName} ILIKE $${p.substr})`;
     }
 
     if (filters.searchTerm) {
-      query += ` ORDER BY GREATEST(similarity(cp.first_name, $${paramCount}), similarity(cp.last_name, $${paramCount}), similarity(cp.username, $${paramCount}), similarity(cp.team_name, $${paramCount})) DESC, cp.verified DESC, cp.created_at DESC LIMIT $${paramCount + 1} OFFSET $${paramCount + 2}`;
-      values.push(filters.searchTerm, limit + 1, offset);
+      // Keys must match compareSearchResults in utils/search-score.js — see invariant there.
+      // (verified DESC intentionally dropped here: cross-model pagination requires identical
+      // keys in all three models; verified coaches surface via the exact/prefix tiers anyway.)
+      query += ` ORDER BY search_score DESC, COALESCE(cp.followers_count, 0) DESC, cp.created_at DESC, cp.user_id LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
+      values.push(limit + 1, offset);
     } else {
       query += ` ORDER BY cp.verified DESC, COALESCE(cp.followers_count, 0) DESC, cp.created_at DESC LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
       values.push(limit + 1, offset);
     }
-    const result = await pool.query(query, values);
+    const result = await pool.query(select + query, values);
     const coaches = result.rows.slice(0, limit);
     const hasMore = result.rows.length > limit;
     return { coaches, hasMore };
