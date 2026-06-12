@@ -626,7 +626,7 @@ function renderMessageInner(msg, isSent) {
     const parts = [];
     if (msg.media_url && msg.media_type === 'image') {
         const url = escapeHtml(msg.media_url);
-        parts.push(`<div class="message-media"><img src="${url}" alt="Attachment" onclick="window.open('${url}','_blank')"></div>`);
+        parts.push(`<div class="message-media"><img src="${url}" alt="Attachment" onclick="openMediaOverlay('${url}', 'image')"></div>`);
     } else if (msg.media_url && msg.media_type === 'video') {
         const url = escapeHtml(msg.media_url);
         parts.push(`<div class="message-media"><video src="${url}" controls preload="metadata"></video></div>`);
@@ -1139,8 +1139,11 @@ function showAttachmentPreview() {
 }
 
 // Small media preview when a chip is tapped. Full-screen overlay (mobile-safe).
-function previewAttachment() {
-    if (!currentAttachment) return;
+// Full-screen in-app media overlay. Shared by the staged-attachment chip
+// preview and photos inside sent/received messages (which previously
+// window.open'd the presigned S3 URL — on iOS that left the app and loaded
+// the raw AWS link in the browser).
+function openMediaOverlay(src, type) {
     let overlay = document.getElementById('attachmentPreviewOverlay');
     if (!overlay) {
         overlay = document.createElement('div');
@@ -1158,14 +1161,18 @@ function previewAttachment() {
                 <line x1="6" y1="6" x2="18" y2="18"></line>
             </svg>
         </button>`;
-    if (currentAttachment.type === 'video') {
-        const src = currentAttachment.preview || URL.createObjectURL(currentAttachment.file);
+    if (type === 'video') {
         overlay.innerHTML = `${closeBtn}<video src="${src}" controls autoplay playsinline></video>`;
     } else {
-        const src = currentAttachment.preview || URL.createObjectURL(currentAttachment.file);
         overlay.innerHTML = `${closeBtn}<img src="${src}" alt="Attachment preview">`;
     }
     overlay.classList.add('active');
+}
+
+function previewAttachment() {
+    if (!currentAttachment) return;
+    const src = currentAttachment.preview || URL.createObjectURL(currentAttachment.file);
+    openMediaOverlay(src, currentAttachment.type);
 }
 
 function closeAttachmentPreview() {
