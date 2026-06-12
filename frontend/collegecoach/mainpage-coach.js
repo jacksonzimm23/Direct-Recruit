@@ -333,13 +333,20 @@ async function verifyCoachType() {
         // email_verified=true. replace() prevents Back-button regression here.
         if (response.user && !response.user.email_verified) {
             localStorage.setItem('pendingVerificationEmail', response.user.email);
-            window.location.replace(new URL('verify-email.html', window.location.href).href);
+            window.location.replace(new URL(window.location.pathname.includes('/tabs/') ? '../verify-email.html' : 'verify-email.html', window.location.href).href);
             return;
         }
         if (response.user && response.profile) {
             const correctFolder = getProfileFolder({ role: response.user.role, is_transfer_player: response.user.is_transfer_player, ...response.profile });
             if (correctFolder !== 'collegecoach') {
-                window.location.href = new URL(`../${correctFolder}/mainpage-coach.html`, window.location.href).href;
+                // Single post view is cross-role: keep the post open but swap to the
+                // viewer's own folder so the sidebar/chrome stays their role's.
+                // replace() so Back returns to the profile, not the wrong-folder URL.
+                if (window.location.pathname.includes('post-view.html')) {
+                    window.location.replace(new URL(`../../${correctFolder}/tabs/post-view.html${window.location.search}`, window.location.href).href);
+                    return;
+                }
+                window.location.href = getMainpageUrl(correctFolder);
                 return;
             }
         }

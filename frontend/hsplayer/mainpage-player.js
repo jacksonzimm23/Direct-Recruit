@@ -467,7 +467,14 @@ async function verifyPlayerType() {
         if (response.user && response.profile) {
             const correctFolder = getProfileFolder({ role: response.user.role, is_transfer_player: response.user.is_transfer_player, ...response.profile });
             if (correctFolder !== 'hsplayer') {
-                window.location.href = new URL(`../${correctFolder}/mainpage-player.html`, window.location.href).href;
+                // Single post view is cross-role: keep the post open but swap to the
+                // viewer's own folder so the sidebar/chrome stays their role's.
+                // replace() so Back returns to the profile, not the wrong-folder URL.
+                if (window.location.pathname.includes('post-view.html')) {
+                    window.location.replace(new URL(`../../${correctFolder}/tabs/post-view.html${window.location.search}`, window.location.href).href);
+                    return;
+                }
+                window.location.href = getMainpageUrl(correctFolder);
                 return;
             }
         }

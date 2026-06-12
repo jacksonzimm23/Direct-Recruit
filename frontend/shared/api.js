@@ -1108,6 +1108,20 @@ function getProfileFolder(user) {
 window.getProfileFolder = getProfileFolder;
 window.COLLEGE_DIVISIONS = COLLEGE_DIVISIONS;
 
+// Absolute URL to a role folder's mainpage, depth-aware (works from both the
+// folder root and tabs/ pages). iOS WKWebView: bare-relative navs no-op, so
+// resolve against location.href.
+function getMainpageUrl(folder) {
+    const map = {
+        hsplayer: 'mainpage-player.html', collegeplayer: 'mainpage-player.html',
+        transferplayer: 'mainpage-player.html', hscoach: 'mainpage-coach.html',
+        collegecoach: 'mainpage-coach.html', other: 'mainpage-other.html'
+    };
+    const depth = window.location.pathname.includes('/tabs/') ? '../../' : '../';
+    return new URL(`${depth}${folder}/${map[folder] || 'mainpage-player.html'}`, window.location.href).href;
+}
+window.getMainpageUrl = getMainpageUrl;
+
 // Normalize legacy division values for display (e.g. 'FBS' → 'D1 FBS')
 function formatDivisionDisplay(div) {
     if (!div) return div;
