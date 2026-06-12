@@ -31,6 +31,17 @@ html.ios-app body { background-color: inherit; }
     padding-top: env(safe-area-inset-top, 0px);
 }
 
+/* Post-photo slideshow viewer (feed.js openMediaSlideshow): the X close
+   button (top: 1rem) and the "1 / N" counter (top: 1.25rem) sit under the
+   iOS status bar (time/wifi/battery) because the overlay is full-screen
+   with viewport-fit=cover. Push both below the status bar. */
+.ios-app .slideshow-close {
+    top: calc(1rem + env(safe-area-inset-top, 0px)) !important;
+}
+.ios-app .slideshow-counter {
+    top: calc(1.25rem + env(safe-area-inset-top, 0px)) !important;
+}
+
 /* ---- Content top-offset for the status bar ----
    The fixed .mobile-header grows by env(safe-area-inset-top) (rule above), but the
    scrollable content below it uses fixed top offsets (mobile-overrides.css) that
@@ -220,6 +231,16 @@ html.ios-app body { background-color: inherit; }
     .ios-app .post-card:hover {
         background: inherit;
         color: inherit;
+    }
+
+    /* The kill rule above also wipes the ACTIVE feed tab's blue pill the
+       moment it's tapped — iOS leaves :hover stuck on the tapped element and
+       `button:hover` (0,2,1) outranks `.feed-tab.active` (0,2,0), so the
+       Discover / Your Network highlight vanished after any tab switch.
+       Re-assert the active style at higher specificity. */
+    .ios-app .feed-tab.active:hover {
+        background: var(--cerulean);
+        color: white;
     }
 }
 
