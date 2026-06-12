@@ -1330,7 +1330,7 @@ function updateProfileActions(hasPendingRequest = false) {
         const shareBtn = actionsContainer.querySelector('.btn-share-profile');
         if (shareBtn) {
             shareBtn.addEventListener('click', async function() {
-                const profileUrl = `${FE_BASE}/other/tabs/my-profile.html?username=${currentProfile.username}`;
+                const profileUrl = `${getShareBaseUrl()}/other/tabs/my-profile.html?username=${currentProfile.username}`;
                 try {
                     await navigator.clipboard.writeText(profileUrl);
                     showToast('Profile link copied to clipboard!');
@@ -1386,7 +1386,7 @@ function updateProfileActions(hasPendingRequest = false) {
         const shareBtn = actionsContainer.querySelector('.btn-share-profile');
         if (shareBtn) {
             shareBtn.addEventListener('click', async function() {
-                const profileUrl = `${FE_BASE}/other/tabs/my-profile.html?username=${currentProfile.username}`;
+                const profileUrl = `${getShareBaseUrl()}/other/tabs/my-profile.html?username=${currentProfile.username}`;
                 try {
                     await navigator.clipboard.writeText(profileUrl);
                     showToast('Profile link copied to clipboard!');
@@ -2890,11 +2890,9 @@ async function profileSharePost(postId, event) {
 
 function profileCopyPostLink(postId) {
     document.querySelector('.share-menu')?.remove();
-    // In-app the bundle root is the frontend/ contents, so there is no '/frontend'
-    // path segment; on web there is. Mirror shared/api.js's prefix convention so
-    // this URL resolves in BOTH the WKWebView and the browser.
-    const FE_BASE = window.location.origin + (window.location.pathname.startsWith('/frontend/') ? '/frontend' : '');
-    const url = `${FE_BASE}/${getProfileFolder({ role: getUser()?.role || 'other' })}/tabs/post-view.html?id=${postId}`;
+    // getShareBaseUrl points at the public site — inside the iOS app the WebView
+    // origin is https://localhost, a dead link for anyone it's shared with.
+    const url = `${getShareBaseUrl()}/${getProfileFolder({ role: getUser()?.role || 'other' })}/tabs/post-view.html?id=${postId}`;
     navigator.clipboard.writeText(url).then(() => {
         showToast('Link copied to clipboard');
     }).catch(() => {

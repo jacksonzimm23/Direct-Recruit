@@ -1719,7 +1719,7 @@ function updateProfileActions(hasPendingRequest = false) {
         const shareBtn = actionsContainer.querySelector('.btn-share-profile');
         if (shareBtn) {
             shareBtn.addEventListener('click', async function() {
-                const profileUrl = `${FE_BASE}/transferplayer/tabs/my-profile.html?username=${currentProfile.username}`;
+                const profileUrl = `${getShareBaseUrl()}/transferplayer/tabs/my-profile.html?username=${currentProfile.username}`;
                 try {
                     await navigator.clipboard.writeText(profileUrl);
                     showShareToast();
@@ -1783,7 +1783,7 @@ function updateProfileActions(hasPendingRequest = false) {
         const shareBtn = actionsContainer.querySelector('.btn-share-profile');
         if (shareBtn) {
             shareBtn.addEventListener('click', async function() {
-                const profileUrl = `${FE_BASE}/transferplayer/tabs/my-profile.html?username=${currentProfile.username}`;
+                const profileUrl = `${getShareBaseUrl()}/transferplayer/tabs/my-profile.html?username=${currentProfile.username}`;
                 try {
                     await navigator.clipboard.writeText(profileUrl);
                     showShareToast();
@@ -7003,15 +7003,15 @@ function setupHighlightsModal() {
     if (_hlVideoInputForIOS) {
         _hlVideoInputForIOS.addEventListener('click', async function(e) {
             if (window.API && window.API.isIOSApp && window.API.isIOSApp()
-                && window.NativeCamera && window.NativeCamera.pickPostVideo) {
+                && window.NativeCamera && window.NativeCamera.showHighlightVideoSheet) {
                 e.preventDefault();
-                const r = await window.NativeCamera.pickPostVideo();
-                if (r.file) {
-                    _iosHighlightVideo = r.file;
-                    showToast('Selected: ' + r.file.name, 'success');
-                } else if (r.error) {
-                    showToast('Video picker failed: ' + r.error, 'error');
-                }
+                // Camera Roll / Files bottom sheet. The old pickPostVideo path
+                // relied on Camera.getVideo, which doesn't exist in the installed
+                // plugin — the picker never opened. Cancel keeps any previous stash.
+                await window.NativeCamera.showHighlightVideoSheet(async function(file) {
+                    _iosHighlightVideo = file;
+                    showToast('Selected: ' + file.name, 'success');
+                });
             }
         });
         _hlVideoInputForIOS.addEventListener('change', function() {
@@ -10599,11 +10599,9 @@ async function profileSharePost(postId, event) {
 
 function profileCopyPostLink(postId) {
     document.querySelector('.share-menu')?.remove();
-    // In-app the bundle root is the frontend/ contents, so there is no '/frontend'
-    // path segment; on web there is. Mirror shared/api.js's prefix convention so
-    // these URLs resolve in BOTH the WKWebView and the browser.
-    const FE_BASE = window.location.origin + (window.location.pathname.startsWith('/frontend/') ? '/frontend' : '');
-    const url = `${FE_BASE}/${getProfileFolder({ role: getUser()?.role || 'player' })}/tabs/post-view.html?id=${postId}`;
+    // getShareBaseUrl points at the public site — inside the iOS app the WebView
+    // origin is https://localhost, a dead link for anyone it's shared with.
+    const url = `${getShareBaseUrl()}/${getProfileFolder({ role: getUser()?.role || 'player' })}/tabs/post-view.html?id=${postId}`;
     navigator.clipboard.writeText(url).then(() => {
         showToast('Link copied to clipboard');
     }).catch(() => {

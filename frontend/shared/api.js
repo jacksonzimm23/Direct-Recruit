@@ -447,6 +447,16 @@ function isIOSApp() {
     return document.documentElement.classList.contains('ios-app');
 }
 
+// Base URL for share/copy links (profile links, post links). These must point
+// at the PUBLIC website: inside the iOS app the WebView origin is
+// https://localhost (bundled files), so origin-derived links would be dead for
+// anyone they're shared with. On web, keep the current origin (+ '/frontend'
+// in local dev, mirroring the FE_BASE convention).
+function getShareBaseUrl() {
+    if (_isNativeApp) return 'https://directrecruit.net';
+    return window.location.origin + (window.location.pathname.startsWith('/frontend/') ? '/frontend' : '');
+}
+
 // API Request wrapper
 async function apiRequest(endpoint, options = {}) {
     const config = {
@@ -1507,6 +1517,7 @@ const API = {
     clearAuth,
     isAuthenticated,
     isIOSApp,
+    getShareBaseUrl,
     // iOS Bearer fallback — exposed so raw-fetch flows (verify-email, switch-profile)
     // can persist a freshly-issued/rotated token. No-op on web.
     setAuthToken,

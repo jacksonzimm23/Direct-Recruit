@@ -332,6 +332,125 @@
         }
     }
 
+    // Convert a FilePicker result file list ({blob?, path, mimeType, name}) to
+    // File[]. Same conversion pickMedia does inline; shared by the video-only
+    // pickers below.
+    async function _pickedToFiles(picked) {
+        const files = [];
+        for (let i = 0; i < picked.length; i++) {
+            const f = picked[i];
+            const mime = f.mimeType || 'application/octet-stream';
+            const name = f.name || ('media-' + Date.now() + '-' + i);
+            try {
+                let file;
+                if (f.blob) {
+                    file = new File([f.blob], name, { type: mime });
+                } else if (f.path) {
+                    const src = (window.Capacitor && window.Capacitor.convertFileSrc)
+                        ? window.Capacitor.convertFileSrc(f.path)
+                        : f.path;
+                    const blob = await (await fetch(src)).blob();
+                    file = new File([blob], name, { type: mime });
+                } else {
+                    continue;
+                }
+                files.push(file);
+            } catch (convErr) {
+                console.error('[NativeCamera] file conversion failed:', convErr);
+            }
+        }
+        return files;
+    }
+
+    // Video-only photo-library picker (FilePicker.pickVideos — same Apple sheet
+    // as pickMedia but filtered to videos). Returns { files, cancelled, error }.
+    async function pickVideos(opts) {
+        opts = opts || {};
+        try {
+            const FilePicker = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.FilePicker;
+            if (!FilePicker) return { files: [], cancelled: false, error: 'FilePicker plugin not available' };
+
+            const result = await FilePicker.pickVideos({ multiple: !!opts.multiple });
+            let picked = (result && result.files) || [];
+            if (!picked.length) return { files: [], cancelled: true };
+            if (opts.limit) picked = picked.slice(0, opts.limit);
+            return { files: await _pickedToFiles(picked), cancelled: false };
+        } catch (e) {
+            const msg = (e && e.message) || '';
+            if (msg.includes('cancel') || msg.includes('Cancel') || (e && e.code === 'USER_CANCELLED') || (e && e.code === 'OS-PLUGIN-FILEPICKER-0001')) {
+                return { files: [], cancelled: true };
+            }
+            return { files: [], cancelled: false, error: msg || 'Video picker failed' };
+        }
+    }
+
+    // Files-app (document) picker restricted to video types — for highlight
+    // clips saved outside the camera roll (e.g. Hudl downloads). FilePicker's
+    // `types` option doesn't support wildcards, so list the formats the
+    // backend accepts (MP4, MOV, AVI, WebM, M4V).
+    async function pickVideoFiles() {
+        try {
+            const FilePicker = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.FilePicker;
+            if (!FilePicker) return { files: [], cancelled: false, error: 'FilePicker plugin not available' };
+
+            const result = await FilePicker.pickFiles({
+                types: ['video/mp4', 'video/quicktime', 'video/x-msvideo', 'video/webm', 'video/x-m4v'],
+                limit: 1
+            });
+            const picked = (result && result.files) || [];
+            if (!picked.length) return { files: [], cancelled: true };
+            return { files: await _pickedToFiles(picked), cancelled: false };
+        } catch (e) {
+            const msg = (e && e.message) || '';
+            if (msg.includes('cancel') || msg.includes('Cancel') || (e && e.code === 'USER_CANCELLED') || (e && e.code === 'OS-PLUGIN-FILEPICKER-0001')) {
+                return { files: [], cancelled: true };
+            }
+            return { files: [], cancelled: false, error: msg || 'File picker failed' };
+        }
+    }
+
+    // Bottom sheet for the highlight-reel upload — Camera Roll / Files / Cancel.
+    // onFilePicked: async (File) => void. Called ONCE with the picked video.
+    function showHighlightVideoSheet(onFilePicked) {
+        return new Promise(function (resolve) {
+            const overlay = document.createElement('div');
+            overlay.className = 'ios-media-sheet-overlay';
+            overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:999999;display:flex;align-items:flex-end;justify-content:center;';
+            overlay.innerHTML =
+                '<div style="background:#0a1128;border-radius:14px 14px 0 0;padding:16px;width:100%;max-width:500px;box-shadow:0 -4px 24px rgba(0,0,0,0.4);padding-bottom:calc(16px + env(safe-area-inset-bottom));">' +
+                '<button type="button" data-choice="library" style="display:block;width:100%;padding:14px;background:#1282a2;color:#fff;border:none;border-radius:8px;font-size:16px;font-weight:600;margin-bottom:8px;cursor:pointer;">🎥 Camera Roll</button>' +
+                '<button type="button" data-choice="files" style="display:block;width:100%;padding:14px;background:#1282a2;color:#fff;border:none;border-radius:8px;font-size:16px;font-weight:600;margin-bottom:8px;cursor:pointer;">📁 Browse Files</button>' +
+                '<button type="button" data-choice="cancel" style="display:block;width:100%;padding:14px;background:transparent;color:#8892b0;border:1px solid rgba(100,116,152,0.3);border-radius:8px;font-size:16px;cursor:pointer;">Cancel</button>' +
+                '</div>';
+            document.body.appendChild(overlay);
+
+            function close() { if (overlay.parentNode) overlay.parentNode.removeChild(overlay); }
+
+            overlay.addEventListener('click', async function (e) {
+                if (e.target === overlay) { close(); resolve(); return; }
+                const choice = e.target && e.target.dataset && e.target.dataset.choice;
+                if (!choice) return;
+                close();
+
+                try {
+                    if (choice === 'library' || choice === 'files') {
+                        const r = (choice === 'library')
+                            ? await pickVideos({ multiple: false })
+                            : await pickVideoFiles();
+                        if (r.files && r.files.length) {
+                            await onFilePicked(r.files[0]);
+                        } else if (r.error && window.showToast) {
+                            window.showToast('Video picker failed: ' + r.error, 'error');
+                        }
+                    }
+                } catch (cbErr) {
+                    console.error('[NativeCamera] onFilePicked failed:', cbErr);
+                }
+                resolve();
+            });
+        });
+    }
+
     // Expose globally — matches window.IAP / window.API patterns
     window.NativeCamera = {
         pickProfilePhoto: pickProfilePhoto,
@@ -342,6 +461,9 @@
         pickMessageVideo: pickMessageVideo,
         showMessageMediaSheet: showMessageMediaSheet,
         pickMedia: pickMedia,
+        pickVideos: pickVideos,
+        pickVideoFiles: pickVideoFiles,
+        showHighlightVideoSheet: showHighlightVideoSheet,
         base64ToFile: base64ToFile,
         webPathToFile: webPathToFile
     };

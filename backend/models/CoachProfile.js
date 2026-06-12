@@ -50,7 +50,7 @@ class CoachProfile {
   static async update(userId, profileData) {
     const allowedColumns = new Set([
       'first_name', 'last_name', 'username', 'team_name', 'college_division',
-      'position_title', 'city', 'state', 'phone', 'bio', 'conference',
+      'position_title', 'city', 'state', 'phone', 'email', 'bio', 'conference',
       // profile_image_url removed — set via updateProfileImage() only (security #22)
       // AI Fit-Matching "Program Profile" columns (Plan 3)
       'admitted_gpa_min', 'admitted_gpa_max', 'test_optional', 'sat_min', 'sat_max',

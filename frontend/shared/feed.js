@@ -3111,7 +3111,12 @@ class FeedManager {
 
     async copyPostLink(postId) {
         try {
-            const url = `${window.location.origin}/post/${postId}`;
+            // Real single-post page (the old /post/:id shape had no route — 404 on
+            // web, and inside the iOS app the origin is https://localhost anyway).
+            // Any role folder works: post-view.html redirects cross-role viewers
+            // to their own folder. getShareBaseUrl points at the public site.
+            const folder = (typeof getProfileFolder === 'function' && getProfileFolder({ role: getUser()?.role || 'player' })) || 'hsplayer';
+            const url = `${getShareBaseUrl()}/${folder}/tabs/post-view.html?id=${postId}`;
             await navigator.clipboard.writeText(url);
             this.showToast('Link copied!', 'success');
             document.querySelector('.share-menu')?.remove();

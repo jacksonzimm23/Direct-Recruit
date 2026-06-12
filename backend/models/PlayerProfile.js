@@ -286,7 +286,7 @@ class PlayerProfile {
       'city', 'state', 'position', 'height', 'weight', 'gpa', 'sat_score', 'act_score',
       'highlight_video_url', 'bio', 'hudl_profile', 'twitter_handle', 'instagram_handle', 'player_status',
       'college_division', 'conference', 'number', 'eligibility', 'transfer',
-      'phone',
+      'phone', 'email',
       'lastseasonstat1', 'lastseasonstat2', 'lastseasonstat3',
       'careerstat1', 'careerstat2', 'careerstat3',
       'other_sports', 'track_100m', 'track_200m', 'pff_grade',

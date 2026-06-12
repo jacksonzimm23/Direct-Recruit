@@ -380,6 +380,10 @@ const validateOtherProfile = [
 
 const validatePlayerProfileUpdate = [
   body('username').optional().trim().isLength({ max: 15 }).withMessage('Username must be 15 characters or less'),
+  // Contact email on the player profile (player_profiles.email — separate from
+  // the login email). checkFalsy lets an empty string through so the field can
+  // be cleared from the edit modal.
+  body('email').optional({ nullable: true, checkFalsy: true }).trim().isEmail().withMessage('Contact email must be a valid email address').isLength({ max: 255 }).withMessage('Contact email must be 255 characters or less'),
   body('first_name').optional({ nullable: true }).trim().isLength({ max: 50 }).withMessage('First name must be 50 characters or less'),
   body('last_name').optional({ nullable: true }).trim().isLength({ max: 50 }).withMessage('Last name must be 50 characters or less'),
   body('team_name').optional({ nullable: true }).trim().isLength({ max: 100 }).withMessage('Team name must be 100 characters or less'),
@@ -399,6 +403,8 @@ const validatePlayerProfileUpdate = [
 
 const validateCoachProfileUpdate = [
   body('username').optional().trim().isLength({ max: 15 }).withMessage('Username must be 15 characters or less'),
+  // Contact email (coach_profiles.email — separate from the login email).
+  body('email').optional({ nullable: true, checkFalsy: true }).trim().isEmail().withMessage('Contact email must be a valid email address').isLength({ max: 255 }).withMessage('Contact email must be 255 characters or less'),
   body('first_name').optional({ nullable: true }).trim().isLength({ max: 50 }).withMessage('First name must be 50 characters or less'),
   body('last_name').optional({ nullable: true }).trim().isLength({ max: 50 }).withMessage('Last name must be 50 characters or less'),
   body('team_name').optional({ nullable: true }).trim().isLength({ max: 100 }).withMessage('Team name must be 100 characters or less'),
