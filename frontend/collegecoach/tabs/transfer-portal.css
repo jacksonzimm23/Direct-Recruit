@@ -2752,6 +2752,12 @@
     font-size: 0.8rem;
     font-weight: 600;
 }
+/* Eligibility filter label: full text everywhere by default, abbreviated to
+   "YOE" only inside the iOS app (.ios-app on <html>) where the full label
+   wraps to two lines on narrow phone screens. No effect on mobile web or desktop. */
+#eligibilityFilterLabel .eligibility-label-short { display: none; }
+html.ios-app #eligibilityFilterLabel .eligibility-label-full { display: none; }
+html.ios-app #eligibilityFilterLabel .eligibility-label-short { display: inline; }
 .rb-pool-filter-select {
     width: 100%;
     padding: 7px 10px;
