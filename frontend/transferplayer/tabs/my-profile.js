@@ -7760,7 +7760,6 @@ function setupRecruitingProfileEditing() {
     document.getElementById('editRpAcademicsBtn')?.addEventListener('click', () => {
         const p = currentProfile;
         document.getElementById('editRpUnweightedGpa').value = p.gpa ?? '';
-        document.getElementById('editRpWeightedGpa').value = p.weighted_gpa ?? '';
         document.getElementById('editRpSat').value = p.sat_score ?? '';
         document.getElementById('editRpAct').value = p.act_score ?? '';
         const hasAp = p.has_ap_ib === true;
@@ -7781,7 +7780,6 @@ function setupRecruitingProfileEditing() {
         const hasAp = rpRadioVal('editRpHasApIb') === 'yes';
         rpSavePayload({
             gpa: rpNumOrNull('editRpUnweightedGpa'),
-            weighted_gpa: rpNumOrNull('editRpWeightedGpa'),
             sat_score: rpIntOrNull('editRpSat'),
             act_score: rpIntOrNull('editRpAct'),
             has_ap_ib: hasAp,
