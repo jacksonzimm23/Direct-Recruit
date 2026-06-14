@@ -129,6 +129,13 @@ html.ios-app body { background-color: inherit; }
     .ios-app .main-content:has(.dp-tab-content.active .ra-layout),
     .ios-app .main-content:has(.tp-tab-content.active .pi-layout) {
         top: calc(50px + env(safe-area-inset-top, 0px)) !important;
+        /* BOTTOM FIX: mobile-overrides.css sets these fixed panels to bottom:70px,
+           but the bottom nav is 76px tall AND adds padding-bottom:
+           env(safe-area-inset-bottom) (the home indicator). So 70px landed the
+           panel's bottom edge BEHIND the nav, hiding the input area's last line —
+           the AI disclaimer under the textbox. Clear the full nav height so the
+           input + disclaimer stay visible and bottom-aligned right above the nav. */
+        bottom: calc(76px + env(safe-area-inset-bottom, 0px)) !important;
     }
 
     /* Discover / Transfer Portal padded (non-AI) tab: align subtabs with the AI-tab
