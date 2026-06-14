@@ -816,10 +816,29 @@
     }
 
     .settings-notification {
+        /* Span the screen with side margins instead of center-translating.
+           left/right already center it, so the desktop translateX(-50%) must be
+           dropped here — otherwise the toast shifts half its width off the left
+           edge (the "cut off / partial, pushed left" bug). */
         left: 1rem;
         right: 1rem;
+        transform: none;
         min-width: auto;
         max-width: none;
+    }
+
+    /* Redefine the slide keyframes (same names) to translate VERTICALLY ONLY on
+       mobile. Same-named @keyframes inside this media query win here, so both the
+       CSS-driven open (animation: slideIn) and the JS-driven close (inline
+       animation: slideOut) stop re-applying the desktop translateX(-50%) that
+       pushed the toast off the left edge. */
+    @keyframes slideIn {
+        from { transform: translateY(120%); opacity: 0; }
+        to   { transform: translateY(0); opacity: 1; }
+    }
+    @keyframes slideOut {
+        from { transform: translateY(0); opacity: 1; }
+        to   { transform: translateY(120%); opacity: 0; }
     }
 }
 
