@@ -171,7 +171,18 @@ html.ios-app body { background-color: inherit; }
     /* AI Recruiting Assistant + Portal Intelligence full-screen modals (base 1.25rem) */
     .ios-app .ra-usage-header,
     .ios-app .ra-baselines-header,
-    .ios-app .pi-usage-header {
+    .ios-app .pi-usage-header,
+    /* AI Match / fit-info modal (.fim-header is first child of the full-screen
+       .fim-modal; covers both player-fit and school-fit modes — base 1.25rem) */
+    .ios-app .fim-header {
+        padding-top: calc(1.25rem + env(safe-area-inset-top, 0px)) !important;
+    }
+    /* Report modal (report-modal.js, JS-injected): top-pinned full-screen on
+       mobile with the title (.report-modal-title) as a bare first child — no
+       header element — so pad the CONTAINER top. .ios-app .report-modal (0,2,0)
+       + !important beats the injected .report-modal (0,1,0); padding-top only,
+       so the injected horizontal/bottom padding is preserved. */
+    .ios-app .report-modal {
         padding-top: calc(1.25rem + env(safe-area-inset-top, 0px)) !important;
     }
     /* AI RA saved modal + Edit Reply modal (base 1rem) */
