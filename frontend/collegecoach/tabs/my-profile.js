@@ -2326,13 +2326,11 @@ function populateEditForm() {
 
     // Populate overview fields
     const conferenceField = document.getElementById('editConference');
-    const recordField = document.getElementById('editRecord');
     const achievementsField = document.getElementById('editAchievements');
     const experienceField = document.getElementById('editExperience');
     const philosophyField = document.getElementById('editPhilosophy');
 
     if (conferenceField) conferenceField.value = currentProfile.conference || '';
-    if (recordField) recordField.value = currentProfile.record || '';
     if (achievementsField) {
         achievementsField.value = currentProfile.achievements || '';
         updateCharCounter('achievements', 1000);
@@ -2433,7 +2431,6 @@ async function saveProfileChanges() {
             phone: document.getElementById('editPhone').value.trim(),
             // Overview fields
             conference: document.getElementById('editConference').value.trim(),
-            record: document.getElementById('editRecord').value.trim(),
             achievements: document.getElementById('editAchievements').value.trim(),
             experience: document.getElementById('editExperience').value.trim(),
             philosophy: document.getElementById('editPhilosophy').value.trim()
@@ -2716,7 +2713,6 @@ function displayOverviewData(profile) {
     const schoolStateValue = document.getElementById('schoolStateValue');
     const divisionValue = document.getElementById('divisionValue');
     const conferenceValue = document.getElementById('conferenceValue');
-    const recordValue = document.getElementById('recordValue');
 
     if (schoolNameValue) schoolNameValue.textContent = profile.team_name || '-';
     if (schoolStateValue) schoolStateValue.textContent = profile.state || '-';
@@ -2724,7 +2720,6 @@ function displayOverviewData(profile) {
         divisionValue.textContent = profile.college_division || '-';
     }
     if (conferenceValue) conferenceValue.textContent = profile.conference || '-';
-    if (recordValue) recordValue.textContent = profile.record || '-';
 
     // Update Program Achievements
     const achievementsList = document.getElementById('achievementsList');
