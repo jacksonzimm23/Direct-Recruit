@@ -35,7 +35,8 @@ class OtherProfile {
 
   static async update(userId, profileData) {
     const allowedColumns = new Set([
-      'first_name', 'last_name', 'username', 'subheader', 'bio'
+      'first_name', 'last_name', 'username', 'subheader', 'bio',
+      'email', 'phone'
       // profile_image_url + profile_picture_url removed — set via
       // updateProfileImage() only (security #22)
     ]);
