@@ -724,7 +724,8 @@ document.addEventListener('DOMContentLoaded', function() {
                         title: 'Delete Conversation',
                         message: 'Are you sure you want to delete this conversation?',
                         confirmText: 'Delete',
-                        danger: true
+                        danger: true,
+                        icon: 'trash'
                     }).then(confirmed => {
                         if (confirmed) deleteChat(chatId);
                     });
@@ -747,7 +748,8 @@ document.addEventListener('DOMContentLoaded', function() {
                         title: 'Delete Conversation',
                         message: 'Are you sure you want to delete this conversation?',
                         confirmText: 'Delete',
-                        danger: true
+                        danger: true,
+                        icon: 'trash'
                     }).then(confirmed => {
                         if (confirmed) deleteChat(chatId);
                     });
