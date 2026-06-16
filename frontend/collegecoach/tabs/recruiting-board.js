@@ -3147,8 +3147,10 @@ document.addEventListener('DOMContentLoaded', async function() {
             return;
         }
 
-        const exportBtn = document.getElementById('exportBoardBtn');
-        if (exportBtn) exportBtn.disabled = true;
+        // Two export buttons now exist (one in the Personal row, one in the
+        // Shared row); disable both while exporting so neither can re-fire.
+        const exportBtns = document.querySelectorAll('.btn-export-csv');
+        exportBtns.forEach(b => { b.disabled = true; });
         try {
             const data = await API.get(endpoint);
             const rows = (data && data.rows) || [];
@@ -3167,12 +3169,15 @@ document.addEventListener('DOMContentLoaded', async function() {
             console.error('Export failed:', err);
             toast('Export failed. Please try again.', 'error');
         } finally {
-            if (exportBtn) exportBtn.disabled = false;
+            exportBtns.forEach(b => { b.disabled = false; });
         }
     }
 
-    const exportBoardBtn = document.getElementById('exportBoardBtn');
-    if (exportBoardBtn) exportBoardBtn.addEventListener('click', exportCurrentBoard);
+    // Bind every export button (Personal row + Shared row) to the same handler;
+    // exportCurrentBoard() resolves which board to export from currentBoardMode.
+    document.querySelectorAll('.btn-export-csv').forEach(btn => {
+        btn.addEventListener('click', exportCurrentBoard);
+    });
 
     // ==================== Drag and Drop for Player Cards ====================
     let draggedElement = null;
