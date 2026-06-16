@@ -87,6 +87,55 @@ async function addSignedUrlsToPlayers(players) {
   }));
 }
 
+// Build enriched export rows for a board's players. The board's JSONB snapshot
+// only holds minimal fields (name, position, height, weight, final_* eval), so
+// we join each DR-account player (user_id present) to player_profiles for the
+// full recruiting-profile data. Questionnaire-only rows (pool_entry_id, no
+// user_id) are dropped — the export is DR-account players only. The snapshot
+// keeps the board-scoped eval fields (final_grade / final_color_tag /
+// final_notes) and board_position (the slot the coach filed them under); the
+// profile wins for biographical fields. Returns [] when nothing to export.
+async function buildExportRows(snapshotPlayers) {
+  if (!Array.isArray(snapshotPlayers)) return [];
+  const drPlayers = snapshotPlayers.filter(p => p && p.user_id);
+  if (drPlayers.length === 0) return [];
+
+  const userIds = [...new Set(drPlayers.map(p => p.user_id))];
+  const profRes = await pool.query(
+    `SELECT user_id, first_name, last_name, username, email, phone,
+            city, state, team_name, conference,
+            height, weight, position, graduation_year, number,
+            gpa, weighted_gpa, sat_score, act_score, class_rank,
+            has_ap_ib, ap_ib_count, intended_major,
+            star_rating, pff_grade, player_status, transfer,
+            college_division, eligibility,
+            offers, hudl_profile, twitter_handle, instagram_handle, highlight_video_url,
+            levels_open, preferred_regions, preferred_campus_setting,
+            needs_financial_aid, needs_scholarship
+       FROM player_profiles
+      WHERE user_id = ANY($1::uuid[])`,
+    [userIds]
+  );
+  const byId = new Map(profRes.rows.map(r => [r.user_id, r]));
+
+  return drPlayers
+    .map(p => {
+      const prof = byId.get(p.user_id);
+      if (!prof) return null; // profile deleted/missing — skip
+      return {
+        ...prof,
+        // board_position = the column the coach dragged them to (used for sort),
+        // distinct from prof.position which may be a slash-joined list.
+        board_position: p.position,
+        // final_* live ONLY in the snapshot, never in player_profiles.
+        final_grade: (p.final_grade !== undefined) ? p.final_grade : null,
+        final_color_tag: (p.final_color_tag !== undefined) ? p.final_color_tag : null,
+        final_notes: (p.final_notes !== undefined) ? p.final_notes : null,
+      };
+    })
+    .filter(Boolean);
+}
+
 // ==================== Named Personal Boards (multi-board) ====================
 // New API used by the redesigned Personal Boards UI. A coach can have up to
 // PERSONAL_BOARD_CAP named boards; each is keyed by its UUID, not by class year.
@@ -193,6 +242,21 @@ router.get('/personal/:boardId/players', authMiddleware, requireRole('coach'), v
   } catch (error) {
     logger.error('Error fetching personal board players:', error);
     res.status(500).json({ error: 'Failed to fetch players' });
+  }
+});
+
+// Export a personal board's players as enriched JSON rows (frontend builds the
+// CSV). Same ownership boundary as the players route above — getPlayers... is
+// scoped to req.userId, so a coach can only export their own board.
+router.get('/personal/:boardId/export', authMiddleware, requireRole('coach'), validateUUID('boardId'), async (req, res) => {
+  try {
+    const players = await RecruitingBoard.getPlayersFromPersonalBoardById(req.params.boardId, req.userId);
+    const rows = await buildExportRows(players);
+    res.set('Cache-Control', 'no-store, must-revalidate');
+    res.json({ rows });
+  } catch (error) {
+    logger.error('Error exporting personal board:', error);
+    res.status(500).json({ error: 'Failed to export board' });
   }
 });
 
@@ -1664,6 +1728,20 @@ router.get('/groups/:groupId/boards/:boardId/players', authMiddleware, requireRo
     res.json(players);
   } catch (error) {
     return handleGroupError(error, res, 'Failed to fetch players');
+  }
+});
+
+// Export a group board's players as enriched JSON rows (any member). Mirrors
+// the players route's access check (requireGroupAccess('any')) so a viewer can
+// export too. The boardId+groupId pair scopes the read to this group.
+router.get('/groups/:groupId/boards/:boardId/export', authMiddleware, requireRole('coach'), validateUUID('groupId', 'boardId'), requireGroupAccess('any'), async (req, res) => {
+  try {
+    const players = await RecruitingBoard.getPlayersFromGroupBoardById(req.params.boardId, req.params.groupId);
+    const rows = await buildExportRows(players);
+    res.set('Cache-Control', 'no-store, must-revalidate');
+    res.json({ rows });
+  } catch (error) {
+    return handleGroupError(error, res, 'Failed to export board');
   }
 });
 

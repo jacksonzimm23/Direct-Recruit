@@ -277,6 +277,16 @@ document.addEventListener('DOMContentLoaded', async function() {
                 // whoever rendered last wins — if we skip here we may leave
                 // the field showing the personal board's positions/players.
                 await loadSharedGroupBoard(currentSharedBoardId);
+            } else {
+                // Already initialized but the coach has zero groups (no active
+                // shared board). The football field DOM is shared with the
+                // personal-boards tab, so whatever it rendered last (e.g. a
+                // personal board) is still mounted. Re-assert the shared empty
+                // state — which wipes the field DOM and hides the field via the
+                // rb-shared-empty body class — so nothing shows under "No Shared
+                // Groups Yet". Mirrors the personal zero-boards path above.
+                currentBoardMode = 'group';
+                showSharedEmptyState();
             }
         }
         if (tabName === 'personal-boards') {
@@ -560,6 +570,8 @@ document.addEventListener('DOMContentLoaded', async function() {
                 document.querySelectorAll('.recruits-list').forEach(l => l.innerHTML = '');
                 document.getElementById('offenseField').innerHTML = '';
                 document.getElementById('defenseField').innerHTML = '';
+                const specsField = document.getElementById('specsField');
+                if (specsField) specsField.innerHTML = '';
             } else {
                 const next = personalBoards[0];
                 personalBoardSelect.value = next.id;
@@ -643,7 +655,22 @@ document.addEventListener('DOMContentLoaded', async function() {
         if (sgNoBoardsState) sgNoBoardsState.style.display = 'none';
         const divider = document.getElementById('sgSectionDivider');
         if (divider) divider.style.display = 'none';
+        // Mirror showPersonalEmptyState: clear the other tabs' field-state classes
+        // so only the shared-empty rule governs the (shared) football field while
+        // we're on this tab. Without this, a board rendered on another tab can
+        // remain visible under "No Shared Groups Yet".
+        document.body.classList.remove('rb-personal-empty', 'rb-shared-no-boards', 'rb-tab-pipeline');
         document.body.classList.add('rb-shared-empty');
+        // The football field DOM is shared with the personal-boards tab, so a
+        // personal board rendered just before switching here would otherwise
+        // linger in the field. Wipe it (same defensive cleanup the personal
+        // zero-boards path does in activateSubtab) so nothing leaks through.
+        const offenseField = document.getElementById('offenseField');
+        if (offenseField) offenseField.innerHTML = '';
+        const defenseField = document.getElementById('defenseField');
+        if (defenseField) defenseField.innerHTML = '';
+        const specsField = document.getElementById('specsField');
+        if (specsField) specsField.innerHTML = '';
         currentSharedGroupId = null;
         currentSharedBoardId = null;
         groupBoards = [];
@@ -744,6 +771,15 @@ document.addEventListener('DOMContentLoaded', async function() {
                     }
                 }
                 document.body.classList.add('rb-shared-no-boards');
+                // Wipe the shared field DOM so a board rendered just before
+                // (another group's board, or a personal board) can't linger
+                // under "No Boards Yet" if the hiding CSS ever fails to win.
+                const offenseField = document.getElementById('offenseField');
+                if (offenseField) offenseField.innerHTML = '';
+                const defenseField = document.getElementById('defenseField');
+                if (defenseField) defenseField.innerHTML = '';
+                const specsField = document.getElementById('specsField');
+                if (specsField) specsField.innerHTML = '';
                 currentBoardMode = 'group';
                 return;
             }
@@ -1689,6 +1725,8 @@ document.addEventListener('DOMContentLoaded', async function() {
                 document.body.classList.add('rb-shared-no-boards');
                 document.getElementById('offenseField').innerHTML = '';
                 document.getElementById('defenseField').innerHTML = '';
+                const specsField = document.getElementById('specsField');
+                if (specsField) specsField.innerHTML = '';
             } else {
                 sharedBoardSelect.value = groupBoards[0].id;
                 await loadSharedGroupBoard(groupBoards[0].id);
@@ -2920,6 +2958,221 @@ document.addEventListener('DOMContentLoaded', async function() {
             enterRemoveMode();
         }
     });
+
+    // ==================== CSV Export ====================
+    // Exports the currently-open board (personal OR group) to a CSV formatted
+    // for clean import into Teamworks (recruiting CRM). DR-account players only;
+    // the backend enriches each board snapshot from player_profiles. CSV build +
+    // download/share lives in shared/csv-export.js (window.buildCsv / saveCsv).
+
+    const US_STATE_ABBR = {
+        'alabama': 'AL', 'alaska': 'AK', 'arizona': 'AZ', 'arkansas': 'AR',
+        'california': 'CA', 'colorado': 'CO', 'connecticut': 'CT', 'delaware': 'DE',
+        'florida': 'FL', 'georgia': 'GA', 'hawaii': 'HI', 'idaho': 'ID',
+        'illinois': 'IL', 'indiana': 'IN', 'iowa': 'IA', 'kansas': 'KS',
+        'kentucky': 'KY', 'louisiana': 'LA', 'maine': 'ME', 'maryland': 'MD',
+        'massachusetts': 'MA', 'michigan': 'MI', 'minnesota': 'MN', 'mississippi': 'MS',
+        'missouri': 'MO', 'montana': 'MT', 'nebraska': 'NE', 'nevada': 'NV',
+        'new hampshire': 'NH', 'new jersey': 'NJ', 'new mexico': 'NM', 'new york': 'NY',
+        'north carolina': 'NC', 'north dakota': 'ND', 'ohio': 'OH', 'oklahoma': 'OK',
+        'oregon': 'OR', 'pennsylvania': 'PA', 'rhode island': 'RI', 'south carolina': 'SC',
+        'south dakota': 'SD', 'tennessee': 'TN', 'texas': 'TX', 'utah': 'UT',
+        'vermont': 'VT', 'virginia': 'VA', 'washington': 'WA', 'west virginia': 'WV',
+        'wisconsin': 'WI', 'wyoming': 'WY', 'district of columbia': 'DC'
+    };
+
+    function exNormalizeState(s) {
+        if (!s) return '';
+        const t = String(s).trim();
+        if (/^[A-Za-z]{2}$/.test(t)) return t.toUpperCase();
+        return US_STATE_ABBR[t.toLowerCase()] || t; // unknown full name: pass through
+    }
+
+    // Teamworks wants height as "6-2" (feet-inches). height is INT inches.
+    function exHeightDash(h) {
+        const n = parseInt(h, 10);
+        if (!Number.isFinite(n) || n <= 0) return '';
+        return Math.floor(n / 12) + '-' + (n % 12);
+    }
+
+    function exPhone(p) {
+        if (!p) return '';
+        const d = String(p).replace(/\D/g, '');
+        if (d.length !== 10) return String(p); // leave odd values as-is
+        return '(' + d.slice(0, 3) + ') ' + d.slice(3, 6) + '-' + d.slice(6);
+    }
+
+    // Positions stored as "CB/WR" or "CB,WR" → "CB; WR" (uppercased, semicolon).
+    function exPositions(pos) {
+        if (!pos) return '';
+        return String(pos).split(/[,/]/).map(s => s.trim().toUpperCase()).filter(Boolean).join('; ');
+    }
+
+    // Pipe-delimited offers "A|B|C" → "A; B; C".
+    function exOffersList(offers) {
+        if (!offers) return '';
+        return String(offers).split('|').map(s => s.trim()).filter(Boolean).join('; ');
+    }
+    function exOffersCount(offers) {
+        if (!offers) return '';
+        return String(offers).split('|').filter(s => s.trim()).length;
+    }
+
+    // TEXT[] (already an array from JSON) or null → "A; B".
+    function exArr(a) {
+        if (!Array.isArray(a) || a.length === 0) return '';
+        return a.map(x => String(x).trim()).filter(Boolean).join('; ');
+    }
+
+    function exYesNo(v) {
+        if (v === null || v === undefined || v === '') return '';
+        const t = String(v).toLowerCase();
+        if (t === 'yes' || t === 'true' || t === 'y') return 'Yes';
+        if (t === 'no' || t === 'false' || t === 'n') return 'No';
+        if (t === 'unsure') return 'Unsure';
+        return String(v);
+    }
+
+    function exPlayerType(r) {
+        return (r.transfer === 'y') ? 'Transfer' : 'High School';
+    }
+
+    function exColorTag(tag) {
+        if (!tag) return '';
+        return String(tag).split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+    }
+
+    function exVal(v) {
+        return (v === null || v === undefined) ? '' : v;
+    }
+
+    // Ordered column descriptors. Most-important identity/physical fields first;
+    // the coach's own eval (grade/color/notes) last. Trim/reorder here only.
+    const EXPORT_COLUMNS = [
+        { header: 'First Name',       format: r => exVal(r.first_name) },
+        { header: 'Last Name',        format: r => exVal(r.last_name) },
+        { header: 'Position(s)',      format: r => exPositions(r.position) },
+        { header: 'Height',           format: r => exHeightDash(r.height) },
+        { header: 'Weight',           format: r => exVal(r.weight) },
+        { header: 'High School',      format: r => exVal(r.team_name) },
+        { header: 'High School City', format: r => exVal(r.city) },
+        { header: 'State',            format: r => exNormalizeState(r.state) },
+        { header: 'Grad Year',        format: r => exVal(r.graduation_year) },
+        { header: 'Jersey #',         format: r => exVal(r.number) },
+        { header: 'Player Type',      format: r => exPlayerType(r) },
+        { header: 'College Division', format: r => exVal(r.college_division) },
+        { header: 'Eligibility',      format: r => exVal(r.eligibility) },
+        { header: 'Email',            format: r => exVal(r.email) },
+        { header: 'Phone',            format: r => exPhone(r.phone) },
+        { header: 'GPA',              format: r => exVal(r.gpa) },
+        { header: 'Weighted GPA',     format: r => exVal(r.weighted_gpa) },
+        { header: 'SAT',              format: r => exVal(r.sat_score) },
+        { header: 'ACT',              format: r => exVal(r.act_score) },
+        { header: 'Class Rank',       format: r => exVal(r.class_rank) },
+        { header: 'Intended Major',   format: r => exArr(r.intended_major) },
+        { header: 'Star Rating',      format: r => exVal(r.star_rating) },
+        { header: 'PFF Grade',        format: r => exVal(r.pff_grade) },
+        { header: 'Offers',           format: r => exOffersList(r.offers) },
+        { header: 'Offer Count',      format: r => exOffersCount(r.offers) },
+        { header: 'Hudl',             format: r => exVal(r.hudl_profile) },
+        { header: 'Twitter',          format: r => exVal(r.twitter_handle) },
+        { header: 'Instagram',        format: r => exVal(r.instagram_handle) },
+        { header: 'Highlight Video',  format: r => exVal(r.highlight_video_url) },
+        { header: 'Coach Grade',      format: r => exVal(r.final_grade) },
+        { header: 'Color Tag',        format: r => exColorTag(r.final_color_tag) },
+        { header: 'Coach Notes',      format: r => exVal(r.final_notes) }
+    ];
+
+    // Map a board position to a unit rank for sorting (offense → defense → specs
+    // → other), mirroring how the board is visually organized. Derived from the
+    // default position groups; custom positions fall into "other" (rank 3).
+    const OFFENSE_SET = new Set(['LT', 'LG', 'C', 'RG', 'RT', 'QB', 'RB', 'WR', 'TE', 'FB', 'OL', 'OT', 'OG', 'ATH']);
+    const DEFENSE_SET = new Set(['DE', 'DT', 'NG', 'NT', 'OLB', 'ILB', 'LB', 'MLB', 'EDGE', 'FS', 'SS', 'S', 'CB', 'DB']);
+    const SPECS_SET = new Set(['K', 'P', 'LS', 'KR', 'PR', 'ATH-ST']);
+    function exUnitRank(pos) {
+        const first = String(pos || '').split(/[,/]/)[0].trim().toUpperCase();
+        if (OFFENSE_SET.has(first)) return 0;
+        if (DEFENSE_SET.has(first)) return 1;
+        if (SPECS_SET.has(first)) return 2;
+        return 3;
+    }
+
+    function exSortRows(rows) {
+        return rows.slice().sort((a, b) => {
+            const ua = exUnitRank(a.board_position || a.position);
+            const ub = exUnitRank(b.board_position || b.position);
+            if (ua !== ub) return ua - ub;
+            // Higher final_grade first; nulls last.
+            const ga = (a.final_grade === null || a.final_grade === undefined) ? -Infinity : Number(a.final_grade);
+            const gb = (b.final_grade === null || b.final_grade === undefined) ? -Infinity : Number(b.final_grade);
+            if (ga !== gb) return gb - ga;
+            return String(a.last_name || '').localeCompare(String(b.last_name || ''));
+        });
+    }
+
+    function exSanitizeFilename(name) {
+        return String(name || 'board').replace(/[^a-z0-9_-]+/gi, '_').replace(/_+/g, '_').replace(/^_|_$/g, '') || 'board';
+    }
+
+    function exToday() {
+        const d = new Date();
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        const dd = String(d.getDate()).padStart(2, '0');
+        return d.getFullYear() + '-' + mm + '-' + dd;
+    }
+
+    async function exportCurrentBoard() {
+        const toast = (typeof window.showToast === 'function') ? window.showToast : showToast;
+
+        // Resolve endpoint + board display name from current board state.
+        let endpoint = null;
+        let boardName = 'board';
+        if (currentBoardMode === 'personal') {
+            if (!currentPersonalBoardId) { toast('No board selected', 'error'); return; }
+            endpoint = `/recruiting-board/personal/${currentPersonalBoardId}/export`;
+            const b = personalBoards.find(x => x.id === currentPersonalBoardId);
+            if (b && b.board_name) boardName = b.board_name;
+        } else if (currentBoardMode === 'group') {
+            if (!currentSharedGroupId || !currentSharedBoardId) { toast('No board selected', 'error'); return; }
+            endpoint = `/recruiting-board/groups/${currentSharedGroupId}/boards/${currentSharedBoardId}/export`;
+            const b = groupBoards.find(x => x.id === currentSharedBoardId);
+            if (b && b.board_name) boardName = b.board_name;
+        } else {
+            toast('No board selected', 'error');
+            return;
+        }
+
+        if (typeof window.buildCsv !== 'function' || typeof window.saveCsv !== 'function') {
+            toast('Export unavailable. Please refresh.', 'error');
+            return;
+        }
+
+        const exportBtn = document.getElementById('exportBoardBtn');
+        if (exportBtn) exportBtn.disabled = true;
+        try {
+            const data = await API.get(endpoint);
+            const rows = (data && data.rows) || [];
+            if (rows.length === 0) {
+                toast('No players to export', 'error');
+                return;
+            }
+            const sorted = exSortRows(rows);
+            const headers = EXPORT_COLUMNS.map(c => c.header);
+            const matrix = sorted.map(r => EXPORT_COLUMNS.map(c => c.format(r)));
+            const csv = window.buildCsv(headers, matrix);
+            const filename = exSanitizeFilename(boardName) + '_recruiting_export_' + exToday() + '.csv';
+            await window.saveCsv(filename, csv);
+            toast('Exported ' + rows.length + ' player' + (rows.length === 1 ? '' : 's'), 'success');
+        } catch (err) {
+            console.error('Export failed:', err);
+            toast('Export failed. Please try again.', 'error');
+        } finally {
+            if (exportBtn) exportBtn.disabled = false;
+        }
+    }
+
+    const exportBoardBtn = document.getElementById('exportBoardBtn');
+    if (exportBoardBtn) exportBoardBtn.addEventListener('click', exportCurrentBoard);
 
     // ==================== Drag and Drop for Player Cards ====================
     let draggedElement = null;

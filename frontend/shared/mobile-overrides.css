@@ -1727,9 +1727,24 @@ html {
     }
 
     .btn-add-position svg,
-    .btn-remove-position svg {
+    .btn-remove-position svg,
+    .btn-export-csv svg {
         width: 14px !important;
         height: 14px !important;
+    }
+
+    /* Export CSV: icon-only on mobile (hide the "Export" label) so all three
+       toolbar buttons fit a narrow row. Add/Remove keep their labels and split
+       the remaining width via flex:1; Export stays icon-sized (flex:0 0 auto),
+       so no flex-wrap is needed even at 320px. */
+    #exportBoardBtn .export-label {
+        display: none !important;
+    }
+
+    .btn-export-csv {
+        flex: 0 0 auto !important;
+        justify-content: center !important;
+        padding: 0.5rem 0.6rem !important;
     }
 
     /* Remove mode indicator */

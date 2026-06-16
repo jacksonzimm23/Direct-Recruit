@@ -94,6 +94,39 @@
     height: 16px;
 }
 
+/* Export CSV button — matches the add/remove button shape, green accent
+   (distinct from cerulean Add + red Remove; reads as "download/export"). */
+.btn-export-csv {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.6rem 1rem;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: 'Inter', sans-serif;
+    background: rgba(16, 185, 129, 0.12);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    color: #10b981;
+}
+
+.btn-export-csv:hover {
+    background: rgba(16, 185, 129, 0.22);
+    border-color: #10b981;
+}
+
+.btn-export-csv:disabled {
+    opacity: 0.6;
+    cursor: default;
+}
+
+.btn-export-csv svg {
+    width: 16px;
+    height: 16px;
+}
+
 /* Remove Mode Indicator */
 .remove-mode-indicator {
     display: flex;

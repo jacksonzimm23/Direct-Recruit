@@ -1,3 +1,13 @@
+// ============================================================
+// !!! BEFORE APP STORE SUBMISSION !!!
+// Set ios.webContentsDebuggingEnabled (below) back to FALSE.
+// It is currently TRUE so the WKWebView can be inspected from
+// Safari's Develop menu in TestFlight/release builds. Shipping
+// with it enabled leaves the app's WebView inspectable (and
+// scriptable) from any paired Mac. Flip it, then re-run
+// `npx cap sync ios` before the release build.
+// ============================================================
+
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
