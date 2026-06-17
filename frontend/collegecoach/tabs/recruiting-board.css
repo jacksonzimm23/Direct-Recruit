@@ -6313,6 +6313,15 @@ body.rb-shared-no-boards .recruiting-board-main .football-field-container {
     top: 1rem;
     right: 1rem;
 }
+/* On mobile/iOS the full-screen "How this works" info modal pushes its X up
+   behind the status-bar icons / notch, where it's unreachable. The "Got it"
+   footer button (and overlay tap) already close the modal, so hide the X on
+   small screens. Desktop keeps it. */
+@media (max-width: 768px) {
+    .recruiting-board-modal.info-modal .recruiting-board-modal-header .modal-close-btn {
+        display: none;
+    }
+}
 .recruiting-board-modal.info-modal .recruiting-board-modal-body {
     text-align: left;
     color: rgba(254, 252, 251, 0.85);

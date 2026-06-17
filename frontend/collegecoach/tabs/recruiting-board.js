@@ -100,11 +100,10 @@ document.addEventListener('DOMContentLoaded', async function() {
     };
     const RB_INFO_SEEN_KEY = (tab) => `rbInfoSeen_${tab}`;
 
-    // Track whether we've called lockBodyScroll for the info modal so close
-    // handlers don't double-unlock if invoked twice (overlay + Got it both
-    // firing in quick succession, etc.). ModalUtils itself ref-counts, but
-    // local guarding keeps the count balanced.
-    let _rbInfoModalScrollLocked = false;
+    // Body scroll-lock for the info modal (and every other modal on this page)
+    // is handled centrally by the .active-class observer set up below — see
+    // initModalScrollLockObserver(). Individual open/close functions only toggle
+    // the .active class; they never touch body scroll directly.
 
     function openInfoModal(tabName) {
         const copy = RB_INFO_COPY[tabName];
@@ -117,20 +116,12 @@ document.addEventListener('DOMContentLoaded', async function() {
         // Reset body scroll position so each open starts at the top of the copy.
         bodyEl.scrollTop = 0;
         modal.classList.add('active');
-        if (!_rbInfoModalScrollLocked && window.ModalUtils && typeof window.ModalUtils.lockBodyScroll === 'function') {
-            window.ModalUtils.lockBodyScroll();
-            _rbInfoModalScrollLocked = true;
-        }
         try { localStorage.setItem(RB_INFO_SEEN_KEY(tabName), '1'); } catch (_) { /* localStorage unavailable */ }
     }
 
     function closeInfoModal() {
         const modal = document.getElementById('rbInfoModal');
         if (modal) modal.classList.remove('active');
-        if (_rbInfoModalScrollLocked && window.ModalUtils && typeof window.ModalUtils.unlockBodyScroll === 'function') {
-            window.ModalUtils.unlockBodyScroll();
-            _rbInfoModalScrollLocked = false;
-        }
     }
 
     function maybeAutoOpenInfoModal(tabName) {
@@ -155,6 +146,48 @@ document.addEventListener('DOMContentLoaded', async function() {
     if (_rbInfoOverlay) _rbInfoOverlay.addEventListener('click', closeInfoModal);
     if (_rbInfoClose) _rbInfoClose.addEventListener('click', closeInfoModal);
     if (_rbInfoGotIt) _rbInfoGotIt.addEventListener('click', closeInfoModal);
+
+    // ==================== Central modal scroll-lock ====================
+    // Every modal on this page is a `.recruiting-board-modal` that is shown by
+    // toggling the `.active` class. Rather than lock/unlock the body at each of
+    // the ~18 open/close call sites (easy to miss one, and mismatched pairs can
+    // freeze the page), a single MutationObserver watches the `class` attribute
+    // of all those modals and derives the lock state from the DOM: if ANY modal
+    // is `.active`, lock the body; once NONE are, unlock it. Deriving from the
+    // live DOM is desync-proof and self-healing — it can't leak a lock or
+    // double-lock no matter how a modal is opened/closed. ModalUtils provides
+    // the iOS-safe (position:fixed) lock implementation.
+    (function initModalScrollLockObserver() {
+        const modals = document.querySelectorAll('.recruiting-board-modal');
+        if (!modals.length || !window.ModalUtils) return;
+        let bodyLocked = false;
+
+        function anyModalActive() {
+            for (const m of modals) {
+                if (m.classList.contains('active')) return true;
+            }
+            return false;
+        }
+
+        function syncBodyScrollLock() {
+            const shouldLock = anyModalActive();
+            if (shouldLock && !bodyLocked) {
+                window.ModalUtils.lockBodyScroll();
+                bodyLocked = true;
+            } else if (!shouldLock && bodyLocked) {
+                window.ModalUtils.unlockBodyScroll();
+                bodyLocked = false;
+            }
+        }
+
+        const observer = new MutationObserver(syncBodyScrollLock);
+        modals.forEach(m => {
+            observer.observe(m, { attributes: true, attributeFilter: ['class'] });
+        });
+        // Catch any modal that's already active at init (e.g. first-visit
+        // auto-open of the info modal fires before this runs).
+        syncBodyScrollLock();
+    })();
 
     // Track if board has unsaved changes
     let hasUnsavedChanges = false;
@@ -478,13 +511,11 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
         if (newPersonalBoardNameInput) newPersonalBoardNameInput.value = '';
         if (createPersonalBoardModal) createPersonalBoardModal.classList.add('active');
-        document.body.style.overflow = 'hidden';
         setTimeout(() => newPersonalBoardNameInput && newPersonalBoardNameInput.focus(), 100);
     }
 
     function closeCreatePersonalBoardModal() {
         if (createPersonalBoardModal) createPersonalBoardModal.classList.remove('active');
-        document.body.style.overflow = '';
     }
 
     if (createPersonalBoardBtn) createPersonalBoardBtn.addEventListener('click', openCreatePersonalBoardModal);
@@ -532,12 +563,10 @@ document.addEventListener('DOMContentLoaded', async function() {
         const nameEl = document.getElementById('deletePersonalBoardName');
         if (nameEl) nameEl.textContent = board.board_name;
         if (deletePersonalBoardModal) deletePersonalBoardModal.classList.add('active');
-        document.body.style.overflow = 'hidden';
     }
 
     function closeDeletePersonalBoardModal() {
         if (deletePersonalBoardModal) deletePersonalBoardModal.classList.remove('active');
-        document.body.style.overflow = '';
     }
 
     if (deletePersonalBoardBtn) deletePersonalBoardBtn.addEventListener('click', openDeletePersonalBoardModal);
@@ -955,13 +984,11 @@ document.addEventListener('DOMContentLoaded', async function() {
         if (searchInput) searchInput.value = '';
         if (results) results.innerHTML = '';
         if (createSharedGroupModal) createSharedGroupModal.classList.add('active');
-        document.body.style.overflow = 'hidden';
         setTimeout(() => newSharedGroupNameInput && newSharedGroupNameInput.focus(), 100);
     }
 
     function closeCreateSharedGroupModal() {
         if (createSharedGroupModal) createSharedGroupModal.classList.remove('active');
-        document.body.style.overflow = '';
         createGroupStagedMembers = [];
     }
 
@@ -1233,12 +1260,10 @@ document.addEventListener('DOMContentLoaded', async function() {
                 : 'Are you sure you want to leave this group? You will no longer have access to its boards.';
         }
         if (leaveSharedGroupModal) leaveSharedGroupModal.classList.add('active');
-        document.body.style.overflow = 'hidden';
     }
 
     function closeLeaveSharedGroupModal() {
         if (leaveSharedGroupModal) leaveSharedGroupModal.classList.remove('active');
-        document.body.style.overflow = '';
     }
 
     if (leaveSharedGroupBtn) leaveSharedGroupBtn.addEventListener('click', openLeaveSharedGroupModal);
@@ -1282,12 +1307,10 @@ document.addEventListener('DOMContentLoaded', async function() {
         const nameEl = document.getElementById('deleteSharedGroupName');
         if (nameEl) nameEl.textContent = currentSharedGroupName || '';
         if (deleteSharedGroupModal) deleteSharedGroupModal.classList.add('active');
-        document.body.style.overflow = 'hidden';
     }
 
     function closeDeleteSharedGroupModal() {
         if (deleteSharedGroupModal) deleteSharedGroupModal.classList.remove('active');
-        document.body.style.overflow = '';
     }
 
     document.getElementById('deleteSharedGroupModalOverlay')?.addEventListener('click', closeDeleteSharedGroupModal);
@@ -1335,13 +1358,11 @@ document.addEventListener('DOMContentLoaded', async function() {
         // instantly — loadSharedGroupInfo() refreshes from the server below.
         renderGroupNameDisplay();
         if (sharedGroupInfoModal) sharedGroupInfoModal.classList.add('active');
-        document.body.style.overflow = 'hidden';
         await loadSharedGroupInfo();
     }
 
     function closeSharedGroupInfoModal() {
         if (sharedGroupInfoModal) sharedGroupInfoModal.classList.remove('active');
-        document.body.style.overflow = '';
         infoStagedMembers = [];
     }
 
@@ -1561,14 +1582,12 @@ document.addEventListener('DOMContentLoaded', async function() {
         const opt = sel.options[sel.selectedIndex];
         document.getElementById('sgTransferConfirmName').textContent = opt.textContent;
         document.getElementById('sgTransferConfirmModal').classList.add('active');
-        document.body.style.overflow = 'hidden';
         document.getElementById('sgTransferConfirmSubmitBtn').dataset.targetUid = sel.value;
     });
 
     function closeTransferConfirmModal() {
         const m = document.getElementById('sgTransferConfirmModal');
         if (m) m.classList.remove('active');
-        document.body.style.overflow = '';
     }
     document.getElementById('sgTransferConfirmModalOverlay')?.addEventListener('click', closeTransferConfirmModal);
     document.getElementById('sgTransferConfirmModalClose')?.addEventListener('click', closeTransferConfirmModal);
@@ -1602,12 +1621,10 @@ document.addEventListener('DOMContentLoaded', async function() {
         _sgRemoveMember = { uid, name };
         document.getElementById('sgRemoveMemberName').textContent = name;
         document.getElementById('sgRemoveMemberModal').classList.add('active');
-        document.body.style.overflow = 'hidden';
     }
     function closeSgRemoveMemberModal() {
         const m = document.getElementById('sgRemoveMemberModal');
         if (m) m.classList.remove('active');
-        document.body.style.overflow = '';
         _sgRemoveMember = null;
     }
     document.getElementById('sgRemoveMemberModalOverlay')?.addEventListener('click', closeSgRemoveMemberModal);
@@ -1641,13 +1658,11 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
         if (newSharedBoardNameInput) newSharedBoardNameInput.value = '';
         if (createSharedBoardModal) createSharedBoardModal.classList.add('active');
-        document.body.style.overflow = 'hidden';
         setTimeout(() => newSharedBoardNameInput && newSharedBoardNameInput.focus(), 100);
     }
 
     function closeCreateSharedBoardModal() {
         if (createSharedBoardModal) createSharedBoardModal.classList.remove('active');
-        document.body.style.overflow = '';
     }
 
     if (createSharedBoardBtn) createSharedBoardBtn.addEventListener('click', openCreateSharedBoardModal);
@@ -1690,12 +1705,10 @@ document.addEventListener('DOMContentLoaded', async function() {
         const board = groupBoards.find(b => b.id === currentSharedBoardId);
         document.getElementById('deleteSharedBoardName').textContent = board ? board.board_name : '';
         if (deleteSharedBoardModal) deleteSharedBoardModal.classList.add('active');
-        document.body.style.overflow = 'hidden';
     }
 
     function closeDeleteSharedBoardModal() {
         if (deleteSharedBoardModal) deleteSharedBoardModal.classList.remove('active');
-        document.body.style.overflow = '';
     }
 
     if (deleteSharedBoardBtn) deleteSharedBoardBtn.addEventListener('click', openDeleteSharedBoardModal);
@@ -2129,7 +2142,6 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     function closeRemoveModal() {
         removeModal.classList.remove('active');
-        document.body.style.overflow = '';
         cardToRemove = null;
     }
 
@@ -2191,7 +2203,6 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
 
         removeModal.classList.add('active');
-        document.body.style.overflow = 'hidden';
     }
 
     // ==================== Move Player Modal ====================
@@ -2215,7 +2226,6 @@ document.addEventListener('DOMContentLoaded', async function() {
         if (moveModal) {
             moveModal.classList.remove('active');
             moveModal.classList.remove('copy-mode');
-            document.body.style.overflow = '';
             playerToMove = null;
             cardToMove = null;
             if (copyInsteadOfMoveCheckbox) copyInsteadOfMoveCheckbox.checked = false;
@@ -2499,7 +2509,6 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
 
         moveModal.classList.add('active');
-        document.body.style.overflow = 'hidden';
     }
 
 
