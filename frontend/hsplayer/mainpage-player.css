@@ -326,18 +326,36 @@
 
 .user-info {
     flex: 1;
+    min-width: 0;
 }
 
 .user-name {
     font-size: 0.95rem;
     font-weight: 700;
     color: var(--white);
+    display: flex;
+    align-items: center;
+    min-width: 0;
+    line-height: 1.3;
+}
+
+.user-name-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+}
+
+.user-name .school-logo-icon {
+    flex-shrink: 0;
 }
 
 .user-role {
     font-size: 0.8rem;
     color: var(--cerulean);
     font-weight: 700;
+    line-height: 1.3;
+    overflow-wrap: break-word;
 }
 
 .more-icon {

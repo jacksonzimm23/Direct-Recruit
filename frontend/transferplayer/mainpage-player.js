@@ -305,7 +305,7 @@ async function updateSidebarFooter() {
             const userName = document.querySelector('.sidebar-footer .user-name');
             if (userName) {
                 const _mpLogo = typeof getSchoolLogoHTML === 'function' ? getSchoolLogoHTML(profile.team_name, _updAssets, 16) : '';
-                userName.innerHTML = `${profile.first_name} ${profile.last_name}${_mpLogo}`;
+                userName.innerHTML = `<span class="user-name-text">${profile.first_name} ${profile.last_name}</span>${_mpLogo}`;
             }
 
             // Update role/info subtitle based on logged-in user's actual profile type

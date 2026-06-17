@@ -16,7 +16,7 @@
     <link rel="stylesheet" href="my-profile.css">
     <link rel="stylesheet" href="../../shared/fit-info-modal.css">
     <link rel="stylesheet" href="../../shared/image-cropper.css">
-    <link rel="stylesheet" href="../../shared/mobile-overrides.css?v=2">
+    <link rel="stylesheet" href="../../shared/mobile-overrides.css?v=3">
     <link rel="stylesheet" href="../../shared/ios-app-overrides.css?v=1">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -260,13 +260,13 @@
 
             <!-- Tab Content -->
             <div class="profile-tab-content">
-                <!-- Recruiting Profile Tab (AI Fit-Matching) — first tab; shown to coaches + owner -->
+                <!-- Recruiting Profile Tab (AI Fit-Matching) â€” first tab; shown to coaches + owner -->
                 <div class="tab-pane" id="recruiting-profile">
                     <!-- Coach-only match banner (placeholder score in Plan 6; real score in Plan 7) -->
                     <div class="recruiting-match-banner" id="recruitingMatchBanner" style="display: none;">
                         <div class="rmb-label">AI Match</div>
-                        <div class="rmb-score" id="rmbScore">—</div>
-                        <div class="rmb-sub" id="rmbSub">Match score coming soon — calculated from your program profile</div>
+                        <div class="rmb-score" id="rmbScore">â€”</div>
+                        <div class="rmb-sub" id="rmbSub">Match score coming soon â€” calculated from your program profile</div>
                     </div>
                     <!-- Owner-only disclaimer -->
                     <p class="recruiting-disclaimer" id="recruitingDisclaimer" style="display: none;">Only college coaches can see this section. This is how your recruiting profile appears to them.</p>
@@ -293,12 +293,12 @@
                         </div>
                         <div class="info-card">
                             <div class="info-grid">
-                                <div class="info-item"><div class="info-label">Unweighted GPA</div><div class="info-value" id="rpUnweightedGpa">—</div></div>
-                                <div class="info-item"><div class="info-label">Weighted GPA</div><div class="info-value" id="rpWeightedGpa">—</div></div>
-                                <div class="info-item"><div class="info-label">SAT Score</div><div class="info-value" id="rpSat">—</div></div>
-                                <div class="info-item"><div class="info-label">ACT Score</div><div class="info-value" id="rpAct">—</div></div>
-                                <div class="info-item"><div class="info-label">AP / IB / Honors</div><div class="info-value" id="rpApIb">—</div></div>
-                                <div class="info-item"><div class="info-label">Class Rank</div><div class="info-value" id="rpClassRank">—</div></div>
+                                <div class="info-item"><div class="info-label">Unweighted GPA</div><div class="info-value" id="rpUnweightedGpa">â€”</div></div>
+                                <div class="info-item"><div class="info-label">Weighted GPA</div><div class="info-value" id="rpWeightedGpa">â€”</div></div>
+                                <div class="info-item"><div class="info-label">SAT Score</div><div class="info-value" id="rpSat">â€”</div></div>
+                                <div class="info-item"><div class="info-label">ACT Score</div><div class="info-value" id="rpAct">â€”</div></div>
+                                <div class="info-item"><div class="info-label">AP / IB / Honors</div><div class="info-value" id="rpApIb">â€”</div></div>
+                                <div class="info-item"><div class="info-label">Class Rank</div><div class="info-value" id="rpClassRank">â€”</div></div>
                             </div>
                         </div>
                     </div>
@@ -313,8 +313,8 @@
                             </button>
                         </div>
                         <div class="info-card">
-                            <div class="info-item-block"><div class="info-label">Intended Major(s)</div><div class="recruiting-tags" id="rpMajor"><span class="info-value">—</span></div></div>
-                            <div class="info-item-block"><div class="info-label">What I'm looking for in a program</div><div class="info-value info-freetext" id="rpLookingFor">—</div></div>
+                            <div class="info-item-block"><div class="info-label">Intended Major(s)</div><div class="recruiting-tags" id="rpMajor"><span class="info-value">â€”</span></div></div>
+                            <div class="info-item-block"><div class="info-label">What I'm looking for in a program</div><div class="info-value info-freetext" id="rpLookingFor">â€”</div></div>
                         </div>
                     </div>
 
@@ -329,10 +329,10 @@
                         </div>
                         <div class="info-card">
                             <div class="info-grid">
-                                <div class="info-item"><div class="info-label">Needs financial aid</div><div class="info-value" id="rpNeedsAid">—</div></div>
-                                <div class="info-item"><div class="info-label">Needs athletic scholarship</div><div class="info-value" id="rpNeedsScholarship">—</div></div>
-                                <div class="info-item"><div class="info-label">Pell-eligible / first-gen</div><div class="info-value" id="rpPellFirstGen">—</div></div>
-                                <div class="info-item"><div class="info-label">Home ZIP Code</div><div class="info-value" id="rpHomeZip">—</div></div>
+                                <div class="info-item"><div class="info-label">Needs financial aid</div><div class="info-value" id="rpNeedsAid">â€”</div></div>
+                                <div class="info-item"><div class="info-label">Needs athletic scholarship</div><div class="info-value" id="rpNeedsScholarship">â€”</div></div>
+                                <div class="info-item"><div class="info-label">Pell-eligible / first-gen</div><div class="info-value" id="rpPellFirstGen">â€”</div></div>
+                                <div class="info-item"><div class="info-label">Home ZIP Code</div><div class="info-value" id="rpHomeZip">â€”</div></div>
                             </div>
                         </div>
                     </div>
@@ -347,9 +347,9 @@
                             </button>
                         </div>
                         <div class="info-card">
-                            <div class="info-item-block"><div class="info-label">Levels open to playing</div><div class="recruiting-tags" id="rpLevelsOpen"><span class="info-value">—</span></div></div>
-                            <div class="info-item-block"><div class="info-label">Preferred region(s)</div><div class="recruiting-tags" id="rpPreferredRegions"><span class="info-value">—</span></div></div>
-                            <div class="info-item-block"><div class="info-label">Preferred campus setting</div><div class="info-value" id="rpCampusSetting">—</div></div>
+                            <div class="info-item-block"><div class="info-label">Levels open to playing</div><div class="recruiting-tags" id="rpLevelsOpen"><span class="info-value">â€”</span></div></div>
+                            <div class="info-item-block"><div class="info-label">Preferred region(s)</div><div class="recruiting-tags" id="rpPreferredRegions"><span class="info-value">â€”</span></div></div>
+                            <div class="info-item-block"><div class="info-label">Preferred campus setting</div><div class="info-value" id="rpCampusSetting">â€”</div></div>
                         </div>
                     </div>
 
@@ -364,14 +364,14 @@
                         </div>
                         <div class="info-card">
                             <div class="info-grid">
-                                <div class="info-item"><div class="info-label">Early playing time</div><div class="info-value" id="rpImpPlayingTime">—</div></div>
-                                <div class="info-item"><div class="info-label">Staying close to home</div><div class="info-value" id="rpImpCloseToHome">—</div></div>
-                                <div class="info-item"><div class="info-label">Academics vs. football</div><div class="info-value" id="rpImpAcademics">—</div></div>
-                                <div class="info-item"><div class="info-label">Level of competition</div><div class="info-value" id="rpImpCompetition">—</div></div>
+                                <div class="info-item"><div class="info-label">Early playing time</div><div class="info-value" id="rpImpPlayingTime">â€”</div></div>
+                                <div class="info-item"><div class="info-label">Staying close to home</div><div class="info-value" id="rpImpCloseToHome">â€”</div></div>
+                                <div class="info-item"><div class="info-label">Academics vs. football</div><div class="info-value" id="rpImpAcademics">â€”</div></div>
+                                <div class="info-item"><div class="info-label">Level of competition</div><div class="info-value" id="rpImpCompetition">â€”</div></div>
                             </div>
                         </div>
 
-                        <!-- Athletics (other sports + track times) — absorbed from the old Athletics tab -->
+                        <!-- Athletics (other sports + track times) â€” absorbed from the old Athletics tab -->
                         <div class="recruiting-subtab-header" style="margin-top:1.5rem;">
                             <h2 class="section-title">Athletics</h2>
                             <button class="btn-edit-recruiting-section" id="editRpAthleticsBtn">
@@ -770,7 +770,7 @@
                         </div>
                     </div>
 
-                    <!-- HS Player fields (no toggle — use Settings to switch profile type) -->
+                    <!-- HS Player fields (no toggle â€” use Settings to switch profile type) -->
 
                     <!-- High School Fields -->
                         <div class="form-group">

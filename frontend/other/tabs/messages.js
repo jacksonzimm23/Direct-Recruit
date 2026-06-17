@@ -67,7 +67,7 @@ async function loadCurrentUser() {
             const userRole = document.querySelector('.sidebar-footer .user-role');
 
             if (userName && response.profile) {
-                userName.textContent = `${response.profile.first_name} ${response.profile.last_name}`;
+                userName.innerHTML = `<span class="user-name-text">${response.profile.first_name} ${response.profile.last_name}</span>`;
             }
             if (userRole && response.profile) {
                 const profile = response.profile;

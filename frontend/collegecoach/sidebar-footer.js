@@ -50,7 +50,7 @@ async function populateSidebarFooter() {
             const _sbAssets = window.location.pathname.includes('/tabs/') ? '../../assets' : '../assets';
             if (typeof ensureSchoolLogosLoaded === 'function') await ensureSchoolLogosLoaded(_sbAssets);
             const _sbLogo = typeof getSchoolLogoHTML === 'function' ? getSchoolLogoHTML(profile.team_name, _sbAssets, 16) : '';
-            userName.innerHTML = `${profile.first_name} ${profile.last_name}${_sbLogo}`;
+            userName.innerHTML = `<span class="user-name-text">${profile.first_name} ${profile.last_name}</span>${_sbLogo}`;
         }
 
         // Update role/info subtitle

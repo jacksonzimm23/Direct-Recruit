@@ -112,7 +112,7 @@ async function updateSidebarFooterFromAPI() {
             if (userName) {
                 if (typeof ensureSchoolLogosLoaded === 'function') await ensureSchoolLogosLoaded('../../assets');
                     const _prLogo = typeof getSchoolLogoHTML === 'function' ? getSchoolLogoHTML(profile.team_name, '../../assets', 16) : '';
-                userName.innerHTML = `${profile.first_name} ${profile.last_name}${_prLogo}`;
+                userName.innerHTML = `<span class="user-name-text">${profile.first_name} ${profile.last_name}</span>${_prLogo}`;
             }
 
             // Update role/info line for transfer player: position • height • weight • YOE
@@ -586,7 +586,7 @@ function updateNavbarForLoggedInUser(user, profile) {
         const userName = document.querySelector('.sidebar-footer .user-name');
         if (userName) {
             const _prLogo = typeof getSchoolLogoHTML === 'function' ? getSchoolLogoHTML(profile.team_name, '../../assets', 16) : '';
-            userName.innerHTML = `${profile.first_name} ${profile.last_name}${_prLogo}`;
+            userName.innerHTML = `<span class="user-name-text">${profile.first_name} ${profile.last_name}</span>${_prLogo}`;
         }
 
         // Update role/info based on logged-in user's specific profile type (userFolder)

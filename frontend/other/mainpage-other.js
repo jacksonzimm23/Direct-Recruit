@@ -335,7 +335,7 @@ async function updateSidebarFooter() {
             // Update name
             const userName = document.querySelector('.sidebar-footer .user-name');
             if (userName) {
-                userName.textContent = `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || 'Other User';
+                userName.innerHTML = `<span class="user-name-text">${(`${profile.first_name || ''} ${profile.last_name || ''}`.trim() || 'Other User')}</span>`;
             }
 
             // Update role/info subtitle based on logged-in user's actual profile type

@@ -74,7 +74,7 @@ async function loadCurrentUser() {
             if (userName && response.profile) {
                 if (typeof ensureSchoolLogosLoaded === 'function') await ensureSchoolLogosLoaded('../../assets');
                 const _msgLogo = typeof getSchoolLogoHTML === 'function' ? getSchoolLogoHTML(response.profile.team_name, '../../assets', 16) : '';
-                userName.innerHTML = `${response.profile.first_name} ${response.profile.last_name}${_msgLogo}`;
+                userName.innerHTML = `<span class="user-name-text">${response.profile.first_name} ${response.profile.last_name}</span>${_msgLogo}`;
             }
             if (userRole && response.profile) {
                 const profile = response.profile;

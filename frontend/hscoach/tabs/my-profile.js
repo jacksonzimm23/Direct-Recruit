@@ -73,7 +73,7 @@ async function updateSidebarFooterFromAPI() {
                 // Update name
                 const userName = document.querySelector('.sidebar-footer .user-name');
                 if (userName) {
-                    userName.textContent = `${profile.first_name} ${profile.last_name}`;
+                    userName.innerHTML = `<span class="user-name-text">${profile.first_name} ${profile.last_name}</span>`;
                 }
 
                 // Update role/info line for transfer player: position • height • weight • YOE
@@ -536,7 +536,7 @@ function updateNavbarForLoggedInUser(user, profile) {
         // Update name
         const userName = document.querySelector('.sidebar-footer .user-name');
         if (userName) {
-            userName.textContent = `${profile.first_name} ${profile.last_name}`;
+            userName.innerHTML = `<span class="user-name-text">${profile.first_name} ${profile.last_name}</span>`;
         }
 
         // Update role/info based on logged-in user's specific profile type (userFolder)

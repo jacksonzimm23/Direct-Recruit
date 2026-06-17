@@ -47,7 +47,7 @@ async function populateSidebarFooter() {
         // Update name
         const userName = document.querySelector('.sidebar-footer .user-name');
         if (userName) {
-            userName.textContent = `${profile.first_name} ${profile.last_name}`;
+            userName.innerHTML = `<span class="user-name-text">${profile.first_name} ${profile.last_name}</span>`;
         }
 
         // Update role/info subtitle

@@ -402,7 +402,7 @@ function updateNavbarForLoggedInUser(user, profile) {
 
         const userName = document.querySelector('.sidebar-footer .user-name');
         if (userName) {
-            userName.textContent = `${profile.first_name} ${profile.last_name}`;
+            userName.innerHTML = `<span class="user-name-text">${profile.first_name} ${profile.last_name}</span>`;
         }
 
         const userRole = document.querySelector('.sidebar-footer .user-role');
@@ -1258,7 +1258,8 @@ function updateSidebarFooter() {
     // Update name in sidebar
     const userName = document.querySelector('.sidebar-footer .user-name');
     if (userName) {
-        userName.textContent = fullName;
+        userName.innerHTML = `<span class="user-name-text"></span>`;
+        userName.firstChild.textContent = fullName;
     }
 
     // Update subheader in sidebar
