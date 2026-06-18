@@ -544,18 +544,18 @@
 
                 <!-- Recruiting Fit Section -->
                 <div class="form-section">
-                    <h2 class="section-title">Recruiting Fit</h2>
-                    <p class="form-hint" style="margin-bottom: 1rem;">Optional — helps coaches find players who truly fit their program. The more you share, the better your matches.</p>
+                    <h2 class="section-title">Recruiting Fit (Looking Back)</h2>
+                    <p class="form-hint" style="margin-bottom: 1rem;">Optional — tell us what mattered to you when you were recruited to your current program. This powers your AI Match insights. You can always fill it in later.</p>
 
                     <div class="form-group">
-                        <label for="homeZip">Home ZIP Code <span class="optional">(Optional)</span></label>
+                        <label for="homeZip">Hometown ZIP Code <span class="optional">(Optional)</span></label>
                         <input type="text" id="homeZip" name="homeZip" inputmode="numeric" pattern="[0-9]{5}" maxlength="5" placeholder="e.g., 80401">
-                        <small class="form-hint">Helps coaches gauge distance and regional fit</small>
+                        <small class="form-hint">Where you grew up — used to gauge distance and regional fit</small>
                     </div>
 
                     <div class="form-row">
                         <div class="form-group">
-                            <label>Will you need financial aid? <span class="optional">(Optional)</span></label>
+                            <label>Did financial aid factor into your decision? <span class="optional">(Optional)</span></label>
                             <div class="radio-row">
                                 <label class="radio-label"><input type="radio" name="needs_financial_aid" value="yes"><span>Yes</span></label>
                                 <label class="radio-label"><input type="radio" name="needs_financial_aid" value="no"><span>No</span></label>
@@ -563,7 +563,7 @@
                             </div>
                         </div>
                         <div class="form-group">
-                            <label>Do you need athletic scholarship money? <span class="optional">(Optional)</span></label>
+                            <label>Did athletic scholarship money factor into your decision? <span class="optional">(Optional)</span></label>
                             <div class="radio-row">
                                 <label class="radio-label"><input type="radio" name="needs_scholarship" value="yes"><span>Yes</span></label>
                                 <label class="radio-label"><input type="radio" name="needs_scholarship" value="no"><span>No</span></label>
@@ -581,21 +581,21 @@
                     </div>
 
                     <div class="form-group">
-                        <label>Levels open to playing <span class="optional">(Optional)</span></label>
-                        <p class="form-hint" style="margin-bottom: 0.75rem;">Which division levels would you consider?</p>
+                        <label>Levels you considered <span class="optional">(Optional)</span></label>
+                        <p class="form-hint" style="margin-bottom: 0.75rem;">Which division levels were you open to when choosing a program?</p>
                         <div class="multi-select-container" id="levelsContainer"></div>
                         <div class="selected-items" id="selectedLevels"></div>
                     </div>
 
                     <div class="form-group">
-                        <label>Preferred region(s) <span class="optional">(Optional)</span></label>
-                        <p class="form-hint" style="margin-bottom: 0.75rem;">Where would you like to play?</p>
+                        <label>Region(s) you preferred <span class="optional">(Optional)</span></label>
+                        <p class="form-hint" style="margin-bottom: 0.75rem;">Where did you want to play?</p>
                         <div class="multi-select-container" id="regionsContainer"></div>
                         <div class="selected-items" id="selectedRegions"></div>
                     </div>
 
                     <div class="form-group">
-                        <label for="campusSetting">Preferred campus setting <span class="optional">(Optional)</span></label>
+                        <label for="campusSetting">Campus setting you preferred <span class="optional">(Optional)</span></label>
                         <select id="campusSetting" name="campusSetting">
                             <option value="">No preference</option>
                             <option value="urban">Urban</option>
@@ -606,7 +606,7 @@
                     </div>
 
                     <div class="form-group">
-                        <label>How important is each of these to you? <span class="optional">(Optional)</span></label>
+                        <label>How important was each of these when you were recruited? <span class="optional">(Optional)</span></label>
                         <p class="form-hint" style="margin-bottom: 1rem;">Slide from Not important (1) to Very important (5)</p>
 
                         <div class="fit-slider-group">
@@ -647,8 +647,8 @@
                     </div>
 
                     <div class="form-group">
-                        <label for="lookingFor">What I'm looking for in a program <span class="optional">(Optional)</span></label>
-                        <textarea id="lookingFor" name="lookingFor" maxlength="280" rows="3" placeholder="In a sentence or two, describe your ideal program (playing style, culture, goals)..."></textarea>
+                        <label for="lookingFor">What I was looking for in a program <span class="optional">(Optional)</span></label>
+                        <textarea id="lookingFor" name="lookingFor" maxlength="280" rows="3" placeholder="In a sentence or two, describe what you valued when choosing your program (playing style, culture, goals)..."></textarea>
                         <small class="form-hint"><span id="lookingForCount">0</span>/280</small>
                     </div>
                 </div>

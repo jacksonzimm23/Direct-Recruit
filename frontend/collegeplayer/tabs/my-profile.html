@@ -318,7 +318,7 @@
                         </div>
                         <div class="info-card">
                             <div class="info-item-block"><div class="info-label">Current Major</div><div class="recruiting-tags" id="rpMajor"><span class="info-value">â€”</span></div></div>
-                            <div class="info-item-block"><div class="info-label">What I'm looking for in a program</div><div class="info-value info-freetext" id="rpLookingFor">â€”</div></div>
+                            <div class="info-item-block"><div class="info-label">What I was looking for in a program</div><div class="info-value info-freetext" id="rpLookingFor">â€”</div></div>
                         </div>
                     </div>
 
@@ -333,10 +333,10 @@
                         </div>
                         <div class="info-card">
                             <div class="info-grid">
-                                <div class="info-item"><div class="info-label">Needs financial aid</div><div class="info-value" id="rpNeedsAid">â€”</div></div>
-                                <div class="info-item"><div class="info-label">Needs athletic scholarship</div><div class="info-value" id="rpNeedsScholarship">â€”</div></div>
+                                <div class="info-item"><div class="info-label">Financial aid factored in</div><div class="info-value" id="rpNeedsAid">â€”</div></div>
+                                <div class="info-item"><div class="info-label">Scholarship money factored in</div><div class="info-value" id="rpNeedsScholarship">â€”</div></div>
                                 <div class="info-item"><div class="info-label">Pell-eligible / first-gen</div><div class="info-value" id="rpPellFirstGen">â€”</div></div>
-                                <div class="info-item"><div class="info-label">Home ZIP Code</div><div class="info-value" id="rpHomeZip">â€”</div></div>
+                                <div class="info-item"><div class="info-label">Hometown ZIP Code</div><div class="info-value" id="rpHomeZip">â€”</div></div>
                             </div>
                         </div>
                     </div>
@@ -351,9 +351,9 @@
                             </button>
                         </div>
                         <div class="info-card">
-                            <div class="info-item-block"><div class="info-label">Levels open to playing</div><div class="recruiting-tags" id="rpLevelsOpen"><span class="info-value">â€”</span></div></div>
-                            <div class="info-item-block"><div class="info-label">Preferred region(s)</div><div class="recruiting-tags" id="rpPreferredRegions"><span class="info-value">â€”</span></div></div>
-                            <div class="info-item-block"><div class="info-label">Preferred campus setting</div><div class="info-value" id="rpCampusSetting">â€”</div></div>
+                            <div class="info-item-block"><div class="info-label">Levels you considered</div><div class="recruiting-tags" id="rpLevelsOpen"><span class="info-value">â€”</span></div></div>
+                            <div class="info-item-block"><div class="info-label">Region(s) you preferred</div><div class="recruiting-tags" id="rpPreferredRegions"><span class="info-value">â€”</span></div></div>
+                            <div class="info-item-block"><div class="info-label">Campus setting you preferred</div><div class="info-value" id="rpCampusSetting">â€”</div></div>
                         </div>
                     </div>
 
@@ -630,8 +630,8 @@
                         <div class="selected-items" id="editRpMajorChips"></div>
                     </div>
                     <div class="form-group">
-                        <label for="editRpLookingFor">What I'm looking for in a program</label>
-                        <textarea id="editRpLookingFor" maxlength="280" rows="3" placeholder="In a sentence or two, describe your ideal program (playing style, culture, goals)..."></textarea>
+                        <label for="editRpLookingFor">What I was looking for in a program</label>
+                        <textarea id="editRpLookingFor" maxlength="280" rows="3" placeholder="In a sentence or two, describe what you valued when choosing your program (playing style, culture, goals)..."></textarea>
                         <small class="form-hint"><span id="editRpLookingForCount">0</span>/280</small>
                     </div>
                 </form>
@@ -653,10 +653,10 @@
             </div>
             <div class="edit-recruiting-modal-body">
                 <form id="editRpFinancialForm">
-                    <div class="form-group"><label>Will you need financial aid?</label><div class="radio-row"><label class="radio-label"><input type="radio" name="editRpNeedsAid" value="yes"><span>Yes</span></label><label class="radio-label"><input type="radio" name="editRpNeedsAid" value="no"><span>No</span></label><label class="radio-label"><input type="radio" name="editRpNeedsAid" value="unsure"><span>Unsure</span></label></div></div>
-                    <div class="form-group"><label>Do you need athletic scholarship money?</label><div class="radio-row"><label class="radio-label"><input type="radio" name="editRpNeedsScholarship" value="yes"><span>Yes</span></label><label class="radio-label"><input type="radio" name="editRpNeedsScholarship" value="no"><span>No</span></label><label class="radio-label"><input type="radio" name="editRpNeedsScholarship" value="unsure"><span>Unsure</span></label></div></div>
+                    <div class="form-group"><label>Did financial aid factor into your decision?</label><div class="radio-row"><label class="radio-label"><input type="radio" name="editRpNeedsAid" value="yes"><span>Yes</span></label><label class="radio-label"><input type="radio" name="editRpNeedsAid" value="no"><span>No</span></label><label class="radio-label"><input type="radio" name="editRpNeedsAid" value="unsure"><span>Unsure</span></label></div></div>
+                    <div class="form-group"><label>Did athletic scholarship money factor into your decision?</label><div class="radio-row"><label class="radio-label"><input type="radio" name="editRpNeedsScholarship" value="yes"><span>Yes</span></label><label class="radio-label"><input type="radio" name="editRpNeedsScholarship" value="no"><span>No</span></label><label class="radio-label"><input type="radio" name="editRpNeedsScholarship" value="unsure"><span>Unsure</span></label></div></div>
                     <div class="form-group"><label>Are you Pell-eligible or a first-generation college student?</label><div class="radio-row"><label class="radio-label"><input type="radio" name="editRpPellFirstGen" value="yes"><span>Yes</span></label><label class="radio-label"><input type="radio" name="editRpPellFirstGen" value="no"><span>No</span></label></div></div>
-                    <div class="form-group"><label for="editRpHomeZip">Home ZIP Code</label><input type="text" id="editRpHomeZip" inputmode="numeric" pattern="[0-9]{5}" maxlength="5" placeholder="e.g., 80401"><small class="form-hint">Helps coaches gauge distance and regional fit</small></div>
+                    <div class="form-group"><label for="editRpHomeZip">Hometown ZIP Code</label><input type="text" id="editRpHomeZip" inputmode="numeric" pattern="[0-9]{5}" maxlength="5" placeholder="e.g., 80401"><small class="form-hint">Where you grew up — used to gauge distance and regional fit</small></div>
                 </form>
             </div>
             <div class="edit-recruiting-modal-footer">
@@ -676,9 +676,9 @@
             </div>
             <div class="edit-recruiting-modal-body">
                 <form id="editRpLevelLocationForm">
-                    <div class="form-group"><label>Levels open to playing</label><p class="form-hint" style="margin-bottom:0.5rem;">Which division levels would you consider?</p><div class="multi-select-container" id="editRpLevelsContainer"></div><div class="selected-items" id="editRpLevelsChips"></div></div>
-                    <div class="form-group"><label>Preferred region(s)</label><p class="form-hint" style="margin-bottom:0.5rem;">Where would you like to play?</p><div class="multi-select-container" id="editRpRegionsContainer"></div><div class="selected-items" id="editRpRegionsChips"></div></div>
-                    <div class="form-group"><label for="editRpCampusSetting">Preferred campus setting</label><select id="editRpCampusSetting"><option value="">No preference</option><option value="urban">Urban</option><option value="suburban">Suburban</option><option value="rural">Rural</option><option value="small-town">Small town</option></select></div>
+                    <div class="form-group"><label>Levels you considered</label><p class="form-hint" style="margin-bottom:0.5rem;">Which division levels were you open to when choosing a program?</p><div class="multi-select-container" id="editRpLevelsContainer"></div><div class="selected-items" id="editRpLevelsChips"></div></div>
+                    <div class="form-group"><label>Region(s) you preferred</label><p class="form-hint" style="margin-bottom:0.5rem;">Where did you want to play?</p><div class="multi-select-container" id="editRpRegionsContainer"></div><div class="selected-items" id="editRpRegionsChips"></div></div>
+                    <div class="form-group"><label for="editRpCampusSetting">Campus setting you preferred</label><select id="editRpCampusSetting"><option value="">No preference</option><option value="urban">Urban</option><option value="suburban">Suburban</option><option value="rural">Rural</option><option value="small-town">Small town</option></select></div>
                 </form>
             </div>
             <div class="edit-recruiting-modal-footer">
