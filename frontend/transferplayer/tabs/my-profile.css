@@ -8719,6 +8719,8 @@ input[type="file"]::file-selector-button:hover {
 /* Subtab dropdown */
 .recruiting-subnav {
     margin-bottom: 1.25rem;
+    position: relative;
+    z-index: 1;
 }
 .recruiting-subtab-select {
     width: 100%;
@@ -8756,6 +8758,12 @@ input[type="file"]::file-selector-button:hover {
 }
 .recruiting-subtab-pane.active {
     display: block;
+    /* iOS WKWebView: the subnav <select> tap area can bleed onto the element
+       directly below it, swallowing taps on the first (Academics) pane's edit
+       button. Give the active pane its own stacking context above the subnav so
+       its edit button always receives the tap. */
+    position: relative;
+    z-index: 2;
 }
 .recruiting-subtab-header {
     display: flex;
