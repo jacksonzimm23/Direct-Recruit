@@ -1679,6 +1679,7 @@ function updateProfileActions(hasPendingRequest = false) {
                 </svg>
                 Edit Profile
             </button>
+<!-- Share/copy-profile-link button removed per request; kept for future use
             <button class="btn-share-profile">
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <circle cx="18" cy="5" r="3"></circle>
@@ -1688,6 +1689,7 @@ function updateProfileActions(hasPendingRequest = false) {
                     <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
                 </svg>
             </button>
+            -->
         `;
 
         // Setup edit profile button
@@ -1698,7 +1700,8 @@ function updateProfileActions(hasPendingRequest = false) {
             });
         }
 
-        // Setup share profile button
+        // Share/copy-profile-link button removed per request; handler kept for future use
+        /*
         const shareBtn = actionsContainer.querySelector('.btn-share-profile');
         if (shareBtn) {
             shareBtn.addEventListener('click', async function() {
@@ -1719,6 +1722,7 @@ function updateProfileActions(hasPendingRequest = false) {
                 }
             });
         }
+        */
     } else if (isOwnProfile && hasUsernameParam) {
         // Own profile but navigated via URL - show back button and edit/share
         actionsContainer.innerHTML = `
@@ -1735,6 +1739,7 @@ function updateProfileActions(hasPendingRequest = false) {
                 </svg>
                 Edit Profile
             </button>
+<!-- Share/copy-profile-link button removed per request; kept for future use
             <button class="btn-share-profile">
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <circle cx="18" cy="5" r="3"></circle>
@@ -1744,6 +1749,7 @@ function updateProfileActions(hasPendingRequest = false) {
                     <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
                 </svg>
             </button>
+            -->
         `;
 
         // Setup back button
@@ -1762,7 +1768,8 @@ function updateProfileActions(hasPendingRequest = false) {
             });
         }
 
-        // Setup share profile button
+        // Share/copy-profile-link button removed per request; handler kept for future use
+        /*
         const shareBtn = actionsContainer.querySelector('.btn-share-profile');
         if (shareBtn) {
             shareBtn.addEventListener('click', async function() {
@@ -1783,6 +1790,7 @@ function updateProfileActions(hasPendingRequest = false) {
                 }
             });
         }
+        */
     } else {
         // Show back button, follow and message buttons
         actionsContainer.innerHTML = `
