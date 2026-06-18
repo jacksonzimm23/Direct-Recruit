@@ -2516,10 +2516,14 @@ document.addEventListener('DOMContentLoaded', async function() {
     function showToast(message, type = 'success') {
         const toast = document.createElement('div');
         toast.className = `toast-notification ${type}`;
+        // Bottom-centered, above the mobile bottom nav (76px) + iOS home indicator
+        // (env(safe-area-inset-bottom); 0 on web/desktop). Was bottom/right: 2rem,
+        // which sat behind the bottom nav on mobile and was cut off.
         toast.style.cssText = `
             position: fixed;
-            bottom: 2rem;
-            right: 2rem;
+            bottom: calc(88px + env(safe-area-inset-bottom, 0px));
+            left: 50%;
+            transform: translateX(-50%) translateY(20px);
             padding: 1rem 1.5rem;
             background: ${type === 'error' ? '#ef4444' : 'var(--cerulean)'};
             color: white;
@@ -2528,26 +2532,21 @@ document.addEventListener('DOMContentLoaded', async function() {
             font-weight: 600;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
             z-index: 2000;
-            animation: slideUp 0.3s ease;
+            opacity: 0;
+            transition: opacity 0.3s ease, transform 0.3s ease;
         `;
         toast.textContent = message;
 
-        if (!document.getElementById('toast-styles')) {
-            const style = document.createElement('style');
-            style.id = 'toast-styles';
-            style.textContent = `
-                @keyframes slideUp {
-                    from { opacity: 0; transform: translateY(20px); }
-                    to { opacity: 1; transform: translateY(0); }
-                }
-            `;
-            document.head.appendChild(style);
-        }
-
         document.body.appendChild(toast);
 
+        requestAnimationFrame(() => {
+            toast.style.opacity = '1';
+            toast.style.transform = 'translateX(-50%) translateY(0)';
+        });
+
         setTimeout(() => {
-            toast.style.animation = 'slideUp 0.3s ease reverse';
+            toast.style.opacity = '0';
+            toast.style.transform = 'translateX(-50%) translateY(20px)';
             setTimeout(() => toast.remove(), 300);
         }, 3000);
     }
@@ -3055,6 +3054,21 @@ document.addEventListener('DOMContentLoaded', async function() {
         return (v === null || v === undefined) ? '' : v;
     }
 
+    // Date of birth → YYYY-MM-DD (strip any time component). Handles both an ISO
+    // string (the normal res.json path) and a Date object, just in case.
+    function exDob(v) {
+        if (!v) return '';
+        if (v instanceof Date) return isNaN(v.getTime()) ? '' : v.toISOString().slice(0, 10);
+        return String(v).slice(0, 10);
+    }
+
+    // parent_guardians is a JSONB array; pull one field from the Nth entry.
+    function exGuardian(list, idx, field) {
+        if (!Array.isArray(list) || !list[idx]) return '';
+        const v = list[idx][field];
+        return (v === null || v === undefined) ? '' : String(v);
+    }
+
     // Ordered column descriptors. Most-important identity/physical fields first;
     // the coach's own eval (grade/color/notes) last. Trim/reorder here only.
     const EXPORT_COLUMNS = [
@@ -3073,6 +3087,25 @@ document.addEventListener('DOMContentLoaded', async function() {
         { header: 'Eligibility',      format: r => exVal(r.eligibility) },
         { header: 'Email',            format: r => exVal(r.email) },
         { header: 'Phone',            format: r => exPhone(r.phone) },
+        { header: 'Date of Birth',    format: r => exDob(r.date_of_birth) },
+        { header: 'Gender',           format: r => exVal(r.gender) },
+        { header: 'Address',          format: r => exVal(r.address) },
+        { header: 'ZIP',              format: r => exVal(r.zip) },
+        { header: 'Coach Name',       format: r => exVal(r.coach_name) },
+        { header: 'Coach Email',      format: r => exVal(r.coach_email) },
+        { header: 'Coach Phone',      format: r => exPhone(r.coach_phone) },
+        { header: 'Parent/Guardian 1 Name',  format: r => exGuardian(r.parent_guardians, 0, 'name') },
+        { header: 'Parent/Guardian 1 Email', format: r => exGuardian(r.parent_guardians, 0, 'email') },
+        { header: 'Parent/Guardian 1 Phone', format: r => exPhone(exGuardian(r.parent_guardians, 0, 'phone')) },
+        { header: 'Parent/Guardian 2 Name',  format: r => exGuardian(r.parent_guardians, 1, 'name') },
+        { header: 'Parent/Guardian 2 Email', format: r => exGuardian(r.parent_guardians, 1, 'email') },
+        { header: 'Parent/Guardian 2 Phone', format: r => exPhone(exGuardian(r.parent_guardians, 1, 'phone')) },
+        { header: 'Parent/Guardian 3 Name',  format: r => exGuardian(r.parent_guardians, 2, 'name') },
+        { header: 'Parent/Guardian 3 Email', format: r => exGuardian(r.parent_guardians, 2, 'email') },
+        { header: 'Parent/Guardian 3 Phone', format: r => exPhone(exGuardian(r.parent_guardians, 2, 'phone')) },
+        { header: 'Parent/Guardian 4 Name',  format: r => exGuardian(r.parent_guardians, 3, 'name') },
+        { header: 'Parent/Guardian 4 Email', format: r => exGuardian(r.parent_guardians, 3, 'email') },
+        { header: 'Parent/Guardian 4 Phone', format: r => exPhone(exGuardian(r.parent_guardians, 3, 'phone')) },
         { header: 'GPA',              format: r => exVal(r.gpa) },
         { header: 'Weighted GPA',     format: r => exVal(r.weighted_gpa) },
         { header: 'SAT',              format: r => exVal(r.sat_score) },

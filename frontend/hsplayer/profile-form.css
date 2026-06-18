@@ -118,6 +118,8 @@ input[type="email"],
 input[type="password"],
 input[type="url"],
 input[type="number"],
+input[type="tel"],
+input[type="date"],
 textarea,
 select {
     width: 100%;
@@ -139,12 +141,32 @@ input[type="email"]:focus,
 input[type="password"]:focus,
 input[type="url"]:focus,
 input[type="number"]:focus,
+input[type="tel"]:focus,
+input[type="date"]:focus,
 textarea:focus,
 select:focus {
     outline: none;
     border-color: var(--cerulean);
     background: rgba(254, 252, 251, 0.08);
     box-shadow: 0 0 0 3px rgba(18, 130, 162, 0.1);
+}
+
+/* Native date input: keep height consistent with text inputs and make the
+   value text + calendar picker icon visible on the dark background. */
+input[type="date"] {
+    min-height: 48px;
+}
+input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(1);
+    opacity: 0.6;
+    cursor: pointer;
+}
+input[type="date"]::-webkit-datetime-edit {
+    color: var(--white);
+}
+input[type="date"]:invalid::-webkit-datetime-edit,
+input[type="date"][value=""]::-webkit-datetime-edit {
+    color: rgba(254, 252, 251, 0.4);
 }
 
 /* Free-text textarea (e.g. "What I'm looking for in a program") —
@@ -466,6 +488,8 @@ input[style*="border-color: #4caf50"] {
     input[type="email"],
     input[type="url"],
     input[type="number"],
+    input[type="tel"],
+    input[type="date"],
     select:not([multiple]) {
         padding: 0.75rem 0.875rem;
         font-size: 16px; /* Prevents iOS zoom on focus */
@@ -1078,4 +1102,40 @@ input.input-success {
     font-size: 0.8rem;
     color: rgba(254, 252, 251, 0.55);
     margin-top: 0.25rem;
+}
+/* Parent / Guardian repeatable rows + Add button (create-profile) */
+.btn-add-guardian {
+    background: rgba(18, 130, 162, 0.12);
+    border: 1px solid rgba(18, 130, 162, 0.4);
+    color: #1282a2;
+    padding: 0.55rem 0.9rem;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    transition: all 0.2s ease;
+}
+.btn-add-guardian:hover { background: rgba(18, 130, 162, 0.22); }
+.btn-add-guardian:disabled { opacity: 0.5; cursor: default; }
+.guardian-row {
+    border: 1px solid rgba(254, 252, 251, 0.12);
+    border-radius: 8px;
+    padding: 0.75rem;
+    margin-bottom: 0.75rem;
+}
+.guardian-row-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+.guardian-row-title { font-size: 0.85rem; font-weight: 600; color: rgba(254, 252, 251, 0.75); }
+.btn-remove-guardian {
+    background: none;
+    border: none;
+    color: #ff6b6b;
+    cursor: pointer;
+    font-size: 1.1rem;
+    line-height: 1;
 }

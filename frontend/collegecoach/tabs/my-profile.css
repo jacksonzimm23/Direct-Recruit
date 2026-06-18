@@ -1449,6 +1449,14 @@
     color: rgba(255, 255, 255, 0.4);
 }
 
+/* Native date input in the edit modal: make the calendar picker icon visible
+   on the dark background (box style inherited from .form-group input). */
+.form-group input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(1);
+    opacity: 0.6;
+    cursor: pointer;
+}
+
 .form-group select {
     cursor: pointer;
 }

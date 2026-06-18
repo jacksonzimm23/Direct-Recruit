@@ -210,6 +210,50 @@ const validateHomeZip = (value) => {
   return true;
 };
 
+// --- Recruiting contact field validators (DOB everywhere; the rest hsplayer/
+// transferplayer only, enforced as required on the client). Format-only here. ---
+
+// DOB: ISO YYYY-MM-DD, a real calendar date, not in the future, sane age range.
+const validateDateOfBirth = (value) => {
+  if (value === null || value === undefined || value === '') return true;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(value))) throw new Error('Date of birth must be in YYYY-MM-DD format');
+  const d = new Date(value + 'T00:00:00Z');
+  if (isNaN(d.getTime())) throw new Error('Date of birth must be a valid date');
+  const year = d.getUTCFullYear();
+  if (year < 1900 || d.getTime() > Date.now()) throw new Error('Date of birth must be a valid past date');
+  return true;
+};
+
+// Mailing zip — allow 5-digit or ZIP+4 (distinct from the AI-fit home_zip).
+const validateMailingZip = (value) => {
+  if (value === null || value === undefined || value === '') return true;
+  if (!/^\d{5}(-\d{4})?$/.test(String(value))) throw new Error('ZIP must be a 5-digit or ZIP+4 code');
+  return true;
+};
+
+// parent_guardians — JSONB array of up to 4 {name,email,phone} objects. Each
+// shown entry is all-or-nothing on the client; here we only enforce shape,
+// length caps, and email validity. An empty array is valid (feature is optional).
+const validateParentGuardians = (value) => {
+  if (value === null || value === undefined || value === '') return true;
+  if (!Array.isArray(value)) throw new Error('parent_guardians must be an array');
+  if (value.length > 4) throw new Error('At most 4 parent/guardians allowed');
+  const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  for (const g of value) {
+    if (typeof g !== 'object' || g === null || Array.isArray(g)) {
+      throw new Error('Each parent/guardian must be an object');
+    }
+    if (g.name != null && String(g.name).length > 100) throw new Error('Parent/guardian name must be 100 characters or less');
+    if (g.email != null && String(g.email).trim() !== '') {
+      if (String(g.email).length > 255 || !emailRe.test(String(g.email))) {
+        throw new Error('Parent/guardian email must be a valid email address');
+      }
+    }
+    if (g.phone != null && String(g.phone).length > 20) throw new Error('Parent/guardian phone must be 20 characters or less');
+  }
+  return true;
+};
+
 // Factory: value (or each array element) must be in the given allowlist Set.
 const inSet = (set, label) => (value) => {
   if (value === null || value === undefined || value === '') return true;
@@ -305,6 +349,22 @@ const fitMatchingPlayerValidators = [
   body('fit_preferences').optional({ nullable: true }).custom(validateFitPreferences),
 ];
 
+// Reusable chain for the recruiting contact fields collected on hsplayer +
+// transferplayer (mandatoriness enforced on the client; format-only here so the
+// single shared player route doesn't reject collegeplayer/partial updates).
+// Spread into both the player create AND update validator arrays (lesson #2).
+const recruitingContactPlayerValidators = [
+  body('phone').optional({ nullable: true, checkFalsy: true }).trim().isLength({ max: 20 }).withMessage('Phone must be 20 characters or less'),
+  body('gender').optional({ nullable: true }).custom(inSet(new Set(['Male', 'Female']), 'gender')),
+  body('address').optional({ nullable: true }).trim().isLength({ max: 255 }).withMessage('Address must be 255 characters or less'),
+  body('city').optional({ nullable: true }).trim().isLength({ max: 100 }).withMessage('City must be 100 characters or less'),
+  body('zip').optional({ nullable: true }).custom(validateMailingZip),
+  body('coach_name').optional({ nullable: true }).trim().isLength({ max: 100 }).withMessage('Coach name must be 100 characters or less'),
+  body('coach_email').optional({ nullable: true, checkFalsy: true }).trim().isEmail().withMessage('Coach email must be a valid email address').isLength({ max: 255 }).withMessage('Coach email must be 255 characters or less'),
+  body('coach_phone').optional({ nullable: true, checkFalsy: true }).trim().isLength({ max: 20 }).withMessage('Coach phone must be 20 characters or less'),
+  body('parent_guardians').optional({ nullable: true }).custom(validateParentGuardians),
+];
+
 // Reusable chain for the AI Fit-Matching coach "Program Profile" / "Program Fit"
 // fields, spread into both the create and update coach validator arrays (lesson #2).
 const fitMatchingCoachValidators = [
@@ -342,6 +402,8 @@ const validatePlayerProfile = [
   body('username').optional().trim().isLength({ max: 15 }).withMessage('Username must be 15 characters or less'),
   body('first_name').trim().notEmpty().withMessage('First name required').isLength({ max: 50 }).withMessage('First name must be 50 characters or less'),
   body('last_name').trim().notEmpty().withMessage('Last name required').isLength({ max: 50 }).withMessage('Last name must be 50 characters or less'),
+  // DOB required on create for ALL roles (App Store age rating).
+  body('date_of_birth').trim().notEmpty().withMessage('Date of birth required').custom(validateDateOfBirth),
   body('team_name').optional({ nullable: true }).trim().isLength({ max: 100 }).withMessage('Team name must be 100 characters or less'),
   body('bio').optional({ nullable: true }).trim().isLength({ max: 1000 }).withMessage('Bio must be 1000 characters or less'),
   body('graduation_year').optional({ nullable: true }).custom(validateGraduationYear),
@@ -355,12 +417,15 @@ const validatePlayerProfile = [
   body('track_200m').optional({ nullable: true }).isNumeric().withMessage('track_200m must be numeric'),
   body('pff_grade').optional({ nullable: true }).custom(validatePffGrade),
   ...fitMatchingPlayerValidators,
+  ...recruitingContactPlayerValidators,
 ];
 
 const validateCoachProfile = [
   body('username').optional().trim().isLength({ max: 15 }).withMessage('Username must be 15 characters or less'),
   body('first_name').trim().notEmpty().withMessage('First name required').isLength({ max: 50 }).withMessage('First name must be 50 characters or less'),
   body('last_name').trim().notEmpty().withMessage('Last name required').isLength({ max: 50 }).withMessage('Last name must be 50 characters or less'),
+  // DOB required on create for ALL roles (App Store age rating).
+  body('date_of_birth').trim().notEmpty().withMessage('Date of birth required').custom(validateDateOfBirth),
   body('team_name').optional({ nullable: true }).trim().isLength({ max: 100 }).withMessage('Team name must be 100 characters or less'),
   body('college_division').optional({ nullable: true }).trim(),
   body('position_title').optional({ nullable: true }).trim().isLength({ max: 100 }).withMessage('Position title must be 100 characters or less'),
@@ -372,6 +437,8 @@ const validateOtherProfile = [
   body('username').optional().trim().isLength({ max: 15 }).withMessage('Username must be 15 characters or less'),
   body('first_name').trim().notEmpty().withMessage('First name required').isLength({ max: 50 }).withMessage('First name must be 50 characters or less'),
   body('last_name').trim().notEmpty().withMessage('Last name required').isLength({ max: 50 }).withMessage('Last name must be 50 characters or less'),
+  // DOB required on create for ALL roles (App Store age rating).
+  body('date_of_birth').trim().notEmpty().withMessage('Date of birth required').custom(validateDateOfBirth),
   body('subheader').optional({ nullable: true }).trim().isLength({ max: 100 }).withMessage('Subheader must be 100 characters or less'),
   body('bio').optional({ nullable: true }).trim().isLength({ max: 1000 }).withMessage('Bio must be 1000 characters or less'),
 ];
@@ -386,6 +453,9 @@ const validatePlayerProfileUpdate = [
   body('email').optional({ nullable: true, checkFalsy: true }).trim().isEmail().withMessage('Contact email must be a valid email address').isLength({ max: 255 }).withMessage('Contact email must be 255 characters or less'),
   body('first_name').optional({ nullable: true }).trim().isLength({ max: 50 }).withMessage('First name must be 50 characters or less'),
   body('last_name').optional({ nullable: true }).trim().isLength({ max: 50 }).withMessage('Last name must be 50 characters or less'),
+  // DOB optional on update (partial PUT + pre-existing rows); the edit modal
+  // enforces it client-side. Format still validated when present.
+  body('date_of_birth').optional({ nullable: true, checkFalsy: true }).custom(validateDateOfBirth),
   body('team_name').optional({ nullable: true }).trim().isLength({ max: 100 }).withMessage('Team name must be 100 characters or less'),
   body('bio').optional({ nullable: true }).trim().isLength({ max: 1000 }).withMessage('Bio must be 1000 characters or less'),
   body('graduation_year').optional({ nullable: true }).custom(validateGraduationYear),
@@ -399,6 +469,7 @@ const validatePlayerProfileUpdate = [
   body('track_200m').optional({ nullable: true }).isNumeric().withMessage('track_200m must be numeric'),
   body('pff_grade').optional({ nullable: true }).custom(validatePffGrade),
   ...fitMatchingPlayerValidators,
+  ...recruitingContactPlayerValidators,
 ];
 
 const validateCoachProfileUpdate = [
@@ -407,6 +478,8 @@ const validateCoachProfileUpdate = [
   body('email').optional({ nullable: true, checkFalsy: true }).trim().isEmail().withMessage('Contact email must be a valid email address').isLength({ max: 255 }).withMessage('Contact email must be 255 characters or less'),
   body('first_name').optional({ nullable: true }).trim().isLength({ max: 50 }).withMessage('First name must be 50 characters or less'),
   body('last_name').optional({ nullable: true }).trim().isLength({ max: 50 }).withMessage('Last name must be 50 characters or less'),
+  // DOB optional on update (partial PUT + pre-existing rows); edit modal enforces.
+  body('date_of_birth').optional({ nullable: true, checkFalsy: true }).custom(validateDateOfBirth),
   body('team_name').optional({ nullable: true }).trim().isLength({ max: 100 }).withMessage('Team name must be 100 characters or less'),
   body('college_division').optional({ nullable: true }).trim(),
   body('position_title').optional({ nullable: true }).trim().isLength({ max: 100 }).withMessage('Position title must be 100 characters or less'),
@@ -420,6 +493,8 @@ const validateOtherProfileUpdate = [
   body('email').optional({ nullable: true, checkFalsy: true }).trim().isEmail().withMessage('Contact email must be a valid email address').isLength({ max: 255 }).withMessage('Contact email must be 255 characters or less'),
   body('first_name').optional({ nullable: true }).trim().isLength({ max: 50 }).withMessage('First name must be 50 characters or less'),
   body('last_name').optional({ nullable: true }).trim().isLength({ max: 50 }).withMessage('Last name must be 50 characters or less'),
+  // DOB optional on update (partial PUT + pre-existing rows); edit modal enforces.
+  body('date_of_birth').optional({ nullable: true, checkFalsy: true }).custom(validateDateOfBirth),
   body('subheader').optional({ nullable: true }).trim().isLength({ max: 100 }).withMessage('Subheader must be 100 characters or less'),
   body('bio').optional({ nullable: true }).trim().isLength({ max: 1000 }).withMessage('Bio must be 1000 characters or less'),
 ];

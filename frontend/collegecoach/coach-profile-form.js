@@ -582,6 +582,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                 first_name: document.getElementById('firstName').value,
                 last_name: document.getElementById('lastName').value,
                 username: document.getElementById('username').value,
+                date_of_birth: document.getElementById('dateOfBirth')?.value || null,
                 position_title: selectedPositions.length > 0 ? selectedPositions.join(', ') : null,
                 bio: document.getElementById('teamBioLink')?.value || null
             };
@@ -899,6 +900,9 @@ async function loadExistingProfile() {
                 document.getElementById('lastName').value = profile.last_name || '';
                 document.getElementById('username').value = profile.username || '';
                 document.getElementById('email').value = data.user.email || '';
+                if (profile.date_of_birth && document.getElementById('dateOfBirth')) {
+                    document.getElementById('dateOfBirth').value = String(profile.date_of_birth).slice(0, 10);
+                }
 
                 // Fill in college data
                 // NOTE: this whole function is dead code — its only caller (line ~18)

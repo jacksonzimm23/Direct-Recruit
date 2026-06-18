@@ -783,9 +783,30 @@ router.delete('/account/delete', authMiddleware, async (req, res) => {
         if (h.video_url) s3Keys.push(h.video_url);
       }
 
+      // Transcript PDFs uploaded via the recruiting questionnaire. These live in
+      // questionnaire_submissions.submission_data.academic.transcript_s3_keys (JSONB)
+      // and are NOT covered by the table cascade (the row may belong to a coach's
+      // recruiting record). Match by linked profile OR by the submission email so a
+      // recruit's transcripts don't outlive their account (Privacy Policy §10). Read
+      // BEFORE the DB delete — linked_player_user_id is ON DELETE SET NULL.
+      const transcriptSubs = await pool.query(
+        `SELECT submission_data FROM questionnaire_submissions
+         WHERE linked_player_user_id = $1 OR LOWER(email) = LOWER($2)`,
+        [req.userId, userEmail]
+      );
+      for (const sub of transcriptSubs.rows) {
+        const keys = sub.submission_data?.academic?.transcript_s3_keys;
+        if (Array.isArray(keys)) s3Keys.push(...keys);
+      }
+
       // Delete all S3 files (non-blocking — don't fail account deletion if S3 cleanup fails)
       await Promise.allSettled(
-        s3Keys.filter(key => key && key.startsWith('profiles/') || key.startsWith('post-media/') || key.startsWith('highlights/'))
+        s3Keys.filter(key => key && (
+            key.startsWith('profiles/') ||
+            key.startsWith('post-media/') ||
+            key.startsWith('highlights/') ||
+            key.startsWith('transcripts/')
+          ))
           .map(key => deleteFromS3(key))
       );
       logger.info(`Cleaned up ${s3Keys.length} S3 files for deleted account ${req.userId}`);
@@ -1256,23 +1277,33 @@ router.post('/switch-profile', authMiddleware, async (req, res) => {
       const pd = profile_data;
       const fitPrefsPlayer = pd.fit_preferences != null ? JSON.stringify(pd.fit_preferences) : '{}';
 
+      // Recruiting contact fields — hsplayer + transferplayer only (collegeplayer
+      // has none on its form). DOB applies to all. parent_guardians JSONB → string.
+      const isContactTarget = ['hsplayer', 'transferplayer'].includes(target_type);
+      const guardians = (isContactTarget && Array.isArray(pd.parent_guardians))
+        ? pd.parent_guardians.slice(0, 4)
+        : [];
+
       await client.query(
         `INSERT INTO player_profiles
-        (user_id, first_name, last_name, username, team_name, state, graduation_year,
+        (user_id, first_name, last_name, username, date_of_birth, team_name, state, graduation_year,
          position, height, weight, gpa, college_division, conference, number, eligibility,
          transfer, bio, profile_image_url, followers_count, following_count,
          profile_visibility, message_permissions,
          other_sports, track_100m, track_200m, pff_grade,
          sat_score, act_score, weighted_gpa, has_ap_ib, ap_ib_count, class_rank, intended_major,
          home_zip, needs_financial_aid, needs_scholarship, pell_or_first_gen, levels_open,
-         preferred_regions, preferred_campus_setting, fit_preferences)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26,
-         $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41)`,
+         preferred_regions, preferred_campus_setting, fit_preferences,
+         phone, gender, address, city, zip, coach_name, coach_email, coach_phone, parent_guardians)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27,
+         $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41, $42,
+         $43, $44, $45, $46, $47, $48, $49, $50, $51)`,
         [
           req.userId,
           preservedData.first_name,
           preservedData.last_name,
           profile_data.username,
+          profile_data.date_of_birth,
           profile_data.team_name,
           profile_data.state,
           profile_data.graduation_year || null,
@@ -1309,7 +1340,16 @@ router.post('/switch-profile', authMiddleware, async (req, res) => {
           pd.levels_open ?? null,
           pd.preferred_regions ?? null,
           pd.preferred_campus_setting ?? null,
-          fitPrefsPlayer
+          fitPrefsPlayer,
+          isContactTarget ? (pd.phone || null) : null,
+          isContactTarget ? (pd.gender || null) : null,
+          isContactTarget ? (pd.address || null) : null,
+          isContactTarget ? (pd.city || null) : null,
+          isContactTarget ? (pd.zip || null) : null,
+          isContactTarget ? (pd.coach_name || null) : null,
+          isContactTarget ? (pd.coach_email || null) : null,
+          isContactTarget ? (pd.coach_phone || null) : null,
+          JSON.stringify(guardians)
         ]
       );
     } else if (targetRole === 'coach') {
@@ -1327,19 +1367,20 @@ router.post('/switch-profile', authMiddleware, async (req, res) => {
 
       await client.query(
         `INSERT INTO coach_profiles
-        (user_id, first_name, last_name, username, team_name, college_division,
+        (user_id, first_name, last_name, username, date_of_birth, team_name, college_division,
          position_title, state, phone, bio, conference, profile_image_url,
          followers_count, following_count, profile_visibility, message_permissions,
          admitted_gpa_min, admitted_gpa_max, test_optional, sat_min, sat_max, act_min, act_max,
          top_programs, football_player_majors, affordability_band, offers_athletic_aid,
          aid_generosity, campus_setting, distance_profile, hs_tier_recruited, fit_preferences)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16,
-         $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32)`,
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17,
+         $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33)`,
         [
           req.userId,
           preservedData.first_name,
           preservedData.last_name,
           profile_data.username,
+          profile_data.date_of_birth,
           profile_data.team_name,
           collegeDivision,
           profile_data.position_title,
@@ -1376,14 +1417,15 @@ router.post('/switch-profile', authMiddleware, async (req, res) => {
         // profile_image_url (see models/OtherProfile.js). Prod's other_profiles
         // has no profile_image_url column, so inserting into it 500s on EC2.
         `INSERT INTO other_profiles
-        (user_id, first_name, last_name, username, bio, profile_picture_url,
+        (user_id, first_name, last_name, username, date_of_birth, bio, profile_picture_url,
          followers_count, following_count, profile_visibility, message_permissions)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
         [
           req.userId,
           preservedData.first_name,
           preservedData.last_name,
           profile_data.username,
+          profile_data.date_of_birth,
           profile_data.bio || null,
           preservedData.profile_image_url,
           preservedData.followers_count,
@@ -1625,6 +1667,16 @@ function validateProfileDataForType(targetType, data) {
     return 'Username must be 1-15 characters, lowercase letters, numbers, and underscores only';
   }
 
+  // DOB required for ALL target types (App Store age rating).
+  if (!data.date_of_birth) return 'Date of birth is required';
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(data.date_of_birth))) return 'Date of birth must be a valid date';
+  {
+    const d = new Date(String(data.date_of_birth) + 'T00:00:00Z');
+    if (isNaN(d.getTime()) || d.getUTCFullYear() < 1900 || d.getTime() > Date.now()) {
+      return 'Date of birth must be a valid past date';
+    }
+  }
+
   if (targetRole === 'player') {
     if (!data.team_name) return 'Team/school name is required';
     if (!data.state) return 'State is required';
@@ -1635,6 +1687,24 @@ function validateProfileDataForType(targetType, data) {
 
     if (['collegeplayer', 'transferplayer'].includes(targetType)) {
       if (!data.college_division) return 'College division is required';
+    }
+
+    // Recruiting contact fields — required on hsplayer + transferplayer only.
+    if (['hsplayer', 'transferplayer'].includes(targetType)) {
+      if (!data.gender || !['Male', 'Female'].includes(data.gender)) return 'Gender is required';
+      if (!data.address) return 'Mailing address is required';
+      if (!data.city) return 'City is required';
+      if (!data.zip || !/^\d{5}(-\d{4})?$/.test(String(data.zip))) return 'A valid ZIP code is required';
+      if (!data.phone) return 'Phone number is required';
+      if (!data.coach_name) return 'Coach name is required';
+      if (!data.coach_email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(data.coach_email))) return 'A valid coach email is required';
+      if (!data.coach_phone) return 'Coach phone is required';
+      // parent_guardians is optional (0-4); validate shape only when present.
+      if (data.parent_guardians != null) {
+        if (!Array.isArray(data.parent_guardians) || data.parent_guardians.length > 4) {
+          return 'At most 4 parent/guardians allowed';
+        }
+      }
     }
   } else if (targetRole === 'coach') {
     if (!data.team_name) return 'Team/school name is required';

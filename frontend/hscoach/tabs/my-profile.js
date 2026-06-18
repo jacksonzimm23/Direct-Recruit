@@ -2292,6 +2292,8 @@ function populateEditForm() {
     }
     if (email) email.value = currentProfile.email || '';
     if (phone) phone.value = formatPhoneNumber(currentProfile.phone) || '';
+    const editDob = document.getElementById('editDateOfBirth');
+    if (editDob) editDob.value = currentProfile.date_of_birth ? String(currentProfile.date_of_birth).slice(0, 10) : '';
 
     // Populate overview fields
     const conferenceField = document.getElementById('editConference');
@@ -2405,6 +2407,7 @@ async function saveProfileChanges() {
             bio: document.getElementById('editBio').value,
             email: document.getElementById('editEmail').value,
             phone: phoneDigits,
+            date_of_birth: document.getElementById('editDateOfBirth')?.value || null,
             conference: document.getElementById('editConference').value.trim(),
             achievements: document.getElementById('editAchievements').value.trim(),
             experience: document.getElementById('editExperience').value.trim(),

@@ -3563,3 +3563,13 @@ body {
         font-size: 0.55rem;
     }
 }
+
+/* Create-profile agreement notice (mirrors .signin-terms-notice; no links per design) */
+.form-terms-notice {
+    text-align: center;
+    margin-top: 1rem;
+    margin-bottom: 0;
+    font-size: 0.8rem;
+    color: rgba(254, 252, 251, 0.5);
+    line-height: 1.5;
+}

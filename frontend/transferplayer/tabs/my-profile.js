@@ -2941,8 +2941,91 @@ function showEditProfileModal() {
     }
 }
 
+// ── Edit-modal parent/guardian rows (optional, up to 4) ──
+const EDIT_GUARDIAN_MAX = 4;
+
+function refreshEditGuardianUI() {
+    const container = document.getElementById('editGuardianRows');
+    const addBtn = document.getElementById('editAddGuardianBtn');
+    if (!container) return;
+    const rows = container.querySelectorAll('.guardian-row');
+    rows.forEach((row, i) => {
+        const title = row.querySelector('.guardian-row-title');
+        if (title) title.textContent = `Parent / Guardian ${i + 1}`;
+    });
+    if (addBtn) addBtn.disabled = rows.length >= EDIT_GUARDIAN_MAX;
+}
+
+function addEditGuardianRow(data) {
+    const container = document.getElementById('editGuardianRows');
+    if (!container) return;
+    if (container.querySelectorAll('.guardian-row').length >= EDIT_GUARDIAN_MAX) return;
+    const d = data || {};
+    const esc = (s) => String(s || '').replace(/"/g, '&quot;');
+    const row = document.createElement('div');
+    row.className = 'guardian-row';
+    row.innerHTML = `
+        <div class="guardian-row-header">
+            <span class="guardian-row-title">Parent / Guardian</span>
+            <button type="button" class="btn-remove-guardian" title="Remove">&times;</button>
+        </div>
+        <div class="form-group">
+            <label>Name</label>
+            <input type="text" class="guardian-name" placeholder="Full name" value="${esc(d.name)}">
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label>Email</label>
+                <input type="email" class="guardian-email" placeholder="email@example.com" value="${esc(d.email)}">
+            </div>
+            <div class="form-group">
+                <label>Phone</label>
+                <input type="tel" class="guardian-phone" placeholder="(555) 123-4567" value="${esc(formatPhoneNumber(d.phone) || '')}">
+            </div>
+        </div>
+    `;
+    row.querySelector('.btn-remove-guardian').addEventListener('click', function () {
+        row.remove();
+        refreshEditGuardianUI();
+    });
+    container.appendChild(row);
+    refreshEditGuardianUI();
+}
+
+function collectEditGuardians() {
+    const container = document.getElementById('editGuardianRows');
+    if (!container) return [];
+    const out = [];
+    container.querySelectorAll('.guardian-row').forEach(row => {
+        const name = (row.querySelector('.guardian-name').value || '').trim();
+        const email = (row.querySelector('.guardian-email').value || '').trim();
+        const phone = (row.querySelector('.guardian-phone').value || '').trim().replace(/\D/g, '');
+        if (name || email || phone) out.push({ name, email, phone });
+    });
+    return out;
+}
+
+function validateEditGuardians(list) {
+    for (const g of list) {
+        if (!g.name || !g.email || !g.phone) {
+            return 'Each parent/guardian needs a name, email, and phone (or remove the row).';
+        }
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(g.email)) {
+            return 'Please enter a valid parent/guardian email.';
+        }
+    }
+    return null;
+}
+
 function populateEditForm() {
     if (!currentProfile) return;
+
+    // Wire the "Add parent/guardian" button once (modal markup is static).
+    const addGuardianBtn = document.getElementById('editAddGuardianBtn');
+    if (addGuardianBtn && !addGuardianBtn.dataset.wired) {
+        addGuardianBtn.dataset.wired = 'true';
+        addGuardianBtn.addEventListener('click', () => addEditGuardianRow());
+    }
 
     // Populate text inputs
     document.getElementById('editFirstName').value = currentProfile.first_name || '';
@@ -3060,6 +3143,33 @@ function populateEditForm() {
     }
     if (email) email.value = currentProfile.email || '';
     if (phone) phone.value = formatPhoneNumber(currentProfile.phone) || '';
+
+    // Recruiting contact fields (private; CSV export)
+    const editDob = document.getElementById('editDateOfBirth');
+    if (editDob) editDob.value = currentProfile.date_of_birth ? String(currentProfile.date_of_birth).slice(0, 10) : '';
+    const editGender = document.getElementById('editGender');
+    if (editGender) editGender.value = currentProfile.gender || '';
+    const editAddress = document.getElementById('editAddress');
+    if (editAddress) editAddress.value = currentProfile.address || '';
+    const editCity = document.getElementById('editCity');
+    if (editCity) editCity.value = currentProfile.city || '';
+    const editZip = document.getElementById('editZip');
+    if (editZip) editZip.value = currentProfile.zip || '';
+    const coachHeading = document.getElementById('editCoachHeading');
+    if (coachHeading) coachHeading.textContent = (currentProfile.transfer === 'y') ? 'Previous Coach' : 'HS Coach';
+    const editCoachName = document.getElementById('editCoachName');
+    if (editCoachName) editCoachName.value = currentProfile.coach_name || '';
+    const editCoachEmail = document.getElementById('editCoachEmail');
+    if (editCoachEmail) editCoachEmail.value = currentProfile.coach_email || '';
+    const editCoachPhone = document.getElementById('editCoachPhone');
+    if (editCoachPhone) editCoachPhone.value = formatPhoneNumber(currentProfile.coach_phone) || '';
+    const guardianContainer = document.getElementById('editGuardianRows');
+    if (guardianContainer) {
+        guardianContainer.innerHTML = '';
+        const list = Array.isArray(currentProfile.parent_guardians) ? currentProfile.parent_guardians : [];
+        list.slice(0, 4).forEach(g => addEditGuardianRow(g));
+        refreshEditGuardianUI();
+    }
 
     // Populate social media fields
     const hudlLink = document.getElementById('editHudlLink');
@@ -3189,6 +3299,14 @@ async function saveProfileChanges() {
             return;
         }
 
+        // Validate parent/guardian rows (each shown row is all-or-nothing).
+        const guardianList = collectEditGuardians();
+        const guardianErr = validateEditGuardians(guardianList);
+        if (guardianErr) {
+            showToast(guardianErr, 'warning');
+            return;
+        }
+
         // Show loading state
         const saveBtn = document.getElementById('btnModalSave');
         const originalText = saveBtn.textContent;
@@ -3203,6 +3321,7 @@ async function saveProfileChanges() {
         // Get phone number and extract only digits for storage
         const phoneInput = document.getElementById('editPhone').value;
         const phoneDigits = phoneInput.replace(/\D/g, '');
+        const coachPhoneDigits = (document.getElementById('editCoachPhone')?.value || '').replace(/\D/g, '');
 
         // Determine which school type is active
         // For transfer players, there's no school type toggle - they're always college players
@@ -3220,7 +3339,17 @@ async function saveProfileChanges() {
             graduation_year: document.getElementById('editGraduationYear').value ? parseInt(document.getElementById('editGraduationYear').value) : null,
             bio: document.getElementById('editBio').value,
             email: document.getElementById('editEmail').value,
-            phone: phoneDigits
+            phone: phoneDigits,
+            // Recruiting contact fields (private; CSV export)
+            date_of_birth: document.getElementById('editDateOfBirth')?.value || null,
+            gender: document.getElementById('editGender')?.value || null,
+            address: (document.getElementById('editAddress')?.value || '').trim() || null,
+            city: (document.getElementById('editCity')?.value || '').trim() || null,
+            zip: (document.getElementById('editZip')?.value || '').trim() || null,
+            coach_name: (document.getElementById('editCoachName')?.value || '').trim() || null,
+            coach_email: (document.getElementById('editCoachEmail')?.value || '').trim() || null,
+            coach_phone: coachPhoneDigits || null,
+            parent_guardians: guardianList
         };
 
         // Add school fields based on type
@@ -4360,25 +4489,36 @@ function showToast(message, type = 'info') {
     toast.textContent = message;
 
     const bgColor = type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#3b82f6';
+    // Bottom-centered, above the mobile bottom nav (76px) + iOS home indicator
+    // (env(safe-area-inset-bottom); 0 on web/desktop). Keeps toasts clear of the
+    // top status bar/notch and the bottom nav on every page.
     toast.style.cssText = `
         position: fixed;
-        top: 20px;
-        right: 20px;
+        bottom: calc(88px + env(safe-area-inset-bottom, 0px));
+        left: 50%;
+        transform: translateX(-50%) translateY(20px);
         background: ${bgColor};
         color: white;
         padding: 1rem 1.5rem;
         border-radius: 8px;
         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         z-index: 10001;
-        animation: slideIn 0.3s ease-out;
+        opacity: 0;
+        transition: opacity 0.3s ease-out, transform 0.3s ease-out;
         font-size: 0.95rem;
         font-weight: 500;
     `;
 
     document.body.appendChild(toast);
 
+    requestAnimationFrame(() => {
+        toast.style.opacity = '1';
+        toast.style.transform = 'translateX(-50%) translateY(0)';
+    });
+
     setTimeout(() => {
-        toast.style.animation = 'slideOut 0.3s ease-out forwards';
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateX(-50%) translateY(20px)';
         setTimeout(() => {
             if (toast.parentNode) {
                 toast.parentNode.removeChild(toast);

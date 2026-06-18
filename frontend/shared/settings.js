@@ -2528,6 +2528,10 @@ function renderStep2() {
             <input type="text" id="switchUsername" value="${escapeHTML(shared.username || '')}" class="form-input" disabled>
             <small class="form-hint">Username is preserved from your current profile</small>
         </div>
+        <div class="switch-form-group">
+            <label>Date of Birth <span class="required">*</span></label>
+            <input type="date" id="switchDateOfBirth" class="form-input">
+        </div>
     `;
 
     if (targetRole === 'player') {
@@ -2630,6 +2634,60 @@ function renderStep2() {
                 <small class="form-hint">Your GPA on a 4.0 scale</small>
             </div>
         `;
+
+        // Recruiting contact fields — hsplayer + transferplayer only. Coach label
+        // is role-specific ("HS Coach" vs "Previous Coach"). Matches the order of
+        // the create-profile forms.
+        if (['hsplayer', 'transferplayer'].includes(selectedTargetType)) {
+            const coachHeading = selectedTargetType === 'transferplayer' ? 'Previous Coach' : 'HS Coach';
+            fieldsHTML += `
+                <div class="switch-form-group">
+                    <label>Gender <span class="required">*</span></label>
+                    <select id="switchGender" class="form-input">
+                        <option value="">Select Gender</option>
+                        <option value="Male">Male</option>
+                        <option value="Female">Female</option>
+                    </select>
+                </div>
+                <div class="switch-form-group">
+                    <label>Phone Number <span class="required">*</span></label>
+                    <input type="tel" id="switchPhone" placeholder="(555) 123-4567" class="form-input">
+                </div>
+                <div class="switch-form-group">
+                    <label>Mailing Address <span class="required">*</span></label>
+                    <input type="text" id="switchAddress" placeholder="123 Main St" class="form-input">
+                </div>
+                <div class="switch-form-row">
+                    <div class="switch-form-group">
+                        <label>City <span class="required">*</span></label>
+                        <input type="text" id="switchCity" placeholder="Denver" class="form-input">
+                    </div>
+                    <div class="switch-form-group">
+                        <label>ZIP Code <span class="required">*</span></label>
+                        <input type="text" id="switchZip" inputmode="numeric" placeholder="80202" class="form-input">
+                    </div>
+                </div>
+                <h4 class="switch-section-heading">${coachHeading}</h4>
+                <div class="switch-form-group">
+                    <label>Coach Name <span class="required">*</span></label>
+                    <input type="text" id="switchCoachName" placeholder="Coach full name" class="form-input">
+                </div>
+                <div class="switch-form-row">
+                    <div class="switch-form-group">
+                        <label>Coach Email <span class="required">*</span></label>
+                        <input type="email" id="switchCoachEmail" placeholder="coach@email.com" class="form-input">
+                    </div>
+                    <div class="switch-form-group">
+                        <label>Coach Phone <span class="required">*</span></label>
+                        <input type="tel" id="switchCoachPhone" placeholder="(555) 123-4567" class="form-input">
+                    </div>
+                </div>
+                <h4 class="switch-section-heading">Parent / Guardian <span class="optional">(Optional)</span></h4>
+                <p class="form-hint" style="margin-bottom: 0.5rem;">Add up to 4. Fill in name, email, and phone for each.</p>
+                <div id="switchGuardianRows"></div>
+                <button type="button" id="switchAddGuardianBtn" class="btn-add-guardian">+ Add parent/guardian</button>
+            `;
+        }
 
         if (needsCollege) {
             fieldsHTML += `
@@ -2869,7 +2927,88 @@ function renderStep2() {
     `;
 }
 
+// ── Switch-form parent/guardian rows (hsplayer/transferplayer; optional, up to 4) ──
+const SWITCH_GUARDIAN_MAX = 4;
+
+function refreshSwitchGuardianUI() {
+    const container = document.getElementById('switchGuardianRows');
+    const addBtn = document.getElementById('switchAddGuardianBtn');
+    if (!container) return;
+    const rows = container.querySelectorAll('.guardian-row');
+    rows.forEach((row, i) => {
+        const title = row.querySelector('.guardian-row-title');
+        if (title) title.textContent = `Parent / Guardian ${i + 1}`;
+    });
+    if (addBtn) addBtn.disabled = rows.length >= SWITCH_GUARDIAN_MAX;
+}
+
+function addSwitchGuardianRow(data) {
+    const container = document.getElementById('switchGuardianRows');
+    if (!container) return;
+    if (container.querySelectorAll('.guardian-row').length >= SWITCH_GUARDIAN_MAX) return;
+    const d = data || {};
+    const row = document.createElement('div');
+    row.className = 'guardian-row';
+    row.innerHTML = `
+        <div class="guardian-row-header">
+            <span class="guardian-row-title">Parent / Guardian</span>
+            <button type="button" class="btn-remove-guardian" title="Remove">&times;</button>
+        </div>
+        <div class="switch-form-group">
+            <label>Name</label>
+            <input type="text" class="guardian-name form-input" placeholder="Full name" value="${escapeHTML(d.name || '')}">
+        </div>
+        <div class="switch-form-row">
+            <div class="switch-form-group">
+                <label>Email</label>
+                <input type="email" class="guardian-email form-input" placeholder="email@example.com" value="${escapeHTML(d.email || '')}">
+            </div>
+            <div class="switch-form-group">
+                <label>Phone</label>
+                <input type="tel" class="guardian-phone form-input" placeholder="(555) 123-4567" value="${escapeHTML(d.phone || '')}">
+            </div>
+        </div>
+    `;
+    row.querySelector('.btn-remove-guardian').addEventListener('click', function () {
+        row.remove();
+        refreshSwitchGuardianUI();
+    });
+    container.appendChild(row);
+    refreshSwitchGuardianUI();
+}
+
+function collectSwitchGuardians() {
+    const container = document.getElementById('switchGuardianRows');
+    if (!container) return [];
+    const out = [];
+    container.querySelectorAll('.guardian-row').forEach(row => {
+        const name = (row.querySelector('.guardian-name').value || '').trim();
+        const email = (row.querySelector('.guardian-email').value || '').trim();
+        const phone = (row.querySelector('.guardian-phone').value || '').trim().replace(/\D/g, '');
+        if (name || email || phone) out.push({ name, email, phone });
+    });
+    return out;
+}
+
+// Returns an error string if any shown guardian row is partially filled, else null.
+function validateSwitchGuardians() {
+    const list = collectSwitchGuardians();
+    for (const g of list) {
+        if (!g.name || !g.email || !g.phone) {
+            return 'Each parent/guardian needs a name, email, and phone (or remove the row).';
+        }
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(g.email)) {
+            return 'Please enter a valid parent/guardian email.';
+        }
+    }
+    return null;
+}
+
 function attachStep2Listeners() {
+    // Parent/guardian Add button (only present for hsplayer/transferplayer targets)
+    const switchAddGuardianBtn = document.getElementById('switchAddGuardianBtn');
+    if (switchAddGuardianBtn) switchAddGuardianBtn.addEventListener('click', () => addSwitchGuardianRow());
+
     document.getElementById('switchBackBtn2').addEventListener('click', () => {
         if (switchSchoolSearch) {
             switchSchoolSearch.destroy();
@@ -3024,6 +3163,9 @@ function validateStep2() {
     if (!username) return 'Username is required';
     if (!/^[a-z0-9_]{1,15}$/.test(username)) return 'Username must be 1-15 characters, lowercase letters, numbers, and underscores only';
 
+    // DOB required for ALL target types (App Store age rating).
+    if (!document.getElementById('switchDateOfBirth')?.value) return 'Date of birth is required';
+
     const targetRole = getBaseRoleFromType(selectedTargetType);
 
     if (targetRole === 'player') {
@@ -3035,6 +3177,22 @@ function validateStep2() {
         if (!document.getElementById('switchWeight')?.value) return 'Weight is required';
         if (['collegeplayer', 'transferplayer'].includes(selectedTargetType)) {
             if (!document.getElementById('switchDivision')?.value) return 'Division is required';
+        }
+        // Recruiting contact fields — required on hsplayer + transferplayer only.
+        if (['hsplayer', 'transferplayer'].includes(selectedTargetType)) {
+            if (!document.getElementById('switchGender')?.value) return 'Gender is required';
+            if (!document.getElementById('switchPhone')?.value?.trim()) return 'Phone number is required';
+            if (!document.getElementById('switchAddress')?.value?.trim()) return 'Mailing address is required';
+            if (!document.getElementById('switchCity')?.value?.trim()) return 'City is required';
+            const zip = (document.getElementById('switchZip')?.value || '').trim();
+            if (!/^\d{5}(-\d{4})?$/.test(zip)) return 'A valid ZIP code is required';
+            if (!document.getElementById('switchCoachName')?.value?.trim()) return 'Coach name is required';
+            const cEmail = (document.getElementById('switchCoachEmail')?.value || '').trim();
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cEmail)) return 'A valid coach email is required';
+            if (!document.getElementById('switchCoachPhone')?.value?.trim()) return 'Coach phone is required';
+            // Parent/guardian rows are optional but each shown row is all-or-nothing.
+            const gErr = validateSwitchGuardians();
+            if (gErr) return gErr;
         }
     } else if (targetRole === 'coach') {
         if (!document.getElementById('switchTeamName')?.value?.trim()) return 'School name is required';
@@ -3052,7 +3210,9 @@ function collectStep2Data() {
     const data = {
         first_name: document.getElementById('switchFirstName')?.value?.trim(),
         last_name: document.getElementById('switchLastName')?.value?.trim(),
-        username: document.getElementById('switchUsername')?.value?.trim()
+        username: document.getElementById('switchUsername')?.value?.trim(),
+        // DOB collected for ALL target types (App Store age rating).
+        date_of_birth: document.getElementById('switchDateOfBirth')?.value || null
     };
 
     const targetRole = getBaseRoleFromType(selectedTargetType);
@@ -3095,6 +3255,17 @@ function collectStep2Data() {
             const hasTrack = playsYes && selectedSports.includes('Track and Field');
             data.track_100m = hasTrack ? (parseFloat(document.getElementById('switchTrack100m')?.value) || null) : null;
             data.track_200m = hasTrack ? (parseFloat(document.getElementById('switchTrack200m')?.value) || null) : null;
+
+            // Recruiting contact fields — hsplayer + transferplayer only (private; CSV export).
+            data.gender = document.getElementById('switchGender')?.value || null;
+            data.phone = (document.getElementById('switchPhone')?.value || '').trim() || null;
+            data.address = (document.getElementById('switchAddress')?.value || '').trim() || null;
+            data.city = (document.getElementById('switchCity')?.value || '').trim() || null;
+            data.zip = (document.getElementById('switchZip')?.value || '').trim() || null;
+            data.coach_name = (document.getElementById('switchCoachName')?.value || '').trim() || null;
+            data.coach_email = (document.getElementById('switchCoachEmail')?.value || '').trim() || null;
+            data.coach_phone = (document.getElementById('switchCoachPhone')?.value || '').trim() || null;
+            data.parent_guardians = collectSwitchGuardians();
         }
 
         // PFF Grade — collegeplayer + transferplayer only. NULL = no grade reported.

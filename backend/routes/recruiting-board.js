@@ -103,7 +103,8 @@ async function buildExportRows(snapshotPlayers) {
   const userIds = [...new Set(drPlayers.map(p => p.user_id))];
   const profRes = await pool.query(
     `SELECT user_id, first_name, last_name, username, email, phone,
-            city, state, team_name, conference,
+            date_of_birth, gender, address, city, state, zip, team_name, conference,
+            coach_name, coach_email, coach_phone, parent_guardians,
             height, weight, position, graduation_year, number,
             gpa, weighted_gpa, sat_score, act_score, class_rank,
             has_ap_ib, ap_ib_count, intended_major,

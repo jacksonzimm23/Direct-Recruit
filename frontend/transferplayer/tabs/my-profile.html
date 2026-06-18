@@ -886,8 +886,52 @@
                             <input type="email" id="editEmail" name="email" placeholder="you@email.com">
                         </div>
                         <div class="form-group">
-                            <label for="editPhone">Phone Number (Optional)</label>
+                            <label for="editPhone">Phone Number</label>
                             <input type="tel" id="editPhone" name="phone" placeholder="(555) 555-5555">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="editDateOfBirth">Date of Birth</label>
+                            <input type="date" id="editDateOfBirth" name="date_of_birth">
+                        </div>
+                        <div class="form-group">
+                            <label for="editGender">Gender</label>
+                            <select id="editGender" name="gender">
+                                <option value="">Select Gender</option>
+                                <option value="Male">Male</option>
+                                <option value="Female">Female</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="editAddress">Mailing Address</label>
+                            <input type="text" id="editAddress" name="address" placeholder="123 Main St">
+                        </div>
+                        <div class="form-group">
+                            <label for="editCity">City</label>
+                            <input type="text" id="editCity" name="city" placeholder="Denver">
+                        </div>
+                        <div class="form-group">
+                            <label for="editZip">ZIP Code</label>
+                            <input type="text" id="editZip" name="zip" inputmode="numeric" placeholder="80202">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="edit-subsection-label" id="editCoachHeading">Previous Coach</label>
+                            <input type="text" id="editCoachName" name="coach_name" placeholder="Coach name">
+                        </div>
+                        <div class="form-group">
+                            <label for="editCoachEmail">Coach Email</label>
+                            <input type="email" id="editCoachEmail" name="coach_email" placeholder="coach@email.com">
+                        </div>
+                        <div class="form-group">
+                            <label for="editCoachPhone">Coach Phone</label>
+                            <input type="tel" id="editCoachPhone" name="coach_phone" placeholder="(555) 123-4567">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="edit-subsection-label">Parent / Guardian (Optional)</label>
+                            <div id="editGuardianRows"></div>
+                            <button type="button" id="editAddGuardianBtn" class="btn-add-guardian">+ Add parent/guardian</button>
                         </div>
 
                         <!-- Social Media Links Section -->

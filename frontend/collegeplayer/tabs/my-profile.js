@@ -2465,6 +2465,8 @@ function populateEditForm() {
     }
     if (email) email.value = currentProfile.email || '';
     if (phone) phone.value = formatPhoneNumber(currentProfile.phone) || '';
+    const editDob = document.getElementById('editDateOfBirth');
+    if (editDob) editDob.value = currentProfile.date_of_birth ? String(currentProfile.date_of_birth).slice(0, 10) : '';
 
     // Populate achievements
     const achievements = document.getElementById('editAchievements');
@@ -2640,6 +2642,7 @@ async function saveProfileChanges() {
             bio: document.getElementById('editBio').value,
             email: document.getElementById('editEmail').value,
             phone: phoneDigits,
+            date_of_birth: document.getElementById('editDateOfBirth')?.value || null,
             achievements: document.getElementById('editAchievements').value || null,
             socials: socialsJson
         };
@@ -6788,25 +6791,36 @@ function showToast(message, type = 'info') {
     toast.textContent = message;
 
     const bgColor = type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#3b82f6';
+    // Bottom-centered, above the mobile bottom nav (76px) + iOS home indicator
+    // (env(safe-area-inset-bottom); 0 on web/desktop). Keeps toasts clear of the
+    // top status bar/notch and the bottom nav on every page.
     toast.style.cssText = `
         position: fixed;
-        top: 20px;
-        right: 20px;
+        bottom: calc(88px + env(safe-area-inset-bottom, 0px));
+        left: 50%;
+        transform: translateX(-50%) translateY(20px);
         background: ${bgColor};
         color: white;
         padding: 1rem 1.5rem;
         border-radius: 8px;
         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         z-index: 10001;
-        animation: slideIn 0.3s ease-out;
+        opacity: 0;
+        transition: opacity 0.3s ease-out, transform 0.3s ease-out;
         font-size: 0.95rem;
         font-weight: 500;
     `;
 
     document.body.appendChild(toast);
 
+    requestAnimationFrame(() => {
+        toast.style.opacity = '1';
+        toast.style.transform = 'translateX(-50%) translateY(0)';
+    });
+
     setTimeout(() => {
-        toast.style.animation = 'slideOut 0.3s ease-out forwards';
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateX(-50%) translateY(20px)';
         setTimeout(() => {
             if (toast.parentNode) {
                 toast.parentNode.removeChild(toast);

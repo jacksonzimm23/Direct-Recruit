@@ -86,7 +86,8 @@ const MIGRATIONS = [
   'add-fit-matching-fields.sql',
   'add-pending-cancel-sub.sql',
   'add-profile-contact-email.sql',
-  'add-other-profile-contact.sql'
+  'add-other-profile-contact.sql',
+  'add-profile-contact-fields.sql'
 ];
 
 async function applyManualFixes() {

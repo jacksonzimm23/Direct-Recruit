@@ -242,7 +242,9 @@ class PlayerProfile {
       // AI Fit-Matching fields (Plan 2)
       weighted_gpa, has_ap_ib, ap_ib_count, class_rank, intended_major, home_zip,
       needs_financial_aid, needs_scholarship, pell_or_first_gen, levels_open,
-      preferred_regions, preferred_campus_setting, fit_preferences
+      preferred_regions, preferred_campus_setting, fit_preferences,
+      // Recruiting contact fields (hsplayer/transferplayer; private, CSV export)
+      phone, gender, address, zip, coach_name, coach_email, coach_phone, parent_guardians
     } = profileData;
 
     const result = await pool.query(
@@ -255,9 +257,11 @@ class PlayerProfile {
        other_sports, track_100m, track_200m, pff_grade,
        weighted_gpa, has_ap_ib, ap_ib_count, class_rank, intended_major, home_zip,
        needs_financial_aid, needs_scholarship, pell_or_first_gen, levels_open,
-       preferred_regions, preferred_campus_setting, fit_preferences)
+       preferred_regions, preferred_campus_setting, fit_preferences,
+       phone, gender, address, zip, coach_name, coach_email, coach_phone, parent_guardians)
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36,
-       $37, $38, $39, $40, $41, $42, $43, $44, $45, $46, $47, $48, $49)
+       $37, $38, $39, $40, $41, $42, $43, $44, $45, $46, $47, $48, $49,
+       $50, $51, $52, $53, $54, $55, $56, $57)
       RETURNING *`,
       [userId, first_name, last_name, username, date_of_birth, team_name, graduation_year,
        city, state, position, height, weight, gpa, sat_score, act_score,
@@ -270,7 +274,11 @@ class PlayerProfile {
        needs_scholarship ?? null, pell_or_first_gen ?? null, levels_open ?? null,
        preferred_regions ?? null, preferred_campus_setting ?? null,
        // JSONB: node-postgres needs a JSON string (defaults to {} per the column default if null)
-       fit_preferences != null ? JSON.stringify(fit_preferences) : '{}']
+       fit_preferences != null ? JSON.stringify(fit_preferences) : '{}',
+       phone ?? null, gender ?? null, address ?? null, zip ?? null,
+       coach_name ?? null, coach_email ?? null, coach_phone ?? null,
+       // JSONB array — node-postgres needs a JSON string (defaults to [] if null)
+       parent_guardians != null ? JSON.stringify(parent_guardians) : '[]']
     );
     return result.rows[0];
   }
@@ -293,7 +301,9 @@ class PlayerProfile {
       // AI Fit-Matching fields (Plan 2)
       'weighted_gpa', 'has_ap_ib', 'ap_ib_count', 'class_rank', 'intended_major', 'home_zip',
       'needs_financial_aid', 'needs_scholarship', 'pell_or_first_gen', 'levels_open',
-      'preferred_regions', 'preferred_campus_setting', 'fit_preferences'
+      'preferred_regions', 'preferred_campus_setting', 'fit_preferences',
+      // Recruiting contact fields (hsplayer/transferplayer; private, CSV export)
+      'gender', 'address', 'zip', 'coach_name', 'coach_email', 'coach_phone', 'parent_guardians'
     ]);
 
     const fields = [];
@@ -303,8 +313,10 @@ class PlayerProfile {
     Object.keys(profileData).forEach(key => {
       if (profileData[key] !== undefined && allowedColumns.has(key)) {
         fields.push(`${key} = $${paramCount}`);
-        // fit_preferences is JSONB — node-postgres needs a JSON string, not a JS object.
-        values.push(key === 'fit_preferences' && profileData[key] != null
+        // fit_preferences and parent_guardians are JSONB — node-postgres needs a
+        // JSON string, not a JS object/array.
+        const isJsonb = key === 'fit_preferences' || key === 'parent_guardians';
+        values.push(isJsonb && profileData[key] != null
           ? JSON.stringify(profileData[key])
           : profileData[key]);
         paramCount++;

@@ -41,8 +41,28 @@ var _capPluginsInited = false;
     // to inject, and if we give up the user is stuck on the splash forever. Keep
     // trying for a long time, and hard-hide via a guaranteed timeout regardless.
     var splashHidden = false;
+
+    // Remember-me auto-login coordination: on the iOS app's cold-launch landing page,
+    // the auto-login check (checkExistingSession in landingpage/auth.js) needs a moment
+    // to call /auth/me before we know whether to redirect to the feed. If we hide the
+    // splash eagerly the marketing landing page paints first, then snaps to the feed —
+    // a visible flash. So on the landing index, in the app, HOLD the splash until the
+    // auth decision releases it (window.__drReleaseSplash) or the hard timeout fires.
+    // A redirect to the feed keeps the splash up through navigation (the destination's
+    // own capacitor-init.js hides it). A logged-out result releases it to reveal the page.
+    var deferSplashForAuth = (function () {
+        try {
+            var isApp = document.documentElement.classList.contains('ios-app');
+            var p = window.location.pathname || '';
+            // landing index: ".../landingpage/" or ".../landingpage/index.html"
+            var onLandingIndex = /\/landingpage\/(index\.html)?$/.test(p);
+            return isApp && onLandingIndex;
+        } catch (_) { return false; }
+    })();
+
     function hideSplash() {
         if (splashHidden) return;
+        if (deferSplashForAuth) return; // held until __drReleaseSplash() or the hard timeout
         var cap = window.Capacitor;
         var SplashScreen = cap && cap.Plugins && cap.Plugins.SplashScreen;
         if (SplashScreen && typeof SplashScreen.hide === 'function') {
@@ -50,6 +70,24 @@ var _capPluginsInited = false;
             try { SplashScreen.hide().catch(function () {}); } catch (_) {}
         }
     }
+
+    // Auth flow calls this: clears the hold and hides the splash (logged-out path).
+    // The redirect path intentionally does NOT call this — it lets the splash ride
+    // through the navigation to the feed for a seamless splash -> feed transition.
+    window.__drReleaseSplash = function () {
+        deferSplashForAuth = false;
+        hideSplash();
+    };
+
+    // Hard safety backstop: never let a slow/offline /auth/me strand the user on the
+    // splash. After this window, force the hold off and hide regardless.
+    if (deferSplashForAuth) {
+        setTimeout(function () {
+            deferSplashForAuth = false;
+            hideSplash();
+        }, 3000);
+    }
+
     // Poll for the bridge for up to ~10s, hiding the splash the moment it's available.
     var splashTries = 0;
     (function pollSplash() {

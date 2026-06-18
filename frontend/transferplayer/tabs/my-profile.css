@@ -1270,6 +1270,14 @@
     color: rgba(255, 255, 255, 0.4);
 }
 
+/* Native date input in the edit modal: make the calendar picker icon visible
+   on the dark background (box style inherited from .form-group input). */
+.form-group input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(1);
+    opacity: 0.6;
+    cursor: pointer;
+}
+
 .form-group select {
     cursor: pointer;
 }
@@ -9014,4 +9022,46 @@ input[type="file"]::file-selector-button:hover {
     font-size: 0.78rem;
     color: rgba(254, 252, 251, 0.5);
     margin-top: 0.25rem;
+}
+
+/* Edit-modal: recruiting contact subsection labels + parent/guardian rows */
+.edit-subsection-label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 0.4rem;
+}
+.btn-add-guardian {
+    background: rgba(18, 130, 162, 0.12);
+    border: 1px solid rgba(18, 130, 162, 0.4);
+    color: #1282a2;
+    padding: 0.5rem 0.85rem;
+    border-radius: 8px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    transition: all 0.2s ease;
+}
+.btn-add-guardian:hover { background: rgba(18, 130, 162, 0.22); }
+.btn-add-guardian:disabled { opacity: 0.5; cursor: default; }
+.guardian-row {
+    border: 1px solid rgba(0, 0, 0, 0.12);
+    border-radius: 8px;
+    padding: 0.75rem;
+    margin-bottom: 0.75rem;
+}
+.guardian-row-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+.guardian-row-title { font-size: 0.82rem; font-weight: 600; }
+.btn-remove-guardian {
+    background: none;
+    border: none;
+    color: #d33;
+    cursor: pointer;
+    font-size: 1.1rem;
+    line-height: 1;
 }

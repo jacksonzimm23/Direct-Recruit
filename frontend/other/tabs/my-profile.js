@@ -1786,6 +1786,8 @@ function populateEditForm() {
         if (editBio) editBio.value = currentProfile.bio || '';
         if (editEmail) editEmail.value = currentProfile.email || '';
         if (editPhone) editPhone.value = formatPhoneNumber(currentProfile.phone) || '';
+        const editDob = document.getElementById('editDateOfBirth');
+        if (editDob) editDob.value = currentProfile.date_of_birth ? String(currentProfile.date_of_birth).slice(0, 10) : '';
 
         // Update bio character counter
         if (editBio) {
@@ -1819,7 +1821,8 @@ async function saveProfileChanges() {
         subheader: document.getElementById('editSubheader')?.value?.trim() || '',
         bio: document.getElementById('editBio')?.value?.trim() || '',
         email: document.getElementById('editEmail')?.value?.trim() || '',
-        phone: document.getElementById('editPhone')?.value?.replace(/\D/g, '') || ''
+        phone: document.getElementById('editPhone')?.value?.replace(/\D/g, '') || '',
+        date_of_birth: document.getElementById('editDateOfBirth')?.value || null
     };
 
     // Validate required fields
@@ -2283,9 +2286,12 @@ function showToast(message) {
     const toast = document.createElement('div');
     toast.className = 'profile-toast';
     toast.textContent = message;
+    // Bottom-centered, above the mobile bottom nav (76px) + iOS home indicator
+    // (env(safe-area-inset-bottom); 0 on web/desktop). Was bottom: 2rem, which sat
+    // behind the bottom nav on mobile and was cut off.
     toast.style.cssText = `
         position: fixed;
-        bottom: 2rem;
+        bottom: calc(88px + env(safe-area-inset-bottom, 0px));
         left: 50%;
         transform: translateX(-50%);
         background: #1a1a2e;

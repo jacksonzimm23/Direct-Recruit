@@ -7,6 +7,82 @@ document.addEventListener('DOMContentLoaded', async function() {
     const schoolTypeInput = document.getElementById('schoolType');
     const profileForm = document.getElementById('playerProfileForm');
 
+    // ── Parent / Guardian repeatable rows (optional, up to 4) ──
+    const GUARDIAN_MAX = 4;
+    const guardianRows = document.getElementById('guardianRows');
+    const addGuardianBtn = document.getElementById('addGuardianBtn');
+
+    function refreshGuardianUI() {
+        const rows = guardianRows ? guardianRows.querySelectorAll('.guardian-row') : [];
+        rows.forEach((row, i) => {
+            const title = row.querySelector('.guardian-row-title');
+            if (title) title.textContent = `Parent / Guardian ${i + 1}`;
+        });
+        if (addGuardianBtn) addGuardianBtn.disabled = rows.length >= GUARDIAN_MAX;
+    }
+
+    function addGuardianRow(data) {
+        if (!guardianRows) return;
+        if (guardianRows.querySelectorAll('.guardian-row').length >= GUARDIAN_MAX) return;
+        const d = data || {};
+        const row = document.createElement('div');
+        row.className = 'guardian-row';
+        row.innerHTML = `
+            <div class="guardian-row-header">
+                <span class="guardian-row-title">Parent / Guardian</span>
+                <button type="button" class="btn-remove-guardian" title="Remove">&times;</button>
+            </div>
+            <div class="form-group">
+                <label>Name</label>
+                <input type="text" class="guardian-name" autocomplete="off" placeholder="Full name" value="${(d.name || '').replace(/"/g, '&quot;')}">
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" class="guardian-email" autocomplete="off" placeholder="email@example.com" value="${(d.email || '').replace(/"/g, '&quot;')}">
+                </div>
+                <div class="form-group">
+                    <label>Phone</label>
+                    <input type="tel" class="guardian-phone" autocomplete="off" placeholder="(555) 123-4567" value="${(d.phone || '').replace(/"/g, '&quot;')}">
+                </div>
+            </div>
+        `;
+        row.querySelector('.btn-remove-guardian').addEventListener('click', function() {
+            row.remove();
+            refreshGuardianUI();
+        });
+        guardianRows.appendChild(row);
+        refreshGuardianUI();
+    }
+
+    if (addGuardianBtn) addGuardianBtn.addEventListener('click', () => addGuardianRow());
+
+    // Collect non-empty guardians; each shown row is all-or-nothing (validated on submit).
+    function collectGuardians() {
+        if (!guardianRows) return [];
+        const out = [];
+        guardianRows.querySelectorAll('.guardian-row').forEach(row => {
+            const name = (row.querySelector('.guardian-name').value || '').trim();
+            const email = (row.querySelector('.guardian-email').value || '').trim();
+            const phone = (row.querySelector('.guardian-phone').value || '').trim().replace(/\D/g, '');
+            if (name || email || phone) out.push({ name, email, phone });
+        });
+        return out;
+    }
+
+    // Returns an error string if any partially-filled guardian row exists, else null.
+    function validateGuardians(list) {
+        for (const g of list) {
+            if (!g.name || !g.email || !g.phone) {
+                return 'Each parent/guardian needs a name, email, and phone (or remove the row).';
+            }
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(g.email)) {
+                return 'Please enter a valid parent/guardian email.';
+            }
+        }
+        return null;
+    }
+
     // Verify-then-pay: the submit button reads "Create Profile" (static, set in HTML).
     // Pricing + the FTC auto-renewal disclosure now live on the paywall
     // (shared/subscription-required.html), where payment actually happens — so there is
@@ -399,6 +475,14 @@ document.addEventListener('DOMContentLoaded', async function() {
             return;
         }
 
+        // Validate parent/guardian rows (each shown row is all-or-nothing).
+        const guardianList = collectGuardians();
+        const guardianErr = validateGuardians(guardianList);
+        if (guardianErr) {
+            showToast(guardianErr, 'warning');
+            return;
+        }
+
         const submitBtn = profileForm.querySelector('button[type="submit"]');
         const submitLabel = document.getElementById('submitBtnLabel');
         const originalText = submitLabel ? submitLabel.textContent : submitBtn.textContent;
@@ -492,6 +576,18 @@ document.addEventListener('DOMContentLoaded', async function() {
             profileData.gpa = parseFloat(document.getElementById('gpa').value) || null;
             // HS players have no division
             profileData.college_division = null;
+
+            // ── Recruiting contact fields (private; CSV export) ──
+            profileData.date_of_birth = document.getElementById('dateOfBirth')?.value || null;
+            profileData.gender = document.getElementById('gender')?.value || null;
+            profileData.phone = (document.getElementById('phone')?.value || '').trim() || null;
+            profileData.address = (document.getElementById('address')?.value || '').trim() || null;
+            profileData.city = (document.getElementById('city')?.value || '').trim() || null;
+            profileData.zip = (document.getElementById('zip')?.value || '').trim() || null;
+            profileData.coach_name = (document.getElementById('coachName')?.value || '').trim() || null;
+            profileData.coach_email = (document.getElementById('coachEmail')?.value || '').trim() || null;
+            profileData.coach_phone = (document.getElementById('coachPhone')?.value || '').trim() || null;
+            profileData.parent_guardians = guardianList;
 
             // Athletics
             const playsOtherEl = document.querySelector('input[name="plays_other_sports"]:checked');
@@ -657,6 +753,25 @@ async function loadExistingProfile() {
                 }
                 if (profile.gpa) {
                     document.getElementById('gpa').value = profile.gpa;
+                }
+
+                // Recruiting contact fields prefill (edit mode)
+                if (profile.date_of_birth) {
+                    // Normalize ISO timestamp/date to YYYY-MM-DD for <input type="date">
+                    const dob = String(profile.date_of_birth).slice(0, 10);
+                    if (document.getElementById('dateOfBirth')) document.getElementById('dateOfBirth').value = dob;
+                }
+                if (profile.gender && document.getElementById('gender')) document.getElementById('gender').value = profile.gender;
+                if (profile.phone && document.getElementById('phone')) document.getElementById('phone').value = profile.phone;
+                if (profile.address && document.getElementById('address')) document.getElementById('address').value = profile.address;
+                if (profile.city && document.getElementById('city')) document.getElementById('city').value = profile.city;
+                if (profile.zip && document.getElementById('zip')) document.getElementById('zip').value = profile.zip;
+                if (profile.coach_name && document.getElementById('coachName')) document.getElementById('coachName').value = profile.coach_name;
+                if (profile.coach_email && document.getElementById('coachEmail')) document.getElementById('coachEmail').value = profile.coach_email;
+                if (profile.coach_phone && document.getElementById('coachPhone')) document.getElementById('coachPhone').value = profile.coach_phone;
+                // Rebuild parent/guardian rows from the JSONB array
+                if (Array.isArray(profile.parent_guardians) && typeof addGuardianRow === 'function') {
+                    profile.parent_guardians.slice(0, 4).forEach(g => addGuardianRow(g));
                 }
 
                 // Athletics prefill

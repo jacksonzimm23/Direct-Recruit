@@ -159,6 +159,8 @@ input[type="email"],
 input[type="password"],
 input[type="url"],
 input[type="number"],
+input[type="tel"],
+input[type="date"],
 textarea,
 select {
     width: 100%;
@@ -175,6 +177,24 @@ select {
     appearance: none;
 }
 
+/* Native date input: keep height consistent with text inputs and make the
+   value text + calendar picker icon visible on the dark background. */
+input[type="date"] {
+    min-height: 48px;
+}
+input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(1);
+    opacity: 0.6;
+    cursor: pointer;
+}
+input[type="date"]::-webkit-datetime-edit {
+    color: var(--white);
+}
+input[type="date"]:invalid::-webkit-datetime-edit,
+input[type="date"][value=""]::-webkit-datetime-edit {
+    color: rgba(254, 252, 251, 0.4);
+}
+
 input[type="text"]::placeholder,
 input[type="email"]::placeholder,
 input[type="password"]::placeholder,
@@ -189,6 +209,8 @@ input[type="email"]:focus,
 input[type="password"]:focus,
 input[type="url"]:focus,
 input[type="number"]:focus,
+input[type="tel"]:focus,
+input[type="date"]:focus,
 textarea:focus,
 select:focus {
     outline: none;
@@ -690,6 +712,8 @@ input.input-success {
     input[type="text"],
     input[type="email"],
     input[type="url"],
+    input[type="tel"],
+    input[type="date"],
     select {
         padding: 0.75rem 1rem;
         font-size: 0.95rem;

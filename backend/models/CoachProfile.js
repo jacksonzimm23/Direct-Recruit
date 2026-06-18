@@ -8,7 +8,7 @@ const { fullNameExpr, searchTermParams, searchScoreExpr } = require('../utils/se
 class CoachProfile {
   static async create(userId, profileData) {
     const {
-      first_name, last_name, username, team_name, college_division,
+      first_name, last_name, username, date_of_birth, team_name, college_division,
       position_title, city, state, phone, bio, conference,
       // AI Fit-Matching "Program Profile" columns (Plan 3)
       admitted_gpa_min, admitted_gpa_max, test_optional, sat_min, sat_max,
@@ -19,17 +19,17 @@ class CoachProfile {
 
     const result = await pool.query(
       `INSERT INTO coach_profiles
-      (user_id, first_name, last_name, username, team_name, college_division,
+      (user_id, first_name, last_name, username, date_of_birth, team_name, college_division,
        position_title, city, state, phone, bio, conference,
        admitted_gpa_min, admitted_gpa_max, test_optional, sat_min, sat_max,
        act_min, act_max, top_programs, football_player_majors,
        affordability_band, offers_athletic_aid, aid_generosity,
        campus_setting, distance_profile, hs_tier_recruited, fit_preferences)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12,
-       $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24,
-       $25, $26, $27, $28)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13,
+       $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25,
+       $26, $27, $28, $29)
       RETURNING *`,
-      [userId, first_name, last_name, username, team_name, college_division,
+      [userId, first_name, last_name, username, date_of_birth ?? null, team_name, college_division,
        position_title, city, state, phone, bio, conference,
        // TEXT[] arrays (top_programs, football_player_majors) pass raw — node-postgres
        // handles JS arrays for TEXT[]. fit_preferences is JSONB → JSON.stringify (or '{}').
@@ -49,7 +49,7 @@ class CoachProfile {
 
   static async update(userId, profileData) {
     const allowedColumns = new Set([
-      'first_name', 'last_name', 'username', 'team_name', 'college_division',
+      'first_name', 'last_name', 'username', 'date_of_birth', 'team_name', 'college_division',
       'position_title', 'city', 'state', 'phone', 'email', 'bio', 'conference',
       // profile_image_url removed — set via updateProfileImage() only (security #22)
       // AI Fit-Matching "Program Profile" columns (Plan 3)

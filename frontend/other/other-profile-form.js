@@ -290,7 +290,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 const profileData = {
                     first_name: document.getElementById('firstName').value,
                     last_name: document.getElementById('lastName').value,
-                    username: usernameInput.value
+                    username: usernameInput.value,
+                    date_of_birth: document.getElementById('dateOfBirth')?.value || null
                 };
 
                 // Step 3: Create profile

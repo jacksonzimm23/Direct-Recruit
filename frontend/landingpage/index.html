@@ -20,6 +20,16 @@
     <script src="../shared/capacitor-init.js"></script>
     <script src="../shared/mobile-web-redirect.js"></script>
     <script src="../shared/sw-register.js"></script>
+    <!-- Remember-me auto-login: load api.js then auth.js so the checkExistingSession()
+         IIFE in auth.js runs on the landing page too. On both the iOS app launch and
+         desktop web, a remembered user with a valid session is redirected straight to
+         their feed (X/Instagram pattern); logged-out visitors fall through and see this
+         marketing page. api.js MUST load before auth.js (it defines apiRequest /
+         getProfileFolder / needsPaywall that the IIFE consumes) — parser-blocking tags
+         in this order guarantee that. mobile-web-redirect.js above already bounced
+         mobile-Safari users to get-the-app.html before we get here. -->
+    <script src="../shared/api.js"></script>
+    <script src="auth.js"></script>
 </head>
 <body class="v2-splash-body">
     <!-- Navigation -->

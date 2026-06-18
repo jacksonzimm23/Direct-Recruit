@@ -406,6 +406,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                 first_name: document.getElementById('firstName').value,
                 last_name: document.getElementById('lastName').value,
                 username: document.getElementById('username').value,
+                date_of_birth: document.getElementById('dateOfBirth')?.value || null,
                 position: selectedPositions.length > 0 ? selectedPositions.join('/') : null,
                 height: height,
                 weight: parseInt(document.getElementById('weight').value) || null,
@@ -525,6 +526,9 @@ async function loadExistingProfile() {
                 document.getElementById('lastName').value = profile.last_name || '';
                 document.getElementById('username').value = profile.username || '';
                 document.getElementById('email').value = data.user.email || '';
+                if (profile.date_of_birth && document.getElementById('dateOfBirth')) {
+                    document.getElementById('dateOfBirth').value = String(profile.date_of_birth).slice(0, 10);
+                }
 
                 // Handle height - convert from total inches to feet and inches
                 if (profile.height) {

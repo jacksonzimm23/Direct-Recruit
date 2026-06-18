@@ -14,7 +14,13 @@ function needsPaywall(folder, user) {
 
 // Auto-login: if user previously chose "Remember me" and cookie is still valid, redirect to dashboard
 (async function checkExistingSession() {
-    if (localStorage.getItem('dr_remember_me') !== 'true') return;
+    // Not a remembered user — nothing to auto-login. Release any held iOS splash
+    // (capacitor-init.js holds it on the app's landing page until this decision) so
+    // the marketing landing page is revealed promptly.
+    if (localStorage.getItem('dr_remember_me') !== 'true') {
+        if (window.__drReleaseSplash) window.__drReleaseSplash();
+        return;
+    }
 
     try {
         // apiRequest (shared/api.js) attaches the iOS Bearer token; a plain fetch sends
@@ -46,9 +52,11 @@ function needsPaywall(folder, user) {
         // correctly preserves the /frontend prefix on web and its absence in-app.
         window.location.href = new URL(`../${folder}/${pageName}`, window.location.href).href;
     } catch (e) {
-        // Session invalid — clear stale preference and show login form
+        // Session invalid — clear stale preference and show login form.
         localStorage.removeItem('dr_remember_me');
         localStorage.removeItem('user_data');
+        // Release the held iOS splash (if any) so the landing page is shown.
+        if (window.__drReleaseSplash) window.__drReleaseSplash();
     }
 })();
 
