@@ -232,7 +232,12 @@ router.put('/', authMiddleware, async (req, res) => {
 router.post('/coach', authMiddleware, requireRole('coach'), validateCoachProfile, handleValidationErrors, async (req, res) => {
   try {
     const existingProfile = await CoachProfile.findByUserId(req.userId);
-    const isCollegeCoach = !!req.body.college_division;
+    // A coach is "college" only if their division is a real college division.
+    // HS coaches send college_division: 'High School' as a marker, which is truthy
+    // but is NOT a college division — so a plain !! check wrongly gated them behind
+    // the college invite flow. Mirror User.getSubtypeFromProfile's canonical check.
+    const isCollegeCoach = !!req.body.college_division
+      && User.COLLEGE_DIVISIONS.includes(req.body.college_division);
 
     // Invite-token gate: new College Coach signups require a valid invite.
     // Existing (legacy/seeded) profiles and HS coaches are unaffected.
