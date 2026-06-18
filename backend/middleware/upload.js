@@ -56,7 +56,9 @@ const upload = multer({
   storage: storage,
   fileFilter: fileFilter,
   limits: {
-    fileSize: parseInt(process.env.MAX_FILE_SIZE) || 5 * 1024 * 1024 // 5MB default
+    fileSize: parseInt(process.env.MAX_FILE_SIZE) || 5 * 1024 * 1024, // 5MB default
+    fields: 20, // cap non-file fields (DoS mitigation, CVE append-field nesting)
+    fieldNestingDepth: 1 // app uses flat field names; reject bracket nesting (a[b][c])
   }
 });
 

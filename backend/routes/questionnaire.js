@@ -15,7 +15,7 @@ const { uploadToS3, generateTranscriptKey } = require('../utils/s3');
 const TRANSCRIPT_MAX_BYTES = 5 * 1024 * 1024; // 5 MB
 const transcriptUpload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: TRANSCRIPT_MAX_BYTES, files: 1 },
+  limits: { fileSize: TRANSCRIPT_MAX_BYTES, files: 1, fields: 50, fieldNestingDepth: 1 },
   fileFilter: (req, file, cb) => {
     const ext = (file.originalname || '').toLowerCase().split('.').pop();
     if (file.mimetype !== 'application/pdf' || ext !== 'pdf') {

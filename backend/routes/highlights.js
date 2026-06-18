@@ -33,7 +33,9 @@ const storage = multer.diskStorage({
 const upload = multer({
   storage: storage,
   limits: {
-    fileSize: 500 * 1024 * 1024 // 500MB limit for videos (supports up to ~10 min videos)
+    fileSize: 500 * 1024 * 1024, // 500MB limit for videos (supports up to ~10 min videos)
+    fields: 20, // cap non-file fields (DoS mitigation, CVE append-field nesting)
+    fieldNestingDepth: 1 // app uses flat field names; reject bracket nesting (a[b][c])
   },
   fileFilter: (req, file, cb) => {
     // Accept video files only

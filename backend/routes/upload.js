@@ -49,7 +49,9 @@ const s3Upload = multer({
     return cb(new Error('Only image files are allowed for profile pictures'));
   },
   limits: {
-    fileSize: parseInt(process.env.MAX_FILE_SIZE) || 5 * 1024 * 1024 // 5MB default
+    fileSize: parseInt(process.env.MAX_FILE_SIZE) || 5 * 1024 * 1024, // 5MB default
+    fields: 20, // cap non-file fields (DoS mitigation, CVE append-field nesting)
+    fieldNestingDepth: 1 // app uses flat field names; reject bracket nesting (a[b][c])
   }
 });
 
@@ -71,7 +73,9 @@ const messageMediaUpload = multer({
     return cb(new Error('Only image files (jpg, png, gif, webp) and video files (mp4, mov, avi, webm) are allowed'));
   },
   limits: {
-    fileSize: 200 * 1024 * 1024
+    fileSize: 200 * 1024 * 1024,
+    fields: 20, // cap non-file fields (DoS mitigation, CVE append-field nesting)
+    fieldNestingDepth: 1 // app uses flat field names; reject bracket nesting (a[b][c])
   }
 });
 
@@ -93,7 +97,9 @@ const postMediaUpload = multer({
     return cb(new Error('Only image files (jpg, png, gif, webp) and video files (mp4, mov, avi, webm) are allowed'));
   },
   limits: {
-    fileSize: 200 * 1024 * 1024 // 200MB max for videos (~5 min at 1080p)
+    fileSize: 200 * 1024 * 1024, // 200MB max for videos (~5 min at 1080p)
+    fields: 20, // cap non-file fields (DoS mitigation, CVE append-field nesting)
+    fieldNestingDepth: 1 // app uses flat field names; reject bracket nesting (a[b][c])
   }
 });
 
