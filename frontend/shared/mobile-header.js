@@ -17,9 +17,36 @@ async function updateMobileHeader() {
 
             // Update mobile header user info
             const fullName = `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || 'User';
+
+            // School logo next to the name — iOS APP ONLY (gated by the .ios-app
+            // class set synchronously in <head> by capacitor-init.js; false in
+            // mobile web + desktop). Only the 3 college roles have a college
+            // team_name that maps to a logo: collegeplayer, transferplayer,
+            // collegecoach. Mirrors the desktop sidebar-footer pattern (lessons
+            // 47-52): await the JSON preload, then guard getSchoolLogoHTML with
+            // typeof. Returns '' for HS/other roles, unknown schools, web, or if
+            // school-search.js failed to load — so the name always still renders.
+            const _COLLEGE_DIVISIONS = ['D1 FBS', 'D1 FCS', 'D2', 'D3', 'NAIA', 'NJCAA', 'FBS', 'FCS', '3C2A'];
+            const _isCollegeRole =
+                (user.role === 'player' && (user.is_transfer_player ||
+                    (profile.college_division && _COLLEGE_DIVISIONS.includes(profile.college_division)))) ||
+                (user.role === 'coach' && (user.is_college_coach ||
+                    (profile.college_division && _COLLEGE_DIVISIONS.includes(profile.college_division))));
+            const _isIosApp = document.documentElement.classList.contains('ios-app');
+            let _nameLogo = '';
+            if (_isIosApp && _isCollegeRole && profile.team_name) {
+                const _mhAssets = window.location.pathname.includes('/tabs/') ? '../../assets' : '../assets';
+                if (typeof ensureSchoolLogosLoaded === 'function') await ensureSchoolLogosLoaded(_mhAssets);
+                _nameLogo = typeof getSchoolLogoHTML === 'function' ? getSchoolLogoHTML(profile.team_name, _mhAssets, 16) : '';
+            }
+            // Switching from textContent to innerHTML to inject the logo, so the
+            // name must be HTML-escaped (reuse the global escapeHtml from api.js).
+            const _safeName = (typeof escapeHtml === 'function') ? escapeHtml(fullName) : fullName;
+            const _nameHtml = `<span class="mobile-name-text">${_safeName}</span>${_nameLogo}`;
+
             const mobileUserName = document.getElementById('mobileUserName');
             if (mobileUserName) {
-                mobileUserName.textContent = fullName;
+                mobileUserName.innerHTML = _nameHtml;
             }
 
             const mobileUserRole = document.getElementById('mobileUserRole');
@@ -123,7 +150,7 @@ async function updateMobileHeader() {
             const mobileSidebarUserName = document.getElementById('mobileSidebarUserName');
             const mobileSidebarUserRole = document.getElementById('mobileSidebarUserRole');
             const mobileSidebarAvatar = document.getElementById('mobileSidebarAvatar');
-            if (mobileSidebarUserName) mobileSidebarUserName.textContent = fullName;
+            if (mobileSidebarUserName) mobileSidebarUserName.innerHTML = _nameHtml;
             if (mobileSidebarUserRole) {
                 mobileSidebarUserRole.textContent = mobileUserRole ? mobileUserRole.textContent : '';
                 mobileSidebarUserRole.style.color = roleColor;
