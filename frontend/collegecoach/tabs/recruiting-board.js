@@ -3069,28 +3069,34 @@ document.addEventListener('DOMContentLoaded', async function() {
         return (v === null || v === undefined) ? '' : String(v);
     }
 
-    // Ordered column descriptors. Most-important identity/physical fields first;
-    // the coach's own eval (grade/color/notes) last. Trim/reorder here only.
+    // Ordered column descriptors — the coach's Teamworks-focused export set.
+    // Empty player fields produce empty cells (formatters return ''). "School" is
+    // team_name (HS name, or previous school for transfers). Eligibility + PFF
+    // Grade are transfer-only and blank for HS players. Account Email is the
+    // login email (users.email, aliased account_email by the backend).
     const EXPORT_COLUMNS = [
         { header: 'First Name',       format: r => exVal(r.first_name) },
         { header: 'Last Name',        format: r => exVal(r.last_name) },
+        { header: 'Sport',            format: () => 'Football' },
         { header: 'Position(s)',      format: r => exPositions(r.position) },
+        { header: 'Grad Year',        format: r => exVal(r.graduation_year) },
         { header: 'Height',           format: r => exHeightDash(r.height) },
         { header: 'Weight',           format: r => exVal(r.weight) },
-        { header: 'High School',      format: r => exVal(r.team_name) },
-        { header: 'High School City', format: r => exVal(r.city) },
-        { header: 'State',            format: r => exNormalizeState(r.state) },
-        { header: 'Grad Year',        format: r => exVal(r.graduation_year) },
-        { header: 'Jersey #',         format: r => exVal(r.number) },
-        { header: 'Player Type',      format: r => exPlayerType(r) },
-        { header: 'College Division', format: r => exVal(r.college_division) },
-        { header: 'Eligibility',      format: r => exVal(r.eligibility) },
-        { header: 'Email',            format: r => exVal(r.email) },
-        { header: 'Phone',            format: r => exPhone(r.phone) },
         { header: 'Date of Birth',    format: r => exDob(r.date_of_birth) },
         { header: 'Gender',           format: r => exVal(r.gender) },
+        { header: 'Account Email',    format: r => exVal(r.account_email) },
+        { header: 'Phone',            format: r => exPhone(r.phone) },
         { header: 'Address',          format: r => exVal(r.address) },
+        { header: 'City',             format: r => exVal(r.city) },
+        { header: 'State',            format: r => exNormalizeState(r.state) },
         { header: 'ZIP',              format: r => exVal(r.zip) },
+        { header: 'School',           format: r => exVal(r.team_name) },
+        { header: 'Eligibility',      format: r => exVal(r.eligibility) },
+        { header: 'Unweighted GPA',   format: r => exVal(r.gpa) },
+        { header: 'Major',            format: r => exArr(r.intended_major) },
+        { header: 'PFF Grade',        format: r => exVal(r.pff_grade) },
+        { header: 'Instagram',        format: r => exVal(r.instagram_handle) },
+        { header: 'Highlight Video',  format: r => exVal(r.highlight_video_url) },
         { header: 'Coach Name',       format: r => exVal(r.coach_name) },
         { header: 'Coach Email',      format: r => exVal(r.coach_email) },
         { header: 'Coach Phone',      format: r => exPhone(r.coach_phone) },
@@ -3105,24 +3111,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         { header: 'Parent/Guardian 3 Phone', format: r => exPhone(exGuardian(r.parent_guardians, 2, 'phone')) },
         { header: 'Parent/Guardian 4 Name',  format: r => exGuardian(r.parent_guardians, 3, 'name') },
         { header: 'Parent/Guardian 4 Email', format: r => exGuardian(r.parent_guardians, 3, 'email') },
-        { header: 'Parent/Guardian 4 Phone', format: r => exPhone(exGuardian(r.parent_guardians, 3, 'phone')) },
-        { header: 'GPA',              format: r => exVal(r.gpa) },
-        { header: 'Weighted GPA',     format: r => exVal(r.weighted_gpa) },
-        { header: 'SAT',              format: r => exVal(r.sat_score) },
-        { header: 'ACT',              format: r => exVal(r.act_score) },
-        { header: 'Class Rank',       format: r => exVal(r.class_rank) },
-        { header: 'Intended Major',   format: r => exArr(r.intended_major) },
-        { header: 'Star Rating',      format: r => exVal(r.star_rating) },
-        { header: 'PFF Grade',        format: r => exVal(r.pff_grade) },
-        { header: 'Offers',           format: r => exOffersList(r.offers) },
-        { header: 'Offer Count',      format: r => exOffersCount(r.offers) },
-        { header: 'Hudl',             format: r => exVal(r.hudl_profile) },
-        { header: 'Twitter',          format: r => exVal(r.twitter_handle) },
-        { header: 'Instagram',        format: r => exVal(r.instagram_handle) },
-        { header: 'Highlight Video',  format: r => exVal(r.highlight_video_url) },
-        { header: 'Coach Grade',      format: r => exVal(r.final_grade) },
-        { header: 'Color Tag',        format: r => exColorTag(r.final_color_tag) },
-        { header: 'Coach Notes',      format: r => exVal(r.final_notes) }
+        { header: 'Parent/Guardian 4 Phone', format: r => exPhone(exGuardian(r.parent_guardians, 3, 'phone')) }
     ];
 
     // Map a board position to a unit rank for sorting (offense → defense → specs

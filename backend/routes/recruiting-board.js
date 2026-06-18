@@ -101,20 +101,20 @@ async function buildExportRows(snapshotPlayers) {
   if (drPlayers.length === 0) return [];
 
   const userIds = [...new Set(drPlayers.map(p => p.user_id))];
+  // JOIN users for the account/login email (u.email), aliased as account_email so
+  // it doesn't collide with the optional pp.email contact field. The CSV export
+  // (frontend EXPORT_COLUMNS) decides which of these columns are actually written.
   const profRes = await pool.query(
-    `SELECT user_id, first_name, last_name, username, email, phone,
-            date_of_birth, gender, address, city, state, zip, team_name, conference,
-            coach_name, coach_email, coach_phone, parent_guardians,
-            height, weight, position, graduation_year, number,
-            gpa, weighted_gpa, sat_score, act_score, class_rank,
-            has_ap_ib, ap_ib_count, intended_major,
-            star_rating, pff_grade, player_status, transfer,
-            college_division, eligibility,
-            offers, hudl_profile, twitter_handle, instagram_handle, highlight_video_url,
-            levels_open, preferred_regions, preferred_campus_setting,
-            needs_financial_aid, needs_scholarship
-       FROM player_profiles
-      WHERE user_id = ANY($1::uuid[])`,
+    `SELECT pp.user_id, pp.first_name, pp.last_name, pp.phone,
+            pp.date_of_birth, pp.gender, pp.address, pp.city, pp.state, pp.zip,
+            pp.team_name, pp.coach_name, pp.coach_email, pp.coach_phone, pp.parent_guardians,
+            pp.height, pp.weight, pp.position, pp.graduation_year,
+            pp.gpa, pp.intended_major, pp.pff_grade, pp.transfer, pp.eligibility,
+            pp.instagram_handle, pp.highlight_video_url,
+            u.email AS account_email
+       FROM player_profiles pp
+       JOIN users u ON u.id = pp.user_id
+      WHERE pp.user_id = ANY($1::uuid[])`,
     [userIds]
   );
   const byId = new Map(profRes.rows.map(r => [r.user_id, r]));

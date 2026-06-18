@@ -1621,16 +1621,12 @@ function updateSocialMedia(profile) {
     const socialMediaCard = document.getElementById('socialMediaCard');
     if (!socialMediaCard) return;
 
-    // Parse socials from JSON if stored as string
-    let socials = {};
-    if (profile.socials) {
-        try {
-            socials = typeof profile.socials === 'string'
-                ? JSON.parse(profile.socials)
-                : profile.socials;
-        } catch (e) {
-        }
-    }
+    // Read the real player_profiles columns (instagram_handle, hudl_profile).
+    // (Legacy code parsed a profile.socials blob that was never persisted.)
+    const socials = {
+        hudl: (profile.hudl_profile || '').trim(),
+        instagram: (profile.instagram_handle || '').trim()
+    };
 
     const hasHudl = socials.hudl && socials.hudl.trim();
     const hasInstagram = socials.instagram && socials.instagram.trim();
@@ -3151,23 +3147,12 @@ function populateEditForm() {
         refreshEditGuardianUI();
     }
 
-    // Populate social media fields
+    // Populate social media fields from the real columns (instagram_handle,
+    // hudl_profile) — not the legacy profile.socials blob that was never saved.
     const hudlLink = document.getElementById('editHudlLink');
     const instagramLink = document.getElementById('editInstagramLink');
-
-    // Parse socials from JSON if stored as string
-    let socials = {};
-    if (currentProfile.socials) {
-        try {
-            socials = typeof currentProfile.socials === 'string'
-                ? JSON.parse(currentProfile.socials)
-                : currentProfile.socials;
-        } catch (e) {
-        }
-    }
-
-    if (hudlLink) hudlLink.value = socials.hudl || '';
-    if (instagramLink) instagramLink.value = socials.instagram || '';
+    if (hudlLink) hudlLink.value = currentProfile.hudl_profile || '';
+    if (instagramLink) instagramLink.value = currentProfile.instagram_handle || '';
 
     // Clear all position checkboxes first
     const positionCheckboxes = document.querySelectorAll('#editPositionsContainer input[name="position"]');
@@ -3330,14 +3315,14 @@ async function saveProfileChanges() {
             parent_guardians: guardianList
         };
 
-        // Add social media links
+        // Social / film links — write the REAL player_profiles columns
+        // (instagram_handle, hudl_profile). These are allowlisted in
+        // PlayerProfile.update(); the old formData.socials blob had no column and
+        // was silently dropped.
         const hudlLink = document.getElementById('editHudlLink');
         const instagramLink = document.getElementById('editInstagramLink');
-        const socialsObj = {
-            hudl: hudlLink ? hudlLink.value.trim() : '',
-            instagram: instagramLink ? instagramLink.value.trim() : ''
-        };
-        formData.socials = JSON.stringify(socialsObj);
+        formData.instagram_handle = (instagramLink ? instagramLink.value.trim() : '') || null;
+        formData.hudl_profile = (hudlLink ? hudlLink.value.trim() : '') || null;
 
         // Send update request
         const response = await API.put('/profile', formData);
