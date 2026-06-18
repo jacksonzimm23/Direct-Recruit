@@ -1989,6 +1989,23 @@ html {
         flex-wrap: wrap !important;
     }
 
+    /* my-profile header uses .profile-actions too, but its mobile layout is an
+       order-based flex row (avatar order:1, actions order:2 pinned top-right via
+       margin-left:auto, info order:3 full-width below). The generic rule above
+       was written for the old view-profile page and stomps that header's
+       justify-content:flex-end. Re-assert the header's intent and force the
+       info block onto its own line (its base flex:1 otherwise keeps it on row 1,
+       which only showed once the Share button was removed and a single button
+       remained). Scoped to .profile-header-simple so the generic page is untouched. */
+    .profile-header-simple .profile-actions {
+        justify-content: flex-end !important;
+    }
+
+    .profile-header-simple .profile-header-info {
+        flex: 0 0 100% !important;
+        max-width: 100% !important;
+    }
+
     /* === OVERVIEW TAB - CONSISTENT SECTION SPACING === */
     /* Stack sections vertically on mobile with consistent spacing */
     .overview-top-row {
