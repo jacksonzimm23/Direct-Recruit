@@ -4829,21 +4829,8 @@ document.addEventListener('DOMContentLoaded', async function() {
                  <circle cx="12" cy="7" r="4"></circle>
                </svg>`;
 
-        // Info tab — recruit's AI Match score + fit at top, then their full
-        // recruiting profile (Academics / Major & Goals / Financial Fit /
-        // Level & Location / Priorities) in a subtab dropdown. Fetched on open.
-        populateEvalInfoTab(recruit);
-
-        // Phase 3 — merged Evaluation + History tab. Fetch the cross-coach
-        // evaluations (live, including soft-deleted historicals), populate the
-        // list, resolve _inMyPipeline, cache id from the viewer's own active
-        // row. Then fetch board promotions to show/hide the Final Grade tab,
-        // and finally update the footer button states.
-        await loadEvaluationsForModal(recruit);
-        await loadBoardPromotionsForModal(recruit);
-        updateFooterButtonsForPipelineState();
-
         // Always reset to the Info tab on open + the recruiting subtab to Academics.
+        // Done synchronously (before any await) so the modal opens on the right tab.
         switchEvalTab('info');
         const _rpSel = document.getElementById('evalRpSubtabSelect');
         if (_rpSel) _rpSel.value = 'evalRpAcademics';
@@ -4869,7 +4856,37 @@ document.addEventListener('DOMContentLoaded', async function() {
             modalBody.style.overflowY = 'auto';
         }
 
+        // Seed the footer button state synchronously so it reflects THIS recruit
+        // the instant the modal shows — not the stale state left from the last
+        // one opened. Pipeline-sourced recruits are known-in-pipeline up front
+        // (mirrors path #1 in loadEvaluationsForModal); board-sourced recruits
+        // default to "not in pipeline" and get corrected by the await below.
+        recruit._inMyPipeline = (recruit._source !== 'board' && !!recruit.id);
+        updateFooterButtonsForPipelineState();
+
+        // Show the modal NOW — every field above is set synchronously from the
+        // recruit object already in hand, so the modal can appear instantly.
+        // The async fetches below (AI match, cross-coach evaluations, board
+        // promotions) populate their tabs/footer afterward, each with its own
+        // loading state. Previously the modal was only shown AFTER awaiting
+        // those network calls, which on slower iOS-mobile connections made the
+        // modal feel delayed on tap. Desktop hid this behind a fast network.
         modal.classList.add('active');
+
+        // Info tab — recruit's AI Match score + fit at top, then their full
+        // recruiting profile (Academics / Major & Goals / Financial Fit /
+        // Level & Location / Priorities) in a subtab dropdown. Fetched on open.
+        populateEvalInfoTab(recruit);
+
+        // Phase 3 — merged Evaluation + History tab. Fetch the cross-coach
+        // evaluations (live, including soft-deleted historicals), populate the
+        // list, resolve _inMyPipeline, cache id from the viewer's own active
+        // row. Then fetch board promotions to show/hide the Final Grade tab,
+        // and finally update the footer button states. Awaited AFTER the modal
+        // is already visible so they never gate the modal appearing.
+        await loadEvaluationsForModal(recruit);
+        await loadBoardPromotionsForModal(recruit);
+        updateFooterButtonsForPipelineState();
     }
 
     // ===== Pipeline modal Info tab: AI Match + recruiting profile (Plan: board cleanup) =====
