@@ -346,9 +346,23 @@ function capacitorInit(cap) {
                 }, true);
 
                 // bfcache restore — tear down any lingering overlay
-                window.addEventListener('pageshow', function () {
+                window.addEventListener('pageshow', function (event) {
                     const el = document.getElementById('drNavOverlay');
                     if (el) el.remove();
+                    // iOS WKWebView restores a stale DOM snapshot from bfcache on a
+                    // persisted restore (edge-swipe-back, background→foreground, in-session
+                    // snapshot) WITHOUT re-running scripts. The bottom nav is the role
+                    // folder's .sidebar-nav — static markup on 5 roles, JS-injected on
+                    // collegecoach — so a restored snapshot carries the PREVIOUS role's nav
+                    // even when the body repaints (feed.js re-inits FeedManager on pageshow,
+                    // but nothing rebuilds the nav). After a profile-type switch this showed
+                    // the OLD role's bottom nav on the NEW role's page. Force a fresh load so
+                    // the nav always reflects the current document. iOS-app-only: web/desktop
+                    // bfcache isn't affected and stays untouched.
+                    if (event && event.persisted &&
+                        document.documentElement.classList.contains('ios-app')) {
+                        window.location.reload();
+                    }
                 });
             } catch (e) {
                 console.error('[capacitorInit][NavSpinner]', e);
