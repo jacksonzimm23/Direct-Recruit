@@ -91,3 +91,9 @@ experiments/
 # APNs auth key (never commit)
 *.p8
 backend/keys/
+
+_chrome_tmp*/
+_repro_*
+_test_autologin.mjs
+_static_server.mjs
+_old_hscoach.html
