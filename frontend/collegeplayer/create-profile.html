@@ -229,57 +229,6 @@
 
                     <div class="form-row">
                         <div class="form-group">
-                            <label for="division">Division <span class="required">*</span></label>
-                            <select id="division" name="division" required>
-                                <option value="">Select Division</option>
-                                <option value="D1 FBS">D1 FBS (Football Bowl Subdivision)</option>
-                                <option value="D1 FCS">D1 FCS (Football Championship Subdivision)</option>
-                                <option value="D2">Division II</option>
-                                <option value="D3">Division III</option>
-                                <option value="NAIA">NAIA</option>
-                                <option value="NJCAA">NJCAA (Junior College)</option>
-                            </select>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="conference">Conference <span class="optional">(Optional)</span></label>
-                            <input
-                                type="text"
-                                id="conference"
-                                name="conference"
-                                placeholder="e.g., Big 12, SEC, ACC"
-                            >
-                        </div>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="jerseyNumber">Jersey Number <span class="optional">(Optional)</span></label>
-                            <input
-                                type="number"
-                                id="jerseyNumber"
-                                name="jerseyNumber"
-                                min="0"
-                                max="99"
-                                placeholder="e.g., 12"
-                            >
-                        </div>
-
-                        <div class="form-group">
-                            <label for="eligibility">Eligibility Remaining <span class="optional">(Optional)</span></label>
-                            <select id="eligibility" name="eligibility">
-                                <option value="">Select Years</option>
-                                <option value="1">1 year</option>
-                                <option value="2">2 years</option>
-                                <option value="3">3 years</option>
-                                <option value="4">4 years</option>
-                                <option value="5">5 years</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
                             <label for="collegeGradYear">Graduation Year <span class="required">*</span></label>
                             <select id="collegeGradYear" name="collegeGradYear" required>
                                 <option value="">Select Year</option>
@@ -293,63 +242,57 @@
                         </div>
 
                         <div class="form-group">
-                            <label for="gpa">Unweighted GPA <span class="optional">(Optional)</span></label>
+                            <label for="division">Division <span class="required">*</span></label>
+                            <select id="division" name="division" required>
+                                <option value="">Select Division</option>
+                                <option value="D1 FBS">D1 FBS (Football Bowl Subdivision)</option>
+                                <option value="D1 FCS">D1 FCS (Football Championship Subdivision)</option>
+                                <option value="D2">Division II</option>
+                                <option value="D3">Division III</option>
+                                <option value="NAIA">NAIA</option>
+                                <option value="NJCAA">NJCAA (Junior College)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="conference">Conference <span class="optional">(Optional)</span></label>
+                            <input
+                                type="text"
+                                id="conference"
+                                name="conference"
+                                placeholder="e.g., Big 12, SEC, ACC"
+                            >
+                        </div>
+
+                        <div class="form-group">
+                            <label for="jerseyNumber">Jersey Number <span class="optional">(Optional)</span></label>
                             <input
                                 type="number"
-                                id="gpa"
-                                name="gpa"
+                                id="jerseyNumber"
+                                name="jerseyNumber"
                                 min="0"
-                                max="4.0"
-                                step="0.01"
-                                placeholder="e.g., 3.75"
+                                max="99"
+                                placeholder="e.g., 12"
                             >
-                            <small class="form-hint">Your GPA on a 4.0 scale</small>
                         </div>
                     </div>
 
                     <div class="form-row">
                         <div class="form-group">
-                            <label for="satScore">SAT Score <span class="optional">(Optional)</span></label>
-                            <input type="number" id="satScore" name="satScore" min="400" max="1600" step="10" placeholder="e.g., 1180">
-                        </div>
-                        <div class="form-group">
-                            <label for="actScore">ACT Score <span class="optional">(Optional)</span></label>
-                            <input type="number" id="actScore" name="actScore" min="1" max="36" step="1" placeholder="e.g., 26">
-                        </div>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>AP / IB / Honors courses taken (in high school)? <span class="optional">(Optional)</span></label>
-                            <div class="radio-row">
-                                <label class="radio-label">
-                                    <input type="radio" name="has_ap_ib" value="no" checked>
-                                    <span>No</span>
-                                </label>
-                                <label class="radio-label">
-                                    <input type="radio" name="has_ap_ib" value="yes">
-                                    <span>Yes</span>
-                                </label>
-                            </div>
-                        </div>
-                        <div class="form-group" id="apIbCountGroup" style="display: none;">
-                            <label for="apIbCount">How many?</label>
-                            <input type="number" id="apIbCount" name="apIbCount" min="0" max="40" step="1" placeholder="e.g., 5">
+                            <label for="eligibility">Eligibility Remaining <span class="optional">(Optional)</span></label>
+                            <select id="eligibility" name="eligibility">
+                                <option value="">Select Years</option>
+                                <option value="1">1 year</option>
+                                <option value="2">2 years</option>
+                                <option value="3">3 years</option>
+                                <option value="4">4 years</option>
+                                <option value="5">5 years</option>
+                            </select>
                         </div>
                     </div>
 
-                    <div class="form-group">
-                        <label for="classRank">Class Rank <span class="optional">(Optional)</span></label>
-                        <input type="text" id="classRank" name="classRank" maxlength="50" placeholder="e.g., Top 10%">
-                    </div>
-
-                    <div class="form-group">
-                        <label>Current Major <span class="optional">(Optional)</span></label>
-                        <p class="form-hint" style="margin-bottom: 0.75rem;">Select up to 3 majors</p>
-                        <div class="multi-select-container" id="majorContainer"></div>
-                        <small class="major-cap-hint" id="majorCapHint">Maximum of 3 majors selected</small>
-                        <div class="selected-items" id="selectedMajors"></div>
-                    </div>
                 </div>
 
                 <!-- Football Information -->
@@ -515,6 +458,71 @@
                         <div class="selected-items" id="selectedPositions"></div>
                     </div>
 
+                </div>
+
+                <!-- Academics (optional) -->
+                <div class="form-section">
+                    <h2 class="section-title">Academics</h2>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="gpa">Unweighted GPA <span class="optional">(Optional)</span></label>
+                            <input
+                                type="number"
+                                id="gpa"
+                                name="gpa"
+                                min="0"
+                                max="4.0"
+                                step="0.01"
+                                placeholder="e.g., 3.75"
+                            >
+                            <small class="form-hint">Your GPA on a 4.0 scale</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="classRank">Class Rank <span class="optional">(Optional)</span></label>
+                            <input type="text" id="classRank" name="classRank" maxlength="50" placeholder="e.g., Top 10%">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="satScore">SAT Score <span class="optional">(Optional)</span></label>
+                            <input type="number" id="satScore" name="satScore" min="400" max="1600" step="10" placeholder="e.g., 1180">
+                        </div>
+                        <div class="form-group">
+                            <label for="actScore">ACT Score <span class="optional">(Optional)</span></label>
+                            <input type="number" id="actScore" name="actScore" min="1" max="36" step="1" placeholder="e.g., 26">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>AP / IB / Honors courses taken (in high school)? <span class="optional">(Optional)</span></label>
+                            <div class="radio-row">
+                                <label class="radio-label">
+                                    <input type="radio" name="has_ap_ib" value="no" checked>
+                                    <span>No</span>
+                                </label>
+                                <label class="radio-label">
+                                    <input type="radio" name="has_ap_ib" value="yes">
+                                    <span>Yes</span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="form-group" id="apIbCountGroup" style="display: none;">
+                            <label for="apIbCount">How many?</label>
+                            <input type="number" id="apIbCount" name="apIbCount" min="0" max="40" step="1" placeholder="e.g., 5">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Current Major <span class="optional">(Optional)</span></label>
+                        <p class="form-hint" style="margin-bottom: 0.75rem;">Select up to 3 majors</p>
+                        <div class="multi-select-container" id="majorContainer"></div>
+                        <small class="major-cap-hint" id="majorCapHint">Maximum of 3 majors selected</small>
+                        <div class="selected-items" id="selectedMajors"></div>
+                    </div>
                 </div>
 
                 <!-- PFF Grade -->
