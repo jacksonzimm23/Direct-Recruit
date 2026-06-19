@@ -356,7 +356,11 @@
     color: var(--cerulean);
     font-weight: 700;
     line-height: 1.3;
-    overflow-wrap: break-word;
+    /* Truncate a long subheader with "…" instead of wrapping (matches .user-name).
+       .user-info is flex:1; min-width:0, giving this a bounded width to clip against. */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .more-icon {
