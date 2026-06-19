@@ -8468,13 +8468,22 @@ input[type="file"]::file-selector-button:hover {
         white-space: normal;
         overflow-wrap: break-word;
     }
-    /* The info block (flex:1 1 0%) claims all free space, so the subheader fills
-       the row right up to the buttons and only wraps at the true collision point.
-       The button group sizes to its content and right-aligns; arrangement
-       (flex-wrap + gap) is unchanged. */
+    /* Keep the button group sized to its content and right-aligned (own-profile
+       Edit Profile case unchanged). */
     .profile-actions {
         flex: 0 1 auto;
         justify-content: flex-end;
         align-content: flex-start;
+    }
+    /* Viewing ANOTHER profile only (root gets .viewing-other-profile when ?username=
+       is present): the action column holds Back/Follow/Message/3-dots plus the
+       full-width "Add to Pipeline" button (width:100%), which with flex-wrap made
+       .profile-actions reserve a ballooned width and wrapped the subheader early.
+       Pin the column to a fixed width so the info block (flex:1 1 0%) takes the
+       rest and the subheader extends to the buttons. 340px fits the top button row,
+       so its arrangement is unchanged. Own profile (Edit Profile) is unaffected. */
+    .viewing-other-profile .profile-actions {
+        flex: 0 0 340px;
+        width: 340px;
     }
 }
