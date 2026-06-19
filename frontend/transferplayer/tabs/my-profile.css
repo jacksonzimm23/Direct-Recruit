@@ -9075,3 +9075,23 @@ input[type="file"]::file-selector-button:hover {
         display: none;
     }
 }
+
+/* DESKTOP ONLY (>=769px): keep the profile header subheader from colliding with
+   the action buttons (Edit Profile, or Back/Follow/Message/3-dots when viewing
+   another profile). The base .profile-meta is white-space:nowrap, which on a long
+   subheader overflowed the info block and ran under the buttons. Give the flex
+   info block min-width:0 so it can shrink, let the subheader wrap, and pin the
+   button group so it never shrinks — text yields to the buttons, not vice versa.
+   Mobile (<=768px) already wraps correctly and is untouched by this min-width rule. */
+@media (min-width: 769px) {
+    .profile-header-info {
+        min-width: 0;
+    }
+    .profile-meta {
+        white-space: normal;
+        overflow-wrap: break-word;
+    }
+    .profile-actions {
+        flex-shrink: 0;
+    }
+}
