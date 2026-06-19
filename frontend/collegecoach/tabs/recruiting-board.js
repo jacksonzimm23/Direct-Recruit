@@ -3000,7 +3000,9 @@ document.addEventListener('DOMContentLoaded', async function() {
     function exHeightDash(h) {
         const n = parseInt(h, 10);
         if (!Number.isFinite(n) || n <= 0) return '';
-        return Math.floor(n / 12) + '-' + (n % 12);
+        // Use 6'2" (feet'inches") format. A "6-2" style is auto-coerced into a
+        // date by Excel/Sheets; the apostrophe+quote form stays text.
+        return Math.floor(n / 12) + "'" + (n % 12) + '"';
     }
 
     function exPhone(p) {
@@ -3078,6 +3080,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         { header: 'First Name',       format: r => exVal(r.first_name) },
         { header: 'Last Name',        format: r => exVal(r.last_name) },
         { header: 'Sport',            format: () => 'Football' },
+        { header: 'Player Type',      format: r => exPlayerType(r) },
         { header: 'Position(s)',      format: r => exPositions(r.position) },
         { header: 'Grad Year',        format: r => exVal(r.graduation_year) },
         { header: 'Height',           format: r => exHeightDash(r.height) },
@@ -3091,10 +3094,11 @@ document.addEventListener('DOMContentLoaded', async function() {
         { header: 'State',            format: r => exNormalizeState(r.state) },
         { header: 'ZIP',              format: r => exVal(r.zip) },
         { header: 'School',           format: r => exVal(r.team_name) },
-        { header: 'Eligibility',      format: r => exVal(r.eligibility) },
+        // Eligibility + PFF Grade are transfer-player-only fields; blank for HS players.
+        { header: 'Eligibility',      format: r => (r.transfer === 'y') ? exVal(r.eligibility) : '' },
         { header: 'Unweighted GPA',   format: r => exVal(r.gpa) },
         { header: 'Major',            format: r => exArr(r.intended_major) },
-        { header: 'PFF Grade',        format: r => exVal(r.pff_grade) },
+        { header: 'PFF Grade',        format: r => (r.transfer === 'y') ? exVal(r.pff_grade) : '' },
         { header: 'Instagram',        format: r => exVal(r.instagram_handle) },
         { header: 'Highlight Video',  format: r => exVal(r.highlight_video_url) },
         { header: 'Coach Name',       format: r => exVal(r.coach_name) },
