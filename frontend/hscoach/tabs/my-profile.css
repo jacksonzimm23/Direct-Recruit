@@ -4629,3 +4629,10 @@ body.transfer-player-viewer .sidebar-user-avatar {
 .edit-modal.with-media .feed-modal-body {
     overflow-y: auto;
 }
+
+/* Icon-only post action bar (Posts/Replies/Likes) — hide the text labels next to
+   the Like/Comment/Share icons so the cards match the feed's icon-only look.
+   Applies on both desktop and mobile. */
+.profile-action-btn span {
+    display: none;
+}

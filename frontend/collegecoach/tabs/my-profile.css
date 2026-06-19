@@ -4692,3 +4692,10 @@ body.transfer-player-viewer .sidebar-user-avatar {
 .edit-recruiting-modal-body .radio-row { display: flex; gap: 1.5rem; flex-wrap: wrap; }
 .edit-recruiting-modal-body .radio-label { display: inline-flex; align-items: center; gap: 0.5rem; cursor: pointer; font-weight: 500; margin: 0; }
 .edit-recruiting-modal-body .radio-label input[type="radio"] { width: 18px; height: 18px; accent-color: var(--accent-orange); cursor: pointer; }
+
+/* Icon-only post action bar (Posts/Replies/Likes) — hide the text labels next to
+   the Like/Comment/Share icons so the cards match the feed's icon-only look.
+   Applies on both desktop and mobile. */
+.profile-action-btn span {
+    display: none;
+}
