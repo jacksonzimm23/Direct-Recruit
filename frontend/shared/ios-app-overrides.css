@@ -121,34 +121,45 @@ html.ios-app body { background-color: inherit; }
         padding-top: calc(60px + env(safe-area-inset-top, 0px)) !important;
     }
 
-    /* AI chat panels (Recruiting Assistant / Portal Intelligence) are
-       position: fixed with top: 50px instead of padding — adjust the top.
-       Scoped to the ACTIVE tab (see mobile-overrides.css): the RA/PI markup
-       stays in the DOM on discover/portal, so a bare :has() matched even when
-       the Find Players / Current Portal tab was showing. */
-    /* RA/PI fixed chat panel — HEIGHT-BASED box (mirrors the messages page fix
-       documented above). Previous attempts anchored the panel with top + bottom
-       offsets; on a real notched device the env() insets at BOTH ends double-
-       counted and left the panel's bottom edge — and the disclaimer under the
-       textbox — clipped behind the 76px bottom nav (RA fully hidden, PI peeking).
-       The bottom nav is position:fixed; bottom:0; height:76px with the home-
-       indicator safe-area BAKED INTO that 76px (box-sizing:border-box). So instead
-       of guessing a bottom offset, size the panel box itself to be exactly
-       (top offset + 76px nav) shorter than the dynamic viewport and pin it with
-       top + height, bottom:auto. Its bottom edge then lands precisely on the nav's
-       top edge on every iPhone — no env() math at the bottom, nothing clipped. */
+    /* AI chat panels (Recruiting Assistant / Portal Intelligence) are position:
+       fixed with top:50px. Pin the top below the header (+ safe-area). The input
+       area is pinned to the viewport bottom independently (see below), so the panel
+       just spans to bottom:0 and the messages list scrolls within it.
+       Scoped to the ACTIVE tab (see mobile-overrides.css): the RA/PI markup stays
+       in the DOM on discover/portal, so a bare :has() matched even when the
+       Find Players / Current Portal tab was showing. */
     .ios-app .main-content:has(.dp-tab-content.active .ra-layout),
     .ios-app .main-content:has(.tp-tab-content.active .pi-layout) {
         top: calc(50px + env(safe-area-inset-top, 0px)) !important;
-        bottom: auto !important;
-        height: calc(100dvh - 50px - env(safe-area-inset-top, 0px) - 76px) !important;
+        bottom: 0 !important;
     }
 
-    /* Keep the input area's last line (the disclaimer) off the panel's bottom edge
-       so it reads as bottom-aligned with breathing room above the nav. */
+    /* INPUT AREA — pin directly to the viewport bottom, ABOVE the 76px bottom nav.
+       Prior attempts relied on the :has() fixed panel containing its flex children
+       and clipping at the nav; on a real device that failed — the input area
+       rendered full-width (393px, edge-to-edge) in normal flow and fell BEHIND the
+       nav, cutting off the textbox + disclaimer. Fixing the input area itself to
+       bottom:76px removes all dependence on the fragile panel containment: the
+       bottom nav is position:fixed; bottom:0; height:76px (home-indicator safe-area
+       baked into that 76px via box-sizing:border-box), so bottom:76px lands the
+       input area's bottom edge exactly on the nav's top edge on every iPhone.
+       z-index keeps it above the messages list; the messages list gets matching
+       bottom padding so its last message isn't hidden under the pinned input. */
     .ios-app .ra-input-area,
     .ios-app .pi-input-area {
+        position: fixed !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 76px !important;
+        z-index: 50 !important;
+        background: #0a1128 !important;
         padding-bottom: 0.85rem !important;
+    }
+    /* Reserve room so the scrollable message list isn't covered by the pinned
+       input area (input area is ~97-105px tall + a little slack). */
+    .ios-app .ra-messages,
+    .ios-app .pi-messages {
+        padding-bottom: 120px !important;
     }
     .ios-app .ra-input-disclaimer,
     .ios-app .pi-input-disclaimer {
