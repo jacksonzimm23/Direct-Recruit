@@ -299,6 +299,19 @@ html.ios-app body { background-color: inherit; }
     .ios-app .registration-modal .modal-content {
         padding-top: calc(32px + env(safe-area-inset-top, 0px)) !important;
     }
+    /* Transfer-portal "Edit Card Stats" modal (.portal-modal.stats-modal,
+       JS-injected by transfer-portal.js): full-screen on mobile with the close X
+       (.portal-modal-close) absolutely positioned at top:1rem and no header
+       element. On a notched iPhone that X — and the title below it — sit under the
+       status bar. Push the X and the modal's top padding below the safe-area inset
+       so the X lands in a visible, tappable spot. Container base padding is 1.5rem
+       on mobile (transfer-portal.css), close base top is 1rem. */
+    .ios-app .portal-modal.stats-modal {
+        padding-top: calc(1.5rem + env(safe-area-inset-top, 0px)) !important;
+    }
+    .ios-app .portal-modal.stats-modal .portal-modal-close {
+        top: calc(1rem + env(safe-area-inset-top, 0px)) !important;
+    }
 }
 
 /* ---- Web-isms: make it feel native ---- */
