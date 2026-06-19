@@ -8443,9 +8443,12 @@ input[type="file"]::file-selector-button:hover {
     overflow-y: auto;
 }
 
-/* Icon-only post action bar (Posts/Replies/Likes) — hide the text labels next to
-   the Like/Comment/Share icons so the cards match the feed's icon-only look.
-   Applies on both desktop and mobile. */
-.profile-action-btn span {
-    display: none;
+/* Icon-only post action bar on mobile (Posts/Replies/Likes) — hide the
+   Like/Comment/Share text labels at <=768px so the cards match the feed
+   (feed.css hides .post-action-btn span at the same breakpoint). Desktop keeps
+   the labels. */
+@media (max-width: 768px) {
+    .profile-action-btn span {
+        display: none;
+    }
 }
