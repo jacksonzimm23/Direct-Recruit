@@ -126,30 +126,29 @@ html.ios-app body { background-color: inherit; }
        Scoped to the ACTIVE tab (see mobile-overrides.css): the RA/PI markup
        stays in the DOM on discover/portal, so a bare :has() matched even when
        the Find Players / Current Portal tab was showing. */
+    /* RA/PI fixed chat panel — HEIGHT-BASED box (mirrors the messages page fix
+       documented above). Previous attempts anchored the panel with top + bottom
+       offsets; on a real notched device the env() insets at BOTH ends double-
+       counted and left the panel's bottom edge — and the disclaimer under the
+       textbox — clipped behind the 76px bottom nav (RA fully hidden, PI peeking).
+       The bottom nav is position:fixed; bottom:0; height:76px with the home-
+       indicator safe-area BAKED INTO that 76px (box-sizing:border-box). So instead
+       of guessing a bottom offset, size the panel box itself to be exactly
+       (top offset + 76px nav) shorter than the dynamic viewport and pin it with
+       top + height, bottom:auto. Its bottom edge then lands precisely on the nav's
+       top edge on every iPhone — no env() math at the bottom, nothing clipped. */
     .ios-app .main-content:has(.dp-tab-content.active .ra-layout),
     .ios-app .main-content:has(.tp-tab-content.active .pi-layout) {
         top: calc(50px + env(safe-area-inset-top, 0px)) !important;
-        /* BOTTOM FIX: mobile-overrides.css sets these fixed panels to bottom:70px,
-           but the bottom nav is 76px tall AND adds padding-bottom:
-           env(safe-area-inset-bottom) (the home indicator). So 70px landed the
-           panel's bottom edge BEHIND the nav, hiding the input area's last line —
-           the AI disclaimer under the textbox. Clear the full nav height so the
-           input + disclaimer stay visible and bottom-aligned right above the nav. */
-        bottom: calc(76px + env(safe-area-inset-bottom, 0px)) !important;
+        bottom: auto !important;
+        height: calc(100dvh - 50px - env(safe-area-inset-top, 0px) - 76px) !important;
     }
 
-    /* DISCLAIMER FIX (iOS only): the RA/PI panels above are position:fixed with
-       overflow:hidden. Inside, .ra-messages is flex:1 and the input area is
-       flex-shrink:0 with only ~0.5rem bottom padding, so the disclaimer line (the
-       last child) sits flush against the panel's clipped bottom edge. On a real
-       device the safe-area / dynamic-viewport math nudges that last line just past
-       the clip region, so it never paints — even though it shows fine in Chrome's
-       responsive emulator (where env(safe-area-inset-bottom) is 0). Give the input
-       area real bottom padding so the disclaimer is comfortably inside the panel,
-       bottom-aligned right above the nav. */
+    /* Keep the input area's last line (the disclaimer) off the panel's bottom edge
+       so it reads as bottom-aligned with breathing room above the nav. */
     .ios-app .ra-input-area,
     .ios-app .pi-input-area {
-        padding-bottom: 1rem !important;
+        padding-bottom: 0.85rem !important;
     }
     .ios-app .ra-input-disclaimer,
     .ios-app .pi-input-disclaimer {
