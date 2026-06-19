@@ -138,6 +138,25 @@ html.ios-app body { background-color: inherit; }
         bottom: calc(76px + env(safe-area-inset-bottom, 0px)) !important;
     }
 
+    /* DISCLAIMER FIX (iOS only): the RA/PI panels above are position:fixed with
+       overflow:hidden. Inside, .ra-messages is flex:1 and the input area is
+       flex-shrink:0 with only ~0.5rem bottom padding, so the disclaimer line (the
+       last child) sits flush against the panel's clipped bottom edge. On a real
+       device the safe-area / dynamic-viewport math nudges that last line just past
+       the clip region, so it never paints — even though it shows fine in Chrome's
+       responsive emulator (where env(safe-area-inset-bottom) is 0). Give the input
+       area real bottom padding so the disclaimer is comfortably inside the panel,
+       bottom-aligned right above the nav. */
+    .ios-app .ra-input-area,
+    .ios-app .pi-input-area {
+        padding-bottom: 1rem !important;
+    }
+    .ios-app .ra-input-disclaimer,
+    .ios-app .pi-input-disclaimer {
+        display: block !important;
+        visibility: visible !important;
+    }
+
     /* Discover / Transfer Portal padded (non-AI) tab: align subtabs with the AI-tab
        position (50px) instead of the default 65px, including the safe-area inset.
        :not(:has(...active AI layout)) so it only applies on the non-AI tab and never
