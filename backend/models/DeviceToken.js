@@ -13,7 +13,7 @@ class DeviceToken {
                  environment = EXCLUDED.environment,
                  app_version = COALESCE(EXCLUDED.app_version, device_tokens.app_version),
                  os_version = COALESCE(EXCLUDED.os_version, device_tokens.os_version)
-             RETURNING id, user_id, token, platform, environment, created_at, last_seen_at`,
+             RETURNING id, user_id, token, platform, environment, created_at, last_seen_at, enabled`,
             [userId, token, platform, env, appVersion || null, osVersion || null]
         );
         return result.rows[0];
@@ -25,6 +25,25 @@ class DeviceToken {
             [userId]
         );
         return result.rows;
+    }
+
+    // Only the tokens that should currently receive pushes. notifyUser() uses
+    // this so disabled devices are filtered out at the SQL layer.
+    static async findEnabledByUserId(userId) {
+        const result = await pool.query(
+            'SELECT * FROM device_tokens WHERE user_id = $1 AND enabled ORDER BY last_seen_at DESC',
+            [userId]
+        );
+        return result.rows;
+    }
+
+    // Flip the per-device send flag for all of a user's devices. Kept in sync
+    // with users.push_enabled by the PUT /api/device-tokens/preference endpoint.
+    static async setEnabledForUser(userId, enabled) {
+        await pool.query(
+            'UPDATE device_tokens SET enabled = $2 WHERE user_id = $1',
+            [userId, enabled]
+        );
     }
 
     // Used when APNs returns a "BadDeviceToken" or "Unregistered" response

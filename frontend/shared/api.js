@@ -1311,6 +1311,14 @@ const deviceTokensAPI = {
                 os_version: osVersion
             })
         });
+    },
+    // Account-wide push on/off (the iOS settings toggle). Sets users.push_enabled
+    // and syncs the user's device rows; notifyUser() honors it for all push types.
+    setPushPreference: async (enabled) => {
+        return await apiRequest('/device-tokens/preference', {
+            method: 'PUT',
+            body: JSON.stringify({ enabled })
+        });
     }
 };
 

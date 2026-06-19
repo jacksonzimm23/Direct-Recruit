@@ -32,7 +32,17 @@ class User {
   }
 
   static async findById(id) {
-    const result = await pool.query('SELECT id, email, username, role, created_at, email_verified, profile_completed, is_active, last_profile_switch_at, subscription_status, subscription_tier, is_suspended FROM users WHERE id = $1', [id]);
+    const result = await pool.query('SELECT id, email, username, role, created_at, email_verified, profile_completed, is_active, last_profile_switch_at, subscription_status, subscription_tier, is_suspended, push_enabled FROM users WHERE id = $1', [id]);
+    return result.rows[0];
+  }
+
+  // Account-wide push-notification on/off. Source of truth for the iOS push
+  // toggle; notifyUser() reads this before fanning out to APNs.
+  static async setPushEnabled(userId, enabled) {
+    const result = await pool.query(
+      'UPDATE users SET push_enabled = $2, updated_at = CURRENT_TIMESTAMP WHERE id = $1 RETURNING id, push_enabled',
+      [userId, enabled]
+    );
     return result.rows[0];
   }
 

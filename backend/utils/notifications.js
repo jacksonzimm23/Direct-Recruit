@@ -10,6 +10,7 @@ const logger = require('./logger');
 function getDeps() {
     return {
         DeviceToken: require('../models/DeviceToken'),
+        User: require('../models/User'),
         apns: require('./apns')
     };
 }
@@ -94,8 +95,17 @@ function notifyUser(io, notif, opts) {
 
         // ---- APNs fan-out ----
         try {
-            const { DeviceToken, apns } = getDeps();
-            const tokens = await DeviceToken.findByUserId(notif.user_id);
+            const { DeviceToken, User, apns } = getDeps();
+
+            // Push on/off gate. users.push_enabled is the account-wide switch
+            // (the iOS settings toggle). When off, skip APNs entirely — the
+            // Socket.IO emit above already updated the in-app bell. This single
+            // check governs every notification type since all of them flow here.
+            const recipient = await User.findById(notif.user_id);
+            if (!recipient || recipient.push_enabled === false) return;
+
+            // Only send to enabled devices (defense in depth alongside the flag above).
+            const tokens = await DeviceToken.findEnabledByUserId(notif.user_id);
             if (!tokens || tokens.length === 0) return;
 
             // Phase 5: include unread count so iOS app icon shows a number, not a dot.

@@ -432,30 +432,19 @@
                         </div>
                     </div>
 
-                    <div class="settings-card coming-soon-card">
-                        <div class="coming-soon-overlay">
-                            <span class="coming-soon-badge">Coming Soon</span>
-                        </div>
+                    <!-- iOS app only: real push on/off toggle. Hidden on desktop web
+                         (revealed by initializePushToggle() in shared/settings.js when
+                         running inside the iOS app). -->
+                    <div class="settings-card ios-only-card" id="pushNotificationsCard" style="display:none;">
                         <h3 class="settings-card-title">Push Notifications</h3>
                         <div class="settings-toggles">
                             <div class="toggle-item">
                                 <div class="toggle-info">
-                                    <div class="toggle-label">Enable Push Notifications</div>
-                                    <div class="toggle-description">Receive real-time notifications on your device</div>
+                                    <div class="toggle-label">Push Notifications</div>
+                                    <div class="toggle-description">Receive notifications on your device for messages, follows, and other activity</div>
                                 </div>
                                 <label class="toggle-switch">
-                                    <input type="checkbox" data-setting="pushEnabled" disabled>
-                                    <span class="toggle-slider"></span>
-                                </label>
-                            </div>
-
-                            <div class="toggle-item">
-                                <div class="toggle-info">
-                                    <div class="toggle-label">Sound Alerts</div>
-                                    <div class="toggle-description">Play sound for important notifications</div>
-                                </div>
-                                <label class="toggle-switch">
-                                    <input type="checkbox" data-setting="pushSound" checked disabled>
+                                    <input type="checkbox" data-setting="pushEnabled" id="pushEnabledToggle">
                                     <span class="toggle-slider"></span>
                                 </label>
                             </div>

@@ -521,7 +521,10 @@ router.get('/me', authMiddleware, async (req, res) => {
         is_college_coach: isCollegeCoach,
         is_transfer_player: isTransferPlayer,
         subscription_status: subInfo?.subscription_status || 'none',
-        subscription_tier: subInfo?.subscription_tier || null
+        subscription_tier: subInfo?.subscription_tier || null,
+        // Push on/off state for the iOS settings toggle. Defaults true if the
+        // column predates this user (NOT NULL DEFAULT true makes this rare).
+        push_enabled: req.user.push_enabled !== false
       },
       profile
     });

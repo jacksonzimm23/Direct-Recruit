@@ -8,6 +8,7 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeToggleSwitches();
     initializeSaveButtons();
     initializeDataExport();
+    initializePushToggle();
     initializeDeleteAccount();
     initializePasswordChange();
     initializeEmailChange();
@@ -78,6 +79,13 @@ function populateSettingsForm(data) {
             messagePermissionsEl.value = data.profile.message_permissions;
             messagePermissionsEl.dataset.originalValue = data.profile.message_permissions;
         }
+    }
+
+    // Reflect the account's push preference on the iOS push toggle (default on).
+    const pushToggle = document.getElementById('pushEnabledToggle');
+    if (pushToggle && data.user) {
+        pushToggle.checked = data.user.push_enabled !== false;
+        pushToggle.dataset.originalChecked = pushToggle.checked;
     }
 }
 
@@ -171,16 +179,17 @@ function initializeFormHandlers() {
 function initializeToggleSwitches() {
     const toggles = document.querySelectorAll('.toggle-switch input');
 
-    // Email preference settings that should NOT trigger Save Changes (coming soon)
-    const emailPreferenceSettings = ['emailMarketing', 'emailWeeklySummary', 'emailRecruitingNews'];
+    // Toggles that should NOT trigger the generic Save Changes flow. Email prefs
+    // are coming-soon; pushEnabled self-saves immediately via initializePushToggle.
+    const excludedFromSave = ['emailMarketing', 'emailWeeklySummary', 'emailRecruitingNews', 'pushEnabled'];
 
     toggles.forEach(toggle => {
         // Store original value
         toggle.dataset.originalChecked = toggle.checked;
 
-        // Skip disabled toggles and email preference toggles (coming soon)
+        // Skip disabled toggles and toggles that manage their own save
         const settingName = toggle.dataset.setting;
-        if (toggle.disabled || emailPreferenceSettings.includes(settingName)) {
+        if (toggle.disabled || excludedFromSave.includes(settingName)) {
             return;
         }
 
@@ -262,9 +271,8 @@ function collectSettingsData() {
         notifyFollowers: document.querySelector('[data-setting="notifyFollowers"]')?.checked || false,
         notifyInteractions: document.querySelector('[data-setting="notifyInteractions"]')?.checked || false,
 
-        // Push notifications
-        pushEnabled: document.querySelector('[data-setting="pushEnabled"]')?.checked || false,
-        pushSound: document.querySelector('[data-setting="pushSound"]')?.checked || false,
+        // Push notifications (pushEnabled) self-saves immediately via its own
+        // handler (initializePushToggle) and is intentionally NOT included here.
 
         // Activity visibility
         showOnlineStatus: document.querySelector('[data-setting="showOnlineStatus"]')?.checked || false,
@@ -419,6 +427,68 @@ function initializeDataExport() {
         } finally {
             exportBtn.disabled = false;
             exportBtn.textContent = originalText;
+        }
+    });
+}
+
+// iOS Push Notifications toggle.
+// The card is hidden on desktop web and only revealed inside the iOS app. The
+// toggle self-saves immediately on change (it controls OS-level push
+// registration), independent of the Save/Discard flow. Account-wide on/off:
+// the backend users.push_enabled flag is the source of truth that notifyUser()
+// checks before sending ANY push, so this one switch governs every notification
+// type. Default ON.
+function initializePushToggle() {
+    const card = document.getElementById('pushNotificationsCard');
+    const toggle = document.getElementById('pushEnabledToggle');
+    if (!card || !toggle) return;
+
+    // Desktop web: leave the card hidden and do nothing.
+    if (!(window.API && API.isIOSApp && API.isIOSApp())) {
+        return;
+    }
+
+    // Inside the iOS app: reveal the card.
+    card.style.display = '';
+
+    toggle.addEventListener('change', async function () {
+        const wantOn = toggle.checked;
+        toggle.disabled = true;
+        try {
+            if (wantOn) {
+                // Turning ON: ensure OS permission, then register + persist.
+                const Push = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.PushNotifications;
+                if (Push) {
+                    let perm = await Push.checkPermissions().catch(() => null);
+                    if (!perm || perm.receive === 'prompt' || perm.receive === 'prompt-with-rationale') {
+                        perm = await Push.requestPermissions();
+                    }
+                    if (!perm || perm.receive !== 'granted') {
+                        // OS denied (and can't be re-prompted from the app). Revert
+                        // the toggle and guide the user to iOS Settings.
+                        toggle.checked = false;
+                        showToast('Turn on notifications for Direct Recruit in your iPhone Settings to enable push.', 'warning');
+                        return;
+                    }
+                    // Re-register so the APNs token is (re)sent to the backend.
+                    await Push.register();
+                }
+                await API.deviceTokens.setPushPreference(true);
+                toggle.dataset.originalChecked = 'true';
+                showToast('Push notifications turned on.', 'success');
+            } else {
+                // Turning OFF: server-side off only (cannot revoke OS permission
+                // from inside the app, and we don't need to).
+                await API.deviceTokens.setPushPreference(false);
+                toggle.dataset.originalChecked = 'false';
+                showToast('Push notifications turned off.', 'success');
+            }
+        } catch (err) {
+            // Revert to the last-known state on any failure.
+            toggle.checked = toggle.dataset.originalChecked === 'true';
+            showToast('Could not update push notifications. Please try again.', 'error');
+        } finally {
+            toggle.disabled = false;
         }
     });
 }
