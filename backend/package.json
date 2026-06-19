@@ -18,6 +18,7 @@
     "@aws-sdk/client-s3": "^3.956.0",
     "@aws-sdk/client-ses": "^3.971.0",
     "@aws-sdk/s3-request-presigner": "^3.956.0",
+    "@parse/node-apn": "^8.1.0",
     "bcrypt": "^6.0.0",
     "cookie": "^1.1.1",
     "cookie-parser": "^1.4.6",
