@@ -8468,22 +8468,21 @@ input[type="file"]::file-selector-button:hover {
         white-space: normal;
         overflow-wrap: break-word;
     }
-    /* Keep the button group sized to its content and right-aligned (own-profile
-       Edit Profile case unchanged). */
+    /* Button group never shrinks (keeps its layout); info block yields. */
     .profile-actions {
-        flex: 0 1 auto;
+        flex-shrink: 0;
         justify-content: flex-end;
         align-content: flex-start;
     }
-    /* Viewing ANOTHER profile only (root gets .viewing-other-profile when ?username=
-       is present): the action column holds Back/Follow/Message/3-dots plus the
-       full-width "Add to Pipeline" button (width:100%), which with flex-wrap made
-       .profile-actions reserve a ballooned width and wrapped the subheader early.
-       Pin the column to a fixed width so the info block (flex:1 1 0%) takes the
-       rest and the subheader extends to the buttons. 340px fits the top button row,
-       so its arrangement is unchanged. Own profile (Edit Profile) is unaffected. */
+    /* Viewing ANOTHER profile (root .viewing-other-profile when ?username= present):
+       the action column = Back/Follow/Message/3-dots on one row + the full-width
+       "Add to Pipeline" below. With flex-wrap, .profile-actions reserved the full
+       UNWRAPPED button width, squeezing the info block so the subheader wrapped
+       early (big gap). Cap the column width so it reserves only ~one button row:
+       the info block (flex:1 1 0%) reclaims the rest and the subheader extends to
+       the buttons, wrapping only when it truly reaches them. 460px comfortably fits
+       the Back/Follow/Message/3-dots row so the button arrangement is unchanged. */
     .viewing-other-profile .profile-actions {
-        flex: 0 0 340px;
-        width: 340px;
+        max-width: 460px;
     }
 }
