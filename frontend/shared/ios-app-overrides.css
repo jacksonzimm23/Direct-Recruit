@@ -187,9 +187,23 @@ html.ios-app body { background-color: inherit; }
         align-items: center !important;
         row-gap: 0.6rem !important;
     }
+    /* Logo must never shrink so the name stays to its right. */
+    .ios-app .ai-rep-school-row .ai-rep-school-logo {
+        flex: 0 0 36px !important;
+    }
+    /* flex-basis 0 (not auto): the info column takes the REMAINING width next to
+       the logo and truncates its long name with "…" — with flex-basis:auto the
+       name's full content width counted toward wrapping and pushed the whole info
+       block onto its own line BELOW the logo. The badge below still wraps via its
+       own flex:0 0 100%. */
     .ios-app .ai-rep-school-row .ai-rep-school-info {
-        flex: 1 1 auto !important;
+        flex: 1 1 0% !important;
         min-width: 0 !important;
+    }
+    .ios-app .ai-rep-school-row .ai-rep-school-name {
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
     }
     /* Force the badge to wrap to its own full-width second row, full bar layout. */
     .ios-app .ai-rep-school-row .fit-badge {
