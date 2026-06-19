@@ -154,7 +154,10 @@ function notifyUser(io, notif, opts) {
             const sent = results.filter(r => r && r.sent).length;
             logger.debug(`[notifyUser] user=${notif.user_id} sent=${sent}/${results.length} deepLink=${deepLinkPath || 'none'}`);
         } catch (e) {
-            logger.error('[notifyUser] apns fan-out error:', e.message);
+            // Interpolate the detail into the message — winston drops a bare
+            // string second arg from the prod JSON format, which previously hid
+            // the real cause (e.g. missing @parse/node-apn, unreadable .p8).
+            logger.error(`[notifyUser] apns fan-out error: ${e && e.message ? e.message : e}${e && e.stack ? '\n' + e.stack : ''}`);
         }
     })();
 }

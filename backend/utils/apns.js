@@ -15,24 +15,43 @@ const hasRealKey = !!(process.env.APNS_KEY_ID
     && (process.env.APNS_P8_PATH || process.env.APNS_P8_CONTENT)
     && process.env.APNS_BUNDLE_ID);
 
-if (!hasRealKey) { module.exports = require('./local/apns-local'); return; }
-
-const apn = require('@parse/node-apn');
-const fs = require('fs');
 const logger = require('./logger');
 
-const provider = new apn.Provider({
-    token: {
-        key: process.env.APNS_P8_CONTENT
-            ? Buffer.from(process.env.APNS_P8_CONTENT, 'base64')
-            : fs.readFileSync(process.env.APNS_P8_PATH),
-        keyId: process.env.APNS_KEY_ID,
-        teamId: process.env.APNS_TEAM_ID
-    },
-    production: process.env.APNS_ENVIRONMENT === 'production'
-});
+if (!hasRealKey) {
+    logger.info('[apns] credentials not fully set — using local mock (no real pushes).');
+    module.exports = require('./local/apns-local');
+    return;
+}
 
-logger.info(`[apns] real client initialized (environment=${process.env.APNS_ENVIRONMENT || 'production'}, bundle=${process.env.APNS_BUNDLE_ID})`);
+// Initialize the real client defensively. If the @parse/node-apn package is
+// missing on this host, or the .p8 key can't be read, DON'T let the throw
+// propagate into every require()/notifyUser() call (which previously surfaced
+// as opaque "apns fan-out error" log spam). Log the precise reason and fall
+// back to the mock so the rest of the app keeps working.
+let provider;
+try {
+    const apn = require('@parse/node-apn');
+    const fs = require('fs');
+
+    const key = process.env.APNS_P8_CONTENT
+        ? Buffer.from(process.env.APNS_P8_CONTENT, 'base64')
+        : fs.readFileSync(process.env.APNS_P8_PATH);
+
+    provider = new apn.Provider({
+        token: {
+            key,
+            keyId: process.env.APNS_KEY_ID,
+            teamId: process.env.APNS_TEAM_ID
+        },
+        production: process.env.APNS_ENVIRONMENT === 'production'
+    });
+
+    logger.info(`[apns] real client initialized (environment=${process.env.APNS_ENVIRONMENT || 'production'}, bundle=${process.env.APNS_BUNDLE_ID})`);
+} catch (initErr) {
+    logger.error(`[apns] FAILED to initialize real client — falling back to mock. Reason: ${initErr && initErr.message ? initErr.message : initErr}`);
+    module.exports = require('./local/apns-local');
+    return;
+}
 
 // payload: { title, body, badge?, deepLinkPath?, notificationId? }
 // Returns { sent: boolean, token, status?, reason? }
