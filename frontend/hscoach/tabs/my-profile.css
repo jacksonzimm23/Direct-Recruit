@@ -4655,7 +4655,13 @@ body.transfer-player-viewer .sidebar-user-avatar {
         white-space: normal;
         overflow-wrap: break-word;
     }
+    /* The info block (flex:1 1 0%) claims all free space, so the subheader fills
+       the row right up to the buttons and only wraps at the true collision point.
+       The button group sizes to its content and right-aligns; arrangement
+       (flex-wrap + gap) is unchanged. */
     .profile-actions {
-        flex-shrink: 0;
+        flex: 0 1 auto;
+        justify-content: flex-end;
+        align-content: flex-start;
     }
 }
