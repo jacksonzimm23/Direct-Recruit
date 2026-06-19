@@ -93,6 +93,26 @@
     height: 18px;
 }
 
+/* Short note under the status badge: how to exit the portal (switch profile type
+   in Settings) now that the Leave Portal button is gone. */
+.portal-leave-note {
+    margin: 0.85rem auto 0;
+    max-width: 520px;
+    font-size: 0.9rem;
+    color: rgba(254, 252, 251, 0.6);
+    line-height: 1.5;
+}
+
+.portal-leave-note a {
+    color: #1282a2;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.portal-leave-note a:hover {
+    text-decoration: underline;
+}
+
 /* Leave Portal Button */
 .leave-portal-btn {
     position: absolute;
