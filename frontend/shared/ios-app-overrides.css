@@ -167,6 +167,14 @@ html.ios-app body { background-color: inherit; }
         visibility: visible !important;
     }
 
+    /* Hide the 2nd example-prompt suggestion on the AI RA / PI welcome screens —
+       iOS app only (desktop/web keep all 3). Each .ra-suggestions/.pi-suggestions
+       holds exactly 3 sibling buttons; drop the middle one to leave the 1st + 3rd. */
+    .ios-app .ra-suggestion:nth-of-type(2),
+    .ios-app .pi-suggestion:nth-of-type(2) {
+        display: none !important;
+    }
+
     /* Discover / Transfer Portal padded (non-AI) tab: align subtabs with the AI-tab
        position (50px) instead of the default 65px, including the safe-area inset.
        :not(:has(...active AI layout)) so it only applies on the non-AI tab and never
