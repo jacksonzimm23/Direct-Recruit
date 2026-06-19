@@ -1239,6 +1239,8 @@ function showInvitePaywall(reason) {
             align-items: center;
             gap: 0.5rem;
             padding: 0.7rem 0.85rem;
+            /* min-height keeps the box at input height for short names; it grows
+               taller when a long name wraps to multiple lines. */
             background-color: rgba(10, 17, 40, 0.6);
             border: 1px solid #ff6b35;
             border-radius: 8px;
@@ -1258,9 +1260,15 @@ function showInvitePaywall(reason) {
             border-radius: 3px;
         }
         .invite-locked-display .invite-locked-name {
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
+            /* Wrap long college/university names instead of truncating with an
+               ellipsis — the value is read-only, so it must always be fully
+               visible (desktop + iOS Safari). overflow-wrap/word-break handle
+               very long unbroken tokens; min-width:0 lets the flex child shrink
+               and wrap rather than overflow the orange-ringed box. */
+            min-width: 0;
+            white-space: normal;
+            overflow-wrap: anywhere;
+            word-break: break-word;
         }
         .invite-lock-hint {
             display: block;
