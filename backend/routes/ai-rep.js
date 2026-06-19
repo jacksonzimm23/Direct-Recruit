@@ -21,16 +21,58 @@ function normalizeDivision(div) {
 }
 
 // Per-dimension detail copy, reworded school→player (privacy-safe: no thresholds/PII).
-// Keyed by the fit-score DIMENSIONS keys.
+// SCORE-DEPENDENT so the words match the match-strength icon the modal draws from
+// the same score (green >=0.67, yellow >=0.34, red <0.34 — see fit-info-modal.js
+// _matchIcon). Mirrors the three coach-side tiers in fit-score.js, reworded for the
+// player. Keyed by the fit-score DIMENSIONS keys; each key has { strong, medium, weak }.
+// Thresholds below are aligned to the modal's icon bands so text never contradicts
+// the icon (e.g. a red X no longer reads "Their aid can meet your financial needs").
 const SCHOOL_DIM_DETAIL = {
-  academic:    'Your academics fit this program’s profile',
-  level:       'Recruits at the level you’re open to',
-  major:       'They support your intended major',
-  geographic:  'Located in a region you’re open to',
-  financial:   'Their aid can meet your financial needs',
-  environment: 'Campus setting matches your preference',
-  development: 'Their development approach fits how you want to be used'
+  academic: {
+    strong: 'Your academics fit this program’s profile',
+    medium: 'Your academics are near their admitted range',
+    weak:   'Your academics are below their typical admitted range'
+  },
+  level: {
+    strong: 'Recruits at the level you’re open to',
+    medium: 'Recruits at the level you’re open to',
+    weak:   'Not currently recruiting at your level'
+  },
+  major: {
+    strong: 'They’re strong in your intended major',
+    medium: 'They support your intended major',
+    weak:   'Your intended major is outside their highlighted programs'
+  },
+  geographic: {
+    strong: 'Located in a region you’re open to',
+    medium: 'Outside your top regions, but they recruit nationally',
+    weak:   'Located outside the regions you prefer'
+  },
+  financial: {
+    strong: 'Their aid can meet your financial needs',
+    medium: 'Some overlap on your financial needs',
+    weak:   'Their aid may not meet your financial needs'
+  },
+  environment: {
+    strong: 'Campus setting matches your preference',
+    medium: 'Campus setting is close to your preference',
+    weak:   'Different campus setting than you prefer'
+  },
+  development: {
+    strong: 'Their development approach fits how you want to be used',
+    medium: 'Their development approach is a partial fit',
+    weak:   'Their development approach is a partial fit'
+  }
 };
+
+// Pick the tiered detail string for a dimension by its averaged score (0–1).
+// Bands MUST match fit-info-modal.js _matchIcon() so the copy agrees with the icon.
+function schoolDimDetail(key, score) {
+  const tiers = SCHOOL_DIM_DETAIL[key];
+  if (!tiers) return null;
+  const band = score >= 0.67 ? 'strong' : score >= 0.34 ? 'medium' : 'weak';
+  return tiers[band];
+}
 
 // ============ GET /api/ai-rep/best-fit-schools ============
 // Player-facing mirror of the coach AI Match: rank the SCHOOLS that best fit this
@@ -94,13 +136,16 @@ router.get('/best-fit-schools', async (req, res) => {
           agg.n += 1;
         }
       }
-      const dimensions = [...dimAgg.entries()].map(([key, agg]) => ({
-        key,
-        label: agg.label,
-        present: true,
-        score: agg.sum / agg.n,
-        detail: SCHOOL_DIM_DETAIL[key] || agg.label
-      }));
+      const dimensions = [...dimAgg.entries()].map(([key, agg]) => {
+        const score = agg.sum / agg.n;
+        return {
+          key,
+          label: agg.label,
+          present: true,
+          score,
+          detail: schoolDimDetail(key, score) || agg.label
+        };
+      });
 
       // Privacy-filtered staff (exclude private coaches; sign avatars; never email).
       const visible = entries.filter(e => e.coach.profile_visibility !== 'private');
