@@ -530,12 +530,63 @@ async function apiRequest(endpoint, options = {}) {
     }
 }
 
+// Signup age gate (client side). Reads a YYYY-MM-DD DOB string, computes whole
+// years, and if under 13 renders a persistent RED inline error directly under
+// the #dateOfBirth field (creating it if needed) and returns false so the
+// caller aborts the submit. The backend validator is the real gate; this is the
+// UX layer so a child sees the "ages 13+" message immediately. Returns true when
+// the DOB is present and the user is 13+.
+const SIGNUP_MIN_AGE = 13;
+function checkSignupAge(dobValue, fieldId = 'dateOfBirth') {
+    const field = document.getElementById(fieldId);
+    // Clear any prior inline error
+    const priorErr = document.getElementById(fieldId + '-age-error');
+    if (priorErr) priorErr.remove();
+    if (field) field.style.borderColor = '';
+
+    const showErr = (msg) => {
+        if (field) field.style.borderColor = '#dc2626';
+        const err = document.createElement('div');
+        err.id = fieldId + '-age-error';
+        err.textContent = msg;
+        err.style.color = '#dc2626';
+        err.style.fontSize = '0.85rem';
+        err.style.marginTop = '6px';
+        err.style.fontWeight = '600';
+        if (field && field.parentNode) field.parentNode.appendChild(err);
+        if (field) field.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    };
+
+    if (!dobValue || !/^\d{4}-\d{2}-\d{2}$/.test(String(dobValue))) {
+        showErr('Please enter your date of birth.');
+        return false;
+    }
+    const d = new Date(dobValue + 'T00:00:00');
+    if (isNaN(d.getTime()) || d.getTime() > Date.now()) {
+        showErr('Please enter a valid date of birth.');
+        return false;
+    }
+    const now = new Date();
+    let age = now.getFullYear() - d.getFullYear();
+    const m = now.getMonth() - d.getMonth();
+    if (m < 0 || (m === 0 && now.getDate() < d.getDate())) age--;
+    if (age < SIGNUP_MIN_AGE) {
+        showErr('You must be at least 13 years old to use Direct Recruit.');
+        return false;
+    }
+    return true;
+}
+
 // Auth API
 const authAPI = {
-    register: async (email, password, role) => {
+    // dateOfBirth (YYYY-MM-DD) powers the backend 13+ age gate and is stored on
+    // the account. termsAccepted records ToS/Privacy acceptance server-side.
+    // Both are required by the backend validator; callers (the create-profile
+    // forms) always pass them.
+    register: async (email, password, role, dateOfBirth = null, termsAccepted = false) => {
         const data = await apiRequest('/auth/register', {
             method: 'POST',
-            body: JSON.stringify({ email, password, role })
+            body: JSON.stringify({ email, password, role, date_of_birth: dateOfBirth, terms_accepted: termsAccepted })
         });
 
         setUser(data.user);

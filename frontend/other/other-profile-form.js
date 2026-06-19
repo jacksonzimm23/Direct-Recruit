@@ -277,11 +277,20 @@ document.addEventListener('DOMContentLoaded', function() {
             try {
                 const email = emailInput.value;
 
+                // Age gate: block under-13 before creating the account. Renders a
+                // red "ages 13+" message under the DOB field and aborts on failure.
+                const dob = document.getElementById('dateOfBirth')?.value || null;
+                if (!checkSignupAge(dob)) {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = originalText;
+                    return;
+                }
+
                 // Store email for verification page
                 localStorage.setItem('pendingVerificationEmail', email);
 
-                // Step 1: Register user with Cognito
-                await authAPI.register(email, password, 'other');
+                // Step 1: Register user with Cognito (DOB + ToS acceptance recorded server-side)
+                await authAPI.register(email, password, 'other', dob, true);
                 userCreated = true;
 
                 submitBtn.textContent = 'Creating Profile...';

@@ -386,11 +386,20 @@ document.addEventListener('DOMContentLoaded', async function() {
             // Only register new user if not updating
             if (!isUpdating) {
 
+                // Age gate: block under-13 before creating the account. Renders a
+                // red "ages 13+" message under the DOB field and aborts on failure.
+                const dob = document.getElementById('dateOfBirth')?.value || null;
+                if (!checkSignupAge(dob)) {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = originalText;
+                    return;
+                }
+
                 // Store email for verification page
                 localStorage.setItem('pendingVerificationEmail', email);
 
-                // Step 1: Register user
-                await authAPI.register(email, password, 'player');
+                // Step 1: Register user (DOB + ToS acceptance recorded server-side)
+                await authAPI.register(email, password, 'player', dob, true);
                 userCreated = true;
             }
 

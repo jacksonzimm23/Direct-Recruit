@@ -18,6 +18,12 @@ const Notification = require('../models/Notification');
 const PipelineRecruit = require('../models/PipelineRecruit');
 const { notifyUser } = require('../utils/notifications');
 
+// Current Terms of Service / Privacy Policy version recorded at signup. Keep in
+// sync with the "Last Updated" date shown in frontend/landingpage/terms-of-service.html
+// and privacy-policy.html. Bump this string whenever those documents materially
+// change so terms_accepted records reflect which version each user agreed to.
+const TERMS_VERSION = '2026-06-18';
+
 // Cookie configuration
 // sameSite 'none' in prod (was 'strict'): the iOS Capacitor WKWebView does not reliably
 // store/send a sameSite=strict auth cookie, so sign-in succeeded but the next request read as
@@ -70,7 +76,9 @@ async function addSignedUrlToProfile(profile) {
 // Register new user
 router.post('/register', authLimiter, validateRegistration, handleValidationErrors, async (req, res) => {
   try {
-    const { email, password, role } = req.body;
+    const { email, password, role, date_of_birth } = req.body;
+    // validateRegistration has already enforced: DOB present + user is 13+,
+    // and terms_accepted is truthy. Record acceptance metadata here.
 
     const existingUser = await User.findByEmail(email);
     if (existingUser) {
@@ -91,8 +99,17 @@ router.post('/register', authLimiter, validateRegistration, handleValidationErro
       throw cognitoError;
     }
 
-    // Create user in local database (without password)
-    const user = await User.create({ email, role, cognitoSub: cognitoResult.userSub });
+    // Create user in local database (without password). Store the account-level
+    // DOB (age gate) and the ToS/Privacy acceptance proof (timestamp, version, IP).
+    const user = await User.create({
+      email,
+      role,
+      cognitoSub: cognitoResult.userSub,
+      dateOfBirth: date_of_birth,
+      termsAcceptedAt: new Date(),
+      termsVersion: TERMS_VERSION,
+      termsAcceptedIp: req.ip || null
+    });
 
     // Backlink: if this email previously submitted via the public questionnaire,
     // tie all existing pool entries + submissions to this new account. Non-fatal —

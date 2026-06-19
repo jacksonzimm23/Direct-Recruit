@@ -1,11 +1,17 @@
 const pool = require('../config/database');
 
 class User {
-  // Create user (now without password - Cognito handles auth)
-  static async create({ email, role, cognitoSub }) {
+  // Create user (now without password - Cognito handles auth).
+  // dateOfBirth is the account-level age signal captured at the 13+ age gate.
+  // termsAcceptedAt/termsVersion/termsAcceptedIp record ToS/Privacy acceptance
+  // server-side. All are optional so existing callers/back-compat paths don't
+  // break, but the register route always supplies them.
+  static async create({ email, role, cognitoSub, dateOfBirth = null, termsAcceptedAt = null, termsVersion = null, termsAcceptedIp = null }) {
     const result = await pool.query(
-      'INSERT INTO users (email, role, cognito_sub) VALUES ($1, $2, $3) RETURNING id, email, role, created_at',
-      [email, role, cognitoSub]
+      `INSERT INTO users (email, role, cognito_sub, date_of_birth, terms_accepted_at, terms_version, terms_accepted_ip)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
+       RETURNING id, email, role, created_at`,
+      [email, role, cognitoSub, dateOfBirth, termsAcceptedAt, termsVersion, termsAcceptedIp]
     );
     return result.rows[0];
   }

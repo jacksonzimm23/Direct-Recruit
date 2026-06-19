@@ -224,6 +224,32 @@ const validateDateOfBirth = (value) => {
   return true;
 };
 
+// Registration DOB: required, real past date, and the user must be at least 13.
+// This is the COPPA age gate — it runs in the validateRegistration chain BEFORE
+// the register route body, so an under-13 attempt never creates a Cognito/DB
+// user. Reuses the same format/calendar checks as validateDateOfBirth, but DOB
+// is REQUIRED here (empty is rejected) and adds the minimum-age check.
+const MIN_SIGNUP_AGE = 13;
+const validateRegistrationDob = (value) => {
+  if (value === null || value === undefined || String(value).trim() === '') {
+    throw new Error('Date of birth is required');
+  }
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(value))) throw new Error('Date of birth must be in YYYY-MM-DD format');
+  const d = new Date(value + 'T00:00:00Z');
+  if (isNaN(d.getTime())) throw new Error('Date of birth must be a valid date');
+  const now = new Date();
+  if (d.getTime() > now.getTime()) throw new Error('Date of birth must be a valid past date');
+  if (d.getUTCFullYear() < 1900) throw new Error('Date of birth must be a valid past date');
+  // Whole-years age as of today (UTC), handling month/day not yet reached.
+  let age = now.getUTCFullYear() - d.getUTCFullYear();
+  const m = now.getUTCMonth() - d.getUTCMonth();
+  if (m < 0 || (m === 0 && now.getUTCDate() < d.getUTCDate())) age--;
+  if (age < MIN_SIGNUP_AGE) {
+    throw new Error(`You must be at least ${MIN_SIGNUP_AGE} years old to use Direct Recruit`);
+  }
+  return true;
+};
+
 // Mailing zip — allow 5-digit or ZIP+4 (distinct from the AI-fit home_zip).
 const validateMailingZip = (value) => {
   if (value === null || value === undefined || value === '') return true;
@@ -394,6 +420,13 @@ const validateRegistration = [
   body('email').isEmail().normalizeEmail().withMessage('Valid email required'),
   body('password').isLength({ min: 8 }).withMessage('Password must be at least 8 characters'),
   body('role').isIn(['player', 'coach', 'other']).withMessage('Role must be player, coach, or other'),
+  // Age gate: required DOB, user must be 13+ (see validateRegistrationDob).
+  body('date_of_birth').custom(validateRegistrationDob),
+  // Terms of Service / Privacy Policy must be affirmatively accepted at signup.
+  body('terms_accepted').custom((v) => {
+    if (v === true || v === 'true') return true;
+    throw new Error('You must agree to the Terms of Service and Privacy Policy');
+  }),
 ];
 
 // --- Profile creation validators (required fields enforced) ---

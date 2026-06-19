@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeFormHandlers();
     initializeToggleSwitches();
     initializeSaveButtons();
+    initializeDataExport();
     initializeDeleteAccount();
     initializePasswordChange();
     initializeEmailChange();
@@ -359,6 +360,67 @@ async function discardChanges() {
         resetModifiedState();
         showNotification('Changes discarded', 'warning');
     }
+}
+
+// Download My Data (data portability / right of access)
+function initializeDataExport() {
+    const exportBtn = document.getElementById('exportDataBtn');
+    if (!exportBtn) return;
+
+    exportBtn.addEventListener('click', async function() {
+        const originalText = exportBtn.textContent;
+        exportBtn.disabled = true;
+        exportBtn.textContent = 'Preparing...';
+
+        try {
+            // iOS Bearer fallback, mirroring the delete-account handler: the raw
+            // fetch must carry the stored token because the cookie path is
+            // unreliable in the WebView. Gated to the iOS app so web is unaffected.
+            const headers = {};
+            if (window.API && API.isIOSApp && API.isIOSApp() && API.getAuthToken) {
+                const t = API.getAuthToken();
+                if (t) headers.Authorization = 'Bearer ' + t;
+            }
+
+            const response = await fetch(`${API_BASE_URL}/settings/account/export`, {
+                method: 'GET',
+                credentials: 'include',
+                headers
+            });
+
+            if (!response.ok) {
+                let msg = 'Failed to export your data';
+                try { const body = await response.json(); if (body.error) msg = body.error; } catch (_) {}
+                throw new Error(msg);
+            }
+
+            // Stream the JSON file to a download. Derive the filename from the
+            // Content-Disposition header the server sets, with a sane fallback.
+            const blob = await response.blob();
+            let filename = 'direct-recruit-data.json';
+            const cd = response.headers.get('Content-Disposition');
+            if (cd) {
+                const match = cd.match(/filename="?([^"]+)"?/i);
+                if (match && match[1]) filename = match[1];
+            }
+
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            window.URL.revokeObjectURL(url);
+
+            showNotification('Your data download has started.', 'success');
+        } catch (err) {
+            showNotification(err.message || 'Failed to export your data', 'error');
+        } finally {
+            exportBtn.disabled = false;
+            exportBtn.textContent = originalText;
+        }
+    });
 }
 
 // Delete Account

@@ -10,7 +10,7 @@ const { authMiddleware } = require('../middleware/auth');
 const { authLimiter } = require('../middleware/rateLimit');
 const cognito = require('../utils/cognito');
 const email = require('../utils/email');
-const { deleteFromS3 } = require('../utils/s3');
+const { deleteFromS3, getSignedS3Url } = require('../utils/s3');
 const { generateToken } = require('../utils/jwt');
 const { bumpRevokeCutoff } = require('../utils/tokenRevocation');
 const pool = require('../config/database');
@@ -705,6 +705,142 @@ router.post('/password/forgot/cancel', authMiddleware, async (req, res) => {
   }
 });
 
+// ==================== EXPORT DATA (data portability / right of access) ====================
+
+// Download a copy of all personal data we hold for the authenticated user, as a
+// single JSON file. Satisfies the right of access + data portability under
+// CCPA / Colorado CPA / GDPR Art.15 & 20. Only ever returns the requester's OWN
+// data (every query is scoped to req.userId, or to the account email for rows
+// that pre-date the account link, e.g. questionnaire submissions). S3 keys are
+// resolved to time-limited signed URLs so the export is self-contained; media
+// bytes themselves are not inlined.
+router.get('/account/export', authMiddleware, async (req, res) => {
+  try {
+    const userId = req.userId;
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    const userEmail = user.email;
+
+    // Helper: run a scoped query and return rows, swallowing "table doesn't
+    // exist yet" so an export never 500s on an environment missing a migration.
+    const safeRows = async (text, params) => {
+      try {
+        const r = await pool.query(text, params);
+        return r.rows;
+      } catch (err) {
+        logger.warn(`Export query skipped (${err.code || err.name}): ${err.message}`);
+        return [];
+      }
+    };
+
+    // Helper: turn any S3 key on a row into a signed URL the user can download.
+    const signKeys = async (rows, fields) => {
+      for (const row of rows) {
+        for (const f of fields) {
+          const key = row[f];
+          if (typeof key === 'string' && key && !/^https?:\/\//i.test(key)) {
+            try { row[f] = await getSignedS3Url(key); }
+            catch { /* leave the raw key if signing fails */ }
+          }
+        }
+      }
+      return rows;
+    };
+
+    // ---- Account ----
+    const account = {
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      created_at: user.created_at,
+      last_login: user.last_login,
+      email_verified: user.email_verified,
+      profile_completed: user.profile_completed,
+    };
+
+    // ---- Profiles (only one of these exists per account) ----
+    const [playerProfile] = await safeRows('SELECT * FROM player_profiles WHERE user_id = $1', [userId]);
+    const [coachProfile] = await safeRows('SELECT * FROM coach_profiles WHERE user_id = $1', [userId]);
+    const [otherProfile] = await safeRows('SELECT * FROM other_profiles WHERE user_id = $1', [userId]);
+    if (playerProfile) await signKeys([playerProfile], ['profile_image_url', 'highlight_video_url']);
+    if (coachProfile) await signKeys([coachProfile], ['profile_image_url']);
+
+    // ---- Content the user created ----
+    const posts = await signKeys(
+      await safeRows('SELECT * FROM posts WHERE user_id = $1 ORDER BY created_at', [userId]),
+      [] // media_urls is an array; handled below
+    );
+    for (const p of posts) {
+      if (Array.isArray(p.media_urls)) {
+        p.media_urls = await Promise.all(p.media_urls.map(async (k) => {
+          if (typeof k === 'string' && k && !/^https?:\/\//i.test(k)) {
+            try { return await getSignedS3Url(k); } catch { return k; }
+          }
+          return k;
+        }));
+      }
+    }
+    const comments = await safeRows('SELECT * FROM post_comments WHERE user_id = $1 ORDER BY created_at', [userId]);
+    // Highlights here are Hudl links (hudl_link), not uploaded S3 videos, so no signing needed.
+    const highlights = await safeRows('SELECT * FROM player_highlights WHERE user_id = $1 ORDER BY created_at', [userId]);
+    // Offers live as a TEXT/JSON column on player_profiles (captured in `profile`
+    // above), so no separate offers table. Game stats are keyed by
+    // player_profile_id, not user_id — join through the profile.
+    const stats = await safeRows(
+      `SELECT ps.* FROM player_stats ps
+         JOIN player_profiles pp ON pp.id = ps.player_id
+        WHERE pp.user_id = $1
+        ORDER BY ps.created_at`,
+      [userId]
+    );
+
+    // ---- Social graph ----
+    const following = await safeRows('SELECT following_id, created_at FROM follows WHERE follower_id = $1', [userId]);
+    const followers = await safeRows('SELECT follower_id, created_at FROM follows WHERE following_id = $1', [userId]);
+
+    // ---- Messages the user sent (other participants' messages are theirs, not ours to export) ----
+    const messages = await safeRows(
+      'SELECT id, conversation_id, content, created_at FROM messages WHERE sender_id = $1 ORDER BY created_at',
+      [userId]
+    );
+
+    // ---- Questionnaire submissions tied to this person (by account link OR email) ----
+    const questionnaireSubmissions = await safeRows(
+      `SELECT id, questionnaire_id, email, submission_data, submitted_at
+         FROM questionnaire_submissions
+        WHERE linked_player_user_id = $1 OR LOWER(email) = LOWER($2)
+        ORDER BY submitted_at`,
+      [userId, userEmail]
+    );
+
+    const exportData = {
+      export_generated_at: new Date().toISOString(),
+      notice: 'This file contains the personal data Direct Recruit holds for your account. Media links are time-limited and expire after a few hours; re-export to refresh them.',
+      account,
+      profile: playerProfile || coachProfile || otherProfile || null,
+      posts,
+      comments,
+      highlights,
+      stats,
+      following,
+      followers,
+      messages_sent: messages,
+      questionnaire_submissions: questionnaireSubmissions,
+    };
+
+    const stamp = new Date().toISOString().slice(0, 10);
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="direct-recruit-data-${stamp}.json"`);
+    res.send(JSON.stringify(exportData, null, 2));
+  } catch (error) {
+    logger.error('Data export error:', error);
+    res.status(500).json({ error: 'Failed to export account data' });
+  }
+});
+
 // ==================== DELETE ACCOUNT ====================
 
 // Delete user account permanently
@@ -813,6 +949,58 @@ router.delete('/account/delete', authMiddleware, async (req, res) => {
     } catch (s3Error) {
       logger.error('S3 cleanup error during account deletion:', s3Error);
       // Continue with account deletion even if S3 cleanup fails
+    }
+
+    // Erase questionnaire/pool PII before the DB cascade. A recruit's
+    // questionnaire_submissions / pool_entries rows are owned by a coach's
+    // team_questionnaire, so the user-table cascade does NOT remove them — the
+    // FK is ON DELETE SET NULL, which would only null linked_player_user_id and
+    // leave submission_data JSONB (name, contact, home address, GPA, parent /
+    // guardian contacts) sitting in coaches' recruiting pools indefinitely.
+    // That is the user's own PII, so on account deletion we hard-delete it,
+    // matched by the linked profile OR the submission email (a recruit may have
+    // submitted before ever creating an account). Required for a genuine
+    // right-to-erasure (Privacy Policy §10 / CCPA / Colorado CPA / GDPR Art.17).
+    //
+    // Deleting questionnaire_submissions cascades to pool_entries
+    // (pool_entries.latest_submission_id REFERENCES ... ON DELETE CASCADE) and
+    // NULLs any pipeline_recruits.pool_entry_id (... ON DELETE SET NULL). A
+    // pipeline row that was pool-sourced and has no DR account link then has no
+    // remaining name source, so we hard-delete those nameless orphans too;
+    // DR-account-linked pipeline rows survive (their name resolves from the
+    // public DR profile, no PII leak) and are removed by the user-table cascade.
+    // Best-effort — never block account deletion on this cleanup.
+    try {
+      // 1. Drop pool-only pipeline rows that depend on THIS person's pool entries
+      //    for their name (no DR account link). Done first, while the pool
+      //    entries still exist to match on, so we don't strand nameless rows.
+      const orphanedPipeline = await pool.query(
+        `DELETE FROM pipeline_recruits pr
+          WHERE pr.linked_player_user_id IS NULL
+            AND pr.pool_entry_id IN (
+              SELECT id FROM pool_entries
+               WHERE linked_player_user_id = $1 OR LOWER(email) = LOWER($2)
+            )
+          RETURNING pr.id`,
+        [req.userId, userEmail]
+      );
+
+      // 2. Hard-delete the submissions (cascades to pool_entries). This is the
+      //    row that actually holds the recruit's PII.
+      const erasedSubs = await pool.query(
+        `DELETE FROM questionnaire_submissions
+          WHERE linked_player_user_id = $1 OR LOWER(email) = LOWER($2)
+          RETURNING id`,
+        [req.userId, userEmail]
+      );
+
+      logger.info(
+        `Erased questionnaire PII for deleted account ${req.userId}: ` +
+        `${erasedSubs.rowCount} submission(s), ${orphanedPipeline.rowCount} orphaned pipeline row(s)`
+      );
+    } catch (questionnaireErr) {
+      logger.error('Questionnaire PII erasure error during account deletion:', questionnaireErr);
+      // Continue with account deletion even if this cleanup fails
     }
 
     // Phase 4a: cancel Stripe subscription for web users before DB deletion.
