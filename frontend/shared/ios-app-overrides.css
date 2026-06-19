@@ -175,6 +175,44 @@ html.ios-app body { background-color: inherit; }
         display: none !important;
     }
 
+    /* AI Rep "Best-Fit Schools" rows (hsplayer + transferplayer) — iOS only.
+       The row is a horizontal flex (logo | info | fit-badge). On a narrow iPhone
+       the AI Match badge (label + slider + score) is a 3rd horizontal column and
+       its score gets pushed off the right edge (cut off). Restructure to TWO rows:
+       line 1 = logo + school name + division; line 2 = the full-width AI Match
+       slider + score underneath. Done by letting the row wrap and forcing the
+       badge onto its own 100%-width line. */
+    .ios-app .ai-rep-school-row {
+        flex-wrap: wrap !important;
+        align-items: center !important;
+        row-gap: 0.6rem !important;
+    }
+    .ios-app .ai-rep-school-row .ai-rep-school-info {
+        flex: 1 1 auto !important;
+        min-width: 0 !important;
+    }
+    /* Force the badge to wrap to its own full-width second row, full bar layout. */
+    .ios-app .ai-rep-school-row .fit-badge {
+        flex: 0 0 100% !important;
+        width: 100% !important;
+        margin-left: 0 !important;
+        margin-top: 0 !important;
+        display: flex !important;
+        align-items: center !important;
+        gap: 0.6rem !important;
+        grid-template-columns: none !important;
+        grid-template-areas: none !important;
+    }
+    .ios-app .ai-rep-school-row .fit-badge .fit-label { order: 1; flex-shrink: 0 !important; }
+    .ios-app .ai-rep-school-row .fit-badge .fit-track { order: 2; flex: 1 1 auto !important; height: 7px !important; }
+    .ios-app .ai-rep-school-row .fit-badge .fit-num {
+        order: 3;
+        flex-shrink: 0 !important;
+        min-width: 2.6ch !important;
+        text-align: right !important;
+        justify-self: auto !important;
+    }
+
     /* Discover / Transfer Portal padded (non-AI) tab: align subtabs with the AI-tab
        position (50px) instead of the default 65px, including the safe-area inset.
        :not(:has(...active AI layout)) so it only applies on the non-AI tab and never
