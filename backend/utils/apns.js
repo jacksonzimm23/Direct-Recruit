@@ -29,8 +29,9 @@ if (!hasRealKey) {
 // as opaque "apns fan-out error" log spam). Log the precise reason and fall
 // back to the mock so the rest of the app keeps working.
 let provider;
+let apn; // module-scoped so sendPush() can build notifications (was block-scoped in the try → "apn is not defined")
 try {
-    const apn = require('@parse/node-apn');
+    apn = require('@parse/node-apn');
     const fs = require('fs');
 
     const key = process.env.APNS_P8_CONTENT
