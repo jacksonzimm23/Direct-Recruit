@@ -54,7 +54,9 @@
             </array>
         </dict>
 
-        <!-- Phone Number (coaches only — for contact during recruiting) -->
+        <!-- Phone Number (player + coach profiles, plus third-party contacts
+             a player enters: HS/previous coach and up to 4 parents/guardians —
+             for contact during recruiting) -->
         <dict>
             <key>NSPrivacyCollectedDataType</key>
             <string>NSPrivacyCollectedDataTypePhoneNumber</string>
@@ -68,10 +70,49 @@
             </array>
         </dict>
 
-        <!-- Physical Address (state only — non-precise, for recruiting context) -->
+        <!-- Physical Address (HS/transfer players provide mailing address, city,
+             ZIP; all profiles can provide home ZIP for recruiting fit; coaches
+             provide city/state. Includes a precise-ish 5-digit ZIP, so declared
+             as Physical Address rather than only Coarse Location.) -->
         <dict>
             <key>NSPrivacyCollectedDataType</key>
             <string>NSPrivacyCollectedDataTypePhysicalAddress</string>
+            <key>NSPrivacyCollectedDataTypeLinked</key>
+            <true/>
+            <key>NSPrivacyCollectedDataTypeTracking</key>
+            <false/>
+            <key>NSPrivacyCollectedDataTypePurposes</key>
+            <array>
+                <string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+            </array>
+        </dict>
+
+        <!-- Coarse Location (approximate location derived from IP address —
+             stored server-side as terms_accepted_ip and on coach signup
+             requests; used for security/abuse logging and approximate context.
+             NOT precise GPS — the app does not request location permission.) -->
+        <dict>
+            <key>NSPrivacyCollectedDataType</key>
+            <string>NSPrivacyCollectedDataTypeCoarseLocation</string>
+            <key>NSPrivacyCollectedDataTypeLinked</key>
+            <true/>
+            <key>NSPrivacyCollectedDataTypeTracking</key>
+            <false/>
+            <key>NSPrivacyCollectedDataTypePurposes</key>
+            <array>
+                <string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+                <string>NSPrivacyCollectedDataTypePurposeAnalytics</string>
+            </array>
+        </dict>
+
+        <!-- Sensitive Info (financial-aid / athletic-scholarship need, Pell /
+             first-generation status entered for recruiting fit; academic
+             transcripts a recruit may upload via the questionnaire, which can
+             contain grades/test scores). Apple classifies financial and
+             health/education-adjacent data here. Linked, never used for tracking. -->
+        <dict>
+            <key>NSPrivacyCollectedDataType</key>
+            <string>NSPrivacyCollectedDataTypeSensitiveInfo</string>
             <key>NSPrivacyCollectedDataTypeLinked</key>
             <true/>
             <key>NSPrivacyCollectedDataTypeTracking</key>
@@ -171,10 +212,15 @@
             </array>
         </dict>
 
-        <!-- Other Data Types (athletic data — height, weight, position,
-             stats, eligibility, graduation year. Apple's enum doesn't have
-             a clean "athletic data" bucket, so we declare under OtherDataTypes
-             as a catch-all per Apple's guidance for sports apps.) -->
+        <!-- Other Data Types (catch-all for data with no clean Apple enum:
+             athletic data — height, weight, position, stats, eligibility,
+             graduation year, track times, multi-sport; academic records —
+             GPA, SAT/ACT, class rank, AP/IB, intended major; date of birth
+             (collected for the 13+ age gate); recruiting preferences —
+             levels open, preferred regions, campus setting, priority sliders;
+             and names of third-party contacts a player enters (coach,
+             parents/guardians). Declared under OtherDataTypes per Apple's
+             guidance for sports apps.) -->
         <dict>
             <key>NSPrivacyCollectedDataType</key>
             <string>NSPrivacyCollectedDataTypeOtherDataTypes</string>
