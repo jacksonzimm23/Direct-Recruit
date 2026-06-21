@@ -88,29 +88,16 @@
             pages: ['notifications'],
             hasBadge: true
         },
-        {
-            href: `${tabsPath}recruiting-board.html`,
-            id: 'recruitingBoardNav',
-            icon: `<rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                   <line x1="9" y1="3" x2="9" y2="21"></line>
-                   <line x1="15" y1="3" x2="15" y2="21"></line>
-                   <line x1="3" y1="9" x2="21" y2="9"></line>
-                   <line x1="3" y1="15" x2="21" y2="15"></line>`,
-            label: 'Recruiting Board',
-            pages: ['recruiting-board'],
-            hidden: true  // Initially hidden, shown by JS for college coaches
-        },
-        {
-            href: `${tabsPath}transfer-portal.html`,
-            id: 'transferPortalNav',
-            icon: `<circle cx="12" cy="12" r="10"></circle>
-                   <path d="M8 12h8"></path>
-                   <path d="M12 8v8"></path>
-                   <circle cx="12" cy="12" r="3"></circle>`,
-            label: 'Transfer Portal',
-            pages: ['transfer-portal'],
-            hidden: true  // Initially hidden, shown by JS for college coaches
-        },
+        // NOTE: Recruiting Board and Transfer Portal are intentionally NOT included
+        // here. They are collegecoach-only features and the pages don't exist for
+        // hscoach (they 404). Previously they were injected with `hidden: true` and
+        // un-hidden by JS for college coaches — but on iOS the bottom-nav CSS rule
+        // `.nav-item { display: flex !important }` (shared/mobile-overrides.css)
+        // overrode the inline `display:none`, force-showing them in the bottom nav
+        // regardless of the JS. Omitting them entirely is the only robust fix, since
+        // hscoach and collegecoach share the same `profile-type-coach` body class and
+        // can't be distinguished in CSS. The collegecoach sidebar-nav.js still injects
+        // these two items normally.
         {
             href: `${tabsPath}settings.html`,
             id: '',

@@ -815,7 +815,11 @@ async function setupCollegeCoachNav() {
         const response = await API.get('/auth/me');
         if (response.user && response.profile) {
             const profile = response.profile;
-            const isCollegeCoach = profile.college_division && profile.college_division.trim() !== '';
+            // High school coaches have 'High School' as a marker, which is truthy but
+            // is NOT a real college division — exclude it explicitly.
+            const isCollegeCoach = profile.college_division &&
+                                   profile.college_division.trim() !== '' &&
+                                   profile.college_division !== 'High School';
 
             const recruitingBoardNav = document.getElementById('recruitingBoardNav');
             const transferPortalNav = document.getElementById('transferPortalNav');

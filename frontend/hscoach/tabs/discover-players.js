@@ -747,8 +747,11 @@ async function setupCollegeCoachNav() {
         if (response.user && response.profile) {
             const profile = response.profile;
             // Check for college_division to determine if user is a college coach
-            // High school coaches won't have a division (FBS, FCS, D2, D3, NAIA, JUCO)
-            const isCollegeCoach = profile.college_division && profile.college_division.trim() !== '';
+            // High school coaches have 'High School' as a marker, which is truthy but
+            // is NOT a real college division — exclude it explicitly.
+            const isCollegeCoach = profile.college_division &&
+                                   profile.college_division.trim() !== '' &&
+                                   profile.college_division !== 'High School';
 
             const recruitingBoardNav = document.getElementById('recruitingBoardNav');
             const transferPortalNav = document.getElementById('transferPortalNav');

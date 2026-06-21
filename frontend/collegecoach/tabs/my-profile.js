@@ -1939,11 +1939,13 @@ function setupUI() {
 
     // Debug logging
 
-    // Show recruiting tab ONLY if viewing profile has a college_division (college coaches)
-    // High school coaches won't have a college division (FBS, FCS, D2, D3, NAIA, JUCO)
+    // Show recruiting tab ONLY if viewing profile has a real college_division (college coaches)
+    // High school coaches have 'High School' as a marker, which is truthy but is NOT a
+    // real college division — exclude it explicitly.
     const isCollegeCoachProfile = currentProfile &&
                                    currentProfile.college_division &&
-                                   currentProfile.college_division.trim() !== '';
+                                   currentProfile.college_division.trim() !== '' &&
+                                   currentProfile.college_division !== 'High School';
 
     if (isCollegeCoachProfile) {
         if (recruitingTab) {
@@ -2217,8 +2219,11 @@ async function setupCollegeCoachNav() {
         if (response.user && response.profile) {
             const profile = response.profile;
             // Check for college_division instead of college_name
-            // High school coaches won't have a division (FBS, FCS, D2, D3, NAIA, JUCO)
-            const isCollegeCoach = profile.college_division && profile.college_division.trim() !== '';
+            // High school coaches have 'High School' as a marker, which is truthy but
+            // is NOT a real college division — exclude it explicitly.
+            const isCollegeCoach = profile.college_division &&
+                                   profile.college_division.trim() !== '' &&
+                                   profile.college_division !== 'High School';
 
             const recruitingBoardNav = document.getElementById('recruitingBoardNav');
             const transferPortalNav = document.getElementById('transferPortalNav');

@@ -1908,11 +1908,13 @@ function setupUI() {
 
     // Debug logging
 
-    // Show recruiting tab ONLY if viewing profile has a college_division (college coaches)
-    // High school coaches won't have a college division (FBS, FCS, D2, D3, NAIA, JUCO)
+    // Show recruiting tab ONLY if viewing profile has a real college_division (college coaches)
+    // High school coaches have 'High School' as a marker, which is truthy but is NOT a
+    // real college division — exclude it explicitly.
     const isCollegeCoachProfile = currentProfile &&
                                    currentProfile.college_division &&
-                                   currentProfile.college_division.trim() !== '';
+                                   currentProfile.college_division.trim() !== '' &&
+                                   currentProfile.college_division !== 'High School';
 
     if (isCollegeCoachProfile) {
         if (recruitingTab) {
