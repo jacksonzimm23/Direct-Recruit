@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Direct Recruit — App Store Screenshots</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+:root{
+  --navy:#0a1128;
+  --navy2:#000f23;
+  --cerulean:#1282a2;
+  --white:#fefcfb;
+  --orange:#ff6b35;
+  --transfer:#dc2626;
+  --fit-6:#1f9d4d;
+  --fit-5:#86efac;
+  --fit-4:#eab308;
+  --fit-3:#f97316;
+  --fit-2:#ef4444;
+  --fit-1:#7f1d1d;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased;}
+body{
+  font-family:'Inter',sans-serif;
+  background:#1a1a1f;
+  color:var(--white);
+  padding:40px;
+}
+.toolbar{
+  position:sticky;top:0;z-index:9999;
+  background:#111;
+  padding:16px 20px;margin:-40px -40px 40px;
+  display:flex;align-items:center;gap:16px;flex-wrap:wrap;
+  border-bottom:1px solid #333;
+}
+.toolbar h1{font-size:16px;font-weight:800;}
+.toolbar p{font-size:13px;color:#999;}
+.btn{
+  background:var(--cerulean);color:#fff;border:none;border-radius:8px;
+  padding:10px 18px;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;
+}
+.btn:hover{filter:brightness(1.1);}
+.btn.alt{background:#333;}
+#status{font-size:13px;color:#7dd3fc;}
+
+.slides-wrap{display:flex;flex-direction:column;gap:60px;align-items:center;}
+
+/* ============ SLIDE (App Store canvas: 1284 x 2778 — iPhone 6.5") ============ */
+.slide{
+  width:1284px;height:2778px;
+  position:relative;overflow:hidden;
+  background:
+    radial-gradient(ellipse 90% 40% at 50% 15%, rgba(18,130,162,0.30) 0%, transparent 62%),
+    linear-gradient(180deg, #0c1430 0%, var(--navy) 50%, var(--navy2) 100%);
+  display:flex;flex-direction:column;align-items:center;
+  flex-shrink:0;
+}
+.slide-caption{
+  text-align:center;
+  padding:0 64px;
+  width:100%;
+  height:798px;                 /* = 2778 slide - 1980 phone: exact gap above phone */
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  flex-shrink:0;
+}
+.slide-caption h2{
+  font-size:120px;line-height:0.97;font-weight:900;letter-spacing:-0.03em;
+  text-transform:uppercase;
+  color:var(--white);
+  text-shadow:0 6px 40px rgba(0,0,0,0.5);
+}
+.slide-caption .accent{
+  display:inline-block;
+  background:linear-gradient(135deg,#26c8ef,#00d4ff);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.slide-caption .accent-orange{color:var(--orange);}
+.slide-caption p{
+  margin-top:28px;font-size:42px;font-weight:600;color:rgba(254,252,251,0.55);line-height:1.3;
+}
+
+/* ============ PHONE FRAME (cut off at bottom, X-style) ============ */
+.phone-stage{
+  flex:1;display:flex;align-items:flex-end;justify-content:center;
+  width:100%;
+}
+.phone{
+  width:1010px;
+  height:1980px;           /* taller: rises up near the title, bottom bleeds off */
+  background:#05060a;
+  border-radius:96px 96px 0 0;
+  padding:18px 18px 0;
+  box-shadow:0 0 0 4px #23262d, 0 -8px 60px rgba(0,0,0,0.4), 0 0 90px rgba(18,130,162,0.18);
+  position:relative;
+}
+.phone-screen{
+  width:100%;height:100%;
+  background:var(--navy);
+  border-radius:80px 80px 0 0;
+  overflow:hidden;
+  position:relative;
+}
+/* Dynamic Island */
+.island{
+  position:absolute;top:22px;left:50%;transform:translateX(-50%);
+  width:230px;height:62px;background:#000;border-radius:40px;z-index:50;
+}
+/* iOS status bar */
+.statusbar{
+  position:absolute;top:0;left:0;right:0;height:96px;z-index:40;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:34px 58px 0;
+  color:var(--white);
+  font-size:34px;font-weight:700;
+}
+.statusbar .sb-right{display:flex;align-items:center;gap:14px;}
+.statusbar svg{display:block;}
+
+/* The real app viewport, scaled. Real mobile width = 390px.
+   We render real-px markup at 390px and scale up to fill the 904px screen. */
+.app{
+  position:absolute;top:0;left:0;
+  width:390px;
+  height:800px;            /* tall enough to fill the cut-off frame */
+  transform-origin:top left;
+  transform:scale(2.497);  /* screen_width(974) / 390 */
+  background:var(--navy);
+  font-size:16px;
+  overflow:hidden;
+}
+
+/* ---------- iOS mobile header (real app) ---------- */
+.m-header{
+  height:56px;display:flex;align-items:center;justify-content:space-between;
+  padding:0.75rem 1rem;background:rgba(0,15,35,0.98);
+  border-bottom:1px solid rgba(18,130,162,0.2);
+  position:relative;z-index:5;
+}
+.m-header-left{display:flex;align-items:center;gap:0.75rem;min-width:0;}
+.m-avatar{width:36px;height:36px;border-radius:50%;background:rgba(18,130,162,0.2);
+  border:2px solid rgba(18,130,162,0.5);display:flex;align-items:center;justify-content:center;overflow:hidden;flex:0 0 36px;}
+.m-avatar img{width:100%;height:100%;object-fit:cover;}
+.m-avatar svg{width:20px;height:20px;color:var(--cerulean);}
+.m-user-name{font-size:0.95rem;font-weight:600;color:var(--white);}
+.m-user-role{font-size:0.75rem;font-weight:700;color:var(--cerulean);}
+.m-user-role.coach{color:var(--orange);}
+.m-header-logo{height:35px;width:auto;}
+
+/* ---------- bottom nav (real app) ---------- */
+.m-bottomnav{
+  position:absolute;bottom:0;left:0;right:0;height:62px;
+  background:rgba(0,15,35,0.98);border-top:1px solid rgba(18,130,162,0.3);
+  display:flex;align-items:center;justify-content:space-around;padding:0 0.5rem;z-index:5;
+}
+.m-nav-item{display:flex;flex-direction:column;align-items:center;justify-content:center;
+  flex:1;padding:0.4rem 0.25rem;border-radius:12px;border:1.5px solid transparent;
+  color:rgba(254,252,251,0.6);}
+.m-nav-item svg{width:26px;height:26px;}
+.m-nav-item.active{background:rgba(18,130,162,0.15);color:var(--cerulean);border-color:rgba(18,130,162,0.5);}
+.m-nav-item.active.coach{background:rgba(255,107,53,0.15);color:var(--orange);border-color:rgba(255,107,53,0.5);}
+.m-nav-item.active.transfer{background:rgba(220,38,38,0.15);color:var(--transfer);border-color:rgba(220,38,38,0.5);}
+
+.app-scroll{position:absolute;top:42px;bottom:0;left:0;right:0;overflow:hidden;padding:0.75rem 0.75rem 0;}
+.app-scroll.nopad{padding:0;}
+/* bottom nav removed from all feature pages per design */
+.m-bottomnav{display:none !important;}
+
+/* ---------- feed post card ---------- */
+.post-card{background:rgba(255,255,255,0.03);border:1px solid rgba(18,130,162,0.2);
+  border-radius:12px;padding:1rem;margin-bottom:0.6rem;}
+.post-header{display:flex;align-items:flex-start;gap:0.75rem;margin-bottom:0.7rem;position:relative;}
+.post-avatar{width:40px;height:40px;border-radius:50%;background:rgba(18,130,162,0.2);
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;}
+.post-avatar.coach{background:rgba(255,107,53,0.2);}
+.post-avatar svg{width:22px;height:22px;color:var(--cerulean);}
+.post-avatar.coach svg{color:var(--orange);}
+.post-user-info{flex:1;min-width:0;}
+.post-name-row{display:flex;align-items:center;gap:0.3rem;}
+.post-name{font-size:1rem;font-weight:700;color:var(--white);display:inline-flex;align-items:center;gap:0.2rem;white-space:nowrap;}
+.verified{width:15px;height:15px;color:var(--cerulean);flex-shrink:0;}
+.post-handle{color:rgba(255,255,255,0.5);font-size:0.8rem;}
+.post-meta{font-size:0.8rem;color:var(--cerulean);margin-top:0.1rem;}
+.post-meta.coach{color:var(--orange);}
+.post-more{position:absolute;top:0;right:0;color:rgba(254,252,251,0.5);}
+.post-more svg{width:18px;height:18px;}
+.post-text{color:var(--white);font-size:0.95rem;line-height:1.5;margin-bottom:0.7rem;}
+.post-img{border-radius:14px;overflow:hidden;border:1px solid rgba(18,130,162,0.2);margin-bottom:0.7rem;height:160px;}
+.post-img img{width:100%;height:100%;object-fit:cover;display:block;}
+.post-img.placeholder{background:linear-gradient(135deg,rgba(18,130,162,0.25),rgba(10,17,40,0.8));display:flex;align-items:center;justify-content:center;}
+.post-img.placeholder svg{width:50px;height:50px;color:rgba(254,252,251,0.3);}
+.post-stats{display:flex;gap:1.2rem;padding:0.55rem 0;font-size:0.82rem;color:rgba(254,252,251,0.6);
+  border-top:1px solid rgba(18,130,162,0.1);border-bottom:1px solid rgba(18,130,162,0.1);margin-bottom:0.45rem;}
+.post-actions{display:flex;justify-content:space-around;padding-top:0.3rem;}
+.post-action{display:flex;align-items:center;gap:0.3rem;color:rgba(254,252,251,0.6);font-size:0.82rem;font-weight:600;}
+.post-action svg{width:18px;height:18px;}
+.post-action.liked{color:#e74c3c;}
+
+/* ---------- AI Rep ---------- */
+.airep-hero{display:flex;align-items:center;gap:1rem;padding:1.25rem;margin-bottom:1.4rem;
+  background:linear-gradient(135deg,rgba(18,130,162,0.12),rgba(18,130,162,0.03));
+  border:1px solid rgba(18,130,162,0.25);border-radius:16px;position:relative;overflow:hidden;}
+.airep-hero-glow{position:absolute;inset:-40% -20%;background:radial-gradient(ellipse at center,rgba(18,130,162,0.18),transparent 65%);}
+.airep-hero-icon{width:48px;height:48px;border-radius:12px;flex-shrink:0;position:relative;z-index:1;
+  background:linear-gradient(135deg,rgba(18,130,162,0.3),rgba(18,130,162,0.1));
+  border:1px solid rgba(18,130,162,0.35);display:flex;align-items:center;justify-content:center;}
+.airep-hero-icon svg{width:28px;height:28px;color:var(--cerulean);}
+.airep-hero-text{position:relative;z-index:1;}
+.airep-hero-title{font-size:1.3rem;font-weight:900;
+  background:linear-gradient(135deg,var(--cerulean),#00d4ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.airep-hero-sub{font-size:0.82rem;color:rgba(254,252,251,0.5);font-weight:500;margin-top:0.2rem;}
+.airep-sec-title{font-size:1.15rem;font-weight:800;color:var(--white);display:flex;align-items:center;gap:0.5rem;margin-bottom:0.4rem;}
+.airep-sec-title svg{width:20px;height:20px;color:var(--cerulean);}
+.airep-sec-sub{font-size:0.82rem;color:rgba(254,252,251,0.6);line-height:1.45;margin-bottom:0.9rem;}
+.airep-school{display:flex;flex-wrap:wrap;align-items:center;gap:0.6rem;row-gap:0.55rem;
+  background:rgba(254,252,251,0.03);border:1px solid rgba(18,130,162,0.2);border-radius:12px;padding:0.8rem 0.9rem;margin-bottom:0.55rem;}
+.airep-school-logo{width:36px;height:36px;flex:0 0 36px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-weight:800;font-size:0.85rem;color:#fff;}
+.airep-school-info{flex:1 1 0%;min-width:0;}
+.airep-school-name{font-size:0.95rem;font-weight:700;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.airep-school-div{font-size:0.72rem;font-weight:600;letter-spacing:0.03em;text-transform:uppercase;color:rgba(254,252,251,0.55);}
+
+/* ---------- fit badge (AI MATCH) full-width bar ---------- */
+.fit-badge{flex:0 0 100%;width:100%;display:flex;align-items:center;gap:0.6rem;}
+.fit-label{order:1;font-size:0.6rem;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;color:var(--white);flex-shrink:0;white-space:nowrap;}
+.fit-track{order:2;flex:1;height:7px;border-radius:4px;background:rgba(254,252,251,0.08);position:relative;}
+.fit-fill{position:absolute;left:0;top:0;bottom:0;border-radius:4px;}
+.fit-spark{position:absolute;top:50%;width:10px;height:10px;border-radius:50%;background:var(--white);transform:translate(-50%,-50%);}
+.fit-num{order:3;font-size:1.05rem;font-weight:800;flex-shrink:0;min-width:2.6ch;text-align:right;}
+
+/* ---------- discover / portal rows ---------- */
+.section-label{display:flex;align-items:center;justify-content:space-between;margin-bottom:0.7rem;}
+.section-label h3{font-size:1.1rem;font-weight:800;color:var(--white);}
+.ai-pill{display:inline-flex;align-items:center;gap:0.35rem;background:rgba(18,130,162,0.15);
+  color:var(--cerulean);border:1px solid rgba(18,130,162,0.35);border-radius:50px;padding:0.3rem 0.7rem;font-size:0.72rem;font-weight:800;letter-spacing:0.03em;}
+.ai-pill svg{width:13px;height:13px;}
+.disc-row{display:flex;flex-wrap:wrap;align-items:center;gap:0.75rem;row-gap:0.55rem;padding:0.7rem 0.25rem;
+  border-bottom:1px solid rgba(254,252,251,0.06);}
+.disc-avatar{width:40px;height:40px;flex:0 0 40px;border-radius:50%;overflow:hidden;display:flex;align-items:center;justify-content:center;
+  border:2px solid var(--cerulean);background:rgba(18,130,162,0.15);font-weight:800;color:var(--cerulean);font-size:0.95rem;}
+.disc-avatar.transfer{border-color:var(--transfer);background:rgba(220,38,38,0.15);color:var(--transfer);}
+.disc-avatar svg{width:22px;height:22px;}
+.disc-info{flex:1 1 60%;min-width:0;}
+.disc-name{font-size:0.875rem;font-weight:800;color:var(--white);}
+.disc-l2{font-size:0.72rem;font-weight:700;color:var(--cerulean);margin-top:0.1rem;}
+.disc-l2.transfer{color:var(--transfer);}
+.disc-l3{font-size:0.72rem;font-weight:700;color:rgba(254,252,251,0.6);margin-top:0.08rem;}
+.disc-offers{color:var(--orange);}
+.outcome-chip{flex:0 0 auto;font-size:0.66rem;font-weight:800;letter-spacing:0.02em;padding:0.25rem 0.55rem;border-radius:6px;}
+.outcome-chip.high{background:rgba(220,38,38,0.15);color:#f87171;}
+.outcome-chip.rising{background:rgba(234,179,8,0.15);color:#eab308;}
+
+/* ---------- profile ---------- */
+.prof-header{display:flex;flex-direction:column;align-items:center;gap:0.9rem;text-align:center;
+  padding-bottom:1.1rem;border-bottom:2px solid rgba(18,130,162,0.2);}
+.prof-avatar{width:100px;height:100px;border-radius:50%;background:rgba(18,130,162,0.3);
+  border:3px solid rgba(18,130,162,0.5);overflow:hidden;position:relative;display:flex;align-items:center;justify-content:center;}
+.prof-avatar img{width:100%;height:100%;object-fit:cover;}
+.prof-avatar svg{width:48px;height:48px;color:var(--cerulean);}
+.prof-name{font-size:1.5rem;font-weight:900;color:var(--white);}
+.prof-pos{font-size:1rem;color:var(--cerulean);font-weight:600;margin-top:0.2rem;}
+.prof-meta{color:rgba(254,252,251,0.7);font-size:0.9rem;margin-top:0.25rem;}
+.prof-follow{display:flex;gap:1.25rem;justify-content:center;margin-top:0.5rem;font-size:0.9rem;color:rgba(254,252,251,0.7);}
+.prof-follow b{color:var(--white);}
+.prof-tabs{display:flex;gap:0.4rem;overflow:hidden;margin:0.9rem 0 1.1rem;}
+.prof-tab{font-size:0.85rem;font-weight:700;color:rgba(254,252,251,0.6);padding:0.55rem 0.6rem;border-bottom:3px solid transparent;white-space:nowrap;}
+.prof-tab.active{color:var(--cerulean);border-bottom-color:var(--cerulean);}
+.sec-title{font-size:1.1rem;font-weight:800;color:var(--white);margin-bottom:0.7rem;}
+.hl-grid{display:flex;flex-direction:column;gap:0.7rem;margin-bottom:1.2rem;}
+.hl-card{background:rgba(254,252,251,0.03);border:1px solid rgba(18,130,162,0.2);border-radius:12px;overflow:hidden;}
+.hl-thumb{aspect-ratio:16/9;background:linear-gradient(135deg,rgba(18,130,162,0.25),rgba(10,17,40,0.7));display:flex;align-items:center;justify-content:center;position:relative;}
+.hl-thumb img{width:100%;height:100%;object-fit:cover;}
+.hl-play{width:46px;height:46px;border-radius:50%;background:rgba(18,130,162,0.85);display:flex;align-items:center;justify-content:center;position:absolute;}
+.hl-play svg{width:22px;height:22px;color:#fff;margin-left:3px;}
+.hl-info{padding:0.7rem 0.85rem;}
+.hl-info h4{font-size:0.92rem;font-weight:700;color:var(--white);}
+.hl-info p{font-size:0.78rem;color:rgba(254,252,251,0.6);margin-top:0.15rem;}
+.offers-grid{display:flex;flex-direction:column;gap:0.6rem;}
+.offer-item{display:flex;align-items:center;gap:0.75rem;padding:0.75rem;background:rgba(18,130,162,0.08);border-radius:10px;}
+.offer-logo{width:42px;height:42px;flex:0 0 42px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;font-size:0.9rem;}
+.offer-name{font-size:0.92rem;font-weight:600;color:var(--white);}
+.offer-div{font-size:0.78rem;color:rgba(254,252,251,0.6);}
+/* stats table (matches real app .stats-table) */
+.stats-table{width:100%;border-collapse:collapse;background:rgba(254,252,251,0.03);
+  border:1px solid rgba(18,130,162,0.2);border-radius:12px;overflow:hidden;margin-bottom:1.1rem;}
+.stats-table thead{background:rgba(18,130,162,0.15);}
+.stats-table th{padding:0.7rem 0.85rem;text-align:center;font-size:0.72rem;font-weight:700;color:var(--cerulean);text-transform:uppercase;letter-spacing:0.04em;}
+.stats-table th:first-child{text-align:left;}
+.stats-table td{padding:0.7rem 0.85rem;border-top:1px solid rgba(18,130,162,0.1);color:rgba(254,252,251,0.85);text-align:center;font-size:0.85rem;}
+.stats-table td:first-child{text-align:left;font-weight:600;color:var(--white);}
+.stats-table td.val{font-weight:800;color:var(--white);}
+.stat-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:0.6rem;margin-bottom:1.1rem;}
+.stat-card{background:rgba(254,252,251,0.03);border:1px solid rgba(18,130,162,0.2);border-radius:12px;padding:0.9rem 0.6rem;text-align:center;}
+.stat-card .num{font-size:1.6rem;font-weight:900;background:linear-gradient(135deg,var(--cerulean),#00d4ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1;}
+.stat-card .lbl{font-size:0.66rem;font-weight:600;color:rgba(254,252,251,0.6);margin-top:0.35rem;text-transform:uppercase;letter-spacing:0.03em;}
+
+/* ---------- recruiting board ---------- */
+.board-top{display:flex;align-items:center;gap:0.5rem;margin-bottom:0.8rem;}
+.board-toggle{display:flex;background:rgba(254,252,251,0.05);border-radius:8px;padding:3px;flex:1;}
+.board-toggle .tg{flex:1;text-align:center;font-size:0.8rem;font-weight:700;padding:0.45rem;border-radius:6px;color:rgba(254,252,251,0.6);}
+.board-toggle .tg.active{background:var(--orange);color:#fff;}
+.board-add{font-size:0.78rem;font-weight:700;color:var(--cerulean);border:1px solid rgba(18,130,162,0.35);border-radius:8px;padding:0.45rem 0.7rem;display:flex;align-items:center;gap:0.3rem;}
+.board-add svg{width:14px;height:14px;}
+/* horizontal-scroll board: 2 rows, columns wider so the 3rd is half-cut (implies scroll) */
+.field{display:flex;flex-direction:column;gap:0.7rem;padding-bottom:0.5rem;width:max-content;}
+.field-row{display:flex;gap:0.55rem;}
+.col{flex:0 0 158px;width:158px;}
+.col-head{font-size:0.82rem;font-weight:800;color:var(--white);background:rgba(255,107,53,0.12);border:1px solid rgba(255,107,53,0.25);
+  border-radius:8px;padding:0.42rem 0.5rem;text-align:center;margin-bottom:0.45rem;}
+.col-body{background:rgba(254,252,251,0.02);border:1px solid rgba(254,252,251,0.06);border-radius:8px;padding:0.4rem;min-height:196px;}
+.rec-card{display:flex;gap:0.4rem;align-items:center;background:rgba(254,252,251,0.04);border:1px solid rgba(18,130,162,0.2);
+  border-radius:8px;padding:0.45rem;margin-bottom:0.4rem;}
+.rec-rank{width:18px;height:18px;flex:0 0 18px;border-radius:50%;background:rgba(255,107,53,0.18);color:var(--orange);font-size:0.6rem;font-weight:800;display:flex;align-items:center;justify-content:center;}
+.rec-info{min-width:0;flex:1;}
+.rec-name{font-size:0.72rem;font-weight:800;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.rec-line{font-size:0.6rem;color:var(--cerulean);font-weight:600;margin-top:0.05rem;}
+.rec-line.muted{color:rgba(254,252,251,0.55);}
+.rec-grade{flex:0 0 auto;font-size:0.82rem;font-weight:900;min-width:2.2ch;text-align:right;}
+
+/* ============ SLIDE 1 (full-bleed magazine collage covering the page) ============ */
+.slide1{
+  background:var(--navy) !important;
+  overflow:hidden;
+}
+/* 4 photos tile the ENTIRE page — asymmetric grid, no gaps, all 3:2 photos
+   filling tall cells via object-fit:cover (some of each photo crops off = dynamic). */
+.slide1-grid{
+  position:absolute;inset:0;z-index:1;
+  display:grid;
+  grid-template-columns:1.15fr 0.85fr;
+  grid-template-rows:1.25fr 1fr 1.15fr;
+  grid-template-areas:
+    "a a"
+    "b c"
+    "d d";
+  gap:8px;background:var(--navy);
+}
+.slide1-cell{overflow:hidden;position:relative;}
+.slide1-cell::after{content:"";position:absolute;inset:0;background:rgba(10,17,40,0.15);z-index:1;}
+.slide1-cell img{width:100%;height:100%;object-fit:cover;display:block;}
+.slide1-cell.ca{grid-area:a;}
+.slide1-cell.cb{grid-area:b;}
+.slide1-cell.cc{grid-area:c;}
+.slide1-cell.cd{grid-area:d;}
+
+/* Strong scrims behind the top brand block + bottom headline so text pops;
+   middle stays mostly photo. */
+.slide1-scrim{position:absolute;inset:0;z-index:2;pointer-events:none;
+  background:
+    linear-gradient(180deg, rgba(8,13,32,0.94) 0%, rgba(8,13,32,0.50) 15%, rgba(8,13,32,0.30) 30%, rgba(8,13,32,0.40) 46%, rgba(8,13,32,0.30) 58%, rgba(8,13,32,0.80) 74%, rgba(8,13,32,0.98) 100%),
+    radial-gradient(ellipse 80% 22% at 50% 10%, rgba(18,130,162,0.35) 0%, transparent 70%),
+    radial-gradient(ellipse 90% 20% at 50% 50%, rgba(8,13,32,0.45) 0%, transparent 70%);}
+
+.slide1-content{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;z-index:5;}
+.slide1-logo-wrap{display:flex;flex-direction:column;align-items:center;padding-top:120px;}
+.slide1-logo{height:140px;width:140px;object-fit:cover;clip-path:circle(47% at 50% 50%);
+  filter:drop-shadow(0 8px 36px rgba(0,0,0,0.7)) drop-shadow(0 0 30px rgba(18,130,162,0.5));}
+.slide1-wordmark{font-size:74px;font-weight:900;letter-spacing:-0.01em;margin-top:24px;color:var(--white);text-shadow:0 6px 30px rgba(0,0,0,0.8);}
+.slide1-tagline-small{font-size:31px;font-weight:800;letter-spacing:0.16em;text-transform:uppercase;color:#4ec6e6;margin-top:16px;text-shadow:0 4px 18px rgba(0,0,0,0.8);}
+
+/* MIDDLE: AI headline, vertically centered in the remaining space */
+.slide1-headline{text-align:center;padding:0 70px;margin-top:auto;margin-bottom:auto;}
+.slide1-headline h1{font-size:118px;line-height:1.02;font-weight:900;letter-spacing:-0.03em;color:var(--white);text-shadow:0 10px 50px rgba(0,0,0,0.85);}
+.slide1-headline .ai{
+  color:var(--orange);
+}
+
+/* BOTTOM: emphasized "stop wasting time" statement in its own band */
+.slide1-bottom{width:100%;padding:0 60px 140px;text-align:center;}
+.slide1-bottom .eyebrow{font-size:30px;font-weight:800;letter-spacing:0.14em;text-transform:uppercase;color:#4ec6e6;margin-bottom:18px;text-shadow:0 4px 18px rgba(0,0,0,0.8);}
+.slide1-bottom .big{font-size:96px;line-height:1.0;font-weight:900;letter-spacing:-0.03em;text-transform:uppercase;color:var(--white);text-shadow:0 10px 50px rgba(0,0,0,0.9);}
+.slide1-bottom .big .hot{
+  color:#26c8ef;
+}
+.slide1-bottom .small{margin-top:24px;font-size:38px;font-weight:600;color:rgba(254,252,251,0.78);text-shadow:0 4px 20px rgba(0,0,0,0.85);}
+
+.scale-note{position:fixed;bottom:14px;right:14px;background:#000a;color:#9ca3af;font-size:12px;padding:6px 10px;border-radius:6px;z-index:9999;}
+</style>
+</head>
+<body>
+
+<div class="toolbar">
+  <h1>Direct Recruit — App Store Screenshots</h1>
+  <p>7 slides · 1284×2778 (6.5"/6.7" iPhone — App Store accepted size)</p>
+  <button class="btn" id="exportBtn">⬇ Export all 7 PNGs</button>
+  <button class="btn alt" id="exportOneBtn">Export current view test (slide 1)</button>
+  <span id="status"></span>
+</div>
+
+<div class="slides-wrap" id="slidesWrap">
+
+  <!-- ============ SLIDE 1 ============ -->
+  <div class="slide slide1" id="slide-1">
+    <div class="slide1-grid">
+      <div class="slide1-cell ca"><img src="slidephotos/crop4.png" alt=""></div>
+      <div class="slide1-cell cb"><img src="slidephotos/crop3.png" alt=""></div>
+      <div class="slide1-cell cc"><img src="slidephotos/crop2.png" alt=""></div>
+      <div class="slide1-cell cd"><img src="slidephotos/crop1.png" alt=""></div>
+    </div>
+    <div class="slide1-scrim"></div>
+    <div class="slide1-content">
+      <div class="slide1-logo-wrap">
+        <img src="frontend/assets/dr-logo.png" class="slide1-logo" alt="Direct Recruit">
+        <div class="slide1-wordmark">Direct Recruit</div>
+        <div class="slide1-tagline-small">Get Recruited · The Right Way</div>
+      </div>
+      <div class="slide1-headline">
+        <h1>Where football recruiting meets <span class="ai">AI</span></h1>
+      </div>
+      <div class="slide1-bottom">
+        <div class="big">Stop <span class="hot">wasting time</span> scrolling</div>
+        <div class="small">All your recruiting in one place.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ SLIDE 2: FEED ============ -->
+  <div class="slide" id="slide-2">
+    <div class="slide-caption">
+      <h2>More than a database.<br>A <span class="accent">community.</span></h2>
+    </div>
+    <div class="phone-stage">
+      <div class="phone"><div class="phone-screen">
+        <div class="island"></div>
+        <div class="statusbar"><span>9:41</span><span class="sb-right">
+          <svg width="36" height="24" viewBox="0 0 36 24" fill="currentColor"><rect x="0" y="14" width="5" height="8" rx="1"/><rect x="8" y="10" width="5" height="12" rx="1"/><rect x="16" y="6" width="5" height="16" rx="1"/><rect x="24" y="2" width="5" height="20" rx="1"/></svg>
+          <svg width="32" height="24" viewBox="0 0 32 24" fill="currentColor"><path d="M16 6c4 0 7.6 1.6 10.3 4.2l2.5-2.6C25.4 4.3 20.9 2.4 16 2.4S6.6 4.3 3.2 7.6l2.5 2.6C8.4 7.6 12 6 16 6z" opacity=".9"/><path d="M16 12.5c2.2 0 4.2.9 5.7 2.3l2.5-2.6C22 10 19.1 8.8 16 8.8s-6 1.2-8.2 3.4l2.5 2.6c1.5-1.4 3.5-2.3 5.7-2.3z"/><circle cx="16" cy="19" r="2.6"/></svg>
+          <svg width="46" height="24" viewBox="0 0 46 24" fill="none"><rect x="1" y="5" width="36" height="14" rx="4" stroke="currentColor" stroke-width="2" opacity=".5"/><rect x="3.5" y="7.5" width="28" height="9" rx="2" fill="currentColor"/><rect x="39" y="9" width="3" height="6" rx="1.5" fill="currentColor" opacity=".5"/></svg>
+        </span></div>
+        <div class="app">
+          <div class="app-scroll">
+            <!-- player post -->
+            <div class="post-card">
+              <div class="post-header">
+                <div class="post-avatar"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></div>
+                <div class="post-user-info">
+                  <div class="post-name-row"><span class="post-name">Devin Carter</span><span class="post-handle">@dcarter7</span></div>
+                  <div class="post-meta">WR • 6'2" • Class of 2026 • 2h</div>
+                </div>
+                <div class="post-more"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"></circle><circle cx="12" cy="5" r="1"></circle><circle cx="12" cy="19" r="1"></circle></svg></div>
+              </div>
+              <div class="post-text">Blessed to receive my first official offer this weekend! Hard work pays off. Thank you to my coaches and family. 🙏 #Recruiting</div>
+              <div class="post-stats"><span>142 likes</span><span>23 replies</span><span>8 shares</span></div>
+              <div class="post-actions">
+                <span class="post-action liked"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>142</span>
+                <span class="post-action"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>23</span>
+                <span class="post-action"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg>8</span>
+              </div>
+            </div>
+            <!-- coach post -->
+            <div class="post-card">
+              <div class="post-header">
+                <div class="post-avatar coach"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></div>
+                <div class="post-user-info">
+                  <div class="post-name-row"><span class="post-name">Coach Daniels</span><span class="post-handle">@coachd</span></div>
+                  <div class="post-meta coach">Riverside State • Recruiting • 5h</div>
+                </div>
+                <div class="post-more"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"></circle><circle cx="12" cy="5" r="1"></circle><circle cx="12" cy="19" r="1"></circle></svg></div>
+              </div>
+              <div class="post-text">Great energy at camp today. We're actively recruiting the 2026 class — DBs and WRs, get your film in front of us. Let's build something special.</div>
+              <div class="post-stats"><span>318 likes</span><span>54 replies</span><span>27 shares</span></div>
+              <div class="post-actions">
+                <span class="post-action"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>318</span>
+                <span class="post-action"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>54</span>
+                <span class="post-action"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg>27</span>
+              </div>
+            </div>
+            <!-- third post (player) -->
+            <div class="post-card">
+              <div class="post-header">
+                <div class="post-avatar"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></div>
+                <div class="post-user-info">
+                  <div class="post-name-row"><span class="post-name">Tyrese Walker</span><span class="post-handle">@twalker</span></div>
+                  <div class="post-meta">CB • 6'0" • Class of 2026 • 7h</div>
+                </div>
+                <div class="post-more"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"></circle><circle cx="12" cy="5" r="1"></circle><circle cx="12" cy="19" r="1"></circle></svg></div>
+              </div>
+              <div class="post-text">Dropped a new highlight tape from this season 🎥 Locked in and ready for the next level. Coaches, let's talk. #DBU</div>
+              <div class="post-stats"><span>206 likes</span><span>41 replies</span><span>15 shares</span></div>
+              <div class="post-actions">
+                <span class="post-action liked"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>206</span>
+                <span class="post-action"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>41</span>
+                <span class="post-action"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg>15</span>
+              </div>
+            </div>
+          </div>
+          <div class="m-bottomnav">
+            <div class="m-nav-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
+            <div class="m-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
+            <div class="m-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 16.8l-6.2 4.5 2.4-7.4L2 9.4h7.6z"/></svg></div>
+            <div class="m-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+            <div class="m-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></div>
+          </div>
+        </div>
+      </div></div>
+    </div>
+  </div>
+
+  <!-- ============ SLIDE 3: AI REP ============ -->
+  <div class="slide" id="slide-3">
+    <div class="slide-caption">
+      <h2><span class="accent">AI Rep</span> finds your best-fit schools</h2>
+    </div>
+    <div class="phone-stage">
+      <div class="phone"><div class="phone-screen">
+        <div class="island"></div>
+        <div class="statusbar"><span>9:41</span><span class="sb-right">
+          <svg width="36" height="24" viewBox="0 0 36 24" fill="currentColor"><rect x="0" y="14" width="5" height="8" rx="1"/><rect x="8" y="10" width="5" height="12" rx="1"/><rect x="16" y="6" width="5" height="16" rx="1"/><rect x="24" y="2" width="5" height="20" rx="1"/></svg>
+          <svg width="32" height="24" viewBox="0 0 32 24" fill="currentColor"><path d="M16 6c4 0 7.6 1.6 10.3 4.2l2.5-2.6C25.4 4.3 20.9 2.4 16 2.4S6.6 4.3 3.2 7.6l2.5 2.6C8.4 7.6 12 6 16 6z" opacity=".9"/><path d="M16 12.5c2.2 0 4.2.9 5.7 2.3l2.5-2.6C22 10 19.1 8.8 16 8.8s-6 1.2-8.2 3.4l2.5 2.6c1.5-1.4 3.5-2.3 5.7-2.3z"/><circle cx="16" cy="19" r="2.6"/></svg>
+          <svg width="46" height="24" viewBox="0 0 46 24" fill="none"><rect x="1" y="5" width="36" height="14" rx="4" stroke="currentColor" stroke-width="2" opacity=".5"/><rect x="3.5" y="7.5" width="28" height="9" rx="2" fill="currentColor"/><rect x="39" y="9" width="3" height="6" rx="1.5" fill="currentColor" opacity=".5"/></svg>
+        </span></div>
+        <div class="app">
+          <div class="app-scroll">
+            <div class="airep-hero">
+              <div class="airep-hero-glow"></div>
+              <div class="airep-hero-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 16.8l-6.2 4.5 2.4-7.4L2 9.4h7.6z"/></svg></div>
+              <div class="airep-hero-text"><div class="airep-hero-title">AI Rep</div><div class="airep-hero-sub">Your personal recruiting representative, working in the background.</div></div>
+            </div>
+            <div class="airep-sec-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>Best-Fit Schools</div>
+            <div class="airep-sec-sub">Schools whose programs best fit you, on and off the field. Tap a school to see why and meet the staff.</div>
+            <!-- school rows -->
+            <div class="airep-school">
+              <div class="airep-school-info"><div class="airep-school-name">Riverside State</div><div class="airep-school-div">D1 FBS</div></div>
+              <div class="fit-badge"><span class="fit-label">AI Match</span><div class="fit-track"><div class="fit-fill" style="width:92%;background:var(--fit-6)"></div><div class="fit-spark" style="left:92%"></div></div><span class="fit-num" style="color:var(--fit-6)">92</span></div>
+            </div>
+            <div class="airep-school">
+              <div class="airep-school-info"><div class="airep-school-name">Cedar Valley University</div><div class="airep-school-div">D1 FCS</div></div>
+              <div class="fit-badge"><span class="fit-label">AI Match</span><div class="fit-track"><div class="fit-fill" style="width:84%;background:var(--fit-5)"></div><div class="fit-spark" style="left:84%"></div></div><span class="fit-num" style="color:var(--fit-5)">84</span></div>
+            </div>
+            <div class="airep-school">
+              <div class="airep-school-info"><div class="airep-school-name">Northgate College</div><div class="airep-school-div">D2</div></div>
+              <div class="fit-badge"><span class="fit-label">AI Match</span><div class="fit-track"><div class="fit-fill" style="width:71%;background:var(--fit-4)"></div><div class="fit-spark" style="left:71%"></div></div><span class="fit-num" style="color:var(--fit-4)">71</span></div>
+            </div>
+            <div class="airep-school">
+              <div class="airep-school-info"><div class="airep-school-name">Lakemont State</div><div class="airep-school-div">D2</div></div>
+              <div class="fit-badge"><span class="fit-label">AI Match</span><div class="fit-track"><div class="fit-fill" style="width:63%;background:var(--fit-3)"></div><div class="fit-spark" style="left:63%"></div></div><span class="fit-num" style="color:var(--fit-3)">63</span></div>
+            </div>
+            <div class="airep-school">
+              <div class="airep-school-info"><div class="airep-school-name">Pinehurst College</div><div class="airep-school-div">NAIA</div></div>
+              <div class="fit-badge"><span class="fit-label">AI Match</span><div class="fit-track"><div class="fit-fill" style="width:58%;background:var(--fit-3)"></div><div class="fit-spark" style="left:58%"></div></div><span class="fit-num" style="color:var(--fit-3)">58</span></div>
+            </div>
+          </div>
+          <div class="m-bottomnav">
+            <div class="m-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
+            <div class="m-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
+            <div class="m-nav-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 16.8l-6.2 4.5 2.4-7.4L2 9.4h7.6z"/></svg></div>
+            <div class="m-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+            <div class="m-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></div>
+          </div>
+        </div>
+      </div></div>
+    </div>
+  </div>
+
+  <!-- ============ SLIDE 4: DISCOVER (AI RA) ============ -->
+  <div class="slide" id="slide-4">
+    <div class="slide-caption">
+      <h2>Find the perfect <span class="accent">prospect</span></h2>
+    </div>
+    <div class="phone-stage">
+      <div class="phone"><div class="phone-screen">
+        <div class="island"></div>
+        <div class="statusbar"><span>9:41</span><span class="sb-right">
+          <svg width="36" height="24" viewBox="0 0 36 24" fill="currentColor"><rect x="0" y="14" width="5" height="8" rx="1"/><rect x="8" y="10" width="5" height="12" rx="1"/><rect x="16" y="6" width="5" height="16" rx="1"/><rect x="24" y="2" width="5" height="20" rx="1"/></svg>
+          <svg width="32" height="24" viewBox="0 0 32 24" fill="currentColor"><path d="M16 6c4 0 7.6 1.6 10.3 4.2l2.5-2.6C25.4 4.3 20.9 2.4 16 2.4S6.6 4.3 3.2 7.6l2.5 2.6C8.4 7.6 12 6 16 6z" opacity=".9"/><path d="M16 12.5c2.2 0 4.2.9 5.7 2.3l2.5-2.6C22 10 19.1 8.8 16 8.8s-6 1.2-8.2 3.4l2.5 2.6c1.5-1.4 3.5-2.3 5.7-2.3z"/><circle cx="16" cy="19" r="2.6"/></svg>
+          <svg width="46" height="24" viewBox="0 0 46 24" fill="none"><rect x="1" y="5" width="36" height="14" rx="4" stroke="currentColor" stroke-width="2" opacity=".5"/><rect x="3.5" y="7.5" width="28" height="9" rx="2" fill="currentColor"/><rect x="39" y="9" width="3" height="6" rx="1.5" fill="currentColor" opacity=".5"/></svg>
+        </span></div>
+        <div class="app">
+          <div class="app-scroll">
+            <div class="section-label">
+              <h3>AI Recruiting Assistant</h3>
+              <span class="ai-pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 16.8l-6.2 4.5 2.4-7.4L2 9.4h7.6z"/></svg>AI-Powered</span>
+            </div>
+            <div class="disc-row">
+              <div class="disc-avatar"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></div>
+              <div class="disc-info"><div class="disc-name">Devin Carter</div><div class="disc-l2">WR • 6'2" • 190 lbs</div><div class="disc-l3">Austin, TX • <span class="disc-offers">Offers: 6</span></div></div>
+              <div class="fit-badge"><span class="fit-label">AI Match</span><div class="fit-track"><div class="fit-fill" style="width:94%;background:var(--fit-6)"></div><div class="fit-spark" style="left:94%"></div></div><span class="fit-num" style="color:var(--fit-6)">94</span></div>
+            </div>
+            <div class="disc-row">
+              <div class="disc-avatar"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></div>
+              <div class="disc-info"><div class="disc-name">Tyrese Walker</div><div class="disc-l2">CB • 6'0" • 185 lbs</div><div class="disc-l3">Tampa, FL • <span class="disc-offers">Offers: 4</span></div></div>
+              <div class="fit-badge"><span class="fit-label">AI Match</span><div class="fit-track"><div class="fit-fill" style="width:88%;background:var(--fit-5)"></div><div class="fit-spark" style="left:88%"></div></div><span class="fit-num" style="color:var(--fit-5)">88</span></div>
+            </div>
+            <div class="disc-row">
+              <div class="disc-avatar"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></div>
+              <div class="disc-info"><div class="disc-name">Andre Mason</div><div class="disc-l2">RB • 5'11" • 205 lbs</div><div class="disc-l3">Atlanta, GA • <span class="disc-offers">Offers: 3</span></div></div>
+              <div class="fit-badge"><span class="fit-label">AI Match</span><div class="fit-track"><div class="fit-fill" style="width:79%;background:var(--fit-5)"></div><div class="fit-spark" style="left:79%"></div></div><span class="fit-num" style="color:var(--fit-5)">79</span></div>
+            </div>
+            <div class="disc-row">
+              <div class="disc-avatar"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></div>
+              <div class="disc-info"><div class="disc-name">Jalen Reed</div><div class="disc-l2">LB • 6'1" • 225 lbs</div><div class="disc-l3">Dallas, TX • <span class="disc-offers">Offers: 5</span></div></div>
+              <div class="fit-badge"><span class="fit-label">AI Match</span><div class="fit-track"><div class="fit-fill" style="width:72%;background:var(--fit-4)"></div><div class="fit-spark" style="left:72%"></div></div><span class="fit-num" style="color:var(--fit-4)">72</span></div>
+            </div>
+            <div class="disc-row">
+              <div class="disc-avatar"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></div>
+              <div class="disc-info"><div class="disc-name">Caleb Brooks</div><div class="disc-l2">S • 6'1" • 195 lbs</div><div class="disc-l3">Phoenix, AZ • <span class="disc-offers">Offers: 2</span></div></div>
+              <div class="fit-badge"><span class="fit-label">AI Match</span><div class="fit-track"><div class="fit-fill" style="width:66%;background:var(--fit-4)"></div><div class="fit-spark" style="left:66%"></div></div><span class="fit-num" style="color:var(--fit-4)">66</span></div>
+            </div>
+            <div class="disc-row">
+              <div class="disc-avatar"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></div>
+              <div class="disc-info"><div class="disc-name">Xavier Price</div><div class="disc-l2">WR • 6'3" • 200 lbs</div><div class="disc-l3">Houston, TX • <span class="disc-offers">Offers: 7</span></div></div>
+              <div class="fit-badge"><span class="fit-label">AI Match</span><div class="fit-track"><div class="fit-fill" style="width:91%;background:var(--fit-6)"></div><div class="fit-spark" style="left:91%"></div></div><span class="fit-num" style="color:var(--fit-6)">91</span></div>
+            </div>
+            <div class="disc-row">
+              <div class="disc-avatar"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></div>
+              <div class="disc-info"><div class="disc-name">Noah Hill</div><div class="disc-l2">TE • 6'4" • 240 lbs</div><div class="disc-l3">Miami, FL • <span class="disc-offers">Offers: 4</span></div></div>
+              <div class="fit-badge"><span class="fit-label">AI Match</span><div class="fit-track"><div class="fit-fill" style="width:85%;background:var(--fit-5)"></div><div class="fit-spark" style="left:85%"></div></div><span class="fit-num" style="color:var(--fit-5)">85</span></div>
+            </div>
+            <div class="disc-row">
+              <div class="disc-avatar"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></div>
+              <div class="disc-info"><div class="disc-name">Eli Owens</div><div class="disc-l2">QB • 6'2" • 205 lbs</div><div class="disc-l3">Nashville, TN • <span class="disc-offers">Offers: 3</span></div></div>
+              <div class="fit-badge"><span class="fit-label">AI Match</span><div class="fit-track"><div class="fit-fill" style="width:74%;background:var(--fit-4)"></div><div class="fit-spark" style="left:74%"></div></div><span class="fit-num" style="color:var(--fit-4)">74</span></div>
+            </div>
+          </div>
+          <div class="m-bottomnav">
+            <div class="m-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
+            <div class="m-nav-item active coach"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
+            <div class="m-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 3h5v5M21 3l-7 7M8 21H3v-5M3 21l7-7"/></svg></div>
+            <div class="m-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+            <div class="m-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></div>
+          </div>
+        </div>
+      </div></div>
+    </div>
+  </div>
+
+  <!-- ============ SLIDE 5: PORTAL INTELLIGENCE (AI PI) ============ -->
+  <div class="slide" id="slide-5">
+    <div class="slide-caption">
+      <h2>Spot transfers before the <span class="accent-orange">portal opens</span></h2>
+    </div>
+    <div class="phone-stage">
+      <div class="phone"><div class="phone-screen">
+        <div class="island"></div>
+        <div class="statusbar"><span>9:41</span><span class="sb-right">
+          <svg width="36" height="24" viewBox="0 0 36 24" fill="currentColor"><rect x="0" y="14" width="5" height="8" rx="1"/><rect x="8" y="10" width="5" height="12" rx="1"/><rect x="16" y="6" width="5" height="16" rx="1"/><rect x="24" y="2" width="5" height="20" rx="1"/></svg>
+          <svg width="32" height="24" viewBox="0 0 32 24" fill="currentColor"><path d="M16 6c4 0 7.6 1.6 10.3 4.2l2.5-2.6C25.4 4.3 20.9 2.4 16 2.4S6.6 4.3 3.2 7.6l2.5 2.6C8.4 7.6 12 6 16 6z" opacity=".9"/><path d="M16 12.5c2.2 0 4.2.9 5.7 2.3l2.5-2.6C22 10 19.1 8.8 16 8.8s-6 1.2-8.2 3.4l2.5 2.6c1.5-1.4 3.5-2.3 5.7-2.3z"/><circle cx="16" cy="19" r="2.6"/></svg>
+          <svg width="46" height="24" viewBox="0 0 46 24" fill="none"><rect x="1" y="5" width="36" height="14" rx="4" stroke="currentColor" stroke-width="2" opacity=".5"/><rect x="3.5" y="7.5" width="28" height="9" rx="2" fill="currentColor"/><rect x="39" y="9" width="3" height="6" rx="1.5" fill="currentColor" opacity=".5"/></svg>
+        </span></div>
+        <div class="app">
+          <div class="app-scroll">
+            <div class="section-label">
+              <h3>AI Portal Intelligence</h3>
+              <span class="ai-pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 16.8l-6.2 4.5 2.4-7.4L2 9.4h7.6z"/></svg>AI-Powered</span>
+            </div>
+            <div class="airep-sec-sub" style="margin-bottom:0.9rem">Players our AI flags as most likely to enter the transfer portal soon.</div>
+            <div class="disc-row">
+              <div class="disc-avatar transfer"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></div>
+              <div class="disc-info"><div class="disc-name">Ryan Hayes</div><div class="disc-l2 transfer">QB • 6'3" • 215 lbs</div><div class="disc-l3">Lakemont State • D1 FBS</div></div>
+              <span class="outcome-chip high">High portal likelihood</span>
+              <div class="fit-badge"><span class="fit-label">AI Match</span><div class="fit-track"><div class="fit-fill" style="width:91%;background:var(--fit-6)"></div><div class="fit-spark" style="left:91%"></div></div><span class="fit-num" style="color:var(--fit-6)">91</span></div>
+            </div>
+            <div class="disc-row">
+              <div class="disc-avatar transfer"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></div>
+              <div class="disc-info"><div class="disc-name">Malik Turner</div><div class="disc-l2 transfer">WR • 6'1" • 195 lbs</div><div class="disc-l3">Northgate College • D2</div></div>
+              <span class="outcome-chip rising">Rising interest</span>
+              <div class="fit-badge"><span class="fit-label">AI Match</span><div class="fit-track"><div class="fit-fill" style="width:83%;background:var(--fit-5)"></div><div class="fit-spark" style="left:83%"></div></div><span class="fit-num" style="color:var(--fit-5)">83</span></div>
+            </div>
+            <div class="disc-row">
+              <div class="disc-avatar transfer"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></div>
+              <div class="disc-info"><div class="disc-name">Damon Scott</div><div class="disc-l2 transfer">EDGE • 6'4" • 248 lbs</div><div class="disc-l3">Cedar Valley University • D1 FCS</div></div>
+              <span class="outcome-chip high">High portal likelihood</span>
+              <div class="fit-badge"><span class="fit-label">AI Match</span><div class="fit-track"><div class="fit-fill" style="width:77%;background:var(--fit-5)"></div><div class="fit-spark" style="left:77%"></div></div><span class="fit-num" style="color:var(--fit-5)">77</span></div>
+            </div>
+            <div class="disc-row">
+              <div class="disc-avatar transfer"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></div>
+              <div class="disc-info"><div class="disc-name">Elijah James</div><div class="disc-l2 transfer">RB • 5'10" • 210 lbs</div><div class="disc-l3">Pinehurst College • NAIA</div></div>
+              <span class="outcome-chip rising">Rising interest</span>
+              <div class="fit-badge"><span class="fit-label">AI Match</span><div class="fit-track"><div class="fit-fill" style="width:69%;background:var(--fit-4)"></div><div class="fit-spark" style="left:69%"></div></div><span class="fit-num" style="color:var(--fit-4)">69</span></div>
+            </div>
+          </div>
+          <div class="m-bottomnav">
+            <div class="m-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
+            <div class="m-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
+            <div class="m-nav-item active transfer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 3h5v5M21 3l-7 7M8 21H3v-5M3 21l7-7"/></svg></div>
+            <div class="m-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+            <div class="m-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></div>
+          </div>
+        </div>
+      </div></div>
+    </div>
+  </div>
+
+  <!-- ============ SLIDE 6: PROFILE ============ -->
+  <div class="slide" id="slide-6">
+    <div class="slide-caption">
+      <h2>Build your <span class="accent">profile</span></h2>
+    </div>
+    <div class="phone-stage">
+      <div class="phone"><div class="phone-screen">
+        <div class="island"></div>
+        <div class="statusbar"><span>9:41</span><span class="sb-right">
+          <svg width="36" height="24" viewBox="0 0 36 24" fill="currentColor"><rect x="0" y="14" width="5" height="8" rx="1"/><rect x="8" y="10" width="5" height="12" rx="1"/><rect x="16" y="6" width="5" height="16" rx="1"/><rect x="24" y="2" width="5" height="20" rx="1"/></svg>
+          <svg width="32" height="24" viewBox="0 0 32 24" fill="currentColor"><path d="M16 6c4 0 7.6 1.6 10.3 4.2l2.5-2.6C25.4 4.3 20.9 2.4 16 2.4S6.6 4.3 3.2 7.6l2.5 2.6C8.4 7.6 12 6 16 6z" opacity=".9"/><path d="M16 12.5c2.2 0 4.2.9 5.7 2.3l2.5-2.6C22 10 19.1 8.8 16 8.8s-6 1.2-8.2 3.4l2.5 2.6c1.5-1.4 3.5-2.3 5.7-2.3z"/><circle cx="16" cy="19" r="2.6"/></svg>
+          <svg width="46" height="24" viewBox="0 0 46 24" fill="none"><rect x="1" y="5" width="36" height="14" rx="4" stroke="currentColor" stroke-width="2" opacity=".5"/><rect x="3.5" y="7.5" width="28" height="9" rx="2" fill="currentColor"/><rect x="39" y="9" width="3" height="6" rx="1.5" fill="currentColor" opacity=".5"/></svg>
+        </span></div>
+        <div class="app">
+          <div class="app-scroll">
+            <div class="prof-header">
+              <div class="prof-avatar"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></div>
+              <div>
+                <div class="prof-name">Marcus Bell</div>
+                <div class="prof-pos">Quarterback (QB)</div>
+                <div class="prof-meta">6'3" • 210 lbs • Class of 2026</div>
+              </div>
+              <div class="prof-follow"><span><b>1,234</b> Followers</span><span><b>312</b> Following</span></div>
+            </div>
+            <div class="prof-tabs">
+              <span class="prof-tab">Overview</span><span class="prof-tab">Highlights</span><span class="prof-tab active">Stats</span><span class="prof-tab">Offers</span>
+            </div>
+            <div class="sec-title">2025 Season Stats</div>
+            <div class="stat-cards">
+              <div class="stat-card"><div class="num">2,847</div><div class="lbl">Pass Yds</div></div>
+              <div class="stat-card"><div class="num">31</div><div class="lbl">Pass TD</div></div>
+              <div class="stat-card"><div class="num">68%</div><div class="lbl">Comp %</div></div>
+            </div>
+            <table class="stats-table">
+              <thead><tr><th>Stat</th><th>Season</th><th>Career</th></tr></thead>
+              <tbody>
+                <tr><td>Completions</td><td class="val">214</td><td>396</td></tr>
+                <tr><td>Attempts</td><td class="val">315</td><td>602</td></tr>
+                <tr><td>Passing Yards</td><td class="val">2,847</td><td>5,120</td></tr>
+                <tr><td>Passing TDs</td><td class="val">31</td><td>54</td></tr>
+                <tr><td>Interceptions</td><td class="val">6</td><td>13</td></tr>
+                <tr><td>Rushing Yards</td><td class="val">412</td><td>788</td></tr>
+                <tr><td>Rushing TDs</td><td class="val">7</td><td>14</td></tr>
+                <tr><td>QBR</td><td class="val">94.2</td><td>89.6</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="m-bottomnav">
+            <div class="m-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
+            <div class="m-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
+            <div class="m-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 16.8l-6.2 4.5 2.4-7.4L2 9.4h7.6z"/></svg></div>
+            <div class="m-nav-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+            <div class="m-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></div>
+          </div>
+        </div>
+      </div></div>
+    </div>
+  </div>
+
+  <!-- ============ SLIDE 7: RECRUITING BOARD ============ -->
+  <div class="slide" id="slide-7">
+    <div class="slide-caption">
+      <h2>Track and grade prospects <span class="accent">all in one place</span></h2>
+    </div>
+    <div class="phone-stage">
+      <div class="phone"><div class="phone-screen">
+        <div class="island"></div>
+        <div class="statusbar"><span>9:41</span><span class="sb-right">
+          <svg width="36" height="24" viewBox="0 0 36 24" fill="currentColor"><rect x="0" y="14" width="5" height="8" rx="1"/><rect x="8" y="10" width="5" height="12" rx="1"/><rect x="16" y="6" width="5" height="16" rx="1"/><rect x="24" y="2" width="5" height="20" rx="1"/></svg>
+          <svg width="32" height="24" viewBox="0 0 32 24" fill="currentColor"><path d="M16 6c4 0 7.6 1.6 10.3 4.2l2.5-2.6C25.4 4.3 20.9 2.4 16 2.4S6.6 4.3 3.2 7.6l2.5 2.6C8.4 7.6 12 6 16 6z" opacity=".9"/><path d="M16 12.5c2.2 0 4.2.9 5.7 2.3l2.5-2.6C22 10 19.1 8.8 16 8.8s-6 1.2-8.2 3.4l2.5 2.6c1.5-1.4 3.5-2.3 5.7-2.3z"/><circle cx="16" cy="19" r="2.6"/></svg>
+          <svg width="46" height="24" viewBox="0 0 46 24" fill="none"><rect x="1" y="5" width="36" height="14" rx="4" stroke="currentColor" stroke-width="2" opacity=".5"/><rect x="3.5" y="7.5" width="28" height="9" rx="2" fill="currentColor"/><rect x="39" y="9" width="3" height="6" rx="1.5" fill="currentColor" opacity=".5"/></svg>
+        </span></div>
+        <div class="app">
+          <div class="app-scroll">
+            <div class="section-label" style="margin-bottom:0.8rem"><h3>Recruiting Board</h3></div>
+            <div class="board-top">
+              <div class="board-toggle"><div class="tg active">Offense</div><div class="tg">Defense</div><div class="tg">Specs</div></div>
+            </div>
+            <div class="field">
+              <!-- Row 1: skill positions -->
+              <div class="field-row">
+                <div class="col">
+                  <div class="col-head">QB</div>
+                  <div class="col-body">
+                    <div class="rec-card"><div class="rec-rank">1</div><div class="rec-info"><div class="rec-name">Marcus Bell</div><div class="rec-line">6'3" • 210 • 2026</div></div><div class="rec-grade" style="color:var(--fit-6)">94</div></div>
+                    <div class="rec-card"><div class="rec-rank">2</div><div class="rec-info"><div class="rec-name">Cole Adams</div><div class="rec-line">6'2" • 200 • 2026</div></div><div class="rec-grade" style="color:var(--fit-4)">81</div></div>
+                  </div>
+                </div>
+                <div class="col">
+                  <div class="col-head">RB</div>
+                  <div class="col-body">
+                    <div class="rec-card"><div class="rec-rank">1</div><div class="rec-info"><div class="rec-name">Andre Mason</div><div class="rec-line">5'11" • 205 • 2026</div></div><div class="rec-grade" style="color:var(--fit-5)">88</div></div>
+                    <div class="rec-card"><div class="rec-rank">2</div><div class="rec-info"><div class="rec-name">KJ Pierce</div><div class="rec-line">5'10" • 198 • 2027</div></div><div class="rec-grade" style="color:var(--fit-4)">76</div></div>
+                  </div>
+                </div>
+                <div class="col">
+                  <div class="col-head">WR</div>
+                  <div class="col-body">
+                    <div class="rec-card"><div class="rec-rank">1</div><div class="rec-info"><div class="rec-name">Devin Carter</div><div class="rec-line">6'2" • 190 • 2026</div></div><div class="rec-grade" style="color:var(--fit-6)">92</div></div>
+                    <div class="rec-card"><div class="rec-rank">2</div><div class="rec-info"><div class="rec-name">Isaiah Cole</div><div class="rec-line">6'0" • 180 • 2026</div></div><div class="rec-grade" style="color:var(--fit-5)">83</div></div>
+                  </div>
+                </div>
+              </div>
+              <!-- Row 2: TE + line + ATH -->
+              <div class="field-row">
+                <div class="col">
+                  <div class="col-head">TE</div>
+                  <div class="col-body">
+                    <div class="rec-card"><div class="rec-rank">1</div><div class="rec-info"><div class="rec-name">Owen Brady</div><div class="rec-line">6'5" • 245 • 2026</div></div><div class="rec-grade" style="color:var(--fit-5)">85</div></div>
+                  </div>
+                </div>
+                <div class="col">
+                  <div class="col-head">OL</div>
+                  <div class="col-body">
+                    <div class="rec-card"><div class="rec-rank">1</div><div class="rec-info"><div class="rec-name">Sam Whitfield</div><div class="rec-line">6'6" • 305 • 2026</div></div><div class="rec-grade" style="color:var(--fit-6)">90</div></div>
+                    <div class="rec-card"><div class="rec-rank">2</div><div class="rec-info"><div class="rec-name">Drew Hansen</div><div class="rec-line">6'4" • 290 • 2027</div></div><div class="rec-grade" style="color:var(--fit-4)">78</div></div>
+                  </div>
+                </div>
+                <div class="col">
+                  <div class="col-head">ATH</div>
+                  <div class="col-body">
+                    <div class="rec-card"><div class="rec-rank">1</div><div class="rec-info"><div class="rec-name">Jordan Vance</div><div class="rec-line">6'1" • 195 • 2026</div></div><div class="rec-grade" style="color:var(--fit-5)">86</div></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="m-bottomnav">
+            <div class="m-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
+            <div class="m-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
+            <div class="m-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 3h5v5M21 3l-7 7M8 21H3v-5M3 21l7-7"/></svg></div>
+            <div class="m-nav-item active coach"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></div>
+            <div class="m-nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+          </div>
+        </div>
+      </div></div>
+    </div>
+  </div>
+
+</div>
+
+<div class="scale-note" id="scaleNote">Slides shown at full size (1284×2778). Zoom out to see all.</div>
+
+<script>
+const W=1284, H=2778;
+function setStatus(t){document.getElementById('status').textContent=t;}
+
+// Verification helper: ?only=N isolates slide N at top-left for clean headless capture.
+(function(){
+  const m=new URLSearchParams(location.search).get('only');
+  if(!m) return;
+  document.querySelector('.toolbar').style.display='none';
+  document.getElementById('scaleNote').style.display='none';
+  document.body.style.padding='0';
+  const wrap=document.getElementById('slidesWrap');
+  wrap.style.gap='0';
+  [...wrap.children].forEach(c=>{ if(c.id!=='slide-'+m) c.style.display='none'; });
+})();
+
+async function exportSlide(id, filename){
+  const el=document.getElementById(id);
+  const canvas=await html2canvas(el,{
+    width:W, height:H, windowWidth:W, windowHeight:H,
+    scale:1, backgroundColor:'#0a1128', useCORS:true, allowTaint:true, imageTimeout:0, logging:false
+  });
+  const link=document.createElement('a');
+  link.download=filename;
+  link.href=canvas.toDataURL('image/png');
+  link.click();
+  return new Promise(r=>setTimeout(r,500));
+}
+
+document.getElementById('exportBtn').addEventListener('click', async ()=>{
+  setStatus('Exporting… (allow multiple downloads if prompted)');
+  for(let i=1;i<=7;i++){
+    setStatus('Exporting slide '+i+' of 7…');
+    await exportSlide('slide-'+i, 'directrecruit-screenshot-'+i+'.png');
+  }
+  setStatus('✅ Done — 7 PNGs downloaded (1320×2868).');
+});
+document.getElementById('exportOneBtn').addEventListener('click', async ()=>{
+  setStatus('Exporting slide 1 test…');
+  await exportSlide('slide-1','directrecruit-screenshot-1.png');
+  setStatus('✅ Slide 1 exported.');
+});
+</script>
+</body>
+</html>
