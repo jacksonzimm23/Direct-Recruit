@@ -38,6 +38,7 @@ uploads/
 
 # Sensitive business docs
 cost-model.html
+direct-recruit-financials.xlsx
 DEPLOYMENT-GUIDE.md
 testing.md
 pipeline.md
@@ -45,6 +46,7 @@ lessons.md
 appcheck.md
 appstore.md
 match.md
+APP-STORE-REJECTION-1.md
 
 # Local cookie/test auth jars — never commit (contain real JWTs)
 cookies.txt

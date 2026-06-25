@@ -7378,6 +7378,12 @@ input[type="file"]::file-selector-button:hover {
         font-size: 0.75rem;
         white-space: normal;
         line-height: 1.3;
+        /* Wrap between words / at the bullet only — never letter-by-letter.
+           Guards against the subheader collapsing to a 1-char vertical column
+           if the flex parent ever starves it of width (iPad Apple rejection). */
+        overflow-wrap: break-word;
+        word-break: normal;
+        min-width: 0;
     }
 
     .profile-username {
