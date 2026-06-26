@@ -686,10 +686,12 @@ async function main() {
     console.log('\n--- Seeding follow relationships ---\n');
     await seedFollows(allPlayers, userIds);
 
-    // 7. Subscriptions (HS + Transfer only — college players are free)
-    console.log('\n--- Setting subscriptions for paid accounts ---\n');
-    const paidPlayers = [...HS_PLAYERS, ...TRANSFER_PLAYERS];
-    await seedSubscriptions(paidPlayers, userIds);
+    // 7. Subscriptions — GTM 2026-06: hsplayer + transferplayer are FREE now, so demo
+    // players get NO subscription (they stay subscription_status='none' like real free
+    // players). seedSubscriptions() is kept dormant for re-enabling player billing:
+    //   const paidPlayers = [...HS_PLAYERS, ...TRANSFER_PLAYERS];
+    //   await seedSubscriptions(paidPlayers, userIds);
+    console.log('\n--- Skipping player subscriptions (players are free) ---\n');
 
     // 8. Portal signals for college players
     console.log('\n--- Setting up portal intelligence signals ---\n');

@@ -3548,7 +3548,8 @@ async function executeSwitchProfile(profileData) {
     // the target type — paid→free AND cross-type paid→paid alike (the old plan
     // keeps billing while the new type needs its own purchase). The
     // hsplayer↔transferplayer pair shares one product, so it carries: no warning.
-    const PAID = ['hsplayer', 'transferplayer', 'collegecoach'];
+    // GTM 2026-06: players are FREE. To re-enable: ['hsplayer','transferplayer','collegecoach'].
+    const PAID = ['collegecoach'];
     const targetIsFree = !PAID.includes(selectedTargetType);
     const samePricePair = ['hsplayer', 'transferplayer'].includes(switchProfileInfo && switchProfileInfo.current_type) &&
                           ['hsplayer', 'transferplayer'].includes(selectedTargetType);
@@ -3856,7 +3857,8 @@ function applyPffGradePrefill() {
 }
 
 // ─── Subscription Section ────────────────────────────────────────────────────
-const PAID_PROFILE_TYPES = ['hsplayer', 'transferplayer', 'collegecoach'];
+// GTM 2026-06: players are FREE. To re-enable: ['hsplayer','transferplayer','collegecoach'].
+const PAID_PROFILE_TYPES = ['collegecoach'];
 const PLAN_DISPLAY = {
     player: { name: 'Player Plan', price: '$10/mo' },
     starter: { name: 'Coach Starter', price: '$20/mo' },
@@ -3876,6 +3878,16 @@ async function initializeSubscriptionSection() {
             college_division: me.profile && me.profile.college_division
         });
         const isPaid = PAID_PROFILE_TYPES.includes(profileFolder);
+
+        // GTM 2026-06: hsplayer/transferplayer became free — hide the "Subscription" nav
+        // button for them so settings isn't cluttered with a now-irrelevant paid-only tab.
+        // Scoped to the two newly-free players only (the other free types — collegeplayer,
+        // hscoach, other — keep their existing behavior unchanged). The section still renders
+        // the "free — no subscription needed" message if reached via deep link.
+        if (profileFolder === 'hsplayer' || profileFolder === 'transferplayer') {
+            const subNavBtn = document.querySelector('.settings-nav-btn[data-section="subscription"]');
+            if (subNavBtn) subNavBtn.style.display = 'none';
+        }
 
         if (!isPaid) {
             const showRestore = API.isIOSApp();

@@ -1590,7 +1590,10 @@ window.API_BASE_URL = API_BASE_URL;
 // ─── Subscription Paywall Check ──────────────────────────────────────────────
 // Runs on every protected page. Redirects unpaid users on paid profile types.
 (function() {
-    const PAID_FOLDERS = ['hsplayer', 'transferplayer', 'collegecoach'];
+    // GTM 2026-06: hsplayer + transferplayer made FREE. Only collegecoach is gated.
+    // To re-enable the player paywall, restore:
+    //   const PAID_FOLDERS = ['hsplayer', 'transferplayer', 'collegecoach'];
+    const PAID_FOLDERS = ['collegecoach'];
     // In-app the bundle root is the frontend/ contents, so there is no '/frontend'
     // path segment; on web there is. Mirror shared/api.js's prefix convention so
     // these URLs resolve in BOTH the WKWebView and the browser.

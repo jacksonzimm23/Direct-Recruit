@@ -141,14 +141,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 localStorage.removeItem('pendingVerificationEmail');
                 localStorage.removeItem('resendCooldown');
 
-                // Verify-then-pay: hsplayer is a PAID type, so after verifying go to the
-                // paywall (shared/subscription-required.html) to subscribe — NOT the
-                // mainpage (the global IIFE would redirect there anyway; routing
-                // explicitly avoids a mainpage flash). After payment, the user is unlocked.
+                // GTM 2026-06: hsplayer is FREE now — after verifying, go straight to the
+                // player dashboard (no paywall). To re-enable the paywall, restore the
+                // redirect to FE_BASE + '/shared/subscription-required.html'.
                 setTimeout(() => {
                     // Absolute URL so it resolves in the iOS WKWebView (bare/relative no-op there).
                     const FE_BASE = window.location.origin + (window.location.pathname.startsWith('/frontend/') ? '/frontend' : '');
-                    window.location.href = FE_BASE + '/shared/subscription-required.html';
+                    window.location.href = FE_BASE + '/hsplayer/mainpage-player.html';
                 }, 2000);
             } else {
                 showError(data.error || 'Invalid verification code');

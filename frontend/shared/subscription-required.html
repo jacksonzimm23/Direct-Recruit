@@ -124,7 +124,8 @@
     <script src="iap-products.js"></script>
     <script>
     (async function() {
-        const PAID_FOLDERS = ['hsplayer', 'transferplayer', 'collegecoach'];
+        // GTM 2026-06: players are FREE. To re-enable: ['hsplayer','transferplayer','collegecoach'].
+        const PAID_FOLDERS = ['collegecoach'];
 
         try {
             // Plan A1: do NOT log the user out if /auth/me hiccups. The user already
@@ -202,6 +203,16 @@
             // Phase 3c: shared handler — branches to IAP on iOS, Stripe on web.
             // profileType: 'hsplayer'|'transferplayer'|'collegecoach'; tier: null for players, 'starter'|'pro'|'elite' for coaches
             async function handleSubscribeClick(profileType, tier, onError) {
+                // GTM 2026-06: players are FREE — never start a player checkout/IAP, even if
+                // a stale app build somehow reaches this handler. Defense-in-depth on top of
+                // the paywall IIFE no longer redirecting players here. (Backend also 400s a
+                // player create-checkout-session.) To re-enable, remove this guard.
+                if (profileType === 'hsplayer' || profileType === 'transferplayer') {
+                    onError && onError(null);
+                    const FE_BASE = window.location.origin + (window.location.pathname.startsWith('/frontend/') ? '/frontend' : '');
+                    window.location.href = FE_BASE + '/' + profileType + '/mainpage-player.html';
+                    return;
+                }
                 if (API.isIOSApp()) {
                     try {
                         const r = await window.IAP.purchaseTier(profileType, tier);

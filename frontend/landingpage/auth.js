@@ -6,7 +6,8 @@
 // paywall IIFE's redirect (shared/api.js) aborted the page's in-flight fetches and
 // feed.js's error handler bounced the user back to signin. Mirrors PAID_FOLDERS +
 // the status allowlist in that IIFE.
-const PAYWALL_PAID_FOLDERS = ['hsplayer', 'transferplayer', 'collegecoach'];
+// GTM 2026-06: players are FREE. To re-enable: ['hsplayer','transferplayer','collegecoach'].
+const PAYWALL_PAID_FOLDERS = ['collegecoach'];
 function needsPaywall(folder, user) {
     return PAYWALL_PAID_FOLDERS.includes(folder) &&
         !['active', 'past_due', 'comp'].includes(user && user.subscription_status);

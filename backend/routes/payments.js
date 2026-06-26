@@ -61,7 +61,10 @@ router.post('/create-checkout-session', authMiddleware, async (req, res) => {
   try {
     const { profileType, tier, context, successUrl, cancelUrl } = req.body;
 
-    // Validate profile type is paid
+    // Validate profile type is paid.
+    // GTM 2026-06: hsplayer/transferplayer are no longer in PAID_TYPES, so this now
+    // returns 400 for player checkout attempts — players can't be charged. The player
+    // PRICE_MAP/TIER_MAP entries below are kept dormant for re-enabling player billing.
     if (!User.PAID_TYPES.includes(profileType)) {
       return res.status(400).json({ error: 'This profile type does not require a subscription' });
     }

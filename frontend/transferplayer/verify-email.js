@@ -141,11 +141,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 localStorage.removeItem('pendingVerificationEmail');
                 localStorage.removeItem('resendCooldown');
 
-                // Verify-then-pay: transferplayer is a PAID type — after verifying go to
-                // the paywall to subscribe, not the mainpage.
+                // GTM 2026-06: transferplayer is FREE now — after verifying, go straight to
+                // the player dashboard (no paywall). To re-enable the paywall, restore the
+                // redirect to FE_BASE + '/shared/subscription-required.html'.
                 setTimeout(() => {
                     const FE_BASE = window.location.origin + (window.location.pathname.startsWith('/frontend/') ? '/frontend' : '');
-                    window.location.href = FE_BASE + '/shared/subscription-required.html';
+                    window.location.href = FE_BASE + '/transferplayer/mainpage-player.html';
                 }, 2000);
             } else {
                 showError(data.error || 'Invalid verification code');

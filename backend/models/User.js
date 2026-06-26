@@ -157,7 +157,12 @@ class User {
 
   static COLLEGE_DIVISIONS = ['D1 FBS', 'D1 FCS', 'D2', 'D3', 'NAIA', 'NJCAA', 'FBS', 'FCS', '3C2A'];
 
-  static PAID_TYPES = ['collegecoach', 'hsplayer', 'transferplayer'];
+  // GTM 2026-06: hsplayer + transferplayer made FREE to gather mass users.
+  // collegecoach remains paid. To re-enable player billing later, restore:
+  //   static PAID_TYPES = ['collegecoach', 'hsplayer', 'transferplayer'];
+  // (ALLOWED_TIERS_BY_SUBTYPE below is intentionally left untouched — the
+  //  player→['player'] entries are dormant infra kept for that re-enable.)
+  static PAID_TYPES = ['collegecoach'];
 
   // Entitlement↔profile-type validation: which subscription tiers may activate
   // which profile subtype. A still-active product the user bought for a

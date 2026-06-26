@@ -1300,8 +1300,20 @@ router.post('/switch-profile', authMiddleware, async (req, res) => {
     const isAppleOrCompSub = user.subscription_source === 'apple_iap' || user.subscription_source === 'comp';
     const targetAllowedTiers = User.ALLOWED_TIERS_BY_SUBTYPE[target_type] || [];
 
-    if (isStripeSub && isCurrentPaid && !isTargetPaid) {
-      // Paid → Free: cancel Stripe subscription + clear DB columns
+    // Cancel an active Stripe sub the TARGET type can't use. We key this off the
+    // subscription itself (status + whether the target allows the held tier), NOT
+    // off isCurrentPaid — because GTM 2026-06 removed hsplayer/transferplayer from
+    // PAID_TYPES, so a legacy paying player would have isCurrentPaid=false and slip
+    // past an isCurrentPaid-based guard, leaving them billed forever. This mirrors
+    // the Apple/comp branch below (subscription_status !== 'none' &&
+    // !targetAllowedTiers.includes(subscription_tier)).
+    const stripeSubUnusableOnTarget =
+      isStripeSub &&
+      user.subscription_status && user.subscription_status !== 'none' &&
+      !targetAllowedTiers.includes(user.subscription_tier);
+
+    if (stripeSubUnusableOnTarget && !isTargetPaid) {
+      // → Free: cancel Stripe subscription + clear DB columns
       try {
         await stripe.cancelSubscription(user.stripe_subscription_id);
       } catch (stripeErr) {
@@ -1315,8 +1327,10 @@ router.post('/switch-profile', authMiddleware, async (req, res) => {
         status: 'cancelled',
         tier: null
       }, client);
-    } else if (isStripeSub && isTargetPaid && isCurrentPaid && !isSamePricePair) {
-      // Paid → different Paid (cross-type, e.g. hsplayer $10 -> collegecoach $20+).
+    } else if (stripeSubUnusableOnTarget && isTargetPaid && !isSamePricePair) {
+      // Held Stripe sub the target can't use, switching to a DIFFERENT paid product
+      // (cross-type, e.g. a legacy player $10 sub -> collegecoach $20+). Keyed off the
+      // sub itself (not isCurrentPaid) for the same GTM reason as the branch above.
       // Verify-then-pay: do NOT cancel the old Stripe sub at switch time — that
       // stripped access if the user abandoned the new payment. Instead:
       //   - set subscription_status='none' so the paywall makes them pay for the NEW product,
