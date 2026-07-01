@@ -1,0 +1,22 @@
+# --- Regenerable / machine-local: never commit ---
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+drill_timing/debug_out/
+debug_out/
+failures.jsonl
+scores.json
+*.log
+.DS_Store
+
+# --- Test footage: large, local-only ---
+**/footage/
+
+# --- Model weights ARE committed here on purpose (safekeeping). ---
+# The prototype's original .gitignore excluded *.pt and models/*.task; we keep
+# them tracked so a fresh clone runs without re-downloading. If they ever grow
+# too large for git, uncomment the lines below and rely on the fail-loud
+# download URLs in drill_timing/core/model_assets.py instead.
+# *.pt
+# models/*.task

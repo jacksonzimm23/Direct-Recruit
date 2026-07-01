@@ -1,0 +1,21 @@
+# Drill Timing Engine - pinned CPU-only deps. Python 3.12 (cp312 wheels).
+# Install torch FIRST from the CPU index (see plan install sequence), so
+# ultralytics cannot drag in a CUDA build.
+#
+# --- CPU PyTorch (must resolve to +cpu, NOT a CUDA build) ---
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch==2.6.0
+torchvision==0.21.0
+# --- perception backends (NOT imported by Plan 1's video.py runtime path) ---
+ultralytics==8.3.40       # detection + pose-rollback + seg (yolov8n-seg.pt auto-downloads)
+lapx>=0.5.2                # linear assignment for ByteTrack (Phase 3); cp312 wheel
+mediapipe==0.10.35        # DEFAULT pose backend (Tasks API): rich BLUEPRINT joints + Hands.
+                          # NOTE: the .task bundles do NOT pip-install — vendor them once into
+                          # <repo>/models/ (pose_landmarker_full.task, hand_landmarker.task);
+                          # fail-loud URLs in core/model_assets.py. See PLATFORM_SPEC §5.V.
+# --- core CV / numerics / config / ffmpeg ---
+opencv-python==4.11.0.86
+numpy==2.1.1
+scipy==1.14.1
+pyyaml==6.0.2
+imageio-ffmpeg==0.5.1

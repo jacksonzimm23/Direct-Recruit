@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "clips": {
+    "v12044gd0000d5eoi8vog65p4r166nhg.mp4": {
+      "clip": "v12044gd0000d5eoi8vog65p4r166nhg.mp4",
+      "start_frame": 9,
+      "start_time_s": 0.2747,
+      "touch_frames": [
+        56,
+        null
+      ],
+      "touch_times_s": [
+        1.8413,
+        null
+      ],
+      "finish_frame": null,
+      "finish_time_s": null,
+      "clip_type": "partial",
+      "athlete_id": "athlete_01",
+      "dataset_split": "dev",
+      "golden": false,
+      "notes": "first 5yd only",
+      "frame_count": 99,
+      "nominal_fps": 30.232,
+      "labeled_at": "2026-06-23T21:59:24",
+      "labeler": "human",
+      "tool_version": "0.1.0"
+    }
+  }
+}

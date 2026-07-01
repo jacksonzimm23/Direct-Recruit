@@ -1,0 +1,174 @@
+# Drill Timing Engine — all thresholds & tunables (Operating Principle 7:
+# config-driven, not hardcoded). Tuning = editing this file, not code.
+# Seeded verbatim from DRILL TIMING SPEC.md Section 6; the only additions are the
+# two VFR keys under `video:` (so the VFR tolerance is config, not a magic number).
+
+video:
+  assume_cfr_if_no_timestamps: true
+  vfr_delta_tolerance_ms: 3.0    # inter-frame delta stdev below this => CFR
+  vfr_max_outlier_frac: 0.02     # frac of deltas allowed to exceed 3x median before VFR
+detection:
+  model: yolov8n.pt             # small, CPU-friendly; auto-downloads ~6MB once
+  min_confidence: 0.4
+  min_box_frac_height: 0.05     # ignore tiny distant people
+  min_detect_rate: 0.95         # below this -> REJECTED ATHLETE_NOT_FOUND
+pose:
+  backend: mediapipe            # swappable: mediapipe | yolo_pose (deterministic rollback)
+  model: yolov8n-pose.pt        # used ONLY when backend: yolo_pose (COCO-17; auto-downloads ~6MB)
+  # --- MediaPipe backend (DEFAULT): rich BLUEPRINT joints (heels + forefoot) + true fingertips ---
+  # .task bundles do NOT auto-download — vendor them once into <repo>/models/ (fail-loud if missing;
+  # see core/model_assets.py for the download URLs). Offline thereafter.
+  pose_task: models/pose_landmarker_full.task
+  hands_task: models/hand_landmarker.task
+  run_hands: true               # run Hands on a wrist crop for TRUE fingertips (anti-cheat needs them)
+  pad_frac: 0.15                # crop padding around the locked box (matches the old YoloPose)
+  min_frac_in_box: 0.5          # >= this frac of confident keypoints must fall inside the locked box
+  hand_crop_frac: 0.18          # wrist-crop size as a frac of box size for the Hands pass
+  hands_lower_frame_only: true  # perf: only run Hands when the wrist is in the lower frame (touch zone)
+segmentation:                   # person silhouette for the BLUEPRINT outline + overlay (5.V)
+  enabled: true
+  backend: yolo_seg
+  model: yolov8n-seg.pt         # Ultralytics; auto-downloads ~6-7MB once to the repo root
+  proc_width: 640               # downscale width for seg inference (perf); 0 = full res
+  min_confidence: 0.4
+  min_mask_in_box: 0.5          # mask-area-inside-locked-box frac required (reject bystanders)
+render:                         # BLUEPRINT visualization (5.V) — BGR colors (OpenCV). Shared by ALL drills.
+  silhouette_fill_color: [255, 180, 0]    # translucent person overlay (blueprint blue-cyan)
+  silhouette_alpha: 0.25
+  outline_color: [255, 230, 150]          # glowing person outline
+  glow_layers: 4
+  glow_thickness: 9
+  outline_thickness: 2
+  skeleton_line_color: [255, 255, 255]    # WHITE connecting lines (operator spec)
+  skeleton_line_thickness: 2
+  joint_dot_color: [255, 255, 255]        # white joint dots
+  joint_dot_radius: 3
+  fingertip_color: [0, 220, 255]          # accent the hand/fingertip touch point
+  head_center_offset_frac: 0.30           # derived head_center: crown offset above eye-line (frac of head height)
+  debug_boxes: false                      # if true, ALSO draw the old athlete/candidate boxes (debugging)
+# --- TRACKER BACKBONE (which perception path locks + tracks the athlete) ---
+# Swappable, like pose.backend (Operating Principle 7). DEFAULT is `mediapipe_roi` —
+# the Fable-5 40-test METHOD, ADOPTED as the engine's person-tracking convention
+# (Jackson's call, 2026-06-29). `yolo_bytetrack` is kept ONLY as a deterministic
+# rollback (one-line switch back if a clip type ever regresses); it is not the path
+# we build on going forward. Still validating mediapipe_roi on real footage (Rules
+# 1-3) — but as the default while we do, not behind it.
+#   mediapipe_roi   = DEFAULT. The 40-test method ported to Python: a digital-zoom ROI that
+#                     follows the athlete with velocity-lead, per-frame MediaPipe multi-pose
+#                     candidate selection + identity lock (biased by the Stage-1 select_athlete
+#                     anchor), real-timestamp VIDEO mode, fade-hold, emitting landmarks+mask
+#                     directly. Capability-probed OK on Python mediapipe 0.10.35 (VIDEO +
+#                     num_poses>1 + nonzero CPU seg-mask; ~48 ms/frame @512px) —
+#                     see PLATFORM_SPEC Global Learnings 2026-06-29.
+#   yolo_bytetrack  = ROLLBACK ONLY. YOLO person-detect -> ByteTrack ids -> select_athlete ->
+#                     run_lock, then a SEPARATE MediaPipe pose + YOLO-seg on the locked box
+#                     (the engine's pre-2026-06-29 path). Kept for safety, not for new work.
+tracker:
+  backend: mediapipe_roi        # mediapipe_roi (DEFAULT, adopted) | yolo_bytetrack (rollback only)
+  mediapipe_roi:
+    pose_task: models/pose_landmarker_full.task   # reuse the vendored bundle
+    num_poses: 4                # ask for several candidates; we pick the runner ourselves
+    running_mode: video         # video (default) | image (capability fallback)
+    min_pose_detection_confidence: 0.3
+    min_pose_presence_confidence: 0.3
+    min_tracking_confidence: 0.3
+    emit_mask: true             # use the MediaPipe seg mask; false -> fall back to segmentation: backend
+    mask_threshold: 0.5         # person-confidence cutoff for the silhouette
+    roi:                        # digital-zoom crop (core/roi.py)
+      detect_max: 512           # long side of the crop fed to the model (px)
+      max_upscale: 3.0          # upscale small crops up to 3x (detailed mask on a far figure)
+      velocity_lead_frames: 2   # aim ~2 frames ahead of a moving athlete
+      velocity_cap_frac: 0.05   # cap per-frame velocity estimate at this * frame_w
+      miss_grace_frames: 3      # brief losses held before widening
+      miss_widen_factor: 1.12   # widen the ROI each miss frame
+      glide_lowpass: 0.5        # ease ROI position toward the lead point
+      crop_height_body_mult: 2.6  # headroom above the athlete
+      crop_width_body_mult: 2.4   # width headroom (portrait clips)
+      crop_min_height_frac: 0.12  # floor so a far figure zooms in tight
+    selection:                  # per-frame choose + lock (core/selection.py)
+      min_diag_frac: 0.10       # reject noise blobs (frac of frame diagonal)
+      max_diag_frac: 0.85       # reject close-up face/torso filling the frame
+      exclude_below_frac: 1.0   # 1 = off; <1 kills a bottom-pinned commentator (clip B style)
+      cold_min_diag_short_frac: 0.12  # cold-pick size floor (frac of short frame side)
+      cold_w_size: 1.6          # cold score: bigger (closer) = more athlete-like
+      cold_w_low: 1.0           # cold score: feet lower in frame = foreground
+      cold_w_iso: 0.7           # cold score: stands alone (bystanders huddle)
+      cold_w_anchor: 1.0        # cold score: proximity to the Stage-1 drill-performer anchor
+      locked_max_jump_frac: 0.45  # reject a 1-frame jump > this * frame_w (not a teleport)
+      locked_max_size_ratio: 2.2  # reject apparent-size changes > this (scale is continuous)
+      lock_size_lowpass: 0.6    # ease the locked size so noise isn't twitchy
+    fade_hold_s: 1.2            # render-only: hold+fade the last layers on a blip (never the signal)
+continuity:                     # pose-continuity verification (core/continuity.py)
+  enabled: true                 # compute + report the "pose held through the run" coverage metric
+  gap_tol_s: 0.20               # a mid-run absent stretch longer than this (media time) is a gap
+  step_max_s: 0.5               # ignore inter-frame steps bigger than this (a seek/stall)
+  # Coverage-as-REJECT is a HYPOTHESIS to validate on real footage first (governance):
+  reject_on_low_coverage: false # OFF by default; flip only after validation shows a safe threshold
+  min_coverage_frac: 0.90       # used only when reject_on_low_coverage: true
+athlete_lock:
+  start_region_frac: 0.25       # central fraction treated as "start area" at t=0
+  center_weight: 0.3            # weak tie-breaker ONLY (a centered bystander must not win)
+  continuity_weight: 2.0
+  motion_weight: 2.0            # DOMINANT: the drill athlete actually sprints (peak speed)
+  size_weight: 0.3             # weak tie-breaker ONLY
+  fingerprint_match_threshold: 0.7   # min appearance match to keep/re-bind lock
+  rebind_search_radius_frac: 0.15    # how far from predicted pos a re-bind may be
+  use_reid_embedding: false          # start with color histogram; enable if needed
+  max_coast_frames: 10               # frames to hold a lost lock before rejecting
+  # --- Phase 3 drill-likeness scoring (pick the DRILL performer, not a mover) ---
+  # The drill athlete is defined by REAL explosive structured MOTION, not by being
+  # centered/large. Motion + traversal dominate; central/size are weak tie-breakers.
+  traversal_weight: 2.0              # DOMINANT: drill sweeps across frame (5/10/5 yd)
+  rest_explode_weight: 3.0           # starts at rest then explodes
+  structure_weight: 2.0              # direction reversals (shuttle back-and-forth)
+  edge_penalty_weight: 1.5           # punish frame-edge drifters (background runners)
+  rest_window_frames: 8              # frames to estimate the at-rest baseline speed
+  rest_speed_frac: 0.30              # rest must be < this * peak to count as "still at start"
+  reversal_min_speed_frac: 0.20      # a step counts as a reversal only if speed > this*peak
+  start_window_frames: 8             # frames after t=0 for central/size/start-eligibility
+  edge_band_frac: 0.15               # outer band of width counted as "edge"
+  min_present_frac: 0.40             # eligibility: present at least this frac of frames
+  reversal_min_run_frames: 3         # debounce for a counted direction reversal
+  # --- Phase 3 reject thresholds (fail loud, never guess) ---
+  athlete_min_score: 1.0             # below -> ATHLETE_NOT_FOUND (no performer)
+  athlete_min_gap: 0.5               # winner must beat runner-up by this, else IDENTITY_UNCERTAIN
+  # --- Phase 3 fingerprint region (torso/legs sub-crop) ---
+  fp_torso_top_frac: 0.15            # crop from 15%..85% of box height (skip head/feet)
+  fp_legs_bottom_frac: 0.85
+  fp_horiz_inset_frac: 0.15          # inset each side to drop background
+  fp_hist_h_bins: 50
+  fp_hist_s_bins: 60
+onset:
+  onset_speed_floor: null       # null = AUTO-RELATIVE to this athlete (keys below)
+  onset_debounce_frames: 3
+  require_accel_spike: true
+  onset_rel_floor_frac: 0.25    # floor = rest + frac*(peak-rest), in body-heights/s
+  onset_rest_window_frames: 8   # frames used to estimate the at-rest baseline
+  onset_accel_floor_frac: 0.10  # accel spike must exceed this frac of the 95th pct accel
+  onset_backoff: 1              # step back from floor-cross toward the commit frame
+  onset_confirm_window_frames: 10  # window after a candidate ramp to confirm it's sustained
+  onset_confirm_stay_frac: 0.6     # >= this frac of the window must stay above floor (reject transients)
+kinematics:
+  gap_max_frames: 3             # interpolate pose gaps up to this many frames
+  max_plausible_speed_bhs: 12.0 # reject COM speeds above this (body-heights/sec) as pose-jitter spikes
+# NOTE: the old `field_calibration:` + `lines:` blocks (Phase 4A yard-line detection /
+# pixel->yard calibration) were REMOVED from this engine. The automatic, player-independent
+# yard-line detector now lives in the browser tool (frontend/drill-lab/shuttle-test/) and reads
+# its own thresholds from that tool's config.js (the `yardLines:` block).
+anti_cheat:
+  touch_keypoint: hand           # HAND ONLY (fingertips count); foot does NOT count as a touch
+  touch_tolerance_yd: 0.5        # how close the HAND/fingertip reach point must get to the line
+  require_hand_touch_both_lines: true   # shuttle: a valid hand touch at BOTH turn lines or reject
+  finish_requires_full_cross: true
+  total_distance_yd: 20.0        # 5 + 10 + 5 for the shuttle
+  distance_tolerance_yd: 1.0     # reject if reconstructed path is shorter than this under target
+timing:
+  agreement_tolerance_s: 0.12   # tighten as accuracy improves
+  target_error_s: 0.10
+distance_gate:
+  min_fill: 0.20                # athlete box height frac of frame -> too far below
+  max_fill: 0.75                # -> too close above
+  require_min_yard_lines: 3     # too close if fewer than this many lines visible
+smoothing:
+  savgol_window: 7
+  savgol_poly: 2
