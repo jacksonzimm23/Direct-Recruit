@@ -276,7 +276,7 @@
     min-height: 50vh;
     padding: 60px 40px;
     overflow: hidden;
-    background: var(--oxford-blue, #0a1128);
+    background: linear-gradient(180deg, #060d1e 0%, var(--oxford-blue, #0a1128) 100%);
 }
 
 .v2-features-hero-bg {
