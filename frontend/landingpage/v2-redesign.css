@@ -276,11 +276,16 @@
     min-height: 50vh;
     padding: 60px 40px;
     overflow: hidden;
-    background: linear-gradient(180deg, #060d1e 0%, var(--oxford-blue, #0a1128) 100%);
+    background: var(--oxford-blue, #0a1128);
 }
 
 .v2-features-hero-bg {
-    display: none;
+    position: absolute;
+    inset: 0;
+    background-image: url('../assets/features-hero-stadium.png');
+    background-size: cover;
+    background-position: center;
+    filter: brightness(0.45);
 }
 
 .v2-features-hero-content {
