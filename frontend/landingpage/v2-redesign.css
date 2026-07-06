@@ -304,7 +304,7 @@
 }
 
 .v2-features-hero-content p {
-    color: rgba(255, 255, 255, 0.55);
+    color: #fff;
     font-size: clamp(1rem, 1.5vw, 1.15rem);
     line-height: 1.6;
     margin: 0;
