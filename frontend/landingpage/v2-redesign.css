@@ -276,15 +276,11 @@
     min-height: 50vh;
     padding: 60px 40px;
     overflow: hidden;
+    background: var(--oxford-blue, #0a1128);
 }
 
 .v2-features-hero-bg {
-    position: absolute;
-    inset: 0;
-    background-image: url('https://res.cloudinary.com/dzmsj6nwv/image/upload/v1762928223/Mines_Field_twmlae.webp');
-    background-size: cover;
-    background-position: center;
-    filter: brightness(0.2);
+    display: none;
 }
 
 .v2-features-hero-content {
