@@ -1601,10 +1601,10 @@
 .v2-final-cta-bg {
     position: absolute;
     inset: 0;
-    background-image: url('https://res.cloudinary.com/dzmsj6nwv/image/upload/v1762928223/Mines_Field_twmlae.webp');
+    background-image: url('../assets/features-hero-stadium.png');
     background-size: cover;
-    background-position: center;
-    filter: brightness(0.2);
+    background-position: center top;
+    filter: brightness(0.45);
 }
 
 .v2-final-cta-inner {
