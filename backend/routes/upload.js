@@ -22,12 +22,27 @@ const memoryStorage = multer.memoryStorage();
 // for the duration of the upload. Routes read the temp file into a Buffer
 // just before the S3 PUT and unlink it in finally.
 const TMP_UPLOAD_DIR = path.join(os.tmpdir(), 'dr-uploads');
-if (!fs.existsSync(TMP_UPLOAD_DIR)) {
-  fs.mkdirSync(TMP_UPLOAD_DIR, { recursive: true });
+
+// Ensure the temp upload dir exists. On Linux, systemd-tmpfiles periodically
+// reaps stale files/dirs under /tmp, so a dir created once at boot can vanish
+// before the next upload — causing ENOENT when multer writes / we readFile the
+// temp file. Call this in the multer destination callback (per-request) so the
+// dir is guaranteed present at write time. mkdir(recursive) is a no-op if it
+// already exists, so it's cheap and safe to call on every upload.
+function ensureTmpUploadDir() {
+  try {
+    fs.mkdirSync(TMP_UPLOAD_DIR, { recursive: true });
+  } catch (err) {
+    logger.error('Failed to ensure temp upload dir:', TMP_UPLOAD_DIR, err.message);
+  }
 }
+ensureTmpUploadDir();
 
 const videoDiskStorage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, TMP_UPLOAD_DIR),
+  destination: (req, file, cb) => {
+    ensureTmpUploadDir();
+    cb(null, TMP_UPLOAD_DIR);
+  },
   filename: (req, file, cb) => {
     const ext = path.extname(file.originalname);
     const stamp = Date.now() + '-' + crypto.randomBytes(8).toString('hex');
