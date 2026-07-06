@@ -23,7 +23,8 @@ const { stripHtml } = require('../middleware/validation');
 
 // Check if coach has active subscription before AI usage.
 // 'comp' = admin-approved complimentary access (no Stripe sub); treated like 'active'.
-const ACTIVE_SUB_STATUSES = ['active', 'past_due', 'comp'];
+// 'trialing' = Stripe free-trial period (players); full access until it converts or expires.
+const ACTIVE_SUB_STATUSES = ['active', 'past_due', 'comp', 'trialing'];
 async function requireActiveSubscription(req, res) {
     const subInfo = await User.getSubscriptionInfo(req.userId);
     if (!subInfo || !ACTIVE_SUB_STATUSES.includes(subInfo.subscription_status)) {

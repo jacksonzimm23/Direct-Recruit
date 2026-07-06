@@ -564,7 +564,7 @@ function openDeleteAccountModal() {
             try {
                 if (document.getElementById('deleteSubNotice')) return;
                 const sub = await API.payments.getSubscriptionStatus();
-                const billing = sub && (sub.status === 'active' || sub.status === 'past_due') && !sub.cancelAtPeriodEnd;
+                const billing = sub && (sub.status === 'active' || sub.status === 'past_due' || sub.status === 'trialing') && !sub.cancelAtPeriodEnd;
                 if (!billing || (sub.source !== 'stripe' && sub.source !== 'apple_iap')) return;
 
                 const anchor = modal.querySelector('.delete-account-warning-box');
@@ -3548,8 +3548,8 @@ async function executeSwitchProfile(profileData) {
     // the target type — paid→free AND cross-type paid→paid alike (the old plan
     // keeps billing while the new type needs its own purchase). The
     // hsplayer↔transferplayer pair shares one product, so it carries: no warning.
-    // GTM 2026-06: players are FREE. To re-enable: ['hsplayer','transferplayer','collegecoach'].
-    const PAID = ['collegecoach'];
+    // Paid profile types (players are paid again — 7-day trial).
+    const PAID = ['hsplayer', 'transferplayer', 'collegecoach'];
     const targetIsFree = !PAID.includes(selectedTargetType);
     const samePricePair = ['hsplayer', 'transferplayer'].includes(switchProfileInfo && switchProfileInfo.current_type) &&
                           ['hsplayer', 'transferplayer'].includes(selectedTargetType);
@@ -3857,8 +3857,8 @@ function applyPffGradePrefill() {
 }
 
 // ─── Subscription Section ────────────────────────────────────────────────────
-// GTM 2026-06: players are FREE. To re-enable: ['hsplayer','transferplayer','collegecoach'].
-const PAID_PROFILE_TYPES = ['collegecoach'];
+// Paid profile types (players are paid again — 7-day trial).
+const PAID_PROFILE_TYPES = ['hsplayer', 'transferplayer', 'collegecoach'];
 const PLAN_DISPLAY = {
     player: { name: 'Player Plan', price: '$10/mo' },
     starter: { name: 'Coach Starter', price: '$20/mo' },
@@ -3878,16 +3878,6 @@ async function initializeSubscriptionSection() {
             college_division: me.profile && me.profile.college_division
         });
         const isPaid = PAID_PROFILE_TYPES.includes(profileFolder);
-
-        // GTM 2026-06: hsplayer/transferplayer became free — hide the "Subscription" nav
-        // button for them so settings isn't cluttered with a now-irrelevant paid-only tab.
-        // Scoped to the two newly-free players only (the other free types — collegeplayer,
-        // hscoach, other — keep their existing behavior unchanged). The section still renders
-        // the "free — no subscription needed" message if reached via deep link.
-        if (profileFolder === 'hsplayer' || profileFolder === 'transferplayer') {
-            const subNavBtn = document.querySelector('.settings-nav-btn[data-section="subscription"]');
-            if (subNavBtn) subNavBtn.style.display = 'none';
-        }
 
         if (!isPaid) {
             const showRestore = API.isIOSApp();
@@ -3934,6 +3924,7 @@ function renderSubscriptionUI(container, sub, profileFolder) {
 
     const plan = PLAN_DISPLAY[sub.tier] || null;
     const isActive = sub.status === 'active';
+    const isTrialing = sub.status === 'trialing';   // 7-day free trial (players)
     const isPastDue = sub.status === 'past_due';
     const isCancelled = sub.status === 'cancelled';
     const isNone = !sub.status || sub.status === 'none';
@@ -3945,7 +3936,8 @@ function renderSubscriptionUI(container, sub, profileFolder) {
     const isIOS = API.isIOSApp();
 
     let statusBadge = '';
-    if (isActive && sub.cancelAtPeriodEnd) statusBadge = '<span class="sub-badge sub-badge-warning">Cancelling</span>';
+    if ((isActive || isTrialing) && sub.cancelAtPeriodEnd) statusBadge = '<span class="sub-badge sub-badge-warning">Cancelling</span>';
+    else if (isTrialing) statusBadge = '<span class="sub-badge sub-badge-active">Free Trial</span>';
     else if (isActive) statusBadge = '<span class="sub-badge sub-badge-active">Active</span>';
     else if (isPastDue) statusBadge = '<span class="sub-badge sub-badge-warning">Past Due</span>';
     else if (isCancelled) statusBadge = '<span class="sub-badge sub-badge-cancelled">Cancelled</span>';
@@ -3960,11 +3952,13 @@ function renderSubscriptionUI(container, sub, profileFolder) {
     // Status
     html += `<div class="sub-row"><span class="sub-label">Status</span><span class="sub-value">${statusBadge}</span></div>`;
 
-    // Billing date
-    if (isActive && sub.currentPeriodEnd) {
+    // Billing date. For a trial, currentPeriodEnd is the day-7 first-charge date.
+    if ((isActive || isTrialing) && sub.currentPeriodEnd) {
         const endDate = new Date(sub.currentPeriodEnd * 1000).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
         if (sub.cancelAtPeriodEnd) {
             html += `<div class="sub-row"><span class="sub-label">Access Until</span><span class="sub-value" style="color:#f59e0b;">${endDate}</span></div>`;
+        } else if (isTrialing) {
+            html += `<div class="sub-row"><span class="sub-label">Trial Ends / First Billing</span><span class="sub-value">${endDate}</span></div>`;
         } else {
             html += `<div class="sub-row"><span class="sub-label">Next Billing</span><span class="sub-value">${endDate}</span></div>`;
         }
@@ -3980,18 +3974,19 @@ function renderSubscriptionUI(container, sub, profileFolder) {
     // it was created on — Stripe subs on the web, Apple subs on the iOS device.
     // Viewing from the other side gets an informational note instead of
     // buttons that would fail (server rejects cross-rail cancel/change anyway).
-    const managedElsewhere = isActive && (
+    const managedElsewhere = (isActive || isTrialing) && (
         (isIOS && sub.source === 'stripe') ||
         (!isIOS && sub.source === 'apple_iap')
     );
 
-    // Buttons
+    // Buttons. A trialing user is treated like an active one so they can cancel
+    // before the day-7 charge (Stripe cancel_at_period_end ends it at trial end).
     html += '<div class="sub-actions">';
     if (managedElsewhere) {
         html += sub.source === 'apple_iap'
             ? '<p class="sub-cancel-note">Subscribed via the iOS app. Manage or cancel your subscription on your iOS device (Settings &gt; Apple ID &gt; Subscriptions, or the Direct Recruit app).</p>'
             : '<p class="sub-cancel-note">Subscribed on the web. Manage your subscription from a desktop browser at directrecruit.net.</p>';
-    } else if (isActive && !sub.cancelAtPeriodEnd) {
+    } else if ((isActive || isTrialing) && !sub.cancelAtPeriodEnd) {
         if (isIOS) {
             html += '<button class="btn-primary" id="subManageAppleBtn">Manage in Apple Subscriptions</button>';
             html += '<p class="sub-cancel-note" style="margin-top:12px;">Plan changes and cancellation are managed through Apple.</p>';
@@ -3999,9 +3994,9 @@ function renderSubscriptionUI(container, sub, profileFolder) {
             if (isCoach) {
                 html += '<button class="btn-secondary" id="subChangePlanBtn">Change Plan</button>';
             }
-            html += '<button class="btn-danger-outline" id="subCancelBtn">Cancel Subscription</button>';
+            html += `<button class="btn-danger-outline" id="subCancelBtn">${isTrialing ? 'Cancel Trial' : 'Cancel Subscription'}</button>`;
         }
-    } else if (isActive && sub.cancelAtPeriodEnd) {
+    } else if ((isActive || isTrialing) && sub.cancelAtPeriodEnd) {
         if (isIOS) {
             html += '<p class="sub-cancel-note">Your subscription will end at the end of the current billing period. You can resubscribe anytime through Apple.</p>';
             html += '<button class="btn-primary" id="subManageAppleBtn">Manage in Apple Subscriptions</button>';

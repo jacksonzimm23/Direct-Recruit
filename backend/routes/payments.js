@@ -61,10 +61,8 @@ router.post('/create-checkout-session', authMiddleware, async (req, res) => {
   try {
     const { profileType, tier, context, successUrl, cancelUrl } = req.body;
 
-    // Validate profile type is paid.
-    // GTM 2026-06: hsplayer/transferplayer are no longer in PAID_TYPES, so this now
-    // returns 400 for player checkout attempts — players can't be charged. The player
-    // PRICE_MAP/TIER_MAP entries below are kept dormant for re-enabling player billing.
+    // Validate profile type is paid. Players are paid again (with a 7-day trial
+    // applied below), so hsplayer/transferplayer checkouts are allowed here.
     if (!User.PAID_TYPES.includes(profileType)) {
       return res.status(400).json({ error: 'This profile type does not require a subscription' });
     }
@@ -115,12 +113,16 @@ router.post('/create-checkout-session', authMiddleware, async (req, res) => {
       customerId = customer.id;
       await User.updateStripeCustomerId(req.userId, customerId);
     }
+    // Player subscriptions (hsplayer/transferplayer) get a 7-day free trial.
+    // Keyed off profileType, NOT tier, so a coach checkout NEVER gets a trial.
+    const isPlayerTrial = profileType === 'hsplayer' || profileType === 'transferplayer';
     const session = await stripe.createCheckoutSession({
       customerId,
       priceId,
       userId: req.userId,
       profileType,
       tier: resolvedTier,
+      trialDays: isPlayerTrial ? 7 : 0,
       context: context || 'signup',
       successUrl: validateRedirectUrl(successUrl, 'https://directrecruit.net/frontend/shared/payment-success.html?session_id={CHECKOUT_SESSION_ID}'),
       cancelUrl: validateRedirectUrl(cancelUrl, 'https://directrecruit.net/frontend/landingpage/pricing.html')
@@ -153,7 +155,10 @@ router.get('/subscription-status', authMiddleware, async (req, res) => {
     // are managed by App Store / RevenueCat; we read those from the webhook.
     const isStripeSub = info.subscription_source === 'stripe'
       || (info.stripe_subscription_id && !info.subscription_source);
-    if (isStripeSub && info.stripe_subscription_id && info.subscription_status === 'active') {
+    // 'trialing' included so a player's trial-end date (Stripe's current_period_end
+    // during a trial = the day-7 first-charge date) populates the settings display.
+    if (isStripeSub && info.stripe_subscription_id
+        && (info.subscription_status === 'active' || info.subscription_status === 'trialing')) {
       try {
         const sub = await stripe.getSubscription(info.stripe_subscription_id);
         response.currentPeriodEnd = sub.current_period_end;

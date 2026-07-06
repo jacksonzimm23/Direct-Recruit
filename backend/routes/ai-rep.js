@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { authMiddleware, requireRole } = require('../middleware/auth');
 const pool = require('../config/database');
-const User = require('../models/User'); // kept for the (currently disabled) AI Rep subscription gate — see GTM 2026-06 comments below
+const User = require('../models/User'); // used by the AI Rep subscription gate (getSubscriptionInfo)
 const PlayerProfile = require('../models/PlayerProfile');
 const CoachProfile = require('../models/CoachProfile');
 const { computeFit, tierOf } = require('../utils/fit-score');
@@ -85,12 +85,11 @@ const SCHOOL_MIN_SCORE = 70;
 
 router.get('/best-fit-schools', async (req, res) => {
   try {
-    // GTM 2026-06: hsplayer + transferplayer are FREE — AI Rep no longer requires a
-    // subscription. To re-gate, restore:
-    //   const subInfo = await User.getSubscriptionInfo(req.userId);
-    //   if (!subInfo || !['active', 'past_due', 'comp'].includes(subInfo.subscription_status)) {
-    //     return res.status(403).json({ error: 'Active subscription required' });
-    //   }
+    // Players are paid again (7-day trial). 'trialing' counts as active access.
+    const subInfo = await User.getSubscriptionInfo(req.userId);
+    if (!subInfo || !['active', 'past_due', 'comp', 'trialing'].includes(subInfo.subscription_status)) {
+      return res.status(403).json({ error: 'Active subscription required' });
+    }
 
     const offset = Math.max(0, parseInt(req.query.offset) || 0);
     const limit = Math.min(50, Math.max(1, parseInt(req.query.limit) || 10));
@@ -186,12 +185,11 @@ router.get('/best-fit-schools', async (req, res) => {
 // ============ GET /api/ai-rep/profile-completion ============
 router.get('/profile-completion', async (req, res) => {
   try {
-    // GTM 2026-06: hsplayer + transferplayer are FREE — AI Rep no longer requires a
-    // subscription. To re-gate, restore:
-    //   const subInfo = await User.getSubscriptionInfo(req.userId);
-    //   if (!subInfo || !['active', 'past_due', 'comp'].includes(subInfo.subscription_status)) {
-    //     return res.status(403).json({ error: 'Active subscription required' });
-    //   }
+    // Players are paid again (7-day trial). 'trialing' counts as active access.
+    const subInfo = await User.getSubscriptionInfo(req.userId);
+    if (!subInfo || !['active', 'past_due', 'comp', 'trialing'].includes(subInfo.subscription_status)) {
+      return res.status(403).json({ error: 'Active subscription required' });
+    }
 
     const userId = req.userId;
 

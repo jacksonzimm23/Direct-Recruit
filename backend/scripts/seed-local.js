@@ -476,13 +476,13 @@ async function seedProfiles(users) {
 async function seedSubscriptions(users) {
   console.log('\n--- Seeding subscriptions for paid accounts ---\n');
 
-  // GTM 2026-06: hsplayer + transferplayer are FREE now — no seeded subscription
-  // (they should have subscription_status='none' like any free type). Only
-  // collegecoach is paid. To re-enable player billing, add the player entries back:
-  //   { email: 'hsplayer@test.com', tier: 'player', subId: 'sub_mock_hsplayer', cusId: 'cus_mock_hsplayer' },
-  //   { email: 'transferplayer@test.com', tier: 'player', subId: 'sub_mock_transferplayer', cusId: 'cus_mock_transferplayer' },
+  // Players are paid again (7-day trial). Seed test player accounts as paid so
+  // they pass the paywall; a fresh signup exercises the real 'trialing' path via
+  // the local Stripe mock (see stripe-local.js).
   const paidAccounts = [
-    { email: 'collegecoach@test.com', tier: 'pro', subId: 'sub_mock_collegecoach', cusId: 'cus_mock_collegecoach' }
+    { email: 'collegecoach@test.com', tier: 'pro', subId: 'sub_mock_collegecoach', cusId: 'cus_mock_collegecoach' },
+    { email: 'hsplayer@test.com', tier: 'player', subId: 'sub_mock_hsplayer', cusId: 'cus_mock_hsplayer' },
+    { email: 'transferplayer@test.com', tier: 'player', subId: 'sub_mock_transferplayer', cusId: 'cus_mock_transferplayer' }
   ];
 
   for (const acct of paidAccounts) {

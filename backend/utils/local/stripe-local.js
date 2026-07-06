@@ -48,7 +48,7 @@ async function createCustomer(email, userId) {
  * In local dev, returns the successUrl directly so the frontend auto-redirects
  * as if payment succeeded.
  */
-async function createCheckoutSession({ customerId, priceId, userId, profileType, tier, context, successUrl, cancelUrl }) {
+async function createCheckoutSession({ customerId, priceId, userId, profileType, tier, context, successUrl, cancelUrl, trialDays }) {
   const sessionId = mockId('cs');
   const subId = mockId('sub');
   const session = {
@@ -59,14 +59,19 @@ async function createCheckoutSession({ customerId, priceId, userId, profileType,
     metadata: { userId, profileType, context }
   };
 
-  // Auto-activate subscription in local dev (simulates webhook checkout.session.completed)
+  // Auto-activate subscription in local dev (simulates webhook checkout.session.completed).
+  // Player checkouts with a trial land 'trialing' (mirrors real Stripe), so local dev
+  // exercises the 'trialing' paywall/gate/settings paths. Coach checkouts stay 'active'.
   if (userId) {
     const resolvedTier = tier || 'player';
+    const isPlayerTrial = trialDays && trialDays > 0
+      && (profileType === 'hsplayer' || profileType === 'transferplayer');
+    const status = isPlayerTrial ? 'trialing' : 'active';
     try {
-      await User.updateSubscription(userId, { subscriptionId: subId, status: 'active', tier: resolvedTier });
-      console.log(`[Stripe Mock] Auto-activated subscription for user ${userId}: tier=${resolvedTier}`);
+      await User.updateSubscription(userId, { subscriptionId: subId, status, tier: resolvedTier, source: 'stripe' });
+      console.log(`[Stripe Mock] Auto-set subscription for user ${userId}: tier=${resolvedTier}, status=${status}`);
     } catch (e) {
-      console.error(`[Stripe Mock] Failed to auto-activate subscription: ${e.message}`);
+      console.error(`[Stripe Mock] Failed to set subscription: ${e.message}`);
     }
   }
 

@@ -29,7 +29,13 @@ async function createCustomer(email, userId) {
 /**
  * Create a Stripe Checkout session for a subscription.
  */
-async function createCheckoutSession({ customerId, priceId, userId, profileType, context, successUrl, cancelUrl }) {
+async function createCheckoutSession({ customerId, priceId, userId, profileType, context, successUrl, cancelUrl, trialDays }) {
+  const subscription_data = { metadata: { userId, profileType } };
+  // Free-trial support: only when the caller passes a positive trialDays (players
+  // get 7; coaches get 0/undefined, so a coach subscription is charged immediately).
+  if (trialDays && trialDays > 0) {
+    subscription_data.trial_period_days = trialDays;
+  }
   const session = await stripe.checkout.sessions.create({
     customer: customerId,
     mode: 'subscription',
@@ -38,11 +44,9 @@ async function createCheckoutSession({ customerId, priceId, userId, profileType,
     success_url: successUrl,
     cancel_url: cancelUrl,
     metadata: { userId, profileType, context },
-    subscription_data: {
-      metadata: { userId, profileType }
-    }
+    subscription_data
   });
-  logger.info(`Checkout session created: ${session.id} for user ${userId}`);
+  logger.info(`Checkout session created: ${session.id} for user ${userId}${trialDays > 0 ? ` (trial ${trialDays}d)` : ''}`);
   return session;
 }
 

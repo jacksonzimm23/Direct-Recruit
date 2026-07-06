@@ -141,12 +141,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 localStorage.removeItem('pendingVerificationEmail');
                 localStorage.removeItem('resendCooldown');
 
-                // GTM 2026-06: transferplayer is FREE now — after verifying, go straight to
-                // the player dashboard (no paywall). To re-enable the paywall, restore the
-                // redirect to FE_BASE + '/shared/subscription-required.html'.
+                // transferplayer is paid again (7-day trial) — after verifying, send the
+                // user to the paywall, which starts the trial (Stripe web / Apple IAP).
                 setTimeout(() => {
                     const FE_BASE = window.location.origin + (window.location.pathname.startsWith('/frontend/') ? '/frontend' : '');
-                    window.location.href = FE_BASE + '/transferplayer/mainpage-player.html';
+                    window.location.href = FE_BASE + '/shared/subscription-required.html';
                 }, 2000);
             } else {
                 showError(data.error || 'Invalid verification code');

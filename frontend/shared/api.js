@@ -17,6 +17,10 @@
         if (path.includes('/landingpage/')) return;
         if (path.endsWith('/get-the-app.html')) return;
         if (path.endsWith('/coming-soon-android.html')) return;
+        // Drill Lab (PROTOTYPE): a standalone sandbox, viewable on desktop for
+        // inspection. Exempt so it's never bounced to "Get the app". Mirror in
+        // shared/mobile-web-redirect.js — keep the two in sync.
+        if (path.includes('/drill-lab/')) return;
 
         // Email-driven flows (Cognito codes, coach invites, password resets) must work
         // on mobile web. Mirror of shared/mobile-web-redirect.js — keep the two in sync.
@@ -1590,10 +1594,8 @@ window.API_BASE_URL = API_BASE_URL;
 // ─── Subscription Paywall Check ──────────────────────────────────────────────
 // Runs on every protected page. Redirects unpaid users on paid profile types.
 (function() {
-    // GTM 2026-06: hsplayer + transferplayer made FREE. Only collegecoach is gated.
-    // To re-enable the player paywall, restore:
-    //   const PAID_FOLDERS = ['hsplayer', 'transferplayer', 'collegecoach'];
-    const PAID_FOLDERS = ['collegecoach'];
+    // Paid profile folders gated by the paywall. Players are paid again (7-day trial).
+    const PAID_FOLDERS = ['hsplayer', 'transferplayer', 'collegecoach'];
     // In-app the bundle root is the frontend/ contents, so there is no '/frontend'
     // path segment; on web there is. Mirror shared/api.js's prefix convention so
     // these URLs resolve in BOTH the WKWebView and the browser.
@@ -1626,9 +1628,10 @@ window.API_BASE_URL = API_BASE_URL;
             if (!PAID_FOLDERS.includes(folder)) return;
 
             const status = me.user.subscription_status;
-            // Allow active, past_due (Stripe retries payment), and comp
-            // (admin-approved complimentary access — no Stripe subscription).
-            if (status === 'active' || status === 'past_due' || status === 'comp') {
+            // Allow active, past_due (Stripe retries payment), comp (admin-approved
+            // complimentary access — no Stripe subscription), and trialing (7-day
+            // free trial period — full access until it converts or expires).
+            if (status === 'active' || status === 'past_due' || status === 'comp' || status === 'trialing') {
                 // Phase 3c: webhook has caught up — clear any stale grace key
                 try { localStorage.removeItem('iap_pending_activation'); } catch (_) {}
                 return;

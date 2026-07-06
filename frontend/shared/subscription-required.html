@@ -124,8 +124,8 @@
     <script src="iap-products.js"></script>
     <script>
     (async function() {
-        // GTM 2026-06: players are FREE. To re-enable: ['hsplayer','transferplayer','collegecoach'].
-        const PAID_FOLDERS = ['collegecoach'];
+        // Paid profile folders (players are paid again — 7-day trial).
+        const PAID_FOLDERS = ['hsplayer', 'transferplayer', 'collegecoach'];
 
         try {
             // Plan A1: do NOT log the user out if /auth/me hiccups. The user already
@@ -161,22 +161,36 @@
                 college_division: (me.profile && me.profile.college_division) || me.user.college_division
             });
 
-            // FTC disclosure price line. Players are a single $10 plan → show the price
-            // here (Apple's localized price on iOS, hardcoded Stripe price on web).
-            // collegecoach has 3 tiers → leave this empty; each tier button shows its own
-            // price, and the renewal terms + Terms/Privacy below still apply.
+            // FTC disclosure price line. Players get a 7-day free trial, then the single
+            // plan price (Apple's localized price on iOS — currently $9.99 — set from the
+            // live offering; hardcoded $10 Stripe price on web). The trial terms line is
+            // set below for players so the coach terms line stays unchanged.
+            // collegecoach has 3 tiers → leave the price empty; each tier button shows its
+            // own price, and the renewal terms + Terms/Privacy below still apply.
             (async function populateDisclosurePrice() {
                 const priceEl = document.getElementById('paywallPrice');
                 if (!priceEl) return;
                 if (folder === 'hsplayer' || folder === 'transferplayer') {
+                    // Player-only: relabel the Subscribe button + terms to reflect the trial
+                    // (web + iOS). Done synchronously, before any await, so the label is set
+                    // before the user could click. Coaches get no trial → button stays
+                    // "Subscribe Now" and the terms line is left byte-for-byte unchanged.
+                    const subscribeBtn = document.getElementById('paywallSubscribeBtn');
+                    if (subscribeBtn) subscribeBtn.textContent = 'Start Free Trial';
+                    const termsEl = document.querySelector('#paywallDisclosure .paywall-terms');
+                    if (termsEl) {
+                        termsEl.innerHTML = 'After your 7-day free trial, auto-renews monthly until cancelled. '
+                            + '<span class="web-only">Cancel anytime in your account settings before the trial ends to avoid charges.</span>'
+                            + '<span class="ios-only">Cancel anytime in your Apple ID subscription settings before the trial ends to avoid charges.</span>';
+                    }
                     if (API.isIOSApp() && window.IAP?.getOfferingsPriceMap) {
                         try {
                             const map = await window.IAP.getOfferingsPriceMap();
-                            if (map && map.player) { priceEl.textContent = map.player + '/month'; return; }
-                        } catch (_) { /* fall through — show nothing rather than a wrong price */ }
-                        priceEl.textContent = ''; // iOS without a reliable price: Apple's sheet shows it
+                            if (map && map.player) { priceEl.textContent = '7-day free trial, then ' + map.player + '/month'; }
+                            else { priceEl.textContent = '7-day free trial'; } // iOS w/o reliable price: Apple's sheet shows the amount
+                        } catch (_) { priceEl.textContent = '7-day free trial'; }
                     } else {
-                        priceEl.textContent = '$10/month'; // web (Stripe)
+                        priceEl.textContent = '7-day free trial, then $10/month'; // web (Stripe)
                     }
                 }
                 // collegecoach: leave empty (tier buttons carry per-tier prices)
@@ -203,16 +217,6 @@
             // Phase 3c: shared handler — branches to IAP on iOS, Stripe on web.
             // profileType: 'hsplayer'|'transferplayer'|'collegecoach'; tier: null for players, 'starter'|'pro'|'elite' for coaches
             async function handleSubscribeClick(profileType, tier, onError) {
-                // GTM 2026-06: players are FREE — never start a player checkout/IAP, even if
-                // a stale app build somehow reaches this handler. Defense-in-depth on top of
-                // the paywall IIFE no longer redirecting players here. (Backend also 400s a
-                // player create-checkout-session.) To re-enable, remove this guard.
-                if (profileType === 'hsplayer' || profileType === 'transferplayer') {
-                    onError && onError(null);
-                    const FE_BASE = window.location.origin + (window.location.pathname.startsWith('/frontend/') ? '/frontend' : '');
-                    window.location.href = FE_BASE + '/' + profileType + '/mainpage-player.html';
-                    return;
-                }
                 if (API.isIOSApp()) {
                     try {
                         const r = await window.IAP.purchaseTier(profileType, tier);
