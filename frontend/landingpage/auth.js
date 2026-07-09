@@ -13,24 +13,10 @@ function needsPaywall(folder, user) {
         !['active', 'past_due', 'comp', 'trialing'].includes(user && user.subscription_status);
 }
 
-// --- Drill Lab gate (PROTOTYPE) ---------------------------------------------
-// These accounts skip the normal role dashboard and land in the standalone
-// drill-lab prototype (frontend/drill-lab/) instead. Frontend-only gate for a
-// private TestFlight build — the lab is unlinked and not part of the product yet.
-// Match is case-insensitive + trimmed so casing/whitespace can't break it.
-const DRILL_LAB_EMAILS = ['jacksonzimm@gmail.com'];
-function isDrillLabUser(emailOrUser) {
-    const email = typeof emailOrUser === 'string'
-        ? emailOrUser
-        : (emailOrUser && emailOrUser.email);
-    if (!email) return false;
-    return DRILL_LAB_EMAILS.includes(String(email).trim().toLowerCase());
-}
-function redirectToDrillLab() {
-    // Resolve relative nav to an absolute URL so it works in the iOS WKWebView
-    // (bare/relative targets silently no-op there).
-    window.location.href = new URL('../drill-lab/index.html', window.location.href).href;
-}
+// NOTE: The drill-lab prototype is a standalone testing tool and is intentionally
+// NOT wired into the sign-in flow. It must never gate or redirect the production
+// iOS app (its page isn't in the app bundle, so any redirect there dead-ends).
+// A prior email-based drill-lab gate here broke sign-in on iOS and was removed.
 
 // Auto-login: if user previously chose "Remember me" and cookie is still valid, redirect to dashboard
 (async function checkExistingSession() {
@@ -49,13 +35,6 @@ function redirectToDrillLab() {
         // Guard: a 200 with no user (e.g. cookie not sent in an iOS WebView) must not crash the
         // page on load — fall through to the catch and show the normal sign-in form.
         if (!meData || !meData.user || !meData.user.role) throw new Error('No valid session');
-
-        // Drill Lab gate (PROTOTYPE): special account always lands in the lab,
-        // never the role dashboard. Check before any folder/paywall routing.
-        if (isDrillLabUser(meData.user)) {
-            redirectToDrillLab();
-            return;
-        }
 
         // Valid session — redirect to their dashboard
         const folder = getProfileFolder({
@@ -113,15 +92,6 @@ if (document.getElementById('signinForm')) {
                 // Defensive: a malformed/empty success body should fail cleanly, not crash on
                 // data.user.role. (The iOS HTML-instead-of-JSON cause is fixed via CapacitorHttp.)
                 throw new Error('Sign-in did not complete. Please try again.');
-            }
-
-            // Drill Lab gate (PROTOTYPE): special account always lands in the lab,
-            // never the role dashboard. Check before ?next= and role routing so
-            // nothing can bounce the lab account elsewhere. Match on the typed
-            // email or the returned user — either is sufficient.
-            if (isDrillLabUser(email) || isDrillLabUser(data.user)) {
-                redirectToDrillLab();
-                return;
             }
 
             // Honor ?next=<relative-path> on the signin URL so flows that bounce users
