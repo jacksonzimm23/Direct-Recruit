@@ -166,6 +166,18 @@ router.get('/subscription-status', authMiddleware, async (req, res) => {
       } catch (err) {
         logger.warn(`Failed to fetch subscription details from Stripe: ${err.message}`);
       }
+    } else if (info.subscription_source === 'apple_iap' && info.subscription_status === 'trialing') {
+      // IAP trial: surface the Apple trial-end date so Settings shows the
+      // "Trial Ends / First Billing" row (display parity with Stripe). Scoped to
+      // the trialing state only — a rare ~7-day window — so the common active
+      // path never pays for this extra RevenueCat call. Best-effort: on any
+      // failure the badge still reads "Free Trial", just without the date row.
+      try {
+        const end = await getIapTrialEnd(req.userId);
+        if (end) response.currentPeriodEnd = end;
+      } catch (err) {
+        logger.warn(`Failed to fetch IAP trial end for user ${req.userId}: ${err.message}`);
+      }
     }
 
     res.json(response);
@@ -190,11 +202,17 @@ router.post('/cancel', authMiddleware, async (req, res) => {
       return res.status(400).json({ error: 'This subscription is managed through Apple. Cancel it in Settings > Apple ID > Subscriptions on your iOS device.' });
     }
 
-    if (info.subscription_status !== 'active') {
+    // Accept 'trialing' too: hsplayer/transferplayer start on a 7-day trial and
+    // the "Cancel Trial" button (settings.js) posts here. cancelSubscription sets
+    // cancel_at_period_end=true, which ends a trialing sub at trial end with NO
+    // charge — the promised "cancel during trial → not charged" escape hatch.
+    // Without 'trialing' here, a trial player got a 400 and was billed on day 7.
+    if (info.subscription_status !== 'active' && info.subscription_status !== 'trialing') {
       return res.status(400).json({ error: 'Subscription is not active' });
     }
 
-    // Cancel at end of billing period (not immediately)
+    // Cancel at end of billing period (not immediately). For a trialing sub this
+    // is the trial-end date, so the first invoice never fires.
     const subscription = await stripe.cancelSubscription(info.stripe_subscription_id);
 
     res.json({
@@ -219,7 +237,10 @@ router.post('/reactivate', authMiddleware, async (req, res) => {
     if (info.subscription_source === 'apple_iap') {
       return res.status(400).json({ error: 'Apple subscriptions are managed in iOS Settings' });
     }
-    if (info.subscription_status !== 'active') {
+    // Accept 'trialing' too: a trial player who hit "Cancel Trial" stays in
+    // 'trialing' status (toggling cancel_at_period_end doesn't change Stripe's
+    // status), so they must be allowed to un-cancel before day 7.
+    if (info.subscription_status !== 'active' && info.subscription_status !== 'trialing') {
       return res.status(400).json({ error: 'Subscription is not active. Subscribe again to restart.' });
     }
 
@@ -274,24 +295,44 @@ async function webhookHandler(req, res) {
         const profileType = session.metadata?.profileType;
 
         if (userId && session.subscription) {
+          // Fetch the subscription once — we need its real status (so a player's
+          // 7-day trial is stored as 'trialing', not a hardcoded 'active') and,
+          // for coaches, its price to resolve the tier. Best-effort: if the fetch
+          // fails we fall back to 'active' (players charge on day 7 either way,
+          // since Stripe owns the trial timer regardless of our stored label).
+          let sub = null;
+          try {
+            sub = await stripe.getSubscription(session.subscription);
+          } catch (err) {
+            logger.warn(`checkout.session.completed: could not fetch subscription ${session.subscription}: ${err.message}`);
+          }
+
           // Determine tier from profile type and price
           let tier = null;
           if (profileType === 'hsplayer' || profileType === 'transferplayer') {
             tier = 'player';
           } else if (profileType === 'collegecoach') {
             // Look up tier from subscription's price
-            try {
-              const sub = await stripe.getSubscription(session.subscription);
-              const priceId = sub.items.data[0]?.price?.id;
-              if (priceId === process.env.STRIPE_COACH_STARTER_PRICE_ID) tier = 'starter';
-              else if (priceId === process.env.STRIPE_COACH_PRO_PRICE_ID) tier = 'pro';
-              else if (priceId === process.env.STRIPE_COACH_ELITE_PRICE_ID) tier = 'elite';
-              else tier = 'pro'; // fallback
-            } catch (err) {
-              logger.warn(`Could not determine tier from subscription, defaulting to pro: ${err.message}`);
-              tier = 'pro';
+            const priceId = sub?.items?.data?.[0]?.price?.id;
+            if (priceId === process.env.STRIPE_COACH_STARTER_PRICE_ID) tier = 'starter';
+            else if (priceId === process.env.STRIPE_COACH_PRO_PRICE_ID) tier = 'pro';
+            else if (priceId === process.env.STRIPE_COACH_ELITE_PRICE_ID) tier = 'elite';
+            else {
+              logger.warn(`Could not determine coach tier from subscription price, defaulting to pro`);
+              tier = 'pro'; // fallback
             }
           }
+
+          // Mirror Stripe's real subscription status so the DB reflects the trial.
+          // A player checkout lands 'trialing' (7-day trial); coaches (no trial)
+          // land 'active'. Only ever store the terminal-good states here — any
+          // exotic Stripe status (incomplete/unpaid) falls back to 'active' so a
+          // paid signup is never wrongly paywalled; the *.updated / payment_failed
+          // handlers correct it if the real state diverges. Every access gate
+          // treats 'trialing' identically to 'active' (paywall + AI gates), so
+          // storing 'trialing' grants full access AND unlocks the Cancel Trial
+          // button (its /cancel guard requires 'active' OR 'trialing').
+          const status = sub?.status === 'trialing' ? 'trialing' : 'active';
 
           // Defense in depth: the session's profileType/tier was fixed at
           // checkout-creation time; the profile may have switched since (or the
@@ -306,7 +347,7 @@ async function webhookHandler(req, res) {
 
           await User.updateSubscription(userId, {
             subscriptionId: session.subscription,
-            status: 'active',
+            status,
             tier,
             source: 'stripe'
           });
@@ -333,7 +374,7 @@ async function webhookHandler(req, res) {
             logger.error(`Failed to cancel prior subscription for user ${userId}: ${cancelErr.message}`);
           }
 
-          logger.info(`Subscription activated for user ${userId}: tier=${tier}`);
+          logger.info(`Subscription ${status === 'trialing' ? 'started (trial)' : 'activated'} for user ${userId}: tier=${tier}, status=${status}`);
         }
         break;
       }
@@ -417,6 +458,40 @@ function mapRevenueCatProductToTier(productId) {
   // Guard against undefined env vars mapping productId='undefined' -> 'player'
   if (!productId) return null;
   return map[productId] || null;
+}
+
+// True when a RevenueCat period_type represents a free-trial (or intro-offer)
+// window rather than a full-price paid period. RevenueCat sends this UPPERCASE in
+// webhook payloads (TRIAL/INTRO/NORMAL/PROMOTIONAL/PREPAID) and lowercase in the
+// REST subscriber object (trial/intro/normal/...), so we lowercase before compare.
+// Both 'trial' and 'intro' mean the user isn't paying full price yet → 'trialing'.
+function isTrialPeriod(periodType) {
+  if (!periodType) return false;
+  const p = String(periodType).toLowerCase();
+  return p === 'trial' || p === 'intro';
+}
+
+// Fetch the trial-end date for an IAP subscriber (Unix SECONDS, to match Stripe's
+// current_period_end shape the frontend already consumes). Returns the newest
+// still-active TRIAL/INTRO sub's expiry, or null if none / not configured.
+// Used only by GET /subscription-status for apple_iap + 'trialing' users.
+async function getIapTrialEnd(userId) {
+  const rcSecret = process.env.REVENUECAT_SECRET_API_KEY;
+  if (!rcSecret) return null;
+  const rcRes = await fetch(`https://api.revenuecat.com/v1/subscribers/${encodeURIComponent(userId)}`, {
+    headers: { Authorization: `Bearer ${rcSecret}` }
+  });
+  if (!rcRes.ok) return null;
+  const body = await rcRes.json();
+  const subs = (body.subscriber && body.subscriber.subscriptions) || {};
+  const now = Date.now();
+  let bestMs = 0;
+  for (const s of Object.values(subs)) {
+    if (!s || !isTrialPeriod(s.period_type) || !s.expires_date) continue;
+    const exp = new Date(s.expires_date).getTime();
+    if (exp > now && exp > bestMs) bestMs = exp;
+  }
+  return bestMs ? Math.floor(bestMs / 1000) : null;
 }
 
 // POST /api/payments/revenuecat-webhook
@@ -519,6 +594,15 @@ async function revenueCatWebhookHandler(req, res) {
           return res.sendStatus(200);
         }
 
+        // Trial-aware status so an Apple free-trial (player intro offer) reads
+        // 'trialing' in Settings, matching the Stripe rail. RevenueCat webhook
+        // period_type is uppercase (TRIAL/INTRO/NORMAL/...). Both TRIAL and INTRO
+        // mean "not yet paying full price," so treat either as trialing. Every
+        // access gate accepts 'trialing' identically to 'active', so this only
+        // changes the badge/label — never access. On RENEWAL (first real charge)
+        // period_type is NORMAL, so status correctly becomes 'active'.
+        const iapStatus = isTrialPeriod(payload.period_type) ? 'trialing' : 'active';
+
         // Entitlement↔profile validation inside a row-locked txn. FOR UPDATE on
         // the users row serializes against profile-switch (which locks the same
         // row in its transaction), so a renewal landing mid-switch validates
@@ -537,7 +621,7 @@ async function revenueCatWebhookHandler(req, res) {
           }
           await User.updateSubscription(app_user_id, {
             subscriptionId: original_transaction_id,
-            status: 'active',
+            status: iapStatus,
             tier: effTier,
             source: 'apple_iap'
           }, client);
@@ -548,7 +632,7 @@ async function revenueCatWebhookHandler(req, res) {
         } finally {
           client.release();
         }
-        logger.info(`[RevenueCat webhook] ${type}: user=${app_user_id} tier=${effTier}`);
+        logger.info(`[RevenueCat webhook] ${type}: user=${app_user_id} tier=${effTier} status=${iapStatus}`);
         break;
       }
       case 'CANCELLATION':
@@ -646,7 +730,15 @@ router.post('/iap-reconcile', authMiddleware, async (req, res) => {
     for (const [productId, s] of Object.entries(subs)) {
       const exp = s && s.expires_date ? new Date(s.expires_date).getTime() : 0;
       if (exp > now) {
-        candidates.push({ productId, tier: mapRevenueCatProductToTier(productId), expires: exp });
+        // period_type (lowercase on the REST subscriber object) tells us whether
+        // this window is a free trial/intro — carried onto the candidate so the
+        // chosen match lands 'trialing' vs 'active' (display parity with Stripe).
+        candidates.push({
+          productId,
+          tier: mapRevenueCatProductToTier(productId),
+          expires: exp,
+          trial: isTrialPeriod(s && s.period_type)
+        });
       }
     }
     if (candidates.length === 0) {
@@ -681,10 +773,11 @@ router.post('/iap-reconcile', authMiddleware, async (req, res) => {
         });
       }
 
-      await User.updateSubscription(req.userId, { status: 'active', tier: match.tier, source: 'apple_iap' }, client);
+      const reconcileStatus = match.trial ? 'trialing' : 'active';
+      await User.updateSubscription(req.userId, { status: reconcileStatus, tier: match.tier, source: 'apple_iap' }, client);
       await client.query('COMMIT');
-      logger.info(`[iap-reconcile] activated user=${req.userId} tier=${match.tier}`);
-      return res.json({ activated: true, tier: match.tier });
+      logger.info(`[iap-reconcile] activated user=${req.userId} tier=${match.tier} status=${reconcileStatus}`);
+      return res.json({ activated: true, tier: match.tier, status: reconcileStatus });
     } catch (txErr) {
       await client.query('ROLLBACK').catch(() => {});
       throw txErr;
@@ -702,3 +795,4 @@ module.exports = router;
 module.exports.webhookHandler = webhookHandler;
 module.exports.revenueCatWebhookHandler = revenueCatWebhookHandler;
 module.exports.allowedTiersFor = allowedTiersFor; // exported for test scripts
+module.exports.isTrialPeriod = isTrialPeriod; // exported for test scripts

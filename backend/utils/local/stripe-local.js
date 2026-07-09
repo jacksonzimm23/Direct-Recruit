@@ -22,10 +22,13 @@ const MOCK_TIER_MAP = {
 
 // In-memory state for the mock so cancel → getSubscription → reactivate
 // reflects an actual lifecycle in local dev. Server restart resets it.
+// `status` and `trial` are tracked so getSubscription() reports the real
+// lifecycle (a player trial reads 'trialing' with a 7-day period end), keeping
+// local dev faithful to production instead of always returning 'active'/30d.
 const _mockSubState = new Map();
 function _getMockState(subscriptionId) {
   if (!_mockSubState.has(subscriptionId)) {
-    _mockSubState.set(subscriptionId, { cancel_at_period_end: false });
+    _mockSubState.set(subscriptionId, { cancel_at_period_end: false, status: 'active', trial: false });
   }
   return _mockSubState.get(subscriptionId);
 }
@@ -67,6 +70,11 @@ async function createCheckoutSession({ customerId, priceId, userId, profileType,
     const isPlayerTrial = trialDays && trialDays > 0
       && (profileType === 'hsplayer' || profileType === 'transferplayer');
     const status = isPlayerTrial ? 'trialing' : 'active';
+    // Record status + trial on the mock sub so getSubscription() reports the real
+    // lifecycle (trialing sub → 'trialing' status + 7-day period, matching prod).
+    const state = _getMockState(subId);
+    state.status = status;
+    state.trial = !!isPlayerTrial;
     try {
       await User.updateSubscription(userId, { subscriptionId: subId, status, tier: resolvedTier, source: 'stripe' });
       console.log(`[Stripe Mock] Auto-set subscription for user ${userId}: tier=${resolvedTier}, status=${status}`);
@@ -80,16 +88,19 @@ async function createCheckoutSession({ customerId, priceId, userId, profileType,
 }
 
 /**
- * Mock cancel subscription.
+ * Mock cancel subscription. Preserves the sub's status (a trialing sub stays
+ * 'trialing' — Stripe only flips it at trial end), so cancelling a trial locally
+ * behaves like prod: access continues, cancel_at_period_end set, no charge.
  */
 async function cancelSubscription(subscriptionId) {
-  _getMockState(subscriptionId).cancel_at_period_end = true;
+  const state = _getMockState(subscriptionId);
+  state.cancel_at_period_end = true;
   console.log(`[Stripe Mock] Subscription ${subscriptionId} set to cancel at period end`);
   return {
     id: subscriptionId,
-    status: 'active',
+    status: state.status || 'active',
     cancel_at_period_end: true,
-    current_period_end: Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60
+    current_period_end: Math.floor(Date.now() / 1000) + (state.trial ? 7 : 30) * 24 * 60 * 60
   };
 }
 
@@ -97,28 +108,32 @@ async function cancelSubscription(subscriptionId) {
  * Mock reactivate subscription — clears cancel_at_period_end.
  */
 async function reactivateSubscription(subscriptionId) {
-  _getMockState(subscriptionId).cancel_at_period_end = false;
+  const state = _getMockState(subscriptionId);
+  state.cancel_at_period_end = false;
   console.log(`[Stripe Mock] Subscription ${subscriptionId} reactivated (cancel_at_period_end cleared)`);
   return {
     id: subscriptionId,
-    status: 'active',
+    status: state.status || 'active',
     cancel_at_period_end: false,
-    current_period_end: Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60
+    current_period_end: Math.floor(Date.now() / 1000) + (state.trial ? 7 : 30) * 24 * 60 * 60
   };
 }
 
 /**
- * Mock get subscription. Reads cancel_at_period_end from in-memory state so
- * the cancel → reactivate flow can be tested locally without real Stripe.
+ * Mock get subscription. Reads status + cancel_at_period_end from in-memory
+ * state so the trialing / cancel / reactivate flows can be tested locally
+ * without real Stripe. A player trial reports status 'trialing' with a 7-day
+ * period end (the day-7 first-charge date), mirroring production.
  */
 async function getSubscription(subscriptionId) {
   const state = _getMockState(subscriptionId);
+  const periodSeconds = state.trial ? 7 * 24 * 60 * 60 : 30 * 24 * 60 * 60;
   return {
     id: subscriptionId || mockId('sub'),
-    status: 'active',
+    status: state.status || 'active',
     cancel_at_period_end: state.cancel_at_period_end,
     current_period_start: Math.floor(Date.now() / 1000),
-    current_period_end: Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60,
+    current_period_end: Math.floor(Date.now() / 1000) + periodSeconds,
     items: {
       data: [{ price: { id: 'price_mock', unit_amount: 1000 } }]
     }
