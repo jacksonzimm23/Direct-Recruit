@@ -48,20 +48,23 @@
             .paywall-title { font-size: 22px; }
             .paywall-message { font-size: 14px; }
         }
-        /* iOS app: push the whole paywall below the status bar (the fixed navbar from
-           styles.css overlaps it otherwise) and use the full dynamic viewport height.
-           Top-anchor + scroll (not center) so the hsplayer/transferplayer card — which is
-           taller than the coach card (it adds a trial price line + longer terms) — never has
-           its top (the lock icon) clipped under the status bar. Vertical centering pushed the
-           overflowing top off-screen with no way to scroll to it; flex-start keeps the icon
-           fully visible below the safe-area inset and lets tall content scroll instead. */
+        /* iOS app: the .navbar is position:fixed, and on iOS it grows by
+           safe-area-inset-top (rule below), so its real height is roughly
+           inset-top + ~76px of logo/padding. The paywall content must start
+           BELOW that or its top (the lock icon) is clipped under the navbar.
+           The previous padding-top (40px + inset) was SHORTER than the navbar,
+           so with top-anchored content the icon landed under the bar.
+           Fix: pad the top by the full navbar height (inset + 96px breathing
+           room). Top-anchor + scroll so the taller hsplayer/transferplayer card
+           (trial price line + longer terms) stays fully reachable instead of
+           overflowing off the top. */
         html.ios-app .paywall-section {
             min-height: 100dvh;
-            flex-direction: column;      /* make the main axis vertical so justify-content controls it */
-            justify-content: flex-start; /* top-anchor vertically (was center → clipped the icon) */
-            align-items: center;         /* keep the card centered horizontally */
+            flex-direction: column;
+            justify-content: flex-start;   /* anchor below the navbar, not centered off the top */
+            align-items: center;           /* keep the card centered horizontally */
             overflow-y: auto;
-            padding-top: calc(40px + env(safe-area-inset-top, 0px));
+            padding-top: calc(96px + env(safe-area-inset-top, 0px));
             padding-bottom: calc(40px + env(safe-area-inset-bottom, 0px));
         }
         html.ios-app .navbar {
