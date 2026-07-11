@@ -6,6 +6,41 @@
     background: var(--oxford-blue);
 }
 
+/* Back button — matches the create-profile back button (.back-button) so the
+   desktop and iOS legal-page back buttons look identical. Inline at the top of
+   the legal container. history.back() keeps it context-aware from every entry
+   point (paywall, settings, landing footer, sign-in) and — critically — never
+   routes an authenticated paywall user through landingpage/index.html, which
+   was what logged them out on iOS. */
+.legal-back-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--cerulean);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.95rem;
+    margin-bottom: 24px;
+    transition: all 0.3s ease;
+    padding: 0.75rem 1.25rem;
+    border-radius: 8px;
+    background: rgba(18, 130, 162, 0.1);
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.legal-back-button:hover {
+    background: rgba(18, 130, 162, 0.2);
+    transform: translateX(-5px);
+}
+
+.legal-back-button svg {
+    width: 20px;
+    height: 20px;
+}
+
 .legal-header {
     text-align: center;
     margin-bottom: 48px;

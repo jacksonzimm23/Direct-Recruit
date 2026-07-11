@@ -22,16 +22,23 @@
     <script src="../shared/sw-register.js"></script>
 </head>
 <body>
-    <!-- No nav - opened in new tab -->
-    <!-- iOS-only back button (native swipe-back is unreliable on these pages) -->
-    <a href="index.html" class="ios-only ios-back-btn" aria-label="Back">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
-        Back
-    </a>
+    <!-- No nav. Reached via same-tab <a href> from the paywall, Settings, sign-in,
+         and the landing footer. Do NOT add target="_blank" to those links — the
+         Back button below relies on history.back() to return to the linking page. -->
 
     <!-- Content -->
     <section class="legal-section">
         <div class="container">
+            <!-- Back button (desktop + iOS). history.back() returns to whatever
+                 page linked here — paywall, Settings, sign-in, or the landing
+                 footer — without routing an authenticated paywall user through
+                 landingpage/index.html (which logged them out on iOS). -->
+            <button type="button" class="legal-back-button" aria-label="Back">
+                <svg viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd"/>
+                </svg>
+                Back
+            </button>
             <div class="legal-header">
                 <h1>Terms of Service</h1>
                 <p class="legal-updated">Last updated: June 18, 2026</p>
