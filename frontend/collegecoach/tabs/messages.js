@@ -1318,45 +1318,38 @@ async function deleteConversation() {
 // RECRUITING PERIOD INDICATOR
 // ========================
 
-// 2025-26 NCAA Recruiting Calendar Data (Aug 1 2025 – July 31 2026)
-// Exceptions listed first so they take priority over general ranges
+// 2026-27 NCAA Recruiting Calendar Data (Aug 1 2026 – July 31 2027)
+// Last updated: July 15, 2026 (7/15/26)
+// Periods are encoded exactly as the official NCAA PDFs mark them. Uncovered
+// dates are NOT auto-filled with Contact — a date outside every listed range
+// falls through to the caller's fallback. Exceptions listed first so they take
+// priority over general ranges.
 const RECRUITING_CALENDARS = {
     FBS: [
-        { m1: 1, d1: 11, m2: 1, d2: 11, type: 'quiet', name: 'Quiet Period' },
-        { m1: 1, d1: 12, m2: 1, d2: 14, type: 'dead', name: 'Dead Period' },
         { m1: 8, d1: 1,  m2: 8, d2: 31, type: 'dead', name: 'Dead Period' },
-        { m1: 9, d1: 1,  m2: 11, d2: 30, type: 'evaluation', name: 'Evaluation Period' },
-        { m1: 12, d1: 1, m2: 1, d2: 4, type: 'dead', name: 'Dead Period' },
-        { m1: 1, d1: 5,  m2: 1, d2: 31, type: 'contact', name: 'Contact Period' },
-        { m1: 2, d1: 1,  m2: 2, d2: 1, type: 'quiet', name: 'Quiet Period' },
-        { m1: 2, d1: 2,  m2: 3, d2: 1, type: 'dead', name: 'Dead Period' },
-        { m1: 3, d1: 2,  m2: 4, d2: 14, type: 'quiet', name: 'Quiet Period' },
-        { m1: 4, d1: 15, m2: 5, d2: 23, type: 'contact', name: 'Contact Period' },
-        { m1: 5, d1: 24, m2: 5, d2: 27, type: 'dead', name: 'Dead Period' },
-        { m1: 5, d1: 28, m2: 6, d2: 21, type: 'quiet', name: 'Quiet Period' },
-        { m1: 6, d1: 22, m2: 7, d2: 31, type: 'dead', name: 'Dead Period' },
+        { m1: 9, d1: 1,  m2: 11, d2: 29, type: 'evaluation', name: 'Evaluation Period' },
+        { m1: 11, d1: 30, m2: 12, d2: 31, type: 'dead', name: 'Dead Period' },
     ],
     FCS: [
-        { m1: 1, d1: 11, m2: 1, d2: 11, type: 'quiet', name: 'Quiet Period' },
-        { m1: 1, d1: 12, m2: 1, d2: 14, type: 'dead', name: 'Dead Period' },
         { m1: 8, d1: 1,  m2: 8, d2: 31, type: 'dead', name: 'Dead Period' },
-        { m1: 9, d1: 1,  m2: 11, d2: 30, type: 'evaluation', name: 'Evaluation Period' },
-        { m1: 12, d1: 1, m2: 12, d2: 4, type: 'dead', name: 'Dead Period' },
-        { m1: 12, d1: 5, m2: 12, d2: 18, type: 'contact', name: 'Contact Period' },
-        { m1: 12, d1: 19, m2: 12, d2: 21, type: 'quiet', name: 'Quiet Period' },
-        { m1: 12, d1: 22, m2: 1, d2: 4, type: 'dead', name: 'Dead Period' },
-        { m1: 1, d1: 5,  m2: 1, d2: 31, type: 'contact', name: 'Contact Period' },
-        { m1: 2, d1: 1,  m2: 2, d2: 1, type: 'quiet', name: 'Quiet Period' },
-        { m1: 2, d1: 2,  m2: 3, d2: 1, type: 'dead', name: 'Dead Period' },
-        { m1: 3, d1: 2,  m2: 4, d2: 14, type: 'quiet', name: 'Quiet Period' },
-        { m1: 4, d1: 15, m2: 5, d2: 23, type: 'contact', name: 'Contact Period' },
-        { m1: 5, d1: 24, m2: 5, d2: 27, type: 'dead', name: 'Dead Period' },
-        { m1: 5, d1: 28, m2: 7, d2: 31, type: 'quiet', name: 'Quiet Period' },
+        { m1: 9, d1: 1,  m2: 11, d2: 29, type: 'evaluation', name: 'Evaluation Period' },
+        { m1: 11, d1: 30, m2: 12, d2: 3, type: 'dead', name: 'Dead Period' },
+        { m1: 12, d1: 4, m2: 12, d2: 17, type: 'contact', name: 'Contact Period' },
+        { m1: 12, d1: 18, m2: 12, d2: 20, type: 'quiet', name: 'Quiet Period' },
+        { m1: 12, d1: 21, m2: 12, d2: 31, type: 'dead', name: 'Dead Period' },
     ],
     D2: [
-        { m1: 12, d1: 1, m2: 12, d2: 3, type: 'dead', name: 'Signing Dead Period' },
-        { m1: 2, d1: 2,  m2: 2, d2: 4, type: 'dead', name: 'Signing Dead Period' },
-        { m1: 11, d1: 10, m2: 11, d2: 12, type: 'dead', name: 'Signing Dead Period' },
+        { m1: 8, d1: 1,  m2: 11, d2: 29, type: 'contact', name: 'Contact Period' },
+        { m1: 11, d1: 30, m2: 12, d2: 2, type: 'dead', name: 'Signing Dead Period' },
+        { m1: 12, d1: 3, m2: 12, d2: 21, type: 'contact', name: 'Contact Period' },
+        { m1: 12, d1: 22, m2: 1, d2: 1, type: 'dead', name: 'Dead Period' },
+        { m1: 1, d1: 2,  m2: 1, d2: 31, type: 'contact', name: 'Contact Period' },
+        { m1: 2, d1: 1,  m2: 2, d2: 3, type: 'dead', name: 'Signing Dead Period' },
+        { m1: 2, d1: 4,  m2: 2, d2: 14, type: 'contact', name: 'Contact Period' },
+        { m1: 2, d1: 15, m2: 2, d2: 17, type: 'dead', name: 'Dead Period' },
+        { m1: 2, d1: 18, m2: 5, d2: 28, type: 'contact', name: 'Contact Period' },
+        { m1: 5, d1: 29, m2: 5, d2: 31, type: 'dead', name: 'Dead Period' },
+        { m1: 6, d1: 1,  m2: 7, d2: 31, type: 'contact', name: 'Contact Period' },
     ]
 };
 
@@ -1392,10 +1385,10 @@ function getRecruitingPeriod(division, date) {
         }
     }
 
-    // D2 default: contact period year-round
-    if (calKey === 'D2') return { name: 'Contact Period', type: 'contact' };
-
-    return { name: 'Unknown Period', type: 'quiet' };
+    // No auto-fill: dates outside every listed period fall through here rather
+    // than defaulting to Contact. (D2's ranges now cover the full year, so D2
+    // never reaches this; FBS/FCS dates after Dec 31 intentionally land here.)
+    return { name: 'No Period Listed', type: 'quiet' };
 }
 
 function getPermissionSummary(periodType) {
