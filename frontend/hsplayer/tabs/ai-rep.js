@@ -126,6 +126,111 @@
         });
     }
 
+    // ============ SEARCH APPEARANCES ============
+    // Every time a college coach's AI Recruiting Assistant search returned this
+    // player. Division + date + matched criteria only — never coach identity.
+
+    const APPEARANCES_BATCH = 5;
+    let appearancesPeriod = '30d';
+    let appearancesOffset = 0;
+
+    const appearancesSection = document.getElementById('aiRepAppearancesSection');
+    const appearancesList = document.getElementById('aiRepAppearancesList');
+    const appearancesLoading = document.getElementById('aiRepAppearancesLoading');
+    const appearancesEmpty = document.getElementById('aiRepAppearancesEmpty');
+    const appearancesPeriodSel = document.getElementById('aiRepAppearancesPeriod');
+    const appearancesShowMore = document.getElementById('aiRepAppearancesShowMore');
+
+    // The section is ALWAYS visible (owner decision, July 2026) — a player with no
+    // appearances yet sees the zero-state note rather than the section vanishing.
+    async function loadSearchAppearances(reset) {
+        if (reset) {
+            appearancesOffset = 0;
+            appearancesList.innerHTML = '';
+            appearancesEmpty.style.display = 'none';
+            appearancesShowMore.style.display = 'none';
+            appearancesLoading.style.display = 'flex';
+        }
+
+        appearancesSection.style.display = '';
+
+        try {
+            const data = await API.aiRep.getSearchAppearances(
+                appearancesPeriod, appearancesOffset, APPEARANCES_BATCH
+            );
+            appearancesLoading.style.display = 'none';
+
+            const list = data.appearances || [];
+            const total = data.totalCount || 0;
+
+            if (reset && total === 0) {
+                appearancesEmpty.style.display = '';
+                return;
+            }
+
+            // School logos must be loaded before the synchronous getSchoolLogoHTML
+            // calls inside renderAppearanceCard (lesson #51).
+            if (typeof ensureSchoolLogosLoaded === 'function') {
+                try { await ensureSchoolLogosLoaded('../../assets'); } catch (e) { /* logos optional */ }
+            }
+
+            list.forEach(item => {
+                appearancesList.insertAdjacentHTML('beforeend', renderAppearanceCard(item));
+            });
+
+            animateAppearanceCards();
+            appearancesShowMore.style.display = data.hasMore ? 'flex' : 'none';
+        } catch (err) {
+            console.error('Failed to load search appearances:', err);
+            appearancesLoading.style.display = 'none';
+            if (reset) appearancesEmpty.style.display = '';
+        }
+    }
+
+    // One row per searching school: logo + name + division, with the date on the
+    // right. Mirrors the Best-Fit Schools row layout so the two sections read as
+    // one system. Logo is the controlled getSchoolLogoHTML emitter (safe per
+    // lesson #114); the name itself is always escaped.
+    function renderAppearanceCard(item) {
+        const date = new Date(item.created_at).toLocaleDateString('en-US', {
+            month: 'short', day: 'numeric', year: 'numeric'
+        });
+        const div = item.coach_division ? escapeHtml(item.coach_division) : '';
+        const logo = (typeof getSchoolLogoHTML === 'function')
+            ? getSchoolLogoHTML(item.team_name, '../../assets', 36) : '';
+
+        return `
+        <div class="ai-rep-appearance-row ai-rep-animate-in">
+            <span class="ai-rep-appearance-logo">${logo}</span>
+            <span class="ai-rep-appearance-info">
+                <span class="ai-rep-appearance-name">${escapeHtml(item.team_name || 'College program')}</span>
+                ${div ? `<span class="ai-rep-appearance-div">${div}</span>` : ''}
+            </span>
+            <span class="ai-rep-appearance-date">${date}</span>
+        </div>`;
+    }
+
+    function animateAppearanceCards() {
+        const cards = appearancesList.querySelectorAll('.ai-rep-animate-in:not(.ai-rep-visible)');
+        cards.forEach((el, i) => {
+            setTimeout(() => el.classList.add('ai-rep-visible'), 60 + (i * 40));
+        });
+    }
+
+    if (appearancesPeriodSel) {
+        appearancesPeriodSel.addEventListener('change', () => {
+            appearancesPeriod = appearancesPeriodSel.value;
+            loadSearchAppearances(true);
+        });
+    }
+
+    if (appearancesShowMore) {
+        appearancesShowMore.addEventListener('click', () => {
+            appearancesOffset += APPEARANCES_BATCH;
+            loadSearchAppearances(false);
+        });
+    }
+
     // ============ PROFILE OPTIMIZATION ============
 
     async function loadProfileCompletion() {
@@ -391,5 +496,9 @@
 
     // ============ INITIAL LOAD ============
 
-    await Promise.all([loadBestFitSchools(true), loadProfileCompletion()]);
+    await Promise.all([
+        loadBestFitSchools(true),
+        loadSearchAppearances(true),
+        loadProfileCompletion()
+    ]);
 })();

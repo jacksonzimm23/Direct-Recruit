@@ -227,6 +227,58 @@ html.ios-app body { background-color: inherit; }
         justify-self: auto !important;
     }
 
+    /* AI Rep "Search Appearances" rows (hsplayer + transferplayer) — iOS only.
+       Two things overflow on a narrow iPhone: (1) the section-header controls,
+       where the badge copy ("N appearances in the last 30 days") sits beside the
+       period <select>; (2) the card headline, where the division chip + sentence
+       + date compete on one line. Let both wrap and give the select a 44px tap
+       target per iOS HIG. */
+    .ios-app .ai-rep-section-controls {
+        width: 100% !important;
+        flex-wrap: wrap !important;
+        gap: 0.5rem !important;
+    }
+    .ios-app .ai-rep-badge {
+        white-space: normal !important;
+        flex: 1 1 auto !important;
+        min-width: 0 !important;
+    }
+    /* 16px font-size prevents iOS Safari from zooming the page on focus; the
+       select is the only form control in this section. */
+    .ios-app .ai-rep-period-filter {
+        min-height: 44px !important;
+        font-size: 16px !important;
+        flex: 0 0 auto !important;
+    }
+    /* Appearance rows (logo | school name + division | date). On a narrow iPhone
+       a long school name ("University of Wisconsin - Whitewater") plus the date
+       on the same line clips the name. Wrap the date onto its own line, indented
+       past the logo so it aligns under the school name. */
+    .ios-app .ai-rep-appearance-row {
+        flex-wrap: wrap !important;
+        row-gap: 0.5rem !important;
+        padding: 0.75rem 0.85rem !important;
+    }
+    .ios-app .ai-rep-appearance-logo {
+        flex: 0 0 36px !important;
+    }
+    /* flex-basis 0 (not auto) so the name column takes the REMAINING width and
+       ellipsizes, rather than its full content width forcing an early wrap —
+       same fix as the Best-Fit Schools rows above. */
+    .ios-app .ai-rep-appearance-info {
+        flex: 1 1 0% !important;
+        min-width: 0 !important;
+    }
+    .ios-app .ai-rep-appearance-name {
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+    }
+    .ios-app .ai-rep-appearance-date {
+        flex: 0 0 100% !important;
+        margin-left: calc(36px + 0.9rem) !important;
+    }
+
     /* Discover / Transfer Portal padded (non-AI) tab: align subtabs with the AI-tab
        position (50px) instead of the default 65px, including the safe-area inset.
        :not(:has(...active AI layout)) so it only applies on the non-AI tab and never

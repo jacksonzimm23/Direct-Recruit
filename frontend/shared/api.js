@@ -1270,6 +1270,8 @@ const aiAPI = {
 const aiRepAPI = {
     getBestFitSchools: async (offset = 0, limit = 10) =>
         apiRequest(`/ai-rep/best-fit-schools?offset=${offset}&limit=${limit}`),
+    getSearchAppearances: async (period = '30d', offset = 0, limit = 5) =>
+        apiRequest(`/ai-rep/search-appearances?period=${period}&offset=${offset}&limit=${limit}`),
     getProfileCompletion: async () =>
         apiRequest('/ai-rep/profile-completion')
 };

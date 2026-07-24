@@ -20,6 +20,147 @@ function normalizeDivision(div) {
   return div;
 }
 
+// ===== Search Appearances: raw active_filters → player-facing chip labels =====
+// Min/max counterparts collapse onto ONE label (a range query on height is still
+// just "Height" to the player). Keep in sync with extractActiveFilters() in
+// routes/ai.js — any new filter key logged there needs a label here or it is
+// silently dropped from the chips.
+const FILTER_LABEL_MAP = {
+  position: 'Position',
+  state: 'State',
+  min_height: 'Height',
+  max_height: 'Height',
+  min_weight: 'Weight',
+  max_weight: 'Weight',
+  min_gpa: 'GPA',
+  max_gpa: 'GPA',
+  min_sat_score: 'Test Scores',
+  max_sat_score: 'Test Scores',
+  min_act_score: 'Test Scores',
+  max_act_score: 'Test Scores',
+  graduation_year: 'Grad Year',
+  max_graduation_year: 'Grad Year',
+  college_division: 'College Division',
+  eligibility: 'Eligibility',
+  max_eligibility: 'Eligibility',
+  has_highlights: 'Highlights/Film',
+  offer_filters: 'Offers',
+  stat_filters: 'Stats',
+  other_sports: 'Other Sports',
+  plays_other_sports: 'Other Sports',
+  track_100m_max: 'Track Times',
+  track_200m_max: 'Track Times',
+  pff_grade_min: 'PFF Grade',
+  pff_grade_max: 'PFF Grade',
+  // Fit / recruiting-profile filters (Plan 7E) — these are why a coach's
+  // off-field criteria matched, so they're worth showing the player.
+  intended_major: 'Intended Major',
+  levels_open: 'Level Openness',
+  preferred_regions: 'Preferred Region',
+  preferred_campus_setting: 'Campus Setting',
+  needs_financial_aid: 'Financial Aid',
+  needs_scholarship: 'Scholarship Need'
+};
+
+// Never surfaced as a "matched on" chip: free-text search and PI-only plumbing.
+const EXCLUDED_FILTERS = new Set(['searchTerm', 'signal_types', 'days']);
+
+// Convert an active_filters array into deduplicated display labels.
+function filtersToLabels(activeFilters) {
+  if (!activeFilters || !activeFilters.length) return [];
+  const seen = new Set();
+  const labels = [];
+  for (const f of activeFilters) {
+    if (EXCLUDED_FILTERS.has(f)) continue;
+    const label = FILTER_LABEL_MAP[f];
+    if (label && !seen.has(label)) {
+      seen.add(label);
+      labels.push(label);
+    }
+  }
+  return labels;
+}
+
+// ============ GET /api/ai-rep/search-appearances ============
+// "Search Appearances": every time a college coach's AI Recruiting Assistant
+// search returned THIS player, shown as the SCHOOL that searched (name + logo
+// + division) and the date.
+//
+// Owner decision (July 2026): players see the searching PROGRAM by name. The
+// school comes from joining ai_analytics.coach_user_id -> coach_profiles.
+// Individual coach identity is still never exposed — only the institution.
+// Rows logged before migration 004 have coach_user_id = NULL and cannot resolve
+// a school; those are EXCLUDED so a player never sees a nameless placeholder row.
+//
+// Source is the ai_analytics rows written on each RA search (see lesson #22).
+router.get('/search-appearances', async (req, res) => {
+  try {
+    // Players are paid again (7-day trial). 'trialing' counts as active access.
+    const subInfo = await User.getSubscriptionInfo(req.userId);
+    if (!subInfo || !['active', 'past_due', 'comp', 'trialing'].includes(subInfo.subscription_status)) {
+      return res.status(403).json({ error: 'Active subscription required' });
+    }
+
+    const period = ['7d', '30d', 'all'].includes(req.query.period) ? req.query.period : '30d';
+    const offset = Math.max(0, parseInt(req.query.offset) || 0);
+    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit) || 5));
+
+    // JSONB containment: the player's id inside the logged result_players array.
+    const playerContainment = JSON.stringify([{ player_id: req.userId }]);
+    // Qualified with the a. alias — ai_analytics and coach_profiles both have
+    // a created_at column, so an unqualified reference is ambiguous.
+    const dateClause = period === '7d'
+      ? `AND a.created_at >= NOW() - INTERVAL '7 days'`
+      : period === '30d'
+        ? `AND a.created_at >= NOW() - INTERVAL '30 days'`
+        : '';
+
+    // Join to coach_profiles for the searching school. team_name IS NOT NULL
+    // drops both pre-migration-004 rows (NULL coach_user_id) and any coach whose
+    // profile was since deleted — neither can name a school.
+    const result = await pool.query(
+      `WITH filtered AS (
+         SELECT a.id,
+                cp.team_name,
+                COALESCE(cp.college_division, a.coach_division) AS division,
+                a.active_filters,
+                a.created_at
+         FROM ai_analytics a
+         JOIN coach_profiles cp ON cp.user_id = a.coach_user_id
+         WHERE a.result_players @> $1::jsonb
+           AND a.ai_type = 'recruit_assistant'
+           AND cp.team_name IS NOT NULL
+           AND cp.team_name <> ''
+           ${dateClause}
+         ORDER BY a.created_at DESC
+       )
+       SELECT *, COUNT(*) OVER() AS total_count
+       FROM filtered
+       LIMIT $2 OFFSET $3`,
+      [playerContainment, limit, offset]
+    );
+
+    const totalCount = result.rows.length > 0 ? parseInt(result.rows[0].total_count) : 0;
+
+    const appearances = result.rows.map(row => ({
+      id: row.id,
+      team_name: row.team_name,
+      coach_division: normalizeDivision(row.division) || 'College',
+      matched_on: filtersToLabels(row.active_filters),
+      created_at: row.created_at
+    }));
+
+    res.json({
+      appearances,
+      totalCount,
+      hasMore: offset + appearances.length < totalCount
+    });
+  } catch (error) {
+    logger.error('AI Rep search-appearances error:', error);
+    res.status(500).json({ error: 'Failed to load search appearances' });
+  }
+});
+
 // Per-dimension detail copy, reworded school→player (privacy-safe: no thresholds/PII).
 // SCORE-DEPENDENT so the words match the match-strength icon the modal draws from
 // the same score (green >=0.67, yellow >=0.34, red <0.34 — see fit-info-modal.js

@@ -545,6 +545,91 @@
 }
 .ai-rep-school-empty-btn:hover { filter: brightness(1.1); }
 
+/* ============ Search Appearances ============ */
+/* School rows: logo + name + division on the left, date on the right. Mirrors
+   .ai-rep-school-row (Best-Fit Schools) so the two sections read as one system.
+   Deliberately NO left accent border and no hover lift — these rows are not
+   clickable, unlike the Best-Fit rows. */
+.ai-rep-appearance-row {
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+    width: 100%;
+    background: rgba(254, 252, 251, 0.03);
+    border: 1px solid rgba(18, 130, 162, 0.2);
+    border-radius: 12px;
+    padding: 0.85rem 1rem;
+    margin-bottom: 0.6rem;
+}
+
+.ai-rep-appearance-logo {
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.ai-rep-appearance-logo img,
+.ai-rep-appearance-logo .school-logo {
+    width: 36px;
+    height: 36px;
+    object-fit: contain;
+}
+
+.ai-rep-appearance-info {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    flex: 1;
+}
+
+.ai-rep-appearance-name {
+    font-size: 0.98rem;
+    font-weight: 700;
+    color: var(--white);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.ai-rep-appearance-div {
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: rgba(254, 252, 251, 0.55);
+}
+
+.ai-rep-appearance-date {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: rgba(254, 252, 251, 0.35);
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+/* Zero state — shown in place of rows; the section itself is never hidden. */
+.ai-rep-appearances-empty {
+    text-align: center;
+    padding: 1.75rem 1.25rem;
+    background: rgba(254, 252, 251, 0.03);
+    border: 1px dashed rgba(18, 130, 162, 0.3);
+    border-radius: 12px;
+}
+.ai-rep-appearances-empty p {
+    margin: 0 0 0.35rem;
+    font-size: 0.98rem;
+    font-weight: 700;
+    color: var(--white);
+}
+.ai-rep-appearances-empty-sub {
+    font-size: 0.86rem !important;
+    font-weight: 500 !important;
+    color: rgba(254, 252, 251, 0.6) !important;
+    margin: 0 !important;
+}
+
 /* ============ Mobile Responsive ============ */
 @media (max-width: 768px) {
     .ai-rep-page {
@@ -601,6 +686,18 @@
     .ai-rep-match-date {
         align-self: flex-start;
     }
+
+    /* Search Appearances: the header stacks (rule above), so let the badge +
+       period dropdown share one full-width row instead of overflowing. */
+    .ai-rep-section-controls {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .ai-rep-badge {
+        font-size: 0.78rem;
+        padding: 0.3rem 0.75rem;
+    }
 }
 
 @media (max-width: 480px) {
@@ -651,6 +748,38 @@
         padding: 0.75rem 0.85rem;
     }
     .ai-rep-school-name { font-size: 0.92rem; }
+
+    /* Search Appearances on the narrowest phones: the badge copy ("N appearances
+       in the last 30 days") plus the dropdown won't fit on one line — allow the
+       controls row to wrap so neither gets clipped. */
+    .ai-rep-section-controls {
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+
+    .ai-rep-badge {
+        font-size: 0.74rem;
+        white-space: normal;
+    }
+
+    /* Search Appearance rows: the date drops under the division so the school
+       name keeps the full row width on a narrow phone. */
+    .ai-rep-appearance-row {
+        flex-wrap: wrap;
+        gap: 0.65rem;
+        padding: 0.75rem 0.85rem;
+        position: relative;
+    }
+    .ai-rep-appearance-name { font-size: 0.92rem; }
+    .ai-rep-appearance-date {
+        flex: 0 0 100%;
+        margin-left: calc(36px + 0.65rem);
+        font-size: 0.75rem;
+    }
+
+    .ai-rep-appearances-empty {
+        padding: 1.5rem 1rem;
+    }
 }
 
 /* ============ Dynamic Page Additions ============ */
