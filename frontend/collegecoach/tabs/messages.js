@@ -1358,7 +1358,10 @@ function toMMDD(month, day) {
 }
 
 function getRecruitingPeriod(division, date) {
-    const div = (division || '').toUpperCase().replace(/\s+/g, '');
+    // Use normalizeDivision so the stored "D1 FBS"/"D1 FCS" forms map correctly.
+    // (Plain uppercase+despace left "D1FCS" !== "FCS", silently falling through
+    // to the FBS calendar — wrong now that FBS and FCS differ in December.)
+    const div = normalizeDivision(division);
 
     if (['D3', 'NAIA'].includes(div)) {
         return { name: 'No Formal Periods', type: 'contact' };
