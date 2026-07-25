@@ -1,7 +1,12 @@
 // Direct Recruit Service Worker
-// Version: 1.0.0
+// Version: 1.0.1
 
-const CACHE_NAME = 'direct-recruit-v1';
+// BUMP THIS ON ANY DEPLOY THAT CHANGES FRONTEND JS/CSS. The fetch handler below
+// caches every successful response under this key, and the activate handler
+// deletes caches whose name no longer matches — so the name IS the cache-bust.
+// Left at v1 through many deploys, which is how users kept running stale scripts
+// (a shipped fix appearing not to work is the usual symptom).
+const CACHE_NAME = 'direct-recruit-v2';
 
 // Static assets to cache on install
 const STATIC_ASSETS = [
