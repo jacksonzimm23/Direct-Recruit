@@ -257,14 +257,26 @@
         }
     }
 
+    // Numeric mm/dd/yy (owner decision, July 2026) — short and fixed-width, so the
+    // date never grows wide enough to squeeze the school name beside it. Built from
+    // the date parts rather than toLocaleDateString so the format is identical on
+    // every device locale (an iOS device set to en-GB would render dd/mm/yy).
+    function formatAppearanceDate(value) {
+        if (!value) return '';
+        const d = new Date(value);
+        if (isNaN(d.getTime())) return '';
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        const dd = String(d.getDate()).padStart(2, '0');
+        const yy = String(d.getFullYear()).slice(-2);
+        return `${mm}/${dd}/${yy}`;
+    }
+
     // One row per searching school: logo + name + division, with the date on the
     // right. Mirrors the Best-Fit Schools row layout so the two sections read as
     // one system. Logo is the controlled getSchoolLogoHTML emitter (safe per
     // lesson #114); the name itself is always escaped.
     function renderAppearanceCard(item) {
-        const date = new Date(item.created_at).toLocaleDateString('en-US', {
-            month: 'short', day: 'numeric', year: 'numeric'
-        });
+        const date = formatAppearanceDate(item.created_at);
         const div = item.coach_division ? escapeHtml(item.coach_division) : '';
         const logo = (typeof getSchoolLogoHTML === 'function')
             ? getSchoolLogoHTML(item.team_name, '../../assets', 36) : '';

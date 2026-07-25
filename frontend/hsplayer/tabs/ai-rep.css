@@ -762,18 +762,18 @@
         white-space: normal;
     }
 
-    /* Search Appearance rows: the date drops under the division so the school
-       name keeps the full row width on a narrow phone. */
+    /* Search Appearance rows: the date STAYS on line 1 (owner decision, July 2026).
+       A long school name ellipsizes with "…" rather than pushing the date onto a
+       second row — the mm/dd/yy format is short enough to always fit beside it. */
     .ai-rep-appearance-row {
-        flex-wrap: wrap;
+        flex-wrap: nowrap;
         gap: 0.65rem;
         padding: 0.75rem 0.85rem;
-        position: relative;
     }
     .ai-rep-appearance-name { font-size: 0.92rem; }
     .ai-rep-appearance-date {
-        flex: 0 0 100%;
-        margin-left: calc(36px + 0.65rem);
+        flex: 0 0 auto;
+        margin-left: 0;
         font-size: 0.75rem;
     }
 

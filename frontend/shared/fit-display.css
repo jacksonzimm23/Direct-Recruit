@@ -158,4 +158,21 @@
         min-width: 0;       /* still allow text lines to ellipsis, never overflow */
         overflow: hidden;
     }
+
+    /* AI Rep "Best-Fit Schools" rows (hsplayer + transferplayer) need the same
+       wrap. Without it the `flex:1 0 100%` badge sits in a nowrap row and crushes
+       the school name to a couple of characters. Line 1 = logo + name + division
+       (name ellipsizes), line 2 = the full-width AI Match bar — matching what
+       ios-app-overrides.css already does for the Capacitor build. */
+    .ai-rep-school-row:has(.fit-badge) {
+        flex-wrap: wrap;
+    }
+    .ai-rep-school-row:has(.fit-badge) > .ai-rep-school-info {
+        flex: 1 1 0%;       /* remaining width beside the logo, so the name truncates */
+        min-width: 0;
+        overflow: hidden;
+    }
+    .ai-rep-school-row:has(.fit-badge) > .fit-badge {
+        margin-top: 0;      /* the row's own gap already spaces the second line */
+    }
 }
