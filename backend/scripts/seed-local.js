@@ -88,7 +88,8 @@ const MIGRATIONS = [
   'add-profile-contact-email.sql',
   'add-other-profile-contact.sql',
   'add-profile-contact-fields.sql',
-  'add-push-enabled.sql'
+  'add-push-enabled.sql',
+  'add-trial-used.sql'
 ];
 
 async function applyManualFixes() {
@@ -476,14 +477,28 @@ async function seedProfiles(users) {
 async function seedSubscriptions(users) {
   console.log('\n--- Seeding subscriptions for paid accounts ---\n');
 
-  // Players are paid again (7-day trial). Seed test player accounts as paid so
-  // they pass the paywall; a fresh signup exercises the real 'trialing' path via
-  // the local Stripe mock (see stripe-local.js).
+  // 2026-07: players are FREE on the platform; a subscription only unlocks the
+  // AI Rep page. NO player account is seeded as subscribed — every player starts
+  // in the real post-signup state (AI Rep locked), so the purchase flow is
+  // testable end to end from a fresh seed. To get a paid player, buy AI Rep
+  // through the paywall modal (the local Stripe mock completes it instantly).
+  // collegecoach stays fully paid; it is still gated by the platform paywall.
   const paidAccounts = [
-    { email: 'collegecoach@test.com', tier: 'pro', subId: 'sub_mock_collegecoach', cusId: 'cus_mock_collegecoach' },
-    { email: 'hsplayer@test.com', tier: 'player', subId: 'sub_mock_hsplayer', cusId: 'cus_mock_hsplayer' },
-    { email: 'transferplayer@test.com', tier: 'player', subId: 'sub_mock_transferplayer', cusId: 'cus_mock_transferplayer' }
+    { email: 'collegecoach@test.com', tier: 'pro', subId: 'sub_mock_collegecoach', cusId: 'cus_mock_collegecoach' }
   ];
+
+  // Reset the seeded test accounts first so re-running the seed is deterministic.
+  // Without this, an account made paid by an earlier seed keeps its subscription
+  // forever (the loop below only ever UPDATEs the accounts it lists).
+  const seededIds = Object.values(users).filter(Boolean);
+  if (seededIds.length) {
+    await pool.query(
+      `UPDATE users SET subscription_status = 'none', subscription_tier = NULL,
+       stripe_subscription_id = NULL, subscription_source = NULL
+       WHERE id = ANY($1::uuid[])`,
+      [seededIds]
+    );
+  }
 
   for (const acct of paidAccounts) {
     const userId = users[acct.email];

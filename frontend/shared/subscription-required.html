@@ -136,8 +136,11 @@
     <script src="iap-products.js"></script>
     <script>
     (async function() {
-        // Paid profile folders (players are paid again — 7-day trial).
-        const PAID_FOLDERS = ['hsplayer', 'transferplayer', 'collegecoach'];
+        // Profile folders blocked from the PLATFORM without a subscription. Kept in
+        // sync with User.PAID_TYPES / the api.js IIFE so a future reader grepping for
+        // paid-lists doesn't find a stale one here. NOTE: declared but not read — the
+        // branching below keys off `folder === 'collegecoach'` directly.
+        const PAID_FOLDERS = ['collegecoach'];
 
         try {
             // Plan A1: do NOT log the user out if /auth/me hiccups. The user already
@@ -183,26 +186,51 @@
                 const priceEl = document.getElementById('paywallPrice');
                 if (!priceEl) return;
                 if (folder === 'hsplayer' || folder === 'transferplayer') {
-                    // Player-only: relabel the Subscribe button + terms to reflect the trial
-                    // (web + iOS). Done synchronously, before any await, so the label is set
-                    // before the user could click. Coaches get no trial → button stays
-                    // "Subscribe Now" and the terms line is left byte-for-byte unchanged.
+                    // 2026-07: players are free on the platform, so they no longer reach this
+                    // page from the paywall IIFE. It stays reachable (and correct) for the
+                    // App Store review window, where a stale .ipa still has players in its
+                    // bundled PAID_FOLDERS and bounces them here.
+                    //
+                    // The trial is ONE per user. Only claim it once the server confirms this
+                    // user is still eligible — telling a returning subscriber "Start Free
+                    // Trial" when they will be billed on day 0 is a false statement about a
+                    // negative-option offer. Defaults stay on the no-trial copy so a failed
+                    // lookup can never over-promise.
                     const subscribeBtn = document.getElementById('paywallSubscribeBtn');
-                    if (subscribeBtn) subscribeBtn.textContent = 'Start Free Trial';
                     const termsEl = document.querySelector('#paywallDisclosure .paywall-terms');
-                    if (termsEl) {
-                        termsEl.innerHTML = 'After your 7-day free trial, auto-renews monthly until cancelled. '
-                            + '<span class="web-only">Cancel anytime in your account settings before the trial ends to avoid charges.</span>'
-                            + '<span class="ios-only">Cancel anytime in your Apple ID subscription settings before the trial ends to avoid charges.</span>';
-                    }
+
+                    let trialEligible = false;
+                    try {
+                        const sub = await API.payments.getSubscriptionStatus();
+                        trialEligible = !!(sub && sub.trialEligible);
+                    } catch (_) { /* keep the no-trial copy */ }
+
+                    let priceStr = null;
                     if (API.isIOSApp() && window.IAP?.getOfferingsPriceMap) {
                         try {
                             const map = await window.IAP.getOfferingsPriceMap();
-                            if (map && map.player) { priceEl.textContent = '7-day free trial, then ' + map.player + '/month'; }
-                            else { priceEl.textContent = '7-day free trial'; } // iOS w/o reliable price: Apple's sheet shows the amount
-                        } catch (_) { priceEl.textContent = '7-day free trial'; }
+                            if (map && map.player) priceStr = map.player + '/month';
+                        } catch (_) { /* Apple's sheet still shows the amount */ }
+                    } else if (!API.isIOSApp()) {
+                        priceStr = '$10/month';   // web (Stripe), fixed price
+                    }
+
+                    if (trialEligible) {
+                        if (subscribeBtn) subscribeBtn.textContent = 'Start Free Trial';
+                        priceEl.textContent = priceStr ? '7-day free trial, then ' + priceStr : '7-day free trial';
+                        if (termsEl) {
+                            termsEl.innerHTML = 'After your 7-day free trial, auto-renews monthly until cancelled. '
+                                + '<span class="web-only">Cancel anytime in your account settings before the trial ends to avoid charges.</span>'
+                                + '<span class="ios-only">Cancel anytime in your Apple ID subscription settings before the trial ends to avoid charges.</span>';
+                        }
                     } else {
-                        priceEl.textContent = '7-day free trial, then $10/month'; // web (Stripe)
+                        if (subscribeBtn) subscribeBtn.textContent = 'Subscribe';
+                        priceEl.textContent = priceStr || '';
+                        if (termsEl) {
+                            termsEl.innerHTML = 'Billed today, then auto-renews monthly until cancelled. '
+                                + '<span class="web-only">Cancel anytime in your account settings.</span>'
+                                + '<span class="ios-only">Cancel anytime in your Apple ID subscription settings.</span>';
+                        }
                     }
                 }
                 // collegecoach: leave empty (tier buttons carry per-tier prices)
@@ -360,7 +388,12 @@
                                 onIapActivated();
                                 return;
                             }
-                            if (rec && rec.reason === 'product_mismatch') {
+                            if (rec && rec.reason === 'stripe_active') {
+                                // Server refused an Apple takeover of a live Stripe sub —
+                                // restoring would have left the web subscription billing
+                                // with no in-app way to cancel it.
+                                showToast('You already have an active subscription billed on the web. Manage or cancel it from a desktop browser at directrecruit.net before subscribing through Apple.', 'warning', 12000);
+                            } else if (rec && rec.reason === 'product_mismatch') {
                                 showToast('Your Apple subscription is for a different profile type and can\'t unlock this one. Subscribe to the right plan below, or use Switch Profile Type. To stop billing for the old plan, cancel it in Settings > Apple ID > Subscriptions.', 'warning', 12000);
                             } else {
                                 showToast('No active subscription found for your Apple ID.', 'error');

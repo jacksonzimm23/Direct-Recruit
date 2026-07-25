@@ -141,11 +141,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 localStorage.removeItem('pendingVerificationEmail');
                 localStorage.removeItem('resendCooldown');
 
-                // transferplayer is paid again (7-day trial) — after verifying, send the
-                // user to the paywall, which starts the trial (Stripe web / Apple IAP).
+                // 2026-07: transferplayer accounts are FREE — no paywall after verifying.
+                // Land straight on the dashboard. The $10/mo AI Rep add-on is sold
+                // in-page from the AI Rep lock (AiRepPaywall in shared/api.js).
                 setTimeout(() => {
                     const FE_BASE = window.location.origin + (window.location.pathname.startsWith('/frontend/') ? '/frontend' : '');
-                    window.location.href = FE_BASE + '/shared/subscription-required.html';
+                    window.location.href = FE_BASE + '/transferplayer/mainpage-player.html';
                 }, 2000);
             } else {
                 showError(data.error || 'Invalid verification code');

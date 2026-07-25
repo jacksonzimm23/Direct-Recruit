@@ -485,12 +485,27 @@ class Notification {
       relatedEntityType: 'portal_watchlist'
     });
   }
-  // Create notification when a player appears in an AI search result
+  // Create notification when a player appears in an AI search result.
+  //
+  // Deliberately anonymous: it never names the coach or school. Both the in-app
+  // row and the APNs push are built from this title/message (see utils/notifications.js),
+  // and the push preview can show on a lock screen — the identity of a program
+  // looking at a recruit is not something to leak there. It also keeps the
+  // notification honest: WHICH schools searched is the paid AI Rep payload.
+  //
+  // Title stays 'AI Search Match' — all six roles' notifications.js switch on that
+  // exact string for the icon, row rendering, and the click-through to AI Rep.
   static async createAiSearchMatchNotification(playerUserId, coachDivision, aiType) {
-    const divisionText = coachDivision ? `A ${coachDivision}` : 'A';
-    const sourceText = aiType === 'portal_intelligence' ? 'portal intelligence search' : 'recruiting search';
+    const isPortal = aiType === 'portal_intelligence';
+    // RA = the AI Rep "Search Appearances" feed (hsplayer/transferplayer).
+    // PI = portal-intelligence sweep (current college players); left as-is.
+    const message = isPortal
+      ? `${coachDivision ? `A ${coachDivision}` : 'A'} coach's portal intelligence search matched your profile`
+      : 'Your profile turned up in a college coach\'s AI search. Open AI Rep to see your search appearances.';
 
-    // Dedupe: don't send more than 1 per player per 6 hours
+    // Dedupe: don't send more than 1 per player per 6 hours. A popular recruit can
+    // surface in many searches an hour; without this the bell (and the lock screen)
+    // would be unusable.
     const alreadyExists = await this.exists({
       userId: playerUserId,
       type: 'interaction',
@@ -503,7 +518,7 @@ class Notification {
       userId: playerUserId,
       type: 'interaction',
       title: 'AI Search Match',
-      message: `${divisionText} coach's ${sourceText} matched your profile`,
+      message,
       relatedUserId: null,
       relatedEntityType: 'ai_search'
     });

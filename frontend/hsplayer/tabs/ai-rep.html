@@ -265,7 +265,15 @@
                     </div>
                 </div>
 
-                <!-- Section 4: Search Trends -->
+                <!-- Section 4: Search Trends
+                     HIDDEN 2026-07-25: commented out so it no longer renders on the AI Rep
+                     page. Kept in the source for future re-enable — to restore, delete this
+                     opening comment marker and the closing one below, and restore the two
+                     inner "Trend stat cards" / "Interactive filter graph" comment markers
+                     (they were converted to plain text because HTML comments cannot nest).
+                     The matching JS in ai-rep.js is left intact but inert — its init is
+                     already guarded on these elements existing, so it self-disables.
+
                 <div class="ai-rep-section">
                     <div class="ai-rep-section-header">
                         <h2 class="ai-rep-section-title">
@@ -281,7 +289,7 @@
                             <span>Coming Soon</span>
                         </div>
                         <div class="ai-rep-coming-soon-content">
-                            <!-- Trend stat cards -->
+                            [Trend stat cards]
                             <div class="ai-rep-trends-grid">
                                 <div class="ai-rep-card ai-rep-trend-card">
                                     <div class="ai-rep-trend-number">--</div>
@@ -297,7 +305,7 @@
                                 </div>
                             </div>
 
-                            <!-- Interactive filter graph -->
+                            [Interactive filter graph]
                             <div class="ai-rep-card">
                                 <div class="ai-rep-filter-graph-header">
                                     <h3 class="ai-rep-card-title">What Coaches Are Searching For</h3>
@@ -362,6 +370,7 @@
                         </div>
                     </div>
                 </div>
+                --><!-- end hidden Search Trends section -->
 
             </div>
         </main>

@@ -1593,11 +1593,30 @@ const API = {
 window.API = API;
 window.API_BASE_URL = API_BASE_URL;
 
+// Shared /auth/me for the page-init gates below. BOTH the platform paywall IIFE
+// and the AI Rep paywall need the same payload on every page load; memoizing it
+// keeps that at ONE round-trip instead of one per consumer. A failure clears the
+// cache so a later caller can retry. Not a general-purpose cache — anything that
+// needs fresh data should call apiRequest('/auth/me') directly.
+let _initMePromise = null;
+function getInitMe() {
+    if (!_initMePromise) {
+        _initMePromise = apiRequest('/auth/me').catch((err) => {
+            _initMePromise = null;
+            throw err;
+        });
+    }
+    return _initMePromise;
+}
+
 // ─── Subscription Paywall Check ──────────────────────────────────────────────
 // Runs on every protected page. Redirects unpaid users on paid profile types.
 (function() {
-    // Paid profile folders gated by the paywall. Players are paid again (7-day trial).
-    const PAID_FOLDERS = ['hsplayer', 'transferplayer', 'collegecoach'];
+    // Profile folders blocked from the PLATFORM without a subscription.
+    // 2026-07: hsplayer/transferplayer are free — their $10/mo subscription is an
+    // AI Rep add-on, gated in-page by AiRepPaywall below, not by this redirect.
+    // Mirrors User.PAID_TYPES on the backend. (Was: ['hsplayer','transferplayer','collegecoach'].)
+    const PAID_FOLDERS = ['collegecoach'];
     // In-app the bundle root is the frontend/ contents, so there is no '/frontend'
     // path segment; on web there is. Mirror shared/api.js's prefix convention so
     // these URLs resolve in BOTH the WKWebView and the browser.
@@ -1620,7 +1639,7 @@ window.API_BASE_URL = API_BASE_URL;
 
     document.addEventListener('DOMContentLoaded', async () => {
         try {
-            const me = await apiRequest('/auth/me');
+            const me = await getInitMe();
             if (!me || !me.user) return;
 
             const folder = getProfileFolder({
@@ -1671,4 +1690,480 @@ window.API_BASE_URL = API_BASE_URL;
             // If /me fails, don't block — auth middleware handles unauthorized
         }
     });
+})();
+
+// ─── AI Rep Paywall (players' only paid surface) ─────────────────────────────
+// 2026-07: hsplayer/transferplayer are FREE on the platform. Their $10/mo
+// subscription unlocks ONE thing — the AI Rep page — so instead of the
+// full-screen redirect above, a free player gets an in-page lock: clicking
+// "AI Rep" in the sidebar (desktop) or bottom nav (iOS) opens a modal that
+// explains the feature and sells it.
+//
+// Lives in api.js on purpose: this is the only script loaded on every page in
+// every role folder, so the nav interception works everywhere with no new
+// <script> tags. Mirrors the showConfirmModal conventions above (one id-guarded
+// injected <style>, dr- prefixed classes, full-screen on mobile per lesson 75).
+//
+// SECURITY: this lock is cosmetic. The real boundary is requireAiRep() in
+// backend/routes/ai-rep.js — gated data never reaches the client, so there is
+// nothing in the DOM to inspect.
+(function () {
+    const ADDON_FOLDERS = ['hsplayer', 'transferplayer'];
+    const ENTITLED_STATUSES = ['active', 'trialing', 'past_due', 'comp'];
+    const FE_BASE = window.location.origin + (window.location.pathname.startsWith('/frontend/') ? '/frontend' : '');
+
+    // null = not resolved yet. Set by refresh() on DOMContentLoaded.
+    let _entitled = null;
+    let _folder = null;
+    let _userId = null;
+    let _iapLoading = null;
+
+    const LOCK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>';
+
+    function isPlayerFolder(f) { return ADDON_FOLDERS.includes(f); }
+
+    // True only when we've confirmed entitlement. Unknown (null) reads as false so
+    // the lock fails CLOSED — a slow /me must never flash the paid UI.
+    function isEntitled() { return _entitled === true; }
+
+    // iap-products.js is not on most pages. Load it on demand for the iOS purchase
+    // path rather than adding a <script> tag to ~20 HTML files.
+    function ensureIap() {
+        if (window.IAP) return Promise.resolve(window.IAP);
+        if (_iapLoading) return _iapLoading;
+        _iapLoading = new Promise((resolve) => {
+            // Always settle. Neither onload nor onerror is guaranteed to fire (a
+            // stalled network, a CSP block, a non-executing environment), and an
+            // unresolved promise here would leave the modal's price and button
+            // copy stuck on their neutral defaults forever. Time out to null and
+            // let the caller fall back — Apple's own purchase sheet still shows
+            // the price, so a missing offerings lookup is cosmetic, not blocking.
+            let done = false;
+            const finish = (v) => { if (!done) { done = true; resolve(v); } };
+            const s = document.createElement('script');
+            s.src = FE_BASE + '/shared/iap-products.js';
+            s.onload = () => finish(window.IAP || null);
+            s.onerror = () => finish(null);
+            document.head.appendChild(s);
+            setTimeout(() => finish(window.IAP || null), 4000);
+        });
+        return _iapLoading;
+    }
+
+    function injectStyles() {
+        if (document.getElementById('dr-airep-paywall-styles')) return;
+        const style = document.createElement('style');
+        style.id = 'dr-airep-paywall-styles';
+        style.textContent = `
+            .dr-airep-overlay {
+                position: fixed; inset: 0; z-index: 11500;
+                background: rgba(0,0,0,0.72);
+                -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px);
+                display: flex; align-items: center; justify-content: center;
+                padding: 1.5rem;
+                animation: drAirepFade 0.2s ease;
+            }
+            @keyframes drAirepFade { from { opacity: 0; } to { opacity: 1; } }
+            @keyframes drAirepSlide { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+            /* Desktop: sized so the whole card (header + 3 features + price, CTA,
+               terms and legal links) fits WITHOUT scrolling. max-height is a safety
+               net for very short viewports, not the normal case — the natural
+               height lands around 560px, which clears a 768px-tall window. */
+            .dr-airep-modal {
+                background: #0a1128;
+                border: 1px solid rgba(18,130,162,0.35);
+                border-radius: 16px;
+                width: 100%; max-width: 520px; max-height: 94vh;
+                display: flex; flex-direction: column; overflow: hidden;
+                animation: drAirepSlide 0.28s ease;
+            }
+            .dr-airep-header {
+                position: relative; flex-shrink: 0;
+                padding: 1.5rem 1.5rem 0.6rem; text-align: center;
+            }
+            .dr-airep-close {
+                position: absolute; top: 0.85rem; right: 0.85rem;
+                width: 34px; height: 34px; border-radius: 50%;
+                background: rgba(255,255,255,0.06); border: none;
+                color: #8892b0; cursor: pointer; font-size: 20px; line-height: 1;
+                display: flex; align-items: center; justify-content: center;
+            }
+            .dr-airep-close:hover { background: rgba(255,255,255,0.12); color: #ccd6f6; }
+            .dr-airep-lock-badge {
+                width: 44px; height: 44px; margin: 0 auto 0.65rem;
+                border-radius: 50%;
+                background: rgba(18,130,162,0.14);
+                border: 1px solid rgba(18,130,162,0.3);
+                display: flex; align-items: center; justify-content: center;
+                color: #1282a2;
+            }
+            .dr-airep-lock-badge svg { width: 21px; height: 21px; }
+            .dr-airep-title { color: #fff; font-size: 1.3rem; font-weight: 800; margin: 0 0 0.3rem; }
+            .dr-airep-sub { color: rgba(255,255,255,0.55); font-size: 0.86rem; line-height: 1.45; margin: 0; }
+            /* overflow-y:auto is the fallback for short viewports only; at the sizes
+               below the content fits and no scrollbar appears. */
+            .dr-airep-body { padding: 0.35rem 1.5rem 0.9rem; overflow-y: auto; flex: 0 1 auto; -webkit-overflow-scrolling: touch; }
+            .dr-airep-feature { display: flex; gap: 0.8rem; align-items: flex-start; padding: 0.55rem 0; }
+            .dr-airep-feature + .dr-airep-feature { border-top: 1px solid rgba(255,255,255,0.06); }
+            .dr-airep-feature-icon {
+                flex-shrink: 0; width: 31px; height: 31px; border-radius: 8px;
+                background: rgba(18,130,162,0.12); color: #1282a2;
+                display: flex; align-items: center; justify-content: center;
+            }
+            .dr-airep-feature-icon svg { width: 16px; height: 16px; }
+            .dr-airep-feature-name { color: #ccd6f6; font-size: 0.89rem; font-weight: 700; margin: 0 0 0.1rem; }
+            .dr-airep-feature-desc { color: rgba(255,255,255,0.5); font-size: 0.79rem; line-height: 1.4; margin: 0; }
+            .dr-airep-footer { flex-shrink: 0; padding: 0 1.5rem 1.25rem; }
+            .dr-airep-price { color: #1282a2; font-size: 0.98rem; font-weight: 800; text-align: center; margin: 0 0 0.65rem; min-height: 0.98rem; }
+            .dr-airep-btn {
+                display: flex; align-items: center; justify-content: center;
+                width: 100%; box-sizing: border-box; padding: 0.8rem 1.25rem;
+                border-radius: 9px; font-size: 0.93rem; font-weight: 700;
+                font-family: inherit; border: none; cursor: pointer; transition: background 0.2s;
+            }
+            .dr-airep-btn-primary { background: #1282a2; color: #fff; }
+            .dr-airep-btn-primary:hover { background: #0e6d8a; }
+            .dr-airep-btn-primary:disabled { opacity: 0.6; cursor: default; }
+            .dr-airep-btn-ghost { background: none; color: #8892b0; font-size: 0.83rem; font-weight: 600; margin-top: 0.4rem; padding: 0.5rem 1rem; }
+            .dr-airep-btn-ghost:hover { color: #ccd6f6; }
+            .dr-airep-terms { color: rgba(255,255,255,0.5); font-size: 0.75rem; line-height: 1.45; text-align: center; margin: 0.7rem 0 0.3rem; }
+            .dr-airep-legal { color: rgba(255,255,255,0.38); font-size: 0.72rem; line-height: 1.45; text-align: center; margin: 0; }
+            .dr-airep-legal a { color: #1282a2; text-decoration: underline; }
+
+            /* Transfer player accent (red) — matches the role theming elsewhere. */
+            .profile-type-transfer .dr-airep-lock-badge { background: rgba(185,28,28,0.14); border-color: rgba(185,28,28,0.35); color: #b91c1c; }
+            .profile-type-transfer .dr-airep-feature-icon { background: rgba(185,28,28,0.12); color: #b91c1c; }
+            .profile-type-transfer .dr-airep-price { color: #ef4444; }
+            .profile-type-transfer .dr-airep-btn-primary { background: #b91c1c; }
+            .profile-type-transfer .dr-airep-btn-primary:hover { background: #991b1b; }
+            .profile-type-transfer .dr-airep-modal { border-color: rgba(185,28,28,0.35); }
+            .profile-type-transfer .dr-airep-legal a { color: #ef4444; }
+
+            /* Mobile: full-screen modal (lesson 75). Sized off the overlay's own
+               inset:0 box (height:100%), NOT 100vh — inside the iOS WKWebView 100vh
+               ignores the dynamic toolbar and overflows the visible area, which is
+               why subscription-required.html already uses dvh. 100dvh where
+               supported, 100% as the universal fallback. */
+            @media (max-width: 768px) {
+                .dr-airep-overlay { padding: 0; align-items: stretch; justify-content: stretch; }
+                .dr-airep-modal {
+                    width: 100%; height: 100%; max-width: 100%; max-height: 100%;
+                    border: none; border-radius: 0;
+                    justify-content: center;
+                }
+                @supports (height: 100dvh) {
+                    .dr-airep-overlay { height: 100dvh; }
+                }
+                .dr-airep-header { padding-top: 2.25rem; }
+            }
+            /* iOS app: clear the status bar so the close button stays tappable. */
+            html.ios-app .dr-airep-header { padding-top: calc(1.75rem + env(safe-area-inset-top, 0px)); }
+            html.ios-app .dr-airep-close { top: calc(0.85rem + env(safe-area-inset-top, 0px)); }
+            html.ios-app .dr-airep-footer { padding-bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px)); }
+        `;
+        document.head.appendChild(style);
+    }
+
+    const FEATURES = [
+        {
+            name: 'Best-Fit Schools',
+            desc: 'See which programs match your profile, with a fit score and the coaches on staff.',
+            icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 16.8l-6.2 4.5 2.4-7.4L2 9.4h7.6z"/></svg>'
+        },
+        {
+            name: 'Search Appearances',
+            desc: 'See which schools are searching for players like you, and what they filtered on.',
+            icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>'
+        },
+        {
+            name: 'Profile Optimization',
+            desc: 'Find out exactly what to add so more coaches turn up your profile.',
+            icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>'
+        }
+    ];
+
+    function close() {
+        const el = document.getElementById('drAirepOverlay');
+        if (!el) return;
+        el.remove();
+        if (window.ModalUtils) window.ModalUtils.unlockBodyScroll();
+    }
+
+    async function open() {
+        if (document.getElementById('drAirepOverlay')) return;
+        injectStyles();
+
+        const iOS = isIOSApp();
+        const overlay = document.createElement('div');
+        overlay.className = 'dr-airep-overlay';
+        overlay.id = 'drAirepOverlay';
+        overlay.innerHTML = `
+            <div class="dr-airep-modal" role="dialog" aria-modal="true" aria-labelledby="drAirepTitle">
+                <div class="dr-airep-header">
+                    <button class="dr-airep-close" id="drAirepClose" aria-label="Close">&times;</button>
+                    <div class="dr-airep-lock-badge">${LOCK_SVG}</div>
+                    <h2 class="dr-airep-title" id="drAirepTitle">Unlock AI Rep</h2>
+                    <p class="dr-airep-sub">Your personal recruiting representative, working in the background.</p>
+                </div>
+                <div class="dr-airep-body">
+                    ${FEATURES.map(f => `
+                        <div class="dr-airep-feature">
+                            <div class="dr-airep-feature-icon">${f.icon}</div>
+                            <div>
+                                <p class="dr-airep-feature-name">${f.name}</p>
+                                <p class="dr-airep-feature-desc">${f.desc}</p>
+                            </div>
+                        </div>`).join('')}
+                </div>
+                <div class="dr-airep-footer">
+                    <div class="dr-airep-price" id="drAirepPrice"></div>
+                    <button class="dr-airep-btn dr-airep-btn-primary" id="drAirepSubscribe">Subscribe</button>
+                    ${iOS ? '<button class="dr-airep-btn dr-airep-btn-ghost" id="drAirepRestore">Restore Purchases</button>' : ''}
+                    <p class="dr-airep-terms" id="drAirepTerms">
+                        Auto-renews monthly until cancelled.
+                        ${iOS
+                            ? 'Cancel anytime in your Apple ID subscription settings.'
+                            : 'Cancel anytime in your account settings.'}
+                    </p>
+                    <p class="dr-airep-legal">
+                        By subscribing you agree to our
+                        <a href="${FE_BASE}/landingpage/terms-of-service.html">Terms of Use</a> and
+                        <a href="${FE_BASE}/landingpage/privacy-policy.html">Privacy Policy</a>.
+                    </p>
+                </div>
+            </div>`;
+        document.body.appendChild(overlay);
+        if (window.ModalUtils) window.ModalUtils.lockBodyScroll();
+
+        // Price + trial copy.
+        //
+        // The markup above ships the NO-TRIAL wording ("Subscribe" /
+        // "Auto-renews monthly"). Trial language is added only once the server
+        // confirms this user is actually trial-eligible. Defaulting the other way
+        // would promise a free trial to a returning subscriber who gets billed on
+        // day 0 — a false statement about a negative-option offer, and exactly the
+        // pattern the FTC and Apple penalise. Erring toward the plainer claim also
+        // means a slow or failed request can never over-promise.
+        //
+        // Apple Guideline 3.1.1: prefer StoreKit's localized price in-app and never
+        // hardcode a $ amount there. On web the Stripe price is fixed, so state it.
+        const priceEl = document.getElementById('drAirepPrice');
+        const btnEl = document.getElementById('drAirepSubscribe');
+        const termsEl = document.getElementById('drAirepTerms');
+
+        // Resolve the localized iOS price (or the fixed web price) first.
+        let priceStr = iOS ? null : '$10/month';
+        if (iOS) {
+            try {
+                const IAP = await ensureIap();
+                if (IAP && IAP.getOfferingsPriceMap) {
+                    const map = await IAP.getOfferingsPriceMap();
+                    if (map && map.player) priceStr = map.player + '/month';
+                }
+            } catch (_) { /* Apple's own sheet still shows the amount */ }
+        }
+
+        let trialEligible = false;
+        try {
+            const sub = await API.payments.getSubscriptionStatus();
+            trialEligible = !!(sub && sub.trialEligible);
+        } catch (_) { /* stay on the no-trial copy */ }
+
+        if (!priceEl.isConnected) return;   // user closed the modal while we waited
+
+        if (trialEligible) {
+            btnEl.textContent = 'Start Free Trial';
+            priceEl.textContent = priceStr ? '7-day free trial, then ' + priceStr : '7-day free trial';
+            termsEl.textContent = 'After your 7-day free trial, auto-renews monthly until cancelled. '
+                + (iOS
+                    ? 'Cancel anytime in your Apple ID subscription settings before the trial ends to avoid charges.'
+                    : 'Cancel anytime in your account settings before the trial ends to avoid charges.');
+        } else {
+            // Trial already used — bills immediately. Say so plainly.
+            btnEl.textContent = 'Subscribe';
+            priceEl.textContent = priceStr || '';
+            termsEl.textContent = 'Billed today, then auto-renews monthly until cancelled. '
+                + (iOS
+                    ? 'Cancel anytime in your Apple ID subscription settings.'
+                    : 'Cancel anytime in your account settings.');
+        }
+
+        document.getElementById('drAirepClose').addEventListener('click', close);
+        overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+        document.addEventListener('keydown', function esc(e) {
+            if (e.key === 'Escape') { close(); document.removeEventListener('keydown', esc); }
+        });
+
+        document.getElementById('drAirepSubscribe').addEventListener('click', subscribe);
+        const restoreBtn = document.getElementById('drAirepRestore');
+        if (restoreBtn) restoreBtn.addEventListener('click', restore);
+    }
+
+    // Where to land after a successful purchase: the AI Rep page itself, so the
+    // player immediately sees what they just bought.
+    function aiRepUrl() {
+        const folder = _folder || 'hsplayer';
+        return FE_BASE + '/' + folder + '/tabs/ai-rep.html';
+    }
+
+    async function subscribe() {
+        const btn = document.getElementById('drAirepSubscribe');
+        if (!btn) return;
+        const original = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = 'Please wait...';
+        const fail = (msg) => {
+            if (msg) showToast(msg, 'error');
+            btn.disabled = false;
+            btn.textContent = original;
+        };
+
+        const profileType = _folder === 'transferplayer' ? 'transferplayer' : 'hsplayer';
+
+        try {
+            if (isIOSApp()) {
+                const IAP = await ensureIap();
+                if (!IAP || !IAP.purchaseTier) return fail('In-app purchases are unavailable right now.');
+                const r = await IAP.purchaseTier(profileType, null);
+                if (r && r.success) {
+                    // Server-authoritative reconcile: re-checks RevenueCat against the
+                    // trusted user id and validates product vs profile type. A network
+                    // blip stays optimistic (the webhook will land), but an explicit
+                    // mismatch must not grant access.
+                    let rec = null;
+                    try { rec = await API.payments.reconcileIap(r.customerInfo); } catch (_) {}
+                    if (rec && rec.activated === false && rec.reason === 'product_mismatch') {
+                        return fail('That purchase doesn\'t match this profile type. Please contact support.');
+                    }
+                    // Grace key: admits the user for ~60s before the RevenueCat
+                    // webhook propagates (same key the platform paywall IIFE honors).
+                    try {
+                        if (_userId) localStorage.setItem('iap_pending_activation', JSON.stringify({ at: Date.now(), userId: _userId }));
+                    } catch (_) {}
+                    _entitled = true;
+                    window.location.href = aiRepUrl();
+                    return;
+                }
+                if (r && r.cancelled) return fail(null);
+                return fail((r && r.error) || 'Purchase failed');
+            }
+
+            // Web — Stripe Checkout.
+            const { url } = await API.payments.createCheckoutSession(
+                profileType, null, 'addon',
+                FE_BASE + '/shared/payment-success-switch.html',
+                window.location.href
+            );
+            localStorage.setItem('switchRedirectUrl', aiRepUrl());
+            window.location.href = url;
+        } catch (e) {
+            fail((e && e.message) || 'Something went wrong. Please try again.');
+        }
+    }
+
+    // Apple Guideline 3.1.1: Restore Purchases must be reachable wherever we sell.
+    // A reinstall / new device / state drift must not strand a paying player.
+    async function restore() {
+        const btn = document.getElementById('drAirepRestore');
+        if (!btn) return;
+        const original = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = 'Restoring...';
+        const reset = () => { btn.disabled = false; btn.textContent = original; };
+        try {
+            const IAP = await ensureIap();
+            if (!IAP || !IAP.restorePurchases) { showToast('Restore is only available in the app.', 'error'); return reset(); }
+            const r = await IAP.restorePurchases();
+            if (!r || !r.success) { showToast('Restore failed: ' + ((r && r.error) || 'unknown'), 'error'); return reset(); }
+            let rec = null;
+            try { rec = await API.payments.reconcileIap(r.customerInfo); } catch (_) {
+                showToast('Couldn\'t verify your subscription. Check your connection and try again.', 'error');
+                return reset();
+            }
+            if (rec && rec.activated) {
+                showToast('Purchases restored successfully.', 'success');
+                try {
+                    if (_userId) localStorage.setItem('iap_pending_activation', JSON.stringify({ at: Date.now(), userId: _userId }));
+                } catch (_) {}
+                _entitled = true;
+                window.location.href = aiRepUrl();
+                return;
+            }
+            if (rec && rec.reason === 'stripe_active') {
+                // Server refused an Apple takeover of a live Stripe sub — restoring
+                // would have left the web subscription billing with no way to cancel.
+                showToast('You already have an active subscription billed on the web. Manage it from a desktop browser at directrecruit.net.', 'warning', 12000);
+            } else if (rec && rec.reason === 'product_mismatch') {
+                showToast('Your Apple subscription is for a different profile type and can\'t unlock AI Rep.', 'warning', 10000);
+            } else {
+                showToast('No active subscription found for your Apple ID.', 'error');
+            }
+            reset();
+        } catch (e) {
+            showToast('Restore failed: ' + ((e && e.message) || 'unknown'), 'error');
+            reset();
+        }
+    }
+
+    // NOTE: there is deliberately NO lock glyph on the nav item. The mobile bottom
+    // bar has no room for one, and a desktop-only badge would be inconsistent
+    // across screens. Free players just click through and the modal explains what
+    // AI Rep is — which converts better than a bare padlock anyway.
+
+    // Resolve entitlement from /auth/me. Returns the boolean.
+    async function refresh(me) {
+        try {
+            if (!me) me = await getInitMe();
+            if (!me || !me.user) return _entitled;
+            _userId = me.user.id || null;
+            // lesson 69: college_division lives on me.profile, not me.user.
+            _folder = getProfileFolder({
+                ...me.user,
+                college_division: (me.profile && me.profile.college_division) || me.user.college_division
+            });
+            if (!isPlayerFolder(_folder)) { _entitled = null; return _entitled; }
+            _entitled = ENTITLED_STATUSES.includes(me.user.subscription_status) &&
+                        me.user.subscription_tier === 'player';
+        } catch (_) { /* leave unresolved; the click handler re-checks */ }
+        return _entitled;
+    }
+
+    // Delegated + capture phase so it beats any per-page handler and works for
+    // nav items injected later by sidebar-nav.js / my-profile.js. One listener
+    // covers all 10 entry points AND both layouts, because mobile-overrides.css
+    // restyles the SAME .nav-item-ai-rep node into the bottom bar.
+    document.addEventListener('click', async (e) => {
+        const link = e.target.closest && e.target.closest('.nav-item-ai-rep');
+        if (!link) return;
+        if (_entitled === true) return;   // subscribed: navigate normally
+
+        // Not entitled, or not resolved yet. Stop the navigation first, then decide —
+        // we can always send them on manually if it turns out they're entitled.
+        e.preventDefault();
+        e.stopPropagation();
+        if (_entitled === null) {
+            await refresh();
+            if (_entitled === true) { window.location.href = link.href; return; }
+            // Not a player folder at all (shouldn't happen for this nav item) — let it through.
+            if (!isPlayerFolder(_folder)) { window.location.href = link.href; return; }
+        }
+        open();
+    }, true);
+
+    // Resolve entitlement up front so the click handler can decide synchronously.
+    // No DOM marking to do — the nav item looks identical either way, and the
+    // delegated capture-phase listener above survives late/async nav injection
+    // (my-profile.js rebuilds the sidebar after its own /auth/me resolves).
+    document.addEventListener('DOMContentLoaded', () => {
+        if (!isAuthenticated()) return;
+        refresh();
+    });
+
+    window.AiRepPaywall = {
+        isEntitled,
+        open,
+        close,
+        refresh,
+        get folder() { return _folder; }
+    };
 })();

@@ -61,10 +61,12 @@ router.post('/create-checkout-session', authMiddleware, async (req, res) => {
   try {
     const { profileType, tier, context, successUrl, cancelUrl } = req.body;
 
-    // Validate profile type is paid. Players are paid again (with a 7-day trial
-    // applied below), so hsplayer/transferplayer checkouts are allowed here.
-    if (!User.PAID_TYPES.includes(profileType)) {
-      return res.status(400).json({ error: 'This profile type does not require a subscription' });
+    // Only types that actually have a purchasable product may open a checkout
+    // session. Deliberately SUBSCRIBABLE_TYPES, not PAID_TYPES: hsplayer and
+    // transferplayer are free on the platform but can still buy the $10/mo
+    // AI Rep add-on (with the 7-day trial applied below).
+    if (!User.SUBSCRIBABLE_TYPES.includes(profileType)) {
+      return res.status(400).json({ error: 'This profile type has no subscription product' });
     }
 
     // Build the price key
@@ -113,9 +115,20 @@ router.post('/create-checkout-session', authMiddleware, async (req, res) => {
       customerId = customer.id;
       await User.updateStripeCustomerId(req.userId, customerId);
     }
-    // Player subscriptions (hsplayer/transferplayer) get a 7-day free trial.
-    // Keyed off profileType, NOT tier, so a coach checkout NEVER gets a trial.
-    const isPlayerTrial = profileType === 'hsplayer' || profileType === 'transferplayer';
+    // The AI Rep add-on (hsplayer/transferplayer) gets a 7-day free trial, but
+    // only ONCE per user. Keyed off profileType, NOT tier, so a coach checkout
+    // never gets a trial.
+    //
+    // The trial_used_at check is what stops trial farming: Stripe would otherwise
+    // apply trial_period_days to every new subscription, letting someone trial,
+    // cancel on day 6, resubscribe, and repeat forever without ever paying. A
+    // returning subscriber is billed immediately instead.
+    const isAddon = User.ADDON_TYPES.includes(profileType);
+    const alreadyTrialed = isAddon ? await User.hasUsedTrial(req.userId) : false;
+    const isPlayerTrial = isAddon && !alreadyTrialed;
+    if (isAddon && alreadyTrialed) {
+      logger.info(`Trial already used by user ${req.userId} — checkout will bill immediately`);
+    }
     const session = await stripe.createCheckoutSession({
       customerId,
       priceId,
@@ -148,7 +161,13 @@ router.get('/subscription-status', authMiddleware, async (req, res) => {
       status: info.subscription_status || 'none',
       tier: info.subscription_tier || null,
       source: info.subscription_source || null,
-      stripeCustomerId: info.stripe_customer_id || null
+      stripeCustomerId: info.stripe_customer_id || null,
+      // Whether a NEW subscription would include the 7-day free trial. Purchase
+      // surfaces must key their copy off this: promising "Start Free Trial" to a
+      // returning subscriber who will actually be billed on day 0 is a false
+      // statement about a negative-option offer, which both the FTC and Apple
+      // treat as a dark pattern. Mirrors the trial decision in create-checkout-session.
+      trialEligible: !info.trial_used_at
     };
 
     // Fetch current period details — ONLY for Stripe subs. Apple IAP periods
@@ -352,6 +371,15 @@ async function webhookHandler(req, res) {
             source: 'stripe'
           });
 
+          // Burn the one-per-user free trial the moment one actually starts, so a
+          // cancel-and-resubscribe cycle is billed immediately. Marked here (on the
+          // completed session) rather than at checkout creation, so abandoning
+          // checkout doesn't cost the user their trial.
+          if (status === 'trialing') {
+            await User.markTrialUsed(userId);
+            logger.info(`Free trial consumed by user ${userId} (stripe)`);
+          }
+
           if (!session.customer) {
             logger.warn(`checkout.session.completed missing customer for user ${userId}`);
           } else {
@@ -384,6 +412,18 @@ async function webhookHandler(req, res) {
         const userId = subscription.metadata?.userId;
 
         if (userId) {
+          // Only apply lifecycle updates for the subscription we are ACTUALLY
+          // tracking. A profile switch can detach (cancel branch) or stash
+          // (verify-then-pay branch) an older sub whose Stripe events keep
+          // arriving for months. Without this check those events resurrect a
+          // cleared entitlement: cancelSubscription() sets cancel_at_period_end,
+          // which immediately fires this event, and the mapping below turns that
+          // straight back into status='active' — with tier left untouched.
+          const tracked = await User.getSubscriptionInfo(userId);
+          if (!tracked || tracked.stripe_subscription_id !== subscription.id) {
+            logger.info(`[Stripe webhook] subscription.updated for untracked sub ${subscription.id} (user ${userId}, tracked=${tracked?.stripe_subscription_id || 'none'}) — ignoring`);
+            break;
+          }
           const status = subscription.cancel_at_period_end ? 'active' : subscription.status;
           await User.updateSubscription(userId, {
             subscriptionId: subscription.id,
@@ -400,6 +440,15 @@ async function webhookHandler(req, res) {
         const userId = subscription.metadata?.userId;
 
         if (userId) {
+          // Same guard as above, for the opposite failure: a cross-type switch
+          // leaves the OLD sub alive until the new one activates, and cancelling
+          // it is cancel_at_period_end — so its 'deleted' event can land up to a
+          // month later and would otherwise wipe the user's CURRENT paid row.
+          const tracked = await User.getSubscriptionInfo(userId);
+          if (!tracked || tracked.stripe_subscription_id !== subscription.id) {
+            logger.info(`[Stripe webhook] subscription.deleted for untracked sub ${subscription.id} (user ${userId}, tracked=${tracked?.stripe_subscription_id || 'none'}) — ignoring`);
+            break;
+          }
           await User.updateSubscription(userId, {
             subscriptionId: null,
             status: 'cancelled',
@@ -420,6 +469,14 @@ async function webhookHandler(req, res) {
             const sub = await stripe.getSubscription(subscriptionId);
             const userId = sub.metadata?.userId;
             if (userId) {
+              // Same untracked-subscription guard as the two handlers above: a
+              // failed invoice on a detached/stashed old sub must not mark the
+              // user's current, healthy subscription past_due.
+              const tracked = await User.getSubscriptionInfo(userId);
+              if (!tracked || tracked.stripe_subscription_id !== subscriptionId) {
+                logger.info(`[Stripe webhook] payment_failed for untracked sub ${subscriptionId} (user ${userId}) — ignoring`);
+                break;
+              }
               await User.updateSubscription(userId, {
                 subscriptionId,
                 status: 'past_due',
@@ -610,7 +667,23 @@ async function revenueCatWebhookHandler(req, res) {
         const client = await pool.connect();
         try {
           await client.query('BEGIN');
-          await client.query('SELECT id FROM users WHERE id = $1 FOR UPDATE', [app_user_id]);
+          const curRow = await client.query(
+            'SELECT subscription_status, subscription_source, stripe_subscription_id FROM users WHERE id = $1 FOR UPDATE',
+            [app_user_id]
+          );
+          const cr = curRow.rows[0] || {};
+          // Same cross-rail guard as /iap-reconcile: an Apple activation must not
+          // overwrite a row backed by a LIVE Stripe subscription, or the Stripe sub
+          // keeps billing with no in-app way to cancel it (see the long note there).
+          // Ack 200 so RevenueCat stops retrying; the loud log names both sides so
+          // support can refund the Apple charge or cancel the Stripe sub.
+          if (!!cr.stripe_subscription_id
+              && (cr.subscription_source === 'stripe' || !cr.subscription_source)
+              && ['active', 'trialing', 'past_due'].includes(cr.subscription_status)) {
+            await client.query('ROLLBACK');
+            logger.error(`[RevenueCat webhook] CROSS-RAIL CONFLICT: user=${app_user_id} bought Apple product ${effectiveProductId} while holding LIVE Stripe sub ${cr.stripe_subscription_id} (${cr.subscription_status}) — NOT activating. Resolve manually: refund the Apple purchase or cancel the Stripe subscription.`);
+            return res.sendStatus(200);
+          }
           const { role, subtype } = await User.getSubtypeAndRole(app_user_id, client);
           if (!allowedTiersFor({ subtype, role }).includes(effTier)) {
             await client.query('ROLLBACK');
@@ -625,6 +698,13 @@ async function revenueCatWebhookHandler(req, res) {
             tier: effTier,
             source: 'apple_iap'
           }, client);
+          // Burn the one-per-user free trial. Apple already enforces intro-offer
+          // eligibility per Apple ID, so this is belt-and-braces on that rail —
+          // but it also makes an Apple trial disqualify a later STRIPE trial,
+          // which nothing else would catch.
+          if (iapStatus === 'trialing') {
+            await User.markTrialUsed(app_user_id, client);
+          }
           await client.query('COMMIT');
         } catch (txErr) {
           await client.query('ROLLBACK').catch(() => {});
@@ -751,7 +831,41 @@ router.post('/iap-reconcile', authMiddleware, async (req, res) => {
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
-      await client.query('SELECT id FROM users WHERE id = $1 FOR UPDATE', [req.userId]);
+      const cur = await client.query(
+        'SELECT subscription_status, subscription_source, stripe_subscription_id FROM users WHERE id = $1 FOR UPDATE',
+        [req.userId]
+      );
+      const row = cur.rows[0] || {};
+
+      // CROSS-RAIL GUARD: never let an Apple entitlement take over a row that is
+      // currently backed by a LIVE Stripe subscription.
+      //
+      // Without this, restore/auto-reconcile flips subscription_source to
+      // 'apple_iap' while leaving the Stripe sub untouched and still billing —
+      // and because /cancel and /reactivate both refuse to act on an 'apple_iap'
+      // row, the user is left with an unstoppable Stripe charge and no in-app way
+      // to cancel it. (stripe_subscription_id is overloaded: on the Apple rail it
+      // holds RevenueCat's original_transaction_id, so /cancel cannot simply key
+      // off the column being present.)
+      //
+      // Refusing is the safer failure: it is unreachable through the UI (an
+      // entitled user never sees a purchase button), it is visible and
+      // supportable, and an Apple charge is refundable — whereas silent
+      // double-billing compounds invisibly. Lapsed/cancelled Stripe rows are NOT
+      // blocked, so switching rails after a Stripe sub ends works normally.
+      const stripeIsLive = !!row.stripe_subscription_id
+        && (row.subscription_source === 'stripe' || !row.subscription_source)
+        && ['active', 'trialing', 'past_due'].includes(row.subscription_status);
+      if (stripeIsLive) {
+        await client.query('ROLLBACK');
+        logger.warn(`[iap-reconcile] BLOCKED: user=${req.userId} holds a live Stripe sub ${row.stripe_subscription_id} (${row.subscription_status}) — refusing Apple takeover`);
+        return res.json({
+          activated: false,
+          reason: 'stripe_active',
+          message: 'You already have an active subscription billed on the web. Cancel it there before subscribing through Apple.'
+        });
+      }
+
       const { role, subtype } = await User.getSubtypeAndRole(req.userId, client);
       const allowed = allowedTiersFor({ subtype, role });
 
@@ -775,6 +889,12 @@ router.post('/iap-reconcile', authMiddleware, async (req, res) => {
 
       const reconcileStatus = match.trial ? 'trialing' : 'active';
       await User.updateSubscription(req.userId, { status: reconcileStatus, tier: match.tier, source: 'apple_iap' }, client);
+      // Same one-per-user trial burn as the webhook path — reconcile can be the
+      // first thing that observes a trial (it runs right after purchase/restore,
+      // often before RevenueCat's webhook lands).
+      if (match.trial) {
+        await User.markTrialUsed(req.userId, client);
+      }
       await client.query('COMMIT');
       logger.info(`[iap-reconcile] activated user=${req.userId} tier=${match.tier} status=${reconcileStatus}`);
       return res.json({ activated: true, tier: match.tier, status: reconcileStatus });

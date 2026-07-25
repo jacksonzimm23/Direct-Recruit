@@ -6,8 +6,10 @@
 // paywall IIFE's redirect (shared/api.js) aborted the page's in-flight fetches and
 // feed.js's error handler bounced the user back to signin. Mirrors PAID_FOLDERS +
 // the status allowlist in that IIFE.
-// Players are paid again (7-day trial); 'trialing' counts as full access.
-const PAYWALL_PAID_FOLDERS = ['hsplayer', 'transferplayer', 'collegecoach'];
+// 2026-07: players are free on the platform — their subscription only unlocks the
+// AI Rep page, which is gated in-page — so they sign in straight to their mainpage.
+// (Was: ['hsplayer','transferplayer','collegecoach'].)
+const PAYWALL_PAID_FOLDERS = ['collegecoach'];
 function needsPaywall(folder, user) {
     return PAYWALL_PAID_FOLDERS.includes(folder) &&
         !['active', 'past_due', 'comp', 'trialing'].includes(user && user.subscription_status);

@@ -260,8 +260,8 @@ function emitUser() {
   const msgPerm = pick(PERMISSIONS);
   const visPerm = pick(PERMISSIONS);
   const stats = summaryStats();
-  const stripeCus = 'cus_randtest_' + Math.random().toString(36).slice(2, 16).padEnd(14, '0');
-  const stripeSub = 'sub_randtest_' + Math.random().toString(36).slice(2, 16).padEnd(14, '0');
+  // No Stripe ids seeded: players are free on the platform (2026-07) and a
+  // subscription only unlocks AI Rep. randtest accounts represent typical FREE users.
 
   // Build the 10-game CTE chain
   // Season runs Aug-Nov of (gradYear - 2) per testing.md
@@ -309,7 +309,7 @@ function emitUser() {
   const allCtes = [
     `new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), ${sq(email)}, 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, ${sq(username)}, 'active', 'player', ${sq(stripeCus)}, ${sq(stripeSub)})
+  VALUES (uuid_generate_v4(), ${sq(email)}, 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, ${sq(username)}, 'none', NULL, NULL, NULL)
   RETURNING id
 )`,
     `new_profile AS (

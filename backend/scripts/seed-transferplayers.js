@@ -367,8 +367,8 @@ function emitUser() {
   const phone = `555-${String(randInt(0,999)).padStart(3,'0')}-${String(randInt(0,9999)).padStart(4,'0')}`;
   const msgPerm = pick(PERMISSIONS);
   const visPerm = pick(PERMISSIONS);
-  const stripeCus = 'cus_randtest_' + Math.random().toString(36).slice(2, 16).padEnd(14, '0');
-  const stripeSub = 'sub_randtest_' + Math.random().toString(36).slice(2, 16).padEnd(14, '0');
+  // No Stripe ids seeded: players are free on the platform (2026-07) and a
+  // subscription only unlocks AI Rep. randtest accounts represent typical FREE users.
 
   const offers = pickOffers(teamName);
   const stats = aggregateStats(position);
@@ -383,7 +383,7 @@ function emitUser() {
   // CTE chain
   const userCte = `new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), ${sq(email)}, 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, ${sq(username)}, 'active', 'player', ${sq(stripeCus)}, ${sq(stripeSub)})
+  VALUES (uuid_generate_v4(), ${sq(email)}, 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, ${sq(username)}, 'none', NULL, NULL, NULL)
   RETURNING id
 )`;
 

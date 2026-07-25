@@ -157,11 +157,45 @@ class User {
 
   static COLLEGE_DIVISIONS = ['D1 FBS', 'D1 FCS', 'D2', 'D3', 'NAIA', 'NJCAA', 'FBS', 'FCS', '3C2A'];
 
-  // Paid profile types. hsplayer + transferplayer are paid again (re-enabled
-  // 2026-07 with a 7-day free trial — see the trial wiring in payments.js /
-  // stripe.js and the 'trialing' status handling across the paywall gates).
-  // ALLOWED_TIERS_BY_SUBTYPE below maps each player subtype → ['player'].
-  static PAID_TYPES = ['collegecoach', 'hsplayer', 'transferplayer'];
+  // ─── Monetization constants (2026-07: players free, AI Rep is the paid add-on) ──
+  // THREE distinct questions, three constants. Do NOT collapse them back into one.
+  // The original single PAID_TYPES answered (a) and (b) at once, and that is exactly
+  // what made it impossible to have a profile type that is free to use but can still
+  // buy something.
+  //
+  // (a) Is this profile type blocked from the PLATFORM without a subscription?
+  //     Drives the full-screen paywall and the PAID/FREE badge in profile switching.
+  //     hsplayer/transferplayer left this list in 2026-07: players are now free.
+  static PAID_TYPES = ['collegecoach'];
+
+  // (b) May this profile type start a Stripe Checkout / Apple IAP purchase?
+  //     Players are free on the platform but CAN buy the $10/mo AI Rep add-on, so
+  //     they must stay here even though they are absent from PAID_TYPES above.
+  static SUBSCRIBABLE_TYPES = ['collegecoach', 'hsplayer', 'transferplayer'];
+
+  // (c) For which types does the subscription unlock a FEATURE rather than platform
+  //     access? These are the 7-day-trial types (see the trial wiring in payments.js).
+  static ADDON_TYPES = ['hsplayer', 'transferplayer'];
+
+  // ─── AI Rep entitlement (the ONLY paid player surface) ───────────────────────
+  // "Has AI Rep" == holds a player-tier subscription in a good-standing status.
+  // Reuses subscription_tier/subscription_status — no new columns, no migration.
+  //
+  // TIER matters, not just status. A stale or clobbered row can carry
+  // status='active' with tier=NULL (e.g. a Stripe webhook for a subscription a
+  // profile switch already detached), and a status-only check would hand those
+  // users free AI Rep. Every legitimate activation path already writes
+  // tier='player': the Stripe checkout webhook, the RevenueCat webhook, and
+  // /iap-reconcile — each one product↔profile validated by allowedTiersFor().
+  static AI_REP_TIERS = ['player'];
+  static ENTITLED_SUB_STATUSES = ['active', 'trialing', 'past_due', 'comp'];
+
+  // Takes the row shape returned by User.getSubscriptionInfo().
+  static hasAiRep(subInfo) {
+    return !!subInfo
+      && User.ENTITLED_SUB_STATUSES.includes(subInfo.subscription_status)
+      && User.AI_REP_TIERS.includes(subInfo.subscription_tier);
+  }
 
   // Entitlement↔profile-type validation: which subscription tiers may activate
   // which profile subtype. A still-active product the user bought for a
@@ -286,10 +320,30 @@ class User {
 
   static async getSubscriptionInfo(userId) {
     const result = await pool.query(
-      'SELECT stripe_customer_id, stripe_subscription_id, subscription_status, subscription_tier, subscription_source FROM users WHERE id = $1',
+      'SELECT stripe_customer_id, stripe_subscription_id, subscription_status, subscription_tier, subscription_source, trial_used_at FROM users WHERE id = $1',
       [userId]
     );
     return result.rows[0] || null;
+  }
+
+  // ─── Free-trial eligibility (AI Rep add-on) ──────────────────────────────────
+  // ONE free trial per user, ever. Stripe applies `trial_period_days` to every
+  // subscription it creates for a customer — it has no once-per-customer notion —
+  // so without this a player could trial, cancel on day 6, resubscribe, and never
+  // pay. Tracked per USER so it also survives an hsplayer<->transferplayer switch
+  // (same product) and spans both billing rails.
+  static async hasUsedTrial(userId, client = pool) {
+    const r = await client.query('SELECT trial_used_at FROM users WHERE id = $1', [userId]);
+    return !!(r.rows[0] && r.rows[0].trial_used_at);
+  }
+
+  // Idempotent: only stamps the FIRST trial, so a renewal or a later webhook
+  // replay never moves the date forward.
+  static async markTrialUsed(userId, client = pool) {
+    await client.query(
+      'UPDATE users SET trial_used_at = NOW() WHERE id = $1 AND trial_used_at IS NULL',
+      [userId]
+    );
   }
 
   // Verify-then-pay (cross-type paid->paid switch): atomically read AND clear the

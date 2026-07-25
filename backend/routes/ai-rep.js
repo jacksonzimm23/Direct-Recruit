@@ -12,6 +12,34 @@ const logger = require('../utils/logger');
 // All routes require authenticated player
 router.use(authMiddleware, requireRole('player'));
 
+// ===== AI Rep entitlement gate =====================================================
+// AI Rep is the ONLY paid player surface (2026-07: players are otherwise free).
+// This is the SECURITY BOUNDARY — the frontend lock is cosmetic, so gated data must
+// never leave the server. Returns true when the caller may proceed; otherwise it has
+// already sent the 403 and the caller must return immediately.
+//
+// Two independent checks, both required:
+//   1. SUBTYPE — only hsplayer/transferplayer have an AI Rep page at all.
+//      requireRole('player') above also matches collegeplayer, who can never
+//      legitimately hold a 'player' tier (allowedTiersFor returns [] for them, which
+//      blocks checkout, both webhooks, and iap-reconcile) — but a stale or
+//      hand-edited row must not be the only thing standing between them and the data.
+//   2. ENTITLEMENT — tier AND status, via User.hasAiRep(). Status alone is not an
+//      entitlement: a clobbered row can read status='active' with tier=NULL.
+async function requireAiRep(req, res) {
+  const { role, subtype } = await User.getSubtypeAndRole(req.userId);
+  if (!subtype || !User.ADDON_TYPES.includes(subtype)) {
+    res.status(403).json({ error: 'AI Rep is not available for this profile type', code: 'AI_REP_UNAVAILABLE' });
+    return false;
+  }
+  const subInfo = await User.getSubscriptionInfo(req.userId);
+  if (!User.hasAiRep(subInfo)) {
+    res.status(403).json({ error: 'AI Rep subscription required', code: 'AI_REP_REQUIRED' });
+    return false;
+  }
+  return true;
+}
+
 // Normalize legacy division values (e.g., "FBS" → "D1 FBS")
 function normalizeDivision(div) {
   if (!div) return null;
@@ -95,11 +123,7 @@ function filtersToLabels(activeFilters) {
 // Source is the ai_analytics rows written on each RA search (see lesson #22).
 router.get('/search-appearances', async (req, res) => {
   try {
-    // Players are paid again (7-day trial). 'trialing' counts as active access.
-    const subInfo = await User.getSubscriptionInfo(req.userId);
-    if (!subInfo || !['active', 'past_due', 'comp', 'trialing'].includes(subInfo.subscription_status)) {
-      return res.status(403).json({ error: 'Active subscription required' });
-    }
+    if (!(await requireAiRep(req, res))) return;
 
     const period = ['7d', '30d', 'all'].includes(req.query.period) ? req.query.period : '30d';
     const offset = Math.max(0, parseInt(req.query.offset) || 0);
@@ -226,11 +250,7 @@ const SCHOOL_MIN_SCORE = 70;
 
 router.get('/best-fit-schools', async (req, res) => {
   try {
-    // Players are paid again (7-day trial). 'trialing' counts as active access.
-    const subInfo = await User.getSubscriptionInfo(req.userId);
-    if (!subInfo || !['active', 'past_due', 'comp', 'trialing'].includes(subInfo.subscription_status)) {
-      return res.status(403).json({ error: 'Active subscription required' });
-    }
+    if (!(await requireAiRep(req, res))) return;
 
     const offset = Math.max(0, parseInt(req.query.offset) || 0);
     const limit = Math.min(50, Math.max(1, parseInt(req.query.limit) || 10));
@@ -326,11 +346,7 @@ router.get('/best-fit-schools', async (req, res) => {
 // ============ GET /api/ai-rep/profile-completion ============
 router.get('/profile-completion', async (req, res) => {
   try {
-    // Players are paid again (7-day trial). 'trialing' counts as active access.
-    const subInfo = await User.getSubscriptionInfo(req.userId);
-    if (!subInfo || !['active', 'past_due', 'comp', 'trialing'].includes(subInfo.subscription_status)) {
-      return res.status(403).json({ error: 'Active subscription required' });
-    }
+    if (!(await requireAiRep(req, res))) return;
 
     const userId = req.userId;
 

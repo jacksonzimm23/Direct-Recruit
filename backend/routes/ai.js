@@ -501,11 +501,22 @@ router.post('/chats/:chatId/message', validateUUID('chatId'), async (req, res) =
       latencyMs: aiResponse._meta?.latency_ms || null
     }).catch(err => logger.error('AI analytics log error:', err.message));
 
-    // Notify matched players (fire-and-forget, deduplicated per 6 hours)
+    // Notify matched players (fire-and-forget, deduplicated per 6 hours).
+    //
+    // Gated on an ACTIVE AI Rep subscription (paid or 7-day trial). Search
+    // Appearances live on the AI Rep page, which is the paid player surface — so
+    // telling a free player "your profile came up in a search" would push them at
+    // a locked page with nothing to see. Only notify players who can actually open
+    // the appearance. notifyUser() then fans out to Socket.IO (the in-app bell on
+    // desktop + iOS) and APNs (iOS push) from the same row.
     if (result.players.length > 0) {
       result.players.forEach(p => {
-        Notification.createAiSearchMatchNotification(p.user_id, coachDivision, 'recruit_assistant')
-          .then(notif => { if (notif) notifyUser(req.app.get('io'), notif); })
+        User.getSubscriptionInfo(p.user_id)
+          .then(subInfo => {
+            if (!User.hasAiRep(subInfo)) return;   // free player — nothing to show them
+            return Notification.createAiSearchMatchNotification(p.user_id, coachDivision, 'recruit_assistant')
+              .then(notif => { if (notif) notifyUser(req.app.get('io'), notif); });
+          })
           .catch(err => logger.error('AI match notification error:', err.message));
       });
     }

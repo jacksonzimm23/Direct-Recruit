@@ -6,7 +6,7 @@
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.dante.king.19172@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'danteking1470', 'active', 'player', 'cus_randtest_b9kvqbt60yo000', 'sub_randtest_8jfw229dj50000')
+  VALUES (uuid_generate_v4(), 'randtest.dante.king.19172@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'danteking1470', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -32,7 +32,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.carter.wilson.81723@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'carterwilson4656', 'active', 'player', 'cus_randtest_o7tcwz0p320000', 'sub_randtest_o5b6gut48g0000')
+  VALUES (uuid_generate_v4(), 'randtest.carter.wilson.81723@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'carterwilson4656', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -67,7 +67,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.elijah.thompson.38438@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'elijahthompson762', 'active', 'player', 'cus_randtest_q6ffu4xiizq000', 'sub_randtest_db17olzynv4000')
+  VALUES (uuid_generate_v4(), 'randtest.elijah.thompson.38438@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'elijahthompson762', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -102,7 +102,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.jalen.mitchell.46938@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'jalenmitchell7637', 'active', 'player', 'cus_randtest_jrafshmxfws000', 'sub_randtest_mbl2cn9jbgp000')
+  VALUES (uuid_generate_v4(), 'randtest.jalen.mitchell.46938@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'jalenmitchell7637', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -137,7 +137,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.jake.green.23991@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'jakegreen9848', 'active', 'player', 'cus_randtest_bb49ukkfcz0000', 'sub_randtest_yl0grcyqusf000')
+  VALUES (uuid_generate_v4(), 'randtest.jake.green.23991@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'jakegreen9848', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -163,7 +163,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.silas.young.12487@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'silasyoung7085', 'active', 'player', 'cus_randtest_8a616hu8eqw000', 'sub_randtest_09jh47i5r60400')
+  VALUES (uuid_generate_v4(), 'randtest.silas.young.12487@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'silasyoung7085', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -198,7 +198,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.owen.adams.94132@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'owenadams8468', 'active', 'player', 'cus_randtest_yewqrybw3b0000', 'sub_randtest_kmssd6ogevg000')
+  VALUES (uuid_generate_v4(), 'randtest.owen.adams.94132@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'owenadams8468', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -233,7 +233,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.cole.martinez.60334@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'colemartinez1364', 'active', 'player', 'cus_randtest_99hh6d3tvtl000', 'sub_randtest_umdzejdjbac000')
+  VALUES (uuid_generate_v4(), 'randtest.cole.martinez.60334@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'colemartinez1364', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -268,7 +268,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.elijah.thompson.91811@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'elijahthompson8796', 'active', 'player', 'cus_randtest_eqih6gb20wl000', 'sub_randtest_rs96ylcmnni000')
+  VALUES (uuid_generate_v4(), 'randtest.elijah.thompson.91811@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'elijahthompson8796', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -303,7 +303,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.mason.taylor.82714@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'masontaylor9079', 'active', 'player', 'cus_randtest_17dtqb14nhu000', 'sub_randtest_5kcuuwvdrvg000')
+  VALUES (uuid_generate_v4(), 'randtest.mason.taylor.82714@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'masontaylor9079', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -338,7 +338,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.devin.young.46320@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'devinyoung2299', 'active', 'player', 'cus_randtest_b286usjiujf000', 'sub_randtest_54uvryg70bn000')
+  VALUES (uuid_generate_v4(), 'randtest.devin.young.46320@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'devinyoung2299', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -373,7 +373,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.gavin.harris.7683@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'gavinharris2881', 'active', 'player', 'cus_randtest_gce45fyi1qr000', 'sub_randtest_ohvk15h8kh0000')
+  VALUES (uuid_generate_v4(), 'randtest.gavin.harris.7683@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'gavinharris2881', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -399,7 +399,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.marcus.brown.32479@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'marcusbrown8289', 'active', 'player', 'cus_randtest_lo6tnk5z8ki000', 'sub_randtest_ldn4rjeowe0000')
+  VALUES (uuid_generate_v4(), 'randtest.marcus.brown.32479@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'marcusbrown8289', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -434,7 +434,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.caleb.mitchell.75576@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'calebmitchell1203', 'active', 'player', 'cus_randtest_lagjru620d0000', 'sub_randtest_lfi9f5tmfvb000')
+  VALUES (uuid_generate_v4(), 'randtest.caleb.mitchell.75576@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'calebmitchell1203', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -469,7 +469,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.blake.nelson.96639@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'blakenelson3161', 'active', 'player', 'cus_randtest_isnxlk1avje000', 'sub_randtest_mgr3jzddnjd000')
+  VALUES (uuid_generate_v4(), 'randtest.blake.nelson.96639@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'blakenelson3161', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -504,7 +504,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.ethan.green.99455@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'ethangreen3944', 'active', 'player', 'cus_randtest_xz9rn1stkmf000', 'sub_randtest_v34hd134740000')
+  VALUES (uuid_generate_v4(), 'randtest.ethan.green.99455@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'ethangreen3944', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -539,7 +539,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.mason.taylor.91169@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'masontaylor8416', 'active', 'player', 'cus_randtest_zjbc8sxdlrf000', 'sub_randtest_jycngo5kv9o000')
+  VALUES (uuid_generate_v4(), 'randtest.mason.taylor.91169@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'masontaylor8416', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -574,7 +574,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.devin.thompson.62947@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'devinthompson1032', 'active', 'player', 'cus_randtest_dul0xhhuag6000', 'sub_randtest_72ky803wpcn000')
+  VALUES (uuid_generate_v4(), 'randtest.devin.thompson.62947@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'devinthompson1032', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -609,7 +609,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.jalen.miller.55899@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'jalenmiller5123', 'active', 'player', 'cus_randtest_mmw3mwb9wzk000', 'sub_randtest_myi7cni045f000')
+  VALUES (uuid_generate_v4(), 'randtest.jalen.miller.55899@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'jalenmiller5123', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -644,7 +644,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.ethan.walker.74680@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'ethanwalker2157', 'active', 'player', 'cus_randtest_49tnfh6ltac000', 'sub_randtest_27fgtbjmhec000')
+  VALUES (uuid_generate_v4(), 'randtest.ethan.walker.74680@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'ethanwalker2157', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -679,7 +679,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.silas.thompson.83761@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'silasthompson7395', 'active', 'player', 'cus_randtest_09dgg9fnwcjg00', 'sub_randtest_g0ufd88e9f0000')
+  VALUES (uuid_generate_v4(), 'randtest.silas.thompson.83761@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'silasthompson7395', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -714,7 +714,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.xavier.hall.35529@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'xavierhall4859', 'active', 'player', 'cus_randtest_r5elxpyn8yd000', 'sub_randtest_koimqsjq280000')
+  VALUES (uuid_generate_v4(), 'randtest.xavier.hall.35529@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'xavierhall4859', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -740,7 +740,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.logan.king.44798@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'loganking7050', 'active', 'player', 'cus_randtest_w4h3pzjdt3i000', 'sub_randtest_ltft905kqre000')
+  VALUES (uuid_generate_v4(), 'randtest.logan.king.44798@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'loganking7050', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -775,7 +775,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.gavin.nelson.4860@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'gavinnelson2032', 'active', 'player', 'cus_randtest_660iedu48ia000', 'sub_randtest_xhpmynh71pi000')
+  VALUES (uuid_generate_v4(), 'randtest.gavin.nelson.4860@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'gavinnelson2032', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -810,7 +810,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.hunter.mitchell.84593@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'huntermitchell3234', 'active', 'player', 'cus_randtest_2968qz75c0l000', 'sub_randtest_v95xvlxfec0000')
+  VALUES (uuid_generate_v4(), 'randtest.hunter.mitchell.84593@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'huntermitchell3234', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -845,7 +845,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.tyler.adams.76148@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'tyleradams6262', 'active', 'player', 'cus_randtest_qtbi4a6ytc0000', 'sub_randtest_0q6vu58y7y0b00')
+  VALUES (uuid_generate_v4(), 'randtest.tyler.adams.76148@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'tyleradams6262', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -871,7 +871,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.marcus.hall.60787@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'marcushall1700', 'active', 'player', 'cus_randtest_vpp1yvwou00000', 'sub_randtest_myyxvn46tv0000')
+  VALUES (uuid_generate_v4(), 'randtest.marcus.hall.60787@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'marcushall1700', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -906,7 +906,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.caleb.brown.73908@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'calebbrown8578', 'active', 'player', 'cus_randtest_y8vcez2l8fi000', 'sub_randtest_c33fmx0hhze000')
+  VALUES (uuid_generate_v4(), 'randtest.caleb.brown.73908@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'calebbrown8578', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -941,7 +941,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.xavier.baker.42094@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'xavierbaker3440', 'active', 'player', 'cus_randtest_s3aapu0231a000', 'sub_randtest_gqrtraeefs0000')
+  VALUES (uuid_generate_v4(), 'randtest.xavier.baker.42094@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'xavierbaker3440', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -976,7 +976,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.mason.wilson.39981@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'masonwilson5573', 'active', 'player', 'cus_randtest_bh9vehezc56000', 'sub_randtest_3rirgrttgus000')
+  VALUES (uuid_generate_v4(), 'randtest.mason.wilson.39981@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'masonwilson5573', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -1011,7 +1011,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.mason.miller.52646@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'masonmiller8790', 'active', 'player', 'cus_randtest_73ul27614w7000', 'sub_randtest_uc7ei1q0vp0000')
+  VALUES (uuid_generate_v4(), 'randtest.mason.miller.52646@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'masonmiller8790', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -1046,7 +1046,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.dante.scott.25061@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'dantescott267', 'active', 'player', 'cus_randtest_czecpvysw35000', 'sub_randtest_6n03fjyzdge000')
+  VALUES (uuid_generate_v4(), 'randtest.dante.scott.25061@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'dantescott267', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -1081,7 +1081,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.logan.davis.1546@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'logandavis3232', 'active', 'player', 'cus_randtest_ohufkrx5xw8000', 'sub_randtest_sl9c49fb1tm000')
+  VALUES (uuid_generate_v4(), 'randtest.logan.davis.1546@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'logandavis3232', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -1116,7 +1116,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.silas.adams.5617@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'silasadams7784', 'active', 'player', 'cus_randtest_2yo1n94ajbg000', 'sub_randtest_c31mvv05sx0000')
+  VALUES (uuid_generate_v4(), 'randtest.silas.adams.5617@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'silasadams7784', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -1151,7 +1151,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.blake.nelson.23480@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'blakenelson4074', 'active', 'player', 'cus_randtest_d2owkp55pli000', 'sub_randtest_57hykszujjw000')
+  VALUES (uuid_generate_v4(), 'randtest.blake.nelson.23480@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'blakenelson4074', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -1186,7 +1186,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.tyler.anderson.61858@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'tyleranderson8164', 'active', 'player', 'cus_randtest_sx68n2vaiu0000', 'sub_randtest_ififpyf0uzk000')
+  VALUES (uuid_generate_v4(), 'randtest.tyler.anderson.61858@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'tyleranderson8164', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -1221,7 +1221,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.gavin.wilson.24579@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'gavinwilson4459', 'active', 'player', 'cus_randtest_ygw402d1fds000', 'sub_randtest_bmx9u4avqcn000')
+  VALUES (uuid_generate_v4(), 'randtest.gavin.wilson.24579@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'gavinwilson4459', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -1247,7 +1247,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.silas.miller.80019@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'silasmiller4656', 'active', 'player', 'cus_randtest_xzky85o9mzo000', 'sub_randtest_3qx6zckwy1z000')
+  VALUES (uuid_generate_v4(), 'randtest.silas.miller.80019@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'silasmiller4656', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -1282,7 +1282,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.tyler.green.66841@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'tylergreen1746', 'active', 'player', 'cus_randtest_ric6k057va0000', 'sub_randtest_qzfraxtrtai000')
+  VALUES (uuid_generate_v4(), 'randtest.tyler.green.66841@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'tylergreen1746', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -1317,7 +1317,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.dante.scott.27150@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'dantescott4990', 'active', 'player', 'cus_randtest_03w5wlx6rd5000', 'sub_randtest_e0aojidltd0000')
+  VALUES (uuid_generate_v4(), 'randtest.dante.scott.27150@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'dantescott4990', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -1352,7 +1352,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.luke.carter.84608@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'lukecarter2905', 'active', 'player', 'cus_randtest_uk2w6lqixfe000', 'sub_randtest_twl4hmu4i3k000')
+  VALUES (uuid_generate_v4(), 'randtest.luke.carter.84608@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'lukecarter2905', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -1387,7 +1387,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.jake.brown.36565@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'jakebrown1298', 'active', 'player', 'cus_randtest_f3tj71573q0000', 'sub_randtest_4ctdcz5x0w1000')
+  VALUES (uuid_generate_v4(), 'randtest.jake.brown.36565@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'jakebrown1298', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -1422,7 +1422,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.isaiah.taylor.84813@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'isaiahtaylor1638', 'active', 'player', 'cus_randtest_nj9ydjfoano000', 'sub_randtest_j916f27g3z0000')
+  VALUES (uuid_generate_v4(), 'randtest.isaiah.taylor.84813@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'isaiahtaylor1638', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -1457,7 +1457,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.mason.lewis.89657@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'masonlewis169', 'active', 'player', 'cus_randtest_4np9gfp3wbk000', 'sub_randtest_wchxn0f98l9000')
+  VALUES (uuid_generate_v4(), 'randtest.mason.lewis.89657@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'masonlewis169', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -1492,7 +1492,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.nolan.thompson.28360@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'nolanthompson9058', 'active', 'player', 'cus_randtest_p6d2wiw3mia000', 'sub_randtest_rf6m516v1gj000')
+  VALUES (uuid_generate_v4(), 'randtest.nolan.thompson.28360@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'nolanthompson9058', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -1527,7 +1527,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.isaiah.wright.51526@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'isaiahwright1011', 'active', 'player', 'cus_randtest_g8uhkuh1tin000', 'sub_randtest_idni3v6zs70000')
+  VALUES (uuid_generate_v4(), 'randtest.isaiah.wright.51526@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'isaiahwright1011', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -1562,7 +1562,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.jalen.ramirez.27967@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'jalenramirez3304', 'active', 'player', 'cus_randtest_ogbd6ttgbq0000', 'sub_randtest_po95iw778w9000')
+  VALUES (uuid_generate_v4(), 'randtest.jalen.ramirez.27967@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'jalenramirez3304', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -1597,7 +1597,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.xavier.ramirez.99146@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'xavierramirez9306', 'active', 'player', 'cus_randtest_y33fs7otyq0000', 'sub_randtest_9l36d69fbe7000')
+  VALUES (uuid_generate_v4(), 'randtest.xavier.ramirez.99146@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'xavierramirez9306', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -1632,7 +1632,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.jalen.lewis.56605@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'jalenlewis6015', 'active', 'player', 'cus_randtest_huujzxc14kh000', 'sub_randtest_1epryqvpsui000')
+  VALUES (uuid_generate_v4(), 'randtest.jalen.lewis.56605@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'jalenlewis6015', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -1667,7 +1667,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.ryder.walker.8276@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'ryderwalker9098', 'active', 'player', 'cus_randtest_aopdmekxsmt000', 'sub_randtest_1ez01ikomyh000')
+  VALUES (uuid_generate_v4(), 'randtest.ryder.walker.8276@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'ryderwalker9098', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -1702,7 +1702,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.elijah.mitchell.74873@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'elijahmitchell874', 'active', 'player', 'cus_randtest_wehcj4lhcl0000', 'sub_randtest_hr4c15nd3kt000')
+  VALUES (uuid_generate_v4(), 'randtest.elijah.mitchell.74873@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'elijahmitchell874', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -1737,7 +1737,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.brandon.anderson.1667@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'brandonanderson211', 'active', 'player', 'cus_randtest_fbqedorhja0000', 'sub_randtest_74qmwk1gg26000')
+  VALUES (uuid_generate_v4(), 'randtest.brandon.anderson.1667@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'brandonanderson211', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -1772,7 +1772,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.xavier.wright.65501@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'xavierwright1241', 'active', 'player', 'cus_randtest_jqtt3z2mf2s000', 'sub_randtest_1zlb078u1yk000')
+  VALUES (uuid_generate_v4(), 'randtest.xavier.wright.65501@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'xavierwright1241', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -1807,7 +1807,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.luke.davis.745@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'lukedavis3017', 'active', 'player', 'cus_randtest_je2kfg2ekpe000', 'sub_randtest_pacd29iexbs000')
+  VALUES (uuid_generate_v4(), 'randtest.luke.davis.745@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'lukedavis3017', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -1842,7 +1842,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.marcus.johnson.5988@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'marcusjohnson7689', 'active', 'player', 'cus_randtest_1ffj6hbt1z1000', 'sub_randtest_e0r7fww49g5000')
+  VALUES (uuid_generate_v4(), 'randtest.marcus.johnson.5988@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'marcusjohnson7689', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -1877,7 +1877,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.tyler.wilson.38044@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'tylerwilson3760', 'active', 'player', 'cus_randtest_12jlaff9bcj000', 'sub_randtest_y4gbtllepnr000')
+  VALUES (uuid_generate_v4(), 'randtest.tyler.wilson.38044@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'tylerwilson3760', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -1912,7 +1912,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.mason.wright.25644@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'masonwright7295', 'active', 'player', 'cus_randtest_ekeuz322j1d000', 'sub_randtest_vomfj4wuch0000')
+  VALUES (uuid_generate_v4(), 'randtest.mason.wright.25644@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'masonwright7295', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -1947,7 +1947,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.carter.brown.66654@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'carterbrown205', 'active', 'player', 'cus_randtest_mkkf0bw4mjp000', 'sub_randtest_ilpwuk7yxqa000')
+  VALUES (uuid_generate_v4(), 'randtest.carter.brown.66654@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'carterbrown205', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -1982,7 +1982,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.zane.anderson.71123@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'zaneanderson3586', 'active', 'player', 'cus_randtest_c0wpznr0ie0000', 'sub_randtest_lppwn06lz80000')
+  VALUES (uuid_generate_v4(), 'randtest.zane.anderson.71123@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'zaneanderson3586', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -2017,7 +2017,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.chase.martinez.93851@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'chasemartinez6398', 'active', 'player', 'cus_randtest_1ysv17t8t5n000', 'sub_randtest_js39b7z1fyf000')
+  VALUES (uuid_generate_v4(), 'randtest.chase.martinez.93851@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'chasemartinez6398', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -2052,7 +2052,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.elijah.davis.34179@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'elijahdavis3565', 'active', 'player', 'cus_randtest_1xfidtecez0000', 'sub_randtest_zfujpgy9ibc000')
+  VALUES (uuid_generate_v4(), 'randtest.elijah.davis.34179@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'elijahdavis3565', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -2087,7 +2087,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.austin.harris.65212@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'austinharris4729', 'active', 'player', 'cus_randtest_fulf1udr5t0000', 'sub_randtest_00lym2zm7svk60')
+  VALUES (uuid_generate_v4(), 'randtest.austin.harris.65212@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'austinharris4729', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -2122,7 +2122,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.hunter.campbell.96767@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'huntercampbell8560', 'active', 'player', 'cus_randtest_sxc7fujr5fg000', 'sub_randtest_ogy2zmpsgz0000')
+  VALUES (uuid_generate_v4(), 'randtest.hunter.campbell.96767@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'huntercampbell8560', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -2157,7 +2157,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.carter.young.40396@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'carteryoung8619', 'active', 'player', 'cus_randtest_tu9o9j95g6k000', 'sub_randtest_aixyc3doyhq000')
+  VALUES (uuid_generate_v4(), 'randtest.carter.young.40396@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'carteryoung8619', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -2192,7 +2192,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.jordan.walker.8714@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'jordanwalker9236', 'active', 'player', 'cus_randtest_bd6oiy0ye4a000', 'sub_randtest_78naor5863q000')
+  VALUES (uuid_generate_v4(), 'randtest.jordan.walker.8714@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'jordanwalker9236', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -2227,7 +2227,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.silas.martinez.24644@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'silasmartinez3506', 'active', 'player', 'cus_randtest_yyqy98r47jj000', 'sub_randtest_u394f0qw5fj000')
+  VALUES (uuid_generate_v4(), 'randtest.silas.martinez.24644@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'silasmartinez3506', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -2262,7 +2262,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.xavier.adams.98727@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'xavieradams2009', 'active', 'player', 'cus_randtest_gkrm41zwhjk000', 'sub_randtest_pj025d8ltzr000')
+  VALUES (uuid_generate_v4(), 'randtest.xavier.adams.98727@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'xavieradams2009', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -2297,7 +2297,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.ethan.baker.53894@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'ethanbaker9396', 'active', 'player', 'cus_randtest_4xlv81s7vpo000', 'sub_randtest_x5oidu0ouv0000')
+  VALUES (uuid_generate_v4(), 'randtest.ethan.baker.53894@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'ethanbaker9396', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -2332,7 +2332,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.marcus.reed.58994@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'marcusreed467', 'active', 'player', 'cus_randtest_0ev9gcvqafdj00', 'sub_randtest_yktcrunu75o000')
+  VALUES (uuid_generate_v4(), 'randtest.marcus.reed.58994@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'marcusreed467', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -2367,7 +2367,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.jordan.anderson.70960@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'jordananderson4623', 'active', 'player', 'cus_randtest_zd871pnnztr000', 'sub_randtest_n1qo3irode0000')
+  VALUES (uuid_generate_v4(), 'randtest.jordan.anderson.70960@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'jordananderson4623', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -2402,7 +2402,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.zane.carter.38420@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'zanecarter7902', 'active', 'player', 'cus_randtest_ffbyww2dno4000', 'sub_randtest_xi2o2l47ysa000')
+  VALUES (uuid_generate_v4(), 'randtest.zane.carter.38420@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'zanecarter7902', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -2437,7 +2437,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.owen.mitchell.97099@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'owenmitchell8063', 'active', 'player', 'cus_randtest_63gxxcl8dnk000', 'sub_randtest_mxd2s37upxk000')
+  VALUES (uuid_generate_v4(), 'randtest.owen.mitchell.97099@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'owenmitchell8063', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -2472,7 +2472,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.jake.green.73914@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'jakegreen6371', 'active', 'player', 'cus_randtest_r6394y9prpi000', 'sub_randtest_3dzapeu2oai000')
+  VALUES (uuid_generate_v4(), 'randtest.jake.green.73914@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'jakegreen6371', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -2507,7 +2507,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.owen.wilson.21329@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'owenwilson3238', 'active', 'player', 'cus_randtest_k1er23bz06c000', 'sub_randtest_r6745jb0bz0000')
+  VALUES (uuid_generate_v4(), 'randtest.owen.wilson.21329@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'owenwilson3238', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -2542,7 +2542,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.chase.clark.1392@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'chaseclark7157', 'active', 'player', 'cus_randtest_kv713drvytk000', 'sub_randtest_qqroxrehk20000')
+  VALUES (uuid_generate_v4(), 'randtest.chase.clark.1392@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'chaseclark7157', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -2577,7 +2577,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.caleb.davis.96627@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'calebdavis1917', 'active', 'player', 'cus_randtest_kn5xt8gl93a000', 'sub_randtest_o4u0f059bm0000')
+  VALUES (uuid_generate_v4(), 'randtest.caleb.davis.96627@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'calebdavis1917', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -2603,7 +2603,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.carter.anderson.3303@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'carteranderson7929', 'active', 'player', 'cus_randtest_n5l1vfgo85j000', 'sub_randtest_4ip5ny13hgp000')
+  VALUES (uuid_generate_v4(), 'randtest.carter.anderson.3303@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'carteranderson7929', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -2638,7 +2638,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.zane.king.5063@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'zaneking6414', 'active', 'player', 'cus_randtest_8ux36rt4j43000', 'sub_randtest_bf3fhkgj98l000')
+  VALUES (uuid_generate_v4(), 'randtest.zane.king.5063@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'zaneking6414', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -2673,7 +2673,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.isaiah.young.60317@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'isaiahyoung1705', 'active', 'player', 'cus_randtest_yuuj59yhcl0000', 'sub_randtest_6xex6u2ll0r000')
+  VALUES (uuid_generate_v4(), 'randtest.isaiah.young.60317@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'isaiahyoung1705', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -2708,7 +2708,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.cole.martinez.32686@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'colemartinez8014', 'active', 'player', 'cus_randtest_eiiijf81hfq000', 'sub_randtest_c1r4uwsi5ep000')
+  VALUES (uuid_generate_v4(), 'randtest.cole.martinez.32686@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'colemartinez8014', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -2743,7 +2743,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.devin.thompson.14443@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'devinthompson8836', 'active', 'player', 'cus_randtest_ogkf2qulujn000', 'sub_randtest_6izn4xxhs8c000')
+  VALUES (uuid_generate_v4(), 'randtest.devin.thompson.14443@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'devinthompson8836', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -2778,7 +2778,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.austin.davis.76950@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'austindavis254', 'active', 'player', 'cus_randtest_b3938gyvq4n000', 'sub_randtest_a5iexupfqpa000')
+  VALUES (uuid_generate_v4(), 'randtest.austin.davis.76950@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'austindavis254', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -2813,7 +2813,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.dante.miller.55217@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'dantemiller4916', 'active', 'player', 'cus_randtest_3jfdj4q3cii000', 'sub_randtest_krulk8ih2lm000')
+  VALUES (uuid_generate_v4(), 'randtest.dante.miller.55217@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'dantemiller4916', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -2848,7 +2848,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.mason.lewis.67444@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'masonlewis2326', 'active', 'player', 'cus_randtest_6t7c45y154o000', 'sub_randtest_f6wevvbwnkh000')
+  VALUES (uuid_generate_v4(), 'randtest.mason.lewis.67444@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'masonlewis2326', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -2883,7 +2883,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.jake.anderson.84920@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'jakeanderson2682', 'active', 'player', 'cus_randtest_wdg8gmbe4j0000', 'sub_randtest_oml69yriks0000')
+  VALUES (uuid_generate_v4(), 'randtest.jake.anderson.84920@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'jakeanderson2682', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -2918,7 +2918,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.luke.nelson.88646@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'lukenelson9458', 'active', 'player', 'cus_randtest_a8mfuioy8pk000', 'sub_randtest_tdujgw25mvo000')
+  VALUES (uuid_generate_v4(), 'randtest.luke.nelson.88646@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'lukenelson9458', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -2953,7 +2953,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.blake.scott.57216@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'blakescott174', 'active', 'player', 'cus_randtest_vd1lqxdwvzp000', 'sub_randtest_t6rxucn8on0000')
+  VALUES (uuid_generate_v4(), 'randtest.blake.scott.57216@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'blakescott174', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -2988,7 +2988,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.nolan.harris.71880@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'nolanharris8812', 'active', 'player', 'cus_randtest_5rtf9okkvtg000', 'sub_randtest_26im3xscvjy000')
+  VALUES (uuid_generate_v4(), 'randtest.nolan.harris.71880@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'nolanharris8812', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -3014,7 +3014,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.dante.reed.37273@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'dantereed6354', 'active', 'player', 'cus_randtest_br9kwetmb4a000', 'sub_randtest_ur4udememao000')
+  VALUES (uuid_generate_v4(), 'randtest.dante.reed.37273@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'dantereed6354', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -3049,7 +3049,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.hunter.nelson.99797@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'hunternelson5428', 'active', 'player', 'cus_randtest_8bjj7l0kzk9000', 'sub_randtest_afhwt3p196j000')
+  VALUES (uuid_generate_v4(), 'randtest.hunter.nelson.99797@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'hunternelson5428', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -3084,7 +3084,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.austin.hall.99683@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'austinhall7737', 'active', 'player', 'cus_randtest_oyj6s7bk9em000', 'sub_randtest_fz9wf3q8z2n000')
+  VALUES (uuid_generate_v4(), 'randtest.austin.hall.99683@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'austinhall7737', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -3119,7 +3119,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.elijah.campbell.56863@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'elijahcampbell2613', 'active', 'player', 'cus_randtest_j0wzd0v6nan000', 'sub_randtest_ni6wscwk5h0000')
+  VALUES (uuid_generate_v4(), 'randtest.elijah.campbell.56863@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'elijahcampbell2613', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -3154,7 +3154,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.logan.carter.53968@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'logancarter7180', 'active', 'player', 'cus_randtest_wsgdyykhzir000', 'sub_randtest_u39boyud45g000')
+  VALUES (uuid_generate_v4(), 'randtest.logan.carter.53968@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'logancarter7180', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -3180,7 +3180,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.jordan.johnson.29739@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'jordanjohnson8969', 'active', 'player', 'cus_randtest_g9vg7wuyxxh000', 'sub_randtest_nfrrypypyq0000')
+  VALUES (uuid_generate_v4(), 'randtest.jordan.johnson.29739@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'jordanjohnson8969', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -3215,7 +3215,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.jalen.wilson.26294@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'jalenwilson6609', 'active', 'player', 'cus_randtest_kfsfj9mzf80000', 'sub_randtest_jrf4ur2ygb0000')
+  VALUES (uuid_generate_v4(), 'randtest.jalen.wilson.26294@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'jalenwilson6609', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -3250,7 +3250,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.brandon.hall.1140@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'brandonhall1667', 'active', 'player', 'cus_randtest_a35il3ii4hu000', 'sub_randtest_zctylcodxy0000')
+  VALUES (uuid_generate_v4(), 'randtest.brandon.hall.1140@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'brandonhall1667', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -3276,7 +3276,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.luke.brown.37044@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'lukebrown5358', 'active', 'player', 'cus_randtest_jjtw48764n9000', 'sub_randtest_ctpt9y5cz70000')
+  VALUES (uuid_generate_v4(), 'randtest.luke.brown.37044@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'lukebrown5358', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -3311,7 +3311,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.gavin.ramirez.28789@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'gavinramirez5131', 'active', 'player', 'cus_randtest_00ce6ub275bp00', 'sub_randtest_aeynlbgwna8000')
+  VALUES (uuid_generate_v4(), 'randtest.gavin.ramirez.28789@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'gavinramirez5131', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -3346,7 +3346,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.jalen.williams.961@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'jalenwilliams9530', 'active', 'player', 'cus_randtest_pwilva9ei1k000', 'sub_randtest_8fp1uddx51p000')
+  VALUES (uuid_generate_v4(), 'randtest.jalen.williams.961@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'jalenwilliams9530', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -3381,7 +3381,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.logan.clark.68175@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'loganclark4507', 'active', 'player', 'cus_randtest_zz4ppvy2ohb000', 'sub_randtest_wtwa72wmm3c000')
+  VALUES (uuid_generate_v4(), 'randtest.logan.clark.68175@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'loganclark4507', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -3416,7 +3416,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.devin.parker.75838@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'devinparker5446', 'active', 'player', 'cus_randtest_pth6uhnq4f0000', 'sub_randtest_npf9iyylvz0000')
+  VALUES (uuid_generate_v4(), 'randtest.devin.parker.75838@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'devinparker5446', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -3451,7 +3451,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.hunter.king.83496@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'hunterking6038', 'active', 'player', 'cus_randtest_3ulbt0svmqd000', 'sub_randtest_i8ce10cxdie000')
+  VALUES (uuid_generate_v4(), 'randtest.hunter.king.83496@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'hunterking6038', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -3486,7 +3486,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.carter.harris.79564@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'carterharris1670', 'active', 'player', 'cus_randtest_6yn1v4qjd9c000', 'sub_randtest_wkd5k1cuscc000')
+  VALUES (uuid_generate_v4(), 'randtest.carter.harris.79564@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'carterharris1670', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -3512,7 +3512,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.trey.parker.16953@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'treyparker1928', 'active', 'player', 'cus_randtest_t0du9resqan000', 'sub_randtest_k57070gp0sb000')
+  VALUES (uuid_generate_v4(), 'randtest.trey.parker.16953@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'treyparker1928', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -3547,7 +3547,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.trey.king.36211@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'treyking2243', 'active', 'player', 'cus_randtest_zdjzi9fgvy0000', 'sub_randtest_6p6134tkrrx000')
+  VALUES (uuid_generate_v4(), 'randtest.trey.king.36211@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'treyking2243', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -3582,7 +3582,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.ethan.scott.19660@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'ethanscott7664', 'active', 'player', 'cus_randtest_fns388vsfx9000', 'sub_randtest_xid717rw3p0000')
+  VALUES (uuid_generate_v4(), 'randtest.ethan.scott.19660@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'ethanscott7664', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -3617,7 +3617,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.gavin.carter.56052@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'gavincarter4033', 'active', 'player', 'cus_randtest_nr0kdwthm6i000', 'sub_randtest_c3trwl7wxpb000')
+  VALUES (uuid_generate_v4(), 'randtest.gavin.carter.56052@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'gavincarter4033', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -3652,7 +3652,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.owen.nelson.91496@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'owennelson2371', 'active', 'player', 'cus_randtest_mytlu5pxl7f000', 'sub_randtest_qdmz0cpeje0000')
+  VALUES (uuid_generate_v4(), 'randtest.owen.nelson.91496@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'owennelson2371', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -3687,7 +3687,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.xavier.martinez.79868@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'xaviermartinez945', 'active', 'player', 'cus_randtest_aroy4xwr80r000', 'sub_randtest_dcmphgg08e9000')
+  VALUES (uuid_generate_v4(), 'randtest.xavier.martinez.79868@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'xaviermartinez945', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -3722,7 +3722,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.isaiah.brown.65891@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'isaiahbrown873', 'active', 'player', 'cus_randtest_cwtkkzxqj47000', 'sub_randtest_33qxxbek9xw000')
+  VALUES (uuid_generate_v4(), 'randtest.isaiah.brown.65891@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'isaiahbrown873', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -3757,7 +3757,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.caleb.young.38588@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'calebyoung1882', 'active', 'player', 'cus_randtest_bpvq3b9et7d000', 'sub_randtest_tyrog705lc8000')
+  VALUES (uuid_generate_v4(), 'randtest.caleb.young.38588@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'calebyoung1882', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -3792,7 +3792,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.zane.parker.23503@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'zaneparker1967', 'active', 'player', 'cus_randtest_061jiky2kss000', 'sub_randtest_csn4nz5m4a8000')
+  VALUES (uuid_generate_v4(), 'randtest.zane.parker.23503@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'zaneparker1967', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -3827,7 +3827,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.ethan.harris.75559@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'ethanharris4932', 'active', 'player', 'cus_randtest_5jpub49howp000', 'sub_randtest_1h9andcj0x2000')
+  VALUES (uuid_generate_v4(), 'randtest.ethan.harris.75559@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'ethanharris4932', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -3862,7 +3862,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.austin.baker.15093@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'austinbaker1380', 'active', 'player', 'cus_randtest_guj6gtl9hit000', 'sub_randtest_l4101hm3smm000')
+  VALUES (uuid_generate_v4(), 'randtest.austin.baker.15093@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'austinbaker1380', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -3897,7 +3897,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.chase.wilson.89361@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'chasewilson7254', 'active', 'player', 'cus_randtest_twrn2m58qq9000', 'sub_randtest_mpas09j2h1h000')
+  VALUES (uuid_generate_v4(), 'randtest.chase.wilson.89361@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'chasewilson7254', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -3932,7 +3932,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.logan.brown.69687@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'loganbrown5521', 'active', 'player', 'cus_randtest_ibot2it9qls000', 'sub_randtest_cnpnp4z6mz0000')
+  VALUES (uuid_generate_v4(), 'randtest.logan.brown.69687@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'loganbrown5521', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -3967,7 +3967,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.ryder.ramirez.26051@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'ryderramirez5921', 'active', 'player', 'cus_randtest_rq01my55ti9000', 'sub_randtest_7qriu73m6vm000')
+  VALUES (uuid_generate_v4(), 'randtest.ryder.ramirez.26051@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'ryderramirez5921', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -4002,7 +4002,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.hunter.baker.18068@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'hunterbaker4041', 'active', 'player', 'cus_randtest_u3jx27roxa0000', 'sub_randtest_2tfv2ytswj3000')
+  VALUES (uuid_generate_v4(), 'randtest.hunter.baker.18068@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'hunterbaker4041', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -4028,7 +4028,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.ethan.nelson.40763@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'ethannelson5068', 'active', 'player', 'cus_randtest_8c23zkkybdl000', 'sub_randtest_s39jiep8yeo000')
+  VALUES (uuid_generate_v4(), 'randtest.ethan.nelson.40763@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'ethannelson5068', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -4063,7 +4063,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.silas.harris.57586@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'silasharris6857', 'active', 'player', 'cus_randtest_f8s0an1jh6h000', 'sub_randtest_nzucfbp7mml000')
+  VALUES (uuid_generate_v4(), 'randtest.silas.harris.57586@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'silasharris6857', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -4098,7 +4098,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.brandon.harris.89629@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'brandonharris4748', 'active', 'player', 'cus_randtest_0mctrxo5xxt000', 'sub_randtest_6fkqc50akbb000')
+  VALUES (uuid_generate_v4(), 'randtest.brandon.harris.89629@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'brandonharris4748', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -4133,7 +4133,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.isaiah.young.65499@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'isaiahyoung9547', 'active', 'player', 'cus_randtest_3uit00z1ovj000', 'sub_randtest_pdsfeig9tp0000')
+  VALUES (uuid_generate_v4(), 'randtest.isaiah.young.65499@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'isaiahyoung9547', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -4168,7 +4168,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.brandon.ramirez.32571@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'brandonramirez3315', 'active', 'player', 'cus_randtest_nzw0qpvxx80000', 'sub_randtest_y4kvad6ym28000')
+  VALUES (uuid_generate_v4(), 'randtest.brandon.ramirez.32571@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'brandonramirez3315', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -4203,7 +4203,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.jordan.wright.44425@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'jordanwright9066', 'active', 'player', 'cus_randtest_a9gnyn1amis000', 'sub_randtest_wxwnovflrij000')
+  VALUES (uuid_generate_v4(), 'randtest.jordan.wright.44425@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'jordanwright9066', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -4238,7 +4238,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.jalen.baker.82331@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'jalenbaker7873', 'active', 'player', 'cus_randtest_83yysl3386t000', 'sub_randtest_zp7vpv2e210000')
+  VALUES (uuid_generate_v4(), 'randtest.jalen.baker.82331@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'jalenbaker7873', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -4273,7 +4273,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.cole.campbell.24086@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'colecampbell8156', 'active', 'player', 'cus_randtest_coig6jmdi1b000', 'sub_randtest_p9ylg0l7ym0000')
+  VALUES (uuid_generate_v4(), 'randtest.cole.campbell.24086@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'colecampbell8156', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -4308,7 +4308,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.chase.scott.71275@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'chasescott9201', 'active', 'player', 'cus_randtest_j79gkf2ov3g000', 'sub_randtest_lb9vvyow50a000')
+  VALUES (uuid_generate_v4(), 'randtest.chase.scott.71275@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'chasescott9201', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -4343,7 +4343,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.elijah.scott.53768@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'elijahscott9185', 'active', 'player', 'cus_randtest_w7538cjyp00000', 'sub_randtest_affynt8hziv000')
+  VALUES (uuid_generate_v4(), 'randtest.elijah.scott.53768@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'elijahscott9185', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -4378,7 +4378,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.hunter.harris.43929@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'hunterharris25', 'active', 'player', 'cus_randtest_5xvfou9s5hn000', 'sub_randtest_64wfkbglbte000')
+  VALUES (uuid_generate_v4(), 'randtest.hunter.harris.43929@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'hunterharris25', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -4413,7 +4413,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.xavier.martinez.61276@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'xaviermartinez6532', 'active', 'player', 'cus_randtest_swhwcmgkaro000', 'sub_randtest_08r51rcg9td700')
+  VALUES (uuid_generate_v4(), 'randtest.xavier.martinez.61276@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'xaviermartinez6532', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -4448,7 +4448,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.carter.green.14140@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'cartergreen8878', 'active', 'player', 'cus_randtest_gszq8b4suw0000', 'sub_randtest_l12vwqfu98j000')
+  VALUES (uuid_generate_v4(), 'randtest.carter.green.14140@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'cartergreen8878', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -4483,7 +4483,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.kai.davis.60295@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'kaidavis3093', 'active', 'player', 'cus_randtest_j6awi51ss0h000', 'sub_randtest_s4r56bhn88b000')
+  VALUES (uuid_generate_v4(), 'randtest.kai.davis.60295@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'kaidavis3093', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -4518,7 +4518,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.jordan.parker.7436@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'jordanparker7199', 'active', 'player', 'cus_randtest_qj94rvt3550000', 'sub_randtest_g0hd7bufsuq000')
+  VALUES (uuid_generate_v4(), 'randtest.jordan.parker.7436@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'jordanparker7199', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -4553,7 +4553,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.owen.reed.88307@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'owenreed7582', 'active', 'player', 'cus_randtest_wsl1ljux250000', 'sub_randtest_07257jjnu85i00')
+  VALUES (uuid_generate_v4(), 'randtest.owen.reed.88307@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'owenreed7582', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -4588,7 +4588,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.austin.mitchell.61350@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'austinmitchell2933', 'active', 'player', 'cus_randtest_ahqcwv9qf6c000', 'sub_randtest_kqrcaz1vyjf000')
+  VALUES (uuid_generate_v4(), 'randtest.austin.mitchell.61350@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'austinmitchell2933', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -4623,7 +4623,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.owen.walker.13263@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'owenwalker4097', 'active', 'player', 'cus_randtest_2zh4du43egz000', 'sub_randtest_70uf0pnyx24000')
+  VALUES (uuid_generate_v4(), 'randtest.owen.walker.13263@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'owenwalker4097', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -4658,7 +4658,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.blake.mitchell.4285@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'blakemitchell1746', 'active', 'player', 'cus_randtest_1cpt95w859j000', 'sub_randtest_r7winj8mcue000')
+  VALUES (uuid_generate_v4(), 'randtest.blake.mitchell.4285@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'blakemitchell1746', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -4693,7 +4693,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.devin.king.15782@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'devinking1733', 'active', 'player', 'cus_randtest_e3xanb7xmjm000', 'sub_randtest_a3o3ijnt0ak000')
+  VALUES (uuid_generate_v4(), 'randtest.devin.king.15782@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'devinking1733', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -4728,7 +4728,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.jordan.nelson.54724@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'jordannelson6502', 'active', 'player', 'cus_randtest_y1khq8a8ar0000', 'sub_randtest_uzl1nd0zin0000')
+  VALUES (uuid_generate_v4(), 'randtest.jordan.nelson.54724@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'jordannelson6502', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -4763,7 +4763,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.tyler.parker.24779@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'tylerparker2063', 'active', 'player', 'cus_randtest_oersh9jgmjh000', 'sub_randtest_yc7njk8i2ed000')
+  VALUES (uuid_generate_v4(), 'randtest.tyler.parker.24779@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'tylerparker2063', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -4798,7 +4798,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.hunter.carter.3602@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'huntercarter1764', 'active', 'player', 'cus_randtest_modesbai4xn000', 'sub_randtest_585h4ap2f40000')
+  VALUES (uuid_generate_v4(), 'randtest.hunter.carter.3602@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'huntercarter1764', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -4833,7 +4833,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.silas.campbell.19636@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'silascampbell8559', 'active', 'player', 'cus_randtest_ts93bgm1gan000', 'sub_randtest_ne6ip98bid0000')
+  VALUES (uuid_generate_v4(), 'randtest.silas.campbell.19636@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'silascampbell8559', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -4868,7 +4868,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.elijah.carter.84072@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'elijahcarter5905', 'active', 'player', 'cus_randtest_xqq0qlyua6c000', 'sub_randtest_xriubmr290c000')
+  VALUES (uuid_generate_v4(), 'randtest.elijah.carter.84072@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'elijahcarter5905', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -4903,7 +4903,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.austin.green.12962@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'austingreen7595', 'active', 'player', 'cus_randtest_p2s1ez53tq8000', 'sub_randtest_maobaov6lin000')
+  VALUES (uuid_generate_v4(), 'randtest.austin.green.12962@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'austingreen7595', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -4929,7 +4929,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.mason.williams.10910@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'masonwilliams8756', 'active', 'player', 'cus_randtest_07oib7ow10h600', 'sub_randtest_1vd3yydudmx000')
+  VALUES (uuid_generate_v4(), 'randtest.mason.williams.10910@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'masonwilliams8756', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -4964,7 +4964,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.owen.wilson.13212@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'owenwilson9159', 'active', 'player', 'cus_randtest_dzn54l4yuem000', 'sub_randtest_2vfc0xpl0v4000')
+  VALUES (uuid_generate_v4(), 'randtest.owen.wilson.13212@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'owenwilson9159', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -4999,7 +4999,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.zane.anderson.83800@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'zaneanderson3066', 'active', 'player', 'cus_randtest_5oqzfi7m02v000', 'sub_randtest_4875yv6pmxm000')
+  VALUES (uuid_generate_v4(), 'randtest.zane.anderson.83800@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'zaneanderson3066', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -5034,7 +5034,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.owen.mitchell.99387@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'owenmitchell895', 'active', 'player', 'cus_randtest_k2avjrbi89r000', 'sub_randtest_6hvjf2amqeq000')
+  VALUES (uuid_generate_v4(), 'randtest.owen.mitchell.99387@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'owenmitchell895', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -5069,7 +5069,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.brandon.walker.10657@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'brandonwalker5112', 'active', 'player', 'cus_randtest_tpdg8vgvr0o000', 'sub_randtest_sh1m7y62pun000')
+  VALUES (uuid_generate_v4(), 'randtest.brandon.walker.10657@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'brandonwalker5112', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -5104,7 +5104,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.jordan.parker.75417@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'jordanparker712', 'active', 'player', 'cus_randtest_l686f6zebj0000', 'sub_randtest_1axrhcndg1ri00')
+  VALUES (uuid_generate_v4(), 'randtest.jordan.parker.75417@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'jordanparker712', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -5130,7 +5130,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.austin.johnson.20920@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'austinjohnson4279', 'active', 'player', 'cus_randtest_s7axyrnjrnf000', 'sub_randtest_fet0hdd0zyc000')
+  VALUES (uuid_generate_v4(), 'randtest.austin.johnson.20920@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'austinjohnson4279', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -5165,7 +5165,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.silas.walker.4864@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'silaswalker3137', 'active', 'player', 'cus_randtest_bpesry3qqkq000', 'sub_randtest_y7ihdj6q3bq000')
+  VALUES (uuid_generate_v4(), 'randtest.silas.walker.4864@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'silaswalker3137', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -5200,7 +5200,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.mason.adams.63296@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'masonadams6121', 'active', 'player', 'cus_randtest_tarq7mdawrp000', 'sub_randtest_9e0skj3itjm000')
+  VALUES (uuid_generate_v4(), 'randtest.mason.adams.63296@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'masonadams6121', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -5235,7 +5235,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.tyler.baker.48388@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'tylerbaker8657', 'active', 'player', 'cus_randtest_8ezgihr2u9g000', 'sub_randtest_ykiumj1c8l0000')
+  VALUES (uuid_generate_v4(), 'randtest.tyler.baker.48388@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'tylerbaker8657', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -5270,7 +5270,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.trey.walker.9814@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'treywalker9785', 'active', 'player', 'cus_randtest_nmr10qgvgx0000', 'sub_randtest_nl891ro3bvc000')
+  VALUES (uuid_generate_v4(), 'randtest.trey.walker.9814@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'treywalker9785', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -5305,7 +5305,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.tyler.scott.83112@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'tylerscott6049', 'active', 'player', 'cus_randtest_k0zq457ndg0000', 'sub_randtest_qt1upfmpu4d000')
+  VALUES (uuid_generate_v4(), 'randtest.tyler.scott.83112@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'tylerscott6049', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -5340,7 +5340,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.xavier.campbell.78397@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'xaviercampbell4398', 'active', 'player', 'cus_randtest_jmv0pbkqgs0000', 'sub_randtest_ygn8vg4sfvq000')
+  VALUES (uuid_generate_v4(), 'randtest.xavier.campbell.78397@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'xaviercampbell4398', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -5375,7 +5375,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.gavin.lewis.17757@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'gavinlewis789', 'active', 'player', 'cus_randtest_5wdqhxejae0000', 'sub_randtest_pgjh7j8pgjf000')
+  VALUES (uuid_generate_v4(), 'randtest.gavin.lewis.17757@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'gavinlewis789', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -5410,7 +5410,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.caleb.williams.30808@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'calebwilliams6300', 'active', 'player', 'cus_randtest_j42mgr9ohw0000', 'sub_randtest_yf2ic9h4es0000')
+  VALUES (uuid_generate_v4(), 'randtest.caleb.williams.30808@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'calebwilliams6300', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -5445,7 +5445,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.devin.hill.35682@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'devinhill6900', 'active', 'player', 'cus_randtest_q5gi15e95o0000', 'sub_randtest_83f2rutl0kp000')
+  VALUES (uuid_generate_v4(), 'randtest.devin.hill.35682@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'devinhill6900', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -5480,7 +5480,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.carter.clark.29818@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'carterclark192', 'active', 'player', 'cus_randtest_2445bkm9k0n000', 'sub_randtest_zzrw7h9oqyi000')
+  VALUES (uuid_generate_v4(), 'randtest.carter.clark.29818@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'carterclark192', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -5515,7 +5515,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.luke.wilson.57044@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'lukewilson8419', 'active', 'player', 'cus_randtest_xittr2u8iw0000', 'sub_randtest_nm7c9u6okhi000')
+  VALUES (uuid_generate_v4(), 'randtest.luke.wilson.57044@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'lukewilson8419', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -5550,7 +5550,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.elijah.johnson.28826@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'elijahjohnson3605', 'active', 'player', 'cus_randtest_o5lcbwspi3f000', 'sub_randtest_g3mqpto1ks7000')
+  VALUES (uuid_generate_v4(), 'randtest.elijah.johnson.28826@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'elijahjohnson3605', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -5585,7 +5585,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.logan.johnson.56432@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'loganjohnson7554', 'active', 'player', 'cus_randtest_gytfjk8zdi8000', 'sub_randtest_vhagwqar7mq000')
+  VALUES (uuid_generate_v4(), 'randtest.logan.johnson.56432@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'loganjohnson7554', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -5620,7 +5620,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.jalen.king.44444@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'jalenking8394', 'active', 'player', 'cus_randtest_9o230a03rqo000', 'sub_randtest_7yodht7b0pw000')
+  VALUES (uuid_generate_v4(), 'randtest.jalen.king.44444@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'jalenking8394', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -5655,7 +5655,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.logan.green.93279@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'logangreen3862', 'active', 'player', 'cus_randtest_8jcbwz3j5dv000', 'sub_randtest_kwczdjb4gel000')
+  VALUES (uuid_generate_v4(), 'randtest.logan.green.93279@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'logangreen3862', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -5690,7 +5690,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.caleb.mitchell.88744@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'calebmitchell732', 'active', 'player', 'cus_randtest_06f5xpjwl70000', 'sub_randtest_gp0cg3vuud0000')
+  VALUES (uuid_generate_v4(), 'randtest.caleb.mitchell.88744@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'calebmitchell732', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -5725,7 +5725,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.logan.ramirez.53928@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'loganramirez4350', 'active', 'player', 'cus_randtest_lgfcyt7blu0000', 'sub_randtest_x8smwcch660000')
+  VALUES (uuid_generate_v4(), 'randtest.logan.ramirez.53928@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'loganramirez4350', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -5760,7 +5760,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.silas.campbell.49697@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'silascampbell597', 'active', 'player', 'cus_randtest_jftmm6twnq0000', 'sub_randtest_i3rh6n01uya000')
+  VALUES (uuid_generate_v4(), 'randtest.silas.campbell.49697@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'silascampbell597', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -5795,7 +5795,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.logan.taylor.50331@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'logantaylor7709', 'active', 'player', 'cus_randtest_yyseqsulygi000', 'sub_randtest_b1i1lpgpxw9000')
+  VALUES (uuid_generate_v4(), 'randtest.logan.taylor.50331@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'logantaylor7709', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -5830,7 +5830,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.blake.hall.64124@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'blakehall2381', 'active', 'player', 'cus_randtest_2ix288gdvkx000', 'sub_randtest_3jop3uctdzs000')
+  VALUES (uuid_generate_v4(), 'randtest.blake.hall.64124@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'blakehall2381', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -5865,7 +5865,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.blake.green.57953@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'blakegreen5331', 'active', 'player', 'cus_randtest_apf9pw48425000', 'sub_randtest_jvjsp2tk9c8000')
+  VALUES (uuid_generate_v4(), 'randtest.blake.green.57953@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'blakegreen5331', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -5891,7 +5891,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.xavier.nelson.1128@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'xaviernelson5588', 'active', 'player', 'cus_randtest_hu8rnu5janu000', 'sub_randtest_h57dpvttzdn000')
+  VALUES (uuid_generate_v4(), 'randtest.xavier.nelson.1128@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'xaviernelson5588', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -5926,7 +5926,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.silas.nelson.16557@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'silasnelson9945', 'active', 'player', 'cus_randtest_wjovyiqn99g000', 'sub_randtest_lhtn1zmiip0000')
+  VALUES (uuid_generate_v4(), 'randtest.silas.nelson.16557@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'silasnelson9945', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -5961,7 +5961,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.mason.taylor.86449@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'masontaylor4814', 'active', 'player', 'cus_randtest_bd6h2pufu1q000', 'sub_randtest_9ml499gckro000')
+  VALUES (uuid_generate_v4(), 'randtest.mason.taylor.86449@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'masontaylor4814', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -5996,7 +5996,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.trey.davis.45810@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'treydavis998', 'active', 'player', 'cus_randtest_zp3sj6qq5v0000', 'sub_randtest_mu7sf3dd48m000')
+  VALUES (uuid_generate_v4(), 'randtest.trey.davis.45810@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'treydavis998', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -6031,7 +6031,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.dante.parker.38050@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'danteparker6659', 'active', 'player', 'cus_randtest_yme5p9nm840000', 'sub_randtest_yi228c63d20000')
+  VALUES (uuid_generate_v4(), 'randtest.dante.parker.38050@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'danteparker6659', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -6066,7 +6066,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.hunter.baker.52061@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'hunterbaker4476', 'active', 'player', 'cus_randtest_ld4826o7krl000', 'sub_randtest_gs95peoxt9i000')
+  VALUES (uuid_generate_v4(), 'randtest.hunter.baker.52061@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'hunterbaker4476', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -6092,7 +6092,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.ryder.baker.58863@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'ryderbaker2794', 'active', 'player', 'cus_randtest_8b7vaky2vps000', 'sub_randtest_30uehw6jiv3000')
+  VALUES (uuid_generate_v4(), 'randtest.ryder.baker.58863@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'ryderbaker2794', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -6127,7 +6127,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.devin.taylor.95655@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'devintaylor6812', 'active', 'player', 'cus_randtest_jwohgg6356m000', 'sub_randtest_a0ipfloxcsr000')
+  VALUES (uuid_generate_v4(), 'randtest.devin.taylor.95655@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'devintaylor6812', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -6162,7 +6162,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.owen.martinez.62120@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'owenmartinez2848', 'active', 'player', 'cus_randtest_5o2bgcsc6ws000', 'sub_randtest_7e1v2dvbfb6000')
+  VALUES (uuid_generate_v4(), 'randtest.owen.martinez.62120@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'owenmartinez2848', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -6197,7 +6197,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.tyler.miller.98907@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'tylermiller4350', 'active', 'player', 'cus_randtest_9w9qvwlxjv0000', 'sub_randtest_0c10lyzdl7l000')
+  VALUES (uuid_generate_v4(), 'randtest.tyler.miller.98907@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'tylermiller4350', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -6223,7 +6223,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.jordan.scott.64264@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'jordanscott780', 'active', 'player', 'cus_randtest_vqojntaq1hj000', 'sub_randtest_9vwjqzx41d0000')
+  VALUES (uuid_generate_v4(), 'randtest.jordan.scott.64264@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'jordanscott780', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -6258,7 +6258,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.logan.baker.48607@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'loganbaker4616', 'active', 'player', 'cus_randtest_jlsp6ru96m0000', 'sub_randtest_9hpa5h0mj8m000')
+  VALUES (uuid_generate_v4(), 'randtest.logan.baker.48607@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'loganbaker4616', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -6293,7 +6293,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.marcus.king.22743@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'marcusking9062', 'active', 'player', 'cus_randtest_bridapsabro000', 'sub_randtest_7n9irfgzagr000')
+  VALUES (uuid_generate_v4(), 'randtest.marcus.king.22743@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'marcusking9062', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -6328,7 +6328,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.chase.young.64572@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'chaseyoung5273', 'active', 'player', 'cus_randtest_3qbn94lhutk000', 'sub_randtest_1aqznr5xsu6000')
+  VALUES (uuid_generate_v4(), 'randtest.chase.young.64572@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'chaseyoung5273', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -6363,7 +6363,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.hunter.brown.70235@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'hunterbrown6382', 'active', 'player', 'cus_randtest_uxke17ogsvs000', 'sub_randtest_iqo4mbrwzu0000')
+  VALUES (uuid_generate_v4(), 'randtest.hunter.brown.70235@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'hunterbrown6382', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -6398,7 +6398,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.isaiah.mitchell.68509@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'isaiahmitchell6496', 'active', 'player', 'cus_randtest_xr8kxmalel0000', 'sub_randtest_7l2kzzp3z2a000')
+  VALUES (uuid_generate_v4(), 'randtest.isaiah.mitchell.68509@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'isaiahmitchell6496', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -6433,7 +6433,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.kai.martinez.42957@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'kaimartinez2868', 'active', 'player', 'cus_randtest_udeb50svqqr000', 'sub_randtest_9s1nbm655w0000')
+  VALUES (uuid_generate_v4(), 'randtest.kai.martinez.42957@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'kaimartinez2868', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -6459,7 +6459,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.ethan.parker.12822@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'ethanparker9003', 'active', 'player', 'cus_randtest_9rng6qh0t8f000', 'sub_randtest_v0mhp9w1390000')
+  VALUES (uuid_generate_v4(), 'randtest.ethan.parker.12822@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'ethanparker9003', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -6494,7 +6494,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.zane.lewis.76954@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'zanelewis692', 'active', 'player', 'cus_randtest_ak48vzh9cva000', 'sub_randtest_2xa87c6u55y000')
+  VALUES (uuid_generate_v4(), 'randtest.zane.lewis.76954@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'zanelewis692', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -6529,7 +6529,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.kai.adams.9981@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'kaiadams7908', 'active', 'player', 'cus_randtest_gwpohgxltfe000', 'sub_randtest_8dnqj2pa14l000')
+  VALUES (uuid_generate_v4(), 'randtest.kai.adams.9981@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'kaiadams7908', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -6564,7 +6564,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.brandon.taylor.28263@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'brandontaylor2928', 'active', 'player', 'cus_randtest_0yd51v67qfy900', 'sub_randtest_u6yuf6t9qj8000')
+  VALUES (uuid_generate_v4(), 'randtest.brandon.taylor.28263@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'brandontaylor2928', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -6599,7 +6599,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.brandon.scott.61861@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'brandonscott4118', 'active', 'player', 'cus_randtest_f1deeo0f8bu000', 'sub_randtest_a4imwn4mcba000')
+  VALUES (uuid_generate_v4(), 'randtest.brandon.scott.61861@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'brandonscott4118', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -6634,7 +6634,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.chase.brown.20488@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'chasebrown9994', 'active', 'player', 'cus_randtest_ap5y32pjrj8000', 'sub_randtest_5uhxkblcecg000')
+  VALUES (uuid_generate_v4(), 'randtest.chase.brown.20488@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'chasebrown9994', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -6669,7 +6669,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.chase.mitchell.9479@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'chasemitchell8101', 'active', 'player', 'cus_randtest_vyu5r6hxmtl000', 'sub_randtest_u7xlush35f0000')
+  VALUES (uuid_generate_v4(), 'randtest.chase.mitchell.9479@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'chasemitchell8101', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -6704,7 +6704,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.brandon.harris.15308@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'brandonharris5565', 'active', 'player', 'cus_randtest_gb7c4cno988000', 'sub_randtest_is2qbx4afe0000')
+  VALUES (uuid_generate_v4(), 'randtest.brandon.harris.15308@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'brandonharris5565', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -6739,7 +6739,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.jake.johnson.88512@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'jakejohnson1876', 'active', 'player', 'cus_randtest_nh24icjc940000', 'sub_randtest_o12p8om8uwp000')
+  VALUES (uuid_generate_v4(), 'randtest.jake.johnson.88512@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'jakejohnson1876', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -6774,7 +6774,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.carter.walker.61184@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'carterwalker2085', 'active', 'player', 'cus_randtest_3k6wt3qht4u000', 'sub_randtest_ivomudhp0c0000')
+  VALUES (uuid_generate_v4(), 'randtest.carter.walker.61184@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'carterwalker2085', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -6800,7 +6800,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.hunter.adams.99714@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'hunteradams4659', 'active', 'player', 'cus_randtest_gyqqtjol0i0000', 'sub_randtest_4quch4p03fe000')
+  VALUES (uuid_generate_v4(), 'randtest.hunter.adams.99714@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'hunteradams4659', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -6835,7 +6835,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.austin.johnson.63737@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'austinjohnson7410', 'active', 'player', 'cus_randtest_nk385xx9fmi000', 'sub_randtest_mdhscxr113g000')
+  VALUES (uuid_generate_v4(), 'randtest.austin.johnson.63737@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'austinjohnson7410', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -6870,7 +6870,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.devin.young.54570@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'devinyoung5717', 'active', 'player', 'cus_randtest_b3ozimbyqo6000', 'sub_randtest_rp2wgo5zpdd000')
+  VALUES (uuid_generate_v4(), 'randtest.devin.young.54570@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'devinyoung5717', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -6905,7 +6905,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.hunter.wilson.14597@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'hunterwilson6778', 'active', 'player', 'cus_randtest_ruw4h2e5bul000', 'sub_randtest_qx4zgmtumpr000')
+  VALUES (uuid_generate_v4(), 'randtest.hunter.wilson.14597@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'hunterwilson6778', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -6931,7 +6931,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.xavier.hill.68915@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'xavierhill1459', 'active', 'player', 'cus_randtest_ncuwpkyjjo0000', 'sub_randtest_ikr6pb3bhgn000')
+  VALUES (uuid_generate_v4(), 'randtest.xavier.hill.68915@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'xavierhill1459', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -6966,7 +6966,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.kai.miller.69930@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'kaimiller6152', 'active', 'player', 'cus_randtest_llbdmsk83w0000', 'sub_randtest_yvcsietk49h000')
+  VALUES (uuid_generate_v4(), 'randtest.kai.miller.69930@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'kaimiller6152', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -7001,7 +7001,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.devin.green.21915@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'devingreen7641', 'active', 'player', 'cus_randtest_wuuah6x02wc000', 'sub_randtest_ukc7d5vauu0000')
+  VALUES (uuid_generate_v4(), 'randtest.devin.green.21915@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'devingreen7641', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -7027,7 +7027,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.hunter.lewis.90037@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'hunterlewis9326', 'active', 'player', 'cus_randtest_tz9votpmck0000', 'sub_randtest_fmumyv82br0000')
+  VALUES (uuid_generate_v4(), 'randtest.hunter.lewis.90037@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'hunterlewis9326', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -7062,7 +7062,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.gavin.mitchell.78674@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'gavinmitchell9504', 'active', 'player', 'cus_randtest_a4wqcmzlz7d000', 'sub_randtest_gjraz9jtnxh000')
+  VALUES (uuid_generate_v4(), 'randtest.gavin.mitchell.78674@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'gavinmitchell9504', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -7088,7 +7088,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.brandon.davis.25454@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'brandondavis958', 'active', 'player', 'cus_randtest_wl202b1lzza000', 'sub_randtest_idx05lvxhqs000')
+  VALUES (uuid_generate_v4(), 'randtest.brandon.davis.25454@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'brandondavis958', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -7123,7 +7123,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.austin.young.80099@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'austinyoung2174', 'active', 'player', 'cus_randtest_eesiiivsr1p000', 'sub_randtest_j8o52imdokk000')
+  VALUES (uuid_generate_v4(), 'randtest.austin.young.80099@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'austinyoung2174', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -7158,7 +7158,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.gavin.anderson.96200@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'gavinanderson6644', 'active', 'player', 'cus_randtest_3536x3cy9d0000', 'sub_randtest_zk67uykoden000')
+  VALUES (uuid_generate_v4(), 'randtest.gavin.anderson.96200@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'gavinanderson6644', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -7193,7 +7193,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.nolan.green.14767@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'nolangreen9266', 'active', 'player', 'cus_randtest_17upxfdyczm000', 'sub_randtest_qk05wmbt6gd000')
+  VALUES (uuid_generate_v4(), 'randtest.nolan.green.14767@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'nolangreen9266', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -7228,7 +7228,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.brandon.parker.16733@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'brandonparker7627', 'active', 'player', 'cus_randtest_yth6ntz6qni000', 'sub_randtest_nrlvtsw2z80000')
+  VALUES (uuid_generate_v4(), 'randtest.brandon.parker.16733@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'brandonparker7627', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -7254,7 +7254,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.dante.wilson.22695@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'dantewilson6321', 'active', 'player', 'cus_randtest_8647xhdt9p8000', 'sub_randtest_du3pxwt8zjp000')
+  VALUES (uuid_generate_v4(), 'randtest.dante.wilson.22695@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'dantewilson6321', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -7289,7 +7289,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.blake.martinez.82723@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'blakemartinez1007', 'active', 'player', 'cus_randtest_lt5jyged94q000', 'sub_randtest_egfm3afdaca000')
+  VALUES (uuid_generate_v4(), 'randtest.blake.martinez.82723@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'blakemartinez1007', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -7324,7 +7324,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.austin.taylor.47320@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'austintaylor5830', 'active', 'player', 'cus_randtest_zepokphu00b000', 'sub_randtest_g2sm4tw676s000')
+  VALUES (uuid_generate_v4(), 'randtest.austin.taylor.47320@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'austintaylor5830', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -7350,7 +7350,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.marcus.young.82187@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'marcusyoung9914', 'active', 'player', 'cus_randtest_p9l9ceww1m0000', 'sub_randtest_0cpwj084dbrs00')
+  VALUES (uuid_generate_v4(), 'randtest.marcus.young.82187@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'marcusyoung9914', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -7385,7 +7385,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.owen.hall.27537@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'owenhall3495', 'active', 'player', 'cus_randtest_7z0okr9ebei000', 'sub_randtest_i9o6vzkrq2a000')
+  VALUES (uuid_generate_v4(), 'randtest.owen.hall.27537@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'owenhall3495', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -7420,7 +7420,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.owen.anderson.33194@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'owenanderson2807', 'active', 'player', 'cus_randtest_bskehwd75k5000', 'sub_randtest_s2k3jkb0720000')
+  VALUES (uuid_generate_v4(), 'randtest.owen.anderson.33194@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'owenanderson2807', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -7455,7 +7455,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.jordan.wilson.68050@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'jordanwilson5628', 'active', 'player', 'cus_randtest_8g4ued6te84000', 'sub_randtest_lonzjhncis0000')
+  VALUES (uuid_generate_v4(), 'randtest.jordan.wilson.68050@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'jordanwilson5628', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -7490,7 +7490,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.ryder.lewis.15072@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'ryderlewis6505', 'active', 'player', 'cus_randtest_wluhl3zt7hl000', 'sub_randtest_dyp1xy1liju000')
+  VALUES (uuid_generate_v4(), 'randtest.ryder.lewis.15072@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'ryderlewis6505', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -7525,7 +7525,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.kai.thompson.24964@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'kaithompson4172', 'active', 'player', 'cus_randtest_ybxfpb4zwfj000', 'sub_randtest_vyo7q7jb8k0000')
+  VALUES (uuid_generate_v4(), 'randtest.kai.thompson.24964@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'kaithompson4172', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -7551,7 +7551,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.zane.scott.47228@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'zanescott8778', 'active', 'player', 'cus_randtest_mhdrurexaqq000', 'sub_randtest_c8ki15abmpw000')
+  VALUES (uuid_generate_v4(), 'randtest.zane.scott.47228@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'zanescott8778', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -7586,7 +7586,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.gavin.parker.32498@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'gavinparker2557', 'active', 'player', 'cus_randtest_6v2mcfx91s0000', 'sub_randtest_46k9wg53kb3000')
+  VALUES (uuid_generate_v4(), 'randtest.gavin.parker.32498@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'gavinparker2557', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -7621,7 +7621,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.mason.hall.13604@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'masonhall4234', 'active', 'player', 'cus_randtest_cezaoms48yr000', 'sub_randtest_34orn2ci0qu000')
+  VALUES (uuid_generate_v4(), 'randtest.mason.hall.13604@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'masonhall4234', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -7656,7 +7656,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.owen.brown.24690@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'owenbrown8325', 'active', 'player', 'cus_randtest_2zmo59r2211000', 'sub_randtest_74sfa6a1dut000')
+  VALUES (uuid_generate_v4(), 'randtest.owen.brown.24690@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'owenbrown8325', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -7682,7 +7682,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.hunter.scott.98089@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'hunterscott6482', 'active', 'player', 'cus_randtest_oi80gh1gog0000', 'sub_randtest_m5w4hahxygp000')
+  VALUES (uuid_generate_v4(), 'randtest.hunter.scott.98089@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'hunterscott6482', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -7717,7 +7717,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.zane.parker.42387@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'zaneparker6356', 'active', 'player', 'cus_randtest_3y7jxcd89wc000', 'sub_randtest_phfjqig5w80000')
+  VALUES (uuid_generate_v4(), 'randtest.zane.parker.42387@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'zaneparker6356', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -7752,7 +7752,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.austin.mitchell.84964@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'austinmitchell9023', 'active', 'player', 'cus_randtest_2h9bab3ujn0000', 'sub_randtest_bimkz668640000')
+  VALUES (uuid_generate_v4(), 'randtest.austin.mitchell.84964@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'austinmitchell9023', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -7778,7 +7778,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.owen.young.47432@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'owenyoung1832', 'active', 'player', 'cus_randtest_l2rr9hao4er000', 'sub_randtest_hk0bqr5x8bl000')
+  VALUES (uuid_generate_v4(), 'randtest.owen.young.47432@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'owenyoung1832', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -7813,7 +7813,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.xavier.martinez.92564@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'xaviermartinez7516', 'active', 'player', 'cus_randtest_oiy9h84i2yg000', 'sub_randtest_865w6j3hwgg000')
+  VALUES (uuid_generate_v4(), 'randtest.xavier.martinez.92564@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'xaviermartinez7516', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -7848,7 +7848,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.marcus.hill.86830@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'marcushill7126', 'active', 'player', 'cus_randtest_f6vauepr1y0000', 'sub_randtest_bnahjrrex9j000')
+  VALUES (uuid_generate_v4(), 'randtest.marcus.hill.86830@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'marcushill7126', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -7883,7 +7883,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.hunter.davis.41633@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'hunterdavis8232', 'active', 'player', 'cus_randtest_kp62vx9pvte000', 'sub_randtest_14i84uteyin000')
+  VALUES (uuid_generate_v4(), 'randtest.hunter.davis.41633@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'hunterdavis8232', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -7918,7 +7918,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.nolan.green.93678@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'nolangreen7144', 'active', 'player', 'cus_randtest_wger4wx8du0000', 'sub_randtest_gxqasmae0aa000')
+  VALUES (uuid_generate_v4(), 'randtest.nolan.green.93678@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'nolangreen7144', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -7953,7 +7953,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.isaiah.walker.73634@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'isaiahwalker1384', 'active', 'player', 'cus_randtest_larax266gla000', 'sub_randtest_91iasn11yd6000')
+  VALUES (uuid_generate_v4(), 'randtest.isaiah.walker.73634@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'isaiahwalker1384', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -7988,7 +7988,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.owen.green.10530@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'owengreen9920', 'active', 'player', 'cus_randtest_lual7817hi0000', 'sub_randtest_i7c4j5dvy5k000')
+  VALUES (uuid_generate_v4(), 'randtest.owen.green.10530@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'owengreen9920', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -8023,7 +8023,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.elijah.johnson.31466@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'elijahjohnson9723', 'active', 'player', 'cus_randtest_ly3ek0ftl2c000', 'sub_randtest_is0jhf84qbq000')
+  VALUES (uuid_generate_v4(), 'randtest.elijah.johnson.31466@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'elijahjohnson9723', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -8058,7 +8058,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.devin.hall.11960@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'devinhall3715', 'active', 'player', 'cus_randtest_b1d7tk8tmlv000', 'sub_randtest_o3jan28r2w0000')
+  VALUES (uuid_generate_v4(), 'randtest.devin.hall.11960@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'devinhall3715', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -8093,7 +8093,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.isaiah.wright.72669@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'isaiahwright264', 'active', 'player', 'cus_randtest_p22wvnheqf0000', 'sub_randtest_rnel4tohakr000')
+  VALUES (uuid_generate_v4(), 'randtest.isaiah.wright.72669@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'isaiahwright264', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -8128,7 +8128,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.jalen.green.51396@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'jalengreen1888', 'active', 'player', 'cus_randtest_ww09nj7va9g000', 'sub_randtest_v51as3dt4c0000')
+  VALUES (uuid_generate_v4(), 'randtest.jalen.green.51396@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'jalengreen1888', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -8154,7 +8154,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.jalen.williams.77124@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'jalenwilliams8744', 'active', 'player', 'cus_randtest_1xs98c2gkdg000', 'sub_randtest_hpnajmlilhg000')
+  VALUES (uuid_generate_v4(), 'randtest.jalen.williams.77124@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'jalenwilliams8744', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -8189,7 +8189,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.luke.clark.59512@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'lukeclark2604', 'active', 'player', 'cus_randtest_3kqxitilyxb000', 'sub_randtest_f4z4wdzg4w0000')
+  VALUES (uuid_generate_v4(), 'randtest.luke.clark.59512@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'lukeclark2604', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -8224,7 +8224,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.jake.martinez.43614@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'jakemartinez2537', 'active', 'player', 'cus_randtest_p8kyz63onyi000', 'sub_randtest_tzw6yl78xlf000')
+  VALUES (uuid_generate_v4(), 'randtest.jake.martinez.43614@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'jakemartinez2537', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -8259,7 +8259,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.isaiah.johnson.31423@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'isaiahjohnson9444', 'active', 'player', 'cus_randtest_cx1ih31utb7000', 'sub_randtest_gt32rjoh4rs000')
+  VALUES (uuid_generate_v4(), 'randtest.isaiah.johnson.31423@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'isaiahjohnson9444', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -8294,7 +8294,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.ryder.green.78744@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'rydergreen7707', 'active', 'player', 'cus_randtest_v6381wr8ujb000', 'sub_randtest_y3xvs9n7x4k000')
+  VALUES (uuid_generate_v4(), 'randtest.ryder.green.78744@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'rydergreen7707', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -8320,7 +8320,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.austin.williams.47013@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'austinwilliams4810', 'active', 'player', 'cus_randtest_10kcj4ioa92f00', 'sub_randtest_5prkr8vpuc0000')
+  VALUES (uuid_generate_v4(), 'randtest.austin.williams.47013@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'austinwilliams4810', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -8355,7 +8355,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.ryder.parker.37038@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'ryderparker9251', 'active', 'player', 'cus_randtest_sy9ogxdpzjg000', 'sub_randtest_069ew9702lgx00')
+  VALUES (uuid_generate_v4(), 'randtest.ryder.parker.37038@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'ryderparker9251', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -8390,7 +8390,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.ryder.anderson.20868@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'ryderanderson6853', 'active', 'player', 'cus_randtest_23vuwrsrjzn000', 'sub_randtest_lbkj2zob6g0000')
+  VALUES (uuid_generate_v4(), 'randtest.ryder.anderson.20868@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'ryderanderson6853', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -8425,7 +8425,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.ethan.reed.19415@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'ethanreed2429', 'active', 'player', 'cus_randtest_y4bckph6w30000', 'sub_randtest_e2kimgo7jwg000')
+  VALUES (uuid_generate_v4(), 'randtest.ethan.reed.19415@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'ethanreed2429', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -8460,7 +8460,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.chase.young.32608@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'chaseyoung4020', 'active', 'player', 'cus_randtest_i3znfadtfkc000', 'sub_randtest_0ucewsnub9d000')
+  VALUES (uuid_generate_v4(), 'randtest.chase.young.32608@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'chaseyoung4020', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -8495,7 +8495,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.kai.campbell.83164@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'kaicampbell5723', 'active', 'player', 'cus_randtest_6ln5o25fpcn000', 'sub_randtest_dxudebzop1k000')
+  VALUES (uuid_generate_v4(), 'randtest.kai.campbell.83164@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'kaicampbell5723', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -8530,7 +8530,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.owen.walker.77825@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'owenwalker9004', 'active', 'player', 'cus_randtest_uj2ze9djzmj000', 'sub_randtest_bmyn9u7g6x6000')
+  VALUES (uuid_generate_v4(), 'randtest.owen.walker.77825@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'owenwalker9004', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -8565,7 +8565,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.hunter.carter.83997@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'huntercarter7179', 'active', 'player', 'cus_randtest_4b4g1vtz3sl000', 'sub_randtest_q0s1zrf9k60000')
+  VALUES (uuid_generate_v4(), 'randtest.hunter.carter.83997@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'huntercarter7179', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -8600,7 +8600,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.nolan.parker.99742@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'nolanparker2068', 'active', 'player', 'cus_randtest_zfqdyecfl49000', 'sub_randtest_4c8t7eufrve000')
+  VALUES (uuid_generate_v4(), 'randtest.nolan.parker.99742@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'nolanparker2068', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -8635,7 +8635,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.blake.hall.38518@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'blakehall1949', 'active', 'player', 'cus_randtest_xdrb5n7vjhl000', 'sub_randtest_a4yt8ymgj0f000')
+  VALUES (uuid_generate_v4(), 'randtest.blake.hall.38518@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'blakehall1949', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -8670,7 +8670,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.caleb.adams.20045@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'calebadams2511', 'active', 'player', 'cus_randtest_9tctzw7t4ws000', 'sub_randtest_odugpd0tlhq000')
+  VALUES (uuid_generate_v4(), 'randtest.caleb.adams.20045@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'calebadams2511', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -8705,7 +8705,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.jordan.campbell.74878@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'jordancampbell5885', 'active', 'player', 'cus_randtest_z4qkhlq6oed000', 'sub_randtest_e84tr2tinwe000')
+  VALUES (uuid_generate_v4(), 'randtest.jordan.campbell.74878@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'jordancampbell5885', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -8740,7 +8740,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.zane.campbell.73169@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'zanecampbell4105', 'active', 'player', 'cus_randtest_v46ct66wz30000', 'sub_randtest_bhhpa59wo6t000')
+  VALUES (uuid_generate_v4(), 'randtest.zane.campbell.73169@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'zanecampbell4105', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -8775,7 +8775,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.luke.adams.27377@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'lukeadams2740', 'active', 'player', 'cus_randtest_00lzu4s0tk9qs0', 'sub_randtest_z3zxz4jp7bp000')
+  VALUES (uuid_generate_v4(), 'randtest.luke.adams.27377@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'lukeadams2740', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -8810,7 +8810,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.marcus.brown.96136@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'marcusbrown5956', 'active', 'player', 'cus_randtest_lihmw5p78r0000', 'sub_randtest_bmjupj8zyzt000')
+  VALUES (uuid_generate_v4(), 'randtest.marcus.brown.96136@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'marcusbrown5956', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -8845,7 +8845,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.devin.wright.43281@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'devinwright3444', 'active', 'player', 'cus_randtest_gfaznv4hdtc000', 'sub_randtest_39wg5utfmwm000')
+  VALUES (uuid_generate_v4(), 'randtest.devin.wright.43281@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'devinwright3444', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -8880,7 +8880,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.austin.miller.47377@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'austinmiller4885', 'active', 'player', 'cus_randtest_7tu2jnc1u7w000', 'sub_randtest_qbdqriltzo0000')
+  VALUES (uuid_generate_v4(), 'randtest.austin.miller.47377@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'austinmiller4885', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -8915,7 +8915,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.trey.ramirez.49534@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'treyramirez1116', 'active', 'player', 'cus_randtest_l2zahrltp40000', 'sub_randtest_ocau3nof3x0000')
+  VALUES (uuid_generate_v4(), 'randtest.trey.ramirez.49534@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'treyramirez1116', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -8950,7 +8950,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.hunter.ramirez.98378@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'hunterramirez8344', 'active', 'player', 'cus_randtest_qmor9dsogma000', 'sub_randtest_pgq5kcmi7m0000')
+  VALUES (uuid_generate_v4(), 'randtest.hunter.ramirez.98378@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'hunterramirez8344', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -8985,7 +8985,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.silas.harris.78954@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'silasharris7716', 'active', 'player', 'cus_randtest_0thfbcxugud000', 'sub_randtest_7ntdn7tg37n000')
+  VALUES (uuid_generate_v4(), 'randtest.silas.harris.78954@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'silasharris7716', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -9011,7 +9011,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.zane.campbell.21714@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'zanecampbell9291', 'active', 'player', 'cus_randtest_6ombsmxps1a000', 'sub_randtest_b6238fr0u2h000')
+  VALUES (uuid_generate_v4(), 'randtest.zane.campbell.21714@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'zanecampbell9291', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -9046,7 +9046,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.blake.harris.73374@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'blakeharris5430', 'active', 'player', 'cus_randtest_18e1uzzoo67000', 'sub_randtest_7fvplzglw92000')
+  VALUES (uuid_generate_v4(), 'randtest.blake.harris.73374@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'blakeharris5430', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -9081,7 +9081,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.luke.carter.5952@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'lukecarter9994', 'active', 'player', 'cus_randtest_8pvkoeqz4m0000', 'sub_randtest_8y0qsjx3amh000')
+  VALUES (uuid_generate_v4(), 'randtest.luke.carter.5952@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'lukecarter9994', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -9116,7 +9116,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.mason.king.47662@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'masonking3204', 'active', 'player', 'cus_randtest_abovja0u7zq000', 'sub_randtest_qa3eruu41n0000')
+  VALUES (uuid_generate_v4(), 'randtest.mason.king.47662@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'masonking3204', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -9151,7 +9151,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.owen.johnson.20258@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'owenjohnson1660', 'active', 'player', 'cus_randtest_7of3beuz3qq000', 'sub_randtest_dqen8ubfdur000')
+  VALUES (uuid_generate_v4(), 'randtest.owen.johnson.20258@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'owenjohnson1660', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -9186,7 +9186,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.tyler.walker.6031@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'tylerwalker5721', 'active', 'player', 'cus_randtest_jrre44aw2h0000', 'sub_randtest_sq3m8ue92rn000')
+  VALUES (uuid_generate_v4(), 'randtest.tyler.walker.6031@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'tylerwalker5721', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -9221,7 +9221,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.tyler.parker.94840@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'tylerparker6933', 'active', 'player', 'cus_randtest_ma4azrgsno0000', 'sub_randtest_9uul8zedjw0000')
+  VALUES (uuid_generate_v4(), 'randtest.tyler.parker.94840@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'tylerparker6933', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -9247,7 +9247,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.marcus.wright.17603@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'marcuswright1314', 'active', 'player', 'cus_randtest_q4hglxr2q30000', 'sub_randtest_k60qpgm5520000')
+  VALUES (uuid_generate_v4(), 'randtest.marcus.wright.17603@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'marcuswright1314', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -9282,7 +9282,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.jalen.hill.46908@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'jalenhill1188', 'active', 'player', 'cus_randtest_rpqq6pntpf0000', 'sub_randtest_ghvud643gfw000')
+  VALUES (uuid_generate_v4(), 'randtest.jalen.hill.46908@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'jalenhill1188', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -9317,7 +9317,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.devin.parker.93262@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'devinparker619', 'active', 'player', 'cus_randtest_3c6m9jd30tx000', 'sub_randtest_v8vmwj4wlif000')
+  VALUES (uuid_generate_v4(), 'randtest.devin.parker.93262@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'devinparker619', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -9352,7 +9352,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.trey.brown.12505@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'treybrown6742', 'active', 'player', 'cus_randtest_h9lb0sdcyhb000', 'sub_randtest_7e1rudwdf65000')
+  VALUES (uuid_generate_v4(), 'randtest.trey.brown.12505@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'treybrown6742', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -9387,7 +9387,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.cole.hill.27275@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'colehill8807', 'active', 'player', 'cus_randtest_2ah4oiu6eys000', 'sub_randtest_ela4hmj68a0000')
+  VALUES (uuid_generate_v4(), 'randtest.cole.hill.27275@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'colehill8807', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -9413,7 +9413,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.trey.anderson.48198@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'treyanderson7886', 'active', 'player', 'cus_randtest_4wqn2ayxqpo000', 'sub_randtest_kchno8xkgah000')
+  VALUES (uuid_generate_v4(), 'randtest.trey.anderson.48198@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'treyanderson7886', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -9439,7 +9439,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.devin.anderson.29032@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'devinanderson5613', 'active', 'player', 'cus_randtest_rqbpl02a950000', 'sub_randtest_bpa6iw8bdav000')
+  VALUES (uuid_generate_v4(), 'randtest.devin.anderson.29032@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'devinanderson5613', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -9474,7 +9474,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.ryder.nelson.82620@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'rydernelson6058', 'active', 'player', 'cus_randtest_sixcdb4uku0000', 'sub_randtest_k8zgx3j5c70000')
+  VALUES (uuid_generate_v4(), 'randtest.ryder.nelson.82620@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'rydernelson6058', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -9509,7 +9509,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.zane.walker.27544@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'zanewalker6191', 'active', 'player', 'cus_randtest_57ysn8ive86000', 'sub_randtest_0tzviyvcvnw000')
+  VALUES (uuid_generate_v4(), 'randtest.zane.walker.27544@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'zanewalker6191', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -9544,7 +9544,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.jake.mitchell.31817@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'jakemitchell9818', 'active', 'player', 'cus_randtest_iau0rnjgmm0000', 'sub_randtest_b6h7z2dlgeq000')
+  VALUES (uuid_generate_v4(), 'randtest.jake.mitchell.31817@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'jakemitchell9818', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -9579,7 +9579,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.jordan.green.85774@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'jordangreen7031', 'active', 'player', 'cus_randtest_v4erl04v4zg000', 'sub_randtest_4os3ttdqla9000')
+  VALUES (uuid_generate_v4(), 'randtest.jordan.green.85774@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'jordangreen7031', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -9614,7 +9614,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.carter.scott.58946@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'carterscott6229', 'active', 'player', 'cus_randtest_e77irz409p0000', 'sub_randtest_tljc46gx3r8000')
+  VALUES (uuid_generate_v4(), 'randtest.carter.scott.58946@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'carterscott6229', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -9640,7 +9640,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.xavier.ramirez.32989@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'xavierramirez5696', 'active', 'player', 'cus_randtest_e7xv83lt4zv000', 'sub_randtest_e2qvv6i1i7n000')
+  VALUES (uuid_generate_v4(), 'randtest.xavier.ramirez.32989@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'xavierramirez5696', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -9675,7 +9675,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.trey.walker.71020@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'treywalker8799', 'active', 'player', 'cus_randtest_1wsnsjm0cwp000', 'sub_randtest_c0bckjfduu0000')
+  VALUES (uuid_generate_v4(), 'randtest.trey.walker.71020@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'treywalker8799', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -9710,7 +9710,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.mason.mitchell.659@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'masonmitchell8043', 'active', 'player', 'cus_randtest_ugfwtlx10xe000', 'sub_randtest_n79vccdya70000')
+  VALUES (uuid_generate_v4(), 'randtest.mason.mitchell.659@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'masonmitchell8043', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -9745,7 +9745,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.devin.davis.58199@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'devindavis656', 'active', 'player', 'cus_randtest_gckuutoi4up000', 'sub_randtest_njmomraofhj000')
+  VALUES (uuid_generate_v4(), 'randtest.devin.davis.58199@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'devindavis656', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -9780,7 +9780,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.ryder.wright.56711@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'ryderwright3219', 'active', 'player', 'cus_randtest_d4zv4cz2h7a000', 'sub_randtest_k89kvbcs410000')
+  VALUES (uuid_generate_v4(), 'randtest.ryder.wright.56711@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'ryderwright3219', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -9815,7 +9815,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.jordan.wilson.18526@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'jordanwilson4223', 'active', 'player', 'cus_randtest_xmnotv3aj1d000', 'sub_randtest_chqew4eytxw000')
+  VALUES (uuid_generate_v4(), 'randtest.jordan.wilson.18526@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'jordanwilson4223', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -9850,7 +9850,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.caleb.davis.41981@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'calebdavis9253', 'active', 'player', 'cus_randtest_bxwmbkle2cm000', 'sub_randtest_xhbwnt4azp7000')
+  VALUES (uuid_generate_v4(), 'randtest.caleb.davis.41981@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'calebdavis9253', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -9885,7 +9885,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.dante.taylor.67474@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'dantetaylor2407', 'active', 'player', 'cus_randtest_hm6961u7209000', 'sub_randtest_bqtmhh3teao000')
+  VALUES (uuid_generate_v4(), 'randtest.dante.taylor.67474@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'dantetaylor2407', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -9911,7 +9911,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.owen.young.76464@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'owenyoung2397', 'active', 'player', 'cus_randtest_et5gsvzdfxg000', 'sub_randtest_w4fs8g1nrk0000')
+  VALUES (uuid_generate_v4(), 'randtest.owen.young.76464@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'owenyoung2397', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -9937,7 +9937,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.dante.lewis.79804@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'dantelewis6103', 'active', 'player', 'cus_randtest_mc1utz1ukq0000', 'sub_randtest_cb3os0kmi5s000')
+  VALUES (uuid_generate_v4(), 'randtest.dante.lewis.79804@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'dantelewis6103', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -9972,7 +9972,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.isaiah.green.77906@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'isaiahgreen903', 'active', 'player', 'cus_randtest_bsnie6b3ib6000', 'sub_randtest_4pwp3rxh4h4000')
+  VALUES (uuid_generate_v4(), 'randtest.isaiah.green.77906@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'isaiahgreen903', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -10007,7 +10007,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.xavier.taylor.65111@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'xaviertaylor6212', 'active', 'player', 'cus_randtest_u9vs7dkba3o000', 'sub_randtest_fbcvbsl0ksq000')
+  VALUES (uuid_generate_v4(), 'randtest.xavier.taylor.65111@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'xaviertaylor6212', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -10033,7 +10033,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.devin.parker.11713@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'devinparker5399', 'active', 'player', 'cus_randtest_c806c1jlgta000', 'sub_randtest_e4xw3oiykyg000')
+  VALUES (uuid_generate_v4(), 'randtest.devin.parker.11713@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'devinparker5399', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -10068,7 +10068,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.ethan.wilson.96850@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'ethanwilson1180', 'active', 'player', 'cus_randtest_6dg4rq9jd5u000', 'sub_randtest_z61i9h6uiqb000')
+  VALUES (uuid_generate_v4(), 'randtest.ethan.wilson.96850@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'ethanwilson1180', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -10103,7 +10103,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.zane.green.26897@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'zanegreen4799', 'active', 'player', 'cus_randtest_qf4cl1ajqe0000', 'sub_randtest_l18xjhmj1d0000')
+  VALUES (uuid_generate_v4(), 'randtest.zane.green.26897@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'zanegreen4799', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -10138,7 +10138,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.devin.reed.20017@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'devinreed7682', 'active', 'player', 'cus_randtest_i7johgujv80000', 'sub_randtest_6kvylhhsv9s000')
+  VALUES (uuid_generate_v4(), 'randtest.devin.reed.20017@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'devinreed7682', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -10173,7 +10173,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.blake.harris.62585@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'blakeharris5744', 'active', 'player', 'cus_randtest_8b89lni3rtj000', 'sub_randtest_7d2kva12ko4000')
+  VALUES (uuid_generate_v4(), 'randtest.blake.harris.62585@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'blakeharris5744', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -10208,7 +10208,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.jordan.king.26069@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'jordanking7770', 'active', 'player', 'cus_randtest_4i6cs0nkyi8000', 'sub_randtest_eu21jwsa0kq000')
+  VALUES (uuid_generate_v4(), 'randtest.jordan.king.26069@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'jordanking7770', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -10243,7 +10243,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.devin.reed.10150@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'devinreed225', 'active', 'player', 'cus_randtest_r2pim9wpr9l000', 'sub_randtest_o92sn3wimx8000')
+  VALUES (uuid_generate_v4(), 'randtest.devin.reed.10150@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'devinreed225', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -10278,7 +10278,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.gavin.thompson.39294@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'gavinthompson6150', 'active', 'player', 'cus_randtest_hsbzygnvmna000', 'sub_randtest_4pqw12gmn2j000')
+  VALUES (uuid_generate_v4(), 'randtest.gavin.thompson.39294@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'gavinthompson6150', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -10313,7 +10313,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.jordan.carter.30939@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'jordancarter8138', 'active', 'player', 'cus_randtest_gz2hlzsoqec000', 'sub_randtest_7f6hlt584dv000')
+  VALUES (uuid_generate_v4(), 'randtest.jordan.carter.30939@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'jordancarter8138', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -10348,7 +10348,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.devin.lewis.8166@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'devinlewis3382', 'active', 'player', 'cus_randtest_xqiqyrjm7a0000', 'sub_randtest_0jcjpyyq3jh500')
+  VALUES (uuid_generate_v4(), 'randtest.devin.lewis.8166@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'devinlewis3382', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -10383,7 +10383,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.kai.reed.13671@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'kaireed76', 'active', 'player', 'cus_randtest_7a1o5u5k99r000', 'sub_randtest_9tp3r31aqbg000')
+  VALUES (uuid_generate_v4(), 'randtest.kai.reed.13671@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'kaireed76', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -10418,7 +10418,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.nolan.davis.10812@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'nolandavis494', 'active', 'player', 'cus_randtest_d3tvjeeka3u000', 'sub_randtest_1s2kc18ieo6000')
+  VALUES (uuid_generate_v4(), 'randtest.nolan.davis.10812@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'nolandavis494', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -10453,7 +10453,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.isaiah.king.62040@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'isaiahking5505', 'active', 'player', 'cus_randtest_4oik90eq25e000', 'sub_randtest_l2ai40aqpnh000')
+  VALUES (uuid_generate_v4(), 'randtest.isaiah.king.62040@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'isaiahking5505', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -10488,7 +10488,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.dante.carter.83758@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'dantecarter4796', 'active', 'player', 'cus_randtest_jnhe8lirn3k000', 'sub_randtest_1s9ipze2uu3000')
+  VALUES (uuid_generate_v4(), 'randtest.dante.carter.83758@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'dantecarter4796', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -10523,7 +10523,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.hunter.baker.44857@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'hunterbaker7950', 'active', 'player', 'cus_randtest_s46efwn3nc0000', 'sub_randtest_ux208zz6roa000')
+  VALUES (uuid_generate_v4(), 'randtest.hunter.baker.44857@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'hunterbaker7950', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -10558,7 +10558,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.gavin.brown.95095@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'gavinbrown1530', 'active', 'player', 'cus_randtest_26qka61qrla000', 'sub_randtest_7zj0cs29q3a000')
+  VALUES (uuid_generate_v4(), 'randtest.gavin.brown.95095@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'gavinbrown1530', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -10593,7 +10593,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.jake.mitchell.15699@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'jakemitchell1267', 'active', 'player', 'cus_randtest_u536flgazap000', 'sub_randtest_1sxvcncco68000')
+  VALUES (uuid_generate_v4(), 'randtest.jake.mitchell.15699@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'jakemitchell1267', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -10628,7 +10628,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.austin.king.50980@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'austinking235', 'active', 'player', 'cus_randtest_5rli0c86u5s000', 'sub_randtest_43sja21q9kh000')
+  VALUES (uuid_generate_v4(), 'randtest.austin.king.50980@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'austinking235', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -10663,7 +10663,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.ryder.miller.38472@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'rydermiller947', 'active', 'player', 'cus_randtest_hgcg93im6ej000', 'sub_randtest_62igyse1if0000')
+  VALUES (uuid_generate_v4(), 'randtest.ryder.miller.38472@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'rydermiller947', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -10698,7 +10698,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.luke.clark.94274@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'lukeclark1502', 'active', 'player', 'cus_randtest_luih6ewmj80000', 'sub_randtest_2877qoq1mkfh00')
+  VALUES (uuid_generate_v4(), 'randtest.luke.clark.94274@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'lukeclark1502', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -10733,7 +10733,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.luke.campbell.41087@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'lukecampbell8649', 'active', 'player', 'cus_randtest_e0c16urpnp0000', 'sub_randtest_hg52atasf2k000')
+  VALUES (uuid_generate_v4(), 'randtest.luke.campbell.41087@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'lukecampbell8649', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -10759,7 +10759,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.brandon.scott.75892@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'brandonscott3661', 'active', 'player', 'cus_randtest_tugp51x1a0j000', 'sub_randtest_5i2v4gvjfqe000')
+  VALUES (uuid_generate_v4(), 'randtest.brandon.scott.75892@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'brandonscott3661', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -10785,7 +10785,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.elijah.walker.78151@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'elijahwalker9053', 'active', 'player', 'cus_randtest_hlbz3sx6m3t000', 'sub_randtest_59quuzzoa62000')
+  VALUES (uuid_generate_v4(), 'randtest.elijah.walker.78151@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'elijahwalker9053', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -10820,7 +10820,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.zane.adams.2501@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'zaneadams8463', 'active', 'player', 'cus_randtest_ua90elmutfl000', 'sub_randtest_z9xy9o8l17m000')
+  VALUES (uuid_generate_v4(), 'randtest.zane.adams.2501@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'zaneadams8463', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -10855,7 +10855,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.hunter.taylor.94629@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'huntertaylor2270', 'active', 'player', 'cus_randtest_vpp4da6a3i0000', 'sub_randtest_wq6je0wvyf0000')
+  VALUES (uuid_generate_v4(), 'randtest.hunter.taylor.94629@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'huntertaylor2270', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -10881,7 +10881,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.elijah.mitchell.40990@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'elijahmitchell3223', 'active', 'player', 'cus_randtest_znana2qwcz9000', 'sub_randtest_2e4cg8ac5mh000')
+  VALUES (uuid_generate_v4(), 'randtest.elijah.mitchell.40990@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'elijahmitchell3223', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -10907,7 +10907,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.cole.hall.61129@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'colehall1300', 'active', 'player', 'cus_randtest_mdzhb67uitf000', 'sub_randtest_3lbjo4rrwil000')
+  VALUES (uuid_generate_v4(), 'randtest.cole.hall.61129@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'colehall1300', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -10942,7 +10942,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.kai.miller.79946@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'kaimiller214', 'active', 'player', 'cus_randtest_sjwmyridq3k000', 'sub_randtest_9i9zc9sat78000')
+  VALUES (uuid_generate_v4(), 'randtest.kai.miller.79946@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'kaimiller214', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -10977,7 +10977,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.silas.thompson.81270@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'silasthompson7841', 'active', 'player', 'cus_randtest_ikwl0383cq0000', 'sub_randtest_u2aosqmxsnl000')
+  VALUES (uuid_generate_v4(), 'randtest.silas.thompson.81270@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'silasthompson7841', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -11012,7 +11012,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.elijah.carter.30808@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'elijahcarter2030', 'active', 'player', 'cus_randtest_66uyclk3rr3000', 'sub_randtest_kpxpwba2f6o000')
+  VALUES (uuid_generate_v4(), 'randtest.elijah.carter.30808@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'elijahcarter2030', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -11038,7 +11038,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.brandon.thompson.18399@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'brandonthompson1566', 'active', 'player', 'cus_randtest_vf09zztu0tn000', 'sub_randtest_k1qy149j3sr000')
+  VALUES (uuid_generate_v4(), 'randtest.brandon.thompson.18399@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'brandonthompson1566', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -11073,7 +11073,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.brandon.hill.62968@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'brandonhill7186', 'active', 'player', 'cus_randtest_058b2cyx1hdd00', 'sub_randtest_gt7oy5cjm05000')
+  VALUES (uuid_generate_v4(), 'randtest.brandon.hill.62968@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'brandonhill7186', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -11108,7 +11108,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.luke.ramirez.23283@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'lukeramirez9248', 'active', 'player', 'cus_randtest_a1cwzs01onj000', 'sub_randtest_dgu5ntb334p000')
+  VALUES (uuid_generate_v4(), 'randtest.luke.ramirez.23283@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'lukeramirez9248', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -11143,7 +11143,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.mason.nelson.31229@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'masonnelson6954', 'active', 'player', 'cus_randtest_n1dseanm060000', 'sub_randtest_ccaiqiy9mem000')
+  VALUES (uuid_generate_v4(), 'randtest.mason.nelson.31229@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'masonnelson6954', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -11178,7 +11178,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.mason.green.95137@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'masongreen6014', 'active', 'player', 'cus_randtest_rh4i2t0bal0000', 'sub_randtest_vc6t9pf1690000')
+  VALUES (uuid_generate_v4(), 'randtest.mason.green.95137@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'masongreen6014', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -11213,7 +11213,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.zane.anderson.18760@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'zaneanderson5327', 'active', 'player', 'cus_randtest_6q4qsd74ign000', 'sub_randtest_qnlqdy1fxp0000')
+  VALUES (uuid_generate_v4(), 'randtest.zane.anderson.18760@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'zaneanderson5327', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -11239,7 +11239,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.logan.taylor.35729@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'logantaylor6143', 'active', 'player', 'cus_randtest_yuaqhsdud30000', 'sub_randtest_8tdeojtim1n000')
+  VALUES (uuid_generate_v4(), 'randtest.logan.taylor.35729@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'logantaylor6143', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -11274,7 +11274,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.isaiah.young.32580@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'isaiahyoung8097', 'active', 'player', 'cus_randtest_el4z49i8vui000', 'sub_randtest_rwv6b99jep0000')
+  VALUES (uuid_generate_v4(), 'randtest.isaiah.young.32580@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'isaiahyoung8097', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -11309,7 +11309,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.jalen.harris.90237@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'jalenharris5095', 'active', 'player', 'cus_randtest_eucc2jw44hb000', 'sub_randtest_nlrugpbxhg0000')
+  VALUES (uuid_generate_v4(), 'randtest.jalen.harris.90237@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'jalenharris5095', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -11344,7 +11344,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.austin.parker.17712@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'austinparker9480', 'active', 'player', 'cus_randtest_5548xf18y9h000', 'sub_randtest_axnlxgior2v000')
+  VALUES (uuid_generate_v4(), 'randtest.austin.parker.17712@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'austinparker9480', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -11379,7 +11379,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.logan.walker.4733@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'loganwalker1286', 'active', 'player', 'cus_randtest_ub8o4llfsfl000', 'sub_randtest_zam0btbehy0000')
+  VALUES (uuid_generate_v4(), 'randtest.logan.walker.4733@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'loganwalker1286', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -11414,7 +11414,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.tyler.thompson.78548@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'tylerthompson2940', 'active', 'player', 'cus_randtest_rii6ipctgxp000', 'sub_randtest_tztzwmmx2s0000')
+  VALUES (uuid_generate_v4(), 'randtest.tyler.thompson.78548@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'tylerthompson2940', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -11449,7 +11449,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.chase.williams.78441@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'chasewilliams8643', 'active', 'player', 'cus_randtest_ps9lm5v7llp000', 'sub_randtest_whtpffaujl0000')
+  VALUES (uuid_generate_v4(), 'randtest.chase.williams.78441@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'chasewilliams8643', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -11484,7 +11484,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.austin.johnson.29742@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'austinjohnson7590', 'active', 'player', 'cus_randtest_vzecze9pxh8000', 'sub_randtest_qjh8bk2l89f000')
+  VALUES (uuid_generate_v4(), 'randtest.austin.johnson.29742@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'austinjohnson7590', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -11519,7 +11519,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.isaiah.harris.15393@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'isaiahharris1302', 'active', 'player', 'cus_randtest_dh5utgr79rg000', 'sub_randtest_rhes3pw16ha000')
+  VALUES (uuid_generate_v4(), 'randtest.isaiah.harris.15393@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'isaiahharris1302', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -11554,7 +11554,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.zane.clark.97501@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'zaneclark7965', 'active', 'player', 'cus_randtest_e9ej4e1an3g000', 'sub_randtest_umy5galcc70000')
+  VALUES (uuid_generate_v4(), 'randtest.zane.clark.97501@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'zaneclark7965', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -11589,7 +11589,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.hunter.adams.29592@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'hunteradams6431', 'active', 'player', 'cus_randtest_r64pcc1tcl9000', 'sub_randtest_4bb4qhrkh94000')
+  VALUES (uuid_generate_v4(), 'randtest.hunter.adams.29592@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'hunteradams6431', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -11624,7 +11624,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.jalen.carter.16253@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'jalencarter9501', 'active', 'player', 'cus_randtest_gx5fouspyxl000', 'sub_randtest_z3cjlvm0cnl000')
+  VALUES (uuid_generate_v4(), 'randtest.jalen.carter.16253@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'jalencarter9501', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -11659,7 +11659,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.trey.johnson.58423@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'treyjohnson3330', 'active', 'player', 'cus_randtest_e1ds69tfimo000', 'sub_randtest_0f8qrb1dcdtv00')
+  VALUES (uuid_generate_v4(), 'randtest.trey.johnson.58423@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'treyjohnson3330', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -11694,7 +11694,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.jalen.anderson.41701@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'jalenanderson1221', 'active', 'player', 'cus_randtest_ov3oq5cxgyj000', 'sub_randtest_73c0ssvdxir000')
+  VALUES (uuid_generate_v4(), 'randtest.jalen.anderson.41701@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'jalenanderson1221', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -11729,7 +11729,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.marcus.anderson.22984@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'marcusanderson7171', 'active', 'player', 'cus_randtest_m7y8t33dgar000', 'sub_randtest_dv4aukyvlvd000')
+  VALUES (uuid_generate_v4(), 'randtest.marcus.anderson.22984@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'marcusanderson7171', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -11764,7 +11764,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.austin.mitchell.95014@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'austinmitchell8866', 'active', 'player', 'cus_randtest_plq1ev95spc000', 'sub_randtest_7s5neqtlz55000')
+  VALUES (uuid_generate_v4(), 'randtest.austin.mitchell.95014@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'austinmitchell8866', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -11799,7 +11799,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.mason.wilson.95110@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'masonwilson5762', 'active', 'player', 'cus_randtest_holgm3057zd000', 'sub_randtest_veu4vf4n0x0000')
+  VALUES (uuid_generate_v4(), 'randtest.mason.wilson.95110@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'masonwilson5762', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -11834,7 +11834,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.chase.lewis.54067@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'chaselewis73', 'active', 'player', 'cus_randtest_xzh7v2nbs6m000', 'sub_randtest_6wxxhqpye3r000')
+  VALUES (uuid_generate_v4(), 'randtest.chase.lewis.54067@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'chaselewis73', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -11869,7 +11869,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.mason.brown.66223@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'masonbrown7500', 'active', 'player', 'cus_randtest_hxc21jf7kz7000', 'sub_randtest_noln3iwwo0j000')
+  VALUES (uuid_generate_v4(), 'randtest.mason.brown.66223@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'masonbrown7500', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -11904,7 +11904,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.trey.nelson.26571@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'treynelson9250', 'active', 'player', 'cus_randtest_fvzy2e5lgf0000', 'sub_randtest_kfy9n2muwqr000')
+  VALUES (uuid_generate_v4(), 'randtest.trey.nelson.26571@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'treynelson9250', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -11930,7 +11930,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.kai.nelson.46329@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'kainelson9797', 'active', 'player', 'cus_randtest_okksuzofkx0000', 'sub_randtest_j0g3lzwbor0000')
+  VALUES (uuid_generate_v4(), 'randtest.kai.nelson.46329@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'kainelson9797', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -11965,7 +11965,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.nolan.adams.67513@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'nolanadams5894', 'active', 'player', 'cus_randtest_yb1lrhzgyn0000', 'sub_randtest_ciwg715fsy0000')
+  VALUES (uuid_generate_v4(), 'randtest.nolan.adams.67513@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'nolanadams5894', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -12000,7 +12000,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.isaiah.thompson.34564@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'isaiahthompson4079', 'active', 'player', 'cus_randtest_nj2xj046i80000', 'sub_randtest_xihgmhgrqwf000')
+  VALUES (uuid_generate_v4(), 'randtest.isaiah.thompson.34564@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'isaiahthompson4079', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -12026,7 +12026,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.jordan.hall.8475@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'jordanhall7069', 'active', 'player', 'cus_randtest_uwfenea62a0000', 'sub_randtest_xkqtccc6bwj000')
+  VALUES (uuid_generate_v4(), 'randtest.jordan.hall.8475@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'jordanhall7069', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -12061,7 +12061,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.isaiah.miller.6697@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'isaiahmiller4558', 'active', 'player', 'cus_randtest_72qnmi1t6wx000', 'sub_randtest_xkb64x7gmes000')
+  VALUES (uuid_generate_v4(), 'randtest.isaiah.miller.6697@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'isaiahmiller4558', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -12087,7 +12087,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.logan.clark.65255@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'loganclark6046', 'active', 'player', 'cus_randtest_bjrniy2wtew000', 'sub_randtest_0urn6hxmawzf00')
+  VALUES (uuid_generate_v4(), 'randtest.logan.clark.65255@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'loganclark6046', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -12122,7 +12122,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.cole.hall.75828@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'colehall6492', 'active', 'player', 'cus_randtest_uw72znsdk60000', 'sub_randtest_2zvxddu2w49000')
+  VALUES (uuid_generate_v4(), 'randtest.cole.hall.75828@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'colehall6492', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -12157,7 +12157,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.blake.reed.76998@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'blakereed7975', 'active', 'player', 'cus_randtest_pmwlfqo0oq0000', 'sub_randtest_ybqtfmu6tz7000')
+  VALUES (uuid_generate_v4(), 'randtest.blake.reed.76998@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'blakereed7975', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -12192,7 +12192,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.carter.reed.11257@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'carterreed6908', 'active', 'player', 'cus_randtest_u7a87oklkzp000', 'sub_randtest_deuze6pvgdo000')
+  VALUES (uuid_generate_v4(), 'randtest.carter.reed.11257@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'carterreed6908', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -12227,7 +12227,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.elijah.brown.95804@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'elijahbrown2534', 'active', 'player', 'cus_randtest_6rzhpku01hs000', 'sub_randtest_8ib9jnkzlpl000')
+  VALUES (uuid_generate_v4(), 'randtest.elijah.brown.95804@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'elijahbrown2534', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -12262,7 +12262,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.tyler.young.78161@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'tyleryoung9652', 'active', 'player', 'cus_randtest_t1rtjk0gjh0000', 'sub_randtest_ewsl4idxopk000')
+  VALUES (uuid_generate_v4(), 'randtest.tyler.young.78161@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'tyleryoung9652', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -12297,7 +12297,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.xavier.parker.33620@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'xavierparker977', 'active', 'player', 'cus_randtest_gzx1eqky9dq000', 'sub_randtest_dsa5z9nw4rq000')
+  VALUES (uuid_generate_v4(), 'randtest.xavier.parker.33620@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'xavierparker977', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -12332,7 +12332,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.silas.hall.45202@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'silashall5659', 'active', 'player', 'cus_randtest_6aileufr768000', 'sub_randtest_4xgn8mdrg90000')
+  VALUES (uuid_generate_v4(), 'randtest.silas.hall.45202@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'silashall5659', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -12367,7 +12367,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.nolan.green.79057@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'nolangreen7760', 'active', 'player', 'cus_randtest_n18h1smegs0000', 'sub_randtest_ot5p1dmxxdd000')
+  VALUES (uuid_generate_v4(), 'randtest.nolan.green.79057@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'nolangreen7760', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -12393,7 +12393,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.zane.anderson.85871@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'zaneanderson2299', 'active', 'player', 'cus_randtest_pxnwlft681p000', 'sub_randtest_ac322iyacl0000')
+  VALUES (uuid_generate_v4(), 'randtest.zane.anderson.85871@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'zaneanderson2299', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -12419,7 +12419,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.mason.mitchell.25164@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'masonmitchell6729', 'active', 'player', 'cus_randtest_d2wdmluzg8t000', 'sub_randtest_q0u9g941jne000')
+  VALUES (uuid_generate_v4(), 'randtest.mason.mitchell.25164@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'masonmitchell6729', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -12454,7 +12454,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.jalen.harris.51982@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'jalenharris7635', 'active', 'player', 'cus_randtest_vehfu5g6nl0000', 'sub_randtest_59473gvbw9s000')
+  VALUES (uuid_generate_v4(), 'randtest.jalen.harris.51982@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'jalenharris7635', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -12489,7 +12489,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.silas.wright.90078@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'silaswright3872', 'active', 'player', 'cus_randtest_e4ekl8v8ek0000', 'sub_randtest_1hgytfrm93l000')
+  VALUES (uuid_generate_v4(), 'randtest.silas.wright.90078@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'silaswright3872', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -12524,7 +12524,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.blake.campbell.46057@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'blakecampbell2022', 'active', 'player', 'cus_randtest_5nl2elcbr40000', 'sub_randtest_sa1mkkkgjv0000')
+  VALUES (uuid_generate_v4(), 'randtest.blake.campbell.46057@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'blakecampbell2022', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -12550,7 +12550,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.nolan.harris.22892@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'nolanharris5761', 'active', 'player', 'cus_randtest_ahsln5tpdw7000', 'sub_randtest_7a5n65t9exq000')
+  VALUES (uuid_generate_v4(), 'randtest.nolan.harris.22892@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'nolanharris5761', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -12576,7 +12576,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.nolan.scott.62258@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'nolanscott6351', 'active', 'player', 'cus_randtest_9a6w8o3aw10000', 'sub_randtest_k5fjk7o4m5q000')
+  VALUES (uuid_generate_v4(), 'randtest.nolan.scott.62258@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'nolanscott6351', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -12611,7 +12611,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.zane.wright.88064@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'zanewright5297', 'active', 'player', 'cus_randtest_ay0x59gmpcs000', 'sub_randtest_usqyh6vf5i0000')
+  VALUES (uuid_generate_v4(), 'randtest.zane.wright.88064@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'zanewright5297', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -12646,7 +12646,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.austin.davis.12652@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'austindavis8390', 'active', 'player', 'cus_randtest_zwbj45pxhhe000', 'sub_randtest_iza4r3g39rn000')
+  VALUES (uuid_generate_v4(), 'randtest.austin.davis.12652@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'austindavis8390', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -12681,7 +12681,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.zane.hill.19077@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'zanehill770', 'active', 'player', 'cus_randtest_a9aqt7rkp3r000', 'sub_randtest_svtlfaxfl3i000')
+  VALUES (uuid_generate_v4(), 'randtest.zane.hill.19077@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'zanehill770', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -12716,7 +12716,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.chase.lewis.58776@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'chaselewis8149', 'active', 'player', 'cus_randtest_g4xec3fg5yw000', 'sub_randtest_zyht2lfyvba000')
+  VALUES (uuid_generate_v4(), 'randtest.chase.lewis.58776@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'chaselewis8149', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -12751,7 +12751,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.logan.davis.67482@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'logandavis7734', 'active', 'player', 'cus_randtest_cevak58ilwc000', 'sub_randtest_8hinmf20dmr000')
+  VALUES (uuid_generate_v4(), 'randtest.logan.davis.67482@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'logandavis7734', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -12786,7 +12786,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.jalen.green.9613@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'jalengreen3186', 'active', 'player', 'cus_randtest_x7nmyq883ab000', 'sub_randtest_62k1ydahqwm000')
+  VALUES (uuid_generate_v4(), 'randtest.jalen.green.9613@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'jalengreen3186', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -12821,7 +12821,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.chase.harris.58692@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'chaseharris6760', 'active', 'player', 'cus_randtest_q5qhktmfn7l000', 'sub_randtest_0ultwwv0daoi00')
+  VALUES (uuid_generate_v4(), 'randtest.chase.harris.58692@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'chaseharris6760', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -12856,7 +12856,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.jalen.campbell.9902@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'jalencampbell4799', 'active', 'player', 'cus_randtest_h8qatrbpw8h000', 'sub_randtest_zlimvfy50p7000')
+  VALUES (uuid_generate_v4(), 'randtest.jalen.campbell.9902@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'jalencampbell4799', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -12891,7 +12891,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.jalen.adams.32198@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'jalenadams4898', 'active', 'player', 'cus_randtest_ogy6e2rvnp0000', 'sub_randtest_nuclye4stji000')
+  VALUES (uuid_generate_v4(), 'randtest.jalen.adams.32198@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'jalenadams4898', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -12917,7 +12917,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.luke.johnson.5872@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'lukejohnson1337', 'active', 'player', 'cus_randtest_sjvgpjf47w0000', 'sub_randtest_o7ohlg6t7b0000')
+  VALUES (uuid_generate_v4(), 'randtest.luke.johnson.5872@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'lukejohnson1337', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -12943,7 +12943,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.isaiah.miller.24749@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'isaiahmiller72', 'active', 'player', 'cus_randtest_pcw08nap360000', 'sub_randtest_xw91tx7qclq000')
+  VALUES (uuid_generate_v4(), 'randtest.isaiah.miller.24749@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'isaiahmiller72', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -12978,7 +12978,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.marcus.baker.88031@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'marcusbaker1605', 'active', 'player', 'cus_randtest_nhi6t501a89000', 'sub_randtest_3bakv96ttvz000')
+  VALUES (uuid_generate_v4(), 'randtest.marcus.baker.88031@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'marcusbaker1605', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -13004,7 +13004,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.gavin.wright.37431@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'gavinwright7410', 'active', 'player', 'cus_randtest_pyjj77x1vzd000', 'sub_randtest_6omf7lw56vb000')
+  VALUES (uuid_generate_v4(), 'randtest.gavin.wright.37431@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'gavinwright7410', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -13039,7 +13039,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.caleb.king.16966@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'calebking2109', 'active', 'player', 'cus_randtest_5v6rc9wmktv000', 'sub_randtest_foe184wf2oj000')
+  VALUES (uuid_generate_v4(), 'randtest.caleb.king.16966@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'calebking2109', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -13065,7 +13065,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.ryder.clark.76321@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'ryderclark6477', 'active', 'player', 'cus_randtest_0prhcmqyqgv000', 'sub_randtest_ew56mnaaql0000')
+  VALUES (uuid_generate_v4(), 'randtest.ryder.clark.76321@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'ryderclark6477', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -13100,7 +13100,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.carter.reed.75048@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'carterreed1815', 'active', 'player', 'cus_randtest_ygkyw4k2u6n000', 'sub_randtest_o6ly4986mvs000')
+  VALUES (uuid_generate_v4(), 'randtest.carter.reed.75048@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'carterreed1815', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -13135,7 +13135,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.tyler.thompson.65615@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'tylerthompson1542', 'active', 'player', 'cus_randtest_9azgviy515i000', 'sub_randtest_z9ct5yjqmyq000')
+  VALUES (uuid_generate_v4(), 'randtest.tyler.thompson.65615@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'tylerthompson1542', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -13170,7 +13170,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.austin.parker.76334@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'austinparker2049', 'active', 'player', 'cus_randtest_y7x0lrtiq4s000', 'sub_randtest_r3h5w8kg68i000')
+  VALUES (uuid_generate_v4(), 'randtest.austin.parker.76334@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'austinparker2049', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -13205,7 +13205,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.kai.martinez.2190@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'kaimartinez4386', 'active', 'player', 'cus_randtest_846tai9pu1m000', 'sub_randtest_0noqkyfsnqc000')
+  VALUES (uuid_generate_v4(), 'randtest.kai.martinez.2190@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'kaimartinez4386', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -13240,7 +13240,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.zane.campbell.17450@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'zanecampbell3866', 'active', 'player', 'cus_randtest_d2x08iwmgq5000', 'sub_randtest_m5fioddsbwb000')
+  VALUES (uuid_generate_v4(), 'randtest.zane.campbell.17450@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'zanecampbell3866', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -13275,7 +13275,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.ethan.clark.90220@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'ethanclark8190', 'active', 'player', 'cus_randtest_jkl3mq9n7v0000', 'sub_randtest_w7a5co1z2w0000')
+  VALUES (uuid_generate_v4(), 'randtest.ethan.clark.90220@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'ethanclark8190', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -13310,7 +13310,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.dante.davis.2438@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'dantedavis7951', 'active', 'player', 'cus_randtest_rvxrcyk0jrl000', 'sub_randtest_075pfcg1imyk00')
+  VALUES (uuid_generate_v4(), 'randtest.dante.davis.2438@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'dantedavis7951', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -13345,7 +13345,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.marcus.mitchell.57020@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'marcusmitchell7117', 'active', 'player', 'cus_randtest_4xg78lbjhpl000', 'sub_randtest_uvlesd3ujh0000')
+  VALUES (uuid_generate_v4(), 'randtest.marcus.mitchell.57020@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'marcusmitchell7117', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -13380,7 +13380,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.zane.lewis.26854@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'zanelewis6630', 'active', 'player', 'cus_randtest_rjqr485kqu0000', 'sub_randtest_8slil4jvdir000')
+  VALUES (uuid_generate_v4(), 'randtest.zane.lewis.26854@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'zanelewis6630', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -13406,7 +13406,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.silas.anderson.62700@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'silasanderson9452', 'active', 'player', 'cus_randtest_7l2ztnacvb0000', 'sub_randtest_vpo8cjr4hai000')
+  VALUES (uuid_generate_v4(), 'randtest.silas.anderson.62700@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'silasanderson9452', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -13441,7 +13441,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.isaiah.scott.81478@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'isaiahscott7058', 'active', 'player', 'cus_randtest_l5e0v0effqk000', 'sub_randtest_vmbfhf07ao8000')
+  VALUES (uuid_generate_v4(), 'randtest.isaiah.scott.81478@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'isaiahscott7058', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -13467,7 +13467,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.gavin.ramirez.61526@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'gavinramirez2009', 'active', 'player', 'cus_randtest_24gj4br7pb4000', 'sub_randtest_xajw8r5w3a0000')
+  VALUES (uuid_generate_v4(), 'randtest.gavin.ramirez.61526@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'gavinramirez2009', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -13502,7 +13502,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.austin.baker.21284@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'austinbaker6776', 'active', 'player', 'cus_randtest_wu985ckyqym000', 'sub_randtest_ppknqlbpfs0000')
+  VALUES (uuid_generate_v4(), 'randtest.austin.baker.21284@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'austinbaker6776', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -13528,7 +13528,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.isaiah.davis.3957@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'isaiahdavis4224', 'active', 'player', 'cus_randtest_4m3n7fw7ciw000', 'sub_randtest_xtr76qbuwx0000')
+  VALUES (uuid_generate_v4(), 'randtest.isaiah.davis.3957@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'isaiahdavis4224', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -13563,7 +13563,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.logan.williams.82350@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'loganwilliams7686', 'active', 'player', 'cus_randtest_xdlowum738g000', 'sub_randtest_hc50jarg4o0000')
+  VALUES (uuid_generate_v4(), 'randtest.logan.williams.82350@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'loganwilliams7686', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -13598,7 +13598,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.logan.clark.56752@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'loganclark1595', 'active', 'player', 'cus_randtest_3lp8va8abft000', 'sub_randtest_fauz7xk6sv5000')
+  VALUES (uuid_generate_v4(), 'randtest.logan.clark.56752@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'loganclark1595', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -13633,7 +13633,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.tyler.wright.92329@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'tylerwright3135', 'active', 'player', 'cus_randtest_5qee2vav8wd000', 'sub_randtest_gt8mi1njxdw000')
+  VALUES (uuid_generate_v4(), 'randtest.tyler.wright.92329@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'tylerwright3135', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -13668,7 +13668,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.jalen.green.60728@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'jalengreen195', 'active', 'player', 'cus_randtest_u59016pmdv0000', 'sub_randtest_9tsju7nioro000')
+  VALUES (uuid_generate_v4(), 'randtest.jalen.green.60728@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'jalengreen195', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -13694,7 +13694,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.brandon.brown.75458@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'brandonbrown5082', 'active', 'player', 'cus_randtest_alpa5vz1528000', 'sub_randtest_fovymtohbd8000')
+  VALUES (uuid_generate_v4(), 'randtest.brandon.brown.75458@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'brandonbrown5082', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -13729,7 +13729,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.austin.king.20845@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'austinking6333', 'active', 'player', 'cus_randtest_w3jeqgm2nsj000', 'sub_randtest_65jr1cg2o75000')
+  VALUES (uuid_generate_v4(), 'randtest.austin.king.20845@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'austinking6333', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -13755,7 +13755,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.austin.baker.37708@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'austinbaker2329', 'active', 'player', 'cus_randtest_txtp9iizp39000', 'sub_randtest_kc2jq8qabhs000')
+  VALUES (uuid_generate_v4(), 'randtest.austin.baker.37708@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'austinbaker2329', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -13790,7 +13790,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.kai.carter.77381@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'kaicarter1520', 'active', 'player', 'cus_randtest_kr7yyx520q0000', 'sub_randtest_hetsitwtjsw000')
+  VALUES (uuid_generate_v4(), 'randtest.kai.carter.77381@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'kaicarter1520', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -13825,7 +13825,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.devin.nelson.47499@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'devinnelson107', 'active', 'player', 'cus_randtest_gvqlq4yugv9000', 'sub_randtest_7ddx4c4c04b000')
+  VALUES (uuid_generate_v4(), 'randtest.devin.nelson.47499@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'devinnelson107', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -13851,7 +13851,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.kai.taylor.7800@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'kaitaylor8769', 'active', 'player', 'cus_randtest_1l9ojjacq3t000', 'sub_randtest_lghfqz70s10000')
+  VALUES (uuid_generate_v4(), 'randtest.kai.taylor.7800@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'kaitaylor8769', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -13886,7 +13886,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.silas.adams.33033@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'silasadams7318', 'active', 'player', 'cus_randtest_wc06umg7jn0000', 'sub_randtest_t1gy4cs6s7f000')
+  VALUES (uuid_generate_v4(), 'randtest.silas.adams.33033@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'silasadams7318', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -13921,7 +13921,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.brandon.thompson.51354@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'brandonthompson2312', 'active', 'player', 'cus_randtest_97sk92ppudu000', 'sub_randtest_zrzyyq3pjop000')
+  VALUES (uuid_generate_v4(), 'randtest.brandon.thompson.51354@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'brandonthompson2312', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -13956,7 +13956,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.isaiah.green.37799@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'isaiahgreen4509', 'active', 'player', 'cus_randtest_9gm5q90oum7000', 'sub_randtest_9j417gbz0il000')
+  VALUES (uuid_generate_v4(), 'randtest.isaiah.green.37799@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'isaiahgreen4509', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -13982,7 +13982,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.luke.parker.71303@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'lukeparker5886', 'active', 'player', 'cus_randtest_qe31hhfug00000', 'sub_randtest_di3sf51kb6f000')
+  VALUES (uuid_generate_v4(), 'randtest.luke.parker.71303@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'lukeparker5886', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -14017,7 +14017,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.jordan.nelson.94422@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'jordannelson7932', 'active', 'player', 'cus_randtest_0k8stpsog6dk00', 'sub_randtest_4tlmfgt39ad000')
+  VALUES (uuid_generate_v4(), 'randtest.jordan.nelson.94422@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'jordannelson7932', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -14052,7 +14052,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.gavin.carter.7621@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'gavincarter7226', 'active', 'player', 'cus_randtest_39km5h09m66000', 'sub_randtest_ll7axge4fcn000')
+  VALUES (uuid_generate_v4(), 'randtest.gavin.carter.7621@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'gavincarter7226', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -14087,7 +14087,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.jake.wilson.69782@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'jakewilson3031', 'active', 'player', 'cus_randtest_eiciiy1zxr5000', 'sub_randtest_lfn1yt1qowj000')
+  VALUES (uuid_generate_v4(), 'randtest.jake.wilson.69782@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'jakewilson3031', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -14122,7 +14122,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.carter.walker.95612@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'carterwalker8357', 'active', 'player', 'cus_randtest_ix2zrc4lfhi000', 'sub_randtest_lc0g6utxka0000')
+  VALUES (uuid_generate_v4(), 'randtest.carter.walker.95612@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'carterwalker8357', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -14157,7 +14157,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.cole.wright.59024@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'colewright1551', 'active', 'player', 'cus_randtest_25lsmkty1xsi00', 'sub_randtest_hhojjr3h30v000')
+  VALUES (uuid_generate_v4(), 'randtest.cole.wright.59024@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'colewright1551', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -14192,7 +14192,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.ethan.williams.42791@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'ethanwilliams9568', 'active', 'player', 'cus_randtest_zjv8dizdxr0000', 'sub_randtest_0ef8lcyr1oh800')
+  VALUES (uuid_generate_v4(), 'randtest.ethan.williams.42791@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'ethanwilliams9568', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -14218,7 +14218,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.logan.harris.72279@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'loganharris3148', 'active', 'player', 'cus_randtest_l1fuzmefoqf000', 'sub_randtest_hblnhxqy0bs000')
+  VALUES (uuid_generate_v4(), 'randtest.logan.harris.72279@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'loganharris3148', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -14253,7 +14253,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.nolan.hill.50795@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'nolanhill9708', 'active', 'player', 'cus_randtest_8lqlb3kx9ze000', 'sub_randtest_c47gmuxv6w0000')
+  VALUES (uuid_generate_v4(), 'randtest.nolan.hill.50795@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'nolanhill9708', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -14288,7 +14288,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.tyler.williams.72769@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'tylerwilliams2592', 'active', 'player', 'cus_randtest_mx64nbg0ugg000', 'sub_randtest_ly84bi8vv80000')
+  VALUES (uuid_generate_v4(), 'randtest.tyler.williams.72769@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'tylerwilliams2592', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -14323,7 +14323,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.owen.carter.96726@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'owencarter510', 'active', 'player', 'cus_randtest_a4w98nexjfj000', 'sub_randtest_sjxiokinfq0000')
+  VALUES (uuid_generate_v4(), 'randtest.owen.carter.96726@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'owencarter510', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -14358,7 +14358,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.devin.carter.41539@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'devincarter1629', 'active', 'player', 'cus_randtest_g9bht6uyyad000', 'sub_randtest_oarckv2qdcf000')
+  VALUES (uuid_generate_v4(), 'randtest.devin.carter.41539@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'devincarter1629', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -14393,7 +14393,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.ethan.anderson.45526@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'ethananderson5534', 'active', 'player', 'cus_randtest_887r3a51f3a000', 'sub_randtest_yucy1w1ev7b000')
+  VALUES (uuid_generate_v4(), 'randtest.ethan.anderson.45526@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'ethananderson5534', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -14428,7 +14428,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.zane.taylor.42181@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'zanetaylor9523', 'active', 'player', 'cus_randtest_4qp2p1twa0e000', 'sub_randtest_j4vtvc9divn000')
+  VALUES (uuid_generate_v4(), 'randtest.zane.taylor.42181@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'zanetaylor9523', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -14463,7 +14463,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.silas.young.67428@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'silasyoung1199', 'active', 'player', 'cus_randtest_tdrt9e6sre0000', 'sub_randtest_fjzjcfigdbl000')
+  VALUES (uuid_generate_v4(), 'randtest.silas.young.67428@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'silasyoung1199', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -14498,7 +14498,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.carter.adams.76183@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'carteradams3563', 'active', 'player', 'cus_randtest_p8tb1ficnsm000', 'sub_randtest_5uv4t6on3ev000')
+  VALUES (uuid_generate_v4(), 'randtest.carter.adams.76183@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'carteradams3563', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -14524,7 +14524,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.elijah.hall.97309@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'elijahhall1744', 'active', 'player', 'cus_randtest_p3wv4txibgi000', 'sub_randtest_o9ezzezupqn000')
+  VALUES (uuid_generate_v4(), 'randtest.elijah.hall.97309@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'elijahhall1744', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -14559,7 +14559,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.owen.adams.36468@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'owenadams708', 'active', 'player', 'cus_randtest_0azpd46g5bgc00', 'sub_randtest_ja3s9yljh5a000')
+  VALUES (uuid_generate_v4(), 'randtest.owen.adams.36468@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'owenadams708', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -14594,7 +14594,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.jake.thompson.46589@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'jakethompson8970', 'active', 'player', 'cus_randtest_02mrgauiwzah00', 'sub_randtest_rvw3od2dz10000')
+  VALUES (uuid_generate_v4(), 'randtest.jake.thompson.46589@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'jakethompson8970', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -14620,7 +14620,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.caleb.wright.44866@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'calebwright2082', 'active', 'player', 'cus_randtest_3xdzpwuqskj000', 'sub_randtest_zknyhchd0vc000')
+  VALUES (uuid_generate_v4(), 'randtest.caleb.wright.44866@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'calebwright2082', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -14655,7 +14655,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.luke.hill.12183@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'lukehill381', 'active', 'player', 'cus_randtest_sgj9x1a5vy0000', 'sub_randtest_cl0vs5if939000')
+  VALUES (uuid_generate_v4(), 'randtest.luke.hill.12183@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'lukehill381', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -14690,7 +14690,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.isaiah.green.85217@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'isaiahgreen1631', 'active', 'player', 'cus_randtest_a3jn3h7j7ca000', 'sub_randtest_nmekzkhonuh000')
+  VALUES (uuid_generate_v4(), 'randtest.isaiah.green.85217@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'isaiahgreen1631', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -14716,7 +14716,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.jordan.davis.87824@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'jordandavis93', 'active', 'player', 'cus_randtest_ga90vggpwqt000', 'sub_randtest_z49wpg2ijd0000')
+  VALUES (uuid_generate_v4(), 'randtest.jordan.davis.87824@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'jordandavis93', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -14751,7 +14751,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.silas.hill.60419@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'silashill9790', 'active', 'player', 'cus_randtest_wexi9kztpm0000', 'sub_randtest_v6dxtv39y4g000')
+  VALUES (uuid_generate_v4(), 'randtest.silas.hill.60419@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'silashill9790', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -14786,7 +14786,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.mason.harris.52283@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'masonharris8955', 'active', 'player', 'cus_randtest_w9t9sbkbc28000', 'sub_randtest_gfvcb5oa2ea000')
+  VALUES (uuid_generate_v4(), 'randtest.mason.harris.52283@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'masonharris8955', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -14812,7 +14812,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.ryder.parker.95427@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'ryderparker8854', 'active', 'player', 'cus_randtest_wqj9a1xrf5r000', 'sub_randtest_xsitxfj95r0000')
+  VALUES (uuid_generate_v4(), 'randtest.ryder.parker.95427@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'ryderparker8854', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -14847,7 +14847,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.dante.young.96927@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'danteyoung9859', 'active', 'player', 'cus_randtest_avjk3gyjj9g000', 'sub_randtest_rhtnk24hm50000')
+  VALUES (uuid_generate_v4(), 'randtest.dante.young.96927@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'danteyoung9859', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -14873,7 +14873,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.gavin.carter.40210@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'gavincarter3314', 'active', 'player', 'cus_randtest_q8sbwngnbwe000', 'sub_randtest_zqpskh9gna0000')
+  VALUES (uuid_generate_v4(), 'randtest.gavin.carter.40210@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'gavincarter3314', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -14908,7 +14908,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.ethan.davis.61519@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'ethandavis3252', 'active', 'player', 'cus_randtest_2oqaxzqecyy000', 'sub_randtest_wgpurinrsxr000')
+  VALUES (uuid_generate_v4(), 'randtest.ethan.davis.61519@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'ethandavis3252', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -14943,7 +14943,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.devin.wilson.49968@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'devinwilson3247', 'active', 'player', 'cus_randtest_tuyezvjb7he000', 'sub_randtest_9legqrkdm5n000')
+  VALUES (uuid_generate_v4(), 'randtest.devin.wilson.49968@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'devinwilson3247', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -14978,7 +14978,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.silas.anderson.95264@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'silasanderson7631', 'active', 'player', 'cus_randtest_y3l8l8fn910000', 'sub_randtest_69wlqc88j17000')
+  VALUES (uuid_generate_v4(), 'randtest.silas.anderson.95264@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'silasanderson7631', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -15013,7 +15013,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.blake.taylor.23980@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'blaketaylor3641', 'active', 'player', 'cus_randtest_9w1qh1z3ac0000', 'sub_randtest_tnqay1cvrxk000')
+  VALUES (uuid_generate_v4(), 'randtest.blake.taylor.23980@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'blaketaylor3641', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -15048,7 +15048,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.austin.walker.12244@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'austinwalker2573', 'active', 'player', 'cus_randtest_7kpyanpg6b5000', 'sub_randtest_wsxzer1ldf0000')
+  VALUES (uuid_generate_v4(), 'randtest.austin.walker.12244@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'austinwalker2573', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -15083,7 +15083,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.jordan.wilson.39746@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'jordanwilson9997', 'active', 'player', 'cus_randtest_60kxe5nc9qt000', 'sub_randtest_45a6g97u8ho000')
+  VALUES (uuid_generate_v4(), 'randtest.jordan.wilson.39746@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'jordanwilson9997', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -15118,7 +15118,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.luke.clark.92216@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'lukeclark6598', 'active', 'player', 'cus_randtest_ad31henxdzt000', 'sub_randtest_ahrtkl1xg90000')
+  VALUES (uuid_generate_v4(), 'randtest.luke.clark.92216@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'lukeclark6598', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -15144,7 +15144,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.isaiah.reed.74154@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'isaiahreed3081', 'active', 'player', 'cus_randtest_ngiowj78mv0000', 'sub_randtest_kpiiujtfxl9000')
+  VALUES (uuid_generate_v4(), 'randtest.isaiah.reed.74154@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'isaiahreed3081', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -15179,7 +15179,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.chase.thompson.2915@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'chasethompson6190', 'active', 'player', 'cus_randtest_2shds41wr8f000', 'sub_randtest_1mx9b07ojmw000')
+  VALUES (uuid_generate_v4(), 'randtest.chase.thompson.2915@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'chasethompson6190', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -15205,7 +15205,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.dante.king.50374@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'danteking4052', 'active', 'player', 'cus_randtest_nj9pb8ma2bf000', 'sub_randtest_bhkrqieprhs000')
+  VALUES (uuid_generate_v4(), 'randtest.dante.king.50374@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'danteking4052', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -15240,7 +15240,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.caleb.adams.23755@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'calebadams794', 'active', 'player', 'cus_randtest_u98kzm0fq60000', 'sub_randtest_emkhgupycvt000')
+  VALUES (uuid_generate_v4(), 'randtest.caleb.adams.23755@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'calebadams794', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -15275,7 +15275,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.carter.johnson.29492@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'carterjohnson9409', 'active', 'player', 'cus_randtest_q6t0gtow4m0000', 'sub_randtest_ly7vs6u9mdj000')
+  VALUES (uuid_generate_v4(), 'randtest.carter.johnson.29492@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'carterjohnson9409', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -15310,7 +15310,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.trey.lewis.90@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'treylewis2726', 'active', 'player', 'cus_randtest_xwnv82ja22s000', 'sub_randtest_ur8dtm81od0000')
+  VALUES (uuid_generate_v4(), 'randtest.trey.lewis.90@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'treylewis2726', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -15345,7 +15345,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.jalen.taylor.75832@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'jalentaylor7929', 'active', 'player', 'cus_randtest_ypcxbz8aa20000', 'sub_randtest_7oaptwhl2yh000')
+  VALUES (uuid_generate_v4(), 'randtest.jalen.taylor.75832@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'jalentaylor7929', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -15380,7 +15380,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.jake.hall.54030@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'jakehall5270', 'active', 'player', 'cus_randtest_akx2yr6hnn0000', 'sub_randtest_994l728nz6g000')
+  VALUES (uuid_generate_v4(), 'randtest.jake.hall.54030@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'jakehall5270', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -15406,7 +15406,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.elijah.martinez.55053@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'elijahmartinez6267', 'active', 'player', 'cus_randtest_tev22ytuifn000', 'sub_randtest_vf55gf2mdk0000')
+  VALUES (uuid_generate_v4(), 'randtest.elijah.martinez.55053@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'elijahmartinez6267', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -15441,7 +15441,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.logan.taylor.56292@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'logantaylor9239', 'active', 'player', 'cus_randtest_n994foqkwh0000', 'sub_randtest_5vjwmc5ff7t000')
+  VALUES (uuid_generate_v4(), 'randtest.logan.taylor.56292@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'logantaylor9239', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -15476,7 +15476,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.devin.harris.90049@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'devinharris1865', 'active', 'player', 'cus_randtest_i0jth0hl7xi000', 'sub_randtest_e42yg6hsbxr000')
+  VALUES (uuid_generate_v4(), 'randtest.devin.harris.90049@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'devinharris1865', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -15511,7 +15511,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.silas.ramirez.25263@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'silasramirez9048', 'active', 'player', 'cus_randtest_0d1dn9yp89gu00', 'sub_randtest_o8a6vfvievo000')
+  VALUES (uuid_generate_v4(), 'randtest.silas.ramirez.25263@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'silasramirez9048', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -15546,7 +15546,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.trey.hill.13989@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'treyhill4944', 'active', 'player', 'cus_randtest_0m95wt5y8zv000', 'sub_randtest_icwt29zu2z0000')
+  VALUES (uuid_generate_v4(), 'randtest.trey.hill.13989@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'treyhill4944', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -15572,7 +15572,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.logan.green.33438@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'logangreen8517', 'active', 'player', 'cus_randtest_usucoovu8on000', 'sub_randtest_s1mrsg67kyi000')
+  VALUES (uuid_generate_v4(), 'randtest.logan.green.33438@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'logangreen8517', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -15607,7 +15607,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.nolan.hill.10904@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'nolanhill9549', 'active', 'player', 'cus_randtest_umumgnpqu49000', 'sub_randtest_xa7op0p2obc000')
+  VALUES (uuid_generate_v4(), 'randtest.nolan.hill.10904@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'nolanhill9549', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -15642,7 +15642,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.chase.hall.874@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'chasehall8810', 'active', 'player', 'cus_randtest_1dk7o01cm63000', 'sub_randtest_dpjyxw66lrp000')
+  VALUES (uuid_generate_v4(), 'randtest.chase.hall.874@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'chasehall8810', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -15677,7 +15677,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.carter.miller.32464@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'cartermiller2887', 'active', 'player', 'cus_randtest_bwybmlb9e2v000', 'sub_randtest_bz5umz2fgoo000')
+  VALUES (uuid_generate_v4(), 'randtest.carter.miller.32464@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'cartermiller2887', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -15712,7 +15712,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.devin.campbell.30188@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'devincampbell7558', 'active', 'player', 'cus_randtest_82s5leg0ip5000', 'sub_randtest_u81oktwnkll000')
+  VALUES (uuid_generate_v4(), 'randtest.devin.campbell.30188@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'devincampbell7558', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -15738,7 +15738,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.caleb.wilson.84451@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'calebwilson9409', 'active', 'player', 'cus_randtest_kne5y7yfk60000', 'sub_randtest_juck6tkxtro000')
+  VALUES (uuid_generate_v4(), 'randtest.caleb.wilson.84451@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'calebwilson9409', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -15773,7 +15773,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.austin.baker.39782@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'austinbaker9039', 'active', 'player', 'cus_randtest_pgy46jwncqj000', 'sub_randtest_btu6r2cv5ho000')
+  VALUES (uuid_generate_v4(), 'randtest.austin.baker.39782@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'austinbaker9039', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -15808,7 +15808,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.tyler.martinez.35098@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'tylermartinez4619', 'active', 'player', 'cus_randtest_vnaumx415qa000', 'sub_randtest_rj4swxlpg3s000')
+  VALUES (uuid_generate_v4(), 'randtest.tyler.martinez.35098@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'tylermartinez4619', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -15843,7 +15843,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.marcus.wilson.31673@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'marcuswilson4825', 'active', 'player', 'cus_randtest_q3vedxmbu8b000', 'sub_randtest_7cxa9r0vehv000')
+  VALUES (uuid_generate_v4(), 'randtest.marcus.wilson.31673@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'marcuswilson4825', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -15878,7 +15878,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.devin.walker.19106@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'devinwalker9501', 'active', 'player', 'cus_randtest_frznmti0t1e000', 'sub_randtest_4e6gdvclk8c000')
+  VALUES (uuid_generate_v4(), 'randtest.devin.walker.19106@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'devinwalker9501', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -15904,7 +15904,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.silas.nelson.45782@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'silasnelson7122', 'active', 'player', 'cus_randtest_t20f48e2e7h000', 'sub_randtest_soludeojke0000')
+  VALUES (uuid_generate_v4(), 'randtest.silas.nelson.45782@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'silasnelson7122', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -15939,7 +15939,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.zane.scott.1999@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'zanescott9357', 'active', 'player', 'cus_randtest_ldnnz3zr89o000', 'sub_randtest_bejma7f65b0000')
+  VALUES (uuid_generate_v4(), 'randtest.zane.scott.1999@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'zanescott9357', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -15965,7 +15965,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.jake.walker.23553@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'jakewalker72', 'active', 'player', 'cus_randtest_1pxa1bj8c1r000', 'sub_randtest_h6ld6qv6tv0000')
+  VALUES (uuid_generate_v4(), 'randtest.jake.walker.23553@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'jakewalker72', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -15991,7 +15991,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.jordan.anderson.17087@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'jordananderson5271', 'active', 'player', 'cus_randtest_ai3mksa0kb8000', 'sub_randtest_slm2zl00e28000')
+  VALUES (uuid_generate_v4(), 'randtest.jordan.anderson.17087@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'jordananderson5271', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -16026,7 +16026,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.devin.johnson.86411@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'devinjohnson3409', 'active', 'player', 'cus_randtest_igze1m0zmhp000', 'sub_randtest_ibalw0ylbt0000')
+  VALUES (uuid_generate_v4(), 'randtest.devin.johnson.86411@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'devinjohnson3409', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -16061,7 +16061,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.owen.williams.43159@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'owenwilliams4998', 'active', 'player', 'cus_randtest_0vnvef25esu000', 'sub_randtest_qvrebafyd4m000')
+  VALUES (uuid_generate_v4(), 'randtest.owen.williams.43159@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'owenwilliams4998', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -16096,7 +16096,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.brandon.adams.94063@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'brandonadams4077', 'active', 'player', 'cus_randtest_f8vby9y7jhc000', 'sub_randtest_a2gu7xoc3ml000')
+  VALUES (uuid_generate_v4(), 'randtest.brandon.adams.94063@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'brandonadams4077', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -16122,7 +16122,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.isaiah.anderson.7902@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'isaiahanderson562', 'active', 'player', 'cus_randtest_yx0w95c8j1j000', 'sub_randtest_2wvvxgcjt5i000')
+  VALUES (uuid_generate_v4(), 'randtest.isaiah.anderson.7902@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'isaiahanderson562', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -16148,7 +16148,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.ryder.wright.81948@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'ryderwright1825', 'active', 'player', 'cus_randtest_i5wr1a2ujjf000', 'sub_randtest_yz0hcs7sr20000')
+  VALUES (uuid_generate_v4(), 'randtest.ryder.wright.81948@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'ryderwright1825', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -16183,7 +16183,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.jalen.lewis.21418@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'jalenlewis9633', 'active', 'player', 'cus_randtest_5vabowqjr3x000', 'sub_randtest_qft05ib03n0000')
+  VALUES (uuid_generate_v4(), 'randtest.jalen.lewis.21418@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'jalenlewis9633', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -16218,7 +16218,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.xavier.reed.64131@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'xavierreed7022', 'active', 'player', 'cus_randtest_urjyiw5tfl0000', 'sub_randtest_1i3arcn0c2l000')
+  VALUES (uuid_generate_v4(), 'randtest.xavier.reed.64131@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'xavierreed7022', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -16244,7 +16244,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.logan.thompson.53453@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'loganthompson4602', 'active', 'player', 'cus_randtest_s6wfqd9dcg0000', 'sub_randtest_c618vjw8b6l000')
+  VALUES (uuid_generate_v4(), 'randtest.logan.thompson.53453@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'loganthompson4602', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -16279,7 +16279,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.marcus.martinez.62957@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'marcusmartinez6106', 'active', 'player', 'cus_randtest_sgcfdoddru0000', 'sub_randtest_c7eofugw67h000')
+  VALUES (uuid_generate_v4(), 'randtest.marcus.martinez.62957@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'marcusmartinez6106', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -16314,7 +16314,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.dante.scott.94406@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'dantescott8559', 'active', 'player', 'cus_randtest_v1oivtxgtoj000', 'sub_randtest_brofu53rknr000')
+  VALUES (uuid_generate_v4(), 'randtest.dante.scott.94406@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'dantescott8559', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -16349,7 +16349,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.blake.clark.63623@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'blakeclark9280', 'active', 'player', 'cus_randtest_adqqos0zpsi000', 'sub_randtest_rdq29qcprun000')
+  VALUES (uuid_generate_v4(), 'randtest.blake.clark.63623@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'blakeclark9280', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -16384,7 +16384,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.ethan.young.40847@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'ethanyoung5512', 'active', 'player', 'cus_randtest_7o7fw80wr20000', 'sub_randtest_7hdv0dwea1f000')
+  VALUES (uuid_generate_v4(), 'randtest.ethan.young.40847@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'ethanyoung5512', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -16419,7 +16419,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.isaiah.scott.91358@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'isaiahscott5476', 'active', 'player', 'cus_randtest_4uy44t7n8ap000', 'sub_randtest_0078pt791e4700')
+  VALUES (uuid_generate_v4(), 'randtest.isaiah.scott.91358@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'isaiahscott5476', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -16445,7 +16445,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.ryder.johnson.23721@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'ryderjohnson3844', 'active', 'player', 'cus_randtest_gyyxza5b7tl000', 'sub_randtest_p6i4yx7y0r0000')
+  VALUES (uuid_generate_v4(), 'randtest.ryder.johnson.23721@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'ryderjohnson3844', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -16480,7 +16480,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.zane.mitchell.6254@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'zanemitchell3815', 'active', 'player', 'cus_randtest_3ynfuyee1d9000', 'sub_randtest_hsp2fsmx6zr000')
+  VALUES (uuid_generate_v4(), 'randtest.zane.mitchell.6254@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'zanemitchell3815', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -16515,7 +16515,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.gavin.lewis.29482@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'gavinlewis1184', 'active', 'player', 'cus_randtest_gmc874y5k7m000', 'sub_randtest_7ilqt8kp1nd000')
+  VALUES (uuid_generate_v4(), 'randtest.gavin.lewis.29482@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'gavinlewis1184', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -16550,7 +16550,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.carter.johnson.97897@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'carterjohnson2763', 'active', 'player', 'cus_randtest_7ewqcaj6w64000', 'sub_randtest_vy1eydylqrg000')
+  VALUES (uuid_generate_v4(), 'randtest.carter.johnson.97897@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'carterjohnson2763', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -16585,7 +16585,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.zane.williams.66790@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'zanewilliams2771', 'active', 'player', 'cus_randtest_u91x340k9ks000', 'sub_randtest_lqy3qwt6p10000')
+  VALUES (uuid_generate_v4(), 'randtest.zane.williams.66790@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'zanewilliams2771', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -16620,7 +16620,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.cole.parker.16798@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'coleparker3115', 'active', 'player', 'cus_randtest_gsv2k8hee04000', 'sub_randtest_6vtk4op1gfb000')
+  VALUES (uuid_generate_v4(), 'randtest.cole.parker.16798@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'coleparker3115', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -16646,7 +16646,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.trey.wilson.23896@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'treywilson6979', 'active', 'player', 'cus_randtest_xrmd84xgx7f000', 'sub_randtest_s180jnw4yor000')
+  VALUES (uuid_generate_v4(), 'randtest.trey.wilson.23896@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'treywilson6979', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -16681,7 +16681,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.silas.brown.12452@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'silasbrown4812', 'active', 'player', 'cus_randtest_lqu0ncexxgg000', 'sub_randtest_qiflubisfc0000')
+  VALUES (uuid_generate_v4(), 'randtest.silas.brown.12452@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'silasbrown4812', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -16716,7 +16716,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.nolan.mitchell.1741@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'nolanmitchell5456', 'active', 'player', 'cus_randtest_obwmj2tcir0000', 'sub_randtest_ruvrkej2ey0000')
+  VALUES (uuid_generate_v4(), 'randtest.nolan.mitchell.1741@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'nolanmitchell5456', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (
@@ -16751,7 +16751,7 @@ COMMIT;
 BEGIN;
 WITH new_user AS (
   INSERT INTO users (id, email, role, email_verified, profile_completed, is_active, cognito_sub, username, subscription_status, subscription_tier, stripe_customer_id, stripe_subscription_id)
-  VALUES (uuid_generate_v4(), 'randtest.jalen.taylor.39144@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'jalentaylor7342', 'active', 'player', 'cus_randtest_vul8v57g4zn000', 'sub_randtest_17b5n1x2wcb000')
+  VALUES (uuid_generate_v4(), 'randtest.jalen.taylor.39144@test.com', 'player', true, true, true, 'randtest-' || gen_random_uuid()::text, 'jalentaylor7342', 'none', NULL, NULL, NULL)
   RETURNING id
 ),
 new_profile AS (

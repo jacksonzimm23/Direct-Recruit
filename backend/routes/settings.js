@@ -1108,7 +1108,14 @@ router.get('/switch-profile/info', authMiddleware, async (req, res) => {
       .map(t => ({
         type: t,
         label: PROFILE_TYPE_LABELS[t],
-        is_paid: User.PAID_TYPES.includes(t)
+        // Platform paywall only → drives the PAID/FREE badge. Players are FREE.
+        is_paid: User.PAID_TYPES.includes(t),
+        // Free type that offers an optional paid add-on (AI Rep).
+        has_addon: User.ADDON_TYPES.includes(t),
+        // Which subscription tiers stay valid on this target. Mirrors the switch
+        // ladder's targetAllowedTiers so the frontend's iOS Apple-billing warning
+        // can ask "does my current plan carry over?" without duplicating the map.
+        allowed_tiers: User.ALLOWED_TIERS_BY_SUBTYPE[t] || []
       }));
 
     // Shared fields for pre-fill
@@ -1137,10 +1144,23 @@ router.get('/switch-profile/info', authMiddleware, async (req, res) => {
       currentPffGrade = profile.pff_grade != null ? Number(profile.pff_grade) : null;
     }
 
+    // Is the user actually on a paid plan RIGHT NOW? A player is a free account
+    // that can hold the $10/mo AI Rep add-on, so the profile-type badge has to
+    // follow the subscription, not the type. 'trialing' counts — the plan is
+    // live during the 7-day trial.
+    const holdsPaidSubscription = User.ENTITLED_SUB_STATUSES.includes(user.subscription_status);
+
     res.json({
       current_type: currentSubtype,
       current_label: PROFILE_TYPE_LABELS[currentSubtype],
-      is_current_paid: User.PAID_TYPES.includes(currentSubtype),
+      // PAID badge for the CURRENT profile. True when either the type itself is
+      // paywalled (collegecoach) OR the user holds a live subscription (a player
+      // on the AI Rep add-on). Without the second half, a paying player reads
+      // "FREE" while being billed.
+      is_current_paid: User.PAID_TYPES.includes(currentSubtype) || holdsPaidSubscription,
+      // Raw signal so the frontend can refine the badge with Stripe's
+      // cancel-at-period-end (a cancelled trial is heading back to free).
+      holds_paid_subscription: holdsPaidSubscription,
       can_switch: canSwitch,
       cooldown_remaining_hours: cooldownRemainingHours,
       targets,
@@ -1277,8 +1297,8 @@ router.post('/switch-profile', authMiddleware, async (req, res) => {
     };
 
     // Compute paid/free transition booleans (used here for Stripe ops AND
-    // below for the response shape).
-    const isCurrentPaid = User.PAID_TYPES.includes(currentSubtype);
+    // below for the response shape). Since 2026-07 only collegecoach is in
+    // PAID_TYPES, so isTargetPaid is effectively `target_type === 'collegecoach'`.
     const isTargetPaid = User.PAID_TYPES.includes(target_type);
     const isSamePricePair = ['hsplayer', 'transferplayer'].includes(currentSubtype) &&
                             ['hsplayer', 'transferplayer'].includes(target_type);
@@ -1287,7 +1307,14 @@ router.post('/switch-profile', authMiddleware, async (req, res) => {
     // transaction so a failed Stripe call rolls back the entire profile
     // switch instead of leaving the user with a free profile + an active
     // subscription.
-    const isStripeSub = user.subscription_source === 'stripe' && user.stripe_subscription_id;
+    // Legacy and seeded rows can carry a stripe_subscription_id with a NULL
+    // subscription_source (they predate the source column, and several seed
+    // scripts write it that way). Treat those as Stripe — the same normalization
+    // GET /subscription-status already does in payments.js. Without this they
+    // satisfy neither isStripeSub nor isAppleOrCompSub and skip the ENTIRE
+    // ladder, riding a stale entitlement into the new profile type.
+    const isStripeSub = !!user.stripe_subscription_id &&
+      (user.subscription_source === 'stripe' || !user.subscription_source);
 
     // Apple IAP and comp subscriptions can't be cancelled server-side (Apple:
     // only the user can, in iOS Settings; comp: nothing billed). If the current
@@ -1302,10 +1329,10 @@ router.post('/switch-profile', authMiddleware, async (req, res) => {
 
     // Cancel an active Stripe sub the TARGET type can't use. We key this off the
     // subscription itself (status + whether the target allows the held tier), NOT
-    // off isCurrentPaid — because GTM 2026-06 removed hsplayer/transferplayer from
-    // PAID_TYPES, so a legacy paying player would have isCurrentPaid=false and slip
-    // past an isCurrentPaid-based guard, leaving them billed forever. This mirrors
-    // the Apple/comp branch below (subscription_status !== 'none' &&
+    // off whether the SOURCE type is in PAID_TYPES — hsplayer/transferplayer are
+    // free types that can still hold an AI Rep subscription, so a source-type-based
+    // guard would skip them and leave them billed forever. This mirrors the
+    // Apple/comp branch below (subscription_status !== 'none' &&
     // !targetAllowedTiers.includes(subscription_tier)).
     const stripeSubUnusableOnTarget =
       isStripeSub &&
@@ -1325,12 +1352,15 @@ router.post('/switch-profile', authMiddleware, async (req, res) => {
       await User.updateSubscription(req.userId, {
         subscriptionId: null,
         status: 'cancelled',
-        tier: null
+        tier: null,
+        // Clear the source too, else the row keeps source='stripe' with a NULL
+        // sub id — which makes isStripeSub read true again on the NEXT switch.
+        source: null
       }, client);
     } else if (stripeSubUnusableOnTarget && isTargetPaid && !isSamePricePair) {
       // Held Stripe sub the target can't use, switching to a DIFFERENT paid product
-      // (cross-type, e.g. a legacy player $10 sub -> collegecoach $20+). Keyed off the
-      // sub itself (not isCurrentPaid) for the same GTM reason as the branch above.
+      // (cross-type, e.g. an AI Rep $10 sub -> collegecoach $20+). Keyed off the
+      // sub itself, not the source profile type, for the same reason as above.
       // Verify-then-pay: do NOT cancel the old Stripe sub at switch time — that
       // stripped access if the user abandoned the new payment. Instead:
       //   - set subscription_status='none' so the paywall makes them pay for the NEW product,
@@ -1744,8 +1774,15 @@ router.post('/switch-profile', authMiddleware, async (req, res) => {
     // Subscription transitions already handled atomically inside the
     // transaction (security #17). All that's left is to compute the response
     // shape — `requires_payment` controls whether the frontend redirects to
-    // Stripe Checkout next. `isCurrentPaid`, `isTargetPaid`, `isSamePricePair`
-    // were declared in the transaction block above and are still in scope.
+    // Stripe Checkout next. `isTargetPaid` and `isSamePricePair` were declared
+    // in the transaction block above and are still in scope.
+    //
+    // Since 2026-07 this reduces to `target_type === 'collegecoach'`: players are
+    // free, so switching TO hsplayer/transferplayer never demands payment. The
+    // AI Rep add-on is bought from the AI Rep paywall modal, not from a switch.
+    // (!isSamePricePair is now redundant — a same-price player pair can never be
+    // isTargetPaid — but it is kept as cheap insurance if players ever return to
+    // PAID_TYPES. If you delete it, delete the isSamePricePair declaration too.)
     const requiresPayment = isTargetPaid && !isSamePricePair;
 
     res.json({

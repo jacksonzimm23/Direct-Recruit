@@ -12,9 +12,7 @@ WITH new_user AS (
     'player', true, true, true,
     'randtest-' || gen_random_uuid()::text,
     'calebwright3826',
-    'active', 'player',
-    'cus_randtest_a8f3k2lm9qx7vr',
-    'sub_randtest_t2n5gh8jw4be1c'
+    'none', NULL, NULL, NULL
   )
   RETURNING id
 ),

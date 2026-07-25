@@ -572,16 +572,22 @@ async function seedFollows(allPlayers, userIds) {
 }
 
 async function seedSubscriptions(players, userIds) {
+  // 2026-07: players are FREE on the platform — a subscription only unlocks the
+  // AI Rep page, so demo players no longer need one. Leaving them 'active' gave
+  // every demo bot free AI Rep AND wrote stripe_subscription_id with a NULL
+  // subscription_source, a shape the profile-switch ladder mishandles.
+  // Explicitly clear rather than skip, so re-running fixes previously-seeded rows.
   for (const p of players) {
     const userId = userIds[p.email];
+    if (!userId) continue;
     await pool.query(
-      `UPDATE users SET subscription_status = 'active', subscription_tier = 'player',
-       stripe_subscription_id = $1, stripe_customer_id = $2
-       WHERE id = $3`,
-      [`sub_mock_${p.username}`, `cus_mock_${p.username}`, userId]
+      `UPDATE users SET subscription_status = 'none', subscription_tier = NULL,
+       stripe_subscription_id = NULL, subscription_source = NULL
+       WHERE id = $1`,
+      [userId]
     );
   }
-  console.log(`  UPDATED: ${players.length} player subscriptions set to active`);
+  console.log(`  UPDATED: ${players.length} demo players set to free (no subscription)`);
 }
 
 async function seedPortalSignals(collegePlayers, userIds, coachIds) {

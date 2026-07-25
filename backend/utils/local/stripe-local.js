@@ -54,6 +54,20 @@ async function createCustomer(email, userId) {
 async function createCheckoutSession({ customerId, priceId, userId, profileType, tier, context, successUrl, cancelUrl, trialDays }) {
   const sessionId = mockId('cs');
   const subId = mockId('sub');
+
+  // Local dev runs the ENTIRE payment flow up to the Stripe API boundary and stops
+  // here. Dump the exact payload that would have been sent so the real request is
+  // inspectable without a Stripe account or network call. Everything below this
+  // line is the mock standing in for Stripe + its checkout.session.completed webhook.
+  console.log('[Stripe Mock] ---- would POST stripe.checkout.sessions.create ----');
+  console.log('[Stripe Mock]   customer          : ' + customerId);
+  console.log('[Stripe Mock]   line_items[0].price: ' + priceId);
+  console.log('[Stripe Mock]   trial_period_days : ' + (trialDays > 0 ? trialDays : '(none)'));
+  console.log('[Stripe Mock]   metadata          : ' + JSON.stringify({ userId, profileType, context }));
+  console.log('[Stripe Mock]   subscription tier : ' + (tier || '(defaulted to player)'));
+  console.log('[Stripe Mock]   success_url       : ' + successUrl);
+  console.log('[Stripe Mock]   cancel_url        : ' + cancelUrl);
+  console.log('[Stripe Mock] ---- STOP: no network call made ----');
   const session = {
     id: sessionId,
     url: `${successUrl}${successUrl.includes('?') ? '&' : '?'}session_id=${sessionId}`,
@@ -77,6 +91,13 @@ async function createCheckoutSession({ customerId, priceId, userId, profileType,
     state.trial = !!isPlayerTrial;
     try {
       await User.updateSubscription(userId, { subscriptionId: subId, status, tier: resolvedTier, source: 'stripe' });
+      // The mock stands in for the checkout.session.completed webhook, which is
+      // where the real rail burns the one-per-user free trial. Mirror it here or
+      // trial-farming would look "fixed" in prod but still be reproducible locally.
+      if (status === 'trialing') {
+        await User.markTrialUsed(userId);
+        console.log(`[Stripe Mock] Free trial consumed by user ${userId} — future checkouts bill immediately`);
+      }
       console.log(`[Stripe Mock] Auto-set subscription for user ${userId}: tier=${resolvedTier}, status=${status}`);
     } catch (e) {
       console.error(`[Stripe Mock] Failed to set subscription: ${e.message}`);

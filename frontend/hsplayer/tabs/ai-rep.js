@@ -1,6 +1,54 @@
 // AI Rep Page - Dynamic (connected to backend)
 
 (async function initAiRep() {
+    // ── AI Rep entitlement gate ──────────────────────────────────────────────
+    // AI Rep is the only paid player surface. Resolve entitlement BEFORE anything
+    // else so a free player who lands here directly (typed URL, bookmark, or the
+    // "AI Search Match" notification deep link) never runs the three loaders and
+    // never has gated markup in their DOM to inspect. The backend 403s regardless
+    // (requireAiRep in routes/ai-rep.js is the real boundary) — this keeps the
+    // page from rendering three silently-empty sections behind a lock.
+    if (window.AiRepPaywall) {
+        await window.AiRepPaywall.refresh();
+        if (!window.AiRepPaywall.isEntitled()) {
+            renderLockedPage();
+            window.AiRepPaywall.open();
+            return;
+        }
+    }
+
+    // Strip the data sections and leave a short teaser + unlock CTA in their place.
+    function renderLockedPage() {
+        ['aiRepSchoolsSection', 'aiRepAppearancesSection', 'aiRepProfileSection']
+            .forEach(id => { const el = document.getElementById(id); if (el) el.remove(); });
+
+        const page = document.querySelector('.ai-rep-page');
+        if (!page) return;
+        const panel = document.createElement('div');
+        panel.className = 'ai-rep-section';
+        panel.innerHTML = `
+            <div class="ai-rep-card" style="text-align:center;padding:2.5rem 1.5rem;">
+                <div style="width:52px;height:52px;margin:0 auto 1rem;border-radius:50%;
+                            background:rgba(18,130,162,0.14);border:1px solid rgba(18,130,162,0.3);
+                            display:flex;align-items:center;justify-content:center;color:#1282a2;">
+                    <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor"
+                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                    </svg>
+                </div>
+                <h2 style="color:#fff;font-size:1.25rem;font-weight:800;margin:0 0 0.5rem;">AI Rep is locked</h2>
+                <p style="color:rgba(255,255,255,0.55);font-size:0.9rem;line-height:1.6;margin:0 auto 1.5rem;max-width:420px;">
+                    Unlock Best-Fit Schools, Search Appearances, and Profile Optimization to see
+                    which programs are looking for players like you.
+                </p>
+                <button class="ai-rep-show-more" id="aiRepUnlockBtn" style="display:inline-block;">See what's included</button>
+            </div>`;
+        page.appendChild(panel);
+        const btn = document.getElementById('aiRepUnlockBtn');
+        if (btn) btn.addEventListener('click', () => window.AiRepPaywall.open());
+    }
+
     const BATCH_SIZE = 10;
     let schoolsOffset = 0;
     let schoolsCache = []; // accumulates loaded schools (for modal lookup by index)
@@ -61,6 +109,10 @@
             animateNewRows();
             schoolsShowMore.style.display = data.hasMore ? 'flex' : 'none';
         } catch (err) {
+            // Subscription lapsed mid-session (cancelled, or trial ended while the
+            // page was open). Swap to the locked state instead of leaving an empty
+            // section that reads as "no data".
+            if (err && err.status === 403) { renderLockedPage(); window.AiRepPaywall.open(); return; }
             console.error('Failed to load best-fit schools:', err);
             schoolsLoading.style.display = 'none';
             if (reset) schoolsEmpty.style.display = '';
@@ -181,6 +233,10 @@
             animateAppearanceCards();
             appearancesShowMore.style.display = data.hasMore ? 'flex' : 'none';
         } catch (err) {
+            // Subscription lapsed mid-session (cancelled, or trial ended while the
+            // page was open). Swap to the locked state instead of leaving an empty
+            // section that reads as "no data".
+            if (err && err.status === 403) { renderLockedPage(); window.AiRepPaywall.open(); return; }
             console.error('Failed to load search appearances:', err);
             appearancesLoading.style.display = 'none';
             if (reset) appearancesEmpty.style.display = '';
@@ -266,6 +322,10 @@
                 setTimeout(() => el.classList.add('ai-rep-visible'), 200 + (i * 50));
             });
         } catch (err) {
+            // Subscription lapsed mid-session (cancelled, or trial ended while the
+            // page was open). Swap to the locked state instead of leaving an empty
+            // section that reads as "no data".
+            if (err && err.status === 403) { renderLockedPage(); window.AiRepPaywall.open(); return; }
             console.error('Failed to load profile completion:', err);
         }
     }
@@ -309,6 +369,10 @@
     }
 
     // ============ SEARCH TRENDS (hardcoded demo data) ============
+    // HIDDEN 2026-07-25: the Search Trends section is commented out in ai-rep.html,
+    // so these three elements resolve to null and the guarded init block at the end
+    // of this section never runs. Code kept intact for re-enable — un-comment the
+    // section in the HTML and this wires itself back up with no JS changes.
 
     const trendDivisionFilter = document.getElementById('trendDivisionFilter');
     const trendPositionFilter = document.getElementById('trendPositionFilter');

@@ -2356,17 +2356,32 @@ async function initializeProfileTypeSwitching() {
         const valueEl = document.getElementById('currentProfileTypeValue');
         if (valueEl) valueEl.textContent = data.current_label;
 
+        // PAID/FREE badge for the CURRENT profile. This tracks whether the user is
+        // actually on a paid plan, NOT whether the profile type is paywalled —
+        // players are free accounts that can hold the $10/mo AI Rep add-on, and a
+        // paying player must not read "FREE".
+        let isPaidNow = !!data.is_current_paid;
+        if (data.holds_paid_subscription) {
+            try {
+                const sub = await API.payments.getSubscriptionStatus();
+                // Cancelled before the trial ends (or before the next renewal):
+                // Stripe will end it with no charge, so the account is on its way
+                // back to free. Show FREE now rather than after the period lapses.
+                // Never downgrade a collegecoach this way — that type is paywalled
+                // regardless of subscription state.
+                if (sub && sub.cancelAtPeriodEnd && !PAID_PROFILE_TYPES.includes(data.current_type)) {
+                    isPaidNow = false;
+                }
+            } catch (_) { /* fall back to the server's answer */ }
+        }
+        switchProfileInfo.is_current_paid = isPaidNow;   // keep step 3's badge in sync
+
         const badgeEl = document.getElementById('currentProfilePaidBadge');
         if (badgeEl) {
-            if (data.is_current_paid) {
-                badgeEl.textContent = 'PAID';
-                badgeEl.classList.add('badge-paid');
-                badgeEl.style.display = '';
-            } else {
-                badgeEl.textContent = 'FREE';
-                badgeEl.classList.add('badge-free');
-                badgeEl.style.display = '';
-            }
+            badgeEl.classList.remove('badge-paid', 'badge-free');
+            badgeEl.textContent = isPaidNow ? 'PAID' : 'FREE';
+            badgeEl.classList.add(isPaidNow ? 'badge-paid' : 'badge-free');
+            badgeEl.style.display = '';
         }
 
         // Handle cooldown
@@ -3548,19 +3563,35 @@ async function executeSwitchProfile(profileData) {
     // the target type — paid→free AND cross-type paid→paid alike (the old plan
     // keeps billing while the new type needs its own purchase). The
     // hsplayer↔transferplayer pair shares one product, so it carries: no warning.
-    // Paid profile types (players are paid again — 7-day trial).
-    const PAID = ['hsplayer', 'transferplayer', 'collegecoach'];
+    // Profile types blocked from the platform without a subscription. Players are
+    // NOT here since 2026-07 — they are free, and their subscription is an AI Rep
+    // add-on. This list only picks the warning COPY below.
+    const PAID = ['collegecoach'];
     const targetIsFree = !PAID.includes(selectedTargetType);
-    const samePricePair = ['hsplayer', 'transferplayer'].includes(switchProfileInfo && switchProfileInfo.current_type) &&
-                          ['hsplayer', 'transferplayer'].includes(selectedTargetType);
-    if (API.isIOSApp() && switchProfileInfo && switchProfileInfo.is_current_paid && !samePricePair) {
-        let source = null, status = null;
+    // Ask "does my plan carry to the target?", NOT "is my profile type paid".
+    // is_current_paid is false for players now, so keying off it would silence this
+    // warning exactly when a player with an Apple sub switches away — and Apple
+    // would keep charging them with no notice. allowed_tiers mirrors the backend
+    // switch ladder's targetAllowedTiers, so the two can't drift.
+    const targetInfo = switchProfileInfo && switchProfileInfo.targets &&
+                       switchProfileInfo.targets.find(t => t.type === selectedTargetType);
+    const targetAllowedTiers = (targetInfo && targetInfo.allowed_tiers) || [];
+    if (API.isIOSApp() && switchProfileInfo) {
+        let source = null, status = null, tier = null;
         try {
             const sub = await API.payments.getSubscriptionStatus();
             source = sub && sub.source;
             status = sub && sub.status;
+            tier = sub && sub.tier;
         } catch (_) { /* if we can't tell, fall through to the warning to be safe */ }
-        if (source === 'apple_iap' && status === 'active') {
+        // 'trialing' counts: a trial player is still on the hook on day 7. The old
+        // check was status === 'active' only, which missed the DEFAULT state of a
+        // brand-new player subscriber.
+        const holdsEntitlement = ['active', 'trialing', 'past_due'].includes(status);
+        const carriesOver = !!tier && targetAllowedTiers.includes(tier);
+        // carriesOver already covers the hsplayer<->transferplayer pair (both allow
+        // the 'player' tier), so no separate samePricePair check is needed.
+        if (source === 'apple_iap' && holdsEntitlement && !carriesOver) {
             const proceed = await showConfirmModal({
                 title: 'Apple subscription stays active',
                 message: targetIsFree
@@ -3857,8 +3888,13 @@ function applyPffGradePrefill() {
 }
 
 // ─── Subscription Section ────────────────────────────────────────────────────
-// Paid profile types (players are paid again — 7-day trial).
-const PAID_PROFILE_TYPES = ['hsplayer', 'transferplayer', 'collegecoach'];
+// Profile types blocked from the PLATFORM without a subscription (mirrors
+// User.PAID_TYPES). Since 2026-07 players are NOT here — they are free, and their
+// $10/mo subscription is an AI Rep add-on instead. That makes this section
+// three-state, not two: free type / free player with an optional add-on / paid coach.
+const PAID_PROFILE_TYPES = ['collegecoach'];
+// Free types that can buy an optional add-on (mirrors User.ADDON_TYPES).
+const ADDON_PROFILE_TYPES = ['hsplayer', 'transferplayer'];
 const PLAN_DISPLAY = {
     player: { name: 'Player Plan', price: '$10/mo' },
     starter: { name: 'Coach Starter', price: '$20/mo' },
@@ -3878,6 +3914,22 @@ async function initializeSubscriptionSection() {
             college_division: me.profile && me.profile.college_division
         });
         const isPaid = PAID_PROFILE_TYPES.includes(profileFolder);
+        const hasAddon = ADDON_PROFILE_TYPES.includes(profileFolder);
+
+        // Players (free platform + optional AI Rep add-on). If they actually hold
+        // the add-on we MUST fall through to the full subscription UI — otherwise a
+        // paying player would be told their account is free with no way to cancel,
+        // which is both wrong and an App Store review risk.
+        if (hasAddon) {
+            const sub = await API.payments.getSubscriptionStatus();
+            const holdsAddon = ['active', 'trialing', 'past_due', 'comp'].includes(sub && sub.status);
+            if (holdsAddon) {
+                renderSubscriptionUI(content, sub, profileFolder);
+                return;
+            }
+            renderFreePlayerUI(content, sub);
+            return;
+        }
 
         if (!isPaid) {
             const showRestore = API.isIOSApp();
@@ -3905,6 +3957,53 @@ async function initializeSubscriptionSection() {
     } catch (error) {
         console.error('Failed to load subscription info:', error);
         content.innerHTML = '<p style="color:#8892b0;">Unable to load subscription information.</p>';
+    }
+}
+
+// Free player (hsplayer / transferplayer) with no AI Rep add-on. The account
+// itself costs nothing; the only thing purchasable is AI Rep. Selling it is
+// delegated to AiRepPaywall (shared/api.js) so the price line, trial terms,
+// Apple/Stripe branching, and the required disclosures live in exactly one place
+// and can't drift between here and the in-page lock.
+function renderFreePlayerUI(container, sub) {
+    const showRestore = API.isIOSApp();
+    // A previously-cancelled add-on is worth naming, so the player understands why
+    // AI Rep stopped working rather than assuming it broke.
+    const wasCancelled = sub && sub.status === 'cancelled';
+    container.innerHTML = `
+        <div class="sub-free-message">
+            <p>Your account is <strong>free</strong> — no subscription needed.</p>
+            <p style="color:rgba(255,255,255,0.4);font-size:0.85rem;margin-top:8px;">All social features, messaging, discovery, and your profile are included at no cost.</p>
+        </div>
+        <div class="sub-details" style="margin-top:20px;">
+            <div class="sub-row">
+                <span class="sub-label">AI Rep</span>
+                <span class="sub-value"><span class="sub-badge sub-badge-none">${wasCancelled ? 'Cancelled' : 'Not Subscribed'}</span></span>
+            </div>
+        </div>
+        <p style="color:rgba(255,255,255,0.5);font-size:0.85rem;line-height:1.6;margin:12px 0 0;">
+            Unlock Best-Fit Schools, Search Appearances, and Profile Optimization to see
+            which programs are searching for players like you.
+        </p>
+        <div class="sub-actions" style="margin-top:16px;">
+            <button class="btn-primary" id="subAiRepBtn">${wasCancelled ? 'Resubscribe to AI Rep' : 'Unlock AI Rep'}</button>
+        </div>
+        ${showRestore ? `
+        <div class="sub-actions" style="margin-top:20px;">
+            <button class="btn-secondary" id="subRestorePurchasesBtn">Restore Purchases</button>
+            <p class="sub-cancel-note" style="margin-top:8px;font-size:0.8rem;">Previously paid through Apple? Tap to restore your subscription.</p>
+        </div>
+        ` : ''}
+    `;
+    const aiRepBtn = document.getElementById('subAiRepBtn');
+    if (aiRepBtn) {
+        aiRepBtn.addEventListener('click', () => {
+            if (window.AiRepPaywall) window.AiRepPaywall.open();
+        });
+    }
+    if (showRestore) {
+        const restoreBtn = document.getElementById('subRestorePurchasesBtn');
+        if (restoreBtn) restoreBtn.addEventListener('click', () => handleRestorePurchases(restoreBtn));
     }
 }
 
@@ -4069,7 +4168,11 @@ async function handleRestorePurchases(btn) {
                 setTimeout(() => window.location.reload(), 1500);
                 return;
             }
-            if (rec && rec.reason === 'product_mismatch') {
+            if (rec && rec.reason === 'stripe_active') {
+                // Server refused an Apple takeover of a live Stripe sub — restoring
+                // would have left the web subscription billing with no way to cancel.
+                showToast('You already have an active subscription billed on the web. Manage or cancel it from a desktop browser at directrecruit.net before subscribing through Apple.', 'warning', 12000);
+            } else if (rec && rec.reason === 'product_mismatch') {
                 showToast('Your Apple subscription is for a different profile type. Switch to that profile type to use it, or cancel it in Settings > Apple ID > Subscriptions to stop billing.', 'warning', 12000);
             } else {
                 showToast('No active subscription found for your Apple ID.', 'error');
@@ -4140,6 +4243,13 @@ async function handleSubscribe(profileFolder) {
         if (profileFolder === 'collegecoach') {
             // Coaches: the tier modal (shared between Stripe + iOS) handles branching
             showSwitchTierModal();
+        } else if (ADDON_PROFILE_TYPES.includes(profileFolder) && window.AiRepPaywall) {
+            // Players buy the AI Rep add-on, not platform access. Route through the
+            // shared paywall modal so the price line, trial terms, Apple/Stripe
+            // branching, Restore Purchases, and the required disclosures come from
+            // ONE place and can't drift from the in-page AI Rep lock.
+            window.AiRepPaywall.open();
+            if (btn) { btn.textContent = 'Subscribe'; btn.disabled = false; }
         } else {
             const profileType = profileFolder === 'hsplayer' ? 'hsplayer' : 'transferplayer';
 
