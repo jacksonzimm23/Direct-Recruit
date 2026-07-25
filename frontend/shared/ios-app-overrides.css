@@ -175,6 +175,30 @@ html.ios-app body { background-color: inherit; }
         display: none !important;
     }
 
+    /* Feed post header (avatar | name + subheader) — iOS only.
+       Two things made this read as loose and misaligned next to the My Profile
+       post cards, which use their own .profile-post-* markup and look correct:
+
+       1. The three-dot menu button lives INSIDE .post-user-name-row and is 36px
+          tall, while the name line is only ~20px. Being the tallest flex item, it
+          set the row height and pushed the subheader ~8px further down than it
+          should sit. Negative vertical margins keep the 36px tap target (iOS HIG)
+          while letting the text decide the row's height.
+       2. The avatar drops to 36px at the narrow-phone breakpoint while the profile
+          card keeps 40px, so the same user looked different on the two screens.
+
+       Scoped to .post-card so it can only touch the feed, never My Profile. */
+    .ios-app .post-card .post-user-name-row > .post-more-btn {
+        margin-top: -8px !important;
+        margin-bottom: -8px !important;
+        flex-shrink: 0 !important;
+    }
+    .ios-app .post-card .post-avatar,
+    .ios-app .post-card .post-avatar-circle {
+        width: 40px !important;
+        height: 40px !important;
+    }
+
     /* AI Rep "Best-Fit Schools" rows (hsplayer + transferplayer) — iOS only.
        The row is a horizontal flex (logo | info | fit-badge). On a narrow iPhone
        the AI Match badge (label + slider + score) is a 3rd horizontal column and

@@ -932,7 +932,16 @@ class FeedManager {
                 return videoExtensions.some(ext => url.toLowerCase().includes(ext));
             };
 
-            // Helper to render a grid cell with media
+            // Helper to render a grid cell with media.
+            //
+            // Video thumbnails need BOTH of these on iOS or the cell renders as an
+            // empty black box with a play glyph (the poster frame is never painted):
+            //   playsinline - without it iOS treats the element as fullscreen-only
+            //                 and refuses to render a frame in place.
+            //   #t=0.1      - a media fragment telling the player to seek 0.1s in,
+            //                 which forces it to decode and paint that frame as the
+            //                 thumbnail. preload="metadata" alone does not.
+            // Both are inert on desktop, so there is no platform branch here.
             const renderGridCell = (url, index) => {
                 const isVideo = isVideoUrl(url, index);
                 const videoIndicator = isVideo ? `
@@ -946,7 +955,7 @@ class FeedManager {
                 return `
                     <div class="media-grid-cell" onclick="event.stopPropagation(); feedManager.openMediaSlideshow(${mediaUrlsJson}, ${index}, ${mediaTypesJson})">
                         ${isVideo ?
-                            `<video src="${url}" muted preload="metadata"></video>` :
+                            `<video src="${url}#t=0.1" muted playsinline preload="metadata"></video>` :
                             `<img src="${url}" alt="Post media ${index + 1}">`
                         }
                         ${videoIndicator}
@@ -1728,7 +1737,7 @@ class FeedManager {
                 return `
                     <div class="media-grid-cell" onclick="event.stopPropagation(); feedManager.openMediaSlideshow(${mediaUrlsJson}, ${index}, ${mediaTypesJson})">
                         ${isVideo ?
-                            `<video src="${url}" muted preload="metadata"></video>` :
+                            `<video src="${url}#t=0.1" muted playsinline preload="metadata"></video>` :
                             `<img src="${url}" alt="Post media ${index + 1}">`
                         }
                         ${videoIndicator}
@@ -1777,7 +1786,7 @@ class FeedManager {
                 return `
                     <div class="quoted-media-item" onclick="feedManager.openMediaSlideshow(${mediaUrlsJson}, ${index}); event.stopPropagation();">
                         ${isVideoUrl ?
-                            `<video src="${url}" muted preload="metadata"></video>` :
+                            `<video src="${url}#t=0.1" muted playsinline preload="metadata"></video>` :
                             `<img src="${url}" alt="Quoted post media ${index + 1}">`
                         }
                         ${videoIndicator}
@@ -3615,7 +3624,9 @@ class FeedManager {
         // Helper to render media element for slideshow
         const renderMediaContent = (url, index) => {
             if (isVideoUrl(url, index)) {
-                return `<video class="slideshow-video" src="${url}" controls autoplay></video>`;
+                // playsinline: without it iOS hijacks playback into the native
+                // fullscreen player instead of playing inside the viewer.
+                return `<video class="slideshow-video" src="${url}" controls autoplay playsinline></video>`;
             }
             return `<img class="slideshow-image" src="${url}" alt="Media">`;
         };

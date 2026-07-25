@@ -2380,7 +2380,7 @@ function buildMediaGridHTML(mediaUrls, mediaType) {
 
     const isVideoUrl = (url, index) => {
         if (mediaType === 'video') return true;
-        return url && url.toLowerCase().match(/\.(mp4|mov|avi|webm|m4v)(\?|$)/);
+        return url && url.toLowerCase().match(/\.(mp4|mov|avi|webm|m4v)(\?|#|$)/);
     };
 
     let gridCells = '';
@@ -2398,7 +2398,7 @@ function buildMediaGridHTML(mediaUrls, mediaType) {
         gridCells += `
             <div class="media-grid-cell" onclick="event.stopPropagation(); openProfileMediaSlideshowFromElement(this);">
                 ${isVideo ?
-                    `<video src="${url}" muted preload="metadata"></video>` :
+                    `<video src="${url}#t=0.1" muted playsinline preload="metadata"></video>` :
                     `<img src="${url}" alt="Post media ${i + 1}">`
                 }
                 ${videoIndicator}
@@ -2435,10 +2435,10 @@ function openProfileMediaSlideshow(mediaUrls, startIndex = 0) {
     overlay.className = 'media-slideshow-overlay';
     overlay.id = 'profile-media-slideshow';
 
-    const isVideo = (url) => url && url.toLowerCase().match(/\.(mp4|mov|avi|webm|m4v)(\?|$)/);
+    const isVideo = (url) => url && url.toLowerCase().match(/\.(mp4|mov|avi|webm|m4v)(\?|#|$)/);
     const currentUrl = mediaUrls[startIndex];
     const mediaElement = isVideo(currentUrl)
-        ? `<video src="${currentUrl}" controls autoplay></video>`
+        ? `<video src="${currentUrl}" controls autoplay playsinline></video>`
         : `<img src="${currentUrl}" alt="Media">`;
 
     overlay.innerHTML = `
@@ -2484,10 +2484,10 @@ function updateProfileSlideshowMedia() {
     if (!container) return;
 
     const currentUrl = profileSlideshowMediaUrls[profileSlideshowCurrentIndex];
-    const isVideo = (url) => url && url.toLowerCase().match(/\.(mp4|mov|avi|webm|m4v)(\?|$)/);
+    const isVideo = (url) => url && url.toLowerCase().match(/\.(mp4|mov|avi|webm|m4v)(\?|#|$)/);
 
     container.innerHTML = isVideo(currentUrl)
-        ? `<video src="${currentUrl}" controls autoplay></video>`
+        ? `<video src="${currentUrl}" controls autoplay playsinline></video>`
         : `<img src="${currentUrl}" alt="Media">`;
 
     if (counter) {
@@ -4241,7 +4241,7 @@ function createProfileQuotePostElement(post) {
         const mediaCount = Math.min(urls.length, 4);
         const isVideoUrl = (url) => {
             if (post.original_media_type === 'video') return true;
-            return url && url.toLowerCase().match(/\.(mp4|mov|avi|webm|m4v)(\?|$)/);
+            return url && url.toLowerCase().match(/\.(mp4|mov|avi|webm|m4v)(\?|#|$)/);
         };
 
         let gridCells = '';
@@ -4259,7 +4259,7 @@ function createProfileQuotePostElement(post) {
             gridCells += `
                 <div class="quoted-media-item" onclick="event.stopPropagation(); openProfileMediaSlideshowFromElement(this);">
                     ${isVideo ?
-                        `<video src="${url}" muted preload="metadata"></video>` :
+                        `<video src="${url}#t=0.1" muted playsinline preload="metadata"></video>` :
                         `<img src="${url}" alt="Post media ${i + 1}">`
                     }
                     ${videoIndicator}
@@ -5004,7 +5004,7 @@ function createProfileLikedQuotePostElement(post) {
         const mediaCount = Math.min(urls.length, 4);
         const isVideoUrl = (url) => {
             if (post.original_media_type === 'video') return true;
-            return url && url.toLowerCase().match(/\.(mp4|mov|avi|webm|m4v)(\?|$)/);
+            return url && url.toLowerCase().match(/\.(mp4|mov|avi|webm|m4v)(\?|#|$)/);
         };
 
         let gridCells = '';
@@ -5022,7 +5022,7 @@ function createProfileLikedQuotePostElement(post) {
             gridCells += `
                 <div class="quoted-media-item" onclick="event.stopPropagation(); openProfileMediaSlideshowFromElement(this);">
                     ${isVideo ?
-                        `<video src="${url}" muted preload="metadata"></video>` :
+                        `<video src="${url}#t=0.1" muted playsinline preload="metadata"></video>` :
                         `<img src="${url}" alt="Post media ${i + 1}">`
                     }
                     ${videoIndicator}

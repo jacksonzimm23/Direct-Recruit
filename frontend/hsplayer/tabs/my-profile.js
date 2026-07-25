@@ -6623,7 +6623,7 @@ function openVideoModal(videoUrl) {
                         <line x1="6" y1="6" x2="18" y2="18"></line>
                     </svg>
                 </button>
-                <video id="videoPlayerElement" controls autoplay>
+                <video id="videoPlayerElement" controls autoplay playsinline>
                     <source src="" type="video/mp4">
                     Your browser does not support the video tag.
                 </video>
@@ -7753,7 +7753,7 @@ function buildMediaGridHTML(mediaUrls, mediaType) {
 
     const isVideoUrl = (url, index) => {
         if (mediaType === 'video') return true;
-        return url && url.toLowerCase().match(/\.(mp4|mov|avi|webm|m4v)(\?|$)/);
+        return url && url.toLowerCase().match(/\.(mp4|mov|avi|webm|m4v)(\?|#|$)/);
     };
 
     let gridCells = '';
@@ -7771,7 +7771,7 @@ function buildMediaGridHTML(mediaUrls, mediaType) {
         gridCells += `
             <div class="media-grid-cell" onclick="event.stopPropagation(); openProfileMediaSlideshowFromElement(this);">
                 ${isVideo ?
-                    `<video src="${url}" muted preload="metadata"></video>` :
+                    `<video src="${url}#t=0.1" muted playsinline preload="metadata"></video>` :
                     `<img src="${url}" alt="Post media ${i + 1}">`
                 }
                 ${videoIndicator}
@@ -8123,7 +8123,7 @@ function createProfileQuotePostElement(post) {
         const mediaCount = Math.min(urls.length, 4);
         const isVideoUrl = (url) => {
             if (post.original_media_type === 'video') return true;
-            return url && url.toLowerCase().match(/\.(mp4|mov|avi|webm|m4v)(\?|$)/);
+            return url && url.toLowerCase().match(/\.(mp4|mov|avi|webm|m4v)(\?|#|$)/);
         };
 
         let gridCells = '';
@@ -8141,7 +8141,7 @@ function createProfileQuotePostElement(post) {
             gridCells += `
                 <div class="quoted-media-item" onclick="event.stopPropagation(); openProfileMediaSlideshowFromElement(this);">
                     ${isVideo ?
-                        `<video src="${url}" muted preload="metadata"></video>` :
+                        `<video src="${url}#t=0.1" muted playsinline preload="metadata"></video>` :
                         `<img src="${url}" alt="Post media ${i + 1}">`
                     }
                     ${videoIndicator}
@@ -9268,10 +9268,10 @@ function updateProfileSlideshowMedia() {
     const counter = document.querySelector('.slideshow-counter');
     const url = data.urls[data.currentIndex];
 
-    const isVideo = url.toLowerCase().match(/\.(mp4|mov|avi|webm|m4v)(\?|$)/);
+    const isVideo = url.toLowerCase().match(/\.(mp4|mov|avi|webm|m4v)(\?|#|$)/);
 
     if (isVideo) {
-        container.innerHTML = `<video src="${url}" controls autoplay style="max-width: 90vw; max-height: 90vh;"></video>`;
+        container.innerHTML = `<video src="${url}" controls autoplay playsinline style="max-width: 90vw; max-height: 90vh;"></video>`;
     } else {
         container.innerHTML = `<img src="${url}" alt="Media" style="max-width: 90vw; max-height: 90vh; object-fit: contain;">`;
     }
@@ -10651,7 +10651,7 @@ function createProfileLikedQuotePostElement(post) {
         const mediaCount = Math.min(urls.length, 4);
         const isVideoUrl = (url) => {
             if (post.original_media_type === 'video') return true;
-            return url && url.toLowerCase().match(/\.(mp4|mov|avi|webm|m4v)(\?|$)/);
+            return url && url.toLowerCase().match(/\.(mp4|mov|avi|webm|m4v)(\?|#|$)/);
         };
 
         let gridCells = '';
@@ -10669,7 +10669,7 @@ function createProfileLikedQuotePostElement(post) {
             gridCells += `
                 <div class="quoted-media-item" onclick="event.stopPropagation(); openProfileMediaSlideshowFromElement(this);">
                     ${isVideo ?
-                        `<video src="${url}" muted preload="metadata"></video>` :
+                        `<video src="${url}#t=0.1" muted playsinline preload="metadata"></video>` :
                         `<img src="${url}" alt="Post media ${i + 1}">`
                     }
                     ${videoIndicator}
