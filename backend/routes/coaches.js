@@ -96,6 +96,65 @@ router.get('/college', authMiddleware, async (req, res) => {
     }
 });
 
+// Get all high school coaches with pagination and filters
+// HS coaches have no college_division set (null or empty)
+// Used by the "other" and "collegeplayer" discover pages, which list every user type
+router.get('/hs', authMiddleware, async (req, res) => {
+    try {
+        const limit = Math.min(parseInt(req.query.limit) || 12, 100);
+        const offset = Math.max(parseInt(req.query.offset) || 0, 0);
+        const state = req.query.state;
+
+        let query = `SELECT * FROM coach_profiles
+             WHERE (college_division IS NULL OR college_division = '')`;
+        let countQuery = `SELECT COUNT(*) FROM coach_profiles
+             WHERE (college_division IS NULL OR college_division = '')`;
+        const values = [];
+        const countValues = [];
+        let paramCount = 1;
+
+        // Exclude current user's profile
+        if (req.userId) {
+            query += ` AND user_id != $${paramCount}`;
+            countQuery += ` AND user_id != $${paramCount}`;
+            values.push(req.userId);
+            countValues.push(req.userId);
+            paramCount++;
+        }
+
+        if (state) {
+            query += ` AND state = $${paramCount}`;
+            countQuery += ` AND state = $${paramCount}`;
+            values.push(state);
+            countValues.push(state);
+            paramCount++;
+        }
+
+        query += ` ORDER BY ${coachPopularityExpr('coach_profiles')} DESC NULLS LAST, created_at DESC, user_id
+             LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
+        values.push(limit, offset);
+
+        const result = await pool.query(query, values);
+        const countResult = await pool.query(countQuery, countValues);
+
+        const total = parseInt(countResult.rows[0].count);
+        const hasMore = offset + result.rows.length < total;
+
+        const coachesWithSignedUrls = await addSignedUrlsToCoaches(result.rows);
+
+        res.json({
+            coaches: coachesWithSignedUrls,
+            total,
+            hasMore,
+            offset,
+            limit
+        });
+    } catch (error) {
+        logger.error('Error fetching HS coaches:', error);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
 // Get college coach by first_name='College' and last_name='Coach' (legacy endpoint)
 router.get('/college-coach', authMiddleware, async (req, res) => {
     try {

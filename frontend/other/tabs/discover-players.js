@@ -4,7 +4,14 @@
 document.addEventListener('DOMContentLoaded', function() {
 
     // Pagination state - separate offsets for each user type
-    const userLimit = window.innerWidth <= 768 ? 5 : 10; // Limit per user type per load
+    // Page size: 10 on desktop, 5 on mobile (matches every other role's discover page)
+    const userLimit = window.innerWidth <= 768 ? 5 : 10;
+    // Users fetched but not yet displayed. Every fetch pulls a full page from EACH
+    // source so a single populated user type can fill the page on its own; the
+    // surplus is buffered here and drained by "See More" before hitting the API again.
+    // Without this buffer, anything fetched past userLimit would be discarded while
+    // the offset still advanced past it, so those users would never be shown at all.
+    let pendingUsers = [];
     let offsets = {
         hsplayer: 0,
         collegeplayer: 0,
@@ -29,6 +36,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const loadMoreBtn = document.getElementById('loadMoreUsersBtn');
 
         if (isLoadingUsers) return;
+        isLoadingUsers = true;
 
         // Ensure school logos are loaded before rendering
         if (typeof ensureSchoolLogosLoaded === 'function') {
@@ -38,8 +46,8 @@ document.addEventListener('DOMContentLoaded', function() {
             // Reset all offsets
             offsets = { hsplayer: 0, collegeplayer: 0, transferplayer: 0, hscoach: 0, collegecoach: 0, other: 0 };
             hasMore = { hsplayer: true, collegeplayer: true, transferplayer: true, hscoach: true, collegecoach: true, other: true };
+            pendingUsers = [];
         }
-        isLoadingUsers = true;
 
         if (loadMoreBtn) {
             loadMoreBtn.textContent = 'Loading...';
@@ -47,67 +55,12 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         try {
-            // Only fetch user types that still have more data
-            const fetchPromises = [];
-            const fetchTypes = [];
-            const perSourceLimit = Math.ceil(userLimit / 6);
-
-            if (hasMore.hsplayer) {
-                fetchPromises.push(API.get(`/profile/discover/hsplayers?limit=${perSourceLimit}&offset=${offsets.hsplayer}`).catch(() => ({ players: [] })));
-                fetchTypes.push('hsplayer');
-            }
-            if (hasMore.collegeplayer) {
-                fetchPromises.push(API.get(`/profile/discover/collegeplayers?limit=${perSourceLimit}&offset=${offsets.collegeplayer}`).catch(() => ({ players: [] })));
-                fetchTypes.push('collegeplayer');
-            }
-            if (hasMore.transferplayer) {
-                fetchPromises.push(API.get(`/profile/discover/transferplayers?limit=${perSourceLimit}&offset=${offsets.transferplayer}`).catch(() => ({ players: [] })));
-                fetchTypes.push('transferplayer');
-            }
-            if (hasMore.hscoach) {
-                fetchPromises.push(API.get(`/coaches/hs?limit=${perSourceLimit}&offset=${offsets.hscoach}`).catch(() => ({ coaches: [] })));
-                fetchTypes.push('hscoach');
-            }
-            if (hasMore.collegecoach) {
-                fetchPromises.push(API.get(`/coaches/college?limit=${perSourceLimit}&offset=${offsets.collegecoach}`).catch(() => ({ coaches: [] })));
-                fetchTypes.push('collegecoach');
-            }
-            if (hasMore.other) {
-                fetchPromises.push(API.get(`/profile/discover/other?limit=${perSourceLimit}&offset=${offsets.other}`).catch(() => ({ profiles: [] })));
-                fetchTypes.push('other');
+            // Only hit the API when the buffer can't fill a full page on its own
+            if (pendingUsers.length < userLimit && Object.values(hasMore).some(v => v)) {
+                await fetchMoreUsers();
             }
 
-            const responses = await Promise.all(fetchPromises);
-
-            // Combine all users with their types
-            const allUsers = [];
-
-            responses.forEach((res, index) => {
-                const type = fetchTypes[index];
-                let items = [];
-                let resHasMore = false;
-
-                if (type === 'hsplayer' || type === 'collegeplayer' || type === 'transferplayer') {
-                    items = (res && res.players) ? res.players : [];
-                    resHasMore = res && res.hasMore;
-                } else if (type === 'hscoach' || type === 'collegecoach') {
-                    items = (res && res.coaches) ? res.coaches : [];
-                    resHasMore = res && res.hasMore;
-                } else if (type === 'other') {
-                    items = (res && res.profiles) ? res.profiles : [];
-                    resHasMore = res && res.hasMore;
-                }
-
-                items.forEach(item => allUsers.push({ ...item, userType: type }));
-
-                // Update offset and hasMore for this type
-                offsets[type] += items.length;
-                hasMore[type] = resHasMore;
-            });
-
-            // Shuffle the array to mix user types, then cap to userLimit
-            shuffleArray(allUsers);
-            const displayUsers = allUsers.slice(0, userLimit);
+            const displayUsers = pendingUsers.splice(0, userLimit);
 
             if (displayUsers.length > 0) {
                 const userCards = displayUsers.map(user => createUserCard(user)).join('');
@@ -124,8 +77,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 usersGrid.innerHTML = '<p class="no-results-message">No users found.</p>';
             }
 
-            // Check if any type still has more
-            const hasMoreUsers = Object.values(hasMore).some(v => v);
+            // More to show if anything is buffered OR any source still has data
+            const hasMoreUsers = pendingUsers.length > 0 || Object.values(hasMore).some(v => v);
 
             // Update load more button visibility
             if (loadMoreBtn) {
@@ -151,6 +104,74 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         isLoadingUsers = false;
+    }
+
+    // Fetch one full page from every source that still has data, then buffer the
+    // results in pendingUsers. Each source is asked for a FULL userLimit (not
+    // userLimit / 6) so the page fills even when only one or two user types exist.
+    async function fetchMoreUsers() {
+        const fetchPromises = [];
+        const fetchTypes = [];
+        const perSourceLimit = userLimit;
+
+        if (hasMore.hsplayer) {
+            fetchPromises.push(API.get(`/profile/discover/hsplayers?limit=${perSourceLimit}&offset=${offsets.hsplayer}`).catch(() => ({ players: [] })));
+            fetchTypes.push('hsplayer');
+        }
+        if (hasMore.collegeplayer) {
+            fetchPromises.push(API.get(`/profile/discover/collegeplayers?limit=${perSourceLimit}&offset=${offsets.collegeplayer}`).catch(() => ({ players: [] })));
+            fetchTypes.push('collegeplayer');
+        }
+        if (hasMore.transferplayer) {
+            fetchPromises.push(API.get(`/profile/discover/transferplayers?limit=${perSourceLimit}&offset=${offsets.transferplayer}`).catch(() => ({ players: [] })));
+            fetchTypes.push('transferplayer');
+        }
+        if (hasMore.hscoach) {
+            fetchPromises.push(API.get(`/coaches/hs?limit=${perSourceLimit}&offset=${offsets.hscoach}`).catch(() => ({ coaches: [] })));
+            fetchTypes.push('hscoach');
+        }
+        if (hasMore.collegecoach) {
+            fetchPromises.push(API.get(`/coaches/college?limit=${perSourceLimit}&offset=${offsets.collegecoach}`).catch(() => ({ coaches: [] })));
+            fetchTypes.push('collegecoach');
+        }
+        if (hasMore.other) {
+            fetchPromises.push(API.get(`/profile/discover/other?limit=${perSourceLimit}&offset=${offsets.other}`).catch(() => ({ profiles: [] })));
+            fetchTypes.push('other');
+        }
+
+        const responses = await Promise.all(fetchPromises);
+
+        // Combine all users with their types
+        const newUsers = [];
+
+        responses.forEach((res, index) => {
+            const type = fetchTypes[index];
+            let items = [];
+            let resHasMore = false;
+
+            if (type === 'hsplayer' || type === 'collegeplayer' || type === 'transferplayer') {
+                items = (res && res.players) ? res.players : [];
+                resHasMore = res && res.hasMore;
+            } else if (type === 'hscoach' || type === 'collegecoach') {
+                items = (res && res.coaches) ? res.coaches : [];
+                resHasMore = res && res.hasMore;
+            } else if (type === 'other') {
+                items = (res && res.profiles) ? res.profiles : [];
+                resHasMore = res && res.hasMore;
+            }
+
+            items.forEach(item => newUsers.push({ ...item, userType: type }));
+
+            // Offset advances by what was actually returned. Nothing is dropped -
+            // the surplus stays in pendingUsers and is shown on the next "See More".
+            offsets[type] += items.length;
+            hasMore[type] = !!resHasMore;
+        });
+
+        // Shuffle each batch so user types stay mixed, then queue it behind
+        // whatever is already buffered
+        shuffleArray(newUsers);
+        pendingUsers = pendingUsers.concat(newUsers);
     }
 
     // Shuffle array (Fisher-Yates algorithm)
@@ -670,7 +691,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const loadMoreUsersBtn = document.getElementById('loadMoreUsersBtn');
     if (loadMoreUsersBtn) {
         loadMoreUsersBtn.addEventListener('click', function() {
-            const hasMoreUsers = Object.values(hasMore).some(v => v);
+            const hasMoreUsers = pendingUsers.length > 0 || Object.values(hasMore).some(v => v);
             if (hasMoreUsers && !isLoadingUsers) {
                 loadUsers(true);
             }
