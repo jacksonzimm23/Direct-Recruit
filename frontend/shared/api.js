@@ -1712,8 +1712,29 @@ function getInitMe() {
     const ENTITLED_STATUSES = ['active', 'trialing', 'past_due', 'comp'];
     const FE_BASE = window.location.origin + (window.location.pathname.startsWith('/frontend/') ? '/frontend' : '');
 
-    // null = not resolved yet. Set by refresh() on DOMContentLoaded.
-    let _entitled = null;
+    // Entitlement is cached in localStorage so the FIRST tap after a page load can
+    // decide SYNCHRONOUSLY. Without it the click handler had to await /auth/me
+    // before opening the modal, which on a phone reads as a dead tap followed by a
+    // late modal (and, on the AI Rep page itself, a flash of the loading skeleton).
+    // Cache is UI-timing only — requireAiRep() in backend/routes/ai-rep.js is still
+    // the authority, and refresh() below corrects the cache on every page load.
+    const CACHE_PREFIX = 'airep_ent_';
+    function cacheKey() {
+        try { const u = getUser(); return u && u.id ? CACHE_PREFIX + u.id : null; } catch (_) { return null; }
+    }
+    function readCache() {
+        try {
+            const k = cacheKey(); if (!k) return null;
+            const v = localStorage.getItem(k);
+            return v === '1' ? true : (v === '0' ? false : null);
+        } catch (_) { return null; }
+    }
+    function writeCache(v) {
+        try { const k = cacheKey(); if (k) localStorage.setItem(k, v ? '1' : '0'); } catch (_) {}
+    }
+
+    // null = not resolved yet. Seeded from cache, confirmed by refresh().
+    let _entitled = readCache();
     let _folder = null;
     let _userId = null;
     let _iapLoading = null;
@@ -2124,6 +2145,7 @@ function getInitMe() {
             if (!isPlayerFolder(_folder)) { _entitled = null; return _entitled; }
             _entitled = ENTITLED_STATUSES.includes(me.user.subscription_status) &&
                         me.user.subscription_tier === 'player';
+            writeCache(_entitled);
         } catch (_) { /* leave unresolved; the click handler re-checks */ }
         return _entitled;
     }
@@ -2132,22 +2154,32 @@ function getInitMe() {
     // nav items injected later by sidebar-nav.js / my-profile.js. One listener
     // covers all 10 entry points AND both layouts, because mobile-overrides.css
     // restyles the SAME .nav-item-ai-rep node into the bottom bar.
-    document.addEventListener('click', async (e) => {
+    // NOTE: this handler is deliberately SYNCHRONOUS up to open(). It must not
+    // await anything before showing the modal — awaiting /auth/me here is what made
+    // the tap feel dead on a phone, and on the AI Rep page it let the loading
+    // skeleton paint first. _entitled is seeded from localStorage at script load,
+    // so the answer is already in hand on the first tap.
+    document.addEventListener('click', (e) => {
         const link = e.target.closest && e.target.closest('.nav-item-ai-rep');
         if (!link) return;
         if (_entitled === true) return;   // subscribed: navigate normally
 
-        // Not entitled, or not resolved yet. Stop the navigation first, then decide —
-        // we can always send them on manually if it turns out they're entitled.
         e.preventDefault();
         e.stopPropagation();
-        if (_entitled === null) {
-            await refresh();
-            if (_entitled === true) { window.location.href = link.href; return; }
-            // Not a player folder at all (shouldn't happen for this nav item) — let it through.
-            if (!isPlayerFolder(_folder)) { window.location.href = link.href; return; }
-        }
-        open();
+        open();   // instant — no network round-trip in the tap path
+
+        // Always verify in the background and correct course if they turn out to be
+        // entitled. Runs even when the cache said "false", because that cache can be
+        // stale (subscribed on another device, or tapped during the page's own
+        // /auth/me) and a stale false would otherwise trap a paying user behind the
+        // modal. Cheap: refresh() goes through the memoized getInitMe(), so this
+        // reuses the page's existing /auth/me rather than issuing another one.
+        refresh().then(() => {
+            if (_entitled === true || !isPlayerFolder(_folder)) {
+                close();
+                window.location.href = link.href;
+            }
+        }).catch(() => { /* keep the modal up; backend still gates the data */ });
     }, true);
 
     // Resolve entitlement up front so the click handler can decide synchronously.
@@ -2161,6 +2193,9 @@ function getInitMe() {
 
     window.AiRepPaywall = {
         isEntitled,
+        // Synchronous best-guess from localStorage (true/false/null). Lets a page
+        // decide what to render on its FIRST frame instead of after /auth/me.
+        cachedEntitled: () => _entitled,
         open,
         close,
         refresh,

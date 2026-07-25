@@ -18,6 +18,22 @@
     --fit-1: #7f1d1d;   /* <30    dark maroon */
 }
 
+/* Paint the document canvas dark from the very first frame.
+   This file is the FIRST stylesheet on every page in every role folder (see the
+   CSS loading order in CLAUDE.md), so putting it here covers the whole app —
+   dashboards, tabs, and landing pages alike — with one rule.
+   Without it the canvas is white until `body`'s background resolves, which on
+   iOS reads as a flash on every navigation. Deliberately NOT scoped to
+   .ios-app: the value is identical to body's, so it is a no-op visually on
+   desktop, and an unscoped rule can't be missed by a page that skips the iOS
+   stylesheet (the landing pages do).
+   NOTE: this only covers the new document. The white gap BETWEEN documents is
+   the native WKWebView background — fixed by `backgroundColor` in
+   capacitor.config.ts, which needs `npx cap sync ios` + a rebuild. */
+html {
+    background-color: var(--oxford-blue);
+}
+
 /* Reset and Base Styles */
 * {
     margin: 0;

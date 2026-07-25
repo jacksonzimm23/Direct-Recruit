@@ -6,6 +6,16 @@
     <title>Direct Recruit</title>
     <meta http-equiv="refresh" content="0; url=landingpage/index.html">
     <link rel="canonical" href="landingpage/index.html">
+    <!-- This is the bundle entry point on iOS (webDir: 'frontend'), so it is the
+         FIRST thing the WebView paints on a cold start. It loads no stylesheet,
+         so without this inline rule it painted white with visible "Redirecting"
+         text before bouncing to the landing page — a flash on every app launch.
+         Inline (not a <link>) so it applies with zero extra request. The text is
+         kept for crawlers/no-JS but visually hidden. -->
+    <style>
+        html, body { background-color: #0a1128; margin: 0; }
+        body p { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+    </style>
     <script>
         // JS redirect runs before meta refresh for instant navigation
         window.location.replace('landingpage/index.html');

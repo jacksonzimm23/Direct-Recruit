@@ -9,6 +9,20 @@
     // (requireAiRep in routes/ai-rep.js is the real boundary) — this keeps the
     // page from rendering three silently-empty sections behind a lock.
     if (window.AiRepPaywall) {
+        // Act on the CACHED answer first so a free player never sees this page's
+        // loading skeleton flash before the lock. Awaiting /auth/me here meant the
+        // "Finding your best-fit schools..." dots painted for the length of a
+        // round-trip, then got torn down — which read as a loading screen on iOS.
+        if (window.AiRepPaywall.cachedEntitled() === false) {
+            renderLockedPage();
+            window.AiRepPaywall.open();
+            // Confirm in the background. If the cache was stale and they really are
+            // subscribed, reload straight into the real page.
+            window.AiRepPaywall.refresh()
+                .then(() => { if (window.AiRepPaywall.isEntitled()) window.location.reload(); })
+                .catch(() => {});
+            return;
+        }
         await window.AiRepPaywall.refresh();
         if (!window.AiRepPaywall.isEntitled()) {
             renderLockedPage();
