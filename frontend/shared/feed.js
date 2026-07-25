@@ -15,6 +15,10 @@ function updateCharCounter(counterEl, currentLength, maxLength) {
     }
 }
 
+// Set on the single post view when the reader taps its back button; read once by
+// FeedManager.isBackNavigation() on the feed page that comes back into view.
+const FEED_RETURN_FLAG = 'drFeedReturn';
+
 // Asset path for school logos (determined by page depth)
 var _feedAssetsPath = window.location.pathname.includes('/tabs/') ? '../../assets' : '../assets';
 // Pre-load school logos data for feed rendering
@@ -54,8 +58,186 @@ class FeedManager {
     async init() {
         await this.loadCurrentUser();
         this.setupEventListeners();
+
+        // Returning from a single post view: reload the same tab, the same number
+        // of pages, and put the reader back on the post they opened. Read the state
+        // BEFORE loadFeed() so the correct tab is the one rendered active.
+        const savedState = this.takeSavedFeedState();
+        if (savedState && savedState.feedType) {
+            this.currentFeedType = savedState.feedType;
+        }
+
         await this.loadFeed();
+
+        if (savedState) {
+            await this.restoreFeedPosition(savedState);
+        }
+
         this.startNewPostsPolling();
+    }
+
+    // ==================== FEED SCROLL RESTORATION ====================
+    //
+    // The feed is an infinite-scroll list built by JS, so native back/forward
+    // scroll restoration lands the reader at the top: at restore time the DOM is
+    // empty and the page has no height yet. Opening a post therefore used to cost
+    // the reader their whole scroll position.
+    //
+    // Fix: snapshot the feed on the way out (tab, how many pages were loaded, the
+    // post being opened, and where that post sat in the viewport), then rebuild
+    // that much feed on the way back and re-anchor on the same post.
+
+    feedStateKey() {
+        // Scoped to the page path so one role's feed can never restore onto another's.
+        return 'drFeedState:' + window.location.pathname;
+    }
+
+    /**
+     * Snapshot the feed before navigating to a single post view.
+     * @param {HTMLElement|null} anchorEl - the .post-card being opened
+     */
+    saveFeedStateForReturn(anchorEl) {
+        try {
+            if (!this.feedContainer) return; // not a feed page (e.g. post-view itself)
+
+            const state = {
+                feedType: this.currentFeedType,
+                followingOffset: this.followingOffset,
+                discoverOffset: this.discoverOffset,
+                scrollY: window.scrollY || window.pageYOffset || 0,
+                anchorPostId: (anchorEl && anchorEl.dataset.postId) || null,
+                anchorShareId: (anchorEl && anchorEl.dataset.shareId) || null,
+                // Where the anchor sat in the viewport. Restoring this exact offset
+                // is stabler than a raw scrollY, which drifts whenever a post above
+                // renders at a different height on the way back.
+                anchorTop: anchorEl ? anchorEl.getBoundingClientRect().top : null,
+                ts: Date.now()
+            };
+            sessionStorage.setItem(this.feedStateKey(), JSON.stringify(state));
+        } catch (e) {
+            // Private mode / quota — restoration is a nicety, never break navigation.
+        }
+    }
+
+    /**
+     * Return the saved snapshot ONLY when this page load is a genuine back/forward
+     * navigation, and consume it so a later fresh visit still opens at the top.
+     * Covers the in-page back button (history.back()), the browser back button and
+     * the iOS swipe-back gesture — all three produce a back_forward navigation.
+     * (When the WebView serves the page from bfcache none of this runs, because the
+     * document is restored intact with its scroll position already correct.)
+     */
+    takeSavedFeedState() {
+        try {
+            const raw = sessionStorage.getItem(this.feedStateKey());
+            if (!raw) return null;
+            if (!this.isBackNavigation()) return null;
+
+            sessionStorage.removeItem(this.feedStateKey());
+
+            const state = JSON.parse(raw);
+            // Stale snapshots would drop the reader somewhere arbitrary in a feed
+            // that has since re-ranked. 30 minutes covers a normal reading session.
+            if (!state || !state.ts || (Date.now() - state.ts) > 30 * 60 * 1000) return null;
+            return state;
+        } catch (e) {
+            return null;
+        }
+    }
+
+    isBackNavigation() {
+        // 1. Explicit signal from the post view's own back button (see the listener
+        //    at the bottom of this file). This is the primary path in the iOS app,
+        //    so it doesn't hinge on the WebView reporting navigation timing.
+        try {
+            const flagged = sessionStorage.getItem(FEED_RETURN_FLAG);
+            if (flagged) {
+                sessionStorage.removeItem(FEED_RETURN_FLAG);
+                // Short fuse: if the reader wandered elsewhere first, a leftover flag
+                // must not turn a later fresh visit into a surprise scroll jump.
+                if (Date.now() - parseInt(flagged, 10) < 60 * 1000) return true;
+            }
+        } catch (e) { /* fall through */ }
+
+        // 2. Browser back button and the iOS swipe-back gesture.
+        try {
+            const entries = performance.getEntriesByType && performance.getEntriesByType('navigation');
+            if (entries && entries.length && entries[0].type) {
+                return entries[0].type === 'back_forward';
+            }
+            // Legacy API for older WKWebView builds. 2 === TYPE_BACK_FORWARD.
+            if (performance.navigation) return performance.navigation.type === 2;
+        } catch (e) { /* fall through */ }
+
+        return false;
+    }
+
+    activeOffset() {
+        return this.currentFeedType === 'following' ? this.followingOffset : this.discoverOffset;
+    }
+
+    /**
+     * Rebuild the feed to the depth it had, then re-anchor.
+     */
+    async restoreFeedPosition(state) {
+        const targetOffset = state.feedType === 'following'
+            ? (state.followingOffset || 0)
+            : (state.discoverOffset || 0);
+
+        // Cap the rebuild so a reader who scrolled extremely far doesn't trigger an
+        // unbounded burst of requests on the way back.
+        const MAX_RESTORE_PAGES = 12;
+        let pages = 0;
+        while (this.activeOffset() < targetOffset && pages < MAX_RESTORE_PAGES) {
+            pages++;
+            const added = await this.loadMorePosts();
+            if (!added) break; // reached the end of the feed
+        }
+
+        this.scrollToSavedPosition(state);
+    }
+
+    scrollToSavedPosition(state) {
+        // Media and school logos settle in after first paint and shift everything
+        // below them, so re-apply a few times. Stop the moment the reader takes
+        // over — yanking the page under an actively scrolling finger is worse than
+        // being slightly off.
+        let cancelled = false;
+        const cancel = () => { cancelled = true; };
+        ['wheel', 'touchstart', 'keydown'].forEach(evt =>
+            window.addEventListener(evt, cancel, { once: true, passive: true })
+        );
+
+        const apply = () => {
+            if (cancelled) return;
+            let top = state.scrollY || 0;
+            const anchor = this.findAnchorCard(state);
+            if (anchor && typeof state.anchorTop === 'number') {
+                top = anchor.getBoundingClientRect().top + window.scrollY - state.anchorTop;
+            }
+            window.scrollTo(0, Math.max(0, top));
+        };
+
+        apply();
+        requestAnimationFrame(apply);
+        setTimeout(apply, 150);
+        setTimeout(apply, 450);
+    }
+
+    findAnchorCard(state) {
+        const section = document.getElementById(`${this.currentFeedType}-section`) || document;
+        const esc = (v) => (typeof CSS !== 'undefined' && CSS.escape) ? CSS.escape(v) : v;
+
+        // Share id first: on a repost/quote the same underlying post can appear more
+        // than once, and the share is what identifies the card the reader opened.
+        if (state.anchorShareId) {
+            const el = section.querySelector(`.post-card[data-share-id="${esc(state.anchorShareId)}"]`);
+            if (el) return el;
+        }
+        if (state.anchorPostId) {
+            return section.querySelector(`.post-card[data-post-id="${esc(state.anchorPostId)}"]`);
+        }
+        return null;
     }
 
     async loadCurrentUser() {
@@ -3291,8 +3473,10 @@ class FeedManager {
 
     // ==================== UTILITY ====================
 
+    // Returns the number of posts appended, so the scroll-restore loop knows when
+    // it has reached the end of the feed and can stop paging.
     async loadMorePosts() {
-        if (this.isLoading) return;
+        if (this.isLoading) return 0;
         this.isLoading = true;
 
         try {
@@ -3320,9 +3504,12 @@ class FeedManager {
                     }
                 });
             }
+
+            return (posts && posts.length) || 0;
         } catch (error) {
             console.error('Error loading feed:', error);
             showToast('Failed to load feed. Please refresh.');
+            return 0;
         } finally {
             this.isLoading = false;
         }
@@ -4304,6 +4491,14 @@ class FeedManager {
             return;
         }
 
+        // Snapshot the feed so pressing back returns the reader to this post
+        // instead of the top. Prefer the card that was actually clicked; fall back
+        // to looking it up for the callers that navigate without an event.
+        const anchorEl = (event && event.target && event.target.closest)
+            ? event.target.closest('.post-card')
+            : this.findAnchorCard({ anchorPostId: postId, anchorShareId: shareId });
+        this.saveFeedStateForReturn(anchorEl);
+
         // Determine the correct path based on current location
         const currentPath = window.location.pathname;
         let basePath = '';
@@ -4341,6 +4536,19 @@ document.addEventListener('DOMContentLoaded', () => {
         feedManager = new FeedManager();
     }
 });
+
+// Single post view: flag the return trip so the feed knows to restore the reader's
+// place. The page's own goBack() calls history.back(), which is already a
+// back_forward navigation — this is the explicit belt-and-braces signal for it.
+// Lives here rather than in the six post-view.html files because every one of them
+// already loads feed.js and uses the same .back-btn markup.
+if (window.location.pathname.includes('post-view.html')) {
+    document.addEventListener('click', (event) => {
+        if (event.target.closest && event.target.closest('.back-btn')) {
+            try { sessionStorage.setItem(FEED_RETURN_FLAG, String(Date.now())); } catch (e) { /* private mode */ }
+        }
+    }, true);
+}
 
 // Handle back/forward cache - ensure feedManager is available when page is restored from bfcache
 window.addEventListener('pageshow', (event) => {
