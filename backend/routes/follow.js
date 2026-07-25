@@ -3,7 +3,7 @@ const router = express.Router();
 const Follow = require('../models/Follow');
 const BlockedUser = require('../models/BlockedUser');
 const Notification = require('../models/Notification');
-const { notifyUser } = require('../utils/notifications');
+const { notifyUser, syncBadge } = require('../utils/notifications');
 const PlayerProfile = require('../models/PlayerProfile');
 const CoachProfile = require('../models/CoachProfile');
 const User = require('../models/User');
@@ -249,6 +249,9 @@ router.delete('/:userId/request', authMiddleware, validateUUID('userId'), async 
     }
     // Clean up the follow request notification so re-following can create a new one
     await Notification.deleteFollowRequestNotification(userId, req.userId);
+    // The notification we just removed belonged to the TARGET, so it's their
+    // badge that's now one too high — not the canceller's.
+    syncBadge(userId);
     res.json({ message: 'Follow request cancelled' });
   } catch (error) {
     logger.error('Cancel follow request error:', error);

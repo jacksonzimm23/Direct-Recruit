@@ -60,6 +60,52 @@ function buildDeepLinkPath(notif) {
 }
 
 /**
+ * Send one payload to every enabled device for a user. Honours the account-wide
+ * users.push_enabled switch and the per-device enabled flag, then cleans up any
+ * token Apple reports as dead. Returns the number successfully sent.
+ *
+ * Shared by notifyUser() (alert push) and syncBadge() (badge-only push) so the
+ * gating + stale-token cleanup live in exactly one place.
+ */
+async function fanOutToDevices(userId, payload, label) {
+    const { DeviceToken, User, apns } = getDeps();
+
+    // Push on/off gate. users.push_enabled is the account-wide switch (the iOS
+    // settings toggle). When off, skip APNs entirely.
+    const recipient = await User.findById(userId);
+    if (!recipient || recipient.push_enabled === false) return 0;
+
+    // Only send to enabled devices (defense in depth alongside the flag above).
+    const tokens = await DeviceToken.findEnabledByUserId(userId);
+    if (!tokens || tokens.length === 0) return 0;
+
+    // Send in parallel; collect failures for stale-token cleanup.
+    const results = await Promise.all(tokens.map(async (row) => {
+        try {
+            return await apns.sendPush(row.token, payload);
+        } catch (err) {
+            logger.warn(`[${label}] apns send threw for token ${row.token.slice(0, 8)}...: ${err.message}`);
+            return { sent: false, token: row.token, reason: 'SendThrew' };
+        }
+    }));
+
+    // Clean up tokens Apple told us are dead.
+    const deadReasons = new Set(['BadDeviceToken', 'Unregistered', 'DeviceTokenNotForTopic']);
+    for (const r of results) {
+        if (r && !r.sent && r.reason && deadReasons.has(r.reason)) {
+            try {
+                await DeviceToken.deleteByToken(r.token);
+                logger.info(`[${label}] removed stale token (reason=${r.reason})`);
+            } catch (delErr) {
+                logger.error(`[${label}] failed to delete stale token: ${delErr.message}`);
+            }
+        }
+    }
+
+    return results.filter(r => r && r.sent).length;
+}
+
+/**
  * Dispatch a notification to Socket.IO + all registered APNs devices
  * for the recipient. Never throws — all errors logged and swallowed.
  *
@@ -95,19 +141,6 @@ function notifyUser(io, notif, opts) {
 
         // ---- APNs fan-out ----
         try {
-            const { DeviceToken, User, apns } = getDeps();
-
-            // Push on/off gate. users.push_enabled is the account-wide switch
-            // (the iOS settings toggle). When off, skip APNs entirely — the
-            // Socket.IO emit above already updated the in-app bell. This single
-            // check governs every notification type since all of them flow here.
-            const recipient = await User.findById(notif.user_id);
-            if (!recipient || recipient.push_enabled === false) return;
-
-            // Only send to enabled devices (defense in depth alongside the flag above).
-            const tokens = await DeviceToken.findEnabledByUserId(notif.user_id);
-            if (!tokens || tokens.length === 0) return;
-
             // Phase 5: include unread count so iOS app icon shows a number, not a dot.
             // Best-effort — if count fails, send without badge.
             let badgeCount = badge;
@@ -128,31 +161,8 @@ function notifyUser(io, notif, opts) {
                 badge: badgeCount
             };
 
-            // Send in parallel; collect failures for stale-token cleanup.
-            const results = await Promise.all(tokens.map(async (row) => {
-                try {
-                    return await apns.sendPush(row.token, payload);
-                } catch (err) {
-                    logger.warn(`[notifyUser] apns send threw for token ${row.token.slice(0, 8)}...: ${err.message}`);
-                    return { sent: false, token: row.token, reason: 'SendThrew' };
-                }
-            }));
-
-            // Clean up tokens Apple told us are dead.
-            const deadReasons = new Set(['BadDeviceToken', 'Unregistered', 'DeviceTokenNotForTopic']);
-            for (const r of results) {
-                if (r && !r.sent && r.reason && deadReasons.has(r.reason)) {
-                    try {
-                        await DeviceToken.deleteByToken(r.token);
-                        logger.info(`[notifyUser] removed stale token (reason=${r.reason})`);
-                    } catch (delErr) {
-                        logger.error(`[notifyUser] failed to delete stale token: ${delErr.message}`);
-                    }
-                }
-            }
-
-            const sent = results.filter(r => r && r.sent).length;
-            logger.debug(`[notifyUser] user=${notif.user_id} sent=${sent}/${results.length} deepLink=${deepLinkPath || 'none'}`);
+            const sent = await fanOutToDevices(notif.user_id, payload, 'notifyUser');
+            logger.debug(`[notifyUser] user=${notif.user_id} sent=${sent} deepLink=${deepLinkPath || 'none'}`);
         } catch (e) {
             // Interpolate the detail into the message — winston drops a bare
             // string second arg from the prod JSON format, which previously hid
@@ -162,4 +172,64 @@ function notifyUser(io, notif, opts) {
     })();
 }
 
-module.exports = { notifyUser, buildDeepLinkPath };
+// ---------------------------------------------------------------------------
+// Badge sync
+//
+// The iOS home-screen badge used to be written ONLY as a side effect of an
+// incoming alert push, so it froze at whatever the count was when the last
+// notification arrived. Reading or clearing notifications (in the app OR on
+// desktop) left a stale red number on the icon.
+//
+// syncBadge() pushes the CURRENT unread count to the user's devices with a
+// badge-only push (no alert, no sound — see apns.js). Because it is a normal
+// alert-type push it works on already-shipped builds with no app update.
+// ---------------------------------------------------------------------------
+
+const BADGE_SYNC_DEBOUNCE_MS = 1200;
+const pendingBadgeSyncs = new Map();
+
+async function pushBadgeNow(userId) {
+    const Notification = require('../models/Notification');
+    const badge = await Notification.getUnreadCount(userId);
+    const sent = await fanOutToDevices(userId, { badgeOnly: true, badge }, 'syncBadge');
+    logger.debug(`[syncBadge] user=${userId} badge=${badge} sent=${sent}`);
+}
+
+/**
+ * Fire-and-forget: push the user's true unread count to their iOS devices.
+ * Call after ANY server-side change to the unread count that the user did not
+ * arrive at via a new notification (mark read, mark all read, delete, clear).
+ *
+ * Debounced per user, so tapping through ten notifications in a row costs one
+ * push instead of ten. Never throws.
+ *
+ * @param {string} userId - recipient whose badge should be corrected
+ */
+function syncBadge(userId) {
+    if (!userId) return;
+
+    const existing = pendingBadgeSyncs.get(userId);
+    if (existing) clearTimeout(existing);
+
+    const timer = setTimeout(() => {
+        pendingBadgeSyncs.delete(userId);
+        pushBadgeNow(userId).catch((e) => {
+            logger.error(`[syncBadge] failed for user=${userId}: ${e && e.message ? e.message : e}`);
+        });
+    }, BADGE_SYNC_DEBOUNCE_MS);
+
+    // Don't hold the event loop open on shutdown for a pending badge push.
+    if (typeof timer.unref === 'function') timer.unref();
+    pendingBadgeSyncs.set(userId, timer);
+}
+
+/**
+ * Same as syncBadge() but for a set of recipients (e.g. deleting a post clears
+ * the like/comment notifications it generated). Duplicates are collapsed.
+ */
+function syncBadgeForUsers(userIds) {
+    if (!Array.isArray(userIds)) return;
+    new Set(userIds.filter(Boolean)).forEach(syncBadge);
+}
+
+module.exports = { notifyUser, buildDeepLinkPath, syncBadge, syncBadgeForUsers };

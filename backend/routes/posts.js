@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Post = require('../models/Post');
 const Notification = require('../models/Notification');
-const { notifyUser } = require('../utils/notifications');
+const { notifyUser, syncBadgeForUsers } = require('../utils/notifications');
 const PlayerProfile = require('../models/PlayerProfile');
 const CoachProfile = require('../models/CoachProfile');
 const OtherProfile = require('../models/OtherProfile');
@@ -552,8 +552,11 @@ router.delete('/:postId', authMiddleware, validateUUID('postId'), async (req, re
       ).catch(err => logger.error('S3 cleanup error on post delete:', err));
     }
 
-    // Clean up notifications referencing this post (non-blocking)
+    // Clean up notifications referencing this post (non-blocking), then correct the
+    // badge for everyone whose unread count just dropped (usually the post owner,
+    // whose like/comment notifications these were).
     Notification.deleteByEntityId(req.params.postId)
+      .then(affectedUserIds => syncBadgeForUsers(affectedUserIds))
       .catch(err => logger.error('Notification cleanup error on post delete:', err));
 
     res.json({ message: 'Post deleted' });

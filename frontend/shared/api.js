@@ -1017,6 +1017,47 @@ const uploadAPI = {
 };
 
 // Notifications API
+// Keep the iOS home-screen badge honest after the user reads or clears
+// notifications inside the app.
+//
+// The authoritative correction is server-side: every read/clear endpoint fires a
+// badge-only APNs push with the true unread count (backend/utils/notifications.js
+// syncBadge), which is also what covers clearing from DESKTOP. This function is
+// the instant local counterpart for the one case JS can handle on its own.
+//
+// @capacitor/push-notifications has no setBadgeCount, but its
+// removeAllDeliveredNotifications() zeroes applicationIconBadgeNumber as a side
+// effect — so we can only act when the true count is 0. That is the common case
+// (user clears the list) and it also sweeps the now-stale banners out of
+// Notification Center. Any non-zero count is left to the server push.
+let _badgeSyncInFlight = null;
+async function syncNativeBadge() {
+    if (!isIOSApp() || !isAuthenticated()) return;
+
+    // Resume fires both appStateChange and visibilitychange; collapse the pair
+    // into a single unread-count round-trip.
+    if (_badgeSyncInFlight) return _badgeSyncInFlight;
+
+    _badgeSyncInFlight = (async () => {
+        try {
+            const Push = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.PushNotifications;
+            if (!Push || typeof Push.removeAllDeliveredNotifications !== 'function') return;
+
+            const res = await apiRequest('/notifications/unread-count');
+            if (!res || res.unreadCount !== 0) return;
+
+            await Push.removeAllDeliveredNotifications();
+        } catch (e) {
+            // Best-effort only — a stale badge must never surface an error to the user.
+            console.warn('[syncNativeBadge]', e && e.message ? e.message : e);
+        } finally {
+            _badgeSyncInFlight = null;
+        }
+    })();
+
+    return _badgeSyncInFlight;
+}
+
 const notificationsAPI = {
     // Get all notifications with optional filtering
     getNotifications: async (type = null, limit = 50, offset = 0) => {
@@ -1039,35 +1080,47 @@ const notificationsAPI = {
 
     // Mark single notification as read
     markAsRead: async (notificationId) => {
-        return await apiRequest(`/notifications/${notificationId}/read`, {
+        const res = await apiRequest(`/notifications/${notificationId}/read`, {
             method: 'PUT'
         });
+        syncNativeBadge();
+        return res;
     },
 
     // Mark all notifications as read
     markAllAsRead: async (type = null) => {
         let url = '/notifications/read-all';
         if (type) url += `?type=${type}`;
-        return await apiRequest(url, {
+        const res = await apiRequest(url, {
             method: 'PUT'
         });
+        syncNativeBadge();
+        return res;
     },
 
     // Delete single notification
     deleteNotification: async (notificationId) => {
-        return await apiRequest(`/notifications/${notificationId}`, {
+        const res = await apiRequest(`/notifications/${notificationId}`, {
             method: 'DELETE'
         });
+        syncNativeBadge();
+        return res;
     },
 
     // Delete all notifications
     deleteAll: async (type = null) => {
         let url = '/notifications';
         if (type) url += `?type=${type}`;
-        return await apiRequest(url, {
+        const res = await apiRequest(url, {
             method: 'DELETE'
         });
-    }
+        syncNativeBadge();
+        return res;
+    },
+
+    // Exposed so page-level code (and the app-resume hook in capacitor-init.js)
+    // can correct the icon badge without going through a mutation.
+    syncNativeBadge
 };
 
 // Role-based avatar border color utility

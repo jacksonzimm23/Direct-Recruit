@@ -10,6 +10,16 @@ async function sendPush(token, payload) {
     const tokenPreview = token
         ? token.slice(0, 10) + '...' + token.slice(-4)
         : '(no token)';
+
+    // Badge-sync pushes carry no alert/sound — log them distinctly so it's obvious
+    // in the dev console that no banner would have appeared on the device.
+    if (payload.badgeOnly) {
+        logger.info('[apns-local] (mock) would send BADGE-ONLY sync push:');
+        logger.info(`  token:    ${tokenPreview}`);
+        logger.info(`  badge:    ${payload.badge == null ? '(unset)' : payload.badge}`);
+        return { sent: true, mocked: true, token };
+    }
+
     logger.info('[apns-local] (mock) would send push:');
     logger.info(`  token:    ${tokenPreview}`);
     logger.info(`  title:    ${payload.title || '(no title)'}`);

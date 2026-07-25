@@ -223,6 +223,27 @@ function capacitorInit(cap) {
                     console.log('[push] foreground notification:', notification && notification.title);
                 });
 
+                // Badge self-heal on foreground. The server pushes the true count
+                // whenever it changes (backend/utils/notifications.js syncBadge), but
+                // a push can be missed — permission revoked, no token yet, device
+                // offline past the 1h APNs expiry. Re-checking on resume means the
+                // icon can never stay stuck at a number the user already cleared.
+                // Uses the App plugin's appStateChange, with visibilitychange as the
+                // fallback for any path where the plugin isn't available.
+                const resyncBadge = () => {
+                    if (window.API && window.API.notifications && window.API.notifications.syncNativeBadge) {
+                        window.API.notifications.syncNativeBadge();
+                    }
+                };
+                if (plugins.App && typeof plugins.App.addListener === 'function') {
+                    plugins.App.addListener('appStateChange', (state) => {
+                        if (state && state.isActive) resyncBadge();
+                    });
+                }
+                document.addEventListener('visibilitychange', () => {
+                    if (document.visibilityState === 'visible') resyncBadge();
+                });
+
                 // User tapped push from lock screen / notification center.
                 // Resolve role folder from current URL + navigate WebView.
                 //

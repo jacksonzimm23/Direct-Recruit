@@ -185,13 +185,15 @@ class Notification {
     return result.rowCount;
   }
 
-  // Delete all notifications referencing a specific entity (e.g. when a post is deleted)
+  // Delete all notifications referencing a specific entity (e.g. when a post is deleted).
+  // Returns the DISTINCT user_ids whose notification lists changed, so the caller can
+  // resync their iOS home-screen badge (see utils/notifications.syncBadgeForUsers).
   static async deleteByEntityId(entityId) {
     const result = await pool.query(
-      `DELETE FROM notifications WHERE related_entity_id = $1`,
+      `DELETE FROM notifications WHERE related_entity_id = $1 RETURNING user_id`,
       [entityId]
     );
-    return result.rowCount;
+    return [...new Set(result.rows.map(r => r.user_id))];
   }
 
   // Check if a notification already exists (to prevent duplicates)

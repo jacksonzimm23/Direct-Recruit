@@ -54,19 +54,32 @@ try {
     return;
 }
 
-// payload: { title, body, badge?, deepLinkPath?, notificationId? }
+// payload: { title, body, badge?, deepLinkPath?, notificationId?, badgeOnly? }
 // Returns { sent: boolean, token, status?, reason? }
 async function sendPush(token, payload) {
     const note = new apn.Notification();
     note.expiry = Math.floor(Date.now() / 1000) + 3600; // 1h expiry
     if (typeof payload.badge === 'number') note.badge = payload.badge;
-    note.sound = 'default';
-    note.alert = { title: payload.title || '', body: payload.body || '' };
     note.topic = process.env.APNS_BUNDLE_ID;
-    note.payload = {
-        notification_id: payload.notificationId || null,
-        deep_link_path: payload.deepLinkPath || null
-    };
+
+    if (payload.badgeOnly) {
+        // Badge-sync push: corrects the home-screen number after the user reads or
+        // clears notifications (in the app OR on desktop). Deliberately carries NO
+        // alert and NO sound, so iOS updates the icon silently with no banner.
+        // A badge IS user-visible, so this is still apns-push-type 'alert' — it needs
+        // no UIBackgroundModes entitlement and works on ALREADY-SHIPPED builds.
+        // collapseId makes a burst of syncs supersede itself instead of queueing.
+        note.pushType = 'alert';
+        note.collapseId = 'dr-badge-sync';
+        note.payload = { badge_sync: true };
+    } else {
+        note.sound = 'default';
+        note.alert = { title: payload.title || '', body: payload.body || '' };
+        note.payload = {
+            notification_id: payload.notificationId || null,
+            deep_link_path: payload.deepLinkPath || null
+        };
+    }
 
     const result = await provider.send(note, token);
     if (result.failed && result.failed.length) {

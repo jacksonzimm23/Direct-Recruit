@@ -3,6 +3,7 @@ const router = express.Router();
 const Notification = require('../models/Notification');
 const { authMiddleware, validateUUID } = require('../middleware/auth');
 const { getSignedS3Url } = require('../utils/s3');
+const { syncBadge } = require('../utils/notifications');
 const logger = require('../utils/logger');
 
 // Helper function to add signed URLs to notifications with profile images
@@ -87,6 +88,9 @@ router.put('/:notificationId/read', authMiddleware, validateUUID('notificationId
       return res.status(404).json({ error: 'Notification not found' });
     }
 
+    // Correct the iOS home-screen badge. Fire-and-forget, never blocks the response.
+    syncBadge(req.userId);
+
     res.json({ message: 'Notification marked as read', notification });
   } catch (error) {
     logger.error('Mark as read error:', error);
@@ -99,6 +103,7 @@ router.put('/read-all', authMiddleware, async (req, res) => {
   try {
     const { type } = req.query;
     const count = await Notification.markAllAsRead(req.userId, type || null);
+    syncBadge(req.userId);
     res.json({ message: 'All notifications marked as read', count });
   } catch (error) {
     logger.error('Mark all as read error:', error);
@@ -116,6 +121,7 @@ router.delete('/:notificationId', authMiddleware, validateUUID('notificationId')
       return res.status(404).json({ error: 'Notification not found' });
     }
 
+    syncBadge(req.userId);
     res.json({ message: 'Notification deleted' });
   } catch (error) {
     logger.error('Delete notification error:', error);
@@ -128,6 +134,7 @@ router.delete('/', authMiddleware, async (req, res) => {
   try {
     const { type } = req.query;
     const count = await Notification.deleteAll(req.userId, type || null);
+    syncBadge(req.userId);
     res.json({ message: 'Notifications deleted', count });
   } catch (error) {
     logger.error('Delete all notifications error:', error);
