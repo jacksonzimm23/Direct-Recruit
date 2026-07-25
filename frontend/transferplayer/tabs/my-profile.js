@@ -8693,7 +8693,7 @@ function buildMediaGridHTML(mediaUrls, mediaType) {
 
     const isVideoUrl = (url, index) => {
         if (mediaType === 'video') return true;
-        return url && url.toLowerCase().match(/\.(mp4|mov|avi|webm)$/);
+        return url && url.toLowerCase().match(/\.(mp4|mov|avi|webm|m4v)(\?|$)/);
     };
 
     let gridCells = '';
@@ -8943,15 +8943,12 @@ function createProfileRepostElement(post) {
     const isSaved = post.user_saved || false;
     const isReposted = post.user_reposted || false;
 
+    // Build media HTML for original post — same grid renderer the profile's own posts
+    // use, so reposted media opens in the viewer and multi-image reposts show every
+    // image instead of only the first behind a "1 / N" badge.
     let mediaHtml = '';
     if (post.original_media_urls && post.original_media_urls.length > 0) {
-        const mediaCount = post.original_media_urls.length;
-        const isVideo = post.original_media_type === 'video' || (post.original_media_urls[0] && post.original_media_urls[0].toLowerCase().match(/\.(mp4|mov|avi|webm)$/));
-        if (isVideo) {
-            mediaHtml = `<div class="profile-post-media"><video controls src="${post.original_media_urls[0]}"></video></div>`;
-        } else {
-            mediaHtml = `<div class="profile-post-media"><img src="${post.original_media_urls[0]}" alt="Post media">${mediaCount > 1 ? `<span class="media-count-badge"><span>1 / ${mediaCount}</span></span>` : ''}</div>`;
-        }
+        mediaHtml = buildMediaGridHTML(post.original_media_urls, post.original_media_type);
     }
 
     const optionsButton = `<button class="profile-post-more-btn" onclick="event.stopPropagation(); showRepostMenu('${post.share_id}', '${post.id}', ${isOwnRepost}, event)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle></svg></button>`;
@@ -9032,7 +9029,7 @@ function createProfileQuotePostElement(post) {
         const mediaCount = Math.min(urls.length, 4);
         const isVideoUrl = (url) => {
             if (post.original_media_type === 'video') return true;
-            return url && url.toLowerCase().match(/\.(mp4|mov|avi|webm)$/);
+            return url && url.toLowerCase().match(/\.(mp4|mov|avi|webm|m4v)(\?|$)/);
         };
 
         let gridCells = '';
@@ -9828,7 +9825,7 @@ function updateProfileSlideshowMedia() {
     const counter = document.querySelector('.slideshow-counter');
     const url = data.urls[data.currentIndex];
 
-    const isVideo = url.toLowerCase().match(/\.(mp4|mov|avi|webm)$/);
+    const isVideo = url.toLowerCase().match(/\.(mp4|mov|avi|webm|m4v)(\?|$)/);
 
     if (isVideo) {
         container.innerHTML = `<video src="${url}" controls autoplay style="max-width: 90vw; max-height: 90vh;"></video>`;
@@ -9865,12 +9862,32 @@ function handleProfileSlideshowKeydown(e) {
     if (e.key === 'ArrowRight') navigateProfileSlideshow(1);
 }
 
-// Open media slideshow from a clicked element (extracts URLs from sibling elements)
+// Open media slideshow from a clicked element (reads the sibling media out of the DOM).
+// Three markups feed this and they use different class names: the post's own media
+// grid, the quoted-post embed, and the single-media block on reposts/liked posts.
+// Matching only the quoted-embed pair is what left grid media unclickable.
 function openProfileMediaSlideshowFromElement(clickedElement) {
-    const mediaContainer = clickedElement.closest('.quoted-post-media');
+    const GRID_SHAPES = [
+        { container: '.post-media-grid', item: '.media-grid-cell' },
+        { container: '.quoted-post-media', item: '.quoted-media-item' }
+    ];
+
+    let mediaContainer = null;
+    let itemSelector = null;
+    for (const shape of GRID_SHAPES) {
+        const found = clickedElement.closest(shape.container);
+        if (found) {
+            mediaContainer = found;
+            itemSelector = shape.item;
+            break;
+        }
+    }
     if (!mediaContainer) return;
 
-    const mediaItems = mediaContainer.querySelectorAll('.quoted-media-item');
+    // Resolve the cell even when the click landed on the inner <img>/<video>.
+    const clickedCell = clickedElement.closest(itemSelector) || clickedElement;
+
+    const mediaItems = mediaContainer.querySelectorAll(itemSelector);
     const urls = [];
     let startIndex = 0;
 
@@ -9880,11 +9897,11 @@ function openProfileMediaSlideshowFromElement(clickedElement) {
         if (img) urls.push(img.src);
         else if (video) urls.push(video.src);
 
-        if (item === clickedElement) startIndex = index;
+        if (item === clickedCell) startIndex = urls.length - 1;
     });
 
     if (urls.length > 0) {
-        openProfileMediaSlideshow(urls, startIndex);
+        openProfileMediaSlideshow(urls, Math.max(0, startIndex));
     }
 }
 
@@ -11422,26 +11439,11 @@ function createProfileLikedPostElement(post) {
     const isSaved = post.user_saved || false;
     const isReposted = post.user_reposted || false;
 
-    // Build media HTML
+    // Build media HTML — shared grid renderer, so liked posts behave like the
+    // profile's own posts: click any image or video to open the full-size viewer.
     let mediaHtml = '';
     if (post.media_urls && post.media_urls.length > 0) {
-        const mediaCount = post.media_urls.length;
-        const isVideo = post.media_type === 'video' || (post.media_urls[0] && post.media_urls[0].toLowerCase().match(/\.(mp4|mov|avi|webm)$/));
-
-        if (isVideo) {
-            mediaHtml = `
-                <div class="profile-post-media">
-                    <video controls src="${post.media_urls[0]}"></video>
-                </div>
-            `;
-        } else {
-            mediaHtml = `
-                <div class="profile-post-media">
-                    <img src="${post.media_urls[0]}" alt="Post media">
-                    ${mediaCount > 1 ? `<span class="media-count-badge"><span>1 / ${mediaCount}</span></span>` : ''}
-                </div>
-            `;
-        }
+        mediaHtml = buildMediaGridHTML(post.media_urls, post.media_type);
     }
 
     // Post options menu button (only for own posts)
@@ -11545,7 +11547,7 @@ function createProfileLikedQuotePostElement(post) {
         const mediaCount = Math.min(urls.length, 4);
         const isVideoUrl = (url) => {
             if (post.original_media_type === 'video') return true;
-            return url && url.toLowerCase().match(/\.(mp4|mov|avi|webm)$/);
+            return url && url.toLowerCase().match(/\.(mp4|mov|avi|webm|m4v)(\?|$)/);
         };
 
         let gridCells = '';
