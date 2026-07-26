@@ -1496,7 +1496,7 @@
 
 .rc-subtitle {
     font-size: 0.8rem !important;
-    color: rgba(255, 107, 53, 0.7) !important;
+    color: rgba(254, 252, 251, 0.65) !important;
     font-style: italic;
 }
 
@@ -1603,7 +1603,7 @@
 
 .rc-note-row td {
     font-size: 0.72rem;
-    color: rgba(255, 107, 53, 0.5);
+    color: rgba(254, 252, 251, 0.45);
     font-style: italic;
     padding-top: 0.2rem;
     padding-bottom: 0.5rem;
@@ -1662,7 +1662,7 @@
 .rc-rule-title {
     font-size: 0.8rem;
     font-weight: 700;
-    color: #ff6b35;
+    color: rgba(254, 252, 251, 0.85);
     margin-bottom: 0.2rem;
 }
 
