@@ -202,11 +202,22 @@ class FeedManager {
         // below them, so re-apply a few times. Stop the moment the reader takes
         // over — yanking the page under an actively scrolling finger is worse than
         // being slightly off.
+        //
+        // "Taking over" is measured as an ACTUAL scroll away from where we last put
+        // the page, not as a raw touch. Listening for touchstart (as this used to)
+        // is wrong on iOS: the edge-swipe-back gesture itself fires touchstart on the
+        // incoming page without moving it, which cancelled every re-application and
+        // left the reader wherever the first, pre-layout guess landed.
         let cancelled = false;
+        let lastApplied = -1;
         const cancel = () => { cancelled = true; };
-        ['wheel', 'touchstart', 'keydown'].forEach(evt =>
-            window.addEventListener(evt, cancel, { once: true, passive: true })
-        );
+
+        const onScroll = () => {
+            if (lastApplied >= 0 && Math.abs(window.scrollY - lastApplied) > 3) cancel();
+        };
+        window.addEventListener('scroll', onScroll, { passive: true });
+        window.addEventListener('wheel', cancel, { once: true, passive: true });
+        window.addEventListener('keydown', cancel, { once: true });
 
         const apply = () => {
             if (cancelled) return;
@@ -215,13 +226,19 @@ class FeedManager {
             if (anchor && typeof state.anchorTop === 'number') {
                 top = anchor.getBoundingClientRect().top + window.scrollY - state.anchorTop;
             }
-            window.scrollTo(0, Math.max(0, top));
+            top = Math.max(0, top);
+            window.scrollTo(0, top);
+            lastApplied = Math.round(window.scrollY);
         };
 
         apply();
         requestAnimationFrame(apply);
         setTimeout(apply, 150);
         setTimeout(apply, 450);
+        setTimeout(() => {
+            cancelled = true;                                  // settle window closed
+            window.removeEventListener('scroll', onScroll);
+        }, 1200);
     }
 
     findAnchorCard(state) {
@@ -684,12 +701,23 @@ class FeedManager {
             this.checkForNewPosts();
         }, this.pollingIntervalMs);
 
-        // Also check when tab becomes visible again
-        document.addEventListener('visibilitychange', () => {
-            if (!document.hidden && this.lastFeedLoadTime) {
-                this.checkForNewPosts();
-            }
-        });
+        // Also check when tab becomes visible again.
+        //
+        // Bound ONCE per instance. This used to register a fresh listener on every
+        // startNewPostsPolling() call, so each re-init stacked another one and a single
+        // foreground event fired checkForNewPosts() N times. It matters here beyond the
+        // wasted requests: the handler can insert the "new posts" button ABOVE the feed,
+        // which shifts every post down — and on iOS this fires exactly when the app
+        // returns to the foreground, i.e. right when a reader is coming back to their
+        // place.
+        if (!this._visibilityBound) {
+            this._visibilityBound = true;
+            document.addEventListener('visibilitychange', () => {
+                if (!document.hidden && this.lastFeedLoadTime) {
+                    this.checkForNewPosts();
+                }
+            });
+        }
     }
 
     stopNewPostsPolling() {
@@ -4561,13 +4589,21 @@ if (window.location.pathname.includes('post-view.html')) {
     }, true);
 }
 
-// Handle back/forward cache - ensure feedManager is available when page is restored from bfcache
+// Back/forward cache restore.
+//
+// A persisted restore hands back the SAME document: the DOM, every listener, and the
+// scroll position are all still intact and correct. Rebuilding FeedManager here was
+// actively harmful — init() calls loadFeed() → showLoading(), which sets
+// feedContainer.innerHTML to a spinner, throwing away the restored feed and sending the
+// reader back to the top of a freshly fetched page 1. That is the whole reason pressing
+// back lost your place.
+//
+// So: only construct when there genuinely isn't a FeedManager yet (i.e. the document was
+// evicted and this is effectively a fresh load).
 window.addEventListener('pageshow', (event) => {
-    if (event.persisted) {
-        // Page was restored from bfcache - always reinitialize to ensure fresh event listeners
-        if (document.getElementById('feedPosts')) {
-            feedManager = new FeedManager();
-        }
+    if (event.persisted && feedManager) return;   // already live — leave the restored page alone
+    if (event.persisted && document.getElementById('feedPosts')) {
+        feedManager = new FeedManager();
     }
 });
 

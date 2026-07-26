@@ -413,14 +413,36 @@ function capacitorInit(cap) {
                     // snapshot) WITHOUT re-running scripts. The bottom nav is the role
                     // folder's .sidebar-nav — static markup on 5 roles, JS-injected on
                     // collegecoach — so a restored snapshot carries the PREVIOUS role's nav
-                    // even when the body repaints (feed.js re-inits FeedManager on pageshow,
-                    // but nothing rebuilds the nav). After a profile-type switch this showed
-                    // the OLD role's bottom nav on the NEW role's page. Force a fresh load so
-                    // the nav always reflects the current document. iOS-app-only: web/desktop
-                    // bfcache isn't affected and stays untouched.
+                    // even when the body repaints. After a profile-type switch this showed
+                    // the OLD role's bottom nav on the NEW role's page.
+                    //
+                    // This used to call window.location.reload(). That fixed the nav, but it
+                    // also threw away the restored DOM and scroll position on EVERY back
+                    // navigation — which is why returning from a post always dumped the
+                    // reader at the top of the feed on iOS.
+                    //
+                    // The stale nav only ever happens when the role actually changed, and the
+                    // role-folder check is exactly what a script-less restore skips. So re-run
+                    // just that check: each role's mainpage-*.js exposes it as
+                    // window.drRevalidateRoleFolder (it fetches /auth/me and navigates only on
+                    // a genuine mismatch). Same guarantee, without nuking the good case.
+                    // iOS-app-only: web/desktop bfcache stays untouched.
                     if (event && event.persisted &&
                         document.documentElement.classList.contains('ios-app')) {
-                        window.location.reload();
+                        if (typeof window.drRevalidateRoleFolder === 'function') {
+                            try {
+                                window.drRevalidateRoleFolder();
+                            } catch (revalErr) {
+                                console.error('[capacitorInit][pageshow] role revalidate failed', revalErr);
+                                window.location.reload();
+                            }
+                        } else {
+                            // Page without the hook (shouldn't happen — every mainpage,
+                            // my-profile and post-view loads its role's mainpage-*.js) —
+                            // fall back to the old blunt behaviour rather than risk a
+                            // wrong-role nav.
+                            window.location.reload();
+                        }
                     }
                 });
             } catch (e) {

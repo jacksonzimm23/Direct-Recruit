@@ -6,7 +6,7 @@
 // deletes caches whose name no longer matches — so the name IS the cache-bust.
 // Left at v1 through many deploys, which is how users kept running stale scripts
 // (a shipped fix appearing not to work is the usual symptom).
-const CACHE_NAME = 'direct-recruit-v3';
+const CACHE_NAME = 'direct-recruit-v4';
 
 // Static assets to cache on install
 const STATIC_ASSETS = [

@@ -1,5 +1,14 @@
 // Dashboard Main Page JavaScript - Other Users Version
 
+// Stable name for the role-folder check, used by shared/capacitor-init.js on an iOS
+// bfcache restore. A persisted restore does not re-run scripts, so this check would
+// otherwise be skipped and a page could keep showing the PREVIOUS role's bottom nav
+// after a profile-type switch. capacitor-init used to force a full reload to work
+// around that, which also destroyed the restored scroll position on every back
+// navigation — re-running just this check preserves the intent and costs nothing
+// when the role is unchanged (it only navigates on a genuine mismatch).
+window.drRevalidateRoleFolder = verifyUserType;
+
 async function verifyUserType() {
     try {
         const urlParams = new URLSearchParams(window.location.search);
