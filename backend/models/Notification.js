@@ -196,8 +196,11 @@ class Notification {
     return [...new Set(result.rows.map(r => r.user_id))];
   }
 
-  // Check if a notification already exists (to prevent duplicates)
-  static async exists({ userId, type, relatedUserId, relatedEntityId, title = null, withinHours = 24 }) {
+  // Check if a notification already exists (to prevent duplicates).
+  // relatedEntityType is optional and narrows the match — needed when two features
+  // share a title (AI RA and Portal Intelligence both use 'AI Search Match') and
+  // only one of them dedupes, so its check must not see the other's rows.
+  static async exists({ userId, type, relatedUserId, relatedEntityId, relatedEntityType = null, title = null, withinHours = 24 }) {
     const result = await pool.query(
       `SELECT id FROM notifications
        WHERE user_id = $1
@@ -205,9 +208,10 @@ class Notification {
          AND ($3::uuid IS NULL OR related_user_id = $3)
          AND ($4::uuid IS NULL OR related_entity_id = $4)
          AND ($6::text IS NULL OR title = $6)
+         AND ($7::text IS NULL OR related_entity_type = $7)
          AND created_at > NOW() - INTERVAL '1 hour' * $5::numeric
        LIMIT 1`,
-      [userId, type, relatedUserId, relatedEntityId, withinHours, title]
+      [userId, type, relatedUserId, relatedEntityId, withinHours, title, relatedEntityType]
     );
     return result.rows.length > 0;
   }
@@ -505,16 +509,40 @@ class Notification {
       ? `${coachDivision ? `A ${coachDivision}` : 'A'} coach's portal intelligence search matched your profile`
       : 'Your profile turned up in a college coach\'s AI search. Open AI Rep to see your search appearances.';
 
-    // Dedupe: don't send more than 1 per player per 6 hours. A popular recruit can
-    // surface in many searches an hour; without this the bell (and the lock screen)
-    // would be unusable.
-    const alreadyExists = await this.exists({
-      userId: playerUserId,
-      type: 'interaction',
-      title: 'AI Search Match',
-      withinHours: 6
-    });
-    if (alreadyExists) return null;
+    // RA (Recruit Assistant): ONE notification per appearance, no dedupe.
+    // Owner decision, July 2026. The AI Rep "Search Appearances" feed gets a row
+    // every time a coach's search outputs the player, and the bell + push must
+    // match that feed one-for-one — a player who sees two appearances should have
+    // received two notifications. This deliberately replaces a 6-hour dedupe.
+    //
+    // Trade-off being accepted knowingly: a recruit who surfaces in many searches
+    // in one afternoon now gets one push per search. If that turns out to be too
+    // noisy in production, the better fix is a digest ("your profile appeared in
+    // 6 searches today") rather than silently dropping appearances, because the
+    // feed and the bell drifting apart is what made this confusing to begin with.
+    //
+    // PI keeps the dedupe: it is a background behavioural sweep, not a coach
+    // deliberately looking at THIS player, so it has a much higher spam ceiling.
+    //
+    // The two features share the title 'AI Search Match' (all six roles'
+    // notifications.js switch on that exact string), so the dedupe MUST be scoped
+    // by entity type — otherwise the now-undeduped RA rows swallow PI's check and
+    // PI goes silent. Verified: without the relatedEntityType filter this test
+    // fails. The audiences are disjoint today (RA returns HS + transfer players,
+    // PI returns current college players), but that is a property of the queries,
+    // not something this function should bet on.
+    const entityType = isPortal ? 'ai_search_portal' : 'ai_search';
+
+    if (isPortal) {
+      const alreadyExists = await this.exists({
+        userId: playerUserId,
+        type: 'interaction',
+        title: 'AI Search Match',
+        relatedEntityType: entityType,
+        withinHours: 6
+      });
+      if (alreadyExists) return null;
+    }
 
     return this.create({
       userId: playerUserId,
@@ -522,7 +550,7 @@ class Notification {
       title: 'AI Search Match',
       message,
       relatedUserId: null,
-      relatedEntityType: 'ai_search'
+      relatedEntityType: entityType
     });
   }
 }

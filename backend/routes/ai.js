@@ -501,7 +501,9 @@ router.post('/chats/:chatId/message', validateUUID('chatId'), async (req, res) =
       latencyMs: aiResponse._meta?.latency_ms || null
     }).catch(err => logger.error('AI analytics log error:', err.message));
 
-    // Notify matched players (fire-and-forget, deduplicated per 6 hours).
+    // Notify matched players (fire-and-forget). ONE notification per appearance —
+    // no dedupe, so the bell and the AI Rep "Search Appearances" feed always agree
+    // (see Notification.createAiSearchMatchNotification).
     //
     // Gated on an ACTIVE AI Rep subscription (paid or 7-day trial). Search
     // Appearances live on the AI Rep page, which is the paid player surface — so

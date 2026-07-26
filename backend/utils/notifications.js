@@ -49,7 +49,10 @@ function buildDeepLinkPath(notif) {
     if (rtype === 'dr_account_linked') {
         return `/recruiting-board.html`;
     }
-    if (rtype === 'ai_search') {
+    // ai_search = AI Recruit Assistant appearance, ai_search_portal = Portal
+    // Intelligence. Split so PI's dedupe can scope itself (see
+    // Notification.createAiSearchMatchNotification); both land on the same tab.
+    if (rtype === 'ai_search' || rtype === 'ai_search_portal') {
         return `/notifications`;
     }
     // Follow / follow-request types store the actor in related_user_id
