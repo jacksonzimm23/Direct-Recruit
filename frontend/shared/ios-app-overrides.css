@@ -251,6 +251,36 @@ html.ios-app body { background-color: inherit; }
         justify-self: auto !important;
     }
 
+    /* Discover + Transfer Portal player rows (college coach) — iOS only.
+       Row is avatar | info | AI Match badge. fit-display.css's mobile rule gives
+       .discover-row-info `flex: 1 1 100%`, so the info column claims a full line
+       of its own and the name + both subheader lines wrap BELOW the avatar
+       instead of sitting beside it. Same fix as the AI Rep rows above: flex-basis
+       0 so info takes only the width left next to the avatar (truncating with
+       "…"), while the badge — already `flex: 1 0 100%` on mobile — still wraps
+       onto its own full-width line under everything.
+       Covers HS player cards (discover-players) and transfer cards
+       (transfer-portal). The Recruiting Assistant tab uses .ra-row-* and the
+       player-side AI Rep uses .ai-rep-school-row, so neither is affected. */
+    .ios-app .discover-row:has(.fit-badge) {
+        flex-wrap: wrap !important;
+        align-items: center !important;
+        row-gap: 0 !important;          /* badge carries its own margin-top */
+    }
+    .ios-app .discover-row:has(.fit-badge) > .discover-row-avatar {
+        flex: 0 0 auto !important;      /* fixed 40px; never shrinks or wraps */
+    }
+    .ios-app .discover-row:has(.fit-badge) > .discover-row-info {
+        flex: 1 1 0% !important;
+        min-width: 0 !important;
+        overflow: hidden !important;
+    }
+    .ios-app .discover-row:has(.fit-badge) > .fit-badge {
+        flex: 0 0 100% !important;
+        width: 100% !important;
+        margin-left: 0 !important;
+    }
+
     /* AI Rep "Search Appearances" rows (hsplayer + transferplayer) — iOS only.
        Two things overflow on a narrow iPhone: (1) the section-header controls,
        where the badge copy ("N appearances in the last 30 days") sits beside the
