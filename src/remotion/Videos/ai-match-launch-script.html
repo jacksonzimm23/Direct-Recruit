@@ -1,0 +1,560 @@
+<title>AI Match — Launch Video Script</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    /* Direct Recruit brand tokens (from brand.ts / platform CSS) */
+    --navy-0: #0a1128;   /* oxford */
+    --navy-1: #0d1730;
+    --navy-2: #122043;
+    --orange: #ff6b35;   /* coach accent */
+    --cerulean: #1a94b8; /* player accent (lifted for contrast on dark) */
+    --cerulean-deep: #1282a2;
+    --off-white: #fefcfb;
+    --ink: #10151f;
+    --fit-green: #37c46f;
+    --fit-gold: #eab308;
+
+    /* semantic tokens — dark by default (the video's own world) */
+    --bg: var(--navy-0);
+    --bg-grid: rgba(255,255,255,0.028);
+    --surface: rgba(255,255,255,0.035);
+    --surface-2: rgba(255,255,255,0.055);
+    --border: rgba(255,255,255,0.10);
+    --border-strong: rgba(255,255,255,0.16);
+    --text: var(--off-white);
+    --text-muted: #9db0c9;      /* navy-biased grey, chosen not defaulted */
+    --text-faint: #6c7f9c;
+    --accent: var(--orange);
+    --shadow: 0 24px 60px rgba(0,0,0,0.45);
+
+    --maxw: 60rem;
+    --radius: 14px;
+    --font: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg: #eef1f6;
+      --bg-grid: rgba(10,17,40,0.035);
+      --surface: #ffffff;
+      --surface-2: #f6f8fb;
+      --border: #dbe1ea;
+      --border-strong: #c3ccd9;
+      --text: #10151f;
+      --text-muted: #566378;
+      --text-faint: #8593a6;
+      --cerulean: #0e6f8c;
+      --shadow: 0 18px 40px rgba(10,17,40,0.10);
+    }
+  }
+  /* explicit toggle overrides win in both directions */
+  :root[data-theme="dark"] {
+    --bg: var(--navy-0); --bg-grid: rgba(255,255,255,0.028);
+    --surface: rgba(255,255,255,0.035); --surface-2: rgba(255,255,255,0.055);
+    --border: rgba(255,255,255,0.10); --border-strong: rgba(255,255,255,0.16);
+    --text: var(--off-white); --text-muted: #9db0c9; --text-faint: #6c7f9c;
+    --cerulean: #1a94b8; --shadow: 0 24px 60px rgba(0,0,0,0.45);
+  }
+  :root[data-theme="light"] {
+    --bg: #eef1f6; --bg-grid: rgba(10,17,40,0.035);
+    --surface: #ffffff; --surface-2: #f6f8fb;
+    --border: #dbe1ea; --border-strong: #c3ccd9;
+    --text: #10151f; --text-muted: #566378; --text-faint: #8593a6;
+    --cerulean: #0e6f8c; --shadow: 0 18px 40px rgba(10,17,40,0.10);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    font-family: var(--font);
+    color: var(--text);
+    background:
+      linear-gradient(var(--bg-grid) 1px, transparent 1px) 0 0 / 46px 46px,
+      linear-gradient(90deg, var(--bg-grid) 1px, transparent 1px) 0 0 / 46px 46px,
+      radial-gradient(120% 80% at 50% -10%, #10214a 0%, var(--bg) 55%);
+    background-attachment: fixed;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  @media (prefers-color-scheme: light) {
+    body { background:
+      linear-gradient(var(--bg-grid) 1px, transparent 1px) 0 0 / 46px 46px,
+      linear-gradient(90deg, var(--bg-grid) 1px, transparent 1px) 0 0 / 46px 46px,
+      radial-gradient(120% 80% at 50% -10%, #ffffff 0%, var(--bg) 60%); }
+  }
+  :root[data-theme="light"] body { background:
+      linear-gradient(var(--bg-grid) 1px, transparent 1px) 0 0 / 46px 46px,
+      linear-gradient(90deg, var(--bg-grid) 1px, transparent 1px) 0 0 / 46px 46px,
+      radial-gradient(120% 80% at 50% -10%, #ffffff 0%, var(--bg) 60%); }
+  :root[data-theme="dark"] body { background:
+      linear-gradient(var(--bg-grid) 1px, transparent 1px) 0 0 / 46px 46px,
+      linear-gradient(90deg, var(--bg-grid) 1px, transparent 1px) 0 0 / 46px 46px,
+      radial-gradient(120% 80% at 50% -10%, #10214a 0%, var(--bg) 55%); }
+
+  .wrap { max-width: var(--maxw); margin: 0 auto; padding: 0 24px 120px; }
+
+  /* ---- sticky mini header ---- */
+  header.bar {
+    position: sticky; top: 0; z-index: 10;
+    backdrop-filter: blur(10px);
+    background: color-mix(in srgb, var(--bg) 72%, transparent);
+    border-bottom: 1px solid var(--border);
+  }
+  .bar-inner {
+    max-width: var(--maxw); margin: 0 auto; padding: 13px 24px;
+    display: flex; align-items: center; gap: 14px;
+  }
+  .dot { width: 9px; height: 9px; border-radius: 50%; flex: none;
+    background: var(--orange); box-shadow: 0 0 12px var(--orange); }
+  .bar-title { font-weight: 800; letter-spacing: -0.02em; font-size: 15px; }
+  .bar-meta { margin-left: auto; color: var(--text-faint); font-size: 12.5px;
+    font-variant-numeric: tabular-nums; }
+  @media (max-width: 560px){ .bar-meta { display:none; } }
+
+  /* ---- hero ---- */
+  .hero { padding: 66px 0 30px; }
+  .eyebrow {
+    display: inline-flex; align-items: center; gap: 9px;
+    text-transform: uppercase; letter-spacing: 0.16em; font-size: 12px; font-weight: 700;
+    color: var(--orange);
+  }
+  .eyebrow::before { content:""; width: 22px; height: 2px; background: var(--orange); border-radius: 2px; }
+  h1 {
+    font-size: clamp(2.4rem, 6.5vw, 4rem); line-height: 0.98; letter-spacing: -0.045em;
+    font-weight: 900; margin: 18px 0 0; text-wrap: balance;
+  }
+  h1 .amp { color: var(--orange); }
+  .lede { color: var(--text-muted); font-size: 1.12rem; max-width: 54ch; margin: 20px 0 0; }
+  .specrow {
+    display: flex; flex-wrap: wrap; gap: 8px; margin-top: 26px;
+  }
+  .chip {
+    font-size: 12.5px; font-weight: 600; letter-spacing: -0.01em;
+    padding: 7px 13px; border-radius: 999px;
+    background: var(--surface); border: 1px solid var(--border); color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .chip b { color: var(--text); font-weight: 700; }
+
+  /* ---- perspective legend ---- */
+  .legend { display: flex; flex-wrap: wrap; gap: 18px; margin-top: 22px; font-size: 13px; color: var(--text-muted); }
+  .legend span { display: inline-flex; align-items: center; gap: 8px; }
+  .swatch { width: 13px; height: 13px; border-radius: 4px; flex: none; }
+  .sw-blue { background: var(--cerulean); }
+  .sw-orange { background: var(--orange); }
+  .sw-neutral { background: var(--text-faint); }
+
+  /* ---- section headers ---- */
+  h2.sec {
+    font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.15em; font-weight: 800;
+    color: var(--text-faint); margin: 54px 0 4px; padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  /* callout */
+  .callout {
+    margin: 26px 0; padding: 18px 20px; border-radius: var(--radius);
+    background: var(--surface); border: 1px solid var(--border);
+    border-left: 3px solid var(--orange);
+    font-size: 0.96rem;
+  }
+  .callout strong { color: var(--text); }
+  .callout.blue { border-left-color: var(--cerulean); }
+
+  /* ---- act divider ---- */
+  .act { display: flex; align-items: baseline; gap: 14px; margin: 46px 0 20px; }
+  .act .num {
+    font-weight: 900; font-size: 1rem; letter-spacing: -0.02em;
+    color: var(--bg); background: var(--orange);
+    width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center; flex: none;
+    box-shadow: 0 4px 14px color-mix(in srgb, var(--orange) 45%, transparent);
+  }
+  .act h3 { margin: 0; font-size: 1.35rem; letter-spacing: -0.03em; font-weight: 800; }
+  .act .actmeta { margin-left: auto; color: var(--text-faint); font-size: 12.5px;
+    font-variant-numeric: tabular-nums; align-self: center; }
+
+  /* ---- scene card ---- */
+  .scene {
+    position: relative;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px 22px 20px 26px;
+    margin: 14px 0;
+    box-shadow: var(--shadow);
+  }
+  .scene::before {
+    content:""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
+    border-radius: var(--radius) 0 0 var(--radius);
+    background: var(--rail, var(--text-faint));
+  }
+  .scene[data-side="player"] { --rail: var(--cerulean); }
+  .scene[data-side="coach"]  { --rail: var(--orange); }
+  .scene[data-side="both"]   { --rail: linear-gradient(var(--cerulean), var(--orange)); }
+  .scene[data-side="neutral"]{ --rail: var(--text-faint); }
+
+  .scene-head { display: flex; align-items: baseline; gap: 11px; flex-wrap: wrap; }
+  .scene-no {
+    font-weight: 800; font-size: 12px; letter-spacing: 0.03em;
+    color: var(--bg); background: var(--rail, var(--text-faint));
+    padding: 3px 9px; border-radius: 6px; flex: none;
+  }
+  .scene[data-side="both"] .scene-no { background: var(--orange); }
+  .scene-title { font-weight: 800; font-size: 1.1rem; letter-spacing: -0.02em; }
+  .scene-tags { margin-left: auto; display: flex; gap: 6px; flex-wrap: wrap; }
+  .tag {
+    font-size: 11px; font-weight: 700; letter-spacing: 0.02em; text-transform: uppercase;
+    padding: 3px 8px; border-radius: 5px;
+    background: var(--surface-2); border: 1px solid var(--border); color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .tag.new { color: var(--fit-green); border-color: color-mix(in srgb, var(--fit-green) 40%, transparent); }
+  .tag.reuse { color: var(--cerulean); border-color: color-mix(in srgb, var(--cerulean) 40%, transparent); }
+  .tag.bookend { color: var(--orange); border-color: color-mix(in srgb, var(--orange) 40%, transparent); }
+
+  .scene p { margin: 12px 0 0; }
+  .label {
+    font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.11em;
+    color: var(--text-faint);
+  }
+  .shows { margin-top: 12px; }
+  .vo {
+    margin-top: 13px; padding: 11px 14px; border-radius: 10px;
+    background: var(--surface-2); border: 1px dashed var(--border-strong);
+    font-size: 0.95rem;
+  }
+  .vo .label { color: var(--orange); }
+  .vo em { color: var(--text); font-style: normal; font-weight: 500; }
+  .kw-ai { color: var(--orange); font-weight: 800; }
+  .kw-blue { color: var(--cerulean); font-weight: 700; }
+  .kw-orange { color: var(--orange); font-weight: 700; }
+  strong { color: var(--text); }
+  code {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 0.86em;
+    background: var(--surface-2); border: 1px solid var(--border);
+    padding: 1px 6px; border-radius: 5px; color: var(--text);
+  }
+
+  /* ---- frame budget table ---- */
+  .tablewrap { overflow-x: auto; margin: 14px 0; border: 1px solid var(--border); border-radius: var(--radius); }
+  table { border-collapse: collapse; width: 100%; font-size: 0.9rem; min-width: 460px; }
+  thead th {
+    text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--text-faint); font-weight: 700; padding: 12px 14px;
+    background: var(--surface-2); border-bottom: 1px solid var(--border);
+  }
+  tbody td { padding: 10px 14px; border-bottom: 1px solid var(--border); }
+  tbody tr:last-child td { border-bottom: none; }
+  .num-col { font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
+  tr.total td { font-weight: 800; color: var(--text); background: var(--surface-2); }
+  .type-pill { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 5px;
+    background: var(--surface-2); border: 1px solid var(--border); color: var(--text-muted); }
+  .type-pill.p { color: var(--cerulean); }
+  .type-pill.c { color: var(--orange); }
+  .type-pill.n { color: var(--text-muted); }
+
+  ul.clean { margin: 12px 0 0; padding-left: 20px; }
+  ul.clean li { margin: 6px 0; color: var(--text-muted); }
+  ul.clean li strong { color: var(--text); }
+
+  .footnote { color: var(--text-faint); font-size: 0.85rem; margin-top: 8px; }
+
+  a { color: var(--orange); }
+  :focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; border-radius: 4px; }
+</style>
+
+<header class="bar">
+  <div class="bar-inner">
+    <span class="dot" aria-hidden="true"></span>
+    <span class="bar-title">AI Match — Launch Video</span>
+    <span class="bar-meta">1920×1080 · 30fps · ~67s · VO + music</span>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <section class="hero">
+    <span class="eyebrow">Direct Recruit · Remotion build spec</span>
+    <h1>One score, seen from<br>both sides.</h1>
+    <p class="lede">A launch film for AI Match. A player answers a few quick questions and sees the
+      schools that fit them. Flip the camera, and the same player shows up for the coach — ranked by fit,
+      with the reasons why. The moral: recruiting works when both sides share the same off-field goals.</p>
+
+    <div class="specrow">
+      <span class="chip"><b>10</b> scenes</span>
+      <span class="chip"><b>~67s</b> target</span>
+      <span class="chip"><b>2</b> new UI builds</span>
+      <span class="chip"><b>2</b> bookends reused</span>
+      <span class="chip">Voiceover-led</span>
+    </div>
+
+    <div class="legend" role="list">
+      <span role="listitem"><span class="swatch sw-blue"></span> Blue = player's side</span>
+      <span role="listitem"><span class="swatch sw-orange"></span> Orange = coach's side</span>
+      <span role="listitem"><span class="swatch sw-neutral"></span> Neutral = brand / transition</span>
+    </div>
+  </section>
+
+  <div class="callout">
+    <strong>Framing (locked, accuracy-critical).</strong> The product says <strong>“two-way fit,”</strong>
+    not “mutual interest.” AI Match scores the <em>overlap of stated preferences</em> — a player wants X,
+    a program offers X. It is <em>not</em> a signal that a specific coach wants a specific player.
+    The VO says <strong>fit / shared goals / who fits your program</strong> — never “this coach is
+    interested in you.”
+  </div>
+
+  <!-- ===== ACT 1 ===== -->
+  <div class="act">
+    <span class="num">1</span>
+    <h3>The hook</h3>
+    <span class="actmeta">brand → idea → title · f0–510</span>
+  </div>
+
+  <div class="scene" data-side="neutral">
+    <div class="scene-head">
+      <span class="scene-no">S1</span>
+      <span class="scene-title">Brand lockup</span>
+      <span class="scene-tags"><span class="tag">0.0–5.0s</span><span class="tag bookend">Bookend · Start</span></span>
+    </div>
+    <div class="shows"><span class="label">Shows</span>
+      <p>DR logo centered → slides left as <strong>“Direct Recruit”</strong> + <strong>“Get Recruited · The Right Way”</strong>
+      reveal beside it, resolving into the centered brand lockup. Reuses the existing <code>Scene02Meet_Merged</code>
+      open (first portion only — hands off into the AI hook instead of the RA title). Logo stays dead-center at
+      the handoff so S2 can shrink it up seamlessly.</p>
+    </div>
+    <div class="vo"><span class="label">VO</span> <em>(silent / breath — let the brand land, ~0.5s hold)</em></div>
+  </div>
+
+  <div class="scene" data-side="neutral">
+    <div class="scene-head">
+      <span class="scene-no">S2</span>
+      <span class="scene-title">The AI hook</span>
+      <span class="scene-tags"><span class="tag">5.0–14.0s</span><span class="tag">Text</span></span>
+    </div>
+    <div class="shows"><span class="label">Shows</span>
+      <p>The brand lockup <strong>shrinks and rises</strong> to the top, clearing center for text. Three lines
+      reveal <strong>word-by-word, synced to the VO</strong>. <span class="kw-ai">AI</span> is the first orange
+      word in the film.</p>
+    </div>
+    <div class="vo"><span class="label">VO / on-screen</span>
+      <p style="margin:8px 0 0"><em>“What if you could use <span class="kw-ai">AI</span> to recruit smarter?
+      A way to connect players and programs that actually fit. So both sides know exactly who to reach out to.”</em></p>
+      <p class="footnote">Hold a beat on line 3 before Scene 3.</p>
+    </div>
+  </div>
+
+  <div class="scene" data-side="neutral">
+    <div class="scene-head">
+      <span class="scene-no">S3</span>
+      <span class="scene-title">Bridge → AI Match title</span>
+      <span class="scene-tags"><span class="tag">14.0–17.0s</span><span class="tag">Transition</span></span>
+    </div>
+    <div class="shows"><span class="label">Shows</span>
+      <p>The three hook lines <strong>pull to center and dissolve</strong>; the <strong>AI Match</strong> title
+      lockup assembles out of that motion (logo + wordmark, soft orange glow). The pivot from <em>told</em> to
+      <em>shown</em>.</p>
+    </div>
+    <div class="vo"><span class="label">VO</span> <em>“That’s AI Match.”</em></div>
+  </div>
+
+  <!-- ===== ACT 2 ===== -->
+  <div class="act">
+    <span class="num">2</span>
+    <h3>The player’s side</h3>
+    <span class="actmeta">the demo begins · f510–1170</span>
+  </div>
+
+  <div class="scene" data-side="player">
+    <div class="scene-head">
+      <span class="scene-no">S4</span>
+      <span class="scene-title">The quick questionnaire</span>
+      <span class="scene-tags"><span class="tag">17.0–29.0s</span><span class="tag new">New UI</span></span>
+    </div>
+    <div class="shows"><span class="label">Shows</span>
+      <p>A centered <span class="kw-blue">player-side</span> card. A short fit questionnaire fills in fast — a
+      cerulean progress bar racing to 100%, a checkmark ticking on each answer:</p>
+      <ul class="clean">
+        <li><strong>Academics</strong> — GPA + test chips fill in (<code>GPA 3.6</code>, <code>SAT 1180</code>)</li>
+        <li><strong>Level</strong> — pills select <code>D2 · D3</code></li>
+        <li><strong>Region</strong> — <code>Southeast · South Central</code> light up</li>
+        <li><strong>Campus</strong> — toggle picks <code>Suburban</code></li>
+        <li><strong>Priorities</strong> — a slider snaps (playing time ⟷ competition level)</li>
+      </ul>
+      <p class="footnote">Keep it brisk — the payoff is the matches, not the form. End on a satisfying 100% state.</p>
+    </div>
+    <div class="vo"><span class="label">VO</span> <em>“It starts with a few quick questions — academics, level, location, and what matters to you.”</em></div>
+  </div>
+
+  <div class="scene" data-side="player">
+    <div class="scene-head">
+      <span class="scene-no">S5</span>
+      <span class="scene-title">Matches resolve → Best-Fit + who to contact</span>
+      <span class="scene-tags"><span class="tag">29.0–39.0s</span><span class="tag new">New UI</span></span>
+    </div>
+    <div class="shows"><span class="label">Shows</span>
+      <p>The questionnaire collapses into a ranked <strong>Best-Fit Schools</strong> list. Each card carries the
+      <strong>AI Match badge</strong> (reuse <code>RaFitBadge</code>) in green/gold tiers (<code>92, 88, 81, 76</code>).
+      One school — <strong>Delta State</strong> — highlights with a pulsing orange ring, then is <strong>tapped</strong>
+      to open the <strong>Match + Staff</strong> view:</p>
+      <ul class="clean">
+        <li><strong>Match</strong> — green ✓ rows: <em>Academics line up · Open to your division · In a region you’re open to</em></li>
+        <li><strong>Staff</strong> — <span class="kw-blue">coaches to contact</span> (avatar · name · title) — the “who to reach out to” payoff</li>
+      </ul>
+    </div>
+    <div class="vo"><span class="label">VO</span> <em>“And instantly, players see the schools that fit them — and exactly who to reach out to.”</em></div>
+  </div>
+
+  <!-- ===== ACT 3 ===== -->
+  <div class="act">
+    <span class="num">3</span>
+    <h3>The flip — the hinge</h3>
+    <span class="actmeta">signature moment · f1170–1290</span>
+  </div>
+
+  <div class="scene" data-side="both">
+    <div class="scene-head">
+      <span class="scene-no">S6</span>
+      <span class="scene-title">Flip to the coach’s view</span>
+      <span class="scene-tags"><span class="tag">39.0–43.0s</span><span class="tag">Transition</span></span>
+    </div>
+    <div class="shows"><span class="label">Shows</span>
+      <p>The Delta State card the player picked <strong>flips in 3D</strong> (<code>rotateY</code> 0°→180°). The
+      front is the player’s <span class="kw-blue">school card</span>; the back is the coach’s <span class="kw-orange">view
+      of that same player</span>. At the 90° edge, the accent crossfades <span class="kw-blue">blue</span> →
+      <span class="kw-orange">orange</span> — the handoff between sides. One card, two faces.</p>
+      <p class="footnote">CSS <code>rotateY</code> by default; real 3D via <code>@react-three/fiber</code> only if the flip doesn’t read premium enough.</p>
+    </div>
+    <div class="vo"><span class="label">VO</span> <em>“Now, from the coach’s side…”</em></div>
+  </div>
+
+  <!-- ===== ACT 4 ===== -->
+  <div class="act">
+    <span class="num">4</span>
+    <h3>The coach’s side</h3>
+    <span class="actmeta">why they fit · f1290–1710</span>
+  </div>
+
+  <div class="scene" data-side="coach">
+    <div class="scene-head">
+      <span class="scene-no">S7</span>
+      <span class="scene-title">Player in the coach’s results</span>
+      <span class="scene-tags"><span class="tag">43.0–48.0s</span><span class="tag reuse">Reuse</span></span>
+    </div>
+    <div class="shows"><span class="label">Shows</span>
+      <p>The flip resolves into a coach <span class="kw-orange">RA result row</span> for the same player (reuse
+      <code>RaPlayerRow</code> + <code>RaFitBadge</code>). The badge reads a strong tier (green, <code>88</code>).
+      A subtle rank cue reinforces “ranked by fit.” Cursor moves toward the <strong>ⓘ</strong> button.</p>
+    </div>
+    <div class="vo"><span class="label">VO</span> <em>“That same player shows up for the coach — ranked by fit to their program.”</em></div>
+  </div>
+
+  <div class="scene" data-side="coach">
+    <div class="scene-head">
+      <span class="scene-no">S8</span>
+      <span class="scene-title">Why they fit</span>
+      <span class="scene-tags"><span class="tag">48.0–57.0s</span><span class="tag reuse">Reuse</span></span>
+    </div>
+    <div class="shows"><span class="label">Shows</span>
+      <p>Click <strong>ⓘ</strong> → the per-dimension breakdown reveals <strong>one row at a time</strong>, each
+      with a match-strength icon. The big score + tier (<code>88 · Strong Fit</code>) sits above:</p>
+      <ul class="clean">
+        <li><strong style="color:var(--fit-green)">Academics ✓</strong> — GPA within your admitted range</li>
+        <li><strong style="color:var(--fit-green)">Level ✓</strong> — open to your division</li>
+        <li><strong style="color:var(--fit-green)">Location ✓</strong> — open to your recruiting region</li>
+        <li><strong style="color:var(--fit-green)">Campus ✓</strong> — prefers a campus like yours</li>
+        <li><strong style="color:var(--fit-gold)">Financial ~</strong> — one honest “open question” row</li>
+      </ul>
+      <p class="footnote">The yellow row shows the “why / why not” nuance without pairing a real-looking player with a bad-fit villain.</p>
+    </div>
+    <div class="vo"><span class="label">VO</span> <em>“Coaches see <strong>why</strong> a player fits — the off-field factors that decide who actually succeeds and stays.”</em></div>
+  </div>
+
+  <!-- ===== ACT 5 ===== -->
+  <div class="act">
+    <span class="num">5</span>
+    <h3>The close</h3>
+    <span class="actmeta">merge → end card · f1710–2010</span>
+  </div>
+
+  <div class="scene" data-side="both">
+    <div class="scene-head">
+      <span class="scene-no">S9</span>
+      <span class="scene-title">Two views → one score</span>
+      <span class="scene-tags"><span class="tag">57.0–63.0s</span><span class="tag">Text · UI</span></span>
+    </div>
+    <div class="shows"><span class="label">Shows</span>
+      <p>Pull back to both views — the player’s <span class="kw-blue">Best-Fit card</span> (left) and the coach’s
+      <span class="kw-orange">breakdown</span> (right). They slide to center and <strong>merge into a single AI Match
+      score</strong>, the split now healed into one number. Word-reveal beneath:
+      <em>One score. · Both sides. · The right fit.</em> (last line gets an orange sweep underline).</p>
+    </div>
+    <div class="vo"><span class="label">VO</span> <em>“One score. Both sides. The same goal — the right fit.”</em></div>
+  </div>
+
+  <div class="scene" data-side="neutral">
+    <div class="scene-head">
+      <span class="scene-no">S10</span>
+      <span class="scene-title">End card</span>
+      <span class="scene-tags"><span class="tag">63.0–67.0s</span><span class="tag bookend">Bookend · Finish</span></span>
+    </div>
+    <div class="shows"><span class="label">Shows</span>
+      <p>Reuses <code>Scene11EndCard</code>: logo + <strong>“Direct Recruit”</strong> + tagline + orange sweep,
+      then the <strong>App Store badge</strong> and <strong>directrecruit.net</strong> fade in. Hold the last
+      ~20 frames static for a clean end-frame / loop point.</p>
+    </div>
+    <div class="vo"><span class="label">VO</span> <em>“Direct Recruit. Get recruited — the right way.”</em></div>
+  </div>
+
+  <!-- ===== FRAME BUDGET ===== -->
+  <h2 class="sec">Frame budget · retimes to the recorded VO</h2>
+  <div class="tablewrap">
+    <table>
+      <thead>
+        <tr><th>#</th><th>Scene</th><th class="num-col">Frames</th><th class="num-col">Sec</th><th>Type</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>1</td><td>Brand lockup</td><td class="num-col">0–150</td><td class="num-col">5.0</td><td><span class="type-pill n">Bookend</span></td></tr>
+        <tr><td>2</td><td>AI hook — 3 lines</td><td class="num-col">150–420</td><td class="num-col">9.0</td><td><span class="type-pill n">Text</span></td></tr>
+        <tr><td>3</td><td>Bridge → AI Match title</td><td class="num-col">420–510</td><td class="num-col">3.0</td><td><span class="type-pill n">Transition</span></td></tr>
+        <tr><td>4</td><td>Questionnaire</td><td class="num-col">510–870</td><td class="num-col">12.0</td><td><span class="type-pill p">UI · new</span></td></tr>
+        <tr><td>5</td><td>Matches → Match + Staff</td><td class="num-col">870–1170</td><td class="num-col">10.0</td><td><span class="type-pill p">UI · new</span></td></tr>
+        <tr><td>6</td><td>The flip</td><td class="num-col">1170–1290</td><td class="num-col">4.0</td><td><span class="type-pill n">Transition</span></td></tr>
+        <tr><td>7</td><td>Player in coach results</td><td class="num-col">1290–1440</td><td class="num-col">5.0</td><td><span class="type-pill c">UI · reuse</span></td></tr>
+        <tr><td>8</td><td>Why they fit</td><td class="num-col">1440–1710</td><td class="num-col">9.0</td><td><span class="type-pill c">UI · reuse</span></td></tr>
+        <tr><td>9</td><td>Two views → one score</td><td class="num-col">1710–1890</td><td class="num-col">6.0</td><td><span class="type-pill n">Text · UI</span></td></tr>
+        <tr><td>10</td><td>End card</td><td class="num-col">1890–2010</td><td class="num-col">4.0</td><td><span class="type-pill n">Bookend</span></td></tr>
+        <tr class="total"><td></td><td>Total</td><td class="num-col">2010</td><td class="num-col">67.0</td><td></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="footnote">Placeholder pacing. Once you record, set each scene’s <code>durationInFrames</code> to your
+  actual VO windows and shift downstream <code>from</code>s — changing one duration shifts every later scene.</p>
+
+  <!-- ===== BUILD NOTES ===== -->
+  <h2 class="sec">Build notes</h2>
+  <div class="callout blue">
+    <strong>Reuse, don’t duplicate.</strong> Scenes 1 &amp; 10 already import from <code>AiRaDemo.tsx</code>
+    (Start / Finish). Scenes 7–8 reuse the RA kit: <code>RaFitBadge</code>, <code>RaPlayerRow</code>,
+    <code>CursorArrow</code>, <code>fitTierColor</code>. Only <strong>Scenes 4, 5, 6, 9</strong> need new
+    components — everything else is assembly.
+  </div>
+  <ul class="clean">
+    <li><strong>New components:</strong> <code>Scene04Questionnaire</code>, <code>Scene05BestFit</code> (+ Match/Staff panel), <code>Scene06Flip</code>, <code>Scene09Merge</code>.</li>
+    <li><strong>Verify by rendering</strong> stills at scene boundaries + pixel-measure — don’t trust the Studio preview for flashes. Watch the S1→S2 lockup shrink and the S6 flip midpoint.</li>
+    <li><strong>Audio last:</strong> record VO → drop in <code>public/</code> → place per scene; keep <code>Background Music.mp3</code> as a low bed (~0.15–0.20 under the VO) with the same silence-trim + envelope as AiRaDemo.</li>
+  </ul>
+
+  <h2 class="sec">Open placeholders — to finalize</h2>
+  <ul class="clean">
+    <li><strong>Record / approve the VO</strong> — then reveals re-time to your audio.</li>
+    <li><strong>The flip (S6):</strong> CSS <code>rotateY</code> vs real 3D — decide at build.</li>
+    <li><strong>Questionnaire (S4):</strong> confirm the 5 questions + sample answers.</li>
+    <li><strong>Best-Fit schools (S5):</strong> confirm the list + scores (Delta State highlighted; Eastern Washington + text cards).</li>
+    <li><strong>Music:</strong> reuse <code>Background Music.mp3</code> or drop a new bed.</li>
+  </ul>
+
+  <p class="footnote" style="margin-top:30px">Markdown source: <code>src/remotion/Videos/ai-match-launch-script.md</code>
+  · Follows <code>Resources/production-craft.md</code> · Blue = player, orange = coach throughout.</p>
+
+</div>

@@ -32,7 +32,7 @@ import {
  */
 
 // ── Shared bits ───────────────────────────────────────────────────────
-const logo = staticFile("dr-logo.png");
+export const logo = staticFile("dr-logo.png");
 
 // Trim plan: show 210 frames (7s) of each clip, starting a little in so the
 // action is mid-flow (avoids dead lead-in). Nudge these after scrubbing.
@@ -389,7 +389,7 @@ const Scene02Zoom_V2: React.FC = () => {
 // The row is a real flex row (gap = tight LOCKUP_TIGHT_GAP). We translate the
 // whole row so the logo's center sits at frame-center whenever text is hidden,
 // which keeps the logo centered both before the reveal and in the Meet-RA state.
-const LOGO_SIZE = 170;
+export const LOGO_SIZE = 170;
 const LOCKUP_TIGHT_GAP = 14; // logo ↔ name spacing (tightened)
 const NAME_BLOCK_W = 456; // width of "Direct Recruit" @70px — used to center the logo+name pair
 // The logo MOVES: when the name+slogan are hidden it sits dead-center; when they
@@ -399,7 +399,7 @@ const NAME_BLOCK_W = 456; // width of "Direct Recruit" @70px — used to center 
 // collapsed endpoint lands the logo precisely at frame-center (= the RaAnchor
 // logo spot), keeping the scene-to-scene handoff seamless.
 const LOCKUP_LOGO_SHIFT = (LOCKUP_TIGHT_GAP + NAME_BLOCK_W) / 2; // logo's leftward travel when fully revealed
-const ContinuousLockup: React.FC<{ reveal: number; textOpacity: number }> = ({ reveal, textOpacity }) => {
+export const ContinuousLockup: React.FC<{ reveal: number; textOpacity: number }> = ({ reveal, textOpacity }) => {
   const textReveal = interpolate(reveal, [0.15, 1], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
   const textVisible = textReveal * textOpacity;
   // Logo center: frame-center when collapsed → LOCKUP_LOGO_SHIFT left when revealed.
@@ -434,7 +434,7 @@ const ContinuousLockup: React.FC<{ reveal: number; textOpacity: number }> = ({ r
   );
 };
 
-const Scene02Meet_Merged: React.FC = () => {
+export const Scene02Meet_Merged: React.FC = () => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
@@ -525,11 +525,12 @@ const Scene02Meet_Merged: React.FC = () => {
           out before the next; line 3 holds to the scene end). Same fixed position. */}
       <AbsoluteFill style={{ justifyContent: "flex-start", alignItems: "center" }}>
         {[
-          // All 3 lines are the SAME duration (35f each: 6f in · 23f hold · 6f out),
-          // with a 2f gap between them, so the pacing is perfectly consistent.
-          { text: <>Stop scrolling on social media</>, start: 114, end: 149 },
-          { text: <>Stop scrolling databases</>, start: 151, end: 186 },
-          { text: <>Start recruiting with <span style={{ color: colors.accentOrange }}>AI</span></>, start: 188, end: 223 },
+          // All 3 lines are the SAME duration (45f each ≈ 1.5s: 6f in · 33f hold ·
+          // 6f out), with a 2f gap between them, so the pacing is consistent. S1 was
+          // extended (225→255) to fit the holds; downstream scenes shift +30.
+          { text: <>Stop scrolling on social media</>, start: 114, end: 159 },
+          { text: <>Stop scrolling databases</>, start: 161, end: 206 },
+          { text: <>Start recruiting with <span style={{ color: colors.accentOrange }}>AI</span></>, start: 208, end: 253 },
         ].map((l, i) => {
           // All lines fade in (rise), hold, then fade out before the next / the
           // scene cut. Snappier 6f fades leave each line at its FINAL state a touch
@@ -883,7 +884,7 @@ const Scene10Capabilities: React.FC = () => {
 // Original lockup animation (logo scale + word reveal + tagline settle + orange
 // sweep), PLUS availability lines that fade in as the sweep pans: the official
 // Apple "Download on the App Store" badge and "directrecruit.net".
-const Scene11EndCard: React.FC = () => {
+export const Scene11EndCard: React.FC = () => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const s = spring({ frame, fps, config: { damping: 200 } });
@@ -950,7 +951,7 @@ const Scene11EndCard: React.FC = () => {
 // The logo + "AI Recruiting Assistant" title render IDENTICALLY in both the
 // Meet-RA scene and the RA-landing scene, centered as a pair, so they don't
 // move across the scene cut. Only the content BELOW changes (subtitle → box).
-const RA_ANCHOR_LOGO_W = 120; // matches Meet-RA's shrunken lockup logo (170 × 0.7 ≈ 119)
+export const RA_ANCHOR_LOGO_W = 120; // matches Meet-RA's shrunken lockup logo (170 × 0.7 ≈ 119)
 const RA_ANCHOR_TITLE_SIZE = 96;
 const RA_ANCHOR_GAP = 30; // logo bottom ↔ title top
 // The TITLE is vertically centered (logo sits above it). We lift the whole pair
@@ -1733,14 +1734,24 @@ const AUDIO = {
   whoosh: staticFile("ra/Whoosh.mp3"),
 };
 
-// GLOBAL cue frames (composition-level). Derived from the scene offsets + local
-// timings: S2 from=225, S3 from=455, S4 from=622.
+// S1 (Scene02Meet_Merged) was extended by +30 frames so each of the 3 open subtitle
+// lines holds 1.5s (45 frames). Every scene + cue after S1 shifts back by the same
+// amount. S2 from=255, S3 from=485, S4 from=652.
+const OPEN_SHIFT = 30;
+const S1_DUR = 225 + OPEN_SHIFT;              // 255
+const S2_FROM = S1_DUR;                        // 280
+const S3_FROM = S2_FROM + 230;                 // 510
+const S4_FROM = S3_FROM + 167;                 // 677
+const S5_FROM = S4_FROM + 320;                 // 997
+
+// GLOBAL cue frames (composition-level). Scene-local timings unchanged; only the S1
+// offset grew (all bases shifted by OPEN_SHIFT).
 const CUE = {
-  typingStart: 225 + 84,          // S2 typing begins (S5_TYPE_START) → 309
-  typingEnd: 225 + 157,           // S2 typing ends (S5_TYPE_END)     → 382
-  sendClick: 225 + 193,           // S2 send-button click (S5_CLICK2) → 418
-  rows: [455 + 82, 455 + 94, 455 + 106, 455 + 118, 455 + 130], // S3 5 rows → 537,549,561,573,585
-  bestStatsClick: 622 + 62,       // S4 "Who has the best stats?" click (M_CLICK) → 684
+  typingStart: S2_FROM + 84,      // S2 typing begins (S5_TYPE_START)
+  typingEnd: S2_FROM + 157,       // S2 typing ends (S5_TYPE_END)
+  sendClick: S2_FROM + 193,       // S2 send-button click (S5_CLICK2)
+  rows: [82, 94, 106, 118, 130].map((f) => S3_FROM + f), // S3 5 rows
+  bestStatsClick: S4_FROM + 62,   // S4 "Who has the best stats?" click (M_CLICK)
 };
 
 // Timeline ──────────────────────────────────────────────────────────
@@ -1748,11 +1759,11 @@ export const AiRaDemo: React.FC = () => {
   const { durationInFrames } = useVideoConfig();
   return (
     <AbsoluteFill style={{ backgroundColor: colors.oxfordBlue }}>
-      <Sequence from={0} durationInFrames={225} name="S1"><Scene02Meet_Merged /></Sequence>
-      <Sequence from={225} durationInFrames={230} name="S2"><Scene05_RaLanding /></Sequence>
-      <Sequence from={455} durationInFrames={167} name="S3"><SceneRaOutput /></Sequence>
-      <Sequence from={622} durationInFrames={320} name="S4"><SceneKeepAsk_Output2 /></Sequence>
-      <Sequence from={942} durationInFrames={180} name="S5"><Scene11EndCard /></Sequence>
+      <Sequence from={0} durationInFrames={S1_DUR} name="S1"><Scene02Meet_Merged /></Sequence>
+      <Sequence from={S2_FROM} durationInFrames={230} name="S2"><Scene05_RaLanding /></Sequence>
+      <Sequence from={S3_FROM} durationInFrames={167} name="S3"><SceneRaOutput /></Sequence>
+      <Sequence from={S4_FROM} durationInFrames={320} name="S4"><SceneKeepAsk_Output2 /></Sequence>
+      <Sequence from={S5_FROM} durationInFrames={180} name="S5"><Scene11EndCard /></Sequence>
 
       {/* ─────────────── AUDIO ─────────────── */}
       {/* Background music — whole video, low bed. Fades in over the first ~1s and

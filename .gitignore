@@ -31,6 +31,8 @@ backend/logs/
 
 # Uploads (if local)
 uploads/
+# Multer temp dir for post/message media (buffered to disk before S3 PUT)
+backend/tmp-uploads/
 
 # Temporary files
 *.tmp
