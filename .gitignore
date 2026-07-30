@@ -101,3 +101,6 @@ _repro_*
 _test_autologin.mjs
 _static_server.mjs
 _old_hscoach.html
+
+# Remotion render output
+out/

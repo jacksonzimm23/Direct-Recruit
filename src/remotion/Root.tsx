@@ -1,5 +1,12 @@
 import React from "react";
-import { Composition } from "remotion";
+import { Composition, Folder, Still } from "remotion";
+import { CollagePost, CollagePostProps } from "./posts/CollagePost";
+import {
+  RecruitingPipeline,
+  RECRUITING_PIPELINE_DURATION,
+} from "./posts/recruiting-pipeline/RecruitingPipeline";
+import { S2Grading } from "./posts/recruiting-pipeline/S2Grading";
+import { S3Board } from "./posts/recruiting-pipeline/S3Board";
 import { AiRaDemo } from "./AiRaDemo";
 import { AiPiDemo } from "./AiPiDemo";
 import { AiMatchLaunch, AI_MATCH_DURATION } from "./AiMatchLaunch";
@@ -71,6 +78,63 @@ export const RemotionRoot: React.FC = () => {
         width={1080}
         height={1350}
       />
+
+      {/* ── Static photo posts (1080x1350) ────────────────────────────────
+          Registered as <Still>, NOT as scenes in a video, so exporting needs
+          no frame numbers: one id in, one PNG out. A new post is a new <Still>
+          below with fresh defaultProps — only write a new component when the
+          LAYOUT changes. See Videos/Resources/social-post-formats.md. ── */}
+      <Folder name="Posts">
+        <Still
+          id="Post-Example-Collage"
+          component={CollagePost}
+          width={1080}
+          height={1350}
+          defaultProps={
+            {
+              eyebrow: "Recruiting, rebuilt",
+              headline: "Every player gets seen.",
+              photos: [],
+              footnote: "Swap photos in via staticFile() paths.",
+              handle: "@directrecruit",
+              showSafeArea: false,
+            } satisfies CollagePostProps
+          }
+        />
+
+        {/* ── Recruiting Pipeline carousel ──────────────────────────────
+            College coach recruiting board feature. S1 is animated (Instagram
+            takes it as a video slide; TikTok and X get a frozen still of it),
+            S2-S5 are static. Scenes are appended to SCENES in
+            posts/recruiting-pipeline/RecruitingPipeline.tsx; each static slide
+            also gets its own <Still> here once it exists, since the PNG is
+            what actually gets posted. ── */}
+        <Folder name="RecruitingPipeline">
+          <Composition
+            id="RecruitingPipeline-1080x1350"
+            component={RecruitingPipeline}
+            durationInFrames={RECRUITING_PIPELINE_DURATION}
+            fps={30}
+            width={1080}
+            height={1350}
+          />
+          {/* S2 onward are STATIC, so they are Stills and are deliberately NOT
+              appended to the composition above — adding them would turn the
+              hook video into a multi-scene clip and break its seamless loop. */}
+          <Still
+            id="RecruitingPipeline-S2-Grading-1080x1350"
+            component={S2Grading}
+            width={1080}
+            height={1350}
+          />
+          <Still
+            id="RecruitingPipeline-S3-Board-1080x1350"
+            component={S3Board}
+            width={1080}
+            height={1350}
+          />
+        </Folder>
+      </Folder>
     </>
   );
 };

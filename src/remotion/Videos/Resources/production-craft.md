@@ -7,6 +7,7 @@ actually build it" companion to the creative/style docs:
 - [`scene-composition.md`](./scene-composition.md) — visualize the idea, don't caption the script
 - [`creative-unlock-rules.md`](./creative-unlock-rules.md) — act like a creative director, not a caption generator
 - [`scene-revisioning.md`](./scene-revisioning.md) — never replace a scene, version it (`Scene X V2`)
+- [`social-post-formats.md`](./social-post-formats.md) — the 1080x1350 frame decision + photo-collage export
 
 This doc covers what those don't: the **animation recipes, the seamless-transition
 system, the audio pipeline, timing conventions, the verification workflow, the
