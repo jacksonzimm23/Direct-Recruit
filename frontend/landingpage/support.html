@@ -23,15 +23,21 @@
 </head>
 <body>
     <!-- No nav - opened in new tab -->
-    <!-- iOS-only back button (native swipe-back is unreliable on these pages) -->
-    <a href="index.html" class="ios-only ios-back-btn" aria-label="Back">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
-        Back
-    </a>
 
     <!-- Content -->
     <section class="legal-section support-section">
         <div class="container">
+            <!-- Back button (desktop + iOS) — same markup/styling as the privacy
+                 and terms pages so all three legal pages match. history.back()
+                 returns to whatever page linked here (landing nav, footer,
+                 Settings) instead of always routing through index.html, which
+                 logged an authenticated user out on iOS. -->
+            <button type="button" class="legal-back-button" aria-label="Back">
+                <svg viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd"/>
+                </svg>
+                Back
+            </button>
             <div class="legal-header">
                 <h1>Support</h1>
                 <p class="legal-updated">We're here to help</p>
@@ -92,7 +98,7 @@
 
                         <div class="faq-item">
                             <h3>How do I switch my profile type?</h3>
-                            <p>Go to Settings &rarr; Profile Type. You can switch between the six profile types (HS Player, College Player, Transfer Player, HS Coach, College Coach, Other) once every 72 hours. Switching to or from a paid type may involve a subscription change &mdash; for example, switching from College Player to HS Player requires starting a subscription. Your posts, followers, and messages are preserved through the switch.</p>
+                            <p>Go to Settings &rarr; Profile Type. You can switch between the six profile types (HS Player, College Player, Transfer Player, HS Coach, College Coach, Other) once every 72 hours. Switching to or from a paid type may involve a subscription change &mdash; for example, switching to College Coach requires starting a subscription. Your posts, followers, and messages are preserved through the switch.</p>
                         </div>
 
                         <div class="faq-item">

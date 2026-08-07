@@ -3896,7 +3896,9 @@ const PAID_PROFILE_TYPES = ['collegecoach'];
 // Free types that can buy an optional add-on (mirrors User.ADDON_TYPES).
 const ADDON_PROFILE_TYPES = ['hsplayer', 'transferplayer'];
 const PLAN_DISPLAY = {
-    player: { name: 'Player Plan', price: '$10/mo' },
+    // "Direct Recruit+", not "Player Plan" — players are free, and this tier is
+    // the optional AI Rep add-on. Matches the name used on the landing page.
+    player: { name: 'Direct Recruit+', price: '$10/mo' },
     starter: { name: 'Coach Starter', price: '$20/mo' },
     pro: { name: 'Coach Pro', price: '$50/mo' },
     elite: { name: 'Coach Elite', price: '$100/mo' }

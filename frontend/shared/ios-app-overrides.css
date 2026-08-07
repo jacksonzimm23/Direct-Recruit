@@ -493,29 +493,15 @@ html.ios-app .ios-only { display: revert !important; }
 html.ios-app .v2-nav-minimal { display: none !important; }
 
 /* ============================================================
-   iOS-only back button for legal/support pages (support, privacy,
-   terms). These pages have no nav and native swipe-back is
-   unreliable here, so we show a small fixed back button (hidden on
-   web via .ios-only). Sits below the status bar via safe-area inset.
+   Legal/support pages (support, privacy, terms) on iOS. These pages
+   have no nav and native swipe-back is unreliable here, so all three
+   render the inline .legal-back-button pill (styled in
+   landingpage/legal.css) on both web and iOS.
+
+   The old fixed .ios-back-btn chevron (support-only, transparent, no
+   pill background) was removed so support matches the other two.
+
+   This tightens the section's 120px desktop top padding and clears the
+   status bar via the safe-area inset.
    ============================================================ */
-.ios-back-btn {
-    position: fixed;
-    top: 0;
-    left: 0;
-    z-index: 2000;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    padding: calc(env(safe-area-inset-top, 0px) + 10px) 16px 10px 16px;
-    background: transparent;
-    border: none;
-    color: #1282a2;
-    font-size: 16px;
-    font-weight: 600;
-    font-family: inherit;
-    cursor: pointer;
-    -webkit-tap-highlight-color: transparent;
-}
-.ios-back-btn svg { width: 18px; height: 18px; }
-/* Push legal page content down so the button doesn't overlap the heading */
 html.ios-app .legal-section { padding-top: calc(env(safe-area-inset-top, 0px) + 52px); }

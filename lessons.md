@@ -393,17 +393,26 @@
 
 39. **Stripe subscriptions follow the same local-dev mock pattern as Cognito/S3/SES.** The environment switcher is `backend/utils/stripe.js` — line 1 checks `NODE_ENV` and loads `backend/utils/local/stripe-local.js` in development. The mock auto-approves all payments, returns fake customer/subscription IDs, and never calls the Stripe API. Zero cost in local dev.
 
-    **Paid profile types and pricing:**
+    > **SUPERSEDED IN PART — read lesson 116 first.** The table below describes the ORIGINAL
+    > model, where hsplayer and transferplayer were paywalled profile types. Since June/July 2026
+    > players are FREE and the `player` tier is an optional **Direct Recruit+** add-on that unlocks
+    > the AI Rep and nothing else. The Stripe/IAP plumbing described in this lesson is unchanged and
+    > still accurate — only the meaning of the `player` tier changed.
 
-    | Profile Type | Price | Tier Value in DB |
-    |---|---|---|
-    | HS Player | $10/mo | `player` |
-    | Transfer Player | $10/mo | `player` |
-    | College Coach Starter | $20/mo | `starter` |
-    | College Coach Pro | $50/mo | `pro` |
-    | College Coach Elite | $100/mo | `elite` |
+    **Subscription tiers and pricing (current):**
 
-    HS Player and Transfer Player share the same Stripe Price ID (same $10/mo plan). College coaches select a tier at checkout.
+    | Profile Type | Price | Tier Value in DB | What it gates |
+    |---|---|---|---|
+    | HS Player | Free | — | Full platform access |
+    | Transfer Player | Free | — | Full platform access |
+    | Direct Recruit+ (hsplayer / transferplayer add-on) | $10/mo | `player` | AI Rep page ONLY |
+    | College Coach Starter | $20/mo | `starter` | Whole platform (required) |
+    | College Coach Pro | $50/mo | `pro` | Whole platform (required) |
+    | College Coach Elite | $100/mo | `elite` | Whole platform (required) |
+
+    Direct Recruit+ for HS Player and Transfer Player is the same Stripe Price ID (one $10/mo plan
+    across both). College coaches select a tier at checkout. The critical distinction: a lapsed
+    `player` tier costs the user the AI Rep only, while a lapsed coach tier locks the platform.
 
     **Database columns added to `users` table (migration `006_add_stripe_subscriptions.sql`):**
     - `stripe_customer_id` — Stripe customer ID, created on first checkout
@@ -436,10 +445,17 @@
 
 40. **Paid profile signup flow: register → pay → create profile (Option A1).** For all 3 paid types (hsplayer, transferplayer, collegecoach), the signup flow is:
 
+    > **SUPERSEDED FOR PLAYERS — read lesson 116 first.** Step 4 no longer happens. Since players
+    > are free, `frontend/{hsplayer,transferplayer}/profile-form.js` no longer calls
+    > `API.payments.createCheckoutSession()` — a player goes create-profile → verify-email →
+    > mainpage with no payment step. The flow below is still exactly correct for **collegecoach**.
+    > The player `payment-success.html` / `payment-success.js` files still exist and are now only
+    > reached by the Direct Recruit+ add-on purchase, not by signup.
+
     1. User fills out the create-profile form and submits
     2. `authAPI.register()` creates a bare `users` row (email + role only, no profile data)
     3. Profile form data is stored in `localStorage` key `pendingProfileData`
-    4. For players: redirect straight to Stripe Checkout ($10/mo)
+    4. ~~For players: redirect straight to Stripe Checkout ($10/mo)~~ (removed — players are free)
     5. For college coaches: show a tier selection modal (Starter $20 / Pro $50 / Elite $100), then redirect to Stripe
     6. Stripe redirects to `payment-success.html` after successful payment
     7. `payment-success.html` reads `pendingProfileData` from localStorage, calls `profileAPI.createPlayerProfile()` or `createCoachProfile()`, clears localStorage, then redirects to `verify-email.html`
@@ -1263,8 +1279,126 @@ DO NOT run seed
     `PlayerProfile.js` if you ever want fit to weigh more.
 
 
+## GTM June 2026 — hsplayer + transferplayer made FREE (collegecoach stays paid)
+
+> **Follow-on: see lesson 118.** June 2026 removed the player paywall outright. July 2026 brought the
+> $10/mo back as an optional **Direct Recruit+** add-on gating the AI Rep only. The paid-list edits
+> below are still current; what changed is that the player Stripe price is no longer dormant.
+
+116. **As a go-to-market move (June 2026), the two player profile types were made FREE; only `collegecoach`
+    remains paid. The change is DELIBERATELY reversible — every edit is commented with the original value
+    and a `// GTM 2026-06 … to re-enable, restore:` note, and ALL billing infrastructure (Stripe price, Apple
+    IAP product, RevenueCat product/entitlement, env vars, `ALLOWED_TIERS_BY_SUBTYPE`, PRICE_MAP/TIER_MAP
+    player entries) was left in place but dormant.** Commit: "GTM: make hsplayer + transferplayer free;
+    collegecoach stays paid".
+
+    **Why the player payment didn't need unwinding:** player signup was already on the "verify-then-pay" model
+    (create profile → verify email → paywall), so freeing them was about REMOVING paywall/paid-list gates, not
+    unwinding a checkout. There were also NO real paying players yet (app had just been approved), so no
+    refunds/cancellations were needed — only seed/test cleanup.
+
+    **The single backend source of truth + 5 frontend copies (the paid-list lives in 6 places):**
+    - `backend/models/User.js` — `PAID_TYPES = ['collegecoach']` (was `['collegecoach','hsplayer','transferplayer']`).
+      This auto-propagates to `payments.js` create-checkout (now 400s for players), `settings.js` switch-info
+      (`is_paid`/`is_current_paid`), and `requiresPayment`.
+    - `frontend/shared/api.js` — `PAID_FOLDERS` (the global paywall IIFE — the core gate that redirects unpaid
+      users to `subscription-required.html`).
+    - `frontend/shared/settings.js` — TWO lists: `PAID` (iOS Apple-billing switch warning) and
+      `PAID_PROFILE_TYPES` (subscription section).
+    - `frontend/shared/subscription-required.html` — inline `PAID_FOLDERS`.
+    - `frontend/landingpage/auth.js` — `PAYWALL_PAID_FOLDERS` (post-signin redirect).
+
+    **Other code touched (all commented for re-enable):**
+    - `backend/routes/ai-rep.js` — the two `getSubscriptionInfo` + 403 gates on `/best-fit-schools` and
+      `/profile-completion` were commented out. AI Rep is player-facing, so leaving them gated would 403 every
+      free player. (`const User = require(...)` kept with a note — referenced only by the commented re-enable code.)
+    - `frontend/{hsplayer,transferplayer}/verify-email.js` — post-verification redirect changed from the paywall
+      to `/{role}/mainpage-player.html`.
+    - `frontend/shared/subscription-required.html` — `handleSubscribeClick()` got a defense-in-depth guard at the
+      top that bounces `hsplayer`/`transferplayer` to their mainpage instead of starting a checkout/IAP.
+    - `frontend/shared/settings.js` — `initializeSubscriptionSection()` hides the "Subscription" settings nav
+      button for `hsplayer`/`transferplayer` only (other free types unchanged).
+    - `backend/scripts/seed-local.js` + `seed-demo-data.js` — player accounts no longer get a seeded subscription
+      (they stay `subscription_status='none'`); only `collegecoach@test.com` is seeded paid.
+
+    **The latent bug this surfaced (FIXED — don't re-introduce):** the profile-switch Stripe-cancel logic in
+    `settings.js` keyed the "cancel sub on paid→free switch" branch off `isCurrentPaid` (`PAID_TYPES.includes(currentSubtype)`).
+    Once players left `PAID_TYPES`, `isCurrentPaid` goes false, so a legacy/future paying player switching to a free
+    type would NEVER get cancelled and would keep being billed. Fixed by keying the cancel branches off the
+    SUBSCRIPTION itself: `stripeSubUnusableOnTarget = isStripeSub && subscription_status !== 'none' &&
+    !targetAllowedTiers.includes(subscription_tier)` — mirroring the Apple/comp branch that was already correct.
+    General rule: **never gate subscription-cancellation logic on whether the profile TYPE is "paid"; gate it on
+    whether the held subscription is valid for the target type.** Verified live: switching a (simulated) paying
+    hsplayer → collegeplayer logged `[Stripe Mock] Subscription … set to cancel at period end` and ended `cancelled`.
+
+    **Manual / external steps that go WITH this code change (not in the repo — must be redone/undone in the
+    dashboards):**
+    - **Stripe:** archive the player Price (`STRIPE_PLAYER_PRICE_ID`) + optionally the product. Web-only (iOS never
+      uses Stripe). Coach prices stay Active.
+    - **App Store Connect:** set IAP `player_monthly_13` to "removed from sale" (do NOT delete — irreversible).
+      Keep `coach_starter_monthly_25` / `coach_pro_monthly_60` / `coach_elite_monthly_125` available.
+    - **RevenueCat:** remove the player package from the default Offering (this is what hides it in the app, even on
+      existing builds). Keep the `player_access` entitlement + `player_monthly_13` product record dormant.
+    - The iOS app only stops showing the player paywall once a NEW build ships (the paid-list is bundled frontend
+      JS); web/desktop gets it instantly on EC2 deploy.
+
+    **DO NOT remove the player env vars.** `STRIPE_PLAYER_PRICE_ID` is in `REQUIRED_SECRETS` for production
+    (`backend/server.js`), so deleting it from prod `.env` makes the backend refuse to boot
+    (`FATAL: Missing required env var`). It now points at an archived price that can't be charged — harmless and
+    dormant. Leave all player keys (`STRIPE_PLAYER_PRICE_ID`, `IAP_PRODUCT_PLAYER`) so re-enable is a pure revert.
+
+    **TO RE-ENABLE PLAYER BILLING LATER:** (1) revert the 6 paid-list copies to include `hsplayer`/`transferplayer`
+    (each has the original value in a comment right above it); (2) un-comment the two `ai-rep.js` subscription gates;
+    (3) restore the two `verify-email.js` redirects to `/shared/subscription-required.html`; (4) remove the player
+    guard at the top of `handleSubscribeClick()` in `subscription-required.html`; (5) re-add the player rows to
+    `seedSubscriptions()` in `seed-local.js`; (6) in the dashboards: un-archive the Stripe player price, restore the
+    ASC IAP to sale, and add the player package back to the RevenueCat Offering. The `settings.js` Stripe-cancel FIX
+    (the bug above) is NOT GTM-specific — keep it. Search the codebase for `GTM 2026-06` to find every revert site.
 
 
+## Prod-only bugs the local dev mocks hide
 
+117. **Never create a temp/scratch dir under `/tmp` (`os.tmpdir()`) once at module load — systemd reaps it and prod breaks while local dev looks fine.** Symptom (July 2026): media posts failed on PROD only with a 500 "Failed to upload media"; text posts worked. The server log showed `ENOENT: no such file or directory, open '/tmp/dr-uploads/...png'` on `POST /api/upload/post-media`. Root cause: `backend/routes/upload.js` created its multer disk-storage temp dir (`os.tmpdir()/dr-uploads`) **once at require-time**. On Linux, `systemd-tmpfiles` periodically reaps stale files/dirs under `/tmp`, so the dir silently vanished between uploads; multer then wrote (or `fs.readFile` then read) into a missing dir → ENOENT → the outer catch returned a generic 500. The upload never even reached S3 — so it looked like an AWS/S3 credentials problem but was not (all four AWS env vars were SET; the `ENOENT` in the log was the tell).
 
+    **Why local dev never caught it (the general trap):** in development `NODE_ENV !== 'production'`, so `backend/utils/s3.js` line 2 short-circuits to `backend/utils/local/s3-local.js` (filesystem mock) — the real multer-disk-then-S3 path is never exercised locally. Any bug that lives ONLY in the production S3/upload path is invisible in local dev. When something works locally but 500s in prod, read the EC2 pm2 logs (`pm2 logs direct-recruit --nostream | grep -A12 "<the route's error label>"`) — the client only ever sees the generic error message; the real stack is server-side.
 
+    **The fix (two layers, both in `upload.js`):** (1) moved `TMP_UPLOAD_DIR` OFF `/tmp` to a project-local dir `path.join(__dirname, '..', 'tmp-uploads')` (= `backend/tmp-uploads/`, gitignored) which systemd never reaps; (2) kept `ensureTmpUploadDir()` (a `fs.mkdirSync(dir,{recursive:true})`) called per-request inside the multer `destination` callback as belt-and-suspenders, so the dir is guaranteed present at write time even if anything ever removes it. General rule: **any dir a long-running process writes to must be (a) outside `/tmp`, and (b) ensured-present at use time, not just at boot.** Verified live on prod: media post succeeded and `grep ENOENT` in the logs came back clean.
+
+---
+
+## Direct Recruit+ — players are free, the $10/mo is an AI Rep add-on
+
+118. **The player $10/mo is an ADD-ON, not a paywall, and the distinction drives every surface that mentions it.** Lesson 116 covers the June 2026 move that made `hsplayer` + `transferplayer` free. July 2026 brought the $10/mo back with completely different semantics, and conflating the two is the mistake to avoid:
+
+    | | Coach subscription | Direct Recruit+ (player) |
+    |---|---|---|
+    | Who | `collegecoach` | `hsplayer`, `transferplayer` |
+    | Required? | Yes, gates the whole platform | No, fully optional |
+    | Enforced by | The paywall IIFE in `frontend/shared/api.js` (`PAID_FOLDERS`), redirects to `subscription-required.html` | The in-page `AiRepPaywall` IIFE in the same file (`ADDON_FOLDERS`), opens a modal |
+    | Server boundary | `requireActiveSubscription()` in `routes/ai.js` | `requireAiRep()` in `routes/ai-rep.js` |
+    | If it lapses | Locked out of the platform | Keeps everything except the AI Rep page |
+    | DB tier value | `starter` / `pro` / `elite` | `player` |
+
+    **`User.PAID_TYPES` is NOT the list of "types that can be billed."** It is the list of types blocked from the platform without a subscription, and it is `['collegecoach']` only. There is a separate `ADDON_TYPES` for the player add-on. Any new code asking "can this user buy something?" must consult the add-on list too, never `PAID_TYPES` alone. This is the same trap documented at the end of lesson 116: **never gate subscription logic on whether the profile TYPE is paid, gate it on the subscription actually held.**
+
+119. **Marketing copy drifted ~2 months behind the code, and the fix touched 5 files (August 2026).** Between the July change and August, the landing pages still sold players a required $10/month plan while `PAID_TYPES` had said `['collegecoach']` since June. The Terms of Service still listed both player types as "Paid ($10/month)", which is a contract, not just copy. Corrected in:
+
+    - `frontend/landingpage/features.html` — Simple Pricing player card is now "Players / Free" with a Direct Recruit+ block pinned to the bottom of the card
+    - `frontend/landingpage/pricing.html` — For Players section rewritten to All Players / Free plus a separate Direct Recruit+ card; coach section moved ABOVE players; FAQ answers corrected
+    - `frontend/landingpage/pricing.css` + `v2-redesign.css` — add-on card styles, plus all body copy taken from 0.2–0.7 white opacity to `#fff` (it was unreadable on the dark background)
+    - `frontend/landingpage/terms-of-service.html` — section 4 relists players as Free with an optional add-on, scopes the access-restriction clause to College Coach, and adds a paragraph defining Direct Recruit+ (Last updated bumped)
+    - `frontend/landingpage/support.html` — profile-switch FAQ no longer claims "switching from College Player to HS Player requires starting a subscription"
+    - `frontend/shared/settings.js` — `PLAN_DISPLAY.player` renamed "Player Plan" → "Direct Recruit+"
+
+    **The lesson:** the pricing model lives in `User.PAID_TYPES` + `ADDON_TYPES`, but it is ALSO asserted in marketing HTML and in the Terms. When the model changes, grep the whole repo for the price string (`$10`) and the type names, not just the code. The Terms of Service is the one that actually matters legally.
+
+    **Copy that is claimed but NOT true, watch for it:** "Transfer Portal access with AI insights" was listed as a free player feature on both pages while the coach Starter tier listed "Transfer Portal Database Access" as paid. Same page, contradicting itself. Removed.
+
+120. **Two landing-page layout constraints that break silently if you add copy.**
+
+    - **features.html Simple Pricing:** the player and coach cards are in a `grid` with default `align-items: stretch`, and `.v2-pricing-card .v2-btn-full` has `margin-top: auto`. Both cards are tuned to a natural height of **433px**. Add a line to either left-hand block and the coach card grows a dead gap under its button. The player-side trims live in `.v2-pricing-card-player`-scoped overrides on purpose, because `.v2-pricing-desc` / `.v2-pricing-features` are shared with the coach card and tightening them globally moves the target.
+    - **pricing.css first band:** `.pricing-hero + .pricing-section` (NOT `:first-of-type`, which resolves against the first `<section>` sibling — that is `.pricing-hero`, which does not carry the `.pricing-section` class, so it would match nothing) is trimmed to `24px 0 40px` so the whole coach section including its CTA button lands above the fold. Measured: button bottom at 634px against a 648px viewport at the tightest case.
+
+    To verify layout changes like these without guessing, render headlessly and measure:
+    `& "C:\Program Files\Google\Chrome\Application\chrome.exe" --headless --disable-gpu --allow-file-access-from-files --virtual-time-budget=6000 --window-size=1240,3000 --dump-dom <file-url>`
+    with a small injected script that writes `getBoundingClientRect()` values into a probe element. Launch it via `Start-Process -Wait -RedirectStandardOutput`; calling `chrome.exe` directly from PowerShell returns before the render finishes and produces no output. Use a scratch `--user-data-dir` and kill only the PIDs whose command line contains it — never `taskkill` chrome by image name.

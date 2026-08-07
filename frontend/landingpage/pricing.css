@@ -9,9 +9,12 @@
 }
 
 /* Hero */
+/* Tight on purpose: the coach section directly below has to fit entirely above
+   the fold on a laptop, including its Start Your Profile button. The hero holds
+   nothing but the H1, so the old 40/24 padding was pure dead space. */
 .pricing-hero {
     background: var(--oxford-blue, #0a1128);
-    padding: 40px 0 24px;
+    padding: 20px 0 8px;
     text-align: center;
 }
 
@@ -19,12 +22,12 @@
     color: #fff;
     font-size: clamp(2rem, 4vw, 3rem);
     font-weight: 800;
-    margin: 0 0 12px 0;
+    margin: 0;
     letter-spacing: -0.02em;
 }
 
 .pricing-hero-sub {
-    color: rgba(255, 255, 255, 0.5);
+    color: #fff;
     font-size: 18px;
     margin: 0;
 }
@@ -39,9 +42,16 @@
     background: #060d1e;
 }
 
+/* First band under the hero (currently For College Coaches). Trimmed so the
+   whole section, cards and CTA button included, lands above the fold. Adjacent
+   sibling rather than :first-of-type, which would match .pricing-hero instead. */
+.pricing-hero + .pricing-section {
+    padding: 24px 0 40px;
+}
+
 .pricing-section-header {
     text-align: center;
-    margin-bottom: 40px;
+    margin-bottom: 24px;
 }
 
 .pricing-section-header h2 {
@@ -52,7 +62,7 @@
 }
 
 .pricing-section-header p {
-    color: rgba(255, 255, 255, 0.45);
+    color: #fff;
     font-size: 15px;
     margin: 0;
 }
@@ -99,11 +109,11 @@
 
 .pricing-period {
     font-size: 16px;
-    color: rgba(255, 255, 255, 0.4);
+    color: #fff;
 }
 
 .pricing-card-desc {
-    color: rgba(255, 255, 255, 0.45);
+    color: #fff;
     font-size: 14px;
     line-height: 1.5;
     margin: 0 0 auto 0;
@@ -125,7 +135,7 @@
     display: flex;
     align-items: center;
     gap: 10px;
-    color: rgba(255, 255, 255, 0.7);
+    color: #fff;
     font-size: 14px;
     padding: 10px 0;
     border-bottom: 1px solid rgba(255, 255, 255, 0.04);
@@ -262,32 +272,44 @@
     font-size: 16px;
 }
 
-/* College Player Note */
-.pricing-college-player-note {
-    display: flex;
-    align-items: center;
-    gap: 12px;
+/* Direct Recruit+ add-on card. Same two-column shell as .pricing-player-card
+   above it, but orange instead of cerulean so it reads as the paid upgrade
+   rather than a second free tier. Replaced the old college-player note, which
+   is obsolete now that every player type is free. */
+.pricing-addon-card {
+    display: grid;
+    grid-template-columns: 1fr 1.5fr;
+    background: rgba(255, 107, 53, 0.05);
+    border: 1px solid rgba(255, 107, 53, 0.28);
+    border-radius: 16px;
+    overflow: hidden;
     max-width: 800px;
-    margin: 20px auto 0;
-    padding: 16px 24px;
-    background: rgba(18, 130, 162, 0.06);
-    border: 1px solid rgba(18, 130, 162, 0.15);
-    border-radius: 10px;
+    margin: 24px auto 0;
 }
 
-.pricing-college-player-note svg {
-    flex-shrink: 0;
+.pricing-addon-label {
+    display: inline-block;
+    align-self: flex-start;
+    color: var(--accent-orange, #ff6b35);
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 10px;
 }
 
-.pricing-college-player-note p {
-    color: rgba(255, 255, 255, 0.6);
+.pricing-addon-trial {
+    color: var(--accent-orange, #ff6b35);
     font-size: 14px;
-    line-height: 1.5;
-    margin: 0;
+    font-weight: 700;
+    margin: 0 0 16px 0;
 }
 
-.pricing-college-player-note p strong {
-    color: rgba(255, 255, 255, 0.85);
+/* .pricing-btn-orange is width:100% for the coach cards; inside this card the
+   button sits in a narrow left column, so keep it to its own width. */
+.pricing-btn-addon {
+    width: auto;
+    align-self: flex-start;
 }
 
 /* Free Banner */
@@ -307,7 +329,7 @@
 }
 
 .pricing-free-banner p {
-    color: rgba(255, 255, 255, 0.5);
+    color: #fff;
     font-size: 15px;
     line-height: 1.6;
     margin: 0 0 24px 0;
@@ -348,7 +370,7 @@
 }
 
 .pricing-faq-item p {
-    color: rgba(255, 255, 255, 0.45);
+    color: #fff;
     font-size: 14px;
     line-height: 1.6;
     margin: 0;
@@ -369,7 +391,7 @@
 }
 
 .pricing-cta p {
-    color: rgba(255, 255, 255, 0.45);
+    color: #fff;
     font-size: 16px;
     margin: 0 0 28px 0;
 }
@@ -395,7 +417,8 @@
         padding: 0 20px;
     }
 
-    .pricing-player-card {
+    .pricing-player-card,
+    .pricing-addon-card {
         grid-template-columns: 1fr;
     }
 
