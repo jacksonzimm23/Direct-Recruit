@@ -41,6 +41,15 @@
     height: 20px;
 }
 
+/* Support has no nav and (unlike privacy/terms) no desktop back button, so the
+   shared 120px top padding left the H1 stranded in dead space. Scoped to
+   .support-section so the legal pages keep their spacing. Lower specificity
+   than `html.ios-app .legal-section`, so the iOS safe-area padding still wins
+   in the app, where the back button does render above the title. */
+.support-section {
+    padding-top: 40px;
+}
+
 .legal-header {
     text-align: center;
     margin-bottom: 48px;

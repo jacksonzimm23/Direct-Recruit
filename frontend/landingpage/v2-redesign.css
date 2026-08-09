@@ -714,8 +714,12 @@
     align-items: start;
 }
 
+/* min-height keeps the page from jumping when you switch role tabs, so it only
+   needs to clear the TALLEST panel. Measured at 1240px and 900px: players 336,
+   coaches 357, everyone 251. It was 480px, which left ~123px of dead space
+   under every panel and pushed the comparison section down the page. */
 .v2-feature-panel {
-    min-height: 480px;
+    min-height: 375px;
 }
 
 .v2-feature-centered {
@@ -1307,7 +1311,7 @@
    its own top padding or the title collides with the feature panel. */
 .v2-comparison {
     background: linear-gradient(180deg, var(--oxford-blue, #0a1128) 0%, #060d1e 100%);
-    padding: 90px 0 100px;
+    padding: 56px 0 100px;
 }
 
 .v2-comparison-table {

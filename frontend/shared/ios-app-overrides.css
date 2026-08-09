@@ -505,3 +505,9 @@ html.ios-app .v2-nav-minimal { display: none !important; }
    status bar via the safe-area inset.
    ============================================================ */
 html.ios-app .legal-section { padding-top: calc(env(safe-area-inset-top, 0px) + 52px); }
+
+/* The support page's back button is tagged .ios-only, and the generic
+   `html.ios-app .ios-only { display: revert !important }` above would reset a
+   <button> to the UA default inline-block, dropping the flex gap between the
+   icon and the label. Restore inline-flex explicitly for this one. */
+html.ios-app .legal-back-button.ios-only { display: inline-flex !important; }
