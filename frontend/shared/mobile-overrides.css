@@ -869,11 +869,6 @@ html {
         border-bottom: none !important;
     }
 
-    /* Feed tabs - normal positioning */
-    .feed-tabs {
-        margin-bottom: 1rem !important;
-    }
-
     /* Hide the "Feed" title on mobile - search bar is enough */
     .content-header h1 {
         display: none !important;
@@ -1314,20 +1309,17 @@ html {
     }
 
     /* === TABS === */
-    .tabs-container,
-    .feed-tabs {
+    .tabs-container {
         overflow-x: auto !important;
         -webkit-overflow-scrolling: touch !important;
         scrollbar-width: none !important;
     }
 
-    .tabs-container::-webkit-scrollbar,
-    .feed-tabs::-webkit-scrollbar {
+    .tabs-container::-webkit-scrollbar {
         display: none !important;
     }
 
-    .tab-btn,
-    .feed-tab {
+    .tab-btn {
         padding: 0.6rem 1rem !important;
         font-size: 0.85rem !important;
         white-space: nowrap !important;

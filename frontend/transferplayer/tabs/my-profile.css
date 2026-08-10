@@ -5460,46 +5460,103 @@
     gap: 0.75rem;
 }
 
-.social-link {
+/* Social media card display links (rendered by updateSocialMedia) */
+.social-media-link {
     display: flex;
     align-items: center;
     gap: 0.75rem;
     padding: 0.75rem 1rem;
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(18, 130, 162, 0.08);
     border-radius: 8px;
-    color: var(--text-primary);
     text-decoration: none;
-    transition: all 0.2s ease;
+    color: var(--white);
+    transition: all 0.2s;
 }
 
-.social-link:hover {
-    background: rgba(255, 255, 255, 0.1);
+.social-media-link:hover {
+    background: rgba(18, 130, 162, 0.15);
     transform: translateX(4px);
 }
 
-.social-link .social-icon {
-    width: 20px;
-    height: 20px;
-    flex-shrink: 0;
+.social-media-link .social-icon {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
 }
 
-.social-link span {
+.social-media-link .link-text {
     flex: 1;
-    font-weight: 500;
+    font-size: 0.9rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
-.social-link .external-icon {
-    width: 16px;
-    height: 16px;
-    opacity: 0.5;
+/* Social media inputs in the edit-profile modal */
+.social-links-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-top: 0.5rem;
 }
 
-.social-link.hudl-link .social-icon {
-    color: #ff6900;
+.social-link-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
 }
 
-.social-link.instagram-link .social-icon {
-    color: #e4405f;
+.social-icon {
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.social-icon svg {
+    width: 22px;
+    height: 22px;
+}
+
+.social-icon.hudl {
+    background: rgba(255, 102, 0, 0.2);
+}
+
+.social-icon.hudl svg {
+    fill: #ff6600;
+}
+
+.social-icon.instagram {
+    background: linear-gradient(45deg, rgba(253, 29, 29, 0.2), rgba(131, 58, 180, 0.2));
+}
+
+.social-icon.instagram svg {
+    fill: #e1306c;
+}
+
+.social-link-row input {
+    flex: 1;
+    padding: 0.75rem 1rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 2px solid rgba(18, 130, 162, 0.2);
+    border-radius: 8px;
+    color: var(--white);
+    font-size: 0.95rem;
+    transition: all 0.2s;
+}
+
+.social-link-row input:focus {
+    outline: none;
+    border-color: var(--cerulean);
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.social-link-row input::placeholder {
+    color: rgba(255, 255, 255, 0.4);
 }
 
 /* Video Upload Progress Bar */
@@ -5806,10 +5863,6 @@ input[type="file"]::file-selector-button:hover {
     gap: 0.35rem;
     flex-wrap: nowrap;
     min-width: 0;
-}
-
-.profile-post-author .verified-badge {
-    flex-shrink: 0;
 }
 
 .profile-post-meta {

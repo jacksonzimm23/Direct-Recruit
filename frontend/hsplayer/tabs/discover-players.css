@@ -198,13 +198,6 @@
     gap: 0.5rem;
 }
 
-.verified-badge {
-    width: 18px;
-    height: 18px;
-    color: var(--cerulean);
-    flex-shrink: 0;
-}
-
 .coach-position {
     font-size: 0.95rem;
     color: var(--accent-orange);
@@ -819,11 +812,6 @@
     .coach-name {
         font-size: 1.1rem;
         margin: 0.25rem 0;
-    }
-
-    .verified-badge {
-        width: 16px;
-        height: 16px;
     }
 
     .coach-position {

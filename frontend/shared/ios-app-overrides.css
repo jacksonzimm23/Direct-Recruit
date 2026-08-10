@@ -458,16 +458,6 @@ html.ios-app body { background-color: inherit; }
         background: inherit;
         color: inherit;
     }
-
-    /* The kill rule above also wipes the ACTIVE feed tab's blue pill the
-       moment it's tapped — iOS leaves :hover stuck on the tapped element and
-       `button:hover` (0,2,1) outranks `.feed-tab.active` (0,2,0), so the
-       Discover / Your Network highlight vanished after any tab switch.
-       Re-assert the active style at higher specificity. */
-    .ios-app .feed-tab.active:hover {
-        background: var(--cerulean);
-        color: white;
-    }
 }
 
 /* Reassert iOS text-size auto-adjustment control */

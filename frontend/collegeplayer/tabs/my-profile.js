@@ -1575,16 +1575,12 @@ function updateSocialMedia(profile) {
     const socialMediaCard = document.getElementById('socialMediaCard');
     if (!socialMediaCard) return;
 
-    // Parse socials from JSON if stored as string
-    let socials = {};
-    if (profile.socials) {
-        try {
-            socials = typeof profile.socials === 'string'
-                ? JSON.parse(profile.socials)
-                : profile.socials;
-        } catch (e) {
-        }
-    }
+    // Read the real player_profiles columns (instagram_handle, hudl_profile).
+    // (Legacy code parsed a profile.socials blob that was never persisted.)
+    const socials = {
+        hudl: (profile.hudl_profile || '').trim(),
+        instagram: (profile.instagram_handle || '').trim()
+    };
 
     const hasHudl = socials.hudl && socials.hudl.trim();
     const hasInstagram = socials.instagram && socials.instagram.trim();
@@ -2481,21 +2477,12 @@ function populateEditForm() {
         }
     }
 
-    // Populate social media links - parse from JSON if stored as JSON string
-    let socials = {};
-    if (currentProfile.socials) {
-        try {
-            socials = typeof currentProfile.socials === 'string'
-                ? JSON.parse(currentProfile.socials)
-                : currentProfile.socials;
-        } catch (e) {
-        }
-    }
-
+    // Populate social media fields from the real columns (instagram_handle,
+    // hudl_profile) — not the legacy profile.socials blob that was never saved.
     const hudlLink = document.getElementById('editHudlLink');
     const instagramLink = document.getElementById('editInstagramLink');
-    if (hudlLink) hudlLink.value = socials.hudl || '';
-    if (instagramLink) instagramLink.value = socials.instagram || '';
+    if (hudlLink) hudlLink.value = currentProfile.hudl_profile || '';
+    if (instagramLink) instagramLink.value = currentProfile.instagram_handle || '';
 
     // Clear all position checkboxes first
     const positionCheckboxes = document.querySelectorAll('#editPositionsContainer input[name="position"]');
@@ -2622,13 +2609,14 @@ async function saveProfileChanges() {
         const phoneInput = document.getElementById('editPhone').value;
         const phoneDigits = phoneInput.replace(/\D/g, '');
 
-        // Build social media links object
-        const hudlLink = document.getElementById('editHudlLink').value.trim();
-        const instagramLink = document.getElementById('editInstagramLink').value.trim();
-        const socialsObj = {};
-        if (hudlLink) socialsObj.hudl = hudlLink;
-        if (instagramLink) socialsObj.instagram = instagramLink;
-        const socialsJson = Object.keys(socialsObj).length > 0 ? JSON.stringify(socialsObj) : null;
+        // Social / film links — write the REAL player_profiles columns
+        // (instagram_handle, hudl_profile). These are allowlisted in
+        // PlayerProfile.update(); the old formData.socials blob had no column and
+        // made the whole PUT fail with a 500.
+        const hudlLinkEl = document.getElementById('editHudlLink');
+        const instagramLinkEl = document.getElementById('editInstagramLink');
+        const hudlLink = hudlLinkEl ? hudlLinkEl.value.trim() : '';
+        const instagramLink = instagramLinkEl ? instagramLinkEl.value.trim() : '';
 
         // Get form data - save positions as slash-separated string
         const formData = {
@@ -2644,7 +2632,8 @@ async function saveProfileChanges() {
             phone: phoneDigits,
             date_of_birth: document.getElementById('editDateOfBirth')?.value || null,
             achievements: document.getElementById('editAchievements').value || null,
-            socials: socialsJson
+            hudl_profile: hudlLink || null,
+            instagram_handle: instagramLink || null
         };
 
         // College player fields (always college)
@@ -3342,11 +3331,6 @@ function createProfilePostElement(post) {
                 <div class="profile-post-info">
                     <div class="profile-post-author">
                         ${authorName}${typeof getSchoolLogoHTML === 'function' && post.author_division ? getSchoolLogoHTML(post.author_school, (window.location.pathname.includes('/tabs/') ? '../../assets' : '../assets'), 16) : ''}
-                        ${post.author_verified ? `
-                            <svg class="verified-badge" viewBox="0 0 24 24" fill="#1DA1F2" width="16" height="16">
-                                <path d="M22.5 12.5c0-1.58-.875-2.95-2.148-3.6.154-.435.238-.905.238-1.4 0-2.21-1.71-3.998-3.818-3.998-.47 0-.92.084-1.336.25C14.818 2.415 13.51 1.5 12 1.5s-2.816.917-3.437 2.25c-.415-.165-.866-.25-1.336-.25-2.11 0-3.818 1.79-3.818 4 0 .494.083.964.237 1.4-1.272.65-2.147 2.018-2.147 3.6 0 1.495.782 2.798 1.942 3.486-.02.17-.032.34-.032.514 0 2.21 1.708 4 3.818 4 .47 0 .92-.086 1.335-.25.62 1.334 1.926 2.25 3.437 2.25 1.512 0 2.818-.916 3.437-2.25.415.163.865.248 1.336.248 2.11 0 3.818-1.79 3.818-4 0-.174-.012-.344-.033-.513 1.158-.687 1.943-1.99 1.943-3.484zm-6.616-3.334l-4.334 6.5c-.145.217-.382.334-.625.334-.143 0-.288-.04-.416-.126l-.115-.094-2.415-2.415c-.293-.293-.293-.768 0-1.06s.768-.294 1.06 0l1.77 1.767 3.825-5.74c.23-.345.696-.436 1.04-.207.346.23.44.696.21 1.04z"/>
-                            </svg>
-                        ` : ''}
                         ${post.author_username ? `<span class="profile-post-handle">@${post.author_username}</span>` : ''}
                         <span class="profile-post-timestamp">${formatTimeAgo(post.created_at)}</span>
                         ${optionsButton}
@@ -3437,7 +3421,7 @@ function createProfileRepostElement(post) {
             <div class="profile-post-header">
                 <div class="profile-post-avatar" style="border: 2px solid ${getRoleBorderColor(post.original_author_role, post.original_author_transfer === 'y', post.original_author_division)}; color: ${getRoleBorderColor(post.original_author_role, post.original_author_transfer === 'y', post.original_author_division)}; background: ${getRoleAvatarBg(post.original_author_role, post.original_author_transfer === 'y', post.original_author_division)}">${post.original_author_image ? `<img src="${post.original_author_image}" alt="${originalAuthorName}">` : `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>`}</div>
                 <div class="profile-post-info">
-                    <div class="profile-post-author">${originalAuthorName}${typeof getSchoolLogoHTML === 'function' && post.original_author_division ? getSchoolLogoHTML(post.original_author_school, (window.location.pathname.includes('/tabs/') ? '../../assets' : '../assets'), 16) : ''}${post.original_author_verified ? `<svg class="verified-badge" viewBox="0 0 24 24" fill="#1DA1F2" width="16" height="16"><path d="M22.5 12.5c0-1.58-.875-2.95-2.148-3.6.154-.435.238-.905.238-1.4 0-2.21-1.71-3.998-3.818-3.998-.47 0-.92.084-1.336.25C14.818 2.415 13.51 1.5 12 1.5s-2.816.917-3.437 2.25c-.415-.165-.866-.25-1.336-.25-2.11 0-3.818 1.79-3.818 4 0 .494.083.964.237 1.4-1.272.65-2.147 2.018-2.147 3.6 0 1.495.782 2.798 1.942 3.486-.02.17-.032.34-.032.514 0 2.21 1.708 4 3.818 4 .47 0 .92-.086 1.335-.25.62 1.334 1.926 2.25 3.437 2.25 1.512 0 2.818-.916 3.437-2.25.415.163.865.248 1.336.248 2.11 0 3.818-1.79 3.818-4 0-.174-.012-.344-.033-.513 1.158-.687 1.943-1.99 1.943-3.484zm-6.616-3.334l-4.334 6.5c-.145.217-.382.334-.625.334-.143 0-.288-.04-.416-.126l-.115-.094-2.415-2.415c-.293-.293-.293-.768 0-1.06s.768-.294 1.06 0l1.77 1.767 3.825-5.74c.23-.345.696-.436 1.04-.207.346.23.44.696.21 1.04z"/></svg>` : ''}${post.original_author_username ? `<span class="profile-post-handle">@${post.original_author_username}</span>` : ''}<span class="profile-post-timestamp">${formatTimeAgo(post.original_created_at)}</span>${optionsButton}</div>
+                    <div class="profile-post-author">${originalAuthorName}${typeof getSchoolLogoHTML === 'function' && post.original_author_division ? getSchoolLogoHTML(post.original_author_school, (window.location.pathname.includes('/tabs/') ? '../../assets' : '../assets'), 16) : ''}${post.original_author_username ? `<span class="profile-post-handle">@${post.original_author_username}</span>` : ''}<span class="profile-post-timestamp">${formatTimeAgo(post.original_created_at)}</span>${optionsButton}</div>
                     <div class="profile-post-meta ${post.original_author_role === 'coach' ? 'coach-meta' : (post.original_author_role === 'other' ? 'other-meta' : (post.original_author_transfer === 'y' ? 'transfer-player-meta' : 'player-meta'))}">${originalMetaInfo}</div>
                 </div>
             </div>
@@ -3560,11 +3544,6 @@ function createProfileQuotePostElement(post) {
                 <div class="profile-post-info">
                     <div class="profile-post-author" onclick="event.stopPropagation(); goToProfile('${post.author_username || quoterId}', '${post.author_role || 'player'}', '${post.author_division || ''}', '${quoterId}', ${post.author_transfer === 'y'})" style="cursor: pointer;">
                         ${quoterName}${typeof getSchoolLogoHTML === 'function' && post.author_division ? getSchoolLogoHTML(post.author_school, (window.location.pathname.includes('/tabs/') ? '../../assets' : '../assets'), 16) : ''}
-                        ${post.author_verified ? `
-                            <svg class="verified-badge" viewBox="0 0 24 24" fill="#1DA1F2" width="16" height="16">
-                                <path d="M22.5 12.5c0-1.58-.875-2.95-2.148-3.6.154-.435.238-.905.238-1.4 0-2.21-1.71-3.998-3.818-3.998-.47 0-.92.084-1.336.25C14.818 2.415 13.51 1.5 12 1.5s-2.816.917-3.437 2.25c-.415-.165-.866-.25-1.336-.25-2.11 0-3.818 1.79-3.818 4 0 .494.083.964.237 1.4-1.272.65-2.147 2.018-2.147 3.6 0 1.495.782 2.798 1.942 3.486-.02.17-.032.34-.032.514 0 2.21 1.708 4 3.818 4 .47 0 .92-.086 1.335-.25.62 1.334 1.926 2.25 3.437 2.25 1.512 0 2.818-.916 3.437-2.25.415.163.865.248 1.336.248 2.11 0 3.818-1.79 3.818-4 0-.174-.012-.344-.033-.513 1.158-.687 1.943-1.99 1.943-3.484zm-6.616-3.334l-4.334 6.5c-.145.217-.382.334-.625.334-.143 0-.288-.04-.416-.126l-.115-.094-2.415-2.415c-.293-.293-.293-.768 0-1.06s.768-.294 1.06 0l1.77 1.767 3.825-5.74c.23-.345.696-.436 1.04-.207.346.23.44.696.21 1.04z"/>
-                            </svg>
-                        ` : ''}
                         ${post.author_username ? `<span class="profile-post-handle">@${post.author_username}</span>` : ''}
                         <span class="profile-post-timestamp">${formatTimeAgo(post.created_at)}</span>
                         ${optionsButton}
@@ -6031,11 +6010,6 @@ function createProfileLikedPostElement(post) {
                 <div class="profile-post-info">
                     <div class="profile-post-author">
                         ${authorName}${typeof getSchoolLogoHTML === 'function' && post.author_division ? getSchoolLogoHTML(post.author_school, (window.location.pathname.includes('/tabs/') ? '../../assets' : '../assets'), 16) : ''}
-                        ${post.author_verified ? `
-                            <svg class="verified-badge" viewBox="0 0 24 24" fill="#1DA1F2" width="16" height="16">
-                                <path d="M22.5 12.5c0-1.58-.875-2.95-2.148-3.6.154-.435.238-.905.238-1.4 0-2.21-1.71-3.998-3.818-3.998-.47 0-.92.084-1.336.25C14.818 2.415 13.51 1.5 12 1.5s-2.816.917-3.437 2.25c-.415-.165-.866-.25-1.336-.25-2.11 0-3.818 1.79-3.818 4 0 .494.083.964.237 1.4-1.272.65-2.147 2.018-2.147 3.6 0 1.495.782 2.798 1.942 3.486-.02.17-.032.34-.032.514 0 2.21 1.708 4 3.818 4 .47 0 .92-.086 1.335-.25.62 1.334 1.926 2.25 3.437 2.25 1.512 0 2.818-.916 3.437-2.25.415.163.865.248 1.336.248 2.11 0 3.818-1.79 3.818-4 0-.174-.012-.344-.033-.513 1.158-.687 1.943-1.99 1.943-3.484zm-6.616-3.334l-4.334 6.5c-.145.217-.382.334-.625.334-.143 0-.288-.04-.416-.126l-.115-.094-2.415-2.415c-.293-.293-.293-.768 0-1.06s.768-.294 1.06 0l1.77 1.767 3.825-5.74c.23-.345.696-.436 1.04-.207.346.23.44.696.21 1.04z"/>
-                            </svg>
-                        ` : ''}
                         ${post.author_username ? `<span class="profile-post-handle">@${post.author_username}</span>` : ''}
                         <span class="profile-post-timestamp">${formatTimeAgo(post.created_at)}</span>
                         ${optionsButton}
@@ -6153,11 +6127,6 @@ function createProfileLikedQuotePostElement(post) {
                 <div class="profile-post-info">
                     <div class="profile-post-author" onclick="event.stopPropagation(); goToProfile('${post.author_username || quoterId}', '${post.author_role || 'player'}', '${post.author_division || ''}', '${quoterId}', ${post.author_transfer === 'y'})" style="cursor: pointer;">
                         ${quoterName}${typeof getSchoolLogoHTML === 'function' && post.author_division ? getSchoolLogoHTML(post.author_school, (window.location.pathname.includes('/tabs/') ? '../../assets' : '../assets'), 16) : ''}
-                        ${post.author_verified ? `
-                            <svg class="verified-badge" viewBox="0 0 24 24" fill="#1DA1F2" width="16" height="16">
-                                <path d="M22.5 12.5c0-1.58-.875-2.95-2.148-3.6.154-.435.238-.905.238-1.4 0-2.21-1.71-3.998-3.818-3.998-.47 0-.92.084-1.336.25C14.818 2.415 13.51 1.5 12 1.5s-2.816.917-3.437 2.25c-.415-.165-.866-.25-1.336-.25-2.11 0-3.818 1.79-3.818 4 0 .494.083.964.237 1.4-1.272.65-2.147 2.018-2.147 3.6 0 1.495.782 2.798 1.942 3.486-.02.17-.032.34-.032.514 0 2.21 1.708 4 3.818 4 .47 0 .92-.086 1.335-.25.62 1.334 1.926 2.25 3.437 2.25 1.512 0 2.818-.916 3.437-2.25.415.163.865.248 1.336.248 2.11 0 3.818-1.79 3.818-4 0-.174-.012-.344-.033-.513 1.158-.687 1.943-1.99 1.943-3.484zm-6.616-3.334l-4.334 6.5c-.145.217-.382.334-.625.334-.143 0-.288-.04-.416-.126l-.115-.094-2.415-2.415c-.293-.293-.293-.768 0-1.06s.768-.294 1.06 0l1.77 1.767 3.825-5.74c.23-.345.696-.436 1.04-.207.346.23.44.696.21 1.04z"/>
-                            </svg>
-                        ` : ''}
                         ${post.author_username ? `<span class="profile-post-handle">@${post.author_username}</span>` : ''}
                         <span class="profile-post-timestamp">${formatTimeAgo(post.created_at)}</span>
                     </div>

@@ -2017,10 +2017,6 @@ body.transfer-player-viewer .sidebar-user-avatar {
     min-width: 0;
 }
 
-.profile-post-author .verified-badge {
-    flex-shrink: 0;
-}
-
 .profile-post-meta {
     font-size: 0.8rem;
     color: var(--cerulean);

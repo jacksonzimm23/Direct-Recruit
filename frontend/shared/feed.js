@@ -31,8 +31,10 @@ class FeedManager {
         this.postInput = document.querySelector('textarea.post-input');
         this.currentUserId = null;
         this.currentUserData = null;
-        this.currentFeedType = 'discover'; // 'following' or 'discover'
-        this.followingOffset = 0;
+        // Single unified feed. getDiscoverFeed returns every public post, including
+        // posts from people you follow, so one section covers what the old
+        // Discover / Your Network tab pair used to split.
+        this.currentFeedType = 'discover';
         this.discoverOffset = 0;
         this.isLoading = false;
 
@@ -46,7 +48,7 @@ class FeedManager {
         // New posts polling state
         this.lastFeedLoadTime = null;
         this.newPostsPollingInterval = null;
-        this.newPostsCount = { discover: 0, following: 0 };
+        this.newPostsCount = { discover: 0 };
         this.pollingIntervalMs = 45000; // Check every 45 seconds
 
         // Skip init for single post view pages
@@ -59,13 +61,9 @@ class FeedManager {
         await this.loadCurrentUser();
         this.setupEventListeners();
 
-        // Returning from a single post view: reload the same tab, the same number
-        // of pages, and put the reader back on the post they opened. Read the state
-        // BEFORE loadFeed() so the correct tab is the one rendered active.
+        // Returning from a single post view: reload the same number of pages and
+        // put the reader back on the post they opened.
         const savedState = this.takeSavedFeedState();
-        if (savedState && savedState.feedType) {
-            this.currentFeedType = savedState.feedType;
-        }
 
         await this.loadFeed();
 
@@ -101,8 +99,6 @@ class FeedManager {
             if (!this.feedContainer) return; // not a feed page (e.g. post-view itself)
 
             const state = {
-                feedType: this.currentFeedType,
-                followingOffset: this.followingOffset,
                 discoverOffset: this.discoverOffset,
                 scrollY: window.scrollY || window.pageYOffset || 0,
                 anchorPostId: (anchorEl && anchorEl.dataset.postId) || null,
@@ -173,16 +169,14 @@ class FeedManager {
     }
 
     activeOffset() {
-        return this.currentFeedType === 'following' ? this.followingOffset : this.discoverOffset;
+        return this.discoverOffset;
     }
 
     /**
      * Rebuild the feed to the depth it had, then re-anchor.
      */
     async restoreFeedPosition(state) {
-        const targetOffset = state.feedType === 'following'
-            ? (state.followingOffset || 0)
-            : (state.discoverOffset || 0);
+        const targetOffset = state.discoverOffset || 0;
 
         // Cap the rebuild so a reader who scrolled extremely far doesn't trigger an
         // unbounded burst of requests on the way back.
@@ -357,17 +351,6 @@ class FeedManager {
 
             mediaInput.addEventListener('change', (e) => this.handleMediaSelect(e));
         }
-
-        // Feed tab switching
-        document.addEventListener('click', (e) => {
-            if (e.target.closest('.feed-tab')) {
-                const tab = e.target.closest('.feed-tab');
-                const feedType = tab.dataset.feed;
-                if (feedType && feedType !== this.currentFeedType) {
-                    this.switchFeedTab(feedType);
-                }
-            }
-        });
 
         // Infinite scroll
         window.addEventListener('scroll', () => {
@@ -547,21 +530,15 @@ class FeedManager {
         this.showLoading();
 
         try {
-            // Load feeds - reposts/quotes are now included in getFollowingFeed
-            const [followingResponse, discoverResponse] = await Promise.all([
-                postsAPI.getFollowingFeed(20, 0),
-                postsAPI.getDiscoverFeed(10, 0)
-            ]);
+            // One feed: every public post, reposts and quotes included.
+            const discoverResponse = await postsAPI.getDiscoverFeed(20, 0);
 
             // Record when feed was loaded for new posts polling
             this.lastFeedLoadTime = new Date().toISOString();
-            this.newPostsCount = { discover: 0, following: 0 };
+            this.newPostsCount = { discover: 0 };
 
             this.hideLoading();
-            this.renderTwoSectionFeed(
-                followingResponse.posts || [],
-                discoverResponse.posts || []
-            );
+            this.renderFeed(discoverResponse.posts || []);
 
         } catch (error) {
             this.hideLoading();
@@ -569,86 +546,27 @@ class FeedManager {
         }
     }
 
-    renderTwoSectionFeed(followingPosts, discoverPosts) {
+    renderFeed(posts) {
         this.feedContainer.innerHTML = '';
-
-        // Feed tabs
-        const tabsHtml = `
-            <div class="feed-tabs">
-                <button class="feed-tab ${this.currentFeedType === 'discover' ? 'active' : ''}" data-feed="discover">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="12" cy="12" r="10"></circle>
-                        <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon>
-                    </svg>
-                    Discover
-                </button>
-                <button class="feed-tab ${this.currentFeedType === 'following' ? 'active' : ''}" data-feed="following">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                        <circle cx="9" cy="7" r="4"></circle>
-                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                    </svg>
-                    Your Network
-                </button>
-            </div>
-        `;
-        this.feedContainer.innerHTML = tabsHtml;
 
         // Create sections container
         const sectionsContainer = document.createElement('div');
         sectionsContainer.className = 'feed-sections';
         this.feedContainer.appendChild(sectionsContainer);
 
-        // Following section
-        const followingSection = document.createElement('div');
-        followingSection.className = `feed-section ${this.currentFeedType === 'following' ? 'active' : ''}`;
-        followingSection.id = 'following-section';
-
-        if (followingPosts.length > 0) {
-            followingPosts.forEach(post => {
-                if (post.is_quote) {
-                    // Quote post from someone you follow
-                    const postEl = this.createFeedQuotePostElement(post);
-                    followingSection.appendChild(postEl);
-                } else if (post.is_repost) {
-                    // Repost from someone you follow
-                    const postEl = this.createFeedRepostElement(post);
-                    followingSection.appendChild(postEl);
-                } else {
-                    // Regular post
-                    followingSection.appendChild(this.createPostElement(post));
-                }
-            });
-        } else {
-            followingSection.innerHTML = `
-                <div class="empty-section">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                        <circle cx="9" cy="7" r="4"></circle>
-                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                    </svg>
-                    <h3>No posts from your network</h3>
-                    <p>Follow coaches and players to see their updates here!</p>
-                </div>
-            `;
-        }
-        sectionsContainer.appendChild(followingSection);
-
-        // Discover section
+        // Single feed section. Kept the .feed-section / #discover-section shape so
+        // scroll restore, infinite scroll and the per-post action handlers that
+        // scope to '.feed-section.active' keep working unchanged.
         const discoverSection = document.createElement('div');
-        discoverSection.className = `feed-section ${this.currentFeedType === 'discover' ? 'active' : ''}`;
+        discoverSection.className = 'feed-section active';
         discoverSection.id = 'discover-section';
 
-        if (discoverPosts.length > 0) {
-            discoverPosts.forEach(post => {
+        if (posts.length > 0) {
+            posts.forEach(post => {
                 if (post.is_quote) {
-                    // Quote post from someone in discover
                     const postEl = this.createFeedQuotePostElement(post);
                     discoverSection.appendChild(postEl);
                 } else if (post.is_repost) {
-                    // Repost from someone in discover
                     const postEl = this.createFeedRepostElement(post);
                     discoverSection.appendChild(postEl);
                 } else {
@@ -663,29 +581,12 @@ class FeedManager {
                         <circle cx="12" cy="12" r="10"></circle>
                         <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon>
                     </svg>
-                    <h3>No posts to discover</h3>
+                    <h3>No posts yet</h3>
                     <p>Check back later for new content!</p>
                 </div>
             `;
         }
         sectionsContainer.appendChild(discoverSection);
-    }
-
-    switchFeedTab(feedType) {
-        this.currentFeedType = feedType;
-
-        // Update tabs
-        document.querySelectorAll('.feed-tab').forEach(tab => {
-            tab.classList.toggle('active', tab.dataset.feed === feedType);
-        });
-
-        // Update sections
-        document.querySelectorAll('.feed-section').forEach(section => {
-            section.classList.toggle('active', section.id === `${feedType}-section`);
-        });
-
-        // Hide "new posts" button for the current tab when switching (it will show count for that tab)
-        this.updateNewPostsButton();
     }
 
     // ==================== NEW POSTS POLLING ====================
@@ -761,10 +662,11 @@ class FeedManager {
         `;
         button.addEventListener('click', () => this.refreshFeed());
 
-        // Insert after the feed tabs
-        const feedTabs = document.querySelector('.feed-tabs');
-        if (feedTabs) {
-            feedTabs.insertAdjacentElement('afterend', button);
+        // Sits at the top of the feed. This used to anchor off .feed-tabs; with the
+        // tabs gone it prepends to the feed container instead, so the button still
+        // lands above the first post rather than silently never rendering.
+        if (this.feedContainer) {
+            this.feedContainer.insertAdjacentElement('afterbegin', button);
         }
     }
 
@@ -789,8 +691,7 @@ class FeedManager {
         // Hide the button immediately
         this.hideNewPostsButton();
 
-        // Reset offsets
-        this.followingOffset = 0;
+        // Reset offset
         this.discoverOffset = 0;
 
         // Scroll to top smoothly
@@ -1026,11 +927,6 @@ class FeedManager {
                     <div class="post-user-name-row">
                         <a href="#" class="post-user-name" onclick="feedManager.goToProfile('${profileNavTarget}', '${profileNavRole}', '${profileNavDivision}', '${profileNavUserId}', ${post.author_transfer === 'y'}); return false;">
                             ${authorName}${typeof getSchoolLogoHTML === 'function' ? getSchoolLogoHTML(post.author_school, _feedAssetsPath, 16) : ''}
-                            ${post.author_verified ? `
-                                <svg class="verified-badge" viewBox="0 0 24 24" fill="#1DA1F2">
-                                    <path d="M22.5 12.5c0-1.58-.875-2.95-2.148-3.6.154-.435.238-.905.238-1.4 0-2.21-1.71-3.998-3.818-3.998-.47 0-.92.084-1.336.25C14.818 2.415 13.51 1.5 12 1.5s-2.816.917-3.437 2.25c-.415-.165-.866-.25-1.336-.25-2.11 0-3.818 1.79-3.818 4 0 .494.083.964.237 1.4-1.272.65-2.147 2.018-2.147 3.6 0 1.495.782 2.798 1.942 3.486-.02.17-.032.34-.032.514 0 2.21 1.708 4 3.818 4 .47 0 .92-.086 1.335-.25.62 1.334 1.926 2.25 3.437 2.25 1.512 0 2.818-.916 3.437-2.25.415.163.865.248 1.336.248 2.11 0 3.818-1.79 3.818-4 0-.174-.012-.344-.033-.513 1.158-.687 1.943-1.99 1.943-3.484zm-6.616-3.334l-4.334 6.5c-.145.217-.382.334-.625.334-.143 0-.288-.04-.416-.126l-.115-.094-2.415-2.415c-.293-.293-.293-.768 0-1.06s.768-.294 1.06 0l1.77 1.767 3.825-5.74c.23-.345.696-.436 1.04-.207.346.23.44.696.21 1.04z"/>
-                                </svg>
-                            ` : ''}
                         </a>
                         ${post.author_username ? `<span class="post-user-handle">@${this.escapeHtml(post.author_username)}</span>` : ''}
                         <span class="post-timestamp">${timeAgo}</span>
@@ -1156,11 +1052,6 @@ class FeedManager {
                     <div class="post-user-name-row">
                         <a href="#" class="post-user-name" onclick="feedManager.goToProfile('${this.escapeJsAttr(post.author_username || post.user_id)}', '${this.escapeJsAttr(post.author_role)}', '${this.escapeJsAttr(post.author_division || '')}', '${this.escapeJsAttr(post.user_id)}', ${post.author_transfer === 'y'}); return false;">
                             ${authorName}${typeof getSchoolLogoHTML === 'function' ? getSchoolLogoHTML(post.author_school, _feedAssetsPath, 16) : ''}
-                            ${post.author_verified ? `
-                                <svg class="verified-badge" viewBox="0 0 24 24" fill="#1DA1F2">
-                                    <path d="M22.5 12.5c0-1.58-.875-2.95-2.148-3.6.154-.435.238-.905.238-1.4 0-2.21-1.71-3.998-3.818-3.998-.47 0-.92.084-1.336.25C14.818 2.415 13.51 1.5 12 1.5s-2.816.917-3.437 2.25c-.415-.165-.866-.25-1.336-.25-2.11 0-3.818 1.79-3.818 4 0 .494.083.964.237 1.4-1.272.65-2.147 2.018-2.147 3.6 0 1.495.782 2.798 1.942 3.486-.02.17-.032.34-.032.514 0 2.21 1.708 4 3.818 4 .47 0 .92-.086 1.335-.25.62 1.334 1.926 2.25 3.437 2.25 1.512 0 2.818-.916 3.437-2.25.415.163.865.248 1.336.248 2.11 0 3.818-1.79 3.818-4 0-.174-.012-.344-.033-.513 1.158-.687 1.943-1.99 1.943-3.484zm-6.616-3.334l-4.334 6.5c-.145.217-.382.334-.625.334-.143 0-.288-.04-.416-.126l-.115-.094-2.415-2.415c-.293-.293-.293-.768 0-1.06s.768-.294 1.06 0l1.77 1.767 3.825-5.74c.23-.345.696-.436 1.04-.207.346.23.44.696.21 1.04z"/>
-                                </svg>
-                            ` : ''}
                         </a>
                         ${post.author_username ? `<span class="post-user-handle">@${this.escapeHtml(post.author_username)}</span>` : ''}
                         <span class="post-timestamp">${timeAgo}</span>
@@ -3517,18 +3408,11 @@ class FeedManager {
         this.isLoading = true;
 
         try {
-            const section = document.getElementById(`${this.currentFeedType}-section`);
-            let posts;
+            const section = document.getElementById('discover-section');
 
-            if (this.currentFeedType === 'following') {
-                this.followingOffset += 10;
-                const response = await postsAPI.getFollowingFeed(10, this.followingOffset);
-                posts = response.posts;
-            } else {
-                this.discoverOffset += 10;
-                const response = await postsAPI.getDiscoverFeed(10, this.discoverOffset);
-                posts = response.posts;
-            }
+            this.discoverOffset += 10;
+            const response = await postsAPI.getDiscoverFeed(10, this.discoverOffset);
+            const posts = response.posts;
 
             if (posts && posts.length > 0) {
                 posts.forEach(post => {
