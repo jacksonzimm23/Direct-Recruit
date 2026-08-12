@@ -1,7 +1,7 @@
 const pool = require('../config/database');
 const { PORTAL_KEYWORDS } = require('../utils/portal-intelligence');
 // Reuse stat allowlists + fit re-ranking from PlayerProfile so RA and PI behave identically.
-const { VALID_STAT_KEYS, VALID_STAT_OPERATORS, COMPOSITE_STAT_KEYS, rerankByFit, MAX_FIT_WINDOW } = require('./PlayerProfile');
+const { VALID_STAT_KEYS, VALID_STAT_OPERATORS, COMPOSITE_STAT_KEYS, rerankByFit, MAX_FIT_WINDOW, buildStateClause } = require('./PlayerProfile');
 
 class PortalSignal {
   /**
@@ -112,11 +112,12 @@ class PortalSignal {
       paramCount++;
     }
 
-    // State filter
+    // State filter — shared with RA. Was an exact `=` match, which never matched a
+    // real signup: the create-profile form stores "CO" while the AI emits "Colorado".
     if (filters.state) {
-      whereClauses.push(`pp.state = $${paramCount}`);
-      values.push(filters.state);
-      paramCount++;
+      const stateClause = buildStateClause(filters.state, values, paramCount);
+      whereClauses.push(stateClause.clause);
+      paramCount = stateClause.paramCount;
     }
 
     // Height range
@@ -344,9 +345,9 @@ class PortalSignal {
       });
     }
 
-    // Build the query — select players with signal flags, then filter to only those with at least one signal
-    const havingCondition = signalConditions.map(s => s).join(' OR ');
-
+    // Select players with signal flags, then filter (in JS below, via
+    // signalConditions.some(...)) to only those with at least one active signal.
+    //
     // Fit-aware ranking (Plan 7E): when a coach is present, over-fetch a window from
     // offset 0 (recency order), post-filter to signal-flagged players, then blend-sort
     // by fit and slice. Without a coach, keep the original offset-based over-fetch.

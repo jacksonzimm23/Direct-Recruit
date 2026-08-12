@@ -30,6 +30,50 @@ const VALID_STAT_KEYS = new Set([
 // allowlist normalises any unexpected value back to '>=' (the safe default).
 const VALID_STAT_OPERATORS = new Set(['>=', '<=', '>', '<', '=']);
 
+// ---- Shared state matching (RA + PI) ----
+// `player_profiles.state` is stored in BOTH formats: the create-profile form saves
+// the two-letter abbreviation ("CO"), while seed/demo rows use the full name
+// ("Colorado"). The AI prompts tell Claude to emit the FULL name, so an exact
+// `state = $1` comparison silently misses every real signup. Match any spelling.
+const STATE_ABBREVIATIONS = {
+  'alabama': 'AL', 'alaska': 'AK', 'arizona': 'AZ', 'arkansas': 'AR',
+  'california': 'CA', 'colorado': 'CO', 'connecticut': 'CT', 'delaware': 'DE',
+  'florida': 'FL', 'georgia': 'GA', 'hawaii': 'HI', 'idaho': 'ID',
+  'illinois': 'IL', 'indiana': 'IN', 'iowa': 'IA', 'kansas': 'KS',
+  'kentucky': 'KY', 'louisiana': 'LA', 'maine': 'ME', 'maryland': 'MD',
+  'massachusetts': 'MA', 'michigan': 'MI', 'minnesota': 'MN', 'mississippi': 'MS',
+  'missouri': 'MO', 'montana': 'MT', 'nebraska': 'NE', 'nevada': 'NV',
+  'new hampshire': 'NH', 'new jersey': 'NJ', 'new mexico': 'NM', 'new york': 'NY',
+  'north carolina': 'NC', 'north dakota': 'ND', 'ohio': 'OH', 'oklahoma': 'OK',
+  'oregon': 'OR', 'pennsylvania': 'PA', 'rhode island': 'RI', 'south carolina': 'SC',
+  'south dakota': 'SD', 'tennessee': 'TN', 'texas': 'TX', 'utah': 'UT',
+  'vermont': 'VT', 'virginia': 'VA', 'washington': 'WA', 'west virginia': 'WV',
+  'wisconsin': 'WI', 'wyoming': 'WY', 'district of columbia': 'DC'
+};
+const STATE_FULL_NAMES = Object.entries(STATE_ABBREVIATIONS)
+  .reduce((acc, [full, abbr]) => {
+    acc[abbr.toLowerCase()] = full.replace(/\b\w/g, c => c.toUpperCase());
+    return acc;
+  }, {});
+
+// Build an OR'd ILIKE clause covering the full name AND the abbreviation, whichever
+// direction the AI emitted. Pushes params onto `values`; returns the new paramCount.
+function buildStateClause(state, values, paramCount) {
+  const raw = String(state).trim();
+  const key = raw.toLowerCase();
+  const candidates = new Set([raw]);
+  if (STATE_ABBREVIATIONS[key]) candidates.add(STATE_ABBREVIATIONS[key]);
+  if (STATE_FULL_NAMES[key]) candidates.add(STATE_FULL_NAMES[key]);
+
+  const parts = [];
+  for (const candidate of candidates) {
+    parts.push(`pp.state ILIKE $${paramCount}`);
+    values.push(candidate);
+    paramCount++;
+  }
+  return { clause: `(${parts.join(' OR ')})`, paramCount };
+}
+
 // ---- Fit-aware re-ranking (Plan 7E), shared by RA (PlayerProfile) and PI (PortalSignal) ----
 // Given a relevance-ordered candidate WINDOW + the viewing coach, attach computeFit
 // to each row and re-sort by a relevance-dominant blend so better fits surface, then
@@ -730,29 +774,11 @@ class PlayerProfile {
       whereClauses.push(`(${posConditions.join(' OR ')})`);
     }
 
-    // State filter — match full name, abbreviation, or case-insensitive
+    // State filter — full name, abbreviation, or either casing (shared with PI)
     if (filters.state) {
-      whereClauses.push(`(pp.state ILIKE $${paramCount} OR pp.state ILIKE $${paramCount + 1})`);
-      values.push(filters.state);
-      // Also try the abbreviation lookup
-      const stateAbbrevs = {
-        'alabama': 'AL', 'alaska': 'AK', 'arizona': 'AZ', 'arkansas': 'AR',
-        'california': 'CA', 'colorado': 'CO', 'connecticut': 'CT', 'delaware': 'DE',
-        'florida': 'FL', 'georgia': 'GA', 'hawaii': 'HI', 'idaho': 'ID',
-        'illinois': 'IL', 'indiana': 'IN', 'iowa': 'IA', 'kansas': 'KS',
-        'kentucky': 'KY', 'louisiana': 'LA', 'maine': 'ME', 'maryland': 'MD',
-        'massachusetts': 'MA', 'michigan': 'MI', 'minnesota': 'MN', 'mississippi': 'MS',
-        'missouri': 'MO', 'montana': 'MT', 'nebraska': 'NE', 'nevada': 'NV',
-        'new hampshire': 'NH', 'new jersey': 'NJ', 'new mexico': 'NM', 'new york': 'NY',
-        'north carolina': 'NC', 'north dakota': 'ND', 'ohio': 'OH', 'oklahoma': 'OK',
-        'oregon': 'OR', 'pennsylvania': 'PA', 'rhode island': 'RI', 'south carolina': 'SC',
-        'south dakota': 'SD', 'tennessee': 'TN', 'texas': 'TX', 'utah': 'UT',
-        'vermont': 'VT', 'virginia': 'VA', 'washington': 'WA', 'west virginia': 'WV',
-        'wisconsin': 'WI', 'wyoming': 'WY', 'district of columbia': 'DC'
-      };
-      const abbrev = stateAbbrevs[filters.state.toLowerCase()] || filters.state;
-      values.push(abbrev);
-      paramCount += 2;
+      const stateClause = buildStateClause(filters.state, values, paramCount);
+      whereClauses.push(stateClause.clause);
+      paramCount = stateClause.paramCount;
     }
 
     // Graduation year
@@ -1113,6 +1139,9 @@ class PlayerProfile {
 module.exports = PlayerProfile;
 module.exports.VALID_STAT_KEYS = VALID_STAT_KEYS;
 module.exports.VALID_STAT_OPERATORS = VALID_STAT_OPERATORS;
+// Shared state matcher — reused by PortalSignal so RA and PI resolve states identically.
+module.exports.buildStateClause = buildStateClause;
+module.exports.STATE_ABBREVIATIONS = STATE_ABBREVIATIONS;
 // Shared fit-aware re-ranking (Plan 7E) — reused by PortalSignal for PI parity.
 module.exports.rerankByFit = rerankByFit;
 module.exports.MAX_FIT_WINDOW = MAX_FIT_WINDOW;

@@ -959,7 +959,7 @@ class FeedManager {
                     </svg>
                     <span>${isLiked ? 'Liked' : 'Like'}</span>
                 </button>
-                <button class="post-action-btn" onclick="feedManager.toggleComments('${postId}')">
+                <button class="post-action-btn" onclick="feedManager.toggleComments('${postId}', { focusComment: true, event })">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
                     </svg>
@@ -1084,7 +1084,7 @@ class FeedManager {
                     </svg>
                     <span>${isLiked ? 'Liked' : 'Like'}</span>
                 </button>
-                <button class="post-action-btn" onclick="feedManager.toggleComments('${postId}')">
+                <button class="post-action-btn" onclick="feedManager.toggleComments('${postId}', { focusComment: true, event })">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
                     </svg>
@@ -1210,7 +1210,7 @@ class FeedManager {
             </div>
             <div class="post-stats">
                 <span class="likes-count" onclick="feedManager.showLikes('${postId}')">${post.likes_count || 0} ${post.likes_count === 1 ? 'like' : 'likes'}</span>
-                <span class="comments-count" onclick="feedManager.toggleComments('${postId}')">${post.comments_count || 0} ${post.comments_count === 1 ? 'comment' : 'comments'}</span>
+                <span class="comments-count" onclick="feedManager.toggleShareComments('${post.share_id}')">${post.comments_count || 0} ${post.comments_count === 1 ? 'comment' : 'comments'}</span>
                 <span class="post-shares-count" onclick="feedManager.showShareLikes('${post.share_id}')">${post.shares_count || 0} ${(post.shares_count || 0) === 1 ? 'share' : 'shares'}</span>
             </div>
             <div class="post-actions-bar">
@@ -1220,7 +1220,7 @@ class FeedManager {
                     </svg>
                     <span>${isLiked ? 'Liked' : 'Like'}</span>
                 </button>
-                <button class="post-action-btn" onclick="feedManager.toggleShareComments('${post.share_id}')">
+                <button class="post-action-btn" onclick="feedManager.toggleShareComments('${post.share_id}', { focusComment: true, event })">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
                     </svg>
@@ -1361,7 +1361,7 @@ class FeedManager {
                     </svg>
                     <span>${isLiked ? 'Liked' : 'Like'}</span>
                 </button>
-                <button class="post-action-btn" onclick="feedManager.toggleShareComments('${share.share_id}')">
+                <button class="post-action-btn" onclick="feedManager.toggleShareComments('${share.share_id}', { focusComment: true, event })">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
                     </svg>
@@ -2518,7 +2518,45 @@ class FeedManager {
         }
     }
 
-    async toggleComments(postId) {
+    // ==================== COMMENTS ROUTE TO THE SINGLE POST PAGE ====================
+    //
+    // Comments are never expanded inline on a card. Clicking Comment (or the comment
+    // count) opens the single post page, which is where you read and write them.
+    // This applies on every platform — iOS app, mobile web and desktop — so there is
+    // one place comments live and one code path to keep correct.
+    //
+    // The only exception is post-view.html itself, which IS the destination: there
+    // the comments are already open, and the Comment button jumps to the input
+    // instead (see toggleComments below).
+    //
+    // Consequence: the inline .post-comments-section baked into every feed card is
+    // now never opened from the UI. It is left in the templates because post-view.html
+    // reuses those same templates and shows that section as its comment thread.
+    _routeCommentsToPostView() {
+        return !window.location.pathname.includes('post-view.html');
+    }
+
+    // Focus the comment box on the single post view. Called on arrival when the
+    // reader tapped the Comment button (write intent) rather than the count.
+    focusCommentInput() {
+        const input = document.querySelector('.post-comments-section .comment-input');
+        if (!input) return;
+        input.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        // iOS only raises the keyboard for a focus() inside a user gesture, so on a
+        // fresh page load this may only highlight and scroll to the field. Harmless
+        // where the keyboard does open.
+        try { input.focus({ preventScroll: true }); } catch (e) { input.focus(); }
+    }
+
+    async toggleComments(postId, opts = {}) {
+        if (this._routeCommentsToPostView()) {
+            return this.navigateToPostView(postId, opts.event || null, null, { focusComment: !!opts.focusComment });
+        }
+        // Already on the single post page: comments are open, so a Comment tap
+        // should jump to the box, never collapse the section the page exists for.
+        if (window.location.pathname.includes('post-view.html')) {
+            if (opts.focusComment) { this.focusCommentInput(); return; }
+        }
         // Find the comment section within the currently active feed section to avoid
         // duplicate ID issues when the same post appears in both Following and Discover
         const activeSection = document.querySelector('.feed-section.active');
@@ -2769,7 +2807,15 @@ class FeedManager {
         }
     }
 
-    async toggleShareComments(shareId) {
+    async toggleShareComments(shareId, opts = {}) {
+        // Quote-post comments live on the share, so the single post page is opened
+        // with ?share= (see navigateToPostView).
+        if (this._routeCommentsToPostView()) {
+            return this.navigateToPostView(null, opts.event || null, shareId, { focusComment: !!opts.focusComment });
+        }
+        if (window.location.pathname.includes('post-view.html')) {
+            if (opts.focusComment) { this.focusCommentInput(); return; }
+        }
         // Scope to active feed section to handle duplicate IDs across Following/Discover
         const activeSection = document.querySelector('.feed-section.active');
         const section = activeSection
@@ -4408,11 +4454,14 @@ class FeedManager {
 
     // Navigate to single post view page
     // For quote posts, pass shareId to view the quote post itself (not just the original)
-    navigateToPostView(postId, event, shareId = null) {
+    // opts.focusComment adds &focus=comment, which post-view.html reads to put the
+    // cursor in the comment box on arrival.
+    navigateToPostView(postId, event, shareId = null, opts = {}) {
         // Safety check - if there's no postId, don't navigate
         if (!postId && !shareId) {
             return;
         }
+        const focusParam = opts.focusComment ? '&focus=comment' : '';
 
         // Snapshot the feed so pressing back returns the reader to this post
         // instead of the top. Prefer the card that was actually clicked; fall back
@@ -4445,9 +4494,9 @@ class FeedManager {
         // (bare/relative targets silently no-op there). new URL(rel, location.href)
         // correctly preserves the /frontend prefix on web and its absence in-app.
         if (shareId) {
-            window.location.href = new URL(`${basePath}post-view.html?share=${shareId}&ref=feed`, window.location.href).href;
+            window.location.href = new URL(`${basePath}post-view.html?share=${shareId}&ref=feed${focusParam}`, window.location.href).href;
         } else {
-            window.location.href = new URL(`${basePath}post-view.html?id=${postId}&ref=feed`, window.location.href).href;
+            window.location.href = new URL(`${basePath}post-view.html?id=${postId}&ref=feed${focusParam}`, window.location.href).href;
         }
     }
 }

@@ -3280,6 +3280,25 @@ function buildPostMetaInfo(post) {
     return metaInfo;
 }
 
+// ---------------------------------------------------------------------------
+// DEPRECATED — no longer called. The Posts and Likes tabs render through
+// feed.js via renderProfileFeedCards(); see the FEED-IDENTICAL POST RENDERING
+// block further down. These are the renderers whose author_* / original_author_*
+// handling disagreed with the feed and produced the wrong header, subheader and
+// avatar on shares.
+//
+// Dead as of this change: createProfilePostElement, createProfileRepostElement,
+// createProfileQuotePostElement, createProfileLikedPostElement,
+// createProfileLikedQuotePostElement, editProfilePost (replaced by
+// feedManager.editPost), plus their helpers buildPostMetaInfo,
+// buildOriginalPostMetaInfo and buildMediaGridHTML.
+//
+// Kept for one review cycle so the old markup is easy to diff against the new
+// cards; slated for deletion in the same pass that ports this to the other five
+// role folders. createProfileReplyElement is NOT dead — the Replies tab still
+// uses it, and it still needs formatPostContent.
+// ---------------------------------------------------------------------------
+
 // Create post card HTML
 function createProfilePostElement(post) {
     const authorName = `${post.author_first_name || ''} ${post.author_last_name || ''}`.trim() || 'Unknown User';
@@ -4437,51 +4456,14 @@ async function togglePostComments(postId) {
     }
 }
 
-function buildCommentSubheader(role, data) {
-    const parts = [];
-    if (role === 'player') {
-        if (data.transfer === 'y') {
-            if (data.position) parts.push(data.position);
-            if (data.height) {
-                const h = String(data.height);
-                if (h.includes("'")) { parts.push(h); } else { const t = parseInt(h); if (!isNaN(t) && t > 0) parts.push(`${Math.floor(t/12)}'${t%12}"`); }
-            }
-            if (data.weight) parts.push(`${data.weight} lbs`);
-            if (data.eligibility) { const yt = data.eligibility === 1 ? 'year' : 'years'; parts.push(`YOE: ${data.eligibility} ${yt}`); }
-            return parts.length ? `<span style="color:#e63946;font-size:11px;">${parts.join(' • ')}</span>` : '';
-        } else if (data.division) {
-            if (data.position) parts.push(data.position);
-            if (data.school) parts.push(data.school);
-            if (data.division) parts.push(formatDivisionDisplay(data.division));
-            return parts.length ? `<span style="color:#1282a2;font-size:11px;">${parts.join(' • ')}</span>` : '';
-        } else {
-            // HS Player: Position • Height • Weight • GradYear
-            if (data.position) parts.push(data.position);
-            if (data.height) {
-                const h = String(data.height);
-                if (h.includes("'")) { parts.push(h); } else { const t = parseInt(h); if (!isNaN(t) && t > 0) parts.push(`${Math.floor(t/12)}'${t%12}"`); }
-            }
-            if (data.weight) parts.push(`${data.weight} lbs`);
-            if (data.grad_year) parts.push(data.grad_year);
-            return parts.length ? `<span style="color:#1282a2;font-size:11px;">${parts.join(' • ')}</span>` : '';
-        }
-    } else if (role === 'coach') {
-        if (data.division) {
-            if (data.school && data.state) parts.push(`${data.school}, ${data.state}`);
-            else if (data.school) parts.push(data.school);
-            else if (data.state) parts.push(data.state);
-            if (data.division) parts.push(formatDivisionDisplay(data.division));
-            return parts.length ? `<span style="color:#ff6b35;font-size:11px;">${parts.join(' • ')}</span>` : '';
-        } else {
-            if (data.school) parts.push(data.school);
-            if (data.state) parts.push(data.state);
-            return parts.length ? `<span style="color:#ff6b35;font-size:11px;">${parts.join(', ')}</span>` : '';
-        }
-    } else if (role === 'other') {
-        return data.subheader ? `<span style="color:#d4a017;font-size:11px;">${data.subheader}</span>` : '';
-    }
-    return '';
-}
+// buildCommentSubheader() intentionally lives in shared/api.js, not here.
+//
+// This file used to declare its own copy, which (being a top-level function
+// declaration in a later-loaded script) shadowed the shared one across the whole
+// profile page. The two had drifted: the local copy interpolated school/position
+// unescaped, and coloured transfer players #e63946 while the feed used #ef4444.
+// Deleting it means the Posts, Likes and Replies tabs now produce byte-identical
+// subheaders to the mainpage feed, and get the shared version's escaping.
 
 async function loadPostComments(postId) {
     const commentsList = document.getElementById(`comments-${postId}`);
@@ -5197,7 +5179,7 @@ async function profileRepostPost(postId) {
     if (menu) menu.remove();
 
     try {
-        await API.post(`/posts/${postId}/share`, { shareType: 'repost' });
+        await API.post(`/posts/${postId}/share`, { share_type: 'repost' });
         showToast('Post reposted!', 'success');
     } catch (error) {
         console.error('Error reposting:', error);
@@ -5255,7 +5237,7 @@ async function submitProfileQuote(postId) {
     }
 
     try {
-        await API.post(`/posts/${postId}/share`, { shareType: 'quote', quoteContent: content });
+        await API.post(`/posts/${postId}/share`, { share_type: 'quote', quote_content: content });
         document.getElementById('quote-modal')?.remove();
         showToast('Quote posted!', 'success');
     } catch (error) {
@@ -5730,6 +5712,163 @@ function goToProfile(identifier, role, collegeDivision, userId, isTransfer) {
     window.location.href = new URL(`../../${folder}/tabs/my-profile.html?${param}&from=${navFrom}`, window.location.href).href;
 }
 
+// ==================== FEED-IDENTICAL POST RENDERING ====================
+//
+// The Posts and Likes tabs render through the SAME feed.js templates the mainpage
+// feed uses, so a post is pixel-identical in both places. Everything on the card
+// (like, comment, share, likes/shares modals, media slideshow, profile links)
+// comes from FeedManager, so there is one implementation to keep correct.
+//
+// The catch: the two endpoints disagree on field names for SHARES.
+//
+//                       GET /posts/feed/discover     GET /posts/user/:id  and  /likes
+//   author_*            the ORIGINAL post author     the REPOSTER / QUOTER
+//   reposter_*          the reposter / quoter        (absent)
+//   original_author_*   (absent)                     the ORIGINAL post author
+//
+// feed.js is written against the discover shape. Handing it a profile share row
+// unchanged renders the reposter as the original author and blanks the
+// "X reposted" line — that is the header/subheader/avatar bug this replaces.
+// normalizeProfilePostForFeed() translates share rows; plain posts already match
+// on both endpoints and pass straight through.
+//
+// The remap lives here rather than in the SQL aliases on purpose: this frontend is
+// bundled into the iOS app, so changing the API response shape would ship to web
+// instantly but not to installed builds, breaking the profile tab on any older app
+// until users updated. Keeping the contract fixed lets backend and app deploy
+// independently.
+
+// Identity columns that carry an author_/reposter_/original_author_ prefix.
+// user_id is handled separately because its unprefixed form is also meaningful.
+const _SHARE_IDENTITY_FIELDS = [
+    'role', 'username', 'first_name', 'last_name', 'image', 'position', 'school',
+    'grad_year', 'star_rating', 'division', 'transfer', 'height', 'weight',
+    'eligibility', 'state', 'verified', 'subheader'
+];
+
+function normalizeProfilePostForFeed(post) {
+    if (!post || (!post.is_repost && !post.is_quote)) return post;
+
+    const p = { ...post };
+
+    // Read every value off the untouched `post` so the two swaps cannot clobber
+    // each other.
+    _SHARE_IDENTITY_FIELDS.forEach(f => {
+        p[`reposter_${f}`] = post[`author_${f}`];   // profile author_*  -> feed reposter_*
+        p[`author_${f}`] = post[`original_author_${f}`]; // profile original_author_* -> feed author_*
+    });
+    p.reposter_user_id = post.author_user_id || post.user_id;
+    p.author_user_id = post.original_author_user_id;
+    // feed.js reads post.user_id as the ORIGINAL author on share cards.
+    p.user_id = post.original_author_user_id || post.user_id;
+
+    // Reposts: the profile query leaves the body columns NULL and puts the
+    // original's body in original_*; the discover query populates both.
+    if (post.is_repost) {
+        p.content = post.content != null ? post.content : post.original_content;
+        p.media_urls = post.media_urls || post.original_media_urls;
+        p.media_type = post.media_type || post.original_media_type;
+    }
+
+    // The Likes endpoint returns no sort_date, and the quote template times the
+    // quoter's line off it — without this it renders "Invalid Date".
+    p.sort_date = post.sort_date || post.created_at;
+
+    return p;
+}
+
+// One FeedManager for the page, assigned to the global `feedManager` because the
+// inline onclick handlers inside the feed templates call it by that name.
+function getProfileFeedManager() {
+    if (typeof FeedManager === 'undefined') return null;   // feed.js failed to load
+    if (window.feedManager) return window.feedManager;
+
+    // skipInit: no feed fetch, no new-posts polling, no infinite scroll.
+    const fm = new FeedManager(true);
+    fm.currentUserId = currentUserId;
+    // Left null so saveFeedStateForReturn() no-ops: the feed's scroll-restore
+    // snapshot is keyed to the mainpage and must not fire from the profile.
+    fm.feedContainer = null;
+
+    // A post opened from the profile must come back to the profile, so post-view
+    // gets ref=profile instead of the feed's ref=feed. Keeps the same 4-arg shape as
+    // FeedManager.navigateToPostView so the iOS comment routing can pass
+    // { focusComment: true } through from the Comment button.
+    fm.navigateToPostView = function (postId, event, shareId = null, opts = {}) {
+        if (!postId && !shareId) return;
+        const qs = shareId ? `share=${shareId}` : `id=${postId}`;
+        const focusParam = opts.focusComment ? '&focus=comment' : '';
+        window.location.href = new URL(`post-view.html?${qs}&ref=profile${focusParam}`, window.location.href).href;
+    };
+
+    // The feed's quote composer writes into .post-input, which only exists on the
+    // mainpage. Keep the profile's own quote modal.
+    fm.quotePost = function (postId) {
+        document.querySelector('.share-menu')?.remove();
+        profileQuotePost(postId);
+    };
+
+    // Own posts get the profile menu (adds Unpin, which the feed menu lacks).
+    // Everyone else's posts keep the feed menu (Report / Block).
+    const feedShowPostMenu = fm.showPostMenu.bind(fm);
+    fm.showPostMenu = function (postId, isOwner, event) {
+        if (!isOwner) return feedShowPostMenu(postId, isOwner, event);
+        event.stopPropagation();
+        const card = event.target.closest('.post-card');
+        showProfilePostMenu(postId, card?.dataset.isPinned === 'true', event);
+    };
+
+    window.feedManager = fm;
+    return fm;
+}
+
+// Pinning is profile-only, so it is layered onto the feed card rather than baked
+// into the shared template. The badge goes INSIDE the card (the old markup made it
+// a sibling, which is why deletes had to hunt for previousElementSibling).
+function decorateProfilePostCard(el, rawPost) {
+    if (!el) return el;
+    el.dataset.isPinned = rawPost.is_pinned ? 'true' : 'false';
+    if (!rawPost.is_pinned) return el;
+
+    el.classList.add('pinned');
+    const badge = document.createElement('div');
+    badge.className = 'profile-post-pinned-badge';
+    badge.innerHTML = `
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+            <line x1="12" y1="17" x2="12" y2="22"></line>
+            <path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V17z"></path>
+        </svg>
+        <span>Pinned</span>`;
+    el.insertBefore(badge, el.firstChild);
+    return el;
+}
+
+// Append posts to a container using the feed templates. Shared by Posts + Likes.
+function renderProfileFeedCards(container, posts) {
+    const fm = getProfileFeedManager();
+    if (!fm) {
+        console.error('feed.js did not load — cannot render profile posts');
+        container.innerHTML = `
+            <div class="profile-posts-error">
+                <p>Failed to load posts</p>
+            </div>`;
+        return;
+    }
+
+    posts.forEach(rawPost => {
+        const post = normalizeProfilePostForFeed(rawPost);
+        let el;
+        if (post.is_quote) {
+            el = fm.createFeedQuotePostElement(post);
+        } else if (post.is_repost) {
+            el = fm.createFeedRepostElement(post);
+        } else {
+            el = fm.createPostElement(post);
+        }
+        container.appendChild(decorateProfilePostCard(el, rawPost));
+    });
+}
+
 // Load profile posts
 async function loadProfilePosts(loadMore = false) {
     const container = document.getElementById('profilePostsContainer');
@@ -5776,15 +5915,15 @@ async function loadProfilePosts(loadMore = false) {
             if (loadMoreContainer) loadMoreContainer.style.display = 'none';
         } else {
             // Render posts (including reposts and quote posts)
-            posts.forEach(post => {
-                if (post.is_repost) {
-                    container.innerHTML += createProfileRepostElement(post);
-                } else if (post.is_quote) {
-                    container.innerHTML += createProfileQuotePostElement(post);
-                } else {
-                    container.innerHTML += createProfilePostElement(post);
-                }
-            });
+            // School logos are looked up synchronously inside the feed templates,
+            // so the JSON has to be in memory before the first render (lesson 51).
+            if (typeof ensureSchoolLogosLoaded === 'function') {
+                await ensureSchoolLogosLoaded('../../assets');
+            }
+
+            // Rendered with the mainpage feed templates (reposts and quote posts
+            // included) so the cards are identical to the feed.
+            renderProfileFeedCards(container, posts);
 
             profilePostsOffset += posts.length;
             profilePostsLoaded = true;
@@ -5934,13 +6073,15 @@ async function loadProfileLikes(loadMore = false) {
             if (loadMoreContainer) loadMoreContainer.style.display = 'none';
         } else {
             // Render liked posts (including liked quote posts)
-            posts.forEach(post => {
-                if (post.is_quote) {
-                    container.innerHTML += createProfileLikedQuotePostElement(post);
-                } else {
-                    container.innerHTML += createProfileLikedPostElement(post);
-                }
-            });
+            if (typeof ensureSchoolLogosLoaded === 'function') {
+                await ensureSchoolLogosLoaded('../../assets');
+            }
+
+            // Same feed templates as the Posts tab. The liked-posts endpoint has no
+            // is_repost column (only regular posts and quote posts can be liked), so
+            // the dispatch inside renderProfileFeedCards resolves to the plain-post
+            // and quote-post templates.
+            renderProfileFeedCards(container, posts);
 
             profileLikesOffset += posts.length;
             profileLikesLoaded = true;
@@ -6236,7 +6377,7 @@ function showProfilePostMenu(postId, isPinned, event) {
     const menu = document.createElement('div');
     menu.className = 'profile-post-dropdown-menu';
     menu.innerHTML = `
-        <div class="dropdown-item" onclick="event.stopPropagation(); editProfilePost('${postId}')">
+        <div class="dropdown-item" onclick="event.stopPropagation(); feedManager.editPost('${postId}')">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                 <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
@@ -6262,7 +6403,10 @@ function showProfilePostMenu(postId, isPinned, event) {
     document.body.appendChild(menu);
 
     // Position menu
-    const btn = event.target.closest('.profile-post-more-btn');
+    // Posts/Likes cards are feed cards (.post-more-btn); the selector keeps
+    // .profile-post-more-btn for any card still on the old markup.
+    const btn = event.target.closest('.post-more-btn, .profile-post-more-btn');
+    if (!btn) return;
     const rect = btn.getBoundingClientRect();
     menu.style.top = rect.bottom + 5 + 'px';
     menu.style.right = window.innerWidth - rect.right + 'px';
@@ -6684,22 +6828,16 @@ async function confirmDeleteProfilePost(postId) {
 
     try {
         await API.delete(`/posts/${postId}`);
-
-        // Remove post from DOM
-        const postCard = document.querySelector(`[data-post-id="${postId}"]`);
-        // Also remove pinned badge if exists (it's a sibling before the article)
-        const pinnedBadge = postCard?.previousElementSibling;
-        if (pinnedBadge?.classList.contains('profile-post-pinned-badge')) {
-            pinnedBadge.remove();
-        }
-        postCard?.remove();
+        // Remove every card for this post (it can appear in both the Posts and the
+        // Likes tab). The Pinned badge is a child of the card, so it goes with it.
+        document.querySelectorAll(`.post-card[data-post-id="${postId}"]`).forEach(c => c.remove());
 
         closeProfilePostModal('delete-profile-post-modal');
         showProfileToast('Post deleted', 'success');
 
         // Check if posts container is now empty
         const container = document.getElementById('profilePostsContainer');
-        if (container && !container.querySelector('.profile-post-card')) {
+        if (container && !container.querySelector('.post-card')) {
             container.innerHTML = `
                 <div class="profile-posts-empty">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">

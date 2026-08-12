@@ -10347,11 +10347,14 @@ function getProfileFeedManager() {
     fm.feedContainer = null;
 
     // A post opened from the profile must come back to the profile, so post-view
-    // gets ref=profile instead of the feed's ref=feed.
-    fm.navigateToPostView = function (postId, event, shareId = null) {
+    // gets ref=profile instead of the feed's ref=feed. Keeps the same 4-arg shape as
+    // FeedManager.navigateToPostView so the iOS comment routing can pass
+    // { focusComment: true } through from the Comment button.
+    fm.navigateToPostView = function (postId, event, shareId = null, opts = {}) {
         if (!postId && !shareId) return;
         const qs = shareId ? `share=${shareId}` : `id=${postId}`;
-        window.location.href = new URL(`post-view.html?${qs}&ref=profile`, window.location.href).href;
+        const focusParam = opts.focusComment ? '&focus=comment' : '';
+        window.location.href = new URL(`post-view.html?${qs}&ref=profile${focusParam}`, window.location.href).href;
     };
 
     // The feed's quote composer writes into .post-input, which only exists on the

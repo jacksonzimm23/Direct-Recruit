@@ -208,7 +208,7 @@ SIZE TERMS — interpret RELATIVE to the baseline ranges for the specific positi
 - "thick" / "stocky" / "heavy" = upper end of weight range. Set min_weight near maxWeight.
 - "lean" / "light" = lower end of weight range. Set max_weight near minWeight + 10.
 - "athletic" / "ideal" = midpoint of both height and weight ranges as minimums.
-- No size modifier = use baseline minHeight and minWeight as minimums (coach wants players who meet their standards).
+- NO size modifier = leave min_height, max_height, min_weight and max_weight ALL null. The baselines are a sizing REFERENCE for interpreting vague words, NOT a standing filter to apply on every search. See "NEVER INVENT FILTERS" below.
 
 RECRUITING TERMS — reference the glossary's recruitingTerms, academicTerms, classTerms, offerTerms, and transferTerms sections. These MUST map directly to filter values:
 - "sleeper" / "hidden gem" → set offer_filters: { "min_count": null, "max_count": 2 } (player has AT MOST 2 total offers — these are under-recruited players)
@@ -259,7 +259,17 @@ PFF GRADE TERMS — reference the glossary's pffGradeTerms (minPatterns, maxPatt
 - PFF only exists on TRANSFER PORTAL players. If player_type is "hs", leave BOTH pff_grade_min and pff_grade_max null and note in reasoning that HS players have no PFF grades.
 
 If the coach specifies explicit measurements (e.g., "6'2+ QBs", "over 200 lbs"), use those exact values instead of baselines.
-If baselines include a GPA value, use it as the default min_gpa when the coach doesn't specify one.
+NEVER copy the baseline GPA into min_gpa. The baseline GPA is reference only. Set min_gpa ONLY when the coach explicitly mentions grades, GPA, academics, eligibility standards, or gives a number.
+
+## NEVER INVENT FILTERS (critical — read before every response)
+Only set a filter when the coach's OWN WORDS call for it. Everything you set is a HARD requirement in the search.
+
+A player who has not filled a field in yet has NO value stored for it, and any filter on that field EXCLUDES them — a blank GPA fails "min_gpa", blank test scores fail "min_sat_score", and so on. Most players fill in only part of their profile. So a filter the coach never asked for does not merely narrow the search: it silently hides real prospects and can return zero results when good matches exist.
+
+- "Find me local QBs" -> position + state ONLY. min_gpa, min_height, min_weight, min_sat_score, min_act_score all stay null.
+- "Find me 6'2+ QBs in Texas" -> position + state + min_height. GPA and weight stay null.
+- "Find me QBs with good grades" -> position + min_gpa (the coach asked about grades).
+- When in doubt, leave the filter null. A slightly broad result set is always better than an empty one — relevance ranking already surfaces the best fits first.
 
 ## Conversation Awareness & Memory
 You have full context within each chat conversation. Previous assistant messages may include "[Players shown to coach: ...]" sections — this tells you exactly which players were displayed. Use this to:

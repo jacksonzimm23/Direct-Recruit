@@ -407,7 +407,22 @@
                     if (commentsSection) {
                         commentsSection.style.display = 'block';
                         // Load comments
-                        feedManager.loadComments(targetPostId);
+                        // Quote posts keep their comments on the SHARE, in #share-comments-<shareId>.
+                        // loadComments(targetPostId) looked for #comments-<originalPostId>,
+                        // found nothing and returned silently — which is why quote posts
+                        // showed an empty comment list. Route on the section the template
+                        // actually rendered.
+                        const _sid = commentsSection.id || '';
+                        if (_sid.indexOf('share-comments-') === 0) {
+                            feedManager.loadShareComments(_sid.slice('share-comments-'.length), commentsSection);
+                        } else {
+                            feedManager.loadComments(targetPostId, commentsSection);
+                        }
+                        // Arrived from a Comment tap in the iOS app (&focus=comment):
+                        // put the cursor in the box rather than making them hunt for it.
+                        if (urlParams.get('focus') === 'comment') {
+                            setTimeout(function () { feedManager.focusCommentInput(); }, 300);
+                        }
                     }
                 } else {
                     throw new Error('Feed manager not available');

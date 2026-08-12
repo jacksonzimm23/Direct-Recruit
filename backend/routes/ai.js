@@ -34,6 +34,49 @@ async function requireActiveSubscription(req, res) {
     return true;
 }
 
+// ---- Unrequested numeric-filter guard (deterministic backstop) ----
+// Every AI filter becomes a HARD SQL requirement, and `col >= $n` evaluates to
+// NULL (not TRUE) for a player who hasn't filled that field in — so a filter the
+// coach never asked for doesn't just narrow the search, it silently HIDES real
+// prospects. The RA prompt used to tell Claude to copy the coach's baseline GPA
+// and size onto every search; on prod that made "Find me local QBs" emit
+// min_gpa: 2.5 and return 0 results while the only HS player on the platform was
+// a Colorado QB whose GPA was simply blank. The prompt no longer instructs that,
+// but Claude is generative, so this enforces it deterministically: a numeric
+// floor/ceiling survives only if the coach's own words referenced that attribute.
+//
+// Fails toward BROADER results on purpose. Missing a keyword drops a filter the
+// coach did want (visible, recoverable — they can rephrase); keeping an invented
+// one hides players with an incomplete profile (silent, and looks like an outage).
+const UNREQUESTED_FILTER_GUARDS = [
+  { keys: ['min_gpa', 'max_gpa'],
+    re: /\bgpa\b|\bgrade|academic|honor\s*roll|transcript|qualifier|\bscholar|\bsmart\b|[0-4]\.\d/i },
+  { keys: ['min_height', 'max_height'],
+    re: /\bheight\b|\btall\b|\blong\b|\bshort\b|\bsmall\b|\bbig\b|\bsize\b|undersized|\d\s*'|\bfeet\b|\bfoot\b|\binch/i },
+  { keys: ['min_weight', 'max_weight'],
+    re: /\bweight\b|\blbs?\b|\bpounds?\b|\bbig\b|\bthick\b|\bstocky\b|\bheavy\b|\blean\b|\blight\b|\bsmall\b|\bsize\b|undersized/i },
+  { keys: ['min_sat_score', 'max_sat_score'],
+    re: /\bsat\b|test\s*score|standardized|academic/i },
+  { keys: ['min_act_score', 'max_act_score'],
+    re: /\bact\b|test\s*score|standardized|academic/i }
+];
+
+function stripUnrequestedFilters(filters, rawQuery) {
+  if (!filters || typeof filters !== 'object') return [];
+  const q = String(rawQuery || '');
+  const stripped = [];
+  for (const guard of UNREQUESTED_FILTER_GUARDS) {
+    if (guard.re.test(q)) continue; // coach referenced this attribute — honor it
+    for (const key of guard.keys) {
+      if (filters[key] !== null && filters[key] !== undefined) {
+        stripped.push(`${key}=${filters[key]}`);
+        filters[key] = null;
+      }
+    }
+  }
+  return stripped;
+}
+
 // Helper: extract active filter names from a filters object for analytics
 function extractActiveFilters(filters) {
   const active = [];
@@ -405,6 +448,12 @@ router.post('/chats/:chatId/message', validateUUID('chatId'), async (req, res) =
       });
     }
 
+    // 7b. Drop numeric floors/ceilings the coach never asked for (see guard above).
+    const raStripped = stripUnrequestedFilters(aiResponse.filters, message);
+    if (raStripped.length) {
+      logger.warn(`RA dropped unrequested filters [${raStripped.join(', ')}] for query: ${message.trim()}`);
+    }
+
     // 8. Execute the search with AI-generated filters (coach passed for fit ranking)
     const result = await PlayerProfile.searchByAiFilters(
       aiResponse.filters,
@@ -661,6 +710,13 @@ router.post('/chats/:chatId/pi-message', validateUUID('chatId'), async (req, res
         signal_filters: null,
         summary: null
       });
+    }
+
+    // 7b. Same unrequested-filter guard as RA. PI has no baselines to auto-inject
+    // from, but the NULL-exclusion hazard is identical on college player profiles.
+    const piStripped = stripUnrequestedFilters(aiResponse.signal_filters, message);
+    if (piStripped.length) {
+      logger.warn(`PI dropped unrequested filters [${piStripped.join(', ')}] for query: ${message.trim()}`);
     }
 
     // 8. Execute the signal query with AI-generated filters (coach passed for fit ranking)
@@ -1032,3 +1088,5 @@ router.delete('/saved', async (req, res) => {
 });
 
 module.exports = router;
+// Exported for testing (same pattern as paymentsRoutes.webhookHandler).
+module.exports.stripUnrequestedFilters = stripUnrequestedFilters;
