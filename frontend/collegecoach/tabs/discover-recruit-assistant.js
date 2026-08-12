@@ -255,8 +255,34 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // iOS app only. The input area is position:fixed on iOS (ios-app-overrides.css),
+    // so it no longer takes flex space and the message list runs underneath it and
+    // the 76px bottom nav. The list reserves that covered height via padding-bottom
+    // calc(76px + var(--ai-input-h)), so the measured height has to be published
+    // here — and re-published whenever the textarea auto-grows. No-op on desktop.
+    const isIOSApp = document.documentElement.classList.contains('ios-app');
+
+    function syncInputHeightVar() {
+        if (!isIOSApp) return;
+        const area = document.querySelector('.ra-input-area');
+        if (!area) return;
+        const h = area.offsetHeight;
+        if (h > 0) document.documentElement.style.setProperty('--ai-input-h', h + 'px');
+    }
+
     function scrollToBottom() {
         messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        // iOS app only: avatars and school logos finish loading AFTER this first
+        // jump and grow the list, so the view ends up short of the real bottom.
+        // Re-pin next frame, as each late image lands, and once after layout
+        // settles. Desktop keeps the original single jump.
+        if (!isIOSApp) return;
+        const pin = () => { messagesContainer.scrollTop = messagesContainer.scrollHeight; };
+        requestAnimationFrame(pin);
+        messagesContainer.querySelectorAll('img').forEach(img => {
+            if (!img.complete) img.addEventListener('load', pin, { once: true });
+        });
+        setTimeout(pin, 250);
     }
 
     // ========================
@@ -621,6 +647,7 @@ document.addEventListener('DOMContentLoaded', function() {
     input.addEventListener('input', () => {
         input.style.height = 'auto';
         input.style.height = Math.min(input.scrollHeight, 120) + 'px';
+        syncInputHeightVar(); // the pinned input grew/shrank — re-reserve list space
     });
 
     if (newChatBtn) {
@@ -1126,6 +1153,16 @@ document.addEventListener('DOMContentLoaded', function() {
     // ========================
 
     async function init() {
+        // Measure before any chat renders so the list reserves the right space
+        // and the scroll-to-bottom below lands correctly on the first paint.
+        syncInputHeightVar();
+        if (isIOSApp && window.ResizeObserver) {
+            const area = document.querySelector('.ra-input-area');
+            // Also catches the tab becoming visible (0px -> real height), since the
+            // RA subtab can start hidden when sessionStorage restores Find Players.
+            if (area) new ResizeObserver(syncInputHeightVar).observe(area);
+        }
+
         await loadChats();
         const savedChatId = sessionStorage.getItem('raActiveChatId');
         const savedChatExists = savedChatId && chats.some(c => c.id === savedChatId);

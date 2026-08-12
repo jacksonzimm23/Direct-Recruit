@@ -156,10 +156,31 @@ html.ios-app body { background-color: inherit; }
         padding-bottom: 0.85rem !important;
     }
     /* Reserve room so the scrollable message list isn't covered by the pinned
-       input area (input area is ~97-105px tall + a little slack). */
+       input area.
+
+       Because the input area above is position:fixed it no longer occupies flex
+       space, so .ra-messages (flex:1) stretches all the way to the panel bottom —
+       which is bottom:0, i.e. UNDER both the pinned input area and the 76px bottom
+       nav. The bottom (76px + input height) of the scroll container is therefore
+       permanently covered. The list can only be scrolled clear of it if its
+       padding-bottom is at least that covered height; anything less and the last
+       player cards sit in dead space that no amount of scrolling reaches.
+
+       The nav's 76px is NOT part of this: .ios-app .main-content already carries
+       padding-bottom:76px (above), so the list's box already stops at the nav's top
+       edge. Only the input area actually overlaps it. Measured on the real layout:
+       list 99..672, nav top 672, input area 580..672 — a 92px overlap.
+
+       This was a flat 120px, which covers a resting input area but NOT a grown one:
+       the textarea auto-resizes up to 120px, taking the input area to ~190px and
+       putting the last cards out of reach. --ai-input-h is measured and republished
+       on every resize by discover-recruit-assistant.js / portal-intelligence.js, so
+       the reserve tracks the real height; the fallback covers the first paint. */
     .ios-app .ra-messages,
     .ios-app .pi-messages {
-        padding-bottom: 120px !important;
+        padding-bottom: calc(var(--ai-input-h, 105px) + 1rem) !important;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior-y: contain;
     }
     .ios-app .ra-input-disclaimer,
     .ios-app .pi-input-disclaimer {
