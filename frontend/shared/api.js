@@ -1146,6 +1146,37 @@ function getRoleAvatarBg(role, isTransfer, collegeDivision) {
 }
 window.getRoleAvatarBg = getRoleAvatarBg;
 
+// Paint the sidebar-footer name for the LOGGED-IN user, school logo included.
+//
+// The sidebar always shows YOU, but the page you are on belongs to the profile you
+// are VIEWING — open an HS player's profile and it is hsplayer/tabs/my-profile.js
+// that repaints your sidebar. So every role folder has to be able to render a
+// college logo, not just the college ones. hsplayer, hscoach and other omitted it,
+// which is why a college coach's logo vanished from their own sidebar the moment
+// they opened one of those profiles. Same trap as lesson 48.
+//
+// getSchoolLogoHTML is synchronous and returns '' until school-logos.json is in
+// memory (lesson 51), so paint the name immediately and patch the logo in if the
+// JSON is still loading. Escapes the name: this writes innerHTML, and stored values
+// can contain a literal '<' since the June 2026 sanitizeBody fix (lesson 114).
+function renderSidebarFooterName(el, firstName, lastName, teamName) {
+    if (!el) return;
+    const path = window.location.pathname.includes('/tabs/') ? '../../assets' : '../assets';
+    const name = `${firstName || ''} ${lastName || ''}`.trim();
+    const safe = (typeof escapeHtml === 'function') ? escapeHtml(name) : name;
+    const paint = () => {
+        const logo = (typeof getSchoolLogoHTML === 'function' && teamName)
+            ? getSchoolLogoHTML(teamName, path, 16) : '';
+        el.innerHTML = `<span class="user-name-text">${safe}</span>${logo}`;
+        return !!logo;
+    };
+    if (paint()) return;                       // cache warm, or this user has no school
+    if (teamName && typeof ensureSchoolLogosLoaded === 'function') {
+        ensureSchoolLogosLoaded(path).then(paint).catch(() => {});
+    }
+}
+window.renderSidebarFooterName = renderSidebarFooterName;
+
 // Parse a timestamp coming back from the API.
 //
 // The schema is mixed: ~60 columns are `timestamp without time zone` while the rest

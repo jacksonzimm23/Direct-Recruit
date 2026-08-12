@@ -402,7 +402,10 @@ function updateNavbarForLoggedInUser(user, profile) {
 
         const userName = document.querySelector('.sidebar-footer .user-name');
         if (userName) {
-            userName.innerHTML = `<span class="user-name-text">${profile.first_name} ${profile.last_name}</span>`;
+            // Shared helper: always the LOGGED-IN user, with their school logo.
+            // Kept identical across all six role folders so the sidebar cannot change
+            // depending on whose profile you happen to be viewing.
+            renderSidebarFooterName(userName, profile.first_name, profile.last_name, profile.team_name);
         }
 
         const userRole = document.querySelector('.sidebar-footer .user-role');

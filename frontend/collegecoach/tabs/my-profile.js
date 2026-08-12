@@ -81,9 +81,10 @@ async function updateSidebarFooterFromAPI() {
                 // Update name
                 const userName = document.querySelector('.sidebar-footer .user-name');
                 if (userName) {
-                    if (typeof ensureSchoolLogosLoaded === 'function') await ensureSchoolLogosLoaded('../../assets');
-                    const _prLogo = typeof getSchoolLogoHTML === 'function' ? getSchoolLogoHTML(profile.team_name, '../../assets', 16) : '';
-                    userName.innerHTML = `<span class="user-name-text">${profile.first_name} ${profile.last_name}</span>${_prLogo}`;
+                    // Shared helper: always the LOGGED-IN user, with their school logo.
+                    // Kept identical across all six role folders so the sidebar cannot change
+                    // depending on whose profile you happen to be viewing.
+                    renderSidebarFooterName(userName, profile.first_name, profile.last_name, profile.team_name);
                 }
 
                 // Update role/info line for transfer player: position • height • weight • YOE
@@ -554,8 +555,10 @@ function updateNavbarForLoggedInUser(user, profile) {
         // Update name
         const userName = document.querySelector('.sidebar-footer .user-name');
         if (userName) {
-            const _prLogo = typeof getSchoolLogoHTML === 'function' ? getSchoolLogoHTML(profile.team_name, '../../assets', 16) : '';
-            userName.innerHTML = `<span class="user-name-text">${profile.first_name} ${profile.last_name}</span>${_prLogo}`;
+            // Shared helper: always the LOGGED-IN user, with their school logo.
+            // Kept identical across all six role folders so the sidebar cannot change
+            // depending on whose profile you happen to be viewing.
+            renderSidebarFooterName(userName, profile.first_name, profile.last_name, profile.team_name);
         }
 
         // Update role/info based on logged-in user's specific profile type (userFolder)
