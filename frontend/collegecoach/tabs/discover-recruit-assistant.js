@@ -1094,6 +1094,18 @@ document.addEventListener('DOMContentLoaded', function() {
         return n.toLocaleString();
     }
 
+    // The billing period arrives as a date-only 'YYYY-MM-DD' string. Passing that
+    // straight to new Date() parses it as UTC midnight, which then renders one day
+    // EARLIER for every viewer west of UTC — so a coach on a Jul 13 - Aug 13 Stripe
+    // cycle saw "Jul 12 - Aug 12". Build a local date from the parts instead, so the
+    // day shown is exactly the day the backend computed.
+    function parsePeriodDate(ymd) {
+        if (!ymd) return null;
+        const parts = String(ymd).split('-').map(Number);
+        if (parts.length !== 3 || parts.some(isNaN)) return new Date(ymd);
+        return new Date(parts[0], parts[1] - 1, parts[2]);
+    }
+
     async function openUsageModal() {
         if (!usageOverlay) return;
         try {
@@ -1102,11 +1114,13 @@ document.addEventListener('DOMContentLoaded', function() {
         const percent = Math.min((totalUsed / usage.tokenCap) * 100, 100);
         const remaining = Math.max(usage.tokenCap - totalUsed, 0);
 
+        const raPeriodStart = parsePeriodDate(usage.periodStart);
+        const raPeriodEnd = parsePeriodDate(usage.periodEnd);
         document.getElementById('raUsagePlanName').textContent = usage.plan;
         document.getElementById('raUsagePeriod').textContent =
-            new Date(usage.periodStart).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) +
+            (raPeriodStart ? raPeriodStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '—') +
             ' – ' +
-            new Date(usage.periodEnd).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+            (raPeriodEnd ? raPeriodEnd.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—');
         document.getElementById('raUsageNumbers').textContent = formatTokenCount(totalUsed) + ' / ' + formatTokenCount(usage.tokenCap);
         document.getElementById('raUsagePercent').textContent = percent.toFixed(1) + '% used';
         document.getElementById('raUsageRemaining').textContent = formatTokenCount(remaining) + ' tokens remaining';
