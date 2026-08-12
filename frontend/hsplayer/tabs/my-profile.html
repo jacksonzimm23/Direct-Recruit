@@ -13,7 +13,13 @@
     <title>My Profile - Direct Recruit</title>
     <link rel="stylesheet" href="../../landingpage/styles.css">
     <link rel="stylesheet" href="../mainpage-player.css">
-    <link rel="stylesheet" href="my-profile.css?v=2">
+    <!-- feed.css powers the Posts + Likes tabs, which render with the same feed.js
+         templates the mainpage uses. Loaded BEFORE my-profile.css (a deliberate
+         exception to the CSS order in CLAUDE.md) so that where the two files share
+         a generic selector (.comment, .no-comments, .post-dropdown-menu), the
+         profile page's existing styling still wins. -->
+    <link rel="stylesheet" href="../../shared/feed.css">
+    <link rel="stylesheet" href="my-profile.css?v=3">
     <link rel="stylesheet" href="../../shared/fit-info-modal.css">
     <link rel="stylesheet" href="../../shared/image-cropper.css">
     <link rel="stylesheet" href="../../shared/mobile-overrides.css?v=3">
@@ -1811,10 +1817,15 @@
     <script src="../sidebar-nav.js"></script>
     <script src="../sidebar-footer.js"></script>
     <script src="../mainpage-player.js"></script>
+    <!-- Posts + Likes tabs render through FeedManager so a post looks identical
+         here and on the mainpage feed. feed.js only auto-constructs a FeedManager
+         when #feedPosts exists, which it does not on this page, so my-profile.js
+         constructs its own instance (see getProfileFeedManager). -->
+    <script src="../../shared/feed.js"></script>
     <script src="../../shared/tabs-scroll-arrows.js"></script>
     <script src="../../shared/stats-table-scroll.js"></script>
     <script src="../../shared/match-constants.js"></script>
     <script src="../../shared/match-ui.js"></script>
-    <script src="my-profile.js?v=2"></script>
+    <script src="my-profile.js?v=3"></script>
 </body>
 </html>
