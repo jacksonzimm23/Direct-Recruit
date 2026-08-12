@@ -2333,7 +2333,11 @@ function showToast(message) {
 function formatTimeAgo(dateString) {
     if (!dateString) return 'Just now';
 
-    const date = new Date(dateString);
+    // parseServerDate (shared/api.js) reads offset-less timestamps as UTC. Roughly
+    // 60 columns are `timestamp without time zone`, and parsing those as local time
+    // puts them in the future — which is what the "future dates" branch below was
+    // silently absorbing into a permanent "Just now".
+    const date = (typeof parseServerDate === 'function') ? parseServerDate(dateString) : new Date(dateString);
     const now = new Date();
 
     // Check for invalid date

@@ -342,25 +342,9 @@ html.ios-app body { background-color: inherit; }
         padding-top: calc(50px + env(safe-area-inset-top, 0px)) !important;
     }
 
-    /* Single post view: put the "Write a comment..." box ABOVE the comment list.
-       In the app the Comment button routes here (feed.js _routeCommentsToPostView),
-       so writing is the main reason you land on this page and the box should not be
-       buried under an arbitrarily long thread. Done with flex + order:-1 rather than
-       reordering the shared template, so desktop and mobile web keep input-below-list
-       and no JS is involved. Scoped to .post-view-container so feed cards are
-       untouched. */
-    .ios-app .post-view-container .post-comments-section {
-        display: flex !important;
-        flex-direction: column !important;
-    }
-    .ios-app .post-view-container .post-comments-section .comment-input-container {
-        order: -1;
-        margin-bottom: 1rem;
-    }
-    .ios-app .post-view-container .post-comments-section .comments-list {
-        order: 0;
-        margin-bottom: 0;
-    }
+    /* The "comment box above the thread" rule used to live here, scoped to .ios-app.
+       It now applies on every platform, so it moved to feed.css — search there for
+       .post-view-container .post-card .post-comments-section. */
 
     /* ---- Modal headers: keep the X close button below the status bar ----
        Full-screen modals sit at top:0; their header positions the X via flex + header

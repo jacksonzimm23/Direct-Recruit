@@ -1146,6 +1146,29 @@ function getRoleAvatarBg(role, isTransfer, collegeDivision) {
 }
 window.getRoleAvatarBg = getRoleAvatarBg;
 
+// Parse a timestamp coming back from the API.
+//
+// The schema is mixed: ~60 columns are `timestamp without time zone` while the rest
+// are `timestamptz`, so the API hands back two different shapes:
+//     with offset    "2026-08-09 03:58:19.228461+00"   -> parses correctly
+//     without offset "2026-08-12 01:41:42.692124"      -> JS parses this as LOCAL time
+//
+// Every value in this database is UTC (the DB server and EC2 both run UTC), so a
+// naive string has to be read as UTC. Read as local it lands up to a full UTC offset
+// in the FUTURE, which makes elapsed time negative — that is what pinned quote-post
+// comment timestamps to "Just now" for hours for anyone west of UTC.
+//
+// Returns a Date. Non-naive input is passed through to the native parser untouched.
+function parseServerDate(value) {
+    if (value instanceof Date) return value;
+    if (typeof value !== 'string') return new Date(value);
+    // "YYYY-MM-DD HH:MM:SS[.ffffff]" and nothing after it — no Z, no +/-offset.
+    // A zoned string ("...+00") or an ISO string ("...Z") simply will not match.
+    const naive = value.trim().match(/^(\d{4}-\d{2}-\d{2})[ T](\d{2}:\d{2}:\d{2}(?:\.\d+)?)$/);
+    return naive ? new Date(`${naive[1]}T${naive[2]}Z`) : new Date(value);
+}
+window.parseServerDate = parseServerDate;
+
 function buildCommentSubheader(role, data) {
     const parts = [];
     if (role === 'player') {

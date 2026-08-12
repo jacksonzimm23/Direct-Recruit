@@ -2902,9 +2902,13 @@ document.addEventListener('DOMContentLoaded', setupFollowListModal);
 
 // Helper function to format time ago
 function formatTimeAgo(dateString) {
-    const date = new Date(dateString);
+    // parseServerDate (shared/api.js) reads offset-less timestamps as UTC. Roughly
+    // 60 columns are `timestamp without time zone`, and parsing those as local time
+    // puts them in the future, which pinned relative times to "just now" for hours.
+    const date = (typeof parseServerDate === "function") ? parseServerDate(dateString) : new Date(dateString);
     const now = new Date();
-    const seconds = Math.floor((now - date) / 1000);
+    // Clamp negatives so clock skew cannot produce a nonsense future duration.
+    const seconds = Math.max(0, Math.floor((now - date) / 1000));
 
     if (seconds < 60) return 'just now';
     const minutes = Math.floor(seconds / 60);

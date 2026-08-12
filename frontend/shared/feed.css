@@ -105,6 +105,35 @@
     cursor: default;
 }
 
+/* Single post view: the comment box sits ABOVE the thread, on every platform.
+   Clicking Comment anywhere now lands you here (feed.js _routeCommentsToPostView),
+   so writing is the primary reason you are on this page and the box should not be
+   buried under an arbitrarily long thread.
+
+   Two cascade hazards this selector is shaped around:
+   1. post-view.html declares `.post-view-content .post-comments-section
+      { display: block !important; }` in an inline <style> that loads AFTER every
+      stylesheet. That is (0,2,0) with !important, so this needs three classes to
+      win. .post-card is always the section's ancestor on that page.
+   2. post-view.html's JS also sets `commentsSection.style.display = 'block'` as an
+      inline style attribute. An !important author rule outranks a normal inline
+      style, so flex still applies.
+   Scoped to .post-view-container so feed and profile cards keep input-below-list. */
+.post-view-container .post-card .post-comments-section {
+    display: flex !important;
+    flex-direction: column !important;
+}
+
+.post-view-container .post-card .post-comments-section .comment-input-container {
+    order: -1;
+    margin-bottom: 1rem;
+}
+
+.post-view-container .post-card .post-comments-section .comments-list {
+    order: 0;
+    margin-bottom: 0;
+}
+
 .post-view-container .post-card:hover {
     background: rgba(255, 255, 255, 0.03);
     border-color: rgba(18, 130, 162, 0.2);

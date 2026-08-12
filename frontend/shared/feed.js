@@ -3637,8 +3637,16 @@ class FeedManager {
 
     getTimeAgo(timestamp) {
         const now = new Date();
-        const postTime = new Date(timestamp);
-        const seconds = Math.floor((now - postTime) / 1000);
+        // parseServerDate reads offset-less timestamps as UTC. Without it, values
+        // from the ~60 `timestamp without time zone` columns (share_comments among
+        // them) parse as local, land in the future, and stick on "Just now".
+        // typeof-guarded like the other shared helpers in case api.js is absent.
+        const postTime = (typeof parseServerDate === 'function')
+            ? parseServerDate(timestamp)
+            : new Date(timestamp);
+        // Clamp negatives so any residual clock skew reads as "Just now" rather
+        // than falling through every branch to a raw date.
+        const seconds = Math.max(0, Math.floor((now - postTime) / 1000));
 
         if (seconds < 60) return 'Just now';
         if (seconds < 3600) return `${Math.floor(seconds / 60)}m`;
