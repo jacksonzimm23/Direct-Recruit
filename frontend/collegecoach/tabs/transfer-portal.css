@@ -2664,6 +2664,40 @@
         width: 100%;
         min-width: unset;
     }
+
+    /* Mobile header layout: [avatar] [name + positions] [Flag].
+       The Flag button is rendered inside .pi-card-header by portal-intelligence.js
+       on mobile and the bottom action bar is omitted; these rules are the safety
+       net for a card that was built at desktop width and then resized. */
+    .pi-card-actions {
+        display: none;
+    }
+
+    .pi-card-header {
+        align-items: center;
+    }
+
+    /* Pinned far right, vertically centered against the avatar, never shrinks. */
+    .pi-card-header .pi-btn-flag-player {
+        margin-left: auto;
+        align-self: center;
+        flex-shrink: 0;
+    }
+
+    /* Info absorbs all overflow instead of pushing the button. min-width:0 is the
+       load-bearing bit — a flex item won't shrink below its content without it,
+       which is what let long names run past the button. */
+    .pi-card-info {
+        flex: 1 1 auto;
+        min-width: 0;
+        overflow: hidden;
+    }
+    .pi-card-name {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        min-width: 0;
+    }
 }
 
 /* ============================================================ */

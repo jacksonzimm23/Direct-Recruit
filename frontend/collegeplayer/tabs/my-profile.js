@@ -5801,12 +5801,9 @@ function getProfileFeedManager() {
         window.location.href = new URL(`post-view.html?${qs}&ref=profile${focusParam}`, window.location.href).href;
     };
 
-    // The feed's quote composer writes into .post-input, which only exists on the
-    // mainpage. Keep the profile's own quote modal.
-    fm.quotePost = function (postId) {
-        document.querySelector('.share-menu')?.remove();
-        profileQuotePost(postId);
-    };
+    // No quotePost override: FeedManager.quotePost feature-detects the inline
+    // composer and falls back to its own full-screen quote modal, which is what
+    // these pages (and the iOS app) need. One composer for every surface.
 
     // Own posts get the profile menu (adds Unpin, which the feed menu lacks).
     // Everyone else's posts keep the feed menu (Report / Block).

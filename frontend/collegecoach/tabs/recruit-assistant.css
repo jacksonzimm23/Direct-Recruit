@@ -921,6 +921,18 @@
     align-items: center;
     gap: 4px;
 }
+/* The name text lives in its own span so it can ellipsize inside the flex row
+   (a bare text node in a flex container can't). The school logo never shrinks,
+   so a long name truncates rather than pushing the logo out. */
+.ra-row-name-text {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.ra-row-name img {
+    flex-shrink: 0;
+}
 .ra-row-line2 {
     font-size: 0.8rem;
     font-weight: 700;
@@ -1438,6 +1450,7 @@
         flex-wrap: wrap;
         gap: 0.5rem;
         padding: 0.65rem 0.75rem;
+        align-items: center;
     }
 
     .ra-row-avatar {
@@ -1451,11 +1464,57 @@
         height: 22px;
     }
 
-    .ra-row-actions {
-        width: 100%;
-        margin-left: 0;
-        justify-content: flex-end;
+    /* Mobile card layout: [avatar] [info] [Save] on one line, AI MATCH bar below.
+       View Profile is dropped — tapping anywhere on the row already opens the
+       profile (see the row click handler in discover-recruit-assistant.js), so
+       the button was redundant and only stole width from the player's info. */
+    .ra-btn-view-profile {
+        display: none;
     }
+
+    /* Explicit order: the fit badge is `flex:1 0 100%`, so without this it wraps
+       to line 2 and pushes the actions down to line 3. Ordering actions ahead of
+       the badge keeps Save on the info line and lets only the badge wrap. */
+    .ra-row-avatar   { order: 1; }
+    .ra-row-info     { order: 2; }
+    .ra-row-actions  { order: 3; }
+    .ra-player-row .fit-badge { order: 4; }
+
+    /* Save sits far right, vertically centered against the avatar, and never
+       shrinks — the info column absorbs all overflow instead. */
+    .ra-row-actions {
+        width: auto;
+        margin-left: auto;
+        justify-content: flex-end;
+        align-self: center;
+        flex-shrink: 0;
+    }
+
+    /* Info takes the leftover width and truncates.
+       flex-basis MUST be 0, not auto. The row is flex-wrap:wrap (so the AI MATCH
+       badge can drop to its own line), and a wrapping flex container decides line
+       breaks from each item's hypothetical size BEFORE it shrinks anything. With
+       basis:auto that size is the full untruncated text width, so a long name
+       pushed the Save button onto a second line instead of ellipsizing. basis:0
+       lets avatar + info + Save share line 1, then info grows into what's left.
+       min-width:0 is also required — flex items default to min-width:auto and
+       refuse to shrink below their content. */
+    .ra-row-info {
+        flex: 1 1 0%;
+        min-width: 0;
+        overflow: hidden;
+    }
+    .ra-row-name,
+    .ra-row-line2,
+    .ra-row-line3 {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        min-width: 0;
+    }
+    /* The name is a flex container (name + school logo); its text child needs the
+       same treatment or the logo gets pushed out instead of the text truncating. */
+    .ra-row-name { display: flex; min-width: 0; }
 }
 
 /* Stats Table in Chat */

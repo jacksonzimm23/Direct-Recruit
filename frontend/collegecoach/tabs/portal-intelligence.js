@@ -465,6 +465,26 @@ document.addEventListener('DOMContentLoaded', function() {
             signalDetailsHtml += section;
         }
 
+        // Mobile (including the iOS app) moves the Flag button up into the header,
+        // pinned far right and vertically centered against the avatar, and drops
+        // View Profile entirely — tapping the card already opens the profile, so
+        // the button only stole width from the player's info. Desktop keeps the
+        // original bottom action bar. JS picks the markup and CSS backs it up,
+        // matching the isMobile()-decides-the-HTML convention on the discover pages.
+        const isMobileCard = window.innerWidth <= 768;
+        const flagBtnHtml = `
+                <button class="pi-btn-flag-player" data-player-id="${player.user_id || ''}" data-flagged="false">
+                    <svg class="pi-flag-icon-outline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                    </svg>
+                    <svg class="pi-flag-icon-filled" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" style="display:none;">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                    </svg>
+                    <span class="pi-flag-label">Flag Player</span>
+                </button>`;
+
         card.innerHTML = `
             <div class="pi-card-header">
                 <div class="pi-card-avatar">
@@ -480,6 +500,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <h3 class="pi-card-name">${escapeHtml(displayName)}</h3>
                     <div class="pi-card-positions">${formatPositions(player.position)}</div>
                 </div>
+                ${isMobileCard ? flagBtnHtml : ''}
             </div>
             <div class="pi-card-stats">
                 <div class="pi-stat-item">
@@ -504,24 +525,14 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
             <div class="pi-signal-badges">${signalBadges}</div>
             ${signalDetailsHtml ? `<div class="pi-signal-details">${signalDetailsHtml}</div>` : ''}
-            <div class="pi-card-actions">
-                <button class="pi-btn-view-profile">View Profile</button>
-                <button class="pi-btn-flag-player" data-player-id="${player.user_id || ''}" data-flagged="false">
-                    <svg class="pi-flag-icon-outline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
-                        <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
-                    </svg>
-                    <svg class="pi-flag-icon-filled" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" style="display:none;">
-                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
-                        <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
-                    </svg>
-                    <span class="pi-flag-label">Flag Player</span>
-                </button>
-            </div>
+            ${isMobileCard ? '' : `<div class="pi-card-actions">
+                <button class="pi-btn-view-profile">View Profile</button>${flagBtnHtml}
+            </div>`}
         `;
 
+        // Null on mobile — the View Profile button isn't rendered there.
         const viewBtn = card.querySelector('.pi-btn-view-profile');
-        viewBtn.addEventListener('click', (e) => {
+        if (viewBtn) viewBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             sessionStorage.setItem('piScrollPosition', String(messagesContainer.scrollTop));
             // Resolve relative nav against current page so it works in both web and iOS WKWebView

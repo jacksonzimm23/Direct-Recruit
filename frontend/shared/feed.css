@@ -680,6 +680,15 @@
     -webkit-line-clamp: 3;
     -webkit-box-orient: vertical;
     overflow: hidden;
+    /* Text-format parity with a normal post body. A post renders inside
+       `.post-content p`, which carries these three; the quoted embed is a bare div
+       with no <p>, so it had none of them. Without break-word a long unbroken
+       string (typically a pasted URL) overflowed the embed on a narrow iPhone
+       instead of wrapping the way it does in a real post. pre-wrap keeps runs of
+       spaces, matching the post body. */
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
 }
 
 .quote-post-card .post-content {
@@ -2236,6 +2245,15 @@
 
     /* Media grid full width on mobile */
     .post-media-grid {
+        width: 100%;
+    }
+
+    /* The quoted-post embed gets the same treatment. Without this the embed kept
+       the 50% desktop width while the post above it went full-width, so the same
+       image looked half-size once it was quoted. The embed is inside a narrower
+       container, so 100% here still renders smaller than the outer post — which is
+       the intended nesting, just at the same proportions. */
+    .quoted-post-media {
         width: 100%;
     }
 }

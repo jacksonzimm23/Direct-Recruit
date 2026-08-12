@@ -2204,83 +2204,14 @@ body.transfer-player-viewer .sidebar-user-avatar {
     max-height: 200px;
     object-fit: contain;
     border-radius: 8px;
-}
+}
 
-/* Quoted post media in profile embeds - grid layout matching feed styling */
-.quoted-post-media {
-    margin-top: 0.75rem;
-    border-radius: 8px;
-    overflow: hidden;
-    width: 50%;
-    height: 200px;
-    background: rgba(0, 0, 0, 0.2);
-    display: grid;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-}
 
-/* Grid layouts based on media count */
-.quoted-post-media.media-count-1 {
-    grid-template-columns: 1fr;
-    grid-template-rows: 1fr;
-}
-
-.quoted-post-media.media-count-2 {
-    grid-template-columns: 1fr 1fr;
-    grid-template-rows: 1fr;
-}
-
-.quoted-post-media.media-count-3 {
-    grid-template-columns: 1fr 1fr;
-    grid-template-rows: 1fr 1fr;
-}
-
-.quoted-post-media.media-count-4 {
-    grid-template-columns: 1fr 1fr;
-    grid-template-rows: 1fr 1fr;
-}
-
-/* Individual media items in the grid */
-.quoted-media-item {
-    position: relative;
-    overflow: hidden;
-    background: #000;
-}
-
-.quoted-media-item img,
-.quoted-media-item video {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-
-/* Video indicator overlay */
-.quoted-media-item .video-indicator {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 32px;
-    height: 32px;
-    background: rgba(0, 0, 0, 0.6);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    pointer-events: none;
-}
-
-.quoted-media-item .video-indicator svg {
-    width: 14px;
-    height: 14px;
-    color: white;
-    margin-left: 2px;
-}
-
-/* Handle 3-item layout - first item spans full height */
-.quoted-post-media.media-count-3 .quoted-media-item:first-child {
-    grid-row: span 2;
-}
-
+/* .quoted-post-media / .quoted-media-item rules intentionally removed.
+   The Posts + Likes tabs render feed cards, so the quoted-post embed is styled by
+   shared/feed.css. The duplicates here loaded second and won, which dropped the
+   grid divider lines, shrank the video play badge and lost the pointer cursor —
+   making a quote repost look different on a profile than in the feed. */
 /* Repost/Quote dropdown menus */
 .repost-dropdown-menu,
 .quote-dropdown-menu {

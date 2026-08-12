@@ -3211,6 +3211,17 @@ class FeedManager {
         const postInput = document.querySelector('.post-input');
         const createPostBox = document.querySelector('.create-post-box');
 
+        // The inline composer is hidden on mobile (mobile-overrides.css sets
+        // .create-post-box { display: none } and the FAB modal replaces it) and does
+        // not exist at all on the profile pages. Writing into it there was a no-op, so
+        // Share > Quote Post silently did nothing on iOS. Feature-detect rather than
+        // sniffing UA or width: offsetParent is null exactly when the box is
+        // display:none or absent, which is the condition that actually matters.
+        const inlineComposerUsable = postInput && createPostBox && createPostBox.offsetParent !== null;
+        if (!inlineComposerUsable) {
+            return this.openQuoteModal(postId, { authorName, postContent, authorImage });
+        }
+
         if (postInput && createPostBox) {
             // Scroll to post creation
             createPostBox.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -3260,6 +3271,104 @@ class FeedManager {
             // Focus on input
             setTimeout(() => postInput.focus(), 300);
         }
+    }
+
+    // Quote composer for every surface without the inline create-post box: the iOS
+    // app and mobile web (where .create-post-box is display:none) and the six
+    // My Profile pages (which never had one). Built on .feed-modal, so it inherits
+    // the full-screen treatment mobile-overrides.css gives modals at <=768px and the
+    // safe-area header padding from ios-app-overrides.css — no new CSS needed.
+    openQuoteModal(postId, quoted = {}) {
+        document.getElementById('quote-post-modal')?.remove();
+
+        const authorName = this.escapeHtml(quoted.authorName || 'Unknown User');
+        const snippet = (quoted.postContent || '').slice(0, 200);
+        const preview = this.escapeHtml(snippet) + ((quoted.postContent || '').length > 200 ? '...' : '');
+
+        const modal = document.createElement('div');
+        modal.className = 'feed-modal-overlay';
+        modal.id = 'quote-post-modal';
+        modal.innerHTML = `
+            <div class="feed-modal edit-modal">
+                <div class="feed-modal-header">
+                    <h3>Quote Post</h3>
+                    <button class="feed-modal-close" id="quote-post-cancel-x">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
+                </div>
+                <div class="feed-modal-body">
+                    <textarea class="edit-post-textarea" id="quote-post-textarea" maxlength="300" placeholder="Add your thoughts..."></textarea>
+                    <span class="char-counter">0/300</span>
+                    <div class="quote-post-preview">
+                        <div class="quote-post-preview-content">
+                            <div class="quote-post-preview-avatar">
+                                ${quoted.authorImage
+                                    ? `<img src="${quoted.authorImage}" alt="${authorName}">`
+                                    : `<svg viewBox="0 0 24 24" fill="currentColor">
+                                          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                          <circle cx="12" cy="7" r="4"></circle>
+                                       </svg>`
+                                }
+                            </div>
+                            <div class="quote-post-preview-body">
+                                <div class="quote-post-preview-author">${authorName}</div>
+                                <div class="quote-post-preview-text">${preview}</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="edit-modal-actions">
+                        <button class="edit-modal-btn edit-modal-btn-cancel" id="quote-post-cancel">Cancel</button>
+                        <button class="edit-modal-btn edit-modal-btn-save" id="quote-post-submit">Post</button>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+
+        const textarea = modal.querySelector('#quote-post-textarea');
+        const counter = modal.querySelector('.char-counter');
+        textarea.addEventListener('input', () => updateCharCounter(counter, textarea.value.length, 300));
+        setTimeout(() => textarea.focus(), 50);
+
+        const close = () => {
+            modal.remove();
+            document.removeEventListener('keydown', onKey);
+        };
+        const onKey = (e) => { if (e.key === 'Escape') close(); };
+        document.addEventListener('keydown', onKey);
+        modal.querySelector('#quote-post-cancel-x').addEventListener('click', close);
+        modal.querySelector('#quote-post-cancel').addEventListener('click', close);
+        modal.addEventListener('click', (e) => { if (e.target === modal) close(); });
+
+        const submitBtn = modal.querySelector('#quote-post-submit');
+        submitBtn.addEventListener('click', async () => {
+            const content = textarea.value.trim();
+            if (!content) {
+                this.showToast('Add your thoughts to the quote', 'error');
+                return;
+            }
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Posting...';
+            try {
+                await postsAPI.sharePost(postId, 'quote', content);
+                close();
+                this.showToast('Quote posted!', 'success');
+                // Refresh whichever surface we are on so the new quote shows.
+                if (this.feedContainer) {
+                    await this.loadFeed();
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                } else if (typeof loadProfilePosts === 'function') {
+                    await loadProfilePosts(false);
+                }
+            } catch (error) {
+                this.showToast('Failed to post quote', 'error');
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Post';
+            }
+        });
     }
 
     cancelQuote() {

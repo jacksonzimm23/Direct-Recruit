@@ -443,7 +443,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
             const line2Parts = [position, height, weight, eligibility].filter(p => p);
 
-            line1 = `${escapeHtml(displayName)}${logoHtml ? ' ' + logoHtml : ''}`;
+            // Name goes in its own span: .ra-row-name is a flex container, and
+            // text-overflow can't ellipsize a bare text node inside one. Without
+            // the span a long name pushes the school logo (and the Save button)
+            // out of the row instead of truncating.
+            line1 = `<span class="ra-row-name-text">${escapeHtml(displayName)}</span>${logoHtml ? ' ' + logoHtml : ''}`;
             line2 = line2Parts.join(' &bull; ');
             line3 = school ? `<span class="ra-row-stats-label">Previously:</span> ${escapeHtml(school)}${division ? ` (${division})` : ''}` : '';
             avatarClass = 'ra-row-avatar transfer-border';
@@ -456,7 +460,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             const line2Parts = [position, height, weight, gradYear].filter(p => p);
 
-            line1 = escapeHtml(displayName);
+            line1 = `<span class="ra-row-name-text">${escapeHtml(displayName)}</span>`;
             line2 = line2Parts.join(' &bull; ');
             line3 = `${escapeHtml(schoolState)}${schoolState ? ' &bull; ' : ''}${offersHtml}`;
             avatarClass = 'ra-row-avatar player-border';
