@@ -680,13 +680,21 @@
     -webkit-line-clamp: 3;
     -webkit-box-orient: vertical;
     overflow: hidden;
-    /* Text-format parity with a normal post body. A post renders inside
-       `.post-content p`, which carries these three; the quoted embed is a bare div
-       with no <p>, so it had none of them. Without break-word a long unbroken
-       string (typically a pasted URL) overflowed the embed on a narrow iPhone
-       instead of wrapping the way it does in a real post. pre-wrap keeps runs of
-       spaces, matching the post body. */
-    white-space: pre-wrap;
+    /* A post body renders inside `.post-content p`, which carries break-word; the
+       quoted embed is a bare div with no <p> and had none, so a long unbroken string
+       (typically a pasted URL) overflowed the embed instead of wrapping the way it
+       does in a real post.
+
+       Deliberately NOT white-space: pre-wrap, even though .post-content p has it.
+       This element is interpolated as
+           <div class="quoted-post-content">
+               ${formatContent(...)}
+           </div>
+       so the template's own newline and indentation sit inside the div. Collapsing
+       is what hides them; pre-wrap renders them literally, which added a blank line
+       above the quoted text and indented it by the template's leading spaces.
+       formatContent already converts real newlines to <br>, so pre-wrap buys nothing
+       here anyway. */
     word-wrap: break-word;
     overflow-wrap: break-word;
 }
