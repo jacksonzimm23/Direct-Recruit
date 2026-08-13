@@ -134,6 +134,12 @@ const MATCH_CONSTANTS = {
   // exact list so the campus-fit dimension compares like-to-like.
   CAMPUS_SETTINGS: ['urban', 'suburban', 'rural', 'small-town'],
 
+  // Player-ONLY extra value for preferred_campus_setting: an explicit "I'm open
+  // to any campus setting" answer. Deliberately NOT in CAMPUS_SETTINGS, because
+  // that list is shared with the coach's campus_setting and a real campus is
+  // never "no preference". null = unanswered, 'no-preference' = answered.
+  NO_CAMPUS_PREFERENCE: 'no-preference',
+
   // Player levels_open — matched against coach college_division.
   LEVELS: ['D1 FBS', 'D1 FCS', 'D2', 'D3', 'NAIA', 'NJCAA'],
 

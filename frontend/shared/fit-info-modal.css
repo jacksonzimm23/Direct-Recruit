@@ -127,6 +127,12 @@
 .fim-match-label { font-size: 0.9rem; font-weight: 700; color: var(--white, #fefcfb); }
 .fim-match-detail { font-size: 0.82rem; color: rgba(254, 252, 251, 0.65); line-height: 1.4; }
 
+/* Criterion that could not be scored (missing data on one or both sides). The
+   row is always rendered so the list is a complete 5-of-5 picture, but muted so
+   it never reads as a match. */
+.fim-match-row--absent .fim-match-label { color: rgba(254, 252, 251, 0.55); font-weight: 600; }
+.fim-match-row--absent .fim-match-detail { color: rgba(254, 252, 251, 0.42); font-style: italic; }
+
 .fim-disclaimer {
     margin: 1.5rem 0 0;
     padding-top: 1rem;

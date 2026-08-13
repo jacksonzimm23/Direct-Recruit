@@ -371,7 +371,8 @@ const fitMatchingPlayerValidators = [
   body('levels_open').optional({ nullable: true }).custom(inSet(MATCH.VALID_LEVELS, 'level')),
   body('preferred_regions').optional({ nullable: true }).isArray().withMessage('preferred_regions must be an array'),
   body('preferred_regions').optional({ nullable: true }).custom(inSet(MATCH.VALID_REGIONS, 'region')),
-  body('preferred_campus_setting').optional({ nullable: true }).custom(inSet(MATCH.VALID_CAMPUS_SETTINGS, 'campus setting')),
+  // Player field: the four settings PLUS an explicit 'no-preference' answer.
+  body('preferred_campus_setting').optional({ nullable: true }).custom(inSet(MATCH.VALID_PLAYER_CAMPUS_PREFERENCES, 'campus setting')),
   body('fit_preferences').optional({ nullable: true }).custom(validateFitPreferences),
 ];
 

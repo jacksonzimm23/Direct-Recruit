@@ -8,13 +8,38 @@
 //   computeFit(player, coach) -> {
 //     score:      Number 0–99 | null,        // null = below the display floor
 //     tier:       { color, label } | null,   // from FitDisplay tiers (mirrored here)
-//     confidence: { n, of, label },          // how many dimensions were scoreable
-//     dimensions: [ { key, label, weight, present, score, detail } ]  // 0–1 each
+//     confidence: { n, of, label },          // how many criteria were scoreable
+//     dimensions: [ { key, label, weight, present, score, detail, missing } ]
 //   }
 //
-// SINGLE SOURCE OF TRUTH: the DIMENSIONS array below. The coach modal match-list,
+// SINGLE SOURCE OF TRUTH: the CRITERIA array below. The coach modal match-list,
 // the AI Rep school modal, and the AI Rep "missing dimensions" nudge all read the
-// same dimension keys/labels — keep them here so nothing drifts (lesson #19).
+// same criterion keys/labels — keep them here so nothing drifts (lesson #19).
+//
+// FIVE CRITERIA, mirroring the recruiting-profile subtabs on BOTH sides so the
+// modal reads the same as the forms the two users actually filled in:
+//
+//   Criterion               Player subtab            Coach subtab
+//   ----------------------- ------------------------ ---------------------
+//   Academics               Academics                Admissions
+//   Level & Location        Level & Location         Program & Location
+//   Major & Goals           Major & Goals            Academics & Majors
+//   Financial Fit           Financial Fit            Cost & Aid
+//   Priorities & Athletics  Priorities & Athletics   Scheme & Fit
+//
+// Level & Location is a GROUP of three scored parts (level / region / campus);
+// the other four are single-part. Athletics (other sports, track times) has no
+// matched coach field, so it is display-only on the profile and does NOT score —
+// criterion 5 scores on the player's priority sliders vs the coach's
+// development-vs-plug-and-play setting.
+//
+// ALWAYS RETURNS ALL FIVE. A criterion with no data on one or both sides comes
+// back present:false with `missing` set to 'player' | 'coach' | 'both' | null so
+// the UI can render an honest "not rated yet" row that names WHICH side is
+// missing, instead of silently dropping it (which read as "this player only
+// matches you on 3 things"). Absent criteria are still EXCLUDED from the
+// weighted average — a blank profile on either side must not be scored as a
+// mismatch.
 //
 // Symmetric: the SAME function powers coach->player (RA/discover cards, profile
 // banner) AND player->school (AI Rep best-fit), so build/maintain it once.
@@ -43,12 +68,29 @@ function tierOf(score) {
   return TIERS[TIERS.length - 1];
 }
 
-// ---- Weights (calibrate at review). HIGH = gatekeepers. ----
+// ---- Criterion weights. HIGH = gatekeepers (can you get in / can you play here) ----
 const W = { high: 3.0, medium: 2.0, low: 1.0 };
 
-// ---- Display floor (locked): >=3 scoreable dims AND >=1 core (academic|level) ----
-const MIN_DIMENSIONS = 3;
-const CORE_KEYS = ['academic', 'level'];
+// ---- Sub-part weights INSIDE the grouped Level & Location criterion ----
+// Same relative ordering the flat engine used (level 3 / region 2 / campus 1), but
+// now normalized within the group so the group as a whole carries W.high rather
+// than the sum of its parts — otherwise Level & Location alone would be 46% of
+// the score and campus-setting preference would outweigh academics.
+const SUB = { level: 3.0, region: 2.0, campus: 1.0 };
+
+// ---- Display floor (locked): >=3 scoreable criteria AND >=1 core ----
+// A score must rest on at least three of the five criteria. Note this is
+// effectively STRICTER than the old flat engine's "3 of 7", because level,
+// region and campus now collapse into a single criterion — a pair that scored
+// on academic+level+geographic used to count 3 and now counts 2.
+//
+// When a well-filled player still comes back unrated, the cause is almost always
+// the VIEWING COACH's Program Profile (Admissions / Academics & Majors / Cost &
+// Aid), not the player: every criterion needs data on both sides. The modal now
+// says which side is missing rather than dropping the row, so that is diagnosable
+// from the UI instead of looking like a broken score.
+const MIN_CRITERIA = 3;
+const CORE_KEYS = ['academics', 'levelLocation'];
 
 // ---- small helpers ----
 const num = (v) => (v === null || v === undefined || v === '' || isNaN(v)) ? null : Number(v);
@@ -237,6 +279,13 @@ function scoreEnvironment(p, c) {
   const pc = p.preferred_campus_setting;
   const cc = c.campus_setting;
   if (!pc || !cc) return { present: false };
+  // Explicit "no preference" is an ANSWER, not a blank: any campus works, so it
+  // is a full match wherever the coach's setting lands. Mirrors the Financial
+  // scorer's "no aid need -> neutral-positive 1.0" rule. Must be handled before
+  // the CAMPUS_ORDER lookup below, which would otherwise miss (-1) and score 0.4.
+  if (pc === MATCH.NO_CAMPUS_PREFERENCE) {
+    return { present: true, score: 1.0, detail: 'Open to any campus setting' };
+  }
   if (pc === cc) return { present: true, score: 1.0, detail: 'Prefers a campus setting like yours' };
   const i = CAMPUS_ORDER.indexOf(pc), j = CAMPUS_ORDER.indexOf(cc);
   if (i === -1 || j === -1) return { present: true, score: 0.4, detail: 'Different campus setting' };
@@ -273,46 +322,156 @@ function scoreDevelopment(p, c) {
 }
 
 // ============================================================
-// DIMENSIONS — single source of truth (order = display order)
+// CRITERIA — single source of truth (order = display order)
 // ============================================================
-const DIMENSIONS = [
-  { key: 'academic',    label: 'Academics',   weight: W.high,   score: scoreAcademic },
-  { key: 'level',       label: 'Level',       weight: W.high,   score: scoreLevel },
-  { key: 'major',       label: 'Major',       weight: W.medium, score: scoreMajor },
-  { key: 'geographic',  label: 'Location',    weight: W.medium, score: scoreGeographic },
-  { key: 'financial',   label: 'Financial',   weight: W.low,    score: scoreFinancial },
-  { key: 'environment', label: 'Campus',      weight: W.low,    score: scoreEnvironment },
-  { key: 'development', label: 'Development',  weight: W.low,    score: scoreDevelopment }
+// `parts`      : scored sub-dimensions; the criterion is present when >=1 part is.
+// `playerHas` / `coachHas`: cheap "did this side fill the section at all" probes,
+//                used ONLY to attribute an absent criterion to a side in the UI.
+//                They never affect the score — presence always comes from the
+//                scorers themselves.
+// `playerSection` / `coachSection`: the subtab name to send someone to.
+const CRITERIA = [
+  {
+    key: 'academics',
+    label: 'Academics',
+    weight: W.high,
+    playerSection: 'Academics',
+    coachSection: 'Admissions',
+    playerHas: (p) => num(p.gpa) != null || num(p.sat_score) != null || num(p.act_score) != null,
+    coachHas: (c) => num(c.admitted_gpa_min) != null || num(c.admitted_gpa_max) != null ||
+                     num(c.sat_min) != null || num(c.sat_max) != null ||
+                     num(c.act_min) != null || num(c.act_max) != null,
+    parts: [{ weight: 1, score: scoreAcademic }]
+  },
+  {
+    key: 'levelLocation',
+    label: 'Level & Location',
+    weight: W.high,
+    playerSection: 'Level & Location',
+    coachSection: 'Program & Location',
+    playerHas: (p) => arr(p.levels_open).length > 0 || arr(p.preferred_regions).length > 0 ||
+                      !!p.preferred_campus_setting,
+    coachHas: (c) => !!c.college_division || !!c.state || !!c.campus_setting,
+    parts: [
+      { weight: SUB.level,  score: scoreLevel },
+      { weight: SUB.region, score: scoreGeographic },
+      { weight: SUB.campus, score: scoreEnvironment }
+    ]
+  },
+  {
+    key: 'majorGoals',
+    label: 'Major & Goals',
+    weight: W.medium,
+    playerSection: 'Major & Goals',
+    coachSection: 'Academics & Majors',
+    // "What I'm looking for in a program" is free text and deliberately does NOT
+    // count — intended major is the only matchable field in this section.
+    playerHas: (p) => arr(p.intended_major).length > 0,
+    coachHas: (c) => arr(c.football_player_majors).length > 0 || arr(c.top_programs).length > 0,
+    parts: [{ weight: 1, score: scoreMajor }]
+  },
+  {
+    key: 'financial',
+    label: 'Financial Fit',
+    weight: W.low,
+    playerSection: 'Financial Fit',
+    coachSection: 'Cost & Aid',
+    playerHas: (p) => !!p.needs_financial_aid || !!p.needs_scholarship,
+    coachHas: (c) => !!c.offers_athletic_aid || !!c.aid_generosity || !!c.affordability_band,
+    parts: [{ weight: 1, score: scoreFinancial }]
+  },
+  {
+    key: 'priorities',
+    label: 'Priorities & Athletics',
+    weight: W.low,
+    playerSection: 'Priorities & Athletics',
+    coachSection: 'Scheme & Fit',
+    // Only the two sliders the development scorer pairs on — close-to-home and
+    // academics-vs-football have no coach counterpart yet.
+    playerHas: (p) => {
+      const fp = fitPrefs(p);
+      return num(fp.importance_playing_time) != null || num(fp.importance_competition_level) != null;
+    },
+    coachHas: (c) => num(fitPrefs(c).dev_vs_plug_and_play) != null,
+    parts: [{ weight: 1, score: scoreDevelopment }]
+  }
 ];
+
+// Back-compat alias — some callers/tests imported DIMENSIONS.
+const DIMENSIONS = CRITERIA;
+
+// Coach-perspective copy for a criterion that could not be scored. The AI Rep
+// rewords these player-side (SCHOOL_DIM_DETAIL in routes/ai-rep.js).
+function absentDetail(cr, missing) {
+  if (missing === 'coach') return `Add ${cr.coachSection} to your program profile to score this`;
+  if (missing === 'player') return `This player hasn’t filled in ${cr.playerSection} yet`;
+  if (missing === 'both') return 'Neither profile has this information yet';
+  return 'Not enough overlapping information yet';
+}
+
+// Which side is responsible for an absent criterion (for the UI only).
+function whoIsMissing(cr, player, coach) {
+  let pHas = false, cHas = false;
+  try { pHas = !!cr.playerHas(player); } catch (e) { pHas = false; }
+  try { cHas = !!cr.coachHas(coach); } catch (e) { cHas = false; }
+  if (!pHas && !cHas) return 'both';
+  if (!pHas) return 'player';
+  if (!cHas) return 'coach';
+  return null; // both filled something, but no part could be paired
+}
+
+// Evaluate one criterion: run its parts, weight-average the present ones.
+function evalCriterion(cr, player, coach) {
+  const results = cr.parts.map(pt => {
+    let r;
+    try { r = pt.score(player, coach) || { present: false }; }
+    catch (e) { r = { present: false }; }
+    return { weight: pt.weight, present: !!r.present, score: r.present ? clamp01(r.score) : null, detail: r.detail };
+  });
+
+  const present = results.filter(r => r.present);
+  if (!present.length) {
+    const missing = whoIsMissing(cr, player, coach);
+    return {
+      key: cr.key, label: cr.label, weight: cr.weight,
+      present: false, score: null, detail: absentDetail(cr, missing), missing
+    };
+  }
+
+  const wsum = present.reduce((a, r) => a + r.weight, 0);
+  const score = clamp01(present.reduce((a, r) => a + r.score * r.weight, 0) / wsum);
+  // Grouped criteria read out every part that scored, so a coach can see the
+  // level/region/campus breakdown behind one "Level & Location" row.
+  const detail = present.map(r => r.detail).filter(Boolean).join(' · ');
+  return {
+    key: cr.key, label: cr.label, weight: cr.weight,
+    present: true, score, detail, missing: null
+  };
+}
 
 // ============================================================
 // computeFit — the public entry point
 // ============================================================
 function computeFit(player, coach) {
+  const of = CRITERIA.length;
+
+  // No profile on one side at all: still return all five rows so the modal can
+  // explain itself rather than rendering an empty list.
   if (!player || !coach) {
-    return { score: null, tier: null, confidence: { n: 0, of: DIMENSIONS.length, label: 'No data' }, dimensions: [] };
+    const dims = CRITERIA.map(cr => ({
+      key: cr.key, label: cr.label, weight: cr.weight,
+      present: false, score: null, detail: absentDetail(cr, 'both'), missing: 'both'
+    }));
+    return { score: null, tier: null, confidence: { n: 0, of, label: `Based on 0 of ${of}` }, dimensions: dims };
   }
 
-  const dims = DIMENSIONS.map(d => {
-    let r;
-    try { r = d.score(player, coach) || { present: false }; }
-    catch (e) { r = { present: false }; }
-    return {
-      key: d.key,
-      label: d.label,
-      weight: d.weight,
-      present: !!r.present,
-      score: r.present ? clamp01(r.score) : null,
-      detail: r.present ? r.detail : null
-    };
-  });
+  const dims = CRITERIA.map(cr => evalCriterion(cr, player, coach));
 
   const present = dims.filter(d => d.present);
   const hasCore = present.some(d => CORE_KEYS.includes(d.key));
-  const of = DIMENSIONS.length;
 
-  // Floor: need >=MIN_DIMENSIONS present AND at least one core dimension.
-  if (present.length < MIN_DIMENSIONS || !hasCore) {
+  // Floor: need >=MIN_CRITERIA present AND at least one core criterion.
+  if (present.length < MIN_CRITERIA || !hasCore) {
     return {
       score: null,
       tier: null,
@@ -321,7 +480,7 @@ function computeFit(player, coach) {
     };
   }
 
-  // Weighted average over PRESENT dimensions only -> 0..1 -> 0..99.
+  // Weighted average over PRESENT criteria only -> 0..1 -> 0..99.
   const wsum = present.reduce((a, d) => a + d.weight, 0);
   const weighted = present.reduce((a, d) => a + d.score * d.weight, 0) / wsum;
   const score = Math.round(clamp01(weighted) * 99);
@@ -337,8 +496,9 @@ function computeFit(player, coach) {
 module.exports = {
   computeFit,
   tierOf,
-  DIMENSIONS,
+  CRITERIA,
+  DIMENSIONS, // back-compat alias for CRITERIA
   // exported for tests / future calibration
   _scorers: { scoreAcademic, scoreMajor, scoreLevel, scoreGeographic, scoreFinancial, scoreEnvironment, scoreDevelopment },
-  _config: { W, MIN_DIMENSIONS, CORE_KEYS }
+  _config: { W, SUB, MIN_CRITERIA, CORE_KEYS }
 };

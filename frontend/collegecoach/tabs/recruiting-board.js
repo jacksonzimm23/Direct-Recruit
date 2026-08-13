@@ -4988,8 +4988,10 @@ document.addEventListener('DOMContentLoaded', async function() {
         scoreEl.textContent = String(score) + (showPct ? '%' : '');
         if (tier) scoreEl.style.color = tier.color;
 
+        // Pass ALL FIVE criteria, including unscoreable ones — the modal renders
+        // those as muted "not rated" rows naming which side is missing data.
         const matches = (fit && Array.isArray(fit.dimensions))
-            ? fit.dimensions.filter(d => d.present).map(d => ({ label: d.label, detail: d.detail, score: d.score }))
+            ? fit.dimensions.map(d => ({ label: d.label, detail: d.detail, score: d.score, present: d.present }))
             : [];
 
         if (subEl) {

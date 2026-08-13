@@ -167,7 +167,9 @@
             schoolName: school.team_name,
             division: school.college_division,
             score: school.score,
-            matches: (school.dimensions || []).map(d => ({ label: d.label, detail: d.detail, score: d.score })),
+            // All five criteria, including unscoreable ones (present:false) so the
+            // modal shows the full picture rather than only what matched.
+            matches: (school.dimensions || []).map(d => ({ label: d.label, detail: d.detail, score: d.score, present: d.present })),
             staff: school.staff || [],
             coachCount: school.coachCount,
             coachHref: (username) =>

@@ -2624,7 +2624,8 @@ function renderSwitchPlayerFitFields() {
         <div class="switch-form-group">
             <label for="switchCampusSetting">Preferred campus setting${opt}</label>
             <select id="switchCampusSetting" class="form-input">
-                <option value="">No preference</option>
+                <option value="">Select Setting</option>
+                <option value="no-preference">No preference</option>
                 <option value="urban">Urban</option>
                 <option value="suburban">Suburban</option>
                 <option value="rural">Rural</option>

@@ -31,16 +31,24 @@
 
   // Fallback "what this player matches you on" rows, used only if a scored
   // player is opened without an explicit opts.matches array. Real calls pass the
-  // computed per-dimension matches. Each row: { label, detail }.
+  // computed per-criterion matches. Each row: { label, detail, score?, present? }.
+  // Labels mirror the five recruiting-profile criteria in backend/utils/fit-score.js
+  // (CRITERIA) — keep them in sync.
   var SAMPLE_MATCHES = [
-    { label: 'Academics',        detail: 'GPA falls within your typical admitted range' },
-    { label: 'Major',            detail: 'Interested in a major your program is strong in' },
-    { label: 'Test scores',      detail: 'SAT/ACT align with your admitted profile' },
-    { label: 'Level',            detail: 'Open to playing at your division' },
-    { label: 'Location',         detail: 'Open to playing in your recruiting region' },
-    { label: 'Campus setting',   detail: 'Prefers a campus environment like yours' },
-    { label: 'Financial fit',    detail: 'Aid needs line up with what your program offers' }
+    { label: 'Academics',              detail: 'GPA and test scores line up with your admitted profile' },
+    { label: 'Level & Location',       detail: 'Open to your division, region and campus setting' },
+    { label: 'Major & Goals',          detail: 'Interested in a major your program is strong in' },
+    { label: 'Financial Fit',          detail: 'Aid needs line up with what your program offers' },
+    { label: 'Priorities & Athletics', detail: 'Wants to be developed the way your program develops players' }
   ];
+
+  // The five criteria as unrated rows, for when no computed breakdown reached us
+  // (fetch failed, or a caller opened the modal without one).
+  function _unratedMatches() {
+    return SAMPLE_MATCHES.map(function (m) {
+      return { label: m.label, detail: 'Not enough information yet', present: false };
+    });
+  }
 
   function _esc(s) {
     var d = document.createElement('div');
@@ -62,28 +70,38 @@
     return '<div class="fim-key">' + rows + '</div>';
   }
 
-  // SVG path bodies for the three match-strength icons.
+  // SVG path bodies for the four match-strength icons.
   var _ICON_CHECK = '<polyline points="20 6 9 17 4 12"></polyline>';                 // strong (green)
   var _ICON_PARTIAL = '<circle cx="12" cy="12" r="9"></circle><line x1="8" y1="12" x2="16" y2="12"></line>'; // medium (yellow) ~
   var _ICON_X = '<line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>';     // weak (red)
+  var _ICON_DASH = '<line x1="5" y1="12" x2="19" y2="12"></line>';                    // not rated (grey)
 
-  // Flat green / yellow / red by score thirds. Each band has a distinct icon shape
-  // so it reads even without color. No score (e.g. sample data) -> green check.
+  // Flat green / yellow / red by score thirds, plus a grey dash for a criterion
+  // that could not be scored at all. Each band has a distinct icon shape so it
+  // reads even without color. No score on a PRESENT row (sample data) -> check.
   var _MATCH_GREEN = '#1f9d4d';
   var _MATCH_YELLOW = '#eab308';
   var _MATCH_RED = '#ef4444';
-  function _matchIcon(score) {
+  var _MATCH_GREY = 'rgba(254,252,251,0.4)';
+  function _matchIcon(score, present) {
+    if (present === false) return { path: _ICON_DASH, color: _MATCH_GREY };  // not rated
     if (score == null) return { path: _ICON_CHECK, color: _MATCH_GREEN };
     if (score >= 0.67) return { path: _ICON_CHECK, color: _MATCH_GREEN };   // strong
     if (score >= 0.34) return { path: _ICON_PARTIAL, color: _MATCH_YELLOW }; // medium
     return { path: _ICON_X, color: _MATCH_RED };                            // weak
   }
 
-  // Build the rows for the "what matches" list from [{label, detail, score?}].
+  // Build the rows for the "what matches" list from
+  // [{label, detail, score?, present?}]. ALL FIVE criteria are always rendered —
+  // a criterion with no data on one side shows a muted "not rated" row naming
+  // what is missing, never disappears (that read as a shorter match list).
+  // `present` defaults to true so legacy callers passing only {label, detail}
+  // keep working.
   function _matchRowsHTML(matches) {
     return matches.map(function (m) {
-      var ic = _matchIcon(m.score);
-      return '<div class="fim-match-row">' +
+      var absent = (m.present === false);
+      var ic = _matchIcon(m.score, m.present);
+      return '<div class="fim-match-row' + (absent ? ' fim-match-row--absent' : '') + '">' +
         '<svg class="fim-check" style="color:' + ic.color + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">' + ic.path + '</svg>' +
         '<div class="fim-match-text"><span class="fim-match-label">' + _esc(m.label) + '</span>' +
         '<span class="fim-match-detail">' + _esc(m.detail) + '</span></div>' +
@@ -101,7 +119,12 @@
   function _openPlayer(opts) {
     var score = (opts.score != null) ? opts.score : null;  // null => not enough data to rate
     var hasScore = (score != null);
-    var matches = (opts.matches && opts.matches.length) ? opts.matches : SAMPLE_MATCHES;
+    // Fall back to the all-green sample rows ONLY when there is a real score. With
+    // no score, sample rows would claim matches that were never computed, so show
+    // the five criteria as unrated instead.
+    var matches = (opts.matches && opts.matches.length)
+      ? opts.matches
+      : (hasScore ? SAMPLE_MATCHES : _unratedMatches());
     var tier = (_hasFit() && hasScore) ? FitDisplay.tierOf(score) : { color: '#1282a2', label: '' };
     var showPct = _hasFit() && FitDisplay.FIT_SHOW_PERCENT;
     var scoreText = (String(score) + (showPct ? '%' : ''));
@@ -134,17 +157,25 @@
         )
       : (
           // --- not-yet-rated empty state ---
+          // Still shows the full five-criterion breakdown, because the gap is very
+          // often the COACH's own program profile, not the player's. Blaming the
+          // player unconditionally sent coaches looking in the wrong place.
           '<div class="fim-noscore">' +
             '<div class="fim-noscore-icon">' +
               '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
               '<circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>' +
             '</div>' +
             '<div class="fim-noscore-title">Not enough profile information yet</div>' +
-            '<p class="fim-noscore-text">' + who + ' hasn’t filled out enough of their recruiting ' +
-            'profile (academics, intended major, the levels and locations they’re open to, ' +
-            'campus preference, and financial fit) for us to calculate an AI Match score for ' +
-            'your program. As they complete more of their profile, a score will appear here.</p>' +
-          '</div>'
+            '<p class="fim-noscore-text">An AI Match score needs at least three of the five ' +
+            'criteria below, including Academics or Level &amp; Location. Anything marked ' +
+            'below is waiting on information from one side or the other.</p>' +
+          '</div>' +
+
+          '<div class="fim-section-label">What this player matches you on</div>' +
+          '<div class="fim-matches">' + _matchRowsHTML(matches) + '</div>' +
+
+          '<p class="fim-disclaimer">AI Match is a guide to help surface best fit recruits. ' +
+          'It complements your own evaluation and never replaces it.</p>'
         );
 
     close(); // ensure only one
@@ -187,7 +218,7 @@
   // --- SCHOOL mode (player viewing a best-fit school) — Plan 7C, tabbed ---
   function _openSchool(opts) {
     var score = (opts.score != null) ? opts.score : null;
-    var matches = (opts.matches && opts.matches.length) ? opts.matches : [];
+    var matches = (opts.matches && opts.matches.length) ? opts.matches : _unratedMatches();
     var staff = opts.staff || [];
     var tier = (_hasFit() && score != null) ? FitDisplay.tierOf(score) : { color: '#1282a2', label: '' };
     var showPct = _hasFit() && FitDisplay.FIT_SHOW_PERCENT;

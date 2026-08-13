@@ -134,6 +134,17 @@ const MATCH_CONSTANTS = {
   // exact list so the campus-fit dimension compares like-to-like.
   CAMPUS_SETTINGS: ['urban', 'suburban', 'rural', 'small-town'],
 
+  // Player-ONLY extra value for preferred_campus_setting: an explicit "I'm open
+  // to any campus setting" answer. Deliberately NOT in CAMPUS_SETTINGS, because
+  // that list is shared with the coach's campus_setting and a real campus is
+  // never "no preference".
+  //
+  // Why it is a stored value rather than an empty string: the forms used to send
+  // "" for No preference, which is indistinguishable from never answering, so the
+  // profile rendered "—" and the fit engine skipped the campus comparison. Both
+  // are now distinct states: null = unanswered, 'no-preference' = answered.
+  NO_CAMPUS_PREFERENCE: 'no-preference',
+
   // Player levels_open (TEXT[]) — matched against coach college_division.
   LEVELS: ['D1 FBS', 'D1 FCS', 'D2', 'D3', 'NAIA', 'NJCAA'],
 
@@ -184,6 +195,13 @@ module.exports = MATCH_CONSTANTS;
 const VALID_MAJORS = new Set(MATCH_CONSTANTS.MAJOR_GROUPS.flatMap(g => g.majors));
 const VALID_REGIONS = new Set(MATCH_CONSTANTS.REGIONS);
 const VALID_CAMPUS_SETTINGS = new Set(MATCH_CONSTANTS.CAMPUS_SETTINGS);
+// Player preferred_campus_setting allowlist = the four real settings PLUS the
+// explicit "no preference" answer. Validate the PLAYER field with this one and
+// the COACH's campus_setting with VALID_CAMPUS_SETTINGS above.
+const VALID_PLAYER_CAMPUS_PREFERENCES = new Set([
+  ...MATCH_CONSTANTS.CAMPUS_SETTINGS,
+  MATCH_CONSTANTS.NO_CAMPUS_PREFERENCE
+]);
 const VALID_LEVELS = new Set(MATCH_CONSTANTS.LEVELS);
 const VALID_YES_NO_UNSURE = new Set(MATCH_CONSTANTS.YES_NO_UNSURE);
 const VALID_AFFORDABILITY_BANDS = new Set(MATCH_CONSTANTS.AFFORDABILITY_BANDS);
@@ -200,6 +218,7 @@ const VALID_SCHEMES_DEFENSE = new Set(MATCH_CONSTANTS.SCHEMES_DEFENSE);
 module.exports.VALID_MAJORS = VALID_MAJORS;
 module.exports.VALID_REGIONS = VALID_REGIONS;
 module.exports.VALID_CAMPUS_SETTINGS = VALID_CAMPUS_SETTINGS;
+module.exports.VALID_PLAYER_CAMPUS_PREFERENCES = VALID_PLAYER_CAMPUS_PREFERENCES;
 module.exports.VALID_LEVELS = VALID_LEVELS;
 module.exports.VALID_YES_NO_UNSURE = VALID_YES_NO_UNSURE;
 module.exports.VALID_AFFORDABILITY_BANDS = VALID_AFFORDABILITY_BANDS;

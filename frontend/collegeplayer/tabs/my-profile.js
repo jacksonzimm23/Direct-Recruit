@@ -9357,6 +9357,23 @@ function rpTitleCase(value) {
     return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
+// Display labels for preferred_campus_setting. rpTitleCase would render the
+// stored hyphenated values as 'No-preference' / 'Small-town'; this keeps the
+// read-only view reading exactly like the option the player picked.
+// null/'' still falls through to the '—' empty state (never answered), which is
+// a different thing from an explicit 'no-preference' answer.
+const RP_CAMPUS_LABELS = {
+    'no-preference': 'No preference',
+    'urban': 'Urban',
+    'suburban': 'Suburban',
+    'rural': 'Rural',
+    'small-town': 'Small town'
+};
+function rpCampusLabel(value) {
+    if (value == null || value === '') return value;
+    return RP_CAMPUS_LABELS[value] || rpTitleCase(value);
+}
+
 // Coach-only AI Match score on the recruiting-profile banner. PLAN 6 = placeholder
 // (number only, no fill bar) + fit rating (Strong/Good/...) + ⓘ button that opens
 // the AI Match explainer modal. Plan 7 swaps FitDisplay.PLACEHOLDER_SCORE for the
@@ -9385,8 +9402,10 @@ async function renderMatchScore(viewerCoachProfile, playerProfile) {
     if (tier) scoreEl.style.color = tier.color;
 
     // Match details for the modal, from the present dimensions only.
+    // Pass ALL FIVE criteria, including unscoreable ones — the modal renders those
+    // as muted "not rated" rows naming which side is missing data.
     const matches = (fit && Array.isArray(fit.dimensions))
-        ? fit.dimensions.filter(d => d.present).map(d => ({ label: d.label, detail: d.detail, score: d.score }))
+        ? fit.dimensions.map(d => ({ label: d.label, detail: d.detail, score: d.score, present: d.present }))
         : null;
 
     // Subtitle: fit rating + info button (replaces the old "coming soon" text)
@@ -9438,7 +9457,7 @@ function populateRecruitingProfile(profile) {
     // Level & Location
     rpRenderTags('rpLevelsOpen', profile.levels_open);
     rpRenderTags('rpPreferredRegions', profile.preferred_regions);
-    rpSetText('rpCampusSetting', rpTitleCase(profile.preferred_campus_setting));
+    rpSetText('rpCampusSetting', rpCampusLabel(profile.preferred_campus_setting));
 
     // Priorities (sliders → "N / 5")
     const slider = (v) => (v == null || v === '') ? '—' : `${v} / 5`;

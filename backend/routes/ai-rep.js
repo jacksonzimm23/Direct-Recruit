@@ -5,7 +5,7 @@ const pool = require('../config/database');
 const User = require('../models/User'); // used by the AI Rep subscription gate (getSubscriptionInfo)
 const PlayerProfile = require('../models/PlayerProfile');
 const CoachProfile = require('../models/CoachProfile');
-const { computeFit, tierOf } = require('../utils/fit-score');
+const { computeFit, tierOf, CRITERIA } = require('../utils/fit-score');
 const { getSignedS3Url } = require('../utils/s3');
 const logger = require('../utils/logger');
 
@@ -185,58 +185,67 @@ router.get('/search-appearances', async (req, res) => {
   }
 });
 
-// Per-dimension detail copy, reworded school→player (privacy-safe: no thresholds/PII).
+// Per-criterion detail copy, reworded school→player (privacy-safe: no thresholds/PII).
 // SCORE-DEPENDENT so the words match the match-strength icon the modal draws from
 // the same score (green >=0.67, yellow >=0.34, red <0.34 — see fit-info-modal.js
-// _matchIcon). Mirrors the three coach-side tiers in fit-score.js, reworded for the
-// player. Keyed by the fit-score DIMENSIONS keys; each key has { strong, medium, weak }.
+// _matchIcon). Mirrors the coach-side tiers in fit-score.js, reworded for the
+// player. Keyed by the fit-score CRITERIA keys (the five recruiting-profile
+// sections); each key has { strong, medium, weak } plus the two absent variants.
 // Thresholds below are aligned to the modal's icon bands so text never contradicts
 // the icon (e.g. a red X no longer reads "Their aid can meet your financial needs").
 const SCHOOL_DIM_DETAIL = {
-  academic: {
+  academics: {
     strong: 'Your academics fit this program’s profile',
     medium: 'Your academics are near their admitted range',
-    weak:   'Your academics are below their typical admitted range'
+    weak:   'Your academics are below their typical admitted range',
+    needPlayer: 'Add your Academics to compare this',
+    needSchool: 'This program hasn’t shared their admissions profile yet'
   },
-  level: {
-    strong: 'Recruits at the level you’re open to',
-    medium: 'Recruits at the level you’re open to',
-    weak:   'Not currently recruiting at your level'
+  levelLocation: {
+    strong: 'Recruits at your level, in a region and campus setting you’re open to',
+    medium: 'Partly matches the level, region or campus setting you want',
+    weak:   'Level, region or campus setting is different from what you want',
+    needPlayer: 'Add your Level & Location preferences to compare this',
+    needSchool: 'This program hasn’t shared their location profile yet'
   },
-  major: {
+  majorGoals: {
     strong: 'They’re strong in your intended major',
     medium: 'They support your intended major',
-    weak:   'Your intended major is outside their highlighted programs'
-  },
-  geographic: {
-    strong: 'Located in a region you’re open to',
-    medium: 'Outside your top regions, but they recruit nationally',
-    weak:   'Located outside the regions you prefer'
+    weak:   'Your intended major is outside their highlighted programs',
+    needPlayer: 'Add your intended major to compare this',
+    needSchool: 'This program hasn’t shared their academic programs yet'
   },
   financial: {
     strong: 'Their aid can meet your financial needs',
     medium: 'Some overlap on your financial needs',
-    weak:   'Their aid may not meet your financial needs'
+    weak:   'Their aid may not meet your financial needs',
+    needPlayer: 'Add your Financial Fit answers to compare this',
+    needSchool: 'This program hasn’t shared their cost and aid info yet'
   },
-  environment: {
-    strong: 'Campus setting matches your preference',
-    medium: 'Campus setting is close to your preference',
-    weak:   'Different campus setting than you prefer'
-  },
-  development: {
+  priorities: {
     strong: 'Their development approach fits how you want to be used',
     medium: 'Their development approach is a partial fit',
-    weak:   'Their development approach is a partial fit'
+    weak:   'Their development approach is a partial fit',
+    needPlayer: 'Rate your Priorities to compare this',
+    needSchool: 'This program hasn’t shared how they develop players yet'
   }
 };
 
-// Pick the tiered detail string for a dimension by its averaged score (0–1).
+// Pick the tiered detail string for a criterion by its averaged score (0–1).
 // Bands MUST match fit-info-modal.js _matchIcon() so the copy agrees with the icon.
 function schoolDimDetail(key, score) {
   const tiers = SCHOOL_DIM_DETAIL[key];
   if (!tiers) return null;
   const band = score >= 0.67 ? 'strong' : score >= 0.34 ? 'medium' : 'weak';
   return tiers[band];
+}
+
+// Copy for a criterion no coach at this school could score. `playerMissing` is a
+// property of the player, so it is identical across every coach at the school.
+function schoolAbsentDetail(key, playerMissing) {
+  const tiers = SCHOOL_DIM_DETAIL[key];
+  if (!tiers) return 'Not enough information yet';
+  return playerMissing ? tiers.needPlayer : tiers.needSchool;
 }
 
 // ============ GET /api/ai-rep/best-fit-schools ============
@@ -287,25 +296,41 @@ router.get('/best-fit-schools', async (req, res) => {
       }
       const college_division = Object.entries(divCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || null;
 
-      // Merge dimensions: average score across coaches where each dim is present.
-      const dimAgg = new Map(); // key -> { label, sum, n }
+      // Merge criteria: average score across coaches where each criterion is
+      // present. ALL FIVE are emitted in CRITERIA order, including ones no coach
+      // at this school could score — those come back present:false so the school
+      // modal shows a complete 5-of-5 picture instead of a short list.
+      const dimAgg = new Map(); // key -> { sum, n, playerMissing }
       for (const e of entries) {
         for (const d of e.fit.dimensions) {
-          if (!d.present) continue;
-          if (!dimAgg.has(d.key)) dimAgg.set(d.key, { label: d.label, sum: 0, n: 0 });
+          if (!dimAgg.has(d.key)) dimAgg.set(d.key, { sum: 0, n: 0, playerMissing: false });
           const agg = dimAgg.get(d.key);
-          agg.sum += d.score;
-          agg.n += 1;
+          if (d.present) {
+            agg.sum += d.score;
+            agg.n += 1;
+          } else if (d.missing === 'player' || d.missing === 'both') {
+            agg.playerMissing = true;
+          }
         }
       }
-      const dimensions = [...dimAgg.entries()].map(([key, agg]) => {
+      const dimensions = CRITERIA.map(cr => {
+        const agg = dimAgg.get(cr.key);
+        if (!agg || agg.n === 0) {
+          return {
+            key: cr.key,
+            label: cr.label,
+            present: false,
+            score: null,
+            detail: schoolAbsentDetail(cr.key, !!(agg && agg.playerMissing))
+          };
+        }
         const score = agg.sum / agg.n;
         return {
-          key,
-          label: agg.label,
+          key: cr.key,
+          label: cr.label,
           present: true,
           score,
-          detail: schoolDimDetail(key, score) || agg.label
+          detail: schoolDimDetail(cr.key, score) || cr.label
         };
       });
 

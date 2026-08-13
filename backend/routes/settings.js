@@ -1853,7 +1853,8 @@ function validateFitFieldsForType(targetType, data) {
       inAllowlist(data.needs_scholarship, MATCH.VALID_YES_NO_UNSURE, 'scholarship option') ||
       inAllowlist(data.levels_open, MATCH.VALID_LEVELS, 'level') ||
       inAllowlist(data.preferred_regions, MATCH.VALID_REGIONS, 'region') ||
-      inAllowlist(data.preferred_campus_setting, MATCH.VALID_CAMPUS_SETTINGS, 'campus setting');
+      // Player field: allows the explicit 'no-preference' answer too.
+      inAllowlist(data.preferred_campus_setting, MATCH.VALID_PLAYER_CAMPUS_PREFERENCES, 'campus setting');
     if (err) return err;
     const fp = data.fit_preferences;
     if (fp != null) {
