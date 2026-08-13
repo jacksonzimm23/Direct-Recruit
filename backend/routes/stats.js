@@ -104,6 +104,15 @@ router.put('/:gameId', authMiddleware, validateUUID('gameId'), async (req, res) 
       return res.status(400).json({ error: 'Game date is required' });
     }
 
+    // Same guard POST has always had. Without it, PlayerGameStats.update deletes
+    // the existing stat rows and then only conditionally re-inserts, leaving a
+    // game row with zero stats attached — a shape nothing else in the app can
+    // produce and which the AI context builder has to special-case. To clear a
+    // game entirely, use the delete endpoint.
+    if (!positions || Object.keys(positions).length === 0) {
+      return res.status(400).json({ error: 'At least one position with stats is required' });
+    }
+
     const game = await PlayerGameStats.update(req.userId, req.params.gameId, {
       game_date,
       season_year,
