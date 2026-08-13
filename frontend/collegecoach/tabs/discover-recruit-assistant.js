@@ -270,20 +270,74 @@ document.addEventListener('DOMContentLoaded', function() {
         if (h > 0) document.documentElement.style.setProperty('--ai-input-h', h + 'px');
     }
 
-    function scrollToBottom() {
+    function pinBottom() {
         messagesContainer.scrollTop = messagesContainer.scrollHeight;
-        // iOS app only: avatars and school logos finish loading AFTER this first
-        // jump and grow the list, so the view ends up short of the real bottom.
-        // Re-pin next frame, as each late image lands, and once after layout
-        // settles. Desktop keeps the original single jump.
-        if (!isIOSApp) return;
-        const pin = () => { messagesContainer.scrollTop = messagesContainer.scrollHeight; };
-        requestAnimationFrame(pin);
-        messagesContainer.querySelectorAll('img').forEach(img => {
-            if (!img.complete) img.addEventListener('load', pin, { once: true });
-        });
-        setTimeout(pin, 250);
     }
+
+    // Runs a scroll adjustment now, then again as the layout settles. iOS app only:
+    // avatars and school logos finish loading AFTER the first jump and grow the list,
+    // so a single call lands short. Desktop keeps the original one-shot behavior.
+    function settle(fn) {
+        fn();
+        if (!isIOSApp) return;
+        requestAnimationFrame(fn);
+        messagesContainer.querySelectorAll('img').forEach(img => {
+            if (!img.complete) img.addEventListener('load', fn, { once: true });
+        });
+        setTimeout(fn, 250);
+    }
+
+    function scrollToBottom() {
+        settle(pinBottom);
+    }
+
+    // Puts `el`'s top edge at the top of the visible list. Used when a reply lands so
+    // the coach reads DOWN through the player cards instead of landing on the last one.
+    // Short replies can't scroll that far — the browser clamps, which degrades to
+    // "bottom", exactly what we want.
+    function alignToTop(el) {
+        if (!el) return;
+        const delta = el.getBoundingClientRect().top - messagesContainer.getBoundingClientRect().top;
+        messagesContainer.scrollTop += delta - 10;
+    }
+
+    // Where the view lands once a reply has rendered. iOS app: top of the reply.
+    // Web/desktop: unchanged — bottom of the list, exactly as before.
+    function landOnReply(el) {
+        if (isIOSApp) settle(() => alignToTop(el));
+        else scrollToBottom();
+    }
+
+    // "Sticky" mode: while a request is in flight the list is re-pinned to the bottom
+    // on every DOM change, so the typing indicator is visible the whole time no matter
+    // when layout settles. The old code fired a fixed set of one-shot pins (rAF + 250ms)
+    // and silently lost the scroll whenever the layout finished outside those windows.
+    // iOS app only — desktop never had the problem.
+    let stickyOn = false;
+    let stickyObserver = null;
+
+    function startSticky() {
+        if (!isIOSApp || !window.MutationObserver) return;
+        stickyOn = true;
+        if (!stickyObserver) {
+            stickyObserver = new MutationObserver(() => { if (stickyOn) pinBottom(); });
+        }
+        stickyObserver.observe(messagesContainer, { childList: true, subtree: true });
+    }
+
+    function stopSticky() {
+        stickyOn = false;
+        if (stickyObserver) stickyObserver.disconnect();
+    }
+
+    // Let the coach scroll back through the conversation while waiting — any manual
+    // scroll more than ~120px clear of the bottom releases the pin. Our own pinBottom()
+    // leaves the distance at ~0, so it never cancels itself.
+    messagesContainer.addEventListener('scroll', () => {
+        if (!stickyOn) return;
+        const fromBottom = messagesContainer.scrollHeight - messagesContainer.scrollTop - messagesContainer.clientHeight;
+        if (fromBottom > 120) stopSticky();
+    }, { passive: true });
 
     // ========================
     // MESSAGING
@@ -326,6 +380,7 @@ document.addEventListener('DOMContentLoaded', function() {
         userDiv.textContent = text;
         messagesContainer.appendChild(userDiv);
         scrollToBottom();
+        startSticky(); // keep the view glued to the bottom until the reply renders
 
         input.value = '';
         input.style.height = 'auto';
@@ -375,13 +430,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 batchCheckSavedPlayers(cardsContainer);
             }
 
-            scrollToBottom();
+            // Cards are in the DOM now — release the bottom pin and land on the top of
+            // the reply instead, so the coach reads down through the results. settle()
+            // re-runs it as avatars/school logos load and change the cards' height.
+            stopSticky();
+            landOnReply(aiDiv);
 
             // Refresh the chat list to update title/order
             loadChats();
 
         } catch (error) {
             removeTyping();
+            stopSticky();
             const errorDiv = document.createElement('div');
             errorDiv.className = 'ra-msg assistant error';
             errorDiv.textContent = 'Sorry, something went wrong. Please try again.';
@@ -389,6 +449,7 @@ document.addEventListener('DOMContentLoaded', function() {
             scrollToBottom();
         }
 
+        stopSticky(); // safety net — never leave the observer attached
         isSending = false;
     }
 

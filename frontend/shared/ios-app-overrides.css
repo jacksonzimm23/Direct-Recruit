@@ -132,6 +132,18 @@ html.ios-app body { background-color: inherit; }
     .ios-app .main-content:has(.tp-tab-content.active .pi-layout) {
         top: calc(50px + env(safe-area-inset-top, 0px)) !important;
         bottom: 0 !important;
+        /* min-height MUST be killed here. The generic rule above
+           (.ios-app .main-content:not(.recruiting-board-main):not(.messages-content),
+           specificity 0,4,0) sets min-height: calc(100dvh - 76px) for normal scrolling
+           pages, and it beat mobile-overrides.css's `min-height: unset` (also 0,4,0,
+           earlier file). On this fixed panel the space between top and bottom:0 is only
+           100dvh - 50 - safe-area-top, so that min-height stretched the box PAST the
+           viewport bottom by (safe-area-top - 26px) — 33px on a notched iPhone. The
+           box's padding-bottom:76px then landed 33px too low, putting the last 33px of
+           the message list under the pinned input area where no scrolling could reach
+           it (measured: dots clipped by ~17px after the +1rem reserve). This selector
+           is 0,5,0 (:has() contributes its most specific argument) so it wins. */
+        min-height: 0 !important;
     }
 
     /* INPUT AREA — pin directly to the viewport bottom, ABOVE the 76px bottom nav.
