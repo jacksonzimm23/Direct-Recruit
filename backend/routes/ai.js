@@ -77,6 +77,85 @@ function stripUnrequestedFilters(filters, rawQuery) {
   return stripped;
 }
 
+// ---- Player context for follow-up questions ----
+// Whatever these emit is the ONLY grounding Claude has when a coach asks a
+// follow-up like "what are his stats?". The old builders appended a field only
+// when it was truthy, so an empty profile field produced NO line at all — and a
+// missing line is indistinguishable from "left out of this summary". Claude
+// filled the silence: on prod it answered "what are his stats" with the example
+// numbers copied verbatim out of the prompt's stats-table layout, and "what are
+// his offers" with four invented FBS programs, for a player whose profile has
+// neither. Absence is now stated outright for the fields coaches actually ask
+// about, so there is a fact to report instead of a gap to fill.
+const NOT_ON_FILE = 'none on file';
+
+// Header distinguishes the two cases the assistant must NOT conflate:
+// a field marked "none on file" is genuinely empty on the player's profile,
+// whereas a field simply not present here may still exist on the full profile —
+// these summaries are a subset. Claiming the first when it's really the second
+// would just be a different fabrication.
+const PLAYER_CONTEXT_HEADER =
+  '[Players shown to coach. Fields marked "' + NOT_ON_FILE + '" are genuinely empty on that ' +
+  "player's profile — say so plainly. Attributes not listed at all are ones you simply do not " +
+  'have here; do not guess them, tell the coach to open the full profile. Never invent a value ' +
+  'for either case:';
+
+function formatStatsForContext(stats) {
+  if (!Array.isArray(stats) || stats.length === 0) return null;
+  return stats.map(g => {
+    const label = g.season_year === 0 ? 'Career Totals'
+      : g.season_year === -1 ? 'Last Season'
+      : `${g.season_year} Season`;
+    const opponent = g.opponent ? ` vs ${g.opponent}` : '';
+    const result = g.result ? ` (${g.result})` : '';
+    const posStats = (g.position_stats || []).map(ps => {
+      const statEntries = Object.entries(ps.stats || {}).map(([k, v]) => `${k}: ${v}`).join(', ');
+      return `${ps.position}: ${statEntries}`;
+    }).join('; ');
+    return `  ${label}${opponent}${result} — ${posStats}`;
+  }).join('\n');
+}
+
+// Renders ONE player. `alwaysShow` fields are emitted even when empty, because
+// those are the ones coaches ask about directly and where silence caused
+// fabrication in production.
+function formatPlayerForContext(p) {
+  const parts = [`${p.first_name || ''} ${p.last_name || ''}`.trim() || 'Unknown player'];
+  if (p.position) parts.push(`Position: ${p.position}`);
+  if (p.height) parts.push(`Height: ${p.height}`);
+  if (p.weight) parts.push(`Weight: ${p.weight} lbs`);
+  if (p.state && p.transfer === 'y') parts.push(`State (college location): ${p.state}`);
+  else if (p.state) parts.push(`Home State: ${p.state}`);
+  if (p.team_name) parts.push(`School: ${p.team_name}`);
+  if (p.college_division) parts.push(`Division: ${p.college_division}`);
+  if (p.eligibility) parts.push(`Eligibility: ${p.eligibility} year(s)`);
+  if (p.graduation_year) parts.push(`Class of ${p.graduation_year}`);
+  if (p.username) parts.push(`Username: ${p.username}`);
+
+  // Always emitted, empty or not — these are the high-risk asks.
+  parts.push(`GPA: ${p.gpa != null && p.gpa !== '' ? p.gpa : NOT_ON_FILE}`);
+  parts.push(`SAT: ${p.sat_score != null ? p.sat_score : NOT_ON_FILE}`);
+  parts.push(`ACT: ${p.act_score != null ? p.act_score : NOT_ON_FILE}`);
+  if (p.transfer === 'y') {
+    parts.push(`PFF grade: ${p.pff_grade != null ? p.pff_grade : NOT_ON_FILE}`);
+  }
+
+  const offerList = p.offers ? String(p.offers).split('|').map(o => o.trim()).filter(Boolean) : [];
+  parts.push(offerList.length
+    ? `Offers (${offerList.length}): ${offerList.join(', ')}`
+    : `Offers: ${NOT_ON_FILE}`);
+
+  const statsBlock = formatStatsForContext(p.stats);
+  parts.push(statsBlock ? `\nStats:\n${statsBlock}` : `Stats: ${NOT_ON_FILE} (this player has not entered any game stats)`);
+
+  return parts.join(', ');
+}
+
+function buildPlayerContextBlock(players) {
+  if (!Array.isArray(players) || players.length === 0) return '';
+  return `\n\n${PLAYER_CONTEXT_HEADER}\n${players.map(formatPlayerForContext).join('\n\n')}]`;
+}
+
 // Helper: extract active filter names from a filters object for analytics
 function extractActiveFilters(filters) {
   const active = [];
@@ -377,50 +456,13 @@ router.post('/chats/:chatId/message', validateUUID('chatId'), async (req, res) =
       await AiChat.updateTitle(chatId, req.userId, title);
     }
 
-    // 5. Build conversation history for Claude (include player context from metadata)
+    // 5. Build conversation history for Claude (include player context from metadata).
+    // buildPlayerContextBlock states empty fields outright instead of omitting them —
+    // see the comment on that helper for the fabrication bug this prevents.
     const conversationHistory = chat.messages.map(m => {
       let content = m.content;
-      // For assistant messages that returned players, append player details as context
       if (m.role === 'assistant' && m.metadata && m.metadata.players && m.metadata.players.length > 0) {
-        const playerSummaries = m.metadata.players.map(p => {
-          const parts = [`${p.first_name} ${p.last_name}`];
-          if (p.position) parts.push(`Position: ${p.position}`);
-          if (p.height) parts.push(`Height: ${p.height}`);
-          if (p.weight) parts.push(`Weight: ${p.weight} lbs`);
-          if (p.gpa) parts.push(`GPA: ${p.gpa}`);
-          if (p.state && p.transfer === 'y') {
-            parts.push(`State (college location): ${p.state}`);
-          } else if (p.state) {
-            parts.push(`Home State: ${p.state}`);
-          }
-          if (p.team_name) parts.push(`School: ${p.team_name}`);
-          if (p.college_division) parts.push(`Division: ${p.college_division}`);
-          if (p.eligibility) parts.push(`Eligibility: ${p.eligibility} year(s)`);
-          if (p.graduation_year) parts.push(`Class of ${p.graduation_year}`);
-          if (p.offers) {
-            const offerList = p.offers.split('|').map(o => o.trim()).filter(Boolean);
-            parts.push(`Offers (${offerList.length}): ${offerList.join(', ')}`);
-          }
-          if (p.username) parts.push(`Username: ${p.username}`);
-
-          // Include stats if available
-          if (p.stats && p.stats.length > 0) {
-            const statsLines = p.stats.map(g => {
-              const label = g.season_year === 0 ? 'Career Totals' : g.season_year === -1 ? 'Last Season' : `${g.season_year} Season`;
-              const opponent = g.opponent ? ` vs ${g.opponent}` : '';
-              const result = g.result ? ` (${g.result})` : '';
-              const posStats = g.position_stats.map(ps => {
-                const statEntries = Object.entries(ps.stats || {}).map(([k, v]) => `${k}: ${v}`).join(', ');
-                return `${ps.position}: ${statEntries}`;
-              }).join('; ');
-              return `  ${label}${opponent}${result} — ${posStats}`;
-            }).join('\n');
-            parts.push(`\nStats:\n${statsLines}`);
-          }
-
-          return parts.join(', ');
-        }).join('\n\n');
-        content += `\n\n[Players shown to coach:\n${playerSummaries}]`;
+        content += buildPlayerContextBlock(m.metadata.players);
       }
       return { role: m.role, content };
     });
@@ -494,6 +536,12 @@ router.post('/chats/:chatId/message', validateUUID('chatId'), async (req, res) =
         graduation_year: p.graduation_year,
         transfer: p.transfer,
         offers: p.offers || null,
+        // Persisted so a follow-up ("what's his SAT?") is answerable from context
+        // instead of guessed. null here renders as "none on file", which is a fact
+        // the assistant can state — unlike an absent key, which is just a gap.
+        sat_score: p.sat_score != null ? p.sat_score : null,
+        act_score: p.act_score != null ? p.act_score : null,
+        pff_grade: p.pff_grade != null ? p.pff_grade : null,
         relevance_score: p.relevance_score || null,
         fit_score: p.fit ? p.fit.score : null
       };
@@ -642,7 +690,13 @@ router.post('/chats/:chatId/pi-message', validateUUID('chatId'), async (req, res
           if (p.college_division) parts.push(`Division: ${p.college_division}`);
           if (p.height) parts.push(`Height: ${p.height}`);
           if (p.weight) parts.push(`Weight: ${p.weight} lbs`);
-          if (p.gpa) parts.push(`GPA: ${p.gpa}`);
+          // Stated rather than omitted, so an empty GPA is a reportable fact
+          // instead of a silent gap the model fills in (see buildPlayerContextBlock).
+          parts.push(`GPA: ${p.gpa != null && p.gpa !== '' ? p.gpa : NOT_ON_FILE}`);
+          // Portal Intelligence never loads game stats or offers, so say so
+          // explicitly — otherwise "what are his stats?" has nothing to anchor on
+          // and gets answered from imagination, exactly as it did in the RA.
+          parts.push('Game stats and offers: not available in Portal Intelligence — tell the coach to open the full profile for those');
           if (p.signal_types) parts.push(`Signals: ${p.signal_types.join(', ')}`);
           if (p.signal_details) {
             if (p.signal_details.portal_keywords) {
@@ -685,7 +739,7 @@ router.post('/chats/:chatId/pi-message', validateUUID('chatId'), async (req, res
           }
           return parts.join(', ');
         }).join('\n\n');
-        content += `\n\n[Flagged players shown:\n${playerSummaries}]`;
+        content += `\n\n${PLAYER_CONTEXT_HEADER.replace('[Players shown to coach.', '[Flagged players shown.')}\n${playerSummaries}]`;
       }
       return { role: m.role, content };
     });
@@ -866,6 +920,13 @@ router.post('/chats/:chatId/show-more', validateUUID('chatId'), async (req, res)
           state: p.state, team_name: p.team_name, college_division: p.college_division,
           eligibility: p.eligibility, graduation_year: p.graduation_year,
           transfer: p.transfer, relevance_score: p.relevance_score || null,
+          // Match the main handler's summary shape exactly. show-more previously
+          // dropped `offers` entirely, so a player from page 2 had no offer data in
+          // context at all and a follow-up about offers had nothing to stand on.
+          offers: p.offers || null,
+          sat_score: p.sat_score != null ? p.sat_score : null,
+          act_score: p.act_score != null ? p.act_score : null,
+          pff_grade: p.pff_grade != null ? p.pff_grade : null,
           fit_score: p.fit ? p.fit.score : null
         };
         try {
@@ -1090,3 +1151,5 @@ router.delete('/saved', async (req, res) => {
 module.exports = router;
 // Exported for testing (same pattern as paymentsRoutes.webhookHandler).
 module.exports.stripUnrequestedFilters = stripUnrequestedFilters;
+module.exports.buildPlayerContextBlock = buildPlayerContextBlock;
+module.exports.formatPlayerForContext = formatPlayerForContext;
