@@ -7,6 +7,7 @@ const { wrapUserMessage, validatePiResponse, stripHtml } = require('./ai');
 const MATCH = require('./match-constants');
 // Single source of truth for the block markers (see utils/ai-context.js).
 const { PI_BLOCK_OPEN, PLAYER_TEXT_OPEN, PLAYER_TEXT_CLOSE } = require('./ai-context');
+const { parseAiJsonReply, looksLikeCode } = require('./ai-reply-parse');
 
 const piClient = new Anthropic({
   apiKey: process.env.ANTHROPIC_PI_API_KEY,
@@ -170,6 +171,27 @@ You have full context within each chat conversation. Previous assistant messages
 If the coach sends a greeting, general question, or off-topic message:
 {"signal_filters": null, "summary": null, "message": "Your friendly conversational response here"}
 
+## Message Length — KEEP IT SHORT
+Coaches read this on a phone between meetings. The "message" field is a chat
+reply, not documentation.
+
+- HARD CAP: 60 words. Most replies should be 1-2 sentences.
+- "What can you do" / "how does this work" -> 2 sentences MAX, then ONE short
+  example query they can tap out. Do not enumerate the three signals, do not
+  explain the methodology, do not write multi-paragraph overviews. If they want
+  the detail they will ask a follow-up.
+- When you ARE returning players, the cards speak for themselves — one sentence
+  of framing is plenty.
+- No headings, no bullet lists, no numbered lists, no bold, no markdown of any
+  kind. Plain sentences only.
+- Never use a backslash as a line break or as punctuation. Write ordinary
+  sentences with normal spaces.
+
+GOOD: "I flag college players showing early signs they may enter the portal, so
+you can build the relationship first. Try: 'D2 receivers with recent film updates'."
+
+BAD: a paragraph explaining each of the three signals in turn.
+
 ## Scope Limitations
 You can ONLY help with portal intelligence — detecting early signs that college players might be considering the transfer portal, so coaches can get them on their radar BEFORE they enter. You CANNOT:
 - Search for players already in the portal (that's the "Current Portal" tab)
@@ -229,25 +251,27 @@ async function getPortalIntelligence(messages, coachState, coachDivision) {
     latency_ms: latencyMs
   };
 
-  // Parse + validate Claude's JSON response. Failed validation falls back to
-  // a stripped conversational message rather than 500'ing or persisting junk.
-  let parsed = null;
-  try {
-    parsed = JSON.parse(text);
-  } catch (e) {
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (jsonMatch) {
-      try { parsed = JSON.parse(jsonMatch[0]); } catch (e2) { /* fall through */ }
-    }
-  }
+  // Parse + validate Claude's JSON response. Tolerates code fences, surrounding
+  // prose, and the bare "\" Claude sometimes uses as a paragraph break inside a
+  // string (which makes the whole object unparseable). See utils/ai-reply-parse.js.
+  const { parsed, message: salvaged } = parseAiJsonReply(text);
 
   const validated = parsed ? validatePiResponse(parsed) : null;
   if (!validated) {
+    // NEVER fall back to the raw model text: when it is JSON or a code fence that
+    // dumped ```json { "signal_filters": null, ... } into the coach's chat.
+    // parseAiJsonReply returns prose or nothing, so this line is always clean.
+    // A reply whose FILTERS were invalid can still carry a perfectly good
+    // sentence, so prefer that over the generic apology.
+    const candidate = salvaged
+      || (parsed && typeof parsed.message === 'string' ? parsed.message : null);
+    const clean = candidate ? stripHtml(candidate) : null;
     return {
       signal_filters: null,
       summary: null,
       reasoning: null,
-      message: stripHtml(text) || "I'm having trouble understanding that. Try rephrasing?",
+      message: (clean && !looksLikeCode(clean) ? clean : null)
+        || "I'm having trouble understanding that. Try rephrasing?",
       _meta,
     };
   }

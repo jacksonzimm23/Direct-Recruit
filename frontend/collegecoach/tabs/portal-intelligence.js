@@ -256,12 +256,43 @@ document.addEventListener('DOMContentLoaded', function() {
     // here — and re-published whenever the textarea auto-grows. No-op on desktop.
     const isIOSApp = document.documentElement.classList.contains('ios-app');
 
+    // Publish how much of the message list's bottom is COVERED by the pinned input
+    // area, which is what .pi-messages reserves via
+    // padding-bottom: calc(var(--ai-input-h) + 1rem).
+    //
+    // Measured from the two real boxes rather than the input's own height, so it
+    // stays correct whatever the subtab, keyboard or auto-grown textarea are doing.
+    // offsetHeight also rounds DOWN, which under-reserved by up to a pixel.
+    //
+    // Getting this wrong is what produced "the output is too short to scroll but
+    // too tall to clear the input box": with too small a reserve the tail of the
+    // reply sits under the pinned input and there is no scroll range left to
+    // reach it. Never publish 0 — a hidden subtab measures 0 and that would
+    // remove the reserve entirely, so the CSS fallback must stand instead.
     function syncInputHeightVar() {
         if (!isIOSApp) return;
         const area = document.querySelector('.pi-input-area');
-        if (!area) return;
-        const h = area.offsetHeight;
-        if (h > 0) document.documentElement.style.setProperty('--ai-input-h', h + 'px');
+        if (!area || !messagesContainer) return;
+        const box = area.getBoundingClientRect();
+        if (box.height <= 0) return;                 // subtab still hidden
+        const listBottom = messagesContainer.getBoundingClientRect().bottom;
+        const covered = Math.ceil(Math.max(box.height, listBottom - box.top));
+        if (covered > 0) document.documentElement.style.setProperty('--ai-input-h', covered + 'px');
+    }
+
+    // The PI subtab starts hidden (Current Portal is active on load), so the input
+    // area measures 0 at init and the list keeps the CSS fallback. Re-measure the
+    // moment the pane gains .active, plus once more after layout settles.
+    function watchTabActivation() {
+        if (!isIOSApp || !window.MutationObserver) return;
+        const pane = document.getElementById('portalIntelligenceTab');
+        if (!pane) return;
+        new MutationObserver(() => {
+            if (!pane.classList.contains('active')) return;
+            syncInputHeightVar();
+            requestAnimationFrame(syncInputHeightVar);
+            setTimeout(syncInputHeightVar, 200);
+        }).observe(pane, { attributes: true, attributeFilter: ['class'] });
     }
 
     function pinBottom() {
@@ -272,14 +303,26 @@ document.addEventListener('DOMContentLoaded', function() {
     // avatars finish loading AFTER the first jump and grow the list, and PI cards
     // expand further as their signal-detail sections render, so a single call lands
     // short. Desktop keeps the original one-shot behavior.
+    // Re-verify the bottom reserve on every settle pass before pinning. The reserve
+    // and the pin have to agree: pinning to a bottom that is still under-reserved
+    // is what leaves the tail of a reply stranded behind the input box.
+    function syncThen(fn) {
+        return () => { syncInputHeightVar(); fn(); };
+    }
+
     function settle(fn) {
-        fn();
+        const step = syncThen(fn);
+        step();
         if (!isIOSApp) return;
-        requestAnimationFrame(fn);
+        requestAnimationFrame(step);
         messagesContainer.querySelectorAll('img').forEach(img => {
-            if (!img.complete) img.addEventListener('load', fn, { once: true });
+            if (!img.complete) img.addEventListener('load', step, { once: true });
         });
-        setTimeout(fn, 250);
+        setTimeout(step, 250);
+        // PI cards keep growing as their signal-detail sections render, and a card
+        // is several times taller than an RA row, so the 250ms pass can still land
+        // mid-growth. One more late pass costs nothing and catches it.
+        setTimeout(step, 600);
     }
 
     function scrollToBottom() {
@@ -296,7 +339,9 @@ document.addEventListener('DOMContentLoaded', function() {
         // Hold the sticky pin through the settle window so late-growing content
         // (avatars, signal-detail sections) keeps the view at the true bottom instead
         // of leaving it where the pre-growth bottom used to be.
-        if (isIOSApp) setTimeout(stopSticky, 500);
+        // Outlast settle()'s final 600ms pass, or the pin is released just before
+        // the last growth spurt and the view is left at the pre-growth bottom.
+        if (isIOSApp) setTimeout(stopSticky, 700);
         else stopSticky();
     }
 
@@ -1242,11 +1287,17 @@ document.addEventListener('DOMContentLoaded', function() {
     // Measure before any chat renders so the list reserves the right space and the
     // scroll-to-bottom in selectChat lands correctly on the first paint.
     syncInputHeightVar();
+    watchTabActivation();
     if (isIOSApp && window.ResizeObserver) {
         const piInputArea = document.querySelector('.pi-input-area');
         // Also catches the tab becoming visible (0px -> real height), since the PI
         // subtab can start hidden when sessionStorage restores Current Portal.
         if (piInputArea) new ResizeObserver(syncInputHeightVar).observe(piInputArea);
+    }
+    if (isIOSApp) {
+        // Rotation and the iOS keyboard both change the input area's height.
+        window.addEventListener('resize', syncInputHeightVar, { passive: true });
+        window.addEventListener('orientationchange', syncInputHeightVar, { passive: true });
     }
 
     loadWatchlistCount();

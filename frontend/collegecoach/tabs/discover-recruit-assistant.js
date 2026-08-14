@@ -262,12 +262,43 @@ document.addEventListener('DOMContentLoaded', function() {
     // here — and re-published whenever the textarea auto-grows. No-op on desktop.
     const isIOSApp = document.documentElement.classList.contains('ios-app');
 
+    // Publish how much of the message list's bottom is COVERED by the pinned input
+    // area, which is what .ra-messages reserves via
+    // padding-bottom: calc(var(--ai-input-h) + 1rem).
+    //
+    // Measured from the two real boxes rather than the input's own height, so it
+    // stays correct whatever the subtab, keyboard or auto-grown textarea are doing.
+    // offsetHeight also rounds DOWN, which under-reserved by up to a pixel.
+    //
+    // Getting this wrong is what produced "the output is too short to scroll but
+    // too tall to clear the input box" on PI: with too small a reserve the tail of
+    // the reply sits under the pinned input and there is no scroll range left to
+    // reach it. Never publish 0 — a hidden subtab measures 0 and that would remove
+    // the reserve entirely, so the CSS fallback must stand instead.
     function syncInputHeightVar() {
         if (!isIOSApp) return;
         const area = document.querySelector('.ra-input-area');
-        if (!area) return;
-        const h = area.offsetHeight;
-        if (h > 0) document.documentElement.style.setProperty('--ai-input-h', h + 'px');
+        if (!area || !messagesContainer) return;
+        const box = area.getBoundingClientRect();
+        if (box.height <= 0) return;                 // subtab still hidden
+        const listBottom = messagesContainer.getBoundingClientRect().bottom;
+        const covered = Math.ceil(Math.max(box.height, listBottom - box.top));
+        if (covered > 0) document.documentElement.style.setProperty('--ai-input-h', covered + 'px');
+    }
+
+    // The RA subtab starts hidden (Find Players is active on load), so the input
+    // area measures 0 at init and the list keeps the CSS fallback. Re-measure the
+    // moment the pane gains .active, plus once more after layout settles.
+    function watchTabActivation() {
+        if (!isIOSApp || !window.MutationObserver) return;
+        const pane = document.getElementById('recruitAssistantTab');
+        if (!pane) return;
+        new MutationObserver(() => {
+            if (!pane.classList.contains('active')) return;
+            syncInputHeightVar();
+            requestAnimationFrame(syncInputHeightVar);
+            setTimeout(syncInputHeightVar, 200);
+        }).observe(pane, { attributes: true, attributeFilter: ['class'] });
     }
 
     function pinBottom() {
@@ -277,14 +308,25 @@ document.addEventListener('DOMContentLoaded', function() {
     // Runs a scroll adjustment now, then again as the layout settles. iOS app only:
     // avatars and school logos finish loading AFTER the first jump and grow the list,
     // so a single call lands short. Desktop keeps the original one-shot behavior.
+    // Re-verify the bottom reserve on every settle pass before pinning. The reserve
+    // and the pin have to agree: pinning to a bottom that is still under-reserved
+    // is what leaves the tail of a reply stranded behind the input box.
+    function syncThen(fn) {
+        return () => { syncInputHeightVar(); fn(); };
+    }
+
     function settle(fn) {
-        fn();
+        const step = syncThen(fn);
+        step();
         if (!isIOSApp) return;
-        requestAnimationFrame(fn);
+        requestAnimationFrame(step);
         messagesContainer.querySelectorAll('img').forEach(img => {
-            if (!img.complete) img.addEventListener('load', fn, { once: true });
+            if (!img.complete) img.addEventListener('load', step, { once: true });
         });
-        setTimeout(fn, 250);
+        setTimeout(step, 250);
+        // Late pass for rows that finish growing after the 250ms mark (avatars,
+        // school logos, a stats table laying out).
+        setTimeout(step, 600);
     }
 
     function scrollToBottom() {
@@ -301,7 +343,9 @@ document.addEventListener('DOMContentLoaded', function() {
         // Hold the sticky pin through the settle window so late-growing content
         // (avatars, school logos) keeps the view at the true bottom instead of
         // leaving it where the pre-growth bottom used to be.
-        if (isIOSApp) setTimeout(stopSticky, 500);
+        // Outlast settle()'s final 600ms pass, or the pin is released just before
+        // the last growth spurt and the view is left at the pre-growth bottom.
+        if (isIOSApp) setTimeout(stopSticky, 700);
         else stopSticky();
     }
 
@@ -1227,11 +1271,17 @@ document.addEventListener('DOMContentLoaded', function() {
         // Measure before any chat renders so the list reserves the right space
         // and the scroll-to-bottom below lands correctly on the first paint.
         syncInputHeightVar();
+        watchTabActivation();
         if (isIOSApp && window.ResizeObserver) {
             const area = document.querySelector('.ra-input-area');
             // Also catches the tab becoming visible (0px -> real height), since the
             // RA subtab can start hidden when sessionStorage restores Find Players.
             if (area) new ResizeObserver(syncInputHeightVar).observe(area);
+        }
+        if (isIOSApp) {
+            // Rotation and the iOS keyboard both change the input area's height.
+            window.addEventListener('resize', syncInputHeightVar, { passive: true });
+            window.addEventListener('orientationchange', syncInputHeightVar, { passive: true });
         }
 
         await loadChats();

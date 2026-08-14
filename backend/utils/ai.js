@@ -8,6 +8,7 @@ const MATCH = require('./match-constants');
 // Single source of truth for the block markers, so the text the prompt tells
 // Claude to trust can never drift from the text routes/ai.js actually emits.
 const { RA_BLOCK_OPEN, PLAYER_TEXT_OPEN, PLAYER_TEXT_CLOSE } = require('./ai-context');
+const { parseAiJsonReply, looksLikeCode } = require('./ai-reply-parse');
 
 // Canonical-value allowlists for the recruiting-profile (fit) FIELD filters (Plan 7E).
 // Claude must emit values string-identical to these or the SQL overlap/equality
@@ -316,9 +317,21 @@ You are talking directly to a college football coach. Speak like a knowledgeable
 
 FORMATTING RULES for conversational messages:
 - NEVER use markdown formatting (no **, no *, no #, no bullet points with -)
+- NEVER use a code fence (\`\`\`) and never show a raw object, field name, or
+  anything that reads like code. Write prose.
 - Use plain text only. Write naturally like a text conversation.
 - For listing player info, use a clean readable format like: "Position: CB, Height: 6'1, Weight: 190 lbs, GPA: 4.0"
 - Use line breaks to separate sections, not bullets or bold text
+- Never use a backslash as a line break or as punctuation.
+
+LENGTH — KEEP IT SHORT:
+- HARD CAP: 60 words for a conversational reply. Most should be 1-2 sentences.
+- "What can you do" / "how does this work" -> 2 sentences MAX, then ONE short
+  example query. Do not write a multi-paragraph overview of your capabilities.
+- When you ARE returning players, one sentence of framing is plenty — the cards
+  carry the detail.
+- This cap does NOT apply to a requested stats table: a [STATS_TABLE] block and
+  the sentence introducing it are always allowed in full.
 
 STATS TABLE FORMATTING:
 PRECONDITION — only ever produce a stats table when the "${RA_BLOCK_OPEN} ...]" block contains a "Stats" section for that player. If it shows "Stats: none on file", or has no Stats section at all, then that player has not entered any game stats: tell the coach that plainly and output NO table. Never build a table out of remembered, typical, or example numbers.
@@ -420,25 +433,27 @@ async function getRecruitingFilters(messages, coachBaselines, coachState, coachD
     latency_ms: latencyMs
   };
 
-  // Parse + validate Claude's JSON response. Failed validation falls back to
-  // a stripped conversational message rather than 500'ing or persisting junk.
-  let parsed = null;
-  try {
-    parsed = JSON.parse(text);
-  } catch (e) {
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (jsonMatch) {
-      try { parsed = JSON.parse(jsonMatch[0]); } catch (e2) { /* fall through */ }
-    }
-  }
+  // Parse + validate Claude's JSON response. Tolerates code fences, surrounding
+  // prose, and the bare "\" Claude sometimes uses as a paragraph break inside a
+  // string (which makes the whole object unparseable). See utils/ai-reply-parse.js.
+  const { parsed, message: salvaged } = parseAiJsonReply(text);
 
   const validated = parsed ? validateRaResponse(parsed) : null;
   if (!validated) {
+    // NEVER fall back to the raw model text: when it is JSON or a code fence that
+    // dumped ```json { "filters": null, ... } into the coach's chat.
+    // parseAiJsonReply returns prose or nothing, so this line is always clean.
+    // A reply whose FILTERS were invalid can still carry a perfectly good
+    // sentence, so prefer that over the generic apology.
+    const candidate = salvaged
+      || (parsed && typeof parsed.message === 'string' ? parsed.message : null);
+    const clean = candidate ? stripHtml(candidate) : null;
     return {
       filters: null,
       summary: null,
       reasoning: null,
-      message: stripHtml(text) || "I'm having trouble understanding that. Try rephrasing?",
+      message: (clean && !looksLikeCode(clean) ? clean : null)
+        || "I'm having trouble understanding that. Try rephrasing?",
       _meta,
     };
   }

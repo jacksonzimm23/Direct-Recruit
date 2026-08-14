@@ -190,7 +190,15 @@ html.ios-app body { background-color: inherit; }
        the reserve tracks the real height; the fallback covers the first paint. */
     .ios-app .ra-messages,
     .ios-app .pi-messages {
-        padding-bottom: calc(var(--ai-input-h, 105px) + 1rem) !important;
+        /* Fallback raised 105px -> 150px. 105 was measured on a RESTING RA input
+           whose disclaimer fits one line; PI's disclaimer wraps to two on a 375-393px
+           iPhone, so the real covered height is ~130px and the old fallback
+           under-reserved by ~25px. That is invisible on a long reply (there is
+           plenty of scroll range) but strands the tail of a SHORT one: too little
+           content to scroll, too much to clear the pinned input. The fallback only
+           applies until the JS publishes a measured value, and over-reserving
+           merely leaves a small gap, so it biases high on purpose. */
+        padding-bottom: calc(var(--ai-input-h, 150px) + 1rem) !important;
         -webkit-overflow-scrolling: touch;
         overscroll-behavior-y: contain;
     }
