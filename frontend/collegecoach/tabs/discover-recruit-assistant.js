@@ -263,8 +263,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const isIOSApp = document.documentElement.classList.contains('ios-app');
 
     // Publish how much of the message list's bottom is COVERED by the pinned input
-    // area, which is what .ra-messages reserves via
-    // padding-bottom: calc(var(--ai-input-h) + 1rem).
+    // area. .ra-messages reserves exactly that much with a ::after flex spacer
+    // (ios-app-overrides.css) — NOT padding, which WebKit leaves out of a flex
+    // container's scrollable overflow, so it bought no scroll range on iOS.
     //
     // Measured from the two real boxes rather than the input's own height, so it
     // stays correct whatever the subtab, keyboard or auto-grown textarea are doing.
