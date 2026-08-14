@@ -4950,7 +4950,9 @@ document.addEventListener('DOMContentLoaded', async function() {
         ]);
 
         const fit = (fitRes.status === 'fulfilled') ? (fitRes.value && fitRes.value.fit) : null;
-        renderEvalMatch(fit, fullName);
+        // This coach's own Program Profile completeness, for the modal callout.
+        const viewerProfile = (fitRes.status === 'fulfilled') ? (fitRes.value && fitRes.value.viewerProfile) : null;
+        renderEvalMatch(fit, fullName, viewerProfile);
 
         if (loadingEl) loadingEl.style.display = 'none';
         if (profRes.status === 'fulfilled' && profRes.value && profRes.value.profile) {
@@ -4966,7 +4968,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
     }
 
-    function renderEvalMatch(fit, playerName) {
+    function renderEvalMatch(fit, playerName, viewerProfile) {
         const matchBlock = document.getElementById('evalMatchBlock');
         const matchEmpty = document.getElementById('evalMatchEmpty');
         const scoreEl = document.getElementById('evalMatchScore');
@@ -5002,7 +5004,10 @@ document.addEventListener('DOMContentLoaded', async function() {
                 `<button type="button" class="eval-rp-match-info" id="evalMatchInfoBtn" aria-label="About AI Match" title="About AI Match"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="11" x2="12" y2="17"></line><line x1="12" y1="7" x2="12.01" y2="7"></line></svg></button>`;
             const infoBtn = document.getElementById('evalMatchInfoBtn');
             if (infoBtn && typeof FitInfoModal !== 'undefined') {
-                infoBtn.addEventListener('click', () => FitInfoModal.open({ score, playerName, matches }));
+                infoBtn.addEventListener('click', () => FitInfoModal.open({
+                    score, playerName, matches, viewerProfile,
+                    profileHref: new URL('my-profile.html', window.location.href).href
+                }));
             }
         }
         // Per-dimension breakdown is NOT shown inline — the ⓘ opens the AI Match

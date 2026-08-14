@@ -6,6 +6,7 @@ const User = require('../models/User'); // used by the AI Rep subscription gate 
 const PlayerProfile = require('../models/PlayerProfile');
 const CoachProfile = require('../models/CoachProfile');
 const { computeFit, tierOf, CRITERIA } = require('../utils/fit-score');
+const { playerSections, playerCompleteness } = require('../utils/profile-completeness');
 const { getSignedS3Url } = require('../utils/s3');
 const logger = require('../utils/logger');
 
@@ -361,7 +362,10 @@ router.get('/best-fit-schools', async (req, res) => {
     const page = schools.slice(offset, offset + limit);
     const hasMore = offset + limit < schools.length;
 
-    res.json({ schools: page, hasMore });
+    // The VIEWER's own recruiting-profile completeness, so the school modal can
+    // tell the player which of their own sections are still blank. Sent once per
+    // response, not per school — it is a property of the player.
+    res.json({ schools: page, hasMore, viewerProfile: playerCompleteness(player) });
   } catch (error) {
     logger.error('AI Rep best-fit-schools error:', error);
     res.status(500).json({ error: 'Failed to load best-fit schools' });
@@ -428,24 +432,11 @@ router.get('/profile-completion', async (req, res) => {
     // like class rank, AP/IB, weighted GPA, looking-for text, Pell, ZIP, athletics
     // do NOT block completion). These power AI Match / Best-Fit Schools and are always
     // surfaced at HIGH priority by the frontend. Plan 7D.
-    const arrHas = (v) => Array.isArray(v) && v.length > 0;
-    let fitPrefs = profile.fit_preferences;
-    if (typeof fitPrefs === 'string') { try { fitPrefs = JSON.parse(fitPrefs); } catch (e) { fitPrefs = {}; } }
-    fitPrefs = fitPrefs || {};
-    const sliderSet = (k) => fitPrefs[k] != null && fitPrefs[k] !== '';
-
-    const recruitingFields = [
-      // Academics: GPA + at least one test score.
-      { label: 'Academics', complete: !!profile.gpa && (!!profile.sat_score || !!profile.act_score) },
-      // Major & Goals: intended major.
-      { label: 'Major & Goals', complete: arrHas(profile.intended_major) },
-      // Financial Fit: both aid questions answered.
-      { label: 'Financial Fit', complete: !!profile.needs_financial_aid && !!profile.needs_scholarship },
-      // Level & Location: levels + regions + campus setting all set.
-      { label: 'Level & Location', complete: arrHas(profile.levels_open) && arrHas(profile.preferred_regions) && !!profile.preferred_campus_setting },
-      // Priorities: all four importance sliders rated.
-      { label: 'Priorities', complete: sliderSet('importance_playing_time') && sliderSet('importance_close_to_home') && sliderSet('importance_academics_vs_football') && sliderSet('importance_competition_level') }
-    ];
+    //
+    // The rules live in utils/profile-completeness.js so this list and the AI Match
+    // modal's "your profile is incomplete" disclaimer can never disagree about what
+    // "filled out" means.
+    const recruitingFields = playerSections(profile);
     const recruitingSectionLabels = recruitingFields.map(f => f.label);
     fields.push(...recruitingFields);
 

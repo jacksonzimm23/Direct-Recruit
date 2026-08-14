@@ -16,6 +16,7 @@ const { validationResult } = require('express-validator');
 const { validatePlayerProfile, validateCoachProfile, validateOtherProfile, validatePlayerProfileUpdate, validateCoachProfileUpdate, validateOtherProfileUpdate, handleValidationErrors } = require('../middleware/validation');
 const { getSignedS3Url } = require('../utils/s3');
 const { computeFit } = require('../utils/fit-score');
+const { coachCompleteness } = require('../utils/profile-completeness');
 const { compareSearchResults } = require('../utils/search-score');
 const { apiLimiter, availabilityLimiter, availabilityDailyLimiter } = require('../middleware/rateLimit');
 const AiEngagement = require('../models/AiEngagement');
@@ -421,7 +422,10 @@ router.get('/fit/:playerUserId', authMiddleware, validateUUID('playerUserId'), r
     if (!player) {
       return res.status(404).json({ error: 'Player profile not found' });
     }
-    res.json({ fit: computeFit(player, coach) });
+    // viewerProfile = the COACH's own Program Profile completeness. The modal uses
+    // it to tell the coach which of their own subtabs are blank, since an
+    // unscoreable criterion is very often their gap rather than the player's.
+    res.json({ fit: computeFit(player, coach), viewerProfile: coachCompleteness(coach) });
   } catch (error) {
     logger.error('Get fit error:', error);
     res.status(500).json({ error: 'Failed to compute fit' });

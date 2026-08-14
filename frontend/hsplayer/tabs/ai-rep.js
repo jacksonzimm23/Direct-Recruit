@@ -66,6 +66,10 @@
     const BATCH_SIZE = 10;
     let schoolsOffset = 0;
     let schoolsCache = []; // accumulates loaded schools (for modal lookup by index)
+    // THIS player's own recruiting-profile completeness, sent once per best-fit
+    // response. Drives the school modal's "your recruiting profile is incomplete"
+    // callout; stays null (callout hidden) until the first response lands.
+    let viewerProfile = null;
 
     // DOM references
     const schoolList = document.getElementById('aiRepSchoolList');
@@ -103,6 +107,9 @@
             schoolsLoading.style.display = 'none';
 
             const schools = data.schools || [];
+            // This player's own recruiting-profile completeness, for the school
+            // modal's 'your recruiting profile is incomplete' callout.
+            if (data.viewerProfile) viewerProfile = data.viewerProfile;
 
             if (reset && schools.length === 0) {
                 schoolsEmpty.style.display = '';
@@ -171,6 +178,8 @@
             // modal shows the full picture rather than only what matched.
             matches: (school.dimensions || []).map(d => ({ label: d.label, detail: d.detail, score: d.score, present: d.present })),
             staff: school.staff || [],
+            viewerProfile: viewerProfile,
+            profileHref: new URL('my-profile.html', window.location.href).href,
             coachCount: school.coachCount,
             coachHref: (username) =>
                 new URL(`../../collegecoach/tabs/my-profile.html?username=${encodeURIComponent(username)}&from=ai-rep`, window.location.href).href

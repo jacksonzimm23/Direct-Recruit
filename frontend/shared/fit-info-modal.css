@@ -133,6 +133,37 @@
 .fim-match-row--absent .fim-match-label { color: rgba(254, 252, 251, 0.55); font-weight: 600; }
 .fim-match-row--absent .fim-match-detail { color: rgba(254, 252, 251, 0.42); font-style: italic; }
 
+/* "Your own recruiting/program profile is incomplete" callout. Rendered only when
+   the VIEWER has a blank section, directly under the match list, because that is
+   where the unrated rows they just read are explained. Cerulean rather than a
+   warning red: this is a nudge, not an error. */
+.fim-incomplete {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.65rem;
+    margin-top: 1.25rem;
+    padding: 0.85rem 0.95rem;
+    border: 1px solid rgba(18, 130, 162, 0.35);
+    border-left: 3px solid var(--cerulean, #1282a2);
+    border-radius: 8px;
+    background: rgba(18, 130, 162, 0.09);
+}
+.fim-incomplete-icon {
+    width: 18px; height: 18px; flex-shrink: 0; margin-top: 1px;
+    color: var(--cerulean, #1282a2);
+}
+.fim-incomplete-text { display: flex; flex-direction: column; gap: 0.2rem; }
+.fim-incomplete-title {
+    font-size: 0.86rem; font-weight: 700; color: var(--white, #fefcfb);
+}
+.fim-incomplete-body {
+    font-size: 0.82rem; line-height: 1.45; color: rgba(254, 252, 251, 0.7);
+}
+.fim-incomplete-link {
+    color: var(--cerulean, #1282a2); font-weight: 700; text-decoration: none;
+}
+.fim-incomplete-link:hover { text-decoration: underline; }
+
 .fim-disclaimer {
     margin: 1.5rem 0 0;
     padding-top: 1rem;

@@ -17,6 +17,13 @@
 //                opts.score (number|null — null renders the not-yet-rated state),
 //                opts.playerName (string, optional),
 //                opts.matches ([{ label, detail }], optional — defaults to sample)
+//              — BOTH modes also accept:
+//                opts.viewerProfile ({complete, missing[], completedCount, of} — the
+//                  VIEWER's own recruiting-profile completeness from the API; renders
+//                  the "your own profile is incomplete" callout. Omitted, or
+//                  complete:true, renders nothing at all),
+//                opts.profileHref (string — link to the viewer's own profile page;
+//                  without it the path is named as plain text)
 //              — SCHOOL mode (opts.mode === 'school', player viewing a school; Plan 7C):
 //                opts.score, opts.schoolName, opts.division, opts.matches
 //                ([{label,detail}] reworded school→player), opts.staff
@@ -54,6 +61,46 @@
     var d = document.createElement('div');
     d.textContent = s == null ? '' : String(s);
     return d.innerHTML;
+  }
+
+  // Join labels into readable prose: "A", "A and B", "A, B and C".
+  function _list(items) {
+    if (items.length === 1) return _esc(items[0]);
+    if (items.length === 2) return _esc(items[0]) + ' and ' + _esc(items[1]);
+    return items.slice(0, -1).map(_esc).join(', ') + ' and ' + _esc(items[items.length - 1]);
+  }
+
+  // "Your own profile is incomplete" callout. Rendered ONLY when the viewer has
+  // at least one blank recruiting-profile section, so a fully-completed profile
+  // never sees a nag. `vp` is the viewerProfile block from the API:
+  //   { complete, missing: [subtab labels], completedCount, of }
+  // opts.profileHref (optional) links to the viewer's own profile page; without
+  // it the path is named as plain text, since tabs have no deep link.
+  //   mode 'coach'  -> the coach's Program Profile
+  //   mode 'player' -> the player's Recruiting Profile
+  function _incompleteHTML(vp, profileHref, mode) {
+    if (!vp || vp.complete || !vp.missing || !vp.missing.length) return '';
+    var isCoach = (mode === 'coach');
+    var one = (vp.missing.length === 1);
+    var what = isCoach ? 'program profile' : 'recruiting profile';
+    // Both sides label the tab "Recruiting Profile" on their own profile page.
+    var tabName = 'Recruiting Profile';
+    var against = isCoach ? 'every recruit' : 'every school';
+    var where = profileHref
+      ? '<a class="fim-incomplete-link" href="' + _esc(profileHref) + '">My Profile</a>'
+      : '<strong>My Profile</strong>';
+    return '' +
+      '<div class="fim-incomplete">' +
+        '<svg class="fim-incomplete-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+          '<circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line>' +
+        '</svg>' +
+        '<div class="fim-incomplete-text">' +
+          '<span class="fim-incomplete-title">Your ' + what + ' is ' + vp.completedCount + ' of ' + vp.of + ' complete</span>' +
+          '<span class="fim-incomplete-body">' + _list(vp.missing) + (one ? ' is' : ' are') + ' still blank. ' +
+            'Fill ' + (one ? 'it' : 'them') + ' in under ' + where + ' &rarr; ' + _esc(tabName) +
+            ' so ' + (one ? 'it counts' : 'they count') + ' against ' + against + '.</span>' +
+        '</div>' +
+      '</div>';
   }
 
   function _hasFit() { return typeof FitDisplay !== 'undefined'; }
@@ -129,6 +176,8 @@
     var showPct = _hasFit() && FitDisplay.FIT_SHOW_PERCENT;
     var scoreText = (String(score) + (showPct ? '%' : ''));
     var who = opts.playerName ? _esc(opts.playerName) : 'This player';
+    // The viewing COACH's own Program Profile gaps. Empty string when complete.
+    var incompleteHTML = _incompleteHTML(opts.viewerProfile, opts.profileHref, 'coach');
 
     // When the player hasn't filled out enough recruiting-profile information to
     // be compared against your program, there is no score. Explain that instead
@@ -150,7 +199,7 @@
 
           // --- match breakdown ---
           '<div class="fim-section-label">What this player matches you on</div>' +
-          '<div class="fim-matches">' + _matchRowsHTML(matches) + '</div>' +
+          '<div class="fim-matches">' + _matchRowsHTML(matches) + '</div>' + incompleteHTML +
 
           '<p class="fim-disclaimer">AI Match is a guide to help surface best fit recruits. ' +
           'It complements your own evaluation and never replaces it.</p>'
@@ -172,7 +221,7 @@
           '</div>' +
 
           '<div class="fim-section-label">What this player matches you on</div>' +
-          '<div class="fim-matches">' + _matchRowsHTML(matches) + '</div>' +
+          '<div class="fim-matches">' + _matchRowsHTML(matches) + '</div>' + incompleteHTML +
 
           '<p class="fim-disclaimer">AI Match is a guide to help surface best fit recruits. ' +
           'It complements your own evaluation and never replaces it.</p>'
@@ -229,6 +278,8 @@
       ? getSchoolLogoHTML(opts.schoolName, '../../assets', 32) : '';
     var privateNote = (opts.coachCount && opts.coachCount > staff.length)
       ? '<p class="fim-staff-note">Some staff keep their profiles private.</p>' : '';
+    // The viewing PLAYER's own Recruiting Profile gaps. Empty string when complete.
+    var incompleteHTML = _incompleteHTML(opts.viewerProfile, opts.profileHref, 'player');
 
     var staffHTML = staff.length
       ? staff.map(function (c) {
@@ -280,7 +331,7 @@
             '<div class="fim-section-label">Rating scale</div>' +
             _tierKeyHTML() +
             '<div class="fim-section-label">What this school offers that matches you</div>' +
-            '<div class="fim-matches">' + _matchRowsHTML(matches) + '</div>' +
+            '<div class="fim-matches">' + _matchRowsHTML(matches) + '</div>' + incompleteHTML +
             '<p class="fim-disclaimer">AI Match is a guide to help you find programs that fit you ' +
             'on and off the field. It complements your own research, never replaces it.</p>' +
           '</div>' +

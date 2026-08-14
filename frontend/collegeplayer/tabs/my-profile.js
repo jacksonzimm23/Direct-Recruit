@@ -9389,9 +9389,13 @@ async function renderMatchScore(viewerCoachProfile, playerProfile) {
 
     // Fetch the real AI Match fit for the viewing coach <-> this player (Plan 7).
     let fit = null;
+    // The VIEWING COACH's own Program Profile completeness, for the modal's
+    // 'your program profile is incomplete' callout.
+    let viewerProfile = null;
     try {
         const res = await API.profile.getFit(playerProfile.user_id);
         fit = res && res.fit;
+        viewerProfile = res && res.viewerProfile;
     } catch (e) {
         // network/permission error -> fall back to the "not yet rated" state below
     }
@@ -9420,7 +9424,10 @@ async function renderMatchScore(viewerCoachProfile, playerProfile) {
             `</button>`;
         const infoBtn = document.getElementById('rmbInfoBtn');
         if (infoBtn && typeof FitInfoModal !== 'undefined') {
-            infoBtn.addEventListener('click', () => FitInfoModal.open({ score, playerName, matches }));
+            infoBtn.addEventListener('click', () => FitInfoModal.open({
+                score, playerName, matches, viewerProfile,
+                profileHref: new URL('../../collegecoach/tabs/my-profile.html', window.location.href).href
+            }));
         }
     }
 }
