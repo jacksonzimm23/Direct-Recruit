@@ -200,6 +200,22 @@ html.ios-app body { background-color: inherit; }
         visibility: visible !important;
     }
 
+    /* RA placeholder ("Describe the player you're looking for...") is long enough to
+       wrap onto a second line inside its rows="1" textarea, so the tail was clipped.
+       The TEXTAREA must stay at 16px — mobile-overrides.css forces that on every
+       input/textarea/select to stop iOS auto-zooming the page on focus — but that zoom
+       heuristic reads the CONTROL's font-size, not the ::placeholder pseudo-element, so
+       shrinking only the placeholder fits the line with no zoom regression and leaves
+       typed queries at full size. 0.82rem measured to fit a 375px iPhone (the narrowest
+       current logical width) with ~9% slack, and 393px with ~15%. PI is untouched: its
+       placeholder is already shortened for mobile in portal-intelligence.js. */
+    .ios-app .ra-input::-webkit-input-placeholder {
+        font-size: 0.82rem !important;
+    }
+    .ios-app .ra-input::placeholder {
+        font-size: 0.82rem !important;
+    }
+
     /* Hide the 2nd example-prompt suggestion on the AI RA / PI welcome screens —
        iOS app only (desktop/web keep all 3). Each .ra-suggestions/.pi-suggestions
        holds exactly 3 sibling buttons; drop the middle one to leave the 1st + 3rd. */
