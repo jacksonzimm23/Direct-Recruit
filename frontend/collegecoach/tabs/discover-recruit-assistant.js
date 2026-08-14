@@ -291,21 +291,18 @@ document.addEventListener('DOMContentLoaded', function() {
         settle(pinBottom);
     }
 
-    // Puts `el`'s top edge at the top of the visible list. Used when a reply lands so
-    // the coach reads DOWN through the player cards instead of landing on the last one.
-    // Short replies can't scroll that far — the browser clamps, which degrades to
-    // "bottom", exactly what we want.
-    function alignToTop(el) {
-        if (!el) return;
-        const delta = el.getBoundingClientRect().top - messagesContainer.getBoundingClientRect().top;
-        messagesContainer.scrollTop += delta - 10;
-    }
-
-    // Where the view lands once a reply has rendered. iOS app: top of the reply.
-    // Web/desktop: unchanged — bottom of the list, exactly as before.
-    function landOnReply(el) {
-        if (isIOSApp) settle(() => alignToTop(el));
-        else scrollToBottom();
+    // Where the view lands once a reply has rendered: the BOTTOM of the output, on
+    // every platform. An earlier iOS build anchored the TOP of the reply instead; that
+    // broke short replies — with little or no content below them there was nothing left
+    // to scroll, so the tail of the output stayed under the pinned input area. Bottom
+    // anchoring is what desktop does and it always shows the end of the output.
+    function landOnReply() {
+        scrollToBottom();
+        // Hold the sticky pin through the settle window so late-growing content
+        // (avatars, school logos) keeps the view at the true bottom instead of
+        // leaving it where the pre-growth bottom used to be.
+        if (isIOSApp) setTimeout(stopSticky, 500);
+        else stopSticky();
     }
 
     // "Sticky" mode: while a request is in flight the list is re-pinned to the bottom
@@ -430,11 +427,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 batchCheckSavedPlayers(cardsContainer);
             }
 
-            // Cards are in the DOM now — release the bottom pin and land on the top of
-            // the reply instead, so the coach reads down through the results. settle()
-            // re-runs it as avatars/school logos load and change the cards' height.
-            stopSticky();
-            landOnReply(aiDiv);
+            // Cards are in the DOM now — settle on the bottom of the output.
+            landOnReply();
 
             // Refresh the chat list to update title/order
             loadChats();
@@ -449,7 +443,9 @@ document.addEventListener('DOMContentLoaded', function() {
             scrollToBottom();
         }
 
-        stopSticky(); // safety net — never leave the observer attached
+        // NOTE: no unconditional stopSticky() here — landOnReply() holds the pin for
+        // 500ms past render on iOS, and a stop at this point would cancel that hold.
+        // Both exit paths (success + catch) already release it.
         isSending = false;
     }
 
