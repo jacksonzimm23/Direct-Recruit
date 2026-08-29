@@ -421,19 +421,28 @@
 }
 
 /* Touch drag clone.
-   The clone now carries the source element's own classes (see createTouchClone
-   in recruiting-board.js) so it renders as the real card rather than a grey box.
-   Two properties MUST be reasserted here because .recruit-card sets them:
-     - margin: 0      (.recruit-card has margin-bottom, which would offset a
-                       position:fixed clone away from the fingertip)
-     - transition: none (.recruit-card has `transition: all 0.2s ease`, which
-                       would animate every left/top write and leave the clone
-                       lagging ~200ms behind the finger) */
-.touch-drag-clone {
+   The clone carries the source element's own classes (see createTouchClone in
+   recruiting-board.js) so it renders as the real card rather than a grey box.
+   That inheritance is why the compound selectors below are REQUIRED rather than
+   tidy: `.recruit-card` is declared twice in this file, and the later block
+   (the final-colour-stripe section) sets `position: relative` and
+   `margin-bottom`. At equal specificity the later rule wins, which pinned the
+   clone to the bottom of <body> instead of under the finger. These three
+   properties must beat `.recruit-card`, so each selector is a compound:
+     - position: fixed   (else the clone is laid out in normal flow)
+     - margin: 0         (else margin-bottom offsets it off the fingertip)
+     - transition: none  (`transition: all 0.2s ease` would animate every
+                          left/top write and leave the clone ~200ms behind) */
+.touch-drag-clone,
+.recruit-card.touch-drag-clone,
+.position-slot.touch-drag-clone {
     position: fixed;
     z-index: 9999;
     pointer-events: none;
-    margin: 0;
+    /* !important is required, not lazy: shared/mobile-overrides.css loads AFTER
+       this file and sets `.recruit-card { margin-bottom: 0.4rem !important }`
+       inside its mobile media query. */
+    margin: 0 !important;
     transition: none;
     opacity: 0.9;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);

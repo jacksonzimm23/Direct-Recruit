@@ -3388,6 +3388,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     let touchDragType = null; // 'card' or 'column'
     let touchDragJustEnded = false;
     let autoScrollRaf = null;
+    let touchScrollAncestors = [];   // scrollers the drag started inside
     const LONG_PRESS_MS = 400;
     const TOUCH_DRAG_THRESHOLD = 10;
     // Distance from a scroll container's edge at which auto-scroll kicks in,
@@ -3472,28 +3473,47 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
 
     // Distance-to-edge ramp: 0 outside the edge zone, up to max at the edge.
+    // Negative distances (finger past the edge entirely) clamp to full speed.
     function edgeSpeed(distance) {
         if (distance >= AUTO_SCROLL_EDGE) return 0;
-        const ratio = Math.max(0, (AUTO_SCROLL_EDGE - distance) / AUTO_SCROLL_EDGE);
+        const ratio = Math.min(1, Math.max(0, (AUTO_SCROLL_EDGE - distance) / AUTO_SCROLL_EDGE));
         return Math.ceil(ratio * AUTO_SCROLL_MAX_SPEED);
+    }
+
+    function collectScrollAncestors(startEl, into) {
+        let el = startEl;
+        while (el && el !== document.body && el !== document.documentElement) {
+            if (into.indexOf(el) === -1 && (isScrollable(el, 'x') || isScrollable(el, 'y'))) into.push(el);
+            el = el.parentElement;
+        }
+        return into;
     }
 
     function autoScrollStep() {
         if (!touchDragActive) { autoScrollRaf = null; return; }
 
-        const x = touchLastX;
-        const y = touchLastY;
-        const cx = Math.max(0, Math.min(x, window.innerWidth - 1));
-        const cy = Math.max(0, Math.min(y, window.innerHeight - 1));
+        const cx = Math.max(0, Math.min(touchLastX, window.innerWidth - 1));
+        const cy = Math.max(0, Math.min(touchLastY, window.innerHeight - 1));
 
-        // Walk up from whatever is under the finger and scroll the first
-        // scrollable ancestor on each axis. The clone is pointer-events:none so
-        // elementFromPoint sees through it.
-        let el = document.elementFromPoint(cx, cy);
+        // Candidate containers, innermost first: whatever is under the finger
+        // (so the DESTINATION column's list scrolls), then the scrollers the
+        // drag started inside. The second half matters because the finger
+        // routinely sits just outside the horizontal scroller's box when the
+        // user pushes toward an off-screen column — deriving containers from
+        // elementFromPoint alone loses the scroller exactly when it is needed.
+        // The clone is pointer-events:none so elementFromPoint sees through it.
+        const candidates = [];
+        collectScrollAncestors(document.elementFromPoint(cx, cy), candidates);
+        for (let i = 0; i < touchScrollAncestors.length; i++) {
+            if (candidates.indexOf(touchScrollAncestors[i]) === -1) candidates.push(touchScrollAncestors[i]);
+        }
+
         let scrolledX = false;
         let scrolledY = false;
 
-        while (el && el !== document.body && el !== document.documentElement) {
+        for (let i = 0; i < candidates.length && !(scrolledX && scrolledY); i++) {
+            const el = candidates[i];
+            if (!el.isConnected) continue;
             const rect = el.getBoundingClientRect();
 
             if (!scrolledX && isScrollable(el, 'x')) {
@@ -3509,8 +3529,6 @@ document.addEventListener('DOMContentLoaded', async function() {
                 if (up > 0 && el.scrollTop > 0) { el.scrollTop -= up; scrolledY = true; }
                 else if (down > 0 && el.scrollTop < el.scrollHeight - el.clientHeight) { el.scrollTop += down; scrolledY = true; }
             }
-
-            el = el.parentElement;
         }
 
         // Fall back to the page itself so a board taller than the viewport is
@@ -3568,6 +3586,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         document.querySelectorAll('.position-slot.dragging').forEach(s => s.classList.remove('dragging'));
         document.querySelectorAll('.position-slot.drag-over').forEach(s => s.classList.remove('drag-over'));
 
+        touchScrollAncestors = [];
         touchDragActive = false;
         touchDragType = null;
         draggedElement = null;
@@ -3623,6 +3642,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             touchDragType = 'card';
             draggedElement = card;
             sourceContainer = card.parentElement;
+            touchScrollAncestors = collectScrollAncestors(card.parentElement, []);
             touchClone = createTouchClone(card);
             card.classList.add('dragging');
             moveTouchClone(touchClone, touchLastX, touchLastY);
@@ -3717,6 +3737,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             touchDragType = 'column';
             draggedColumn = slot;
             columnSourceGroup = slot.parentElement;
+            touchScrollAncestors = collectScrollAncestors(slot.parentElement, []);
             touchClone = createTouchClone(slot);
             slot.classList.add('dragging');
             moveTouchClone(touchClone, touchLastX, touchLastY);
