@@ -439,8 +439,10 @@ class PlayerProfile {
     return { players, hasMore };
   }
 
+  // Case-insensitive so a profile URL resolves regardless of how the username
+  // was typed. Matches the lower(username) unique index from migration 054.
   static async findByUsername(username) {
-    const result = await pool.query('SELECT pp.*, u.role FROM player_profiles pp JOIN users u ON pp.user_id = u.id WHERE pp.username = $1', [username]);
+    const result = await pool.query('SELECT pp.*, u.role FROM player_profiles pp JOIN users u ON pp.user_id = u.id WHERE lower(pp.username) = lower($1)', [username]);
     return result.rows[0];
   }
 

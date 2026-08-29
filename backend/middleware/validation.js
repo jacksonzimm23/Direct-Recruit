@@ -430,10 +430,45 @@ const validateRegistration = [
   }),
 ];
 
+// --- Username field ---
+//
+// THE normalisation chokepoint. `username` is written in two places per signup
+// (users.username via User.updateUsername, and <role>_profiles.username via the
+// profile insert), both straight off req.body.username. Sanitising here covers
+// every profile create and update route at once, so neither write site needs to
+// remember to normalise.
+//
+// Lowercasing is what makes usernames case-insensitive end to end: the storage
+// side is enforced by the lower(username) unique indexes in migration 054, and
+// the read side by User.findByUsername. Without it, "JohnSmith" and "johnsmith"
+// were two distinct storable identities, and a user's own name could read as
+// taken in the edit-profile modal.
+//
+// Charset is enforced here too. This previously had NO regex, so uppercase,
+// spaces, unicode and emoji were all accepted server-side even though every
+// frontend strips to [a-z0-9_].
+//
+// Minimum length is 1, not 3, deliberately. These same validators run on the
+// UPDATE paths, and the frontend echoes the user's existing username back on any
+// profile edit. A stricter floor here would 400 a legacy account with a short
+// handle on an unrelated edit. The create forms enforce 3+ client-side for new
+// signups; the server stays permissive so existing users can always save.
+// The sanitizer runs BEFORE .matches(), so a legacy mixed-case handle is folded
+// to lowercase and passes rather than being rejected.
+//
+// Returns a fresh chain per call — express-validator chains are stateful and
+// must not be shared between validator arrays.
+const usernameField = () =>
+  body('username')
+    .optional()
+    .customSanitizer((v) => (typeof v === 'string' ? v.trim().toLowerCase() : v))
+    .matches(/^[a-z0-9_]{1,15}$/)
+    .withMessage('Username must be 1-15 characters: lowercase letters, numbers and underscores only');
+
 // --- Profile creation validators (required fields enforced) ---
 
 const validatePlayerProfile = [
-  body('username').optional().trim().isLength({ max: 15 }).withMessage('Username must be 15 characters or less'),
+  usernameField(),
   body('first_name').trim().notEmpty().withMessage('First name required').isLength({ max: 50 }).withMessage('First name must be 50 characters or less'),
   body('last_name').trim().notEmpty().withMessage('Last name required').isLength({ max: 50 }).withMessage('Last name must be 50 characters or less'),
   // DOB required on create for ALL roles (App Store age rating).
@@ -455,7 +490,7 @@ const validatePlayerProfile = [
 ];
 
 const validateCoachProfile = [
-  body('username').optional().trim().isLength({ max: 15 }).withMessage('Username must be 15 characters or less'),
+  usernameField(),
   body('first_name').trim().notEmpty().withMessage('First name required').isLength({ max: 50 }).withMessage('First name must be 50 characters or less'),
   body('last_name').trim().notEmpty().withMessage('Last name required').isLength({ max: 50 }).withMessage('Last name must be 50 characters or less'),
   // DOB required on create for ALL roles (App Store age rating).
@@ -468,7 +503,7 @@ const validateCoachProfile = [
 ];
 
 const validateOtherProfile = [
-  body('username').optional().trim().isLength({ max: 15 }).withMessage('Username must be 15 characters or less'),
+  usernameField(),
   body('first_name').trim().notEmpty().withMessage('First name required').isLength({ max: 50 }).withMessage('First name must be 50 characters or less'),
   body('last_name').trim().notEmpty().withMessage('Last name required').isLength({ max: 50 }).withMessage('Last name must be 50 characters or less'),
   // DOB required on create for ALL roles (App Store age rating).
@@ -480,7 +515,7 @@ const validateOtherProfile = [
 // --- Profile update validators (all fields optional for partial updates) ---
 
 const validatePlayerProfileUpdate = [
-  body('username').optional().trim().isLength({ max: 15 }).withMessage('Username must be 15 characters or less'),
+  usernameField(),
   // Contact email on the player profile (player_profiles.email — separate from
   // the login email). checkFalsy lets an empty string through so the field can
   // be cleared from the edit modal.
@@ -507,7 +542,7 @@ const validatePlayerProfileUpdate = [
 ];
 
 const validateCoachProfileUpdate = [
-  body('username').optional().trim().isLength({ max: 15 }).withMessage('Username must be 15 characters or less'),
+  usernameField(),
   // Contact email (coach_profiles.email — separate from the login email).
   body('email').optional({ nullable: true, checkFalsy: true }).trim().isEmail().withMessage('Contact email must be a valid email address').isLength({ max: 255 }).withMessage('Contact email must be 255 characters or less'),
   body('first_name').optional({ nullable: true }).trim().isLength({ max: 50 }).withMessage('First name must be 50 characters or less'),
@@ -522,7 +557,7 @@ const validateCoachProfileUpdate = [
 ];
 
 const validateOtherProfileUpdate = [
-  body('username').optional().trim().isLength({ max: 15 }).withMessage('Username must be 15 characters or less'),
+  usernameField(),
   // Contact email (other_profiles.email — separate from the login email).
   body('email').optional({ nullable: true, checkFalsy: true }).trim().isEmail().withMessage('Contact email must be a valid email address').isLength({ max: 255 }).withMessage('Contact email must be 255 characters or less'),
   body('first_name').optional({ nullable: true }).trim().isLength({ max: 50 }).withMessage('First name must be 50 characters or less'),

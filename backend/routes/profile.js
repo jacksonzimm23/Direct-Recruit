@@ -18,9 +18,48 @@ const { getSignedS3Url } = require('../utils/s3');
 const { computeFit } = require('../utils/fit-score');
 const { coachCompleteness } = require('../utils/profile-completeness');
 const { compareSearchResults } = require('../utils/search-score');
-const { apiLimiter, availabilityLimiter, availabilityDailyLimiter } = require('../middleware/rateLimit');
+const {
+  apiLimiter,
+  availabilityLimiter,
+  availabilityDailyLimiter,
+  emailAvailabilityLimiter,
+  emailAvailabilityDailyLimiter
+} = require('../middleware/rateLimit');
 const AiEngagement = require('../models/AiEngagement');
 const logger = require('../utils/logger');
+
+// Username is UNIQUE in four tables (users, player_profiles, coach_profiles,
+// other_profiles). A genuine collision used to surface as a generic 500
+// "Failed to save profile", which told the user nothing and looked like an
+// outage. Map Postgres 23505 (unique_violation) on a username index to a 409
+// the signup forms can render against the username field.
+//
+// This is the real backstop now that the client-side availability check fails
+// OPEN on a rate-limited/unreachable server: the check is advisory, this is
+// authoritative. Returns true if the error was handled.
+// Pre-write cross-table uniqueness guard. Returns true if it already sent a 409.
+//
+// Must run before every profile write that carries a username. The per-table
+// UNIQUE indexes cannot see across tables, so without this a player could claim
+// a handle a coach already owns (verified: it returned 200 and silently created
+// a duplicate handle). handleUsernameConflict below still catches the
+// same-table case and the narrow race between this check and the write.
+async function rejectIfUsernameTaken(req, res) {
+  if (!req.body.username) return false;
+  const taken = await User.isUsernameTakenByOther(req.userId, req.body.username);
+  if (!taken) return false;
+  res.status(409).json({ error: 'That username is already taken. Please choose another.' });
+  return true;
+}
+
+function handleUsernameConflict(error, res) {
+  const isUsernameUnique =
+    error && error.code === '23505' &&
+    /username/i.test(String(error.constraint || error.detail || ''));
+  if (!isUsernameUnique) return false;
+  res.status(409).json({ error: 'That username is already taken. Please choose another.' });
+  return true;
+}
 
 // Helper function to convert S3 key to signed URL in profile
 async function addSignedUrlToProfile(profile) {
@@ -118,6 +157,8 @@ async function canViewFullProfile(viewerId, profileUserId) {
 // Create/Update Player Profile
 router.post('/player', authMiddleware, requireRole('player'), validatePlayerProfile, handleValidationErrors, async (req, res) => {
   try {
+    if (await rejectIfUsernameTaken(req, res)) return;
+
     const existingProfile = await PlayerProfile.findByUserId(req.userId);
 
     let profile;
@@ -156,6 +197,7 @@ router.post('/player', authMiddleware, requireRole('player'), validatePlayerProf
     });
   } catch (error) {
     logger.error('Player profile error:', error);
+    if (handleUsernameConflict(error, res)) return;
     res.status(500).json({ error: 'Failed to save profile' });
   }
 });
@@ -189,6 +231,10 @@ router.put('/', authMiddleware, async (req, res) => {
         details: errors.array()
       });
     }
+
+    // After validation (so req.body.username is already normalised to lowercase)
+    // and before any write.
+    if (await rejectIfUsernameTaken(req, res)) return;
 
     let profile;
     if (user.role === 'player') {
@@ -225,6 +271,7 @@ router.put('/', authMiddleware, async (req, res) => {
     });
   } catch (error) {
     logger.error('Profile update error:', error);
+    if (handleUsernameConflict(error, res)) return;
     res.status(500).json({ error: 'Failed to update profile' });
   }
 });
@@ -232,6 +279,8 @@ router.put('/', authMiddleware, async (req, res) => {
 // Create/Update Coach Profile
 router.post('/coach', authMiddleware, requireRole('coach'), validateCoachProfile, handleValidationErrors, async (req, res) => {
   try {
+    if (await rejectIfUsernameTaken(req, res)) return;
+
     const existingProfile = await CoachProfile.findByUserId(req.userId);
     // A coach is "college" only if their division is a real college division.
     // HS coaches send college_division: 'High School' as a marker, which is truthy
@@ -313,6 +362,7 @@ router.post('/coach', authMiddleware, requireRole('coach'), validateCoachProfile
     });
   } catch (error) {
     logger.error('Coach profile error:', error);
+    if (handleUsernameConflict(error, res)) return;
     res.status(500).json({ error: 'Failed to save profile' });
   }
 });
@@ -320,6 +370,8 @@ router.post('/coach', authMiddleware, requireRole('coach'), validateCoachProfile
 // Create/Update Other Profile
 router.post('/other', authMiddleware, requireRole('other'), validateOtherProfile, handleValidationErrors, async (req, res) => {
   try {
+    if (await rejectIfUsernameTaken(req, res)) return;
+
     const existingProfile = await OtherProfile.findByUserId(req.userId);
 
     let profile;
@@ -344,6 +396,7 @@ router.post('/other', authMiddleware, requireRole('other'), validateOtherProfile
     });
   } catch (error) {
     logger.error('Other profile error:', error);
+    if (handleUsernameConflict(error, res)) return;
     res.status(500).json({ error: 'Failed to save profile' });
   }
 });
@@ -662,12 +715,21 @@ router.get('/search', authMiddleware, async (req, res) => {
   }
 });
 
-// Check username availability
+// Check username availability.
+//
+// Normalise before lookup: usernames are stored lowercase (validation.js
+// lowercases every write path), and findByUsername checks all four tables that
+// carry a UNIQUE username constraint.
+//
+// NOTE for callers: a 429 from the rate limiters above never reaches this
+// handler, so the response body has no `available` key. Clients MUST check
+// response.ok and treat any non-200 as "could not verify" rather than "taken" —
+// see checkAvailability() in frontend/shared/api.js. Rendering a 429 as "taken"
+// was the original signup bug.
 router.get('/check-username/:username', availabilityLimiter, availabilityDailyLimiter, async (req, res) => {
   try {
-    const { username } = req.params;
+    const username = String(req.params.username || '').trim().toLowerCase();
 
-    // Check in users table (single source of truth for usernames)
     const existingUser = await User.findByUsername(username);
 
     res.json({
@@ -681,10 +743,12 @@ router.get('/check-username/:username', availabilityLimiter, availabilityDailyLi
   }
 });
 
-// Check email availability
-router.get('/check-email/:email', availabilityLimiter, availabilityDailyLimiter, async (req, res) => {
+// Check email availability.
+// Uses its OWN limiter pair so the email field cannot drain the username budget
+// (both fields live on the same signup form).
+router.get('/check-email/:email', emailAvailabilityLimiter, emailAvailabilityDailyLimiter, async (req, res) => {
   try {
-    const { email } = req.params;
+    const email = String(req.params.email || '').trim().toLowerCase();
 
     // Check if email exists in users table
     const existingUser = await User.findByEmail(email);
@@ -695,7 +759,10 @@ router.get('/check-email/:email', availabilityLimiter, availabilityDailyLimiter,
     });
   } catch (error) {
     logger.error('Check email error:', error);
-    res.status(500).json({ error: 'Failed to check email' });
+    // Fail OPEN, matching check-username. Returning a 500 here made the signup
+    // forms render a false "email already in use"; registration still enforces
+    // uniqueness server-side.
+    res.json({ available: true, email: req.params.email });
   }
 });
 

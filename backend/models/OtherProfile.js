@@ -27,7 +27,8 @@ class OtherProfile {
 
   static async findByUsername(username) {
     const result = await pool.query(
-      'SELECT op.*, u.role FROM other_profiles op JOIN users u ON op.user_id = u.id WHERE op.username = $1',
+      // Case-insensitive: matches the lower(username) unique index (migration 054).
+      'SELECT op.*, u.role FROM other_profiles op JOIN users u ON op.user_id = u.id WHERE lower(op.username) = lower($1)',
       [username]
     );
     return result.rows[0];

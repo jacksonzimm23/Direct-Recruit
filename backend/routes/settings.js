@@ -1452,18 +1452,33 @@ router.post('/switch-profile', authMiddleware, async (req, res) => {
       [targetRole, req.userId]
     );
 
-    // Update users.username if provided in profile_data
+    // Update users.username if provided in profile_data.
+    //
+    // This path bypasses express-validator (it uses the hand-rolled check in
+    // validateProfileData below), so it has to normalise for itself. Lowercase
+    // to stay consistent with the lower(username) unique indexes (migration 054)
+    // and with every other write path.
     if (profile_data.username) {
-      // Check username uniqueness
+      const normalizedUsername = String(profile_data.username).trim().toLowerCase();
+      // Check username uniqueness across all four tables that carry a UNIQUE
+      // username constraint, excluding this user's own rows.
       const usernameCheck = await client.query(
-        'SELECT id FROM users WHERE username = $1 AND id != $2',
-        [profile_data.username, req.userId]
+        `SELECT 1 FROM users            WHERE lower(username) = $1 AND id      != $2
+         UNION ALL
+         SELECT 1 FROM player_profiles  WHERE lower(username) = $1 AND user_id != $2
+         UNION ALL
+         SELECT 1 FROM coach_profiles   WHERE lower(username) = $1 AND user_id != $2
+         UNION ALL
+         SELECT 1 FROM other_profiles   WHERE lower(username) = $1 AND user_id != $2
+         LIMIT 1`,
+        [normalizedUsername, req.userId]
       );
       if (usernameCheck.rows.length > 0) {
         await client.query('ROLLBACK');
-        return res.status(400).json({ error: 'Username already taken' });
+        return res.status(409).json({ error: 'That username is already taken. Please choose another.' });
       }
-      await client.query('UPDATE users SET username = $1 WHERE id = $2', [profile_data.username, req.userId]);
+      profile_data.username = normalizedUsername;
+      await client.query('UPDATE users SET username = $1 WHERE id = $2', [normalizedUsername, req.userId]);
     }
 
     // Create new profile row
@@ -1900,11 +1915,18 @@ function validateFitFieldsForType(targetType, data) {
 function validateProfileDataForType(targetType, data) {
   const targetRole = User.getBaseRole(targetType);
 
-  if (!data.username || data.username.trim().length === 0) {
+  // Normalise in place BEFORE testing, so the emptiness check and the regex
+  // agree. They previously disagreed: the first trimmed, the second did not, so
+  // "bob " passed one and failed the other. Lowercasing here also keeps this
+  // path consistent with usernameField() in middleware/validation.js.
+  if (typeof data.username === 'string') {
+    data.username = data.username.trim().toLowerCase();
+  }
+  if (!data.username || data.username.length === 0) {
     return 'Username is required';
   }
-  if (!/^[a-z0-9_]{1,15}$/.test(data.username)) {
-    return 'Username must be 1-15 characters, lowercase letters, numbers, and underscores only';
+  if (!/^[a-z0-9_]{3,15}$/.test(data.username)) {
+    return 'Username must be 3-15 characters, lowercase letters, numbers, and underscores only';
   }
 
   // DOB required for ALL target types (App Store age rating).

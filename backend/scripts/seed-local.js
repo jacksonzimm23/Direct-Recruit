@@ -89,7 +89,8 @@ const MIGRATIONS = [
   'add-other-profile-contact.sql',
   'add-profile-contact-fields.sql',
   'add-push-enabled.sql',
-  'add-trial-used.sql'
+  'add-trial-used.sql',
+  'add-username-case-insensitive.sql'
 ];
 
 async function applyManualFixes() {

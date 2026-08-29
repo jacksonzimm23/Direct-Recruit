@@ -4,6 +4,17 @@ const logger = require('../utils/logger');
 // Skip rate limiting in development for localhost
 const isDevelopment = process.env.NODE_ENV !== 'production';
 
+// Local-only escape hatch: `FORCE_RATE_LIMITS=1 node server.js` exercises the
+// 429 paths in dev without pretending to be production (NODE_ENV=production
+// locally would also demand a live Redis, SSL on the DB, and prod cookie/CORS
+// behaviour). Deliberately does NOT affect getRedisStore below — dev keeps the
+// in-memory store.
+//
+// This exists because the availability limiters skipping in dev is exactly why
+// the "username already taken" signup bug was never caught locally: the 429
+// response the frontend mishandled could not be produced on a dev machine.
+const limitsBypassed = isDevelopment && process.env.FORCE_RATE_LIMITS !== '1';
+
 // Only load Redis store in production
 function getRedisStore(prefix) {
   if (isDevelopment) return {};
@@ -80,41 +91,65 @@ const passwordResetLimiter = rateLimit({
   }
 });
 
-// Availability check rate limiter — short window, prevents bursts.
-// Raised from 10 to 25 to absorb carrier NAT (multiple cell users behind
-// the same IP) without false-429s on signup availability checks.
-const availabilityLimiter = rateLimit({
-  ...getRedisStore('rl:avail:'),
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: isDevelopment ? 10000 : 25, // 25 checks per 15 minutes per IP (cell-NAT-safe)
-  message: 'Too many requests, please try again later',
-  standardHeaders: true,
-  legacyHeaders: false,
-  skip: (req) => isDevelopment,
-  handler: (req, res) => {
-    logger.warn('Availability check short-window limit hit', { ip: req.ip, route: 'check-availability' });
-    res.status(429).json({
-      error: 'Too many requests, please try again later'
-    });
-  }
-});
+// Availability check rate limiters.
+//
+// IMPORTANT: the username and email checks get SEPARATE limiter instances (and
+// therefore separate Redis buckets). They both live on the same signup form, so
+// sharing one bucket meant typing an email drained the username budget and vice
+// versa — a coach filling out one form could exhaust the cap by themselves.
+//
+// Caps are deliberately generous. The checks are debounced-per-keystroke, so one
+// username attempt costs several requests, and cell/school NAT puts many real
+// users behind a single IP. A false 429 here is far more damaging than a slow
+// enumeration attempt: the endpoints only ever answer yes/no, and the server
+// still enforces uniqueness at write time (23505 -> 409).
+//
+// History: the short-window cap went 10 -> 25 -> 60. The 25 was still low enough
+// that testers on shared WiFi hit it constantly, and the frontend rendered the
+// resulting 429 as "This username is already taken" (fixed in shared/api.js —
+// see checkAvailability, which maps any non-200 to 'unknown', never 'taken').
+function makeAvailabilityLimiters(label, shortPrefix, dailyPrefix) {
+  return {
+    short: rateLimit({
+      ...getRedisStore(shortPrefix),
+      windowMs: 15 * 60 * 1000, // 15 minutes
+      max: limitsBypassed ? 10000 : 60, // 60 checks per 15 minutes per IP (cell-NAT-safe)
+      message: 'Too many requests, please try again later',
+      standardHeaders: true,
+      legacyHeaders: false,
+      skip: () => limitsBypassed,
+      handler: (req, res) => {
+        logger.warn('Availability check short-window limit hit', { ip: req.ip, route: label });
+        res.status(429).json({
+          error: 'Too many requests, please try again later'
+        });
+      }
+    }),
+    daily: rateLimit({
+      ...getRedisStore(dailyPrefix),
+      windowMs: 24 * 60 * 60 * 1000, // 24 hours
+      max: limitsBypassed ? 10000 : 400, // 400 checks per day per IP
+      message: 'Too many requests, please try again later',
+      standardHeaders: true,
+      legacyHeaders: false,
+      skip: () => limitsBypassed,
+      handler: (req, res) => {
+        logger.warn('Availability check daily cap hit', { ip: req.ip, route: label });
+        res.status(429).json({
+          error: 'Too many requests, please try again later'
+        });
+      }
+    })
+  };
+}
 
-// Availability check daily soft-cap — prevents sustained enumeration from a single IP
-const availabilityDailyLimiter = rateLimit({
-  ...getRedisStore('rl:availday:'),
-  windowMs: 24 * 60 * 60 * 1000, // 24 hours
-  max: isDevelopment ? 10000 : 100, // 100 checks per day per IP
-  message: 'Too many requests, please try again later',
-  standardHeaders: true,
-  legacyHeaders: false,
-  skip: (req) => isDevelopment,
-  handler: (req, res) => {
-    logger.warn('Availability check daily cap hit', { ip: req.ip, route: 'check-availability' });
-    res.status(429).json({
-      error: 'Too many requests, please try again later'
-    });
-  }
-});
+const _usernameAvailability = makeAvailabilityLimiters('check-username', 'rl:avail:', 'rl:availday:');
+const _emailAvailability = makeAvailabilityLimiters('check-email', 'rl:availemail:', 'rl:availemailday:');
+
+const availabilityLimiter = _usernameAvailability.short;
+const availabilityDailyLimiter = _usernameAvailability.daily;
+const emailAvailabilityLimiter = _emailAvailability.short;
+const emailAvailabilityDailyLimiter = _emailAvailability.daily;
 
 // Message rate limiter
 const messageLimiter = rateLimit({
@@ -205,6 +240,8 @@ module.exports = {
   passwordResetLimiter,
   availabilityLimiter,
   availabilityDailyLimiter,
+  emailAvailabilityLimiter,
+  emailAvailabilityDailyLimiter,
   coachRequestLimiter,
   questionnaireGetLimiter,
   questionnaireSubmitLimiter,

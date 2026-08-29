@@ -112,15 +112,61 @@ class User {
   }
 
   // Security #15: only caller (username-availability check) needs existence
-  // truthiness. Project to `id` only — any future caller that wants more
+  // truthiness. Project to a constant — any future caller that wants real
   // columns has to make a deliberate choice rather than implicitly inherit
   // SELECT *.
+  //
+  // Checks ALL FOUR tables that carry a UNIQUE username constraint, not just
+  // `users`. They drift: several accounts have users.username NULL while the
+  // profile row holds the name, so a users-only check answered "available" for
+  // a name that then blew up on the profile table's unique constraint as a
+  // generic 500 at save time.
+  //
+  // Case-insensitive to match the unique indexes added in migration 054.
+  // Usernames are normalised to lowercase on write (see middleware/validation.js),
+  // so `lower()` here is belt-and-braces for any legacy mixed-case row.
   static async findByUsername(username) {
+    const needle = String(username || '').trim().toLowerCase();
+    if (!needle) return undefined;
     const result = await pool.query(
-      'SELECT id FROM users WHERE username = $1',
-      [username]
+      `SELECT 1 AS taken FROM users            WHERE lower(username) = $1
+       UNION ALL
+       SELECT 1 FROM player_profiles WHERE lower(username) = $1
+       UNION ALL
+       SELECT 1 FROM coach_profiles  WHERE lower(username) = $1
+       UNION ALL
+       SELECT 1 FROM other_profiles  WHERE lower(username) = $1
+       LIMIT 1`,
+      [needle]
     );
     return result.rows[0];
+  }
+
+  // Is this username held by SOMEONE ELSE?
+  //
+  // The four UNIQUE indexes are per-table, so they cannot catch a CROSS-table
+  // collision: writing 'coachrodriguez' into player_profiles.username does not
+  // violate the coach_profiles index, even though a coach already owns that
+  // handle and /profile/username/coachrodriguez resolves to exactly one of them.
+  // The DB alone cannot enforce this, so the write paths call this first.
+  //
+  // Excludes the caller's own rows so re-saving your own unchanged username is
+  // never reported as a conflict.
+  static async isUsernameTakenByOther(userId, username) {
+    const needle = String(username || '').trim().toLowerCase();
+    if (!needle) return false;
+    const result = await pool.query(
+      `SELECT 1 AS taken FROM users            WHERE lower(username) = $1 AND id      <> $2
+       UNION ALL
+       SELECT 1 FROM player_profiles WHERE lower(username) = $1 AND user_id <> $2
+       UNION ALL
+       SELECT 1 FROM coach_profiles  WHERE lower(username) = $1 AND user_id <> $2
+       UNION ALL
+       SELECT 1 FROM other_profiles  WHERE lower(username) = $1 AND user_id <> $2
+       LIMIT 1`,
+      [needle, userId]
+    );
+    return result.rows.length > 0;
   }
 
   static async updateUsername(userId, username) {

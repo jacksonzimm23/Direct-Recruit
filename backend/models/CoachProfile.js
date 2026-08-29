@@ -199,7 +199,8 @@ class CoachProfile {
   }
 
   static async findByUsername(username) {
-    const result = await pool.query('SELECT cp.*, u.role FROM coach_profiles cp JOIN users u ON cp.user_id = u.id WHERE cp.username = $1', [username]);
+    // Case-insensitive: matches the lower(username) unique index (migration 054).
+    const result = await pool.query('SELECT cp.*, u.role FROM coach_profiles cp JOIN users u ON cp.user_id = u.id WHERE lower(cp.username) = lower($1)', [username]);
     return result.rows[0];
   }
 
