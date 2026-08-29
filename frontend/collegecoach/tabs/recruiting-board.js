@@ -3357,34 +3357,87 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
 
     // ==================== Touch Drag and Drop ====================
+    //
+    // iOS note (read before changing any of this). On WKWebView the browser
+    // decides whether a touch gesture belongs to a scroll container based on
+    // whether the page called preventDefault() on the touchmove events. Once it
+    // has handed the gesture to a scroller, every later preventDefault() is
+    // ignored and it fires `touchcancel`, which used to tear the drag down and
+    // leave the card frozen for the rest of the finger-down (there was no way to
+    // re-arm). That was the "hold a player, move slowly, it locks in place" bug.
+    //
+    // Two rules keep the gesture ours:
+    //   1. While the long press is still pending we preventDefault() every
+    //      touchmove that is INSIDE the slop radius, so the browser can never
+    //      claim the gesture while we are still deciding. The moment the finger
+    //      travels past the slop radius we stop preventing and release the
+    //      gesture, so an ordinary scroll-by-swiping-over-a-card still works.
+    //   2. Once the drag is armed we preventDefault() unconditionally.
+    //
+    // Because we own the gesture, native scrolling cannot run during a drag —
+    // so the board is scrolled for the user by the auto-scroll loop below.
     let touchDragActive = false;
     let touchLongPressTimer = null;
     let touchStartX = 0;
     let touchStartY = 0;
+    let touchLastX = 0;
+    let touchLastY = 0;
+    let touchGrabOffsetX = 0;
+    let touchGrabOffsetY = 0;
     let touchClone = null;
     let touchDragType = null; // 'card' or 'column'
     let touchDragJustEnded = false;
+    let autoScrollRaf = null;
     const LONG_PRESS_MS = 400;
     const TOUCH_DRAG_THRESHOLD = 10;
+    // Distance from a scroll container's edge at which auto-scroll kicks in,
+    // and the fastest it will travel (px per animation frame).
+    const AUTO_SCROLL_EDGE = 56;
+    const AUTO_SCROLL_MAX_SPEED = 16;
+    // Lifts the dragged clone above the fingertip so the card stays visible
+    // instead of sitting under the user's thumb.
+    const TOUCH_CLONE_LIFT = 14;
+
+    // Suppress the synthetic click that iOS fires after a touch sequence, so a
+    // drag (or a drag the browser cancelled) never falls through to the card's
+    // click handler and opens the context menu.
+    function armTouchClickSuppression() {
+        touchDragJustEnded = true;
+        setTimeout(function() { touchDragJustEnded = false; }, 300);
+    }
+
+    // Shared-board viewers are read-only. The desktop path enforces this with
+    // `card.draggable = false` (applySharedPermissionToUI), which is an HTML5
+    // drag attribute the touch path never reads — so without this check a
+    // viewer could reorder the board on a phone and watch the change silently
+    // fail to save.
+    function isTouchDragBlocked() {
+        return currentBoardMode === 'group' && currentSharedGroupPermission === 'viewer';
+    }
 
     function createTouchClone(element) {
         const rect = element.getBoundingClientRect();
         const clone = document.createElement('div');
-        clone.className = 'touch-drag-clone';
+        // Keep the source element's own classes so the clone renders with the
+        // real card styling (hs-player / transfer-player colours, the final
+        // colour stripe, the grade pill) instead of a generic grey box.
+        clone.className = element.className + ' touch-drag-clone';
+        clone.classList.remove('dragging');
         clone.innerHTML = element.innerHTML;
         clone.style.width = rect.width + 'px';
+        clone.style.height = rect.height + 'px';
         clone.style.left = rect.left + 'px';
         clone.style.top = rect.top + 'px';
         document.body.appendChild(clone);
         return clone;
     }
 
+    // Anchored to where the finger actually grabbed the element, so the card
+    // does not jump under the thumb the instant the drag arms.
     function moveTouchClone(clone, x, y) {
         if (!clone) return;
-        const width = clone.offsetWidth;
-        const height = clone.offsetHeight;
-        clone.style.left = (x - width / 2) + 'px';
-        clone.style.top = (y - height / 2) + 'px';
+        clone.style.left = (x - touchGrabOffsetX) + 'px';
+        clone.style.top = (y - touchGrabOffsetY - TOUCH_CLONE_LIFT) + 'px';
     }
 
     function removeTouchClone() {
@@ -3401,9 +3454,112 @@ document.addEventListener('DOMContentLoaded', async function() {
         return el ? el.closest(selector) : null;
     }
 
+    // ---- Auto-scroll while dragging -------------------------------------
+    // Without this a drag can only ever reach a drop target that is already on
+    // screen. On a phone the position columns are a nowrap horizontal scroller
+    // (~2 columns visible) and each column's list is capped at 280px, so most
+    // of the board was simply unreachable by drag.
+
+    function isScrollable(el, axis) {
+        if (!el || el === document.body || el === document.documentElement) return false;
+        const style = window.getComputedStyle(el);
+        if (axis === 'x') {
+            const ox = style.overflowX;
+            return (ox === 'auto' || ox === 'scroll') && el.scrollWidth > el.clientWidth + 1;
+        }
+        const oy = style.overflowY;
+        return (oy === 'auto' || oy === 'scroll') && el.scrollHeight > el.clientHeight + 1;
+    }
+
+    // Distance-to-edge ramp: 0 outside the edge zone, up to max at the edge.
+    function edgeSpeed(distance) {
+        if (distance >= AUTO_SCROLL_EDGE) return 0;
+        const ratio = Math.max(0, (AUTO_SCROLL_EDGE - distance) / AUTO_SCROLL_EDGE);
+        return Math.ceil(ratio * AUTO_SCROLL_MAX_SPEED);
+    }
+
+    function autoScrollStep() {
+        if (!touchDragActive) { autoScrollRaf = null; return; }
+
+        const x = touchLastX;
+        const y = touchLastY;
+        const cx = Math.max(0, Math.min(x, window.innerWidth - 1));
+        const cy = Math.max(0, Math.min(y, window.innerHeight - 1));
+
+        // Walk up from whatever is under the finger and scroll the first
+        // scrollable ancestor on each axis. The clone is pointer-events:none so
+        // elementFromPoint sees through it.
+        let el = document.elementFromPoint(cx, cy);
+        let scrolledX = false;
+        let scrolledY = false;
+
+        while (el && el !== document.body && el !== document.documentElement) {
+            const rect = el.getBoundingClientRect();
+
+            if (!scrolledX && isScrollable(el, 'x')) {
+                const left = edgeSpeed(cx - rect.left);
+                const right = edgeSpeed(rect.right - cx);
+                if (left > 0 && el.scrollLeft > 0) { el.scrollLeft -= left; scrolledX = true; }
+                else if (right > 0 && el.scrollLeft < el.scrollWidth - el.clientWidth) { el.scrollLeft += right; scrolledX = true; }
+            }
+
+            if (!scrolledY && isScrollable(el, 'y')) {
+                const up = edgeSpeed(cy - rect.top);
+                const down = edgeSpeed(rect.bottom - cy);
+                if (up > 0 && el.scrollTop > 0) { el.scrollTop -= up; scrolledY = true; }
+                else if (down > 0 && el.scrollTop < el.scrollHeight - el.clientHeight) { el.scrollTop += down; scrolledY = true; }
+            }
+
+            el = el.parentElement;
+        }
+
+        // Fall back to the page itself so a board taller than the viewport is
+        // still reachable (native scrolling is suppressed while dragging).
+        if (!scrolledY) {
+            const up = edgeSpeed(cy);
+            const down = edgeSpeed(window.innerHeight - cy);
+            if (up > 0 && window.pageYOffset > 0) window.scrollBy(0, -up);
+            else if (down > 0) window.scrollBy(0, down);
+        }
+
+        // The board moved under a stationary finger, so the highlighted drop
+        // target has to be recomputed even without a touchmove.
+        refreshTouchDropTarget();
+
+        autoScrollRaf = requestAnimationFrame(autoScrollStep);
+    }
+
+    function startAutoScroll() {
+        if (autoScrollRaf === null) autoScrollRaf = requestAnimationFrame(autoScrollStep);
+    }
+
+    function stopAutoScroll() {
+        if (autoScrollRaf !== null) {
+            cancelAnimationFrame(autoScrollRaf);
+            autoScrollRaf = null;
+        }
+    }
+
+    // Single source of truth for the drop highlight, called from both touchmove
+    // and the auto-scroll loop.
+    function refreshTouchDropTarget() {
+        if (touchDragType === 'card') {
+            document.querySelectorAll('.recruits-list.drag-over').forEach(l => l.classList.remove('drag-over'));
+            const targetList = getDropTargetUnderFinger(touchLastX, touchLastY, '.recruits-list');
+            if (targetList) targetList.classList.add('drag-over');
+        } else if (touchDragType === 'column') {
+            document.querySelectorAll('.position-slot.drag-over').forEach(s => s.classList.remove('drag-over'));
+            const targetSlot = getDropTargetUnderFinger(touchLastX, touchLastY, '.position-slot');
+            if (targetSlot && targetSlot !== draggedColumn && targetSlot.parentElement === columnSourceGroup) {
+                targetSlot.classList.add('drag-over');
+            }
+        }
+    }
+
     function cleanupTouchDrag() {
         clearTimeout(touchLongPressTimer);
         touchLongPressTimer = null;
+        stopAutoScroll();
         removeTouchClone();
         document.body.classList.remove('touch-dragging');
 
@@ -3420,49 +3576,75 @@ document.addEventListener('DOMContentLoaded', async function() {
         columnSourceGroup = null;
     }
 
+    // Shared by the card and column touchmove handlers for the window between
+    // touchstart and the long press firing. Returns true when the caller should
+    // stop processing (the gesture has been released to the browser).
+    function handlePendingTouchMove(e) {
+        if (!touchLongPressTimer) return true;   // already released or cancelled
+        const touch = e.touches[0];
+        if (!touch) return true;
+        // Keep the last-known point fresh so the clone spawns under the finger
+        // even if it drifted a few px inside the slop radius during the hold.
+        touchLastX = touch.clientX;
+        touchLastY = touch.clientY;
+        const dx = touch.clientX - touchStartX;
+        const dy = touch.clientY - touchStartY;
+        if (Math.sqrt(dx * dx + dy * dy) > TOUCH_DRAG_THRESHOLD) {
+            // Past the slop radius: the user is scrolling, not dragging. Drop
+            // the long press and let the browser have the gesture. Deliberately
+            // NOT prevented, so the native scroll starts on this same event.
+            clearTimeout(touchLongPressTimer);
+            touchLongPressTimer = null;
+            return true;
+        }
+        // Inside the slop radius: swallow the move so WebKit cannot hand the
+        // gesture to a scroll container while the long press is still pending.
+        if (e.cancelable) e.preventDefault();
+        return true;
+    }
+
     // --- Player card touch handlers ---
     function handleCardTouchStart(e) {
         if (e.touches.length > 1) return;
+        if (isTouchDragBlocked()) return;
         const touch = e.touches[0];
         touchStartX = touch.clientX;
         touchStartY = touch.clientY;
+        touchLastX = touch.clientX;
+        touchLastY = touch.clientY;
         const card = this;
+        const rect = card.getBoundingClientRect();
+        touchGrabOffsetX = touch.clientX - rect.left;
+        touchGrabOffsetY = touch.clientY - rect.top;
 
         touchLongPressTimer = setTimeout(function() {
+            touchLongPressTimer = null;
             touchDragActive = true;
             touchDragType = 'card';
             draggedElement = card;
             sourceContainer = card.parentElement;
-            card.classList.add('dragging');
             touchClone = createTouchClone(card);
-            moveTouchClone(touchClone, touchStartX, touchStartY);
+            card.classList.add('dragging');
+            moveTouchClone(touchClone, touchLastX, touchLastY);
             document.body.classList.add('touch-dragging');
             if (navigator.vibrate) navigator.vibrate(50);
+            startAutoScroll();
         }, LONG_PRESS_MS);
     }
 
     function handleCardTouchMove(e) {
         if (!touchDragActive) {
-            if (touchLongPressTimer) {
-                const touch = e.touches[0];
-                const dx = touch.clientX - touchStartX;
-                const dy = touch.clientY - touchStartY;
-                if (Math.sqrt(dx * dx + dy * dy) > TOUCH_DRAG_THRESHOLD) {
-                    clearTimeout(touchLongPressTimer);
-                    touchLongPressTimer = null;
-                }
-            }
+            handlePendingTouchMove(e);
             return;
         }
-        e.preventDefault();
+        if (touchDragType !== 'card') return;
+        if (e.cancelable) e.preventDefault();
         const touch = e.touches[0];
-        moveTouchClone(touchClone, touch.clientX, touch.clientY);
-
-        document.querySelectorAll('.recruits-list.drag-over').forEach(l => l.classList.remove('drag-over'));
-        const targetList = getDropTargetUnderFinger(touch.clientX, touch.clientY, '.recruits-list');
-        if (targetList) {
-            targetList.classList.add('drag-over');
-        }
+        if (!touch) return;
+        touchLastX = touch.clientX;
+        touchLastY = touch.clientY;
+        moveTouchClone(touchClone, touchLastX, touchLastY);
+        refreshTouchDropTarget();
     }
 
     function handleCardTouchEnd(e) {
@@ -3470,7 +3652,8 @@ document.addEventListener('DOMContentLoaded', async function() {
         touchLongPressTimer = null;
 
         if (!touchDragActive || touchDragType !== 'card') return;
-        e.preventDefault();
+        if (e.cancelable) e.preventDefault();
+        stopAutoScroll();
 
         const touch = e.changedTouches[0];
         const targetList = getDropTargetUnderFinger(touch.clientX, touch.clientY, '.recruits-list');
@@ -3499,59 +3682,65 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
 
         cleanupTouchDrag();
-        touchDragJustEnded = true;
-        setTimeout(function() { touchDragJustEnded = false; }, 300);
+        armTouchClickSuppression();
     }
 
+    // iOS still fires `touchcancel` in cases we cannot pre-empt (an incoming
+    // call, a system edge gesture, a second finger). Suppress the click that
+    // follows so a cancelled drag does not fall through and open the player
+    // context menu.
     function handleCardTouchCancel() {
+        const wasDragging = touchDragActive;
         cleanupTouchDrag();
+        if (wasDragging) armTouchClickSuppression();
     }
 
     // --- Position column touch handlers ---
     function handleColumnTouchStart(e) {
         if (e.touches.length > 1) return;
+        if (isTouchDragBlocked()) return;
         if (e.target.classList.contains('position-label-input') || e.target.closest('.recruit-card')) return;
 
         const touch = e.touches[0];
         touchStartX = touch.clientX;
         touchStartY = touch.clientY;
+        touchLastX = touch.clientX;
+        touchLastY = touch.clientY;
         const slot = this;
+        const rect = slot.getBoundingClientRect();
+        touchGrabOffsetX = touch.clientX - rect.left;
+        touchGrabOffsetY = touch.clientY - rect.top;
 
         touchLongPressTimer = setTimeout(function() {
+            touchLongPressTimer = null;
             touchDragActive = true;
             touchDragType = 'column';
             draggedColumn = slot;
             columnSourceGroup = slot.parentElement;
-            slot.classList.add('dragging');
             touchClone = createTouchClone(slot);
-            moveTouchClone(touchClone, touchStartX, touchStartY);
+            slot.classList.add('dragging');
+            moveTouchClone(touchClone, touchLastX, touchLastY);
             document.body.classList.add('touch-dragging');
             if (navigator.vibrate) navigator.vibrate(50);
+            startAutoScroll();
         }, LONG_PRESS_MS);
     }
 
     function handleColumnTouchMove(e) {
         if (!touchDragActive) {
-            if (touchLongPressTimer) {
-                const touch = e.touches[0];
-                const dx = touch.clientX - touchStartX;
-                const dy = touch.clientY - touchStartY;
-                if (Math.sqrt(dx * dx + dy * dy) > TOUCH_DRAG_THRESHOLD) {
-                    clearTimeout(touchLongPressTimer);
-                    touchLongPressTimer = null;
-                }
-            }
+            handlePendingTouchMove(e);
             return;
         }
-        e.preventDefault();
+        // A card drag bubbles its touchmove up through the enclosing slot; the
+        // card handler owns that gesture, so bail rather than double-handling.
+        if (touchDragType !== 'column') return;
+        if (e.cancelable) e.preventDefault();
         const touch = e.touches[0];
-        moveTouchClone(touchClone, touch.clientX, touch.clientY);
-
-        document.querySelectorAll('.position-slot.drag-over').forEach(s => s.classList.remove('drag-over'));
-        const targetSlot = getDropTargetUnderFinger(touch.clientX, touch.clientY, '.position-slot');
-        if (targetSlot && targetSlot !== draggedColumn && targetSlot.parentElement === columnSourceGroup) {
-            targetSlot.classList.add('drag-over');
-        }
+        if (!touch) return;
+        touchLastX = touch.clientX;
+        touchLastY = touch.clientY;
+        moveTouchClone(touchClone, touchLastX, touchLastY);
+        refreshTouchDropTarget();
     }
 
     function handleColumnTouchEnd(e) {
@@ -3559,7 +3748,8 @@ document.addEventListener('DOMContentLoaded', async function() {
         touchLongPressTimer = null;
 
         if (!touchDragActive || touchDragType !== 'column') return;
-        e.preventDefault();
+        if (e.cancelable) e.preventDefault();
+        stopAutoScroll();
 
         const touch = e.changedTouches[0];
         const targetSlot = getDropTargetUnderFinger(touch.clientX, touch.clientY, '.position-slot');
@@ -3579,17 +3769,22 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
 
         cleanupTouchDrag();
+        armTouchClickSuppression();
     }
 
     function handleColumnTouchCancel() {
+        const wasDragging = touchDragActive;
         cleanupTouchDrag();
+        if (wasDragging) armTouchClickSuppression();
     }
 
     // --- Attach touch listeners ---
+    // touchmove MUST stay { passive: false }: the pending-phase preventDefault()
+    // is the whole reason WebKit cannot steal the gesture mid-long-press.
     function initTouchDragForCard(card) {
         card.addEventListener('touchstart', handleCardTouchStart, { passive: true });
         card.addEventListener('touchmove', handleCardTouchMove, { passive: false });
-        card.addEventListener('touchend', handleCardTouchEnd);
+        card.addEventListener('touchend', handleCardTouchEnd, { passive: false });
         card.addEventListener('touchcancel', handleCardTouchCancel);
     }
 
@@ -3597,7 +3792,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         document.querySelectorAll('.position-slot').forEach(function(slot) {
             slot.addEventListener('touchstart', handleColumnTouchStart, { passive: true });
             slot.addEventListener('touchmove', handleColumnTouchMove, { passive: false });
-            slot.addEventListener('touchend', handleColumnTouchEnd);
+            slot.addEventListener('touchend', handleColumnTouchEnd, { passive: false });
             slot.addEventListener('touchcancel', handleColumnTouchCancel);
         });
     }

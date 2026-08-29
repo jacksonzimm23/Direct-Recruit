@@ -54,23 +54,28 @@
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             if (email.length > 0 && emailRegex.test(email)) {
                 personalEmailCheckTimeout = setTimeout(async () => {
-                    try {
-                        const response = await fetch(getApiBase() + '/profile/check-email/' + encodeURIComponent(email));
-                        const data = await response.json();
-                        if (!data.available) {
-                            personalEmailError.style.display = 'block';
-                            if (personalEmailHint) personalEmailHint.style.display = 'none';
-                            personalEmailInput.classList.add('input-error');
-                            personalEmailInput.classList.remove('input-success');
-                            isPersonalEmailAvailable = false;
-                        } else {
-                            personalEmailInput.classList.add('input-success');
-                            personalEmailInput.classList.remove('input-error');
-                            isPersonalEmailAvailable = true;
-                        }
-                    } catch (err) {
-                        // Network/rate-limit error — let the form submit proceed; the
-                        // server-side guard at registration time will still catch dupes.
+                    // checkAvailability returns 'available' | 'taken' | 'unknown'.
+                    // It maps every non-200 (429 rate limit included) to 'unknown'
+                    // rather than "taken" — a bare `!data.available` on a 429 body
+                    // read as "already in use" and blocked the form.
+                    const status = await checkAvailability('email', email);
+                    // Discard a stale response for an older prefix.
+                    if (personalEmailInput.value.trim() !== email) return;
+                    if (status === 'taken') {
+                        personalEmailError.style.display = 'block';
+                        if (personalEmailHint) personalEmailHint.style.display = 'none';
+                        personalEmailInput.classList.add('input-error');
+                        personalEmailInput.classList.remove('input-success');
+                        isPersonalEmailAvailable = false;
+                    } else if (status === 'available') {
+                        personalEmailInput.classList.add('input-success');
+                        personalEmailInput.classList.remove('input-error');
+                        isPersonalEmailAvailable = true;
+                    } else {
+                        // 'unknown' — the server could not answer. Stay neutral and
+                        // let the form submit; the server-side guard at registration
+                        // time still catches duplicates.
+                        personalEmailInput.classList.remove('input-error', 'input-success');
                         isPersonalEmailAvailable = true;
                     }
                 }, 500);

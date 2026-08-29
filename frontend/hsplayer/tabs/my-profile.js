@@ -3400,6 +3400,8 @@ let editUsernameCheckTimeout;
 let isEditUsernameAvailable = false;
 let originalUsername = '';
 
+const editUsernameSeq = createSequencer();
+
 function setupUsernameValidation() {
     const editUsernameInput = document.getElementById('editUsername');
     const editUsernameError = document.getElementById('editUsernameError');
@@ -3426,8 +3428,14 @@ function setupUsernameValidation() {
             editUsernameInput.style.borderColor = '';
             isEditUsernameAvailable = false;
 
-            // If username hasn't changed from original, it's valid
-            if (username === originalUsername) {
+            // If username hasn't changed from original, it's valid.
+            //
+            // Compare case-INSENSITIVELY. This handler lowercases the field while
+            // originalUsername keeps whatever casing was stored, so a legacy
+            // mixed-case account failed this check the moment they touched the
+            // field, then ran the availability check against their OWN row and
+            // was told their own username was already taken.
+            if (username === String(originalUsername || '').trim().toLowerCase()) {
                 editUsernameInput.style.borderColor = '#4caf50';
                 isEditUsernameAvailable = true;
                 return;
@@ -3436,23 +3444,35 @@ function setupUsernameValidation() {
             // Only check if username is not empty and matches pattern (lowercase letters, numbers, underscore)
             if (username.length >= 3 && /^[a-z0-9_]+$/.test(username)) {
                 // Debounce API call by 500ms
+                const token = editUsernameSeq.next();
                 editUsernameCheckTimeout = setTimeout(async () => {
-                    try {
-                        const response = await API.get(`/profile/check-username/${username}`);
+                    // checkAvailability maps every non-200 (429 included) to
+                    // 'unknown'. The old code used API.get, which THROWS on 429,
+                    // leaving isEditUsernameAvailable false and silently blocking
+                    // save with no message.
+                    const status = await checkAvailability('username', username);
+                    // Discard a stale response for an older prefix.
+                    if (!editUsernameSeq.isCurrent(token)) return;
+                    if (editUsernameInput.value.trim() !== username) return;
 
-                        if (!response.available) {
-                            // Username is taken
-                            editUsernameError.style.display = 'block';
-                            editUsernameHint.style.display = 'none';
-                            editUsernameInput.style.borderColor = '#ff6b6b';
-                            isEditUsernameAvailable = false;
-                        } else {
-                            // Username is available
-                            editUsernameInput.style.borderColor = '#4caf50';
-                            isEditUsernameAvailable = true;
-                        }
-                    } catch (error) {
-                        console.error('Error checking username:', error);
+                    if (status === 'taken') {
+                        editUsernameError.style.display = 'block';
+                        editUsernameHint.style.display = 'none';
+                        editUsernameInput.style.borderColor = '#ff6b6b';
+                        isEditUsernameAvailable = false;
+                    } else if (status === 'available') {
+                        editUsernameError.style.display = 'none';
+                        editUsernameHint.style.display = 'block';
+                        editUsernameInput.style.borderColor = '#4caf50';
+                        isEditUsernameAvailable = true;
+                    } else {
+                        // 'unknown' — stay neutral and let the save proceed. The
+                        // server enforces uniqueness and returns 409 on a real
+                        // collision.
+                        editUsernameError.style.display = 'none';
+                        editUsernameHint.style.display = 'block';
+                        editUsernameInput.style.borderColor = '';
+                        isEditUsernameAvailable = true;
                     }
                 }, 500);
             }
@@ -3512,6 +3532,36 @@ document.addEventListener('DOMContentLoaded', function() {
             updateEditSelectedPositions();
         });
     });
+
+    // First/last name character counters. The modal fills these inputs
+    // programmatically, which fires no input event, so re-sync when the modal
+    // is shown as well as on typing.
+    const nameCounterPairs = [
+        ['editFirstName', 'editFirstNameCharCounter'],
+        ['editLastName', 'editLastNameCharCounter']
+    ];
+    function syncNameCounters() {
+        nameCounterPairs.forEach(function(pair) {
+            const nameInput = document.getElementById(pair[0]);
+            const nameCounter = document.getElementById(pair[1]);
+            if (!nameInput || !nameCounter) return;
+            const len = nameInput.value.length;
+            nameCounter.textContent = `${len}/20`;
+            nameCounter.classList.toggle('limit-reached', len >= 20);
+        });
+    }
+    nameCounterPairs.forEach(function(pair) {
+        const nameInput = document.getElementById(pair[0]);
+        if (nameInput) nameInput.addEventListener('input', syncNameCounters);
+    });
+    const editProfileModalEl = document.getElementById('editProfileModal');
+    if (editProfileModalEl) {
+        new MutationObserver(syncNameCounters).observe(editProfileModalEl, {
+            attributes: true,
+            attributeFilter: ['style', 'class']
+        });
+    }
+    syncNameCounters();
 
     // Handle bio character counter
     const bioInput = document.getElementById('editBio');

@@ -152,12 +152,51 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
     }
 
-    // Email availability validation
+    // Email availability validation.
+    //
+    // Availability is tri-state ('available' | 'taken' | 'unknown'). 'unknown'
+    // means the server could not answer (rate limited, offline) and MUST let the
+    // user through — the server re-checks at save time. Treating 'unknown' as
+    // 'taken' is the bug that told testers every input was already in use.
     const emailInput = document.getElementById('email');
     const emailError = document.getElementById('emailError');
     const emailHint = document.getElementById('emailHint');
     let emailCheckTimeout;
-    let isEmailAvailable = true;
+    let emailStatus = 'unknown';
+    const emailSeq = createSequencer();
+
+    function applyEmailStatus(status) {
+        emailStatus = status;
+        if (status === 'taken') {
+            emailError.style.display = 'block';
+            if (emailHint) emailHint.style.display = 'none';
+            emailInput.classList.add('input-error');
+            emailInput.classList.remove('input-success');
+        } else if (status === 'available') {
+            emailError.style.display = 'none';
+            if (emailHint) emailHint.style.display = 'block';
+            emailInput.classList.add('input-success');
+            emailInput.classList.remove('input-error');
+        } else {
+            emailError.style.display = 'none';
+            if (emailHint) emailHint.style.display = 'block';
+            emailInput.classList.remove('input-error', 'input-success');
+        }
+    }
+
+    // Runs the check immediately, bypassing the debounce. Used on submit so a
+    // user who clicks before the 500ms timer fires still gets a real answer.
+    async function resolveEmailNow() {
+        clearTimeout(emailCheckTimeout);
+        const email = emailInput ? emailInput.value.trim() : '';
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!email || !emailRegex.test(email)) return 'unknown';
+        const token = emailSeq.next();
+        const status = await checkAvailability('email', email);
+        if (!emailSeq.isCurrent(token)) return emailStatus;
+        applyEmailStatus(status);
+        return status;
+    }
 
     if (emailInput && emailError) {
         emailInput.addEventListener('input', function() {
@@ -167,38 +206,18 @@ document.addEventListener('DOMContentLoaded', async function() {
             clearTimeout(emailCheckTimeout);
 
             // Reset error state
-            emailError.style.display = 'none';
-            if (emailHint) emailHint.style.display = 'block';
-            emailInput.classList.remove('input-error', 'input-success');
-            isEmailAvailable = true;
+            applyEmailStatus('unknown');
 
             // Only check if email is valid format
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             if (email.length > 0 && emailRegex.test(email)) {
                 // Debounce API call by 500ms
+                const token = emailSeq.next();
                 emailCheckTimeout = setTimeout(async () => {
-                    try {
-                        const response = await fetch(`${API_BASE_URL}/profile/check-email/${encodeURIComponent(email)}`);
-                        const data = await response.json();
-
-                        if (!data.available) {
-                            // Email is taken
-                            emailError.style.display = 'block';
-                            if (emailHint) emailHint.style.display = 'none';
-                            emailInput.classList.add('input-error');
-                            emailInput.classList.remove('input-success');
-                            isEmailAvailable = false;
-                        } else {
-                            // Email is available
-                            emailInput.classList.add('input-success');
-                            emailInput.classList.remove('input-error');
-                            isEmailAvailable = true;
-                        }
-                    } catch (error) {
-                        console.error('Error checking email:', error);
-                        // Assume available if check fails
-                        isEmailAvailable = true;
-                    }
+                    const status = await checkAvailability('email', email);
+                    if (!emailSeq.isCurrent(token)) return;
+                    if (emailInput.value.trim() !== email) return;
+                    applyEmailStatus(status);
                 }, 500);
             }
         });
@@ -239,14 +258,63 @@ document.addEventListener('DOMContentLoaded', async function() {
         });
     }
 
-    // Username availability validation
+    // Username availability validation.
+    // Tri-state, same contract as the email check above: 'unknown' never blocks.
     const usernameInput = document.getElementById('username');
     const usernameError = document.getElementById('usernameError');
     const usernameLengthError = document.getElementById('usernameLengthError');
     const usernameHint = document.getElementById('usernameHint');
+    // First/last name character counters (same treatment as the username counter below).
+    [['firstName', 'firstNameCharCount'], ['lastName', 'lastNameCharCount']].forEach(function(pair) {
+        const nameInput = document.getElementById(pair[0]);
+        const nameCount = document.getElementById(pair[1]);
+        if (!nameInput || !nameCount) return;
+        const updateNameCount = function() {
+            const len = nameInput.value.length;
+            nameCount.textContent = len;
+            if (len >= 16) {
+                nameCount.style.color = len >= 20 ? '#ff6b6b' : '#ffa500';
+            } else {
+                nameCount.style.color = '';
+            }
+        };
+        nameInput.addEventListener('input', updateNameCount);
+        updateNameCount();
+    });
+
     const usernameCharCount = document.getElementById('usernameCharCount');
     let usernameCheckTimeout;
-    let isUsernameAvailable = false;
+    let usernameStatus = 'unknown';
+    const usernameSeq = createSequencer();
+
+    function applyUsernameStatus(status) {
+        usernameStatus = status;
+        if (status === 'taken') {
+            usernameError.style.display = 'block';
+            usernameHint.style.display = 'none';
+            usernameInput.style.borderColor = '#ff6b6b';
+        } else if (status === 'available') {
+            usernameError.style.display = 'none';
+            usernameHint.style.display = 'block';
+            usernameInput.style.borderColor = '#4caf50';
+        } else {
+            usernameError.style.display = 'none';
+            usernameHint.style.display = 'block';
+            usernameInput.style.borderColor = '';
+        }
+    }
+
+    // Resolve the username immediately, bypassing the debounce, for use on submit.
+    async function resolveUsernameNow() {
+        clearTimeout(usernameCheckTimeout);
+        const username = usernameInput ? usernameInput.value.trim() : '';
+        if (!/^[a-z0-9_]{3,15}$/.test(username)) return 'unknown';
+        const token = usernameSeq.next();
+        const status = await checkAvailability('username', username);
+        if (!usernameSeq.isCurrent(token)) return usernameStatus;
+        applyUsernameStatus(status);
+        return status;
+    }
 
     if (usernameInput && usernameError) {
         usernameInput.addEventListener('input', function() {
@@ -268,44 +336,34 @@ document.addEventListener('DOMContentLoaded', async function() {
             clearTimeout(usernameCheckTimeout);
 
             // Reset error state
-            usernameError.style.display = 'none';
             if (usernameLengthError) usernameLengthError.style.display = 'none';
-            usernameHint.style.display = 'block';
-            usernameInput.style.borderColor = '';
-            isUsernameAvailable = false;
+            applyUsernameStatus('unknown');
 
-            // Check for max length
-            if (username.length >= 15) {
+            // Warn only ABOVE the limit, not AT it. This used to fire at >= 15
+            // and `return` before the availability check, so a transfer player
+            // who used the full 15 characters the input allows was never checked
+            // at all: the form silently refused to submit while showing "Username
+            // cannot exceed 15 characters" on a name that was exactly at the cap.
+            if (username.length > 15) {
                 if (usernameLengthError) {
                     usernameLengthError.style.display = 'block';
                     usernameHint.style.display = 'none';
                     usernameInput.style.borderColor = '#ff6b6b';
                 }
-                return;
             }
 
             // Only check if username is not empty and matches pattern (lowercase only)
-            if (username.length >= 3 && /^[a-z0-9_]+$/.test(username)) {
+            if (username.length >= 3 && username.length <= 15 && /^[a-z0-9_]+$/.test(username)) {
                 // Debounce API call by 500ms
+                const token = usernameSeq.next();
                 usernameCheckTimeout = setTimeout(async () => {
-                    try {
-                        const response = await fetch(`${API_BASE_URL}/profile/check-username/${username}`);
-                        const data = await response.json();
-
-                        if (!data.available) {
-                            // Username is taken
-                            usernameError.style.display = 'block';
-                            usernameHint.style.display = 'none';
-                            usernameInput.style.borderColor = '#ff6b6b';
-                            isUsernameAvailable = false;
-                        } else {
-                            // Username is available
-                            usernameInput.style.borderColor = '#4caf50';
-                            isUsernameAvailable = true;
-                        }
-                    } catch (error) {
-                        console.error('Error checking username:', error);
-                    }
+                    const status = await checkAvailability('username', username);
+                    // Discard a stale response: clearTimeout cannot cancel an
+                    // in-flight request, so an older prefix could otherwise
+                    // overwrite the verdict for what is currently typed.
+                    if (!usernameSeq.isCurrent(token)) return;
+                    if (usernameInput.value.trim() !== username) return;
+                    applyUsernameStatus(status);
                 }, 500);
             }
         });
@@ -515,17 +573,32 @@ document.addEventListener('DOMContentLoaded', async function() {
             else submitBtn.textContent = text;
         };
 
-        // Validate username is available (only for new profiles, not updates)
-        if (!isUpdating && !isUsernameAvailable) {
-            // Just focus on the username field - don't show alert, let user see the red border and error message
-            usernameInput.focus();
-            return;
-        }
+        // Validate username is available (only for new profiles, not updates).
+        //
+        // Resolve the check NOW rather than reading a possibly-stale flag. If the
+        // user clicked submit inside the 500ms debounce, the old code silently
+        // focused the field and returned, so nothing appeared to happen.
+        //
+        // Only a definite 'taken' blocks. 'unknown' (rate limited, offline) goes
+        // through — the server re-checks and returns 409 on a real collision.
+        if (!isUpdating) {
+            const usernameVerdict = usernameStatus === 'taken'
+                ? 'taken'
+                : await resolveUsernameNow();
+            if (usernameVerdict === 'taken') {
+                usernameInput.focus();
+                showToast('That username is already taken. Please choose another.', 'error');
+                return;
+            }
 
-        // Validate email is available (only for new profiles, not updates)
-        if (!isUpdating && !isEmailAvailable) {
-            emailInput.focus();
-            return;
+            const emailVerdict = emailStatus === 'taken'
+                ? 'taken'
+                : await resolveEmailNow();
+            if (emailVerdict === 'taken') {
+                emailInput.focus();
+                showToast('That email is already in use. Please sign in instead.', 'error');
+                return;
+            }
         }
 
         // Validate password meets requirements (only for new profiles)
@@ -712,6 +785,18 @@ document.addEventListener('DOMContentLoaded', async function() {
             }
         } catch (error) {
             console.error('Profile error:', error);
+
+            // 409 = the server's authoritative uniqueness check rejected the
+            // username. This is the backstop for the advisory client-side check,
+            // which now lets 'unknown' through rather than guessing "taken".
+            if (error.status === 409) {
+                applyUsernameStatus('taken');
+                usernameInput.focus();
+                showToast(error.message || 'That username is already taken. Please choose another.', 'error');
+                submitBtn.disabled = false;
+                setBtnText(originalText);
+                return;
+            }
 
             // If user was created but something failed, show helpful error
             if (userCreated) {

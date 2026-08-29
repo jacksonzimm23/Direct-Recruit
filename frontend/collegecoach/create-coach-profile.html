@@ -57,6 +57,7 @@
                                 autocomplete="off"
                                 placeholder="John"
                             >
+                            <small class="form-hint"><span id="firstNameCharCount">0</span>/20</small>
                         </div>
 
                         <div class="form-group">
@@ -70,6 +71,7 @@
                                 autocomplete="off"
                                 placeholder="Smith"
                             >
+                            <small class="form-hint"><span id="lastNameCharCount">0</span>/20</small>
                         </div>
                     </div>
 
@@ -79,6 +81,9 @@
                             type="text"
                             id="username"
                             name="username"
+                            autocapitalize="none"
+                            autocorrect="off"
+                            spellcheck="false"
                             required
                             maxlength="15"
                             pattern="[a-z0-9_]+"

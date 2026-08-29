@@ -1646,6 +1646,72 @@ const reportsAPI = {
         })
 };
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Username / email availability
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// THE ONE RULE: a check that did not get a real answer is 'unknown', NEVER
+// 'taken'. Callers must let the user proceed on 'unknown' — the server is the
+// authority on uniqueness at save time (it returns 409 on a real collision).
+//
+// This exists because every create-profile form used to do:
+//     const data = await response.json();
+//     if (!data.available) { show "This username is already taken" }
+// with no response.ok check. /profile/check-username is rate limited (see
+// backend/middleware/rateLimit.js) and a 429 body is {error: "..."} with no
+// `available` key, so `!undefined` was true and a rate-limited user was told
+// every username they tried was taken. Testers on shared WiFi hit this
+// constantly; local dev never did, because the limiters carry skip:isDevelopment.
+//
+// Deliberately uses raw fetch, NOT apiRequest — apiRequest throws on non-2xx,
+// which is what made the edit-profile modals fail closed and silently block save.
+//
+// @param {'username'|'email'} kind
+// @param {string} value
+// @returns {Promise<'available'|'taken'|'unknown'>}
+async function checkAvailability(kind, value) {
+    const endpoint = kind === 'email' ? 'check-email' : 'check-username';
+    try {
+        const response = await fetch(
+            `${API_BASE_URL}/profile/${endpoint}/${encodeURIComponent(value)}`
+        );
+        // 429 (rate limited), 4xx, 5xx — the server did not answer the question.
+        if (!response.ok) return 'unknown';
+        const data = await response.json();
+        // Only an explicit `available: false` on a 200 may ever mean "taken".
+        if (data && data.available === false) return 'taken';
+        if (data && data.available === true) return 'available';
+        return 'unknown';
+    } catch (error) {
+        // Network failure, CORS, non-JSON body. Never block the user on this.
+        console.error(`Error checking ${kind} availability:`, error);
+        return 'unknown';
+    }
+}
+
+// Sequence-token guard for debounced availability checks.
+//
+// clearTimeout only cancels a PENDING timer, not an in-flight request, so a slow
+// response for an earlier prefix could land after a newer one and overwrite the
+// verdict for a username the user no longer has typed.
+//
+// A sequence token is used rather than AbortController on purpose: CapacitorHttp
+// replaces window.fetch in the iOS app and is not guaranteed to honour an abort
+// signal, so correctness must not depend on aborting.
+//
+// Usage:
+//     const seq = createSequencer();
+//     const token = seq.next();
+//     const result = await checkAvailability('username', value);
+//     if (!seq.isCurrent(token)) return;   // a newer check superseded this one
+function createSequencer() {
+    let counter = 0;
+    return {
+        next: () => ++counter,
+        isCurrent: (token) => token === counter
+    };
+}
+
 const API = {
     // Direct access to apiRequest for custom endpoints
     get: async (endpoint) => await apiRequest(endpoint),
@@ -1682,6 +1748,10 @@ const API = {
     config: configAPI,
     blocks: blocksAPI,
     reports: reportsAPI,
+
+    // Availability helpers (see checkAvailability above — 'unknown' is never 'taken')
+    checkAvailability,
+    createSequencer,
 
     // Auth helpers
     getUser,

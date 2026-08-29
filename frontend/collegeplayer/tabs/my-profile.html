@@ -735,11 +735,17 @@
                 <form id="editProfileForm">
                     <div class="form-row">
                         <div class="form-group">
-                            <label for="editFirstName">First Name</label>
+                            <div class="label-with-counter">
+                                <label for="editFirstName">First Name</label>
+                                <span class="char-counter" id="editFirstNameCharCounter">0/20</span>
+                            </div>
                             <input type="text" id="editFirstName" name="first_name" maxlength="20" placeholder="Enter first name">
                         </div>
                         <div class="form-group">
-                            <label for="editLastName">Last Name</label>
+                            <div class="label-with-counter">
+                                <label for="editLastName">Last Name</label>
+                                <span class="char-counter" id="editLastNameCharCounter">0/20</span>
+                            </div>
                             <input type="text" id="editLastName" name="last_name" maxlength="20" placeholder="Enter last name">
                         </div>
                     </div>

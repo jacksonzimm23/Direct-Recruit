@@ -2540,8 +2540,13 @@ async function validateUsername(username, isFinalCheck = false) {
         return false;
     }
 
-    // If username hasn't changed, it's valid
-    if (username === originalUsername) {
+    // If username hasn't changed, it's valid.
+    //
+    // Compare case-INSENSITIVELY. The input handler lowercases the field while
+    // originalUsername keeps whatever casing was stored, so a legacy mixed-case
+    // account would fail this check, run the availability call against their OWN
+    // row, and be told their own username was already taken.
+    if (username === String(originalUsername || '').trim().toLowerCase()) {
         validationMsg.textContent = '';
         validationMsg.className = 'validation-message';
         return true;
@@ -2553,25 +2558,28 @@ async function validateUsername(username, isFinalCheck = false) {
         validationMsg.className = 'validation-message checking';
     }
 
-    try {
-        // Check if username is available (checks across both players and coaches)
-        const response = await API.get(`/profile/check-username/${username}`);
+    // checkAvailability returns 'available' | 'taken' | 'unknown'. It maps every
+    // non-200 (429 rate limit included) to 'unknown' rather than "taken".
+    //
+    // 'unknown' must return TRUE. This used to go through API.get, which throws
+    // on a 429, and the catch returned false — so a rate-limited coach could not
+    // save their profile at all, with only a vague "Error checking username
+    // availability" to go on. The server enforces uniqueness and returns 409.
+    const status = await checkAvailability('username', username);
 
-        if (response.available) {
-            validationMsg.textContent = '✓ Username is available';
-            validationMsg.className = 'validation-message success';
-            return true;
-        } else {
-            validationMsg.textContent = 'Username is already taken';
-            validationMsg.className = 'validation-message error';
-            return false;
-        }
-    } catch (error) {
-        console.error('Error checking username:', error);
-        validationMsg.textContent = 'Error checking username availability';
+    if (status === 'taken') {
+        validationMsg.textContent = 'Username is already taken';
         validationMsg.className = 'validation-message error';
         return false;
     }
+    if (status === 'available') {
+        validationMsg.textContent = '✓ Username is available';
+        validationMsg.className = 'validation-message success';
+        return true;
+    }
+    validationMsg.textContent = '';
+    validationMsg.className = 'validation-message';
+    return true;
 }
 
 function setupEditProfileModal() {
@@ -2622,6 +2630,36 @@ function setupEditProfileModal() {
             updateEditSelectedCoachingPositions();
         });
     });
+
+    // First/last name character counters. The modal fills these inputs
+    // programmatically, which fires no input event, so re-sync when the modal
+    // is shown as well as on typing.
+    const nameCounterPairs = [
+        ['editFirstName', 'editFirstNameCharCounter'],
+        ['editLastName', 'editLastNameCharCounter']
+    ];
+    function syncNameCounters() {
+        nameCounterPairs.forEach(function(pair) {
+            const nameInput = document.getElementById(pair[0]);
+            const nameCounter = document.getElementById(pair[1]);
+            if (!nameInput || !nameCounter) return;
+            const len = nameInput.value.length;
+            nameCounter.textContent = `${len}/20`;
+            nameCounter.classList.toggle('limit-reached', len >= 20);
+        });
+    }
+    nameCounterPairs.forEach(function(pair) {
+        const nameInput = document.getElementById(pair[0]);
+        if (nameInput) nameInput.addEventListener('input', syncNameCounters);
+    });
+    const editProfileModalEl = document.getElementById('editProfileModal');
+    if (editProfileModalEl) {
+        new MutationObserver(syncNameCounters).observe(editProfileModalEl, {
+            attributes: true,
+            attributeFilter: ['style', 'class']
+        });
+    }
+    syncNameCounters();
 
     // Handle bio character counter
     const bioInput = document.getElementById('editBio');

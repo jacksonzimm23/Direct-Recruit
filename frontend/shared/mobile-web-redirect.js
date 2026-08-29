@@ -30,6 +30,11 @@
         path.indexOf('confirm-team-switch.html') !== -1 ||
         path.indexOf('verify-email.html') !== -1) return;
 
+    // Drill Lab (PROTOTYPE): standalone sandbox, viewable on desktop for
+    // inspection and never bounced to "Get the app". Mirror in the
+    // mobileWebRedirect() IIFE at the top of shared/api.js — keep in sync.
+    if (path.indexOf('/drill-lab/') !== -1) return;
+
     var prefix = path.startsWith('/frontend/') ? '/frontend' : '';
     var target = isIOS
       ? prefix + '/landingpage/get-the-app.html'
