@@ -2660,11 +2660,11 @@ function renderStep2() {
     let fieldsHTML = `
         <div class="switch-form-group">
             <label>First Name</label>
-            <input type="text" id="switchFirstName" value="${escapeHTML(shared.first_name)}" class="form-input">
+            <input type="text" id="switchFirstName" value="${escapeHTML(shared.first_name)}" maxlength="20" class="form-input">
         </div>
         <div class="switch-form-group">
             <label>Last Name</label>
-            <input type="text" id="switchLastName" value="${escapeHTML(shared.last_name)}" class="form-input">
+            <input type="text" id="switchLastName" value="${escapeHTML(shared.last_name)}" maxlength="20" class="form-input">
         </div>
         <div class="switch-form-group">
             <label>Email</label>

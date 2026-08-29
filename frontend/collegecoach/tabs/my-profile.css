@@ -269,6 +269,9 @@
 
 .profile-header-info {
     flex: 1;
+    /* Let the info column shrink so a long name wraps instead of pushing
+       the header wider than its container. */
+    min-width: 0;
 }
 
 .profile-name {
@@ -276,7 +279,11 @@
     font-weight: 900;
     color: var(--white);
     margin-bottom: 0.5rem;
-    white-space: nowrap;
+    /* A name too long for one row breaks at the space, so first and last
+       name land on their own rows instead of running off the screen. */
+    white-space: normal;
+    overflow-wrap: break-word; /* fallback for older iOS WebKit */
+    overflow-wrap: anywhere;
 }
 
 .profile-position {
@@ -2204,7 +2211,7 @@ body.transfer-player-viewer .sidebar-user-avatar {
     max-height: 200px;
     object-fit: contain;
     border-radius: 8px;
-}
+}
 
 
 /* .quoted-post-media / .quoted-media-item rules intentionally removed.
