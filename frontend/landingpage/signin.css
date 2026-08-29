@@ -94,30 +94,13 @@
     background: rgba(254, 252, 251, 0.1);
 }
 
+/* "Forgot password?" is the only child now that the Remember me checkbox is gone,
+   so this is flex-end rather than space-between to keep it right-aligned. */
 .form-options {
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-end;
     align-items: center;
     margin-top: -0.5rem;
-}
-
-.remember-me {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-.remember-me input[type="checkbox"] {
-    width: 18px;
-    height: 18px;
-    cursor: pointer;
-    accent-color: var(--cerulean);
-}
-
-.remember-me label {
-    font-size: 0.9rem;
-    color: rgba(254, 252, 251, 0.7);
-    cursor: pointer;
 }
 
 .forgot-password {

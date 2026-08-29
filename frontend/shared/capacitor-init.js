@@ -42,7 +42,7 @@ var _capPluginsInited = false;
     // trying for a long time, and hard-hide via a guaranteed timeout regardless.
     var splashHidden = false;
 
-    // Remember-me auto-login coordination: on the iOS app's cold-launch landing page,
+    // Auto-login coordination: on the iOS app's cold-launch landing page,
     // the auto-login check (checkExistingSession in landingpage/auth.js) needs a moment
     // to call /auth/me before we know whether to redirect to the feed. If we hide the
     // splash eagerly the marketing landing page paints first, then snaps to the feed —

@@ -19,12 +19,15 @@ const stripe = require('../utils/stripe');
 const { normalizeEmail } = require('../middleware/validation');
 const MATCH = require('../utils/match-constants'); // AI Fit-Matching allowlist Sets (Plan 4)
 
-// Cookie configuration (mirrored from auth.js — keep sameSite in sync with auth.js)
+// Cookie configuration (mirrored from auth.js — keep sameSite AND maxAge in sync
+// with auth.js). These routes reissue the auth cookie after an email change, a
+// password change, and a profile-type switch; a shorter maxAge here would quietly
+// downgrade a 1-year session to a short one the moment a user edits their account.
 const COOKIE_OPTIONS = {
   httpOnly: true,
   secure: process.env.NODE_ENV === 'production',
   sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-  maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+  maxAge: 365 * 24 * 60 * 60 * 1000 // 1 year
 };
 
 const SWITCH_COOLDOWN_HOURS = 72;

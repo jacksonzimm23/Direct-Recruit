@@ -331,3 +331,29 @@ class SearchComponent {
 }
 
 window.SearchComponent = SearchComponent;
+
+// Self-initialize on any page that provides the container.
+//
+// This used to be a four-line inline <script> duplicated in all six
+// mainpage-*.html files, which meant the search bar was MISSING on the web app:
+// the backend serves those pages with helmet's `script-src 'self'` (server.js),
+// which blocks inline scripts, so the constructor never ran and
+// #searchComponent — empty in the markup, filled only by render() — stayed
+// empty. It worked in local dev (Live Server sends no CSP) and in the iOS app
+// (Capacitor serves the bundle from its own origin, so the backend's header
+// never applies), which is why it went unnoticed. See lessons.md #84.
+//
+// Living here rather than in six copies also means the initializer cannot drift
+// between role folders. Guarded on the container so any future page that loads
+// search.js without one is unaffected.
+(function initSearchComponent() {
+    function start() {
+        if (!document.getElementById('searchComponent')) return;
+        new SearchComponent('searchComponent');
+    }
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', start, { once: true });
+    } else {
+        start();   // script loaded late (e.g. deferred/injected) — run immediately
+    }
+})();

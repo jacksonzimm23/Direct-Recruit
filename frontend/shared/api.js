@@ -433,6 +433,8 @@ function getAuthToken() {
 // Clear auth data (user data from localStorage, cookie cleared by backend)
 function clearAuth() {
     localStorage.removeItem(USER_KEY);
+    // Legacy "Remember me" key. The checkbox is gone (every session persists until
+    // sign-out), but keep purging it so it disappears from existing installs.
     localStorage.removeItem('dr_remember_me');
     // Drop the iOS Bearer token so a revoked token isn't re-sent after logout.
     try { localStorage.removeItem(TOKEN_KEY); } catch (_) {}
@@ -598,19 +600,14 @@ const authAPI = {
         return data;
     },
 
-    login: async (email, password, rememberMe = false) => {
+    login: async (email, password) => {
         const data = await apiRequest('/auth/login', {
             method: 'POST',
-            body: JSON.stringify({ email, password, rememberMe })
+            body: JSON.stringify({ email, password })
         });
 
         setUser(data.user);
         setAuthToken(data.token); // iOS Bearer fallback (no-op on web)
-        if (rememberMe) {
-            localStorage.setItem('dr_remember_me', 'true');
-        } else {
-            localStorage.removeItem('dr_remember_me');
-        }
 
         // Phase 3b: keep RevenueCat identity in sync with our session on iOS.
         // Best-effort — errors are swallowed so they never block login.
@@ -697,7 +694,14 @@ const authAPI = {
     },
 
     getCurrentUser: async () => {
-        return await apiRequest('/auth/me');
+        const data = await apiRequest('/auth/me');
+        // Sliding session: the server reissues the token once it is older than its
+        // renewal threshold and returns it here. On web the refreshed cookie does
+        // the work and this is ignored; on iOS this IS the session, because the
+        // cross-origin cookie does not survive the WKWebView, so failing to store
+        // it would let the app's token age out and sign the user out after a year.
+        if (data && data.token) setAuthToken(data.token);
+        return data;
     }
 };
 

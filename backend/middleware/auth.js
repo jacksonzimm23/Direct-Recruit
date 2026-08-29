@@ -59,6 +59,9 @@ const authMiddleware = async (req, res, next) => {
 
     req.user = user;
     req.userId = user.id;
+    // Issued-at (seconds since epoch) so GET /auth/me can tell how old this token
+    // is and slide the session window forward when it is due for renewal.
+    req.tokenIat = decoded.iat;
     next();
   } catch (error) {
     if (process.env.NODE_ENV !== 'production') {

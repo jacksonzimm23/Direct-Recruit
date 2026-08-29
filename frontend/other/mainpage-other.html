@@ -338,11 +338,8 @@
     <script src="../shared/feed.js"></script>
     <script src="../shared/suggested-connections.js"></script>
     <script src="mainpage-other.js"></script>
-    <script>
-        // Initialize search component
-        document.addEventListener('DOMContentLoaded', () => {
-            new SearchComponent('searchComponent');
-        });
-    </script>
+    <!-- The search bar initializes itself from shared/search.js. It used to be an
+         inline script here, which the backend's CSP (script-src 'self') blocked,
+         so the search box never rendered on the web app. See lessons.md #84. -->
 </body>
 </html>

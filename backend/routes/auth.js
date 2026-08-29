@@ -33,18 +33,30 @@ const COOKIE_OPTIONS = {
   httpOnly: true,
   secure: process.env.NODE_ENV === 'production',
   sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-  maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+  maxAge: 365 * 24 * 60 * 60 * 1000 // 1 year — see SESSION LIFETIME below
 };
 
-// Helper to set auth cookie
-// rememberMe: true = persistent 7-day cookie, false = session cookie (deleted on browser close)
-function setAuthCookie(res, token, rememberMe = true) {
-  const options = { ...COOKIE_OPTIONS };
-  if (!rememberMe) {
-    delete options.maxAge;
-  }
-  res.cookie('token', token, options);
+// SESSION LIFETIME
+// There is no "Remember me". Signing up or signing in keeps you signed in until you
+// explicitly sign out, which is what users expect from a social app. Mechanically:
+//   - the cookie and the JWT (utils/jwt.js) both last 1 year
+//   - GET /me slides that window forward (RENEW_AFTER_MS below), so a session that
+//     is actually being used never expires; the year is only a backstop for a device
+//     that is abandoned entirely
+//   - sign-out / password change still kill every session immediately via
+//     bumpRevokeCutoff (utils/tokenRevocation.js — its Redis TTL is pinned to this
+//     same 1 year, do not let the two drift apart)
+// On iOS the cookie is unreliable (WebView origin https://localhost calling
+// directrecruit.net cross-origin), so persistence there rides on the Bearer token
+// the app stores in localStorage. Both are issued together everywhere.
+function setAuthCookie(res, token) {
+  res.cookie('token', token, { ...COOKIE_OPTIONS });
 }
+
+// Reissue the token once it is older than this, so an in-use session rolls forward.
+// Deliberately much shorter than the token's own life: it only needs to be short
+// enough that any active user refreshes comfortably inside the year.
+const RENEW_AFTER_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 
 // Helper function to convert S3 key to signed URL in profile
 async function addSignedUrlToProfile(profile) {
@@ -277,7 +289,7 @@ router.post('/resend-verification', authLimiter, async (req, res) => {
 // Login
 router.post('/login', authLimiter, async (req, res) => {
   try {
-    const { password, rememberMe } = req.body;
+    const { password } = req.body;
     // Normalize to match how registration stored the email (and the Cognito
     // username). Without this, "Jacksonzimm@..." won't match the stored
     // "jacksonzimm@..." and login fails on a case-only difference.
@@ -346,7 +358,7 @@ router.post('/login', authLimiter, async (req, res) => {
     await User.updateLastLogin(user.id);
     const token = generateToken(user.id, user.role);
 
-    setAuthCookie(res, token, !!rememberMe);
+    setAuthCookie(res, token);
 
     res.json({
       message: 'Login successful',
@@ -373,7 +385,12 @@ router.post('/login', authLimiter, async (req, res) => {
 // is mandatory.
 router.post('/logout', async (req, res) => {
   try {
-    const token = req.cookies?.token;
+    // Accept the Bearer header as well as the cookie. The iOS app is Bearer-only
+    // (the cross-origin cookie does not survive in the WKWebView), so reading the
+    // cookie alone meant an iOS sign-out never bumped the revoke cutoff and the
+    // token stayed valid server-side. That was survivable with 7-day tokens; with
+    // 1-year tokens it is not.
+    const token = req.cookies?.token || req.header('Authorization')?.replace('Bearer ', '');
     if (token) {
       const decoded = jwt.decode(token);
       if (decoded?.userId) {
@@ -511,7 +528,15 @@ router.get('/me', authMiddleware, async (req, res) => {
     // Disable browser caching so profile image updates are reflected immediately
     res.set('Cache-Control', 'no-store');
 
-    res.json({
+    // Sliding session. Every page calls /me on load, so this is the natural place to
+    // roll the window forward: once the current token is older than RENEW_AFTER_MS,
+    // mint a fresh one. A session in regular use therefore never expires, while an
+    // abandoned one still lapses a year after its last use.
+    //
+    // Safe against revocation: authMiddleware already rejected the token via
+    // isTokenRevoked() before we got here, so a signed-out token can never be
+    // renewed back to life.
+    const body = {
       user: {
         id: req.user.id,
         email: req.user.email,
@@ -527,7 +552,18 @@ router.get('/me', authMiddleware, async (req, res) => {
         push_enabled: req.user.push_enabled !== false
       },
       profile
-    });
+    };
+
+    // req.tokenIat is seconds since epoch (JWT `iat`), set by authMiddleware.
+    if (req.tokenIat && (Date.now() - req.tokenIat * 1000) > RENEW_AFTER_MS) {
+      const renewedToken = generateToken(req.user.id, req.user.role);
+      setAuthCookie(res, renewedToken);
+      // iOS Bearer fallback: the app replaces its stored token with this one.
+      // Web ignores it and keeps using the refreshed cookie.
+      body.token = renewedToken;
+    }
+
+    res.json(body);
   } catch (error) {
     logger.error('Get user error:', error);
     res.status(500).json({ error: 'Failed to fetch user data' });

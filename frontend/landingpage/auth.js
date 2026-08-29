@@ -20,20 +20,28 @@ function needsPaywall(folder, user) {
 // iOS app (its page isn't in the app bundle, so any redirect there dead-ends).
 // A prior email-based drill-lab gate here broke sign-in on iOS and was removed.
 
-// Auto-login: if user previously chose "Remember me" and cookie is still valid, redirect to dashboard
+// Auto-login: sessions persist until the user signs out (there is no "Remember me"),
+// so anyone with a live session is sent straight to their dashboard.
 (async function checkExistingSession() {
-    // Not a remembered user — nothing to auto-login. Release any held iOS splash
-    // (capacitor-init.js holds it on the app's landing page until this decision) so
-    // the marketing landing page is revealed promptly.
-    if (localStorage.getItem('dr_remember_me') !== 'true') {
+    // getUser() is truthy for anyone who has ever signed in or registered on this
+    // device (setUser runs in authAPI.login and authAPI.register) and is cleared by
+    // clearAuth() on sign-out. Using it as the gate keeps the fast path for a
+    // first-time visitor — no /auth/me round trip, no iOS splash hold — while
+    // everyone else gets auto-logged-in. This replaced the old dr_remember_me gate,
+    // which never fired for a freshly created account because nothing set it, so a
+    // new user who closed the app came back logged out despite a valid session.
+    if (!getUser()) {
+        // Release any held iOS splash (capacitor-init.js holds it on the app's
+        // landing page until this decision) so the page is revealed promptly.
         if (window.__drReleaseSplash) window.__drReleaseSplash();
         return;
     }
 
     try {
-        // apiRequest (shared/api.js) attaches the iOS Bearer token; a plain fetch sends
-        // only the cookie, which is unreliable in the WKWebView. Throws on 401.
-        const meData = await apiRequest('/auth/me');
+        // getCurrentUser wraps apiRequest, which attaches the iOS Bearer token (a plain
+        // fetch sends only the cookie, unreliable in the WKWebView), and stores the
+        // renewed token when the server slides the session forward. Throws on 401.
+        const meData = await authAPI.getCurrentUser();
         // Guard: a 200 with no user (e.g. cookie not sent in an iOS WebView) must not crash the
         // page on load — fall through to the catch and show the normal sign-in form.
         if (!meData || !meData.user || !meData.user.role) throw new Error('No valid session');
@@ -60,9 +68,10 @@ function needsPaywall(folder, user) {
         // correctly preserves the /frontend prefix on web and its absence in-app.
         window.location.href = new URL(`../${folder}/${pageName}`, window.location.href).href;
     } catch (e) {
-        // Session invalid — clear stale preference and show login form.
-        localStorage.removeItem('dr_remember_me');
-        localStorage.removeItem('user_data');
+        // Session invalid (expired, revoked, or signed out elsewhere) — drop the
+        // cached user, the legacy remember-me key, and the stale iOS Bearer token,
+        // then show the landing/sign-in page.
+        clearAuth();
         // Release the held iOS splash (if any) so the landing page is shown.
         if (window.__drReleaseSplash) window.__drReleaseSplash();
     }
@@ -76,7 +85,6 @@ if (document.getElementById('signinForm')) {
 
         const email = document.getElementById('email').value;
         const password = document.getElementById('password').value;
-        const rememberMe = document.getElementById('remember')?.checked || false;
         const submitBtn = form.querySelector('button[type="submit"]');
 
         // Disable button and show loading state
@@ -84,7 +92,7 @@ if (document.getElementById('signinForm')) {
         submitBtn.textContent = 'Signing in...';
 
         try {
-            const data = await authAPI.login(email, password, rememberMe);
+            const data = await authAPI.login(email, password);
 
             // Guard against a malformed/empty success body (e.g. the auth cookie failed to
             // persist in an iOS WebView, or a proxy returned a non-JSON 200). Reading

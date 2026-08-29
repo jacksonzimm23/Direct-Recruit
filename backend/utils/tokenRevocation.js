@@ -2,8 +2,12 @@ const redisClient = require('../config/redis');
 const logger = require('./logger');
 
 const KEY_PREFIX = 'jwt:revoke-before:';
-// 7 days + 1h slack — TTL just needs to outlive the longest-lived JWT.
-const CUTOFF_TTL_SECONDS = 7 * 24 * 60 * 60 + 3600;
+// 1 year + 1h slack. This TTL MUST outlive the longest-lived JWT (utils/jwt.js is
+// 365d) — if the cutoff key expires first, a token issued BEFORE a sign-out or
+// password change silently becomes valid again, because there is no longer any
+// record that it was revoked. Raise this in lockstep with JWT_EXPIRE, never below.
+// Storage cost is one short key per user who has ever signed out.
+const CUTOFF_TTL_SECONDS = 365 * 24 * 60 * 60 + 3600;
 
 // Bump the revoke-before cutoff for a user to "now". Any JWT for this user
 // with iat <= cutoff is now invalid until the user logs in again (which
