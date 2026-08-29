@@ -261,10 +261,14 @@ class SearchComponent {
                     subtitle.push(escapeHtml(formatDivisionDisplay(result.college_division)));
                 }
             } else {
-                // HS Coach: Position Title • Team Name • State
-                if (result.position_title) subtitle.push(escapeHtml(result.position_title));
-                if (result.team_name) subtitle.push(escapeHtml(result.team_name));
-                if (result.state) subtitle.push(escapeHtml(result.state));
+                // HS Coach: Team Name, State
+                if (result.team_name && result.state) {
+                    subtitle.push(`${escapeHtml(result.team_name)}, ${escapeHtml(result.state)}`);
+                } else if (result.team_name) {
+                    subtitle.push(escapeHtml(result.team_name));
+                } else if (result.state) {
+                    subtitle.push(escapeHtml(result.state));
+                }
             }
         } else if (role === 'other') {
             // Other: Subheader only

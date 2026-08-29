@@ -411,10 +411,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function createMobileHSCoachRow(coach) {
         const displayName = `${coach.first_name || ''} ${coach.last_name || ''}`.trim() || 'Unknown Coach';
-        const school = coach.high_school || coach.school_name || '';
+        const school = coach.team_name || '';
         const state = coach.state || '';
         const profileImage = coach.profile_image_url;
-        const schoolState = school + (state ? `, ${state}` : '');
+        const schoolState = [school, state].filter(p => p).join(', ');
 
         return `
             <div class="discover-row" data-username="${coach.username || ''}" data-user-type="hscoach">
@@ -563,10 +563,10 @@ document.addEventListener('DOMContentLoaded', function() {
     function createHSCoachCard(coach) {
         if (isMobile()) return createMobileHSCoachRow(coach);
         const displayName = `${coach.first_name || ''} ${coach.last_name || ''}`.trim() || 'Unknown Coach';
-        const school = coach.high_school || coach.school_name || '';
+        const school = coach.team_name || '';
         const state = coach.state || '';
         const profileImage = coach.profile_image_url;
-        const schoolState = school + (state ? `, ${state}` : '');
+        const schoolState = [school, state].filter(p => p).join(', ');
 
         return `
             <div class="discover-desktop-row" data-username="${coach.username || ''}" data-user-type="hscoach">
