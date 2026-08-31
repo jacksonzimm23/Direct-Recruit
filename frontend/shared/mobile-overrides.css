@@ -1330,9 +1330,15 @@ html {
         flex-direction: column !important;
     }
 
+    /* NO max-height here. A fixed cap (this was 40vh) stops the list short of
+       the Recruiting Calendar footer, so on a tall phone the list scrolled while
+       a large blank band sat between its last row and the calendar. Let it flex
+       into all the space above the footer instead: rows fill downward and the
+       list only starts scrolling once they would reach the calendar. */
     .conversations-list {
         width: 100% !important;
-        max-height: 40vh !important;
+        flex: 1 1 auto !important;
+        min-height: 0 !important;
         border-right: none !important;
         border-bottom: 1px solid rgba(18, 130, 162, 0.2) !important;
     }

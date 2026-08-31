@@ -44,7 +44,16 @@
 .messages-container {
     display: grid;
     grid-template-columns: 380px 1fr;
+    /* Pin the single grid row to the container height. With no explicit row
+       track the implicit row is `auto`, which sizes to its tallest item's
+       max-content height - so a long conversation list grew the row, pushed the
+       Recruiting Calendar footer below the container, and overflow:hidden
+       clipped it out of view. minmax(0, 1fr) makes the row exactly the
+       container height, so the list scrolls inside it and the footer stays put. */
+    grid-template-rows: minmax(0, 1fr);
     height: calc(100vh - 72px);
+    /* flex item of .messages-content - stop it growing past its height */
+    min-height: 0;
     overflow: hidden;
 }
 
@@ -53,6 +62,11 @@
     border-right: 1px solid rgba(18, 130, 162, 0.2);
     display: flex;
     flex-direction: column;
+    /* Mirrors .message-thread: fill the grid row exactly and allow the inner
+       scroller to shrink. Without min-height:0 the sidebar's min-content height
+       is the FULL conversation list, which is what inflated the grid row. */
+    height: 100%;
+    min-height: 0;
     background: rgba(254, 252, 251, 0.02);
 }
 
@@ -100,7 +114,12 @@
 }
 
 .conversations-list {
-    flex: 1;
+    /* Takes all space between the search header and the Recruiting Calendar
+       footer, and scrolls once the conversations would overflow it.
+       min-height:0 is required - a flex item defaults to min-height:auto, which
+       refuses to shrink below its content and pushes the footer down instead. */
+    flex: 1 1 auto;
+    min-height: 0;
     overflow-y: auto;
     overflow-x: hidden;
 }
@@ -987,6 +1006,9 @@
         grid-template-columns: 1fr;
         position: relative;
         height: 100%;
+        /* flex item of .messages-content - keep it at exactly 100% so the
+           Recruiting Calendar footer lands on the bottom nav's top edge */
+        min-height: 0;
     }
 
     .conversations-sidebar {
