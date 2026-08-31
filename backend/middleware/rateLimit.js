@@ -15,6 +15,23 @@ const isDevelopment = process.env.NODE_ENV !== 'production';
 // response the frontend mishandled could not be produced on a dev machine.
 const limitsBypassed = isDevelopment && process.env.FORCE_RATE_LIMITS !== '1';
 
+// Event-window overrides for the two limiters that can HARD-BLOCK onboarding
+// (apiLimiter gates every /api call, authLimiter gates register/login/verify).
+//
+// Optional by design: absent, empty or unparseable falls through the `||` to the
+// committed default, so the backend still boots without them. Deliberately NOT
+// added to REQUIRED_SECRETS in server.js — a missing required var makes the
+// backend refuse to start (lessons.md #116), and these must never be able to do
+// that.
+//
+// Retune live without a deploy: edit prod .env, then
+//     pm2 restart direct-recruit --update-env
+// To revert entirely: delete the two .env lines and restart. No code change.
+//
+// COLLAB 2026-08-30: set RATE_API_MAX=10000 / RATE_AUTH_MAX=2000 for the event.
+const API_MAX = Number(process.env.RATE_API_MAX) || 2000;
+const AUTH_MAX = Number(process.env.RATE_AUTH_MAX) || 500;
+
 // Only load Redis store in production
 function getRedisStore(prefix) {
   if (isDevelopment) return {};
@@ -28,15 +45,43 @@ function getRedisStore(prefix) {
   };
 }
 
+// Endpoints exempt from the GLOBAL per-IP budget.
+//
+// Every logged-in user runs two 30s badge polls (CLAUDE.md Pattern 3, e.g.
+// frontend/hsplayer/mainpage-player.js) = 4 req/min = ~60 req/user/15min of
+// pure IDLE load, before anyone loads a page. apiLimiter is mounted globally on
+// /api and keyed on req.ip, so behind carrier NAT (where hundreds of phone users
+// share one IP) that budget is consumed by polling alone:
+//
+//     2000 / 60 = ~33 idle users per IP before the 34th gets 429s on everything.
+//
+// Both endpoints are authMiddleware-gated and return nothing but
+// { unreadCount: N }, so excluding them from the IP budget gives up essentially
+// no abuse protection while removing the dominant term.
+//
+// NOTE ON PATH FORM: apiLimiter is mounted via app.use('/api/', ...) in
+// server.js, so Express strips the mount prefix and req.path here is
+// '/notifications/unread-count', NOT '/api/notifications/unread-count'.
+// If this ever stops matching, the skip simply never fires and behaviour falls
+// back to the plain per-IP cap — it fails safe, it does not break.
+//
+// COLLAB 2026-08-30. To revert: delete POLL_PATHS and restore
+// `skip: (req) => isDevelopment`.
+const POLL_PATHS = new Set([
+  '/notifications/unread-count',
+  '/messages/unread-count'
+]);
+
 // General API rate limiter
 const apiLimiter = rateLimit({
   ...getRedisStore('rl:api:'),
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: isDevelopment ? 10000 : 2000, // 2000 requests per 15 minutes per IP
+  max: isDevelopment ? 10000 : API_MAX, // per IP per 15 min; RATE_API_MAX overrides
   message: 'Too many requests, please try again later',
   standardHeaders: true,
   legacyHeaders: false,
-  skip: (req) => isDevelopment, // Skip rate limiting entirely in development
+  // Skip entirely in development, and always skip the idle badge polls.
+  skip: (req) => isDevelopment || POLL_PATHS.has(req.path),
   handler: (req, res) => {
     res.status(429).json({
       error: 'Too many requests, please try again later'
@@ -45,14 +90,22 @@ const apiLimiter = rateLimit({
 });
 
 // Auth endpoints rate limiter (stricter).
-// Cap is generous to absorb carrier NAT (cell users sharing IPs on the iOS
-// app). 500/15min = ~33/min, comfortably handles hundreds of users behind
-// one carrier NAT without false-429s. keyGenerator stays on req.ip since
-// req.userId is null at login/signup time.
+// Cap absorbs carrier NAT (cell users sharing IPs on the iOS app). keyGenerator
+// stays on req.ip since req.userId is null at login/signup time.
+//
+// This one is a HARD blocker when tripped: it guards /register, /login,
+// /verify-email, /resend-verification, /forgot-password and /reset-password
+// (routes/auth.js), so a false 429 means a new user cannot create an account
+// at all. Signup alone costs several calls (register -> verify -> maybe resend),
+// so the per-user cost is well above 1.
+//
+// The previous comment claimed 500/15min "comfortably handles hundreds of users
+// behind one carrier NAT" — that was optimistic. Raise it via RATE_AUTH_MAX
+// ahead of any campaign that drives concentrated mobile signup traffic.
 const authLimiter = rateLimit({
   ...getRedisStore('rl:auth:'),
   windowMs: 15 * 60 * 1000,
-  max: isDevelopment ? 10000 : 500, // Cell-NAT-safe cap for iOS app users
+  max: isDevelopment ? 10000 : AUTH_MAX, // per IP per 15 min; RATE_AUTH_MAX overrides
   message: 'Too many authentication attempts, please try again later',
   standardHeaders: true,
   legacyHeaders: false,
@@ -104,7 +157,8 @@ const passwordResetLimiter = rateLimit({
 // enumeration attempt: the endpoints only ever answer yes/no, and the server
 // still enforces uniqueness at write time (23505 -> 409).
 //
-// History: the short-window cap went 10 -> 25 -> 60. The 25 was still low enough
+// History: the short-window cap went 10 -> 25 -> 60 -> 200 (daily 400 -> 2000 at
+// the same time, for the COLLAB 2026-08-30 traffic event). The 25 was still low enough
 // that testers on shared WiFi hit it constantly, and the frontend rendered the
 // resulting 429 as "This username is already taken" (fixed in shared/api.js —
 // see checkAvailability, which maps any non-200 to 'unknown', never 'taken').
@@ -113,7 +167,7 @@ function makeAvailabilityLimiters(label, shortPrefix, dailyPrefix) {
     short: rateLimit({
       ...getRedisStore(shortPrefix),
       windowMs: 15 * 60 * 1000, // 15 minutes
-      max: limitsBypassed ? 10000 : 60, // 60 checks per 15 minutes per IP (cell-NAT-safe)
+      max: limitsBypassed ? 10000 : 200, // COLLAB 2026-08-30, revert to: 60
       message: 'Too many requests, please try again later',
       standardHeaders: true,
       legacyHeaders: false,
@@ -128,7 +182,7 @@ function makeAvailabilityLimiters(label, shortPrefix, dailyPrefix) {
     daily: rateLimit({
       ...getRedisStore(dailyPrefix),
       windowMs: 24 * 60 * 60 * 1000, // 24 hours
-      max: limitsBypassed ? 10000 : 400, // 400 checks per day per IP
+      max: limitsBypassed ? 10000 : 2000, // COLLAB 2026-08-30, revert to: 400
       message: 'Too many requests, please try again later',
       standardHeaders: true,
       legacyHeaders: false,
