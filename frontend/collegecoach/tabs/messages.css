@@ -1304,6 +1304,16 @@
         flex-shrink: 0;
     }
 
+    .thread-actions-btn {
+        padding: 0.15rem;
+        border-radius: 4px;
+    }
+
+    .thread-actions-btn svg {
+        width: 12px;
+        height: 12px;
+    }
+
     .btn-delete-conversation {
         padding: 0.15rem;
         border-radius: 4px;
@@ -1499,6 +1509,35 @@
 .btn-view-thread-profile:hover {
     background: var(--cerulean);
     color: var(--white);
+}
+
+/* Thread "More options" button (Report / Block).
+   The markup class is .thread-actions-btn (plural) but the only rule in this file
+   was .thread-action-btn (singular), so this button matched nothing and fell back
+   to the browser's native button chrome: a ~16x36 near-white sliver with its SVG
+   collapsed to 0x0. That sliver is the "white vertical line" beside the trash can. */
+.thread-actions-btn {
+    background: transparent;
+    border: 1px solid rgba(254, 252, 251, 0.25);
+    color: rgba(254, 252, 251, 0.7);
+    padding: 0.5rem;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.thread-actions-btn:hover {
+    background: rgba(254, 252, 251, 0.08);
+    border-color: rgba(254, 252, 251, 0.5);
+    color: var(--white);
+}
+
+.thread-actions-btn svg {
+    width: 18px;
+    height: 18px;
 }
 
 /* Delete Conversation Button */

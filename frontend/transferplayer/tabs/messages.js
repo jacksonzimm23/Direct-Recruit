@@ -466,8 +466,17 @@ function updateThreadHeader(participant) {
         threadAvatarCircle.style.border = `2px solid ${getRoleBorderColor(participant.role, participant.transfer === 'y', participant.college_division)}`;
         threadAvatarCircle.style.color = getRoleBorderColor(participant.role, participant.transfer === 'y', participant.college_division);
         threadAvatarCircle.style.backgroundColor = getRoleAvatarBg(participant.role, participant.transfer === 'y', participant.college_division);
+        // Both branches must write. The thread header is a single reused node, so
+        // without the else a participant with no photo kept the PREVIOUS
+        // conversation's <img> — the ring/name/subheader looked right because those
+        // are set unconditionally above, only the image went stale.
         if (participant.profile_image) {
             threadAvatarCircle.innerHTML = `<img src="${escapeHtml(participant.profile_image)}" alt="${escapeHtml(participant.first_name)}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
+        } else {
+            threadAvatarCircle.innerHTML = `<svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                </svg>`;
         }
     }
 
