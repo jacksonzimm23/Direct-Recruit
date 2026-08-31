@@ -67,6 +67,7 @@ const pipelineRoutes = require('./routes/pipeline');
 const reportsRoutes = require('./routes/reports');
 const blocksRoutes = require('./routes/blocks');
 const deviceTokensRoutes = require('./routes/device-tokens');
+const appVersionRoutes = require('./routes/app-version');
 const initializeSocket = require('./socket');
 const { apiLimiter } = require('./middleware/rateLimit');
 const { sanitizeBody } = require('./middleware/validation');
@@ -197,6 +198,7 @@ app.use('/api/pipeline', pipelineRoutes);
 app.use('/api/reports', reportsRoutes);
 app.use('/api/blocks', blocksRoutes);
 app.use('/api/device-tokens', deviceTokensRoutes);
+app.use('/api/app', appVersionRoutes);
 
 // In development, serve frontend files so cookies work on the same origin
 if (process.env.NODE_ENV !== 'production') {

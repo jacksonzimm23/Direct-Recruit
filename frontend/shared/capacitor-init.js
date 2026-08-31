@@ -10,6 +10,22 @@
 // AFTER the IIFE would be in its temporal dead zone and throw a ReferenceError.
 var _capPluginsInited = false;
 
+// Force-update gate config. Declared HERE, above the bootstrap IIFE, for the same
+// reason as the flag above: the IIFE runs synchronously at parse time and can reach
+// capacitorInit() -> drVersionGate() in that same tick. Left at the bottom of the
+// file next to the gate functions, these `var`s would still be hoisted but would
+// read as `undefined` until the script body finished executing.
+var DR_GATE_API_HOST = 'https://directrecruit.net';
+var DR_GATE_CACHE_KEY = 'drVersionGate';
+var DR_GATE_SNOOZE_KEY = 'drUpdateNagSnooze';
+var DR_GATE_TTL_MS = 15 * 60 * 1000;          // re-ask the backend at most this often
+var DR_GATE_NAG_SNOOZE_MS = 24 * 60 * 60 * 1000;
+var DR_GATE_TIMEOUT_MS = 4000;
+var DR_GATE_STORE_URL = 'itms-apps://apps.apple.com/app/id6774454639';
+var DR_GATE_STORE_URL_HTTPS = 'https://apps.apple.com/app/id6774454639';
+var _drGateAlertUp = false;
+var _drGateListenerBound = false;
+
 (function bootstrapCapacitorInit() {
     // --- .ios-app gate: detect the bundled iOS WebView SYNCHRONOUSLY by origin ---
     // The .ios-app class on <html> gates all iOS safe-area CSS. It used to be added
@@ -151,6 +167,20 @@ function capacitorInit(cap) {
         // NOTE: SplashScreen.hide() is handled by the resilient hideSplash() loop in
         // bootstrapCapacitorInit above (runs independently of this bridge-gated init,
         // so the splash always hides even if plugin init is delayed on a cold start).
+
+        // --- Force-update gate (App Store) ---
+        // The frontend ships bundled inside the .ipa, so an installed build's JS can
+        // never be hot-fixed. This asks the backend whether the installed version is
+        // behind the live App Store version and, if so, puts up an iOS-style alert
+        // whose Update button deep-links to the store listing.
+        // Fails OPEN on every error path: a version check must never brick the app.
+        (async () => {
+            try {
+                await drVersionGate(plugins);
+            } catch (e) {
+                console.error('[capacitorInit][VersionGate]', e);
+            }
+        })();
 
         // --- RevenueCat init (Phase 3b) ---
         // Fetch RC config from backend, configure the SDK, log in user if
@@ -498,4 +528,265 @@ function capacitorInit(cap) {
     } catch (e) {
         console.error('[capacitorInit]', e);
     }
+}
+
+// ==================== Force-update gate ====================
+// Asks GET /api/app/version-check whether the installed CFBundleShortVersionString
+// is behind the live App Store version, then renders a replica of a native iOS
+// UIAlertController over the app.
+//
+// Why an HTML alert and not @capacitor/dialog: the store deep-link needs no native
+// plugin (Capacitor's WebViewDelegationHandler already hands off-origin top-level
+// navigations to UIApplication.open), so building the alert in HTML keeps this
+// change pure-JS. No new pods, no Xcode project edits, ships with `npx cap sync`.
+//
+// EVERY failure path is a no-op that lets the user into the app. A backend outage,
+// a timeout, a missing plugin or a malformed response must never lock anyone out.
+
+// (Config constants live at the TOP of this file, above the bootstrap IIFE.)
+
+async function drVersionGate(plugins) {
+    var App = plugins && plugins.App;
+    if (!App || typeof App.getInfo !== 'function') return;   // fail open
+
+    var installed;
+    try {
+        var info = await App.getInfo();
+        installed = info && info.version;                    // CFBundleShortVersionString
+    } catch (_) { return; }
+    if (!installed) return;
+
+    // Re-check when the app comes back to the foreground: a release can go live
+    // while the app sits backgrounded, and the WebView is not torn down for that.
+    if (!_drGateListenerBound && plugins.App && typeof plugins.App.addListener === 'function') {
+        _drGateListenerBound = true;
+        plugins.App.addListener('appStateChange', function (state) {
+            if (state && state.isActive && !_drGateAlertUp) {
+                drVersionGate(plugins).catch(function () {});
+            }
+        });
+    }
+
+    var verdict = drGateReadCache(installed);
+    if (!verdict) {
+        verdict = await drGateFetch(installed);
+        if (!verdict) return;                                // fail open
+        drGateWriteCache(installed, verdict);
+    }
+
+    if (verdict.action === 'block') {
+        drGateShowAlert(verdict, true);
+        return;
+    }
+
+    if (verdict.action === 'nag') {
+        // Snooze is keyed to the version being advertised, so the next release
+        // nags again instead of inheriting a still-valid snooze.
+        try {
+            var snoozed = JSON.parse(localStorage.getItem(DR_GATE_SNOOZE_KEY) || 'null');
+            if (snoozed && snoozed.version === verdict.latest && Date.now() < snoozed.until) return;
+        } catch (_) {}
+        drGateShowAlert(verdict, false);
+    }
+}
+
+function drGateReadCache(installed) {
+    try {
+        var c = JSON.parse(sessionStorage.getItem(DR_GATE_CACHE_KEY) || 'null');
+        if (!c || c.installed !== installed) return null;
+        if (Date.now() - c.t > DR_GATE_TTL_MS) return null;
+        return c.verdict;
+    } catch (_) { return null; }
+}
+
+function drGateWriteCache(installed, verdict) {
+    // MPA: this file re-runs on all 95 pages. Caching the verdict for the session
+    // means one network call per app launch instead of one per navigation, and a
+    // 'block' verdict re-asserts itself instantly on every page with no round trip.
+    try {
+        sessionStorage.setItem(DR_GATE_CACHE_KEY, JSON.stringify({
+            installed: installed, verdict: verdict, t: Date.now()
+        }));
+    } catch (_) {}
+}
+
+async function drGateFetch(installed) {
+    var url = DR_GATE_API_HOST + '/api/app/version-check?platform=ios&version='
+        + encodeURIComponent(installed);
+
+    var request = (async function () {
+        try {
+            // Absolute cross-origin URL so CapacitorHttp routes it natively; a bare
+            // /api/... would hit the bundled assets, not the backend.
+            var res = await fetch(url);
+            if (!res || !res.ok) return null;
+            var body = await res.json();
+            return (body && typeof body.action === 'string') ? body : null;
+        } catch (_) { return null; }
+    })();
+
+    // Hard timeout via race rather than AbortController: CapacitorHttp replaces
+    // window.fetch and does not reliably honour an AbortSignal, and a hung request
+    // here would leave the gate pending forever on a cold launch.
+    return Promise.race([
+        request,
+        new Promise(function (resolve) { setTimeout(function () { resolve(null); }, DR_GATE_TIMEOUT_MS); })
+    ]);
+}
+
+function drGateInjectStyles() {
+    if (document.getElementById('drUpdateAlertStyles')) return;
+    var style = document.createElement('style');
+    style.id = 'drUpdateAlertStyles';
+    // Metrics lifted from UIAlertController: 270px wide, 14px radius, 17px/600
+    // title, 13px message, 44px action rows split by 0.5px hairlines, #007AFF
+    // tint. The alert follows the SYSTEM appearance (like a real one), not the
+    // app's dark theme, hence the prefers-color-scheme block.
+    style.textContent = ''
+        + '.dr-ua-backdrop{position:fixed;inset:0;z-index:2147483647;display:flex;'
+        + 'align-items:center;justify-content:center;padding:24px;opacity:0;'
+        + 'transition:opacity 180ms ease-out;-webkit-user-select:none;user-select:none;}'
+        + '.dr-ua-backdrop.dr-ua-blocking{background:#0a1128;}'
+        + '.dr-ua-backdrop.dr-ua-soft{background:rgba(0,0,0,0.4);}'
+        + '.dr-ua-backdrop.dr-ua-in{opacity:1;}'
+        + '.dr-ua-alert{width:270px;max-width:100%;border-radius:14px;overflow:hidden;'
+        + 'text-align:center;background:rgba(242,242,242,0.82);color:#000;'
+        + '-webkit-backdrop-filter:blur(20px) saturate(180%);backdrop-filter:blur(20px) saturate(180%);'
+        + "font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',system-ui,sans-serif;"
+        + 'transform:scale(1.15);opacity:0;'
+        + 'transition:transform 200ms cubic-bezier(0.2,0.9,0.3,1),opacity 160ms ease-out;}'
+        + '.dr-ua-backdrop.dr-ua-in .dr-ua-alert{transform:scale(1);opacity:1;}'
+        + '.dr-ua-body{padding:19px 16px;}'
+        + '.dr-ua-title{font-size:17px;font-weight:600;line-height:22px;letter-spacing:-0.4px;}'
+        + '.dr-ua-msg{font-size:13px;line-height:18px;margin-top:4px;letter-spacing:-0.08px;}'
+        + '.dr-ua-actions{display:flex;border-top:0.5px solid rgba(60,60,67,0.29);}'
+        + '.dr-ua-btn{flex:1 1 0;min-height:44px;display:flex;align-items:center;'
+        + 'justify-content:center;font-size:17px;color:#007aff;background:transparent;'
+        + 'border:0;font-family:inherit;letter-spacing:-0.4px;cursor:pointer;'
+        + '-webkit-tap-highlight-color:transparent;}'
+        + '.dr-ua-btn.dr-ua-preferred{font-weight:600;}'
+        + '.dr-ua-btn:active{background:rgba(0,0,0,0.08);}'
+        + '.dr-ua-btn+.dr-ua-btn{border-left:0.5px solid rgba(60,60,67,0.29);}'
+        + '@media (prefers-color-scheme:dark){'
+        + '.dr-ua-alert{background:rgba(37,37,37,0.82);color:#fff;}'
+        + '.dr-ua-actions{border-top-color:rgba(84,84,88,0.65);}'
+        + '.dr-ua-btn{color:#0a84ff;}'
+        + '.dr-ua-btn:active{background:rgba(255,255,255,0.1);}'
+        + '.dr-ua-btn+.dr-ua-btn{border-left-color:rgba(84,84,88,0.65);}}';
+    document.head.appendChild(style);
+}
+
+function drGateShowAlert(verdict, blocking) {
+    if (_drGateAlertUp) return;
+    if (document.getElementById('drUpdateAlert')) return;
+    if (!document.body) {
+        document.addEventListener('DOMContentLoaded', function () {
+            drGateShowAlert(verdict, blocking);
+        }, { once: true });
+        return;
+    }
+    _drGateAlertUp = true;
+    drGateInjectStyles();
+
+    var backdrop = document.createElement('div');
+    backdrop.id = 'drUpdateAlert';
+    backdrop.className = 'dr-ua-backdrop ' + (blocking ? 'dr-ua-blocking' : 'dr-ua-soft');
+    backdrop.setAttribute('role', 'alertdialog');
+    backdrop.setAttribute('aria-modal', 'true');
+
+    var alertEl = document.createElement('div');
+    alertEl.className = 'dr-ua-alert';
+
+    var body = document.createElement('div');
+    body.className = 'dr-ua-body';
+    var title = document.createElement('div');
+    title.className = 'dr-ua-title';
+    // textContent, never innerHTML: title/message come off the wire.
+    title.textContent = verdict.title || (blocking ? 'Update Required' : 'Update Available');
+    var msg = document.createElement('div');
+    msg.className = 'dr-ua-msg';
+    msg.textContent = verdict.message || 'A new version of Direct Recruit is available.';
+    body.appendChild(title);
+    body.appendChild(msg);
+
+    var actions = document.createElement('div');
+    actions.className = 'dr-ua-actions';
+
+    // Non-blocking alerts get a "Not Now"; a blocking one deliberately has no way out.
+    if (!blocking) {
+        var cancel = document.createElement('button');
+        cancel.type = 'button';
+        cancel.className = 'dr-ua-btn';
+        cancel.textContent = verdict.cancelText || 'Not Now';
+        cancel.addEventListener('click', function () {
+            try {
+                localStorage.setItem(DR_GATE_SNOOZE_KEY, JSON.stringify({
+                    version: verdict.latest, until: Date.now() + DR_GATE_NAG_SNOOZE_MS
+                }));
+            } catch (_) {}
+            drGateDismiss(backdrop);
+        });
+        actions.appendChild(cancel);
+    }
+
+    var confirm = document.createElement('button');
+    confirm.type = 'button';
+    confirm.className = 'dr-ua-btn dr-ua-preferred';
+    confirm.textContent = verdict.confirmText || 'Update';
+    confirm.addEventListener('click', function () { drGateOpenStore(verdict); });
+    actions.appendChild(confirm);
+
+    alertEl.appendChild(body);
+    alertEl.appendChild(actions);
+    backdrop.appendChild(alertEl);
+    document.body.appendChild(backdrop);
+
+    if (blocking) {
+        // Freeze the page behind the wall. The opaque backdrop already swallows
+        // taps (the nav-spinner delegate walks up looking for an <a> and finds
+        // none), this just stops the content scrolling underneath.
+        try {
+            document.documentElement.style.overflow = 'hidden';
+            document.body.style.overflow = 'hidden';
+        } catch (_) {}
+    }
+
+    // Double rAF so the transition runs from the initial state rather than being
+    // collapsed into the first paint.
+    requestAnimationFrame(function () {
+        requestAnimationFrame(function () { backdrop.classList.add('dr-ua-in'); });
+    });
+}
+
+function drGateDismiss(backdrop) {
+    _drGateAlertUp = false;
+    backdrop.classList.remove('dr-ua-in');
+    setTimeout(function () {
+        if (backdrop && backdrop.parentNode) backdrop.parentNode.removeChild(backdrop);
+    }, 200);
+}
+
+function drGateOpenStore(verdict) {
+    var scheme = verdict.storeUrl || DR_GATE_STORE_URL;
+    var https = verdict.storeUrlHttps || DR_GATE_STORE_URL_HTTPS;
+
+    // itms-apps:// opens the App Store app directly with no Safari bounce.
+    // Capacitor cancels the navigation and calls UIApplication.open on it
+    // (WebViewDelegationHandler.decidePolicyFor: off-origin top-level nav).
+    var left = false;
+    function markLeft() { left = true; }
+    document.addEventListener('visibilitychange', function () {
+        if (document.hidden) markLeft();
+    }, { once: true });
+    window.addEventListener('pagehide', markLeft, { once: true });
+
+    try { window.location.href = scheme; } catch (_) {}
+
+    // Only if we are demonstrably still in the foreground did the scheme fail to
+    // hand off. Guarding on that matters: without it, this fires on resume and
+    // bounces the user back to the store a second time after they return.
+    setTimeout(function () {
+        if (left || document.hidden) return;
+        try { window.open(https, '_blank'); } catch (_) {}
+    }, 900);
 }
