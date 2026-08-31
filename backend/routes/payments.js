@@ -575,9 +575,15 @@ async function revenueCatWebhookHandler(req, res) {
     }
 
     // 2. Parse body
+    // RevenueCat's body is { api_version, event: { id, type, app_user_id, ... } } —
+    // the event id is INSIDE the event object, a sibling of type/app_user_id, NOT at
+    // the top level. Reading the top-level `id` made this guard fire on 100% of
+    // deliveries, so every purchase/renewal/cancellation was silently 200-ACKed and
+    // never processed (only the client-driven /iap-reconcile kept the Apple rail
+    // working at all). Kept `|| event.id` so a future top-level id also resolves.
     const event = JSON.parse(req.body.toString('utf8'));
-    const eventId = event.id;
     const payload = event.event || {};
+    const eventId = payload.id || event.id;
     const { type, app_user_id, product_id, original_transaction_id } = payload;
 
     // 3. Require event.id (RevenueCat always sends one — guard anyway)
