@@ -535,12 +535,16 @@ class PlayerProfile {
     return { players, hasMore };
   }
 
-  // Search College Players only (those WITH college_division)
+  // Search College Players only (those WITH college_division, excluding transfers)
+  // Transfer players keep their previous school's college_division, so without the
+  // transfer guard they come back here AND from searchTransferPlayers - any page that
+  // merges both lists (other + collegeplayer discover) renders the same account twice.
   static async searchCollegePlayers(filters, limit = 9, offset = 0) {
     let query = `SELECT pp.* FROM player_profiles pp
                  JOIN users u ON pp.user_id = u.id
                  WHERE u.is_active = true
-                 AND pp.college_division IS NOT NULL AND pp.college_division != ''`;
+                 AND pp.college_division IS NOT NULL AND pp.college_division != ''
+                 AND (pp.transfer IS NULL OR pp.transfer != 'y')`;
     const values = [];
     let paramCount = 1;
 
