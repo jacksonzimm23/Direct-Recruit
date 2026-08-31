@@ -118,10 +118,14 @@ async function loadCurrentUser() {
             // Update avatar and show it (was hidden initially to prevent flash)
             const avatarElement = document.querySelector('.sidebar-footer .user-avatar-circle');
             if (avatarElement) {
-                // Check for both profile_image_url (player/coach) and profile_picture_url (other)
-                const profileImageUrl = response.profile.profile_image_url || response.profile.profile_picture_url;
-                if (response.profile && profileImageUrl) {
-                    avatarElement.innerHTML = `<img src="${profileImageUrl}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
+                // Check for both profile_image_url (player/coach) and profile_picture_url (other).
+                // Optional-chain the lookup: this used to dereference response.profile
+                // BEFORE the null check on the next line, so a user with no profile row
+                // threw here and skipped the border/visibility code below, leaving the
+                // avatar hidden until the outer catch revealed it.
+                const profileImageUrl = response.profile?.profile_image_url || response.profile?.profile_picture_url;
+                if (profileImageUrl) {
+                    avatarElement.innerHTML = `<img src="${escapeHtml(profileImageUrl)}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
                 }
                 avatarElement.style.border = `2px solid ${getRoleBorderColor(response.user.role, response.user.is_transfer_player, response.profile?.college_division)}`;
                 avatarElement.style.color = getRoleBorderColor(response.user.role, response.user.is_transfer_player, response.profile?.college_division);
@@ -196,7 +200,7 @@ function renderConversationsList() {
                 <div class="conversation-avatar">
                     <div class="avatar-circle" style="border: 2px solid ${getRoleBorderColor(participant.role, participant.transfer === 'y', participant.college_division)}; color: ${getRoleBorderColor(participant.role, participant.transfer === 'y', participant.college_division)}; background: ${getRoleAvatarBg(participant.role, participant.transfer === 'y', participant.college_division)}">
                         ${participant.profile_image
-                            ? `<img src="${participant.profile_image}" alt="${safeFirst}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`
+                            ? `<img src="${escapeHtml(participant.profile_image)}" alt="${safeFirst}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`
                             : `<svg viewBox="0 0 24 24" fill="currentColor">
                                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
                                 <circle cx="12" cy="7" r="4"></circle>
@@ -487,13 +491,18 @@ function updateThreadHeader(participant) {
     }
 
     // Wire up the More menu (Report User + Block User) — Fix #2d.
+    // The participant object comes from Message.getUserConversations, which builds it
+    // with the key 'id' — there is no 'user_id'. Gating on participant.user_id was
+    // always undefined, so #threadMoreBtn (display:none in the markup) never unhid and
+    // Report/Block was unreachable from every thread. 'id' is what the rest of this
+    // file already uses (data-participant-id, navigateToProfile).
     const oldMoreBtn = document.getElementById('threadMoreBtn');
-    if (oldMoreBtn && participant.user_id) {
+    if (oldMoreBtn && participant.id) {
         const moreBtn = oldMoreBtn.cloneNode(true);
         oldMoreBtn.parentNode.replaceChild(moreBtn, oldMoreBtn);
         moreBtn.style.display = '';
         const displayName = `${participant.first_name || ''} ${participant.last_name || ''}`.trim() || 'this user';
-        moreBtn.addEventListener('click', (e) => showThreadMoreMenu(e, participant.user_id, displayName));
+        moreBtn.addEventListener('click', (e) => showThreadMoreMenu(e, participant.id, displayName));
     }
 }
 
@@ -679,6 +688,13 @@ async function openOrCreateConversation(otherUserId) {
         }
     } catch (error) {
         console.error('Failed to create conversation:', error);
+        // Surface it. Without a toast this failure looks identical to landing on an
+        // empty inbox, which is what made the wrong-folder navigation bug so hard to
+        // spot. error.message carries the server's `error` field (e.g. the 403 from
+        // Follow.canMessage when the recipient restricts messages).
+        if (typeof showToast === 'function') {
+            showToast(error.message || 'Could not open this conversation. Please try again.', 'error');
+        }
     }
 }
 

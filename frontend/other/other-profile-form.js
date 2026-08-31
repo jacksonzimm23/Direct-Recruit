@@ -89,16 +89,20 @@ document.addEventListener('DOMContentLoaded', function() {
     const usernameError = document.getElementById('usernameError');
     const usernameLengthError = document.getElementById('usernameLengthError');
     const usernameHint = document.getElementById('usernameHint');
-    // First/last name character counters (same treatment as the username counter below).
-    [['firstName', 'firstNameCharCount'], ['lastName', 'lastNameCharCount']].forEach(function(pair) {
+    // First/last name + subheader character counters (same treatment as the username
+    // counter below). Thresholds are derived from each input's own maxlength so fields
+    // with different caps (20 for names, 30 for subheader) warn at the same proportion.
+    [['firstName', 'firstNameCharCount'], ['lastName', 'lastNameCharCount'], ['subheader', 'subheaderCharCount']].forEach(function(pair) {
         const nameInput = document.getElementById(pair[0]);
         const nameCount = document.getElementById(pair[1]);
         if (!nameInput || !nameCount) return;
+        const max = nameInput.maxLength > 0 ? nameInput.maxLength : 20;
+        const warnAt = Math.ceil(max * 0.8);
         const updateNameCount = function() {
             const len = nameInput.value.length;
             nameCount.textContent = len;
-            if (len >= 16) {
-                nameCount.style.color = len >= 20 ? '#ff6b6b' : '#ffa500';
+            if (len >= warnAt) {
+                nameCount.style.color = len >= max ? '#ff6b6b' : '#ffa500';
             } else {
                 nameCount.style.color = '';
             }
@@ -366,7 +370,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     first_name: document.getElementById('firstName').value,
                     last_name: document.getElementById('lastName').value,
                     username: usernameInput.value,
-                    date_of_birth: document.getElementById('dateOfBirth')?.value || null
+                    date_of_birth: document.getElementById('dateOfBirth')?.value || null,
+                    // Optional. Sent as null rather than '' so the column stays NULL
+                    // when it's left blank, matching what the edit modal writes.
+                    subheader: document.getElementById('subheader')?.value.trim() || null
                 };
 
                 // Step 3: Create profile

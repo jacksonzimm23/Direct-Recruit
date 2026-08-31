@@ -6,16 +6,20 @@ const { fullNameExpr, searchTermParams, searchScoreExpr } = require('../utils/se
 
 class OtherProfile {
   static async create(userId, profileData) {
+    // subheader is the "other" profile's role line (the equivalent of a player's
+    // Position • Height • Weight). It was omitted here, so every new account landed
+    // with subheader = NULL and rendered a blank line under its name in the sidebar,
+    // message threads and search. validateOtherProfile already accepts it.
     const {
-      first_name, last_name, username, date_of_birth
+      first_name, last_name, username, date_of_birth, subheader
     } = profileData;
 
     const result = await pool.query(
       `INSERT INTO other_profiles
-      (user_id, first_name, last_name, username, date_of_birth)
-      VALUES ($1, $2, $3, $4, $5)
+      (user_id, first_name, last_name, username, date_of_birth, subheader)
+      VALUES ($1, $2, $3, $4, $5, $6)
       RETURNING *`,
-      [userId, first_name, last_name, username, date_of_birth ?? null]
+      [userId, first_name, last_name, username, date_of_birth ?? null, subheader ?? null]
     );
     return result.rows[0];
   }

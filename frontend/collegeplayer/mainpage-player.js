@@ -459,17 +459,28 @@ window.drRevalidateRoleFolder = verifyPlayerType;
 async function verifyPlayerType() {
     try {
         const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.get('username')) return;
+        // A page carrying ?username= / ?userId= is intentionally in the VIEWED user's
+        // folder, so skip the check. view-profile.js falls back to ?userId= when the
+        // target has no username, so both have to be exempt.
+        // Messages is the exception: it must always be the VIEWER's own folder, so it
+        // gets the query-preserving folder swap below instead of an exemption.
+        const isMessagesPage = window.location.pathname.includes('messages.html');
+        if (!isMessagesPage && (urlParams.get('username') || urlParams.get('userId'))) return;
 
         const response = await API.get('/auth/me');
         if (response.user && response.profile) {
             const correctFolder = getProfileFolder({ role: response.user.role, is_transfer_player: response.user.is_transfer_player, ...response.profile });
             if (correctFolder !== 'collegeplayer') {
-                // Single post view is cross-role: keep the post open but swap to the
-                // viewer's own folder so the sidebar/chrome stays their role's.
+                // Cross-role tab pages carry a payload in the query string (a post id,
+                // or a ?userId= to open a conversation). Swap to the viewer's own folder
+                // and KEEP the query string, so the sidebar/chrome stays their role's and
+                // the payload survives — dropping them on the feed loses it.
                 // replace() so Back returns to the profile, not the wrong-folder URL.
-                if (window.location.pathname.includes('post-view.html')) {
-                    window.location.replace(new URL(`../../${correctFolder}/tabs/post-view.html${window.location.search}`, window.location.href).href);
+                const crossRolePage = window.location.pathname.includes('post-view.html')
+                    ? 'post-view.html'
+                    : (isMessagesPage ? 'messages.html' : null);
+                if (crossRolePage) {
+                    window.location.replace(new URL(`../../${correctFolder}/tabs/${crossRolePage}${window.location.search}`, window.location.href).href);
                     return;
                 }
                 window.location.href = getMainpageUrl(correctFolder);

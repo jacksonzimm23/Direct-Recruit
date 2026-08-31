@@ -1666,16 +1666,20 @@ router.post('/switch-profile', authMiddleware, async (req, res) => {
         // "Other" profiles store the avatar in profile_picture_url, NOT
         // profile_image_url (see models/OtherProfile.js). Prod's other_profiles
         // has no profile_image_url column, so inserting into it 500s on EC2.
+        // subheader is the "other" profile's role line. The switch form already
+        // collects it (shared/settings.js switchSubheader), but it was missing from
+        // this INSERT, so a switched profile rendered a blank line under its name.
         `INSERT INTO other_profiles
-        (user_id, first_name, last_name, username, date_of_birth, bio, profile_picture_url,
+        (user_id, first_name, last_name, username, date_of_birth, subheader, bio, profile_picture_url,
          followers_count, following_count, profile_visibility, message_permissions)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
         [
           req.userId,
           preservedData.first_name,
           preservedData.last_name,
           profile_data.username,
           profile_data.date_of_birth,
+          profile_data.subheader || null,
           profile_data.bio || null,
           preservedData.profile_image_url,
           preservedData.followers_count,
@@ -1979,8 +1983,18 @@ function validateProfileDataForType(targetType, data) {
     if (targetType === 'collegecoach') {
       if (!data.college_division) return 'College division is required';
     }
+  } else if (targetRole === 'other') {
+    // No required fields beyond username. Length caps only, mirroring
+    // validateOtherProfile in middleware/validation.js — this endpoint doesn't run
+    // that validator, and other_profiles.subheader is VARCHAR(255), so an oversized
+    // value would surface as a 500 from Postgres instead of a 400.
+    if (typeof data.subheader === 'string' && data.subheader.trim().length > 100) {
+      return 'Subheader must be 100 characters or less';
+    }
+    if (typeof data.bio === 'string' && data.bio.trim().length > 1000) {
+      return 'Bio must be 1000 characters or less';
+    }
   }
-  // 'other' has no required fields beyond username
 
   // AI Fit-Matching fields (Plan 4) — all optional, validated only when present.
   const fitError = validateFitFieldsForType(targetType, data);

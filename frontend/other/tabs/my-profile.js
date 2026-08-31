@@ -1449,6 +1449,21 @@ async function setupMessageButton() {
     const messageBtn = document.getElementById('messageBtn');
     if (!messageBtn || !viewingUserId) return;
 
+    // In-app the bundle root is the frontend/ contents, so there is no '/frontend'
+    // path segment; on web there is. Mirror shared/api.js's prefix convention so
+    // these URLs resolve in BOTH the WKWebView and the browser.
+    const FE_BASE = window.location.origin + (window.location.pathname.startsWith('/frontend/') ? '/frontend' : '');
+
+    // Messages must open in the LOGGED-IN user's folder, not the viewed profile's.
+    // A relative 'messages.html' here resolved to other/tabs/messages.html for every
+    // viewer, and the role guard in mainpage-other.js then bounced non-'other' users
+    // to their feed (it only exempts ?username=). loggedInUserFolder is set by
+    // loadCurrentUser(), which is awaited before the profile renders.
+    const goToConversation = () => {
+        const folder = loggedInUserFolder || 'other';
+        window.location.href = `${FE_BASE}/${folder}/tabs/messages.html?userId=${viewingUserId}`;
+    };
+
     // Check message permissions
     try {
         const permissionResult = await API.get(`/follow/can-message/${viewingUserId}`);
@@ -1456,10 +1471,7 @@ async function setupMessageButton() {
         if (permissionResult.canMessage) {
             // Show the message button
             messageBtn.style.display = '';
-            messageBtn.addEventListener('click', () => {
-                // Navigate to messages with this user
-                window.location.href = new URL(`messages.html?userId=${viewingUserId}`, window.location.href).href;
-            });
+            messageBtn.addEventListener('click', goToConversation);
         } else {
             // Keep the button hidden (already hidden by default)
             messageBtn.style.display = 'none';
@@ -1468,9 +1480,7 @@ async function setupMessageButton() {
         console.error('Error checking message permissions:', error);
         // On error, show the button (fail open for better UX)
         messageBtn.style.display = '';
-        messageBtn.addEventListener('click', () => {
-            window.location.href = new URL(`messages.html?userId=${viewingUserId}`, window.location.href).href;
-        });
+        messageBtn.addEventListener('click', goToConversation);
     }
 }
 
