@@ -50,10 +50,15 @@ class Message {
     );
 
     if (result.rows[0]) {
-      // Unhide the conversation for the initiating user (in case it was previously hidden)
+      // Unhide the conversation for the initiating user (in case it was previously
+      // hidden), and stamp opened_at so getUserConversations will list it for them.
+      // Without opened_at, a message-less conversation created by the OTHER user is
+      // returned here but filtered out of this user's own list (created_by is not
+      // them), so the frontend can't find it and the thread header renders blank.
       await pool.query(
         `UPDATE conversation_participants
-         SET hidden_at = NULL
+         SET hidden_at = NULL,
+             opened_at = COALESCE(opened_at, CURRENT_TIMESTAMP)
          WHERE conversation_id = $1 AND user_id = $2`,
         [result.rows[0].id, user1Id]
       );
@@ -121,7 +126,9 @@ class Message {
   static async getUserConversations(userId, limit = 20, offset = 0) {
     // Only show conversations that:
     // 1. Have at least one message, OR
-    // 2. Were created by the current user (empty conversations only visible to initiator)
+    // 2. Were created by the current user, OR the current user has explicitly
+    //    opened them from a profile (opened_at) — an empty conversation still
+    //    stays out of the other person's inbox until they open it themselves
     // 3. Are not hidden by the user, OR have a new message after hidden_at
     const result = await pool.query(
       `SELECT c.*,
@@ -161,6 +168,7 @@ class Message {
          AND (
            EXISTS (SELECT 1 FROM messages m WHERE m.conversation_id = c.id)
            OR c.created_by = $1
+           OR cp_user.opened_at IS NOT NULL
          )
          AND (
            cp_user.hidden_at IS NULL
@@ -177,8 +185,15 @@ class Message {
            UNION
            SELECT blocker_id FROM blocked_users WHERE blocked_id = $1
          )
-       GROUP BY c.id, cp_user.last_read_at
-       ORDER BY c.updated_at DESC
+       GROUP BY c.id, cp_user.last_read_at, cp_user.opened_at
+       -- Per-viewer ordering: a thread you just opened from someone's profile
+       -- floats to the top of YOUR list (opened_at is only stamped by
+       -- getOrCreateConversation, never by reading an existing thread, and never
+       -- touches the other participant's row). Without this, reopening an old
+       -- conversation could land outside the default 20-row window, and the
+       -- frontend — which finds the thread header's participant in this list —
+       -- would render a blank header again.
+       ORDER BY GREATEST(c.updated_at, COALESCE(cp_user.opened_at, c.updated_at)) DESC
        LIMIT $2 OFFSET $3`,
       [userId, limit, offset]
     );
