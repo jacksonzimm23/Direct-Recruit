@@ -3918,6 +3918,10 @@ async function initializeSubscriptionSection() {
         });
         const isPaid = PAID_PROFILE_TYPES.includes(profileFolder);
         const hasAddon = ADDON_PROFILE_TYPES.includes(profileFolder);
+        // AI-REP-FREE 2026-09: read straight off the /me response we already have.
+        // window.AiRepPaywall.freeMode would race with this function (both resolve on
+        // DOMContentLoaded); me.user is the same server value with no race.
+        const aiRepFree = me.user.ai_rep_free === true;
 
         // Players (free platform + optional AI Rep add-on). If they actually hold
         // the add-on we MUST fall through to the full subscription UI — otherwise a
@@ -3930,8 +3934,15 @@ async function initializeSubscriptionSection() {
                 renderSubscriptionUI(content, sub, profileFolder);
                 return;
             }
-            renderFreePlayerUI(content, sub);
-            return;
+            // AI-REP-FREE 2026-09: while AI Rep is free we must not upsell it. Falling
+            // through to the generic free-account block below keeps Restore Purchases
+            // on iOS (Apple requires the restore path) and drops the "Unlock AI Rep"
+            // button, which would otherwise sell a feature the user already has.
+            // To restore: delete the `if (!aiRepFree)` wrapper.
+            if (!aiRepFree) {
+                renderFreePlayerUI(content, sub);
+                return;
+            }
         }
 
         if (!isPaid) {

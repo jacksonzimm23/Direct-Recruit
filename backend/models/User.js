@@ -236,8 +236,20 @@ class User {
   static AI_REP_TIERS = ['player'];
   static ENTITLED_SUB_STATUSES = ['active', 'trialing', 'past_due', 'comp'];
 
+  // AI-REP-FREE 2026-09: AI Rep is temporarily FREE for hsplayer/transferplayer.
+  // THIS BOOLEAN IS THE ONLY REVERT POINT. Flip it to false and restart the server
+  // and every surface re-locks instantly, phones included, because the clients read
+  // it off /auth/me (as `ai_rep_free`) rather than baking it into their bundle.
+  // Do NOT hardcode a copy of this in frontend JS: an iOS bundle that decides on its
+  // own can only be corrected by another App Store build.
+  // Deliberately does NOT touch PAID_TYPES / SUBSCRIBABLE_TYPES / ADDON_TYPES, the
+  // Stripe + RevenueCat plumbing, or existing subscribers, who keep working access
+  // and a working cancel path throughout.
+  static AI_REP_FREE = true;
+
   // Takes the row shape returned by User.getSubscriptionInfo().
   static hasAiRep(subInfo) {
+    if (User.AI_REP_FREE) return true;   // AI-REP-FREE 2026-09
     return !!subInfo
       && User.ENTITLED_SUB_STATUSES.includes(subInfo.subscription_status)
       && User.AI_REP_TIERS.includes(subInfo.subscription_tier);

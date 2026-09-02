@@ -1916,6 +1916,12 @@ function getInitMe() {
 
     // null = not resolved yet. Seeded from cache, confirmed by refresh().
     let _entitled = readCache();
+    // AI-REP-FREE 2026-09: mirrors User.AI_REP_FREE, delivered on /auth/me as
+    // `ai_rep_free` and set by refresh(). Deliberately NOT a hardcoded constant here:
+    // this file is bundled into the iOS app, so a baked-in value could only be
+    // corrected by another App Store build. Starts false so the lock still fails
+    // CLOSED before /auth/me resolves.
+    let _freeMode = false;
     let _folder = null;
     let _userId = null;
     let _iapLoading = null;
@@ -2092,6 +2098,10 @@ function getInitMe() {
     }
 
     async function open() {
+        // AI-REP-FREE 2026-09: never sell a feature that is currently free. Belt and
+        // suspenders — the nav handler and the AI Rep page both let a free-mode user
+        // straight through, so nothing should reach this.
+        if (_freeMode) return;
         if (document.getElementById('drAirepOverlay')) return;
         injectStyles();
 
@@ -2324,8 +2334,15 @@ function getInitMe() {
                 college_division: (me.profile && me.profile.college_division) || me.user.college_division
             });
             if (!isPlayerFolder(_folder)) { _entitled = null; return _entitled; }
-            _entitled = ENTITLED_STATUSES.includes(me.user.subscription_status) &&
-                        me.user.subscription_tier === 'player';
+            // AI-REP-FREE 2026-09: `ai_rep_free` mirrors User.AI_REP_FREE on the
+            // server. While it is on, every player is entitled; the real subscription
+            // check below still runs so an actual subscriber is unaffected either way,
+            // and flipping the server flag back off re-locks this client on its next
+            // /auth/me with no new build.
+            _freeMode = me.user.ai_rep_free === true;
+            _entitled = _freeMode ||
+                        (ENTITLED_STATUSES.includes(me.user.subscription_status) &&
+                         me.user.subscription_tier === 'player');
             writeCache(_entitled);
         } catch (_) { /* leave unresolved; the click handler re-checks */ }
         return _entitled;
@@ -2374,6 +2391,10 @@ function getInitMe() {
 
     window.AiRepPaywall = {
         isEntitled,
+        // AI-REP-FREE 2026-09: true once refresh() has seen ai_rep_free on /auth/me.
+        // Callers that already hold a /me response should read me.user.ai_rep_free
+        // directly instead, since this is false until refresh() resolves.
+        get freeMode() { return _freeMode; },
         // Synchronous best-guess from localStorage (true/false/null). Lets a page
         // decide what to render on its FIRST frame instead of after /auth/me.
         cachedEntitled: () => _entitled,

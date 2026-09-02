@@ -416,7 +416,18 @@
 
             async function showTierSelection() {
                 const container = document.querySelector('.paywall-actions');
-                container.innerHTML = '<p style="color:#8892b0;font-size:14px;margin:0 0 16px;">Select your plan:</p>';
+                // AI-REP-FREE 2026-09: the marketing site advertises coach plans as free for
+                // a limited time, but this screen is where a coach is ACTUALLY charged and the
+                // tier buttons below still carry the real price. The free-pass line closes that
+                // gap without touching checkout. web-only: on iOS an external route to access
+                // is an Apple 3.1.1 problem, and .web-only is already hidden in the app.
+                // Remove this line with the promo.
+                container.innerHTML =
+                    '<p class="web-only" style="color:#8892b0;font-size:13px;line-height:1.5;margin:0 0 14px;">'
+                    + 'Coach plans are free for a limited time. Email '
+                    + '<a href="mailto:jackson@directrecruit.net" style="color:#ff6b35;font-weight:700;text-decoration:none;">jackson@directrecruit.net</a>'
+                    + ' for a free pass instead of subscribing.</p>'
+                    + '<p style="color:#8892b0;font-size:14px;margin:0 0 16px;">Select your plan:</p>';
 
                 // Apple Guideline 3.1.1: prefer Apple's localized price on iOS,
                 // fall back to hardcoded USD on web or if offerings fetch fails.

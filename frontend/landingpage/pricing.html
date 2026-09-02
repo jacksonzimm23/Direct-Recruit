@@ -50,8 +50,11 @@
                 <div class="pricing-coach-card">
                     <h3>Starter</h3>
                     <div class="pricing-amount">
-                        <span class="pricing-dollar pricing-dollar-sm web-only">$20</span>
-                        <span class="pricing-period web-only">/month</span>
+                        <!-- AI-REP-FREE 2026-09: promotional free period. To restore:
+                             <span class="pricing-dollar pricing-dollar-sm web-only">$20</span>
+                             <span class="pricing-period web-only">/month</span> -->
+                        <span class="pricing-dollar pricing-dollar-sm web-only">Free</span>
+                        <span class="pricing-promo-note web-only">for a limited time</span>
                     </div>
                     <p class="pricing-card-desc">Get started with AI recruiting tools.</p>
                     <ul class="pricing-feature-list pricing-feature-list-compact">
@@ -67,8 +70,11 @@
                     <div class="pricing-popular-badge">Most Popular</div>
                     <h3>Pro</h3>
                     <div class="pricing-amount">
-                        <span class="pricing-dollar pricing-dollar-sm web-only">$50</span>
-                        <span class="pricing-period web-only">/month</span>
+                        <!-- AI-REP-FREE 2026-09: promotional free period. To restore:
+                             <span class="pricing-dollar pricing-dollar-sm web-only">$50</span>
+                             <span class="pricing-period web-only">/month</span> -->
+                        <span class="pricing-dollar pricing-dollar-sm web-only">Free</span>
+                        <span class="pricing-promo-note web-only">for a limited time</span>
                     </div>
                     <p class="pricing-card-desc">Full access for active recruiting programs.</p>
                     <ul class="pricing-feature-list pricing-feature-list-compact">
@@ -80,8 +86,11 @@
                 <div class="pricing-coach-card">
                     <h3>Elite</h3>
                     <div class="pricing-amount">
-                        <span class="pricing-dollar pricing-dollar-sm web-only">$100</span>
-                        <span class="pricing-period web-only">/month</span>
+                        <!-- AI-REP-FREE 2026-09: promotional free period. To restore:
+                             <span class="pricing-dollar pricing-dollar-sm web-only">$100</span>
+                             <span class="pricing-period web-only">/month</span> -->
+                        <span class="pricing-dollar pricing-dollar-sm web-only">Free</span>
+                        <span class="pricing-promo-note web-only">for a limited time</span>
                     </div>
                     <p class="pricing-card-desc">Maximum capacity for large coaching staffs.</p>
                     <ul class="pricing-feature-list pricing-feature-list-compact">
@@ -93,6 +102,15 @@
             <div style="text-align:center;margin-top:32px;">
                 <a href="get-started.html" class="pricing-btn pricing-btn-orange pricing-btn-lg">Start Your Profile</a>
             </div>
+            <!-- AI-REP-FREE 2026-09: the free-pass route for coaches. Sits BELOW the CTA on
+                 purpose: pricing.css tunes this band so the button lands above the fold
+                 (lessons.md #120), and anything added above it pushes the button down.
+                 web-only like every other price on this page, so an App Review pass never
+                 sees an external path to obtaining access. Remove with the promo. -->
+            <p class="pricing-coach-contact web-only">
+                Email <a href="mailto:jackson@directrecruit.net">jackson@directrecruit.net</a>
+                for a free pass while coach plans are free.
+            </p>
         </div>
     </section>
 
@@ -137,17 +155,25 @@
             </div>
             <!-- Direct Recruit+ add-on. Players are free on the platform; this
                  $10/mo subscription unlocks the AI Rep only (PAID_TYPES in
-                 backend/models/User.js, AI Rep paywall in shared/api.js). -->
+                 backend/models/User.js, AI Rep paywall in shared/api.js).
+                 AI-REP-FREE 2026-09: the add-on is currently given away, gated by
+                 User.AI_REP_FREE. Copy below reverts with that flag. -->
             <div class="pricing-addon-card">
                 <div class="pricing-card-left">
-                    <div class="pricing-addon-label">Optional upgrade</div>
+                    <!-- AI-REP-FREE 2026-09: was "Optional upgrade" -->
+                    <div class="pricing-addon-label">Free right now</div>
                     <h3>Direct Recruit+</h3>
                     <div class="pricing-amount">
-                        <span class="pricing-dollar pricing-dollar-sm web-only">$10</span>
-                        <span class="pricing-period web-only">/month</span>
+                        <!-- AI-REP-FREE 2026-09: promotional free period. To restore:
+                             <span class="pricing-dollar pricing-dollar-sm web-only">$10</span>
+                             <span class="pricing-period web-only">/month</span> -->
+                        <span class="pricing-dollar pricing-dollar-sm web-only">Free</span>
+                        <span class="pricing-promo-note web-only">for a limited time</span>
                     </div>
                     <p class="pricing-card-desc">For players who are serious about getting recruited.</p>
-                    <p class="pricing-addon-trial">Start your 7 day free trial today!</p>
+                    <!-- AI-REP-FREE 2026-09: no trial to start while it is free. To restore:
+                         <p class="pricing-addon-trial">Start your 7 day free trial today!</p> -->
+                    <p class="pricing-addon-trial">Included free with every player account right now.</p>
                     <a href="get-started.html" class="pricing-btn pricing-btn-orange pricing-btn-addon">Start Your Profile</a>
                 </div>
                 <div class="pricing-card-right">
@@ -192,7 +218,9 @@
                 </div>
                 <div class="pricing-faq-item web-only">
                     <h4>Is there a free trial for coach plans?</h4>
-                    <p>We offer a Starter plan at $20/month so you can try the AI tools at a lower commitment before upgrading.</p>
+                    <!-- AI-REP-FREE 2026-09: was "We offer a Starter plan at $20/month so you
+                         can try the AI tools at a lower commitment before upgrading." -->
+                    <p>Every coach tier is free for a limited time, so you can try the full set of AI tools before any plan pricing begins. Email <a href="mailto:jackson@directrecruit.net">jackson@directrecruit.net</a> and we will set your staff up with a free pass.</p>
                 </div>
                 <div class="pricing-faq-item web-only">
                     <h4>What payment methods do you accept?</h4>
@@ -204,11 +232,18 @@
                 </div>
                 <div class="pricing-faq-item">
                     <h4>Do players have to pay?</h4>
-                    <p>No. Every player uses Direct Recruit for free, along with HS coaches, parents, and fans. Direct Recruit+ is an optional add-on that unlocks the AI Rep. Only college coaches have a required paid plan.</p>
+                    <!-- AI-REP-FREE 2026-09: was "No. Every player uses Direct Recruit for free,
+                         along with HS coaches, parents, and fans. Direct Recruit+ is an optional
+                         add-on that unlocks the AI Rep. Only college coaches have a required paid
+                         plan." -->
+                    <p>No. Every player uses Direct Recruit for free, along with HS coaches, parents, and fans. Direct Recruit+, which unlocks the AI Rep, is free for a limited time too. College coaches are the only profile type with a paid plan, and that is also free for a limited time right now.</p>
                 </div>
                 <div class="pricing-faq-item web-only">
                     <h4>Is there a student discount?</h4>
-                    <p>Direct Recruit is already free for players, and the optional $10/month Direct Recruit+ add-on is priced for students. We may offer additional discounts in the future.</p>
+                    <!-- AI-REP-FREE 2026-09: was "Direct Recruit is already free for players, and
+                         the optional $10/month Direct Recruit+ add-on is priced for students. We
+                         may offer additional discounts in the future." -->
+                    <p>Direct Recruit is free for players, and Direct Recruit+ is free for a limited time as well. When it does start costing something it will be priced for students, and we may offer additional discounts.</p>
                 </div>
             </div>
         </div>

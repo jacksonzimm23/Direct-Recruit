@@ -185,7 +185,14 @@
     - **Profile Optimization:** Checks the player's profile against all AI RA searchable fields. HS players have 11 fields, transfer players have 13 (adds College Division + Eligibility). Incomplete fields show as prioritized recommendations (HIGH/MED/LOW). Displays "Completing your profile helps get more coaching matches" message.
     - **Search Trends:** Coming Soon overlay — no data yet.
 
-    **Backend:** `backend/routes/ai-rep.js` mounted at `/api/ai-rep` with `requireRole('player')`. Two endpoints: `GET /matches` (queries `ai_analytics` via JSONB containment `result_players @> '[{"player_id":"..."}]'`) and `GET /profile-completion`. Frontend API: `API.aiRep.getMatches()` and `API.aiRep.getProfileCompletion()`.
+    **Backend:** `backend/routes/ai-rep.js` mounted at `/api/ai-rep` with `requireRole('player')`. THREE endpoints, each individually gated by `requireAiRep()`:
+    - `GET /search-appearances` — the match feed. Queries `ai_analytics` via JSONB containment `result_players @> '[{"player_id":"..."}]'`. Takes `period` / `offset` / `limit`.
+    - `GET /best-fit-schools` — takes `offset` / `limit`.
+    - `GET /profile-completion`
+
+    Frontend API: `API.aiRep.getSearchAppearances()`, `API.aiRep.getBestFitSchools()`, `API.aiRep.getProfileCompletion()` (`aiRepAPI` at `frontend/shared/api.js:1381`).
+
+    **There is no `/matches` endpoint and no `API.aiRep.getMatches()`.** This entry claimed both until Sept 2026, and a plan written off it wasted a verification cycle curl-ing a route that 404s. The feed is called "matches" in the UI copy but `search-appearances` on the wire. When verifying AI Rep gating, hit all three routes: a 404 means you used the wrong name, only a 403 means the gate fired.
 
     **Local dev note:** The AI RA mock (`backend/utils/local/ai-local.js`) returns hardcoded filters for every query, so "matched on" tags won't reflect the actual coach request locally. In production with real Claude, the filters are accurate. To clear all AI Rep test data locally:
     ```
@@ -925,6 +932,50 @@
 
 84. **CSP ('script-src \'self\'') breaks any inline `<script>` on pages served by the node backend.** `payment-success.html` (collegecoach, hsplayer, transferplayer) and `payment-success-switch.html` were originally written with inline scripts, which silently fail with a console error — coach gets stuck on "Setting up your profile..." forever because the profile-creation code never runs. Fix: extract to external `payment-success.js` files. This was hidden during local dev because Live Server (port 5500) doesn't enforce CSP, only the node backend does. Test all post-Stripe pages on `:5000` to catch this category of bug, not just `:5500`.
 
+    **CORRECTION (Aug 2026) — "served by the node backend" does NOT mean production.
+    On prod, nginx serves the frontend HTML itself and Express never sees it, so the
+    CSP is never attached to a page.** Verified against live response headers:
+
+    ```
+    GET https://directrecruit.net/collegecoach/mainpage-coach.html
+        Server: nginx/1.28.1   (+ ETag / Last-Modified / Accept-Ranges)
+        NO Content-Security-Policy header
+    GET https://directrecruit.net/api/auth/me
+        Content-Security-Policy: default-src 'self';script-src 'self';...
+    ```
+
+    Only `/api/*` is proxied to Express, and helmet's CSP rides on those responses.
+    Every `.html`, `.js` and `.css` under the site root is a static file straight off
+    disk from nginx, with no CSP. So an inline `<script>` in a page **runs fine in
+    production**, and it runs fine in the iOS app too (Capacitor serves the bundle
+    from its own `https://localhost` origin, which the backend header also never
+    touches). The ONLY place the CSP bites an inline script is when a page is
+    fetched from Express directly, i.e. `http://localhost:5000/frontend/...` in
+    local dev.
+
+    **Consequence for debugging: a CSP inline-script error seen on `:5000` is NOT
+    by itself evidence of a production bug.** This was gotten wrong once already —
+    the six `mainpage-*.html` files each carried an inline
+    `new SearchComponent('searchComponent')` initializer, it was observed failing on
+    `:5000`, and that was reported as "the search bar is missing for every user on
+    directrecruit.net". It wasn't; nginx was serving those pages CSP-free the whole
+    time and the search bar worked. **Before calling an inline-script CSP failure a
+    prod bug, curl the real thing and look for the header:**
+    `curl -sI https://directrecruit.net/<path> | grep -i content-security-policy`
+    (no output = not affected).
+
+    The initializer was still moved into `shared/search.js` as a self-init (guarded
+    on the container existing), because that also collapses a six-way duplicated
+    block that could drift between role folders — but that was cleanup, not a fix.
+    Testing on `:5000` remains worthwhile: it is the strictest environment and
+    catches inline scripts before some future nginx/serving change makes them matter.
+
+    **OPEN QUESTION on the payment-success story above.** It is recorded as a real
+    symptom (a coach stuck on "Setting up your profile..."), but with nginx serving
+    HTML without CSP that could not have been caused by the CSP as described. Either
+    the nginx config changed since, or those pages were reached some other way, or
+    the root cause was something else. Re-verify before relying on this paragraph.
+
 85. **Service worker disabled in local dev.** `frontend/shared/sw-register.js` short-circuits when `window.location.hostname === 'localhost'` or `127.0.0.1`, AND actively unregisters any previously installed SW + wipes its caches. Reason: the SW had a network-first strategy that cached aggressively and treated CSP-blocked Google Fonts requests as network failures, causing it to serve stale or 503 responses for unrelated assets (logos, CSS) until a hard refresh. In dev this fights with file edits — every change required Ctrl+Shift+R until the SW was removed. Production deploys (`directrecruit.net`) still register the SW for PWA behavior.
 
 ---
@@ -1402,3 +1453,72 @@ DO NOT run seed
     To verify layout changes like these without guessing, render headlessly and measure:
     `& "C:\Program Files\Google\Chrome\Application\chrome.exe" --headless --disable-gpu --allow-file-access-from-files --virtual-time-budget=6000 --window-size=1240,3000 --dump-dom <file-url>`
     with a small injected script that writes `getBoundingClientRect()` values into a probe element. Launch it via `Start-Process -Wait -RedirectStandardOutput`; calling `chrome.exe` directly from PowerShell returns before the render finishes and produces no output. Use a scratch `--user-data-dir` and kill only the PIDs whose command line contains it — never `taskkill` chrome by image name.
+
+---
+
+## Apple IAP / RevenueCat — webhook payload shape, and trial eligibility
+
+121. **The RevenueCat webhook event id is nested INSIDE `event`, not at the top level. Reading it from the wrong level silently discarded 100% of deliveries for three months (found + fixed Aug 2026).** The body RevenueCat posts is:
+
+    ```json
+    { "api_version": "1.0",
+      "event": { "id": "...", "type": "INITIAL_PURCHASE", "app_user_id": "...",
+                 "product_id": "...", "period_type": "TRIAL" } }
+    ```
+
+    `id` is a SIBLING of `type` / `app_user_id` / `product_id`, all of which the handler already read from `event.event`. The code did `const eventId = event.id` on the OUTER object (which only holds `api_version` and `event`), so it was always `undefined`, the `if (!eventId)` guard fired, and the handler `return`ed a 200 before ever reaching `switch (type)`. Fix is two lines in `revenueCatWebhookHandler`: build `payload` first, then `const eventId = payload.id || event.id` (the `||` keeps it working if a future API version hoists the id).
+
+    **Why it hid for three months — the trap worth internalising.** The guard's failure path is `res.sendStatus(200)`, which tells RevenueCat "delivered successfully." So RevenueCat's webhook delivery dashboard showed 100% green, Apple showed the subscription active, and the app's purchase flow worked. **The ONLY symptom anywhere was one `warn` line per delivery in the pm2 log.** General rule: a webhook that ACKs unconditionally cannot be monitored from the sender's dashboard — grep the receiver's logs. When adding any new webhook, make the "I could not process this" path log loudly and distinguishably, because it will still return 200.
+
+    **The two write paths on the Apple rail, and what each actually covers.** Purchases kept working throughout, which is exactly why nobody noticed:
+    - `POST /payments/iap-reconcile` — called by the CLIENT from `frontend/shared/api.js` in exactly two places, after a successful `IAP.purchaseTier()` and after `IAP.restorePurchases()`. Server-authoritative (re-queries RevenueCat's REST API keyed off the JWT user id) and trial-aware. **Never runs on app launch or a timer, and NEVER downgrades** — when RevenueCat reports no active sub it returns `{activated:false, reason:'no_active'}` before touching the DB.
+    - The webhook — the ONLY path that hears about anything AFTER the purchase moment.
+
+    So with the webhook dead: the initial purchase looked perfect (reconcile set `trialing`), but the day-7 trial→paid conversion never flipped `trialing`→`active`, `BILLING_ISSUE` never set `past_due`, and — the actual revenue leak — `EXPIRATION` never landed, so **a player who cancelled kept AI Rep access permanently.** Nothing else in the system corrects this: `server.js` only schedules the engagement-score recalc and the suggested-connections MV refresh, there is no subscription sweep.
+
+    **Verifying a webhook fix without touching prod.** Boot local with the env vars inline (`REVENUECAT_WEBHOOK_AUTH_HEADER='test-rc-auth' IAP_PRODUCT_PLAYER='player_monthly_13' NODE_ENV=development node server.js`) — `dotenv` does not override already-set vars, so the shell value wins. Then `curl --data-binary @payload.json` with the real nested shape and assert against the REAL entitlement function rather than your reading of it (`require('./models/User').hasAiRep(await User.getSubscriptionInfo(id))`). The lifecycle that must pass: `INITIAL_PURCHASE`+`TRIAL` → `trialing`; `RENEWAL`+`NORMAL` → `active`; `CANCELLATION`+`cancel_reason:UNSUBSCRIBE` → **stays `active`** (paid-through access, mirrors Stripe's `cancel_at_period_end`); `EXPIRATION` → `cancelled` and `hasAiRep()` false.
+
+    **Confirming the deploy took, against RevenueCat's "Send Test Event" button:** success is any log line OTHER than `missing event.id`. The test event carries a dummy `app_user_id`, so the expected (good) result is `[RevenueCat webhook] unknown app_user_id: <uuid>` — that message is emitted at step 6, well past the guard, so reaching it proves parse + dedupe + UUID validation all cleared.
+
+122. **Apple introductory-offer (free trial) eligibility is per Apple ID per SUBSCRIPTION GROUP, consumed permanently by the first subscription in that group — it is not per product and not per Direct Recruit account.** This burned an afternoon chasing a non-bug: `player_monthly_13` showed "Free for the first week" in all 175 territories in App Store Connect, yet the Apple purchase sheet offered no trial and RevenueCat reported `period_type: NORMAL`. The cause was that the test Apple ID had already subscribed to that product months earlier, so it was permanently ineligible. A fresh Apple ID immediately got the trial. **Nothing was wrong with the ASC config or the code.**
+
+    **The tell in the logs:** several DIFFERENT Direct Recruit user ids all reporting the same product active (`[iap-reconcile] PRODUCT/PROFILE MISMATCH: user=<a|b|c> ... active=[player_monthly_13]`) is the signature of ONE Apple ID reused across test accounts — RevenueCat returns the Apple ID's entitlements regardless of which DR account is signed in.
+
+    **To test a trial you must use a brand-new sandbox tester** (App Store Connect → Users and Access → Sandbox → Test Accounts), signing out of the previous one on-device via Settings → Developer → Sandbox Apple Account. Burn a new tester for every trial test. Sandbox compresses a month to ~5 minutes, so the full `trialing` → `active` → `cancelled` lifecycle is observable in one sitting.
+
+    **Two things that look like bugs and are not:** (a) TestFlight/sandbox purchases NEVER charge real money, trial or no trial, so "I wasn't charged" proves nothing on its own — check the Sandbox/Production badge on the RevenueCat customer, and only Production purchases appear in ASC → Payments and Financial Reports; (b) RevenueCat's customer-list "Subscription Status" column reads **Active** during a trial — trial-ness is the separate `period_type` field, not a status.
+
+    **Known gap, not yet fixed:** the AI Rep paywall's trial copy keys off `trialEligible` from `GET /payments/subscription-status`, which is just `!users.trial_used_at` — a DB flag that knows nothing about StoreKit eligibility. An iOS user whose Apple ID already burned the intro offer is still shown "Start Free Trial" and is then billed immediately, which is exactly the false negative-option claim the code comments warn about. On iOS that copy should come from the StoreKit product's own intro-offer eligibility. (The reverse case, `trial_used_at` set but Apple still eligible, is harmless: we under-promise and Apple hands them a free week anyway.)
+
+    **Key files:** `backend/routes/payments.js` (`revenueCatWebhookHandler`, `/iap-reconcile`, `isTrialPeriod`, `getIapTrialEnd`), `backend/models/User.js` (`hasAiRep`, `ENTITLED_SUB_STATUSES`, `AI_REP_TIERS`, `allowedTiersFor`), `backend/routes/ai-rep.js` (`requireAiRep` — the security boundary), `frontend/shared/api.js` (`AiRepPaywall` trial copy + `reconcileIap` call sites), `frontend/shared/iap-products.js` (`purchaseTier` / `restorePurchases`).
+---
+
+## Gating and ungating a paid feature — the four-layer model
+
+123. **A paid feature sits on four independent layers. Only the bottom two are switches; the top two are plumbing that must stay wired at all times. Turning a feature free means flipping the switches, never dismantling the plumbing.** Established Sept 2026 when AI Rep was made temporarily free (`AI-REP-FREE 2026-09`), and it is the same shape as the June 2026 go-to-market in lesson 116.
+
+    | Layer | Controls | Switch | Safe to touch? |
+    |---|---|---|---|
+    | 1. Product records + entitlements (App Store Connect IAP, RevenueCat product + entitlement, Stripe Price) | whether billing can **recognize** an existing subscription | none | **NO** |
+    | 2. Env vars (`IAP_PRODUCT_*`, `STRIPE_*_PRICE_ID`) | how a receipt **maps to a tier** | none | **NO** |
+    | 3. Offering membership (which packages are in the RevenueCat offering) | whether it can be **bought** | RevenueCat dashboard | YES |
+    | 4. A server-side boolean (`User.AI_REP_FREE`) | whether it is **free** | one constant + `pm2 restart` | YES |
+
+    **Layer 4 must be server-driven, never a bundled frontend constant.** `frontend/shared/api.js` is compiled into the iOS bundle, so a hardcoded flag there can only be corrected by another App Store build. Publish it on `GET /auth/me` (e.g. `ai_rep_free: User.AI_REP_FREE`) and have the client OR it into its entitlement check. Then flipping the boolean on EC2 re-locks or unlocks **every platform including already-installed phones** with no build and no review. Keep the client failing CLOSED before `/auth/me` resolves.
+
+    **Layer 3 is the only lever that works on OLD builds.** A build already in the App Store has a bundle that has never heard of your new flag, so it still shows its purchase button. The server checkout guard does not help: an iOS purchase goes Apple → RevenueCat and never touches `POST /payments/create-checkout-session`. Removing the package from the offering is what makes that button fail cleanly (`purchaseTier` returns `Product ... not in offerings`, `frontend/shared/iap-products.js`).
+
+    **Three tempting shortcuts that are all wrong, and why:**
+    - **Archiving the whole offering.** One offering holds ALL packages (player + all three coach tiers) and `purchaseTier` resolves every product out of `offerings.current || offerings.all.default`. Archiving it kills coach purchases on every installed build too.
+    - **Duplicating the offering minus one package and making the copy current.** Works, but that `|| offerings.all.default` fallback means if `current` is ever unset the app silently falls back to the offering literally named `default`, which still has the package, re-enabling the purchase. Edit the offering that is BOTH current and named `default` so the two lookup paths agree.
+    - **Blanking `IAP_PRODUCT_PLAYER` in `.env` (or archiving the product).** This is the dangerous one: it takes down the wrong layer. `mapRevenueCatProductToTier()` (`backend/routes/payments.js`) builds its map FROM those env vars, and it is what the RevenueCat webhook and `/iap-reconcile` use to recognize an **existing** subscriber's receipt. Blank it and renewals stop activating and Restore Purchases silently fails, while the sales surface stays up. Exactly backwards.
+
+    **Restore Purchases survives a layer-3 change** because `/iap-reconcile` reads `subscriber.subscriptions` keyed by product id off the receipt, which has nothing to do with offerings. Apple requires the restore path to keep working, so never gate it behind the free-mode flag.
+
+    **Do NOT remove price env vars to "clean up".** `STRIPE_PLAYER_PRICE_ID` is in `REQUIRED_SECRETS` (`backend/server.js`) and prod refuses to boot without it.
+
+    **Marketing copy is a fifth, non-code layer that drifts.** Every price string gets a `<!-- AI-REP-FREE 2026-09: was ... -->` comment preserving the original, so the revert is mechanical. Terms of Service is a contract, so frame a promo as *"free for a limited time; standard pricing applies afterward"* rather than deleting the price — that stays true if anyone is still billed. See lesson 119 for how far copy drifted last time.
+
+    **Going back to paid:** (1) flip the boolean + `pm2 restart direct-recruit --update-env`, (2) add the package back to the offering, (3) `grep -rn "AI-REP-FREE"` and revert the copy from the preserved comments. No cache purge needed; the first `/auth/me` after the flip rewrites the stale `airep_ent_<id>` localStorage value on each device.
+
+    **Adding a NEW paid feature later is unaffected by any of this**: new ASC product → new package in the same offering → new env var → new entries in `mapRevenueCatProductToTier` and the Stripe `PRICE_MAP`/`TIER_MAP`. Removing one package never blocks adding another.

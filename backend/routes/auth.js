@@ -547,6 +547,11 @@ router.get('/me', authMiddleware, async (req, res) => {
         is_transfer_player: isTransferPlayer,
         subscription_status: subInfo?.subscription_status || 'none',
         subscription_tier: subInfo?.subscription_tier || null,
+        // AI-REP-FREE 2026-09: server-driven feature flag for the AI Rep add-on.
+        // The AiRepPaywall in shared/api.js ORs this into its entitlement check, so
+        // the promo can be turned on and off from the server alone. Not a billing
+        // field: subscription_status/tier above still report the real subscription.
+        ai_rep_free: User.AI_REP_FREE,
         // Push on/off state for the iOS settings toggle. Defaults true if the
         // column predates this user (NOT NULL DEFAULT true makes this rare).
         push_enabled: req.user.push_enabled !== false

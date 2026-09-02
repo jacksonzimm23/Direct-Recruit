@@ -46,7 +46,11 @@
    whole section, cards and CTA button included, lands above the fold. Adjacent
    sibling rather than :first-of-type, which would match .pricing-hero instead. */
 .pricing-hero + .pricing-section {
-    padding: 24px 0 40px;
+    /* AI-REP-FREE 2026-09: was 24px top. The promotional .pricing-promo-note line
+       added height inside every coach card and pushed the CTA button to 652px,
+       past the 648px fold. Trimmed here (per lesson 120) rather than by dropping
+       the promo line. Restore 24px when the promo ends. */
+    padding: 12px 0 40px;
 }
 
 .pricing-section-header {
@@ -110,6 +114,38 @@
 .pricing-period {
     font-size: 16px;
     color: #fff;
+}
+
+/* AI-REP-FREE 2026-09: sits under the "Free" amount during the promotional period
+   ("for a limited time"). Its own line so the long phrase never wraps the 32px
+   amount awkwardly inside a narrow coach card. Remove with the promo. */
+.pricing-promo-note {
+    display: block;
+    font-size: 12px;
+    line-height: 1.2;
+    font-weight: 700;
+    color: var(--accent-orange, #ff6b35);
+    margin-top: 0;
+}
+
+/* AI-REP-FREE 2026-09: free-pass line under the coach CTA. Deliberately below the
+   button so it costs the above-the-fold budget nothing. Remove with the promo. */
+.pricing-coach-contact {
+    text-align: center;
+    margin: 14px 0 0;
+    font-size: 14px;
+    color: #fff;
+    opacity: 0.85;
+}
+
+.pricing-coach-contact a {
+    color: var(--accent-orange, #ff6b35);
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.pricing-coach-contact a:hover {
+    text-decoration: underline;
 }
 
 .pricing-card-desc {

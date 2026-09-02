@@ -300,20 +300,29 @@
                          subscription unlocks the AI Rep only (see PAID_TYPES in
                          backend/models/User.js and the AI Rep paywall in shared/api.js).
                          Kept deliberately compact so this card matches the height of
-                         the coach card beside it. -->
+                         the coach card beside it.
+                         AI-REP-FREE 2026-09: the add-on is currently given away (gated by
+                         User.AI_REP_FREE). Replacement copy below is intentionally no
+                         LONGER than the original — this card is tuned to a 433px natural
+                         height and growing it opens a dead gap under the coach card's
+                         button (lessons.md #120). -->
                     <div class="v2-pricing-addon">
                         <div class="v2-pricing-addon-head">
                             <span class="v2-pricing-addon-name">Direct Recruit+</span>
-                            <span class="v2-pricing-addon-price">$10<span>/mo</span></span>
+                            <!-- AI-REP-FREE 2026-09: was $10<span>/mo</span> -->
+                            <span class="v2-pricing-addon-price">Free</span>
                         </div>
                         <p class="v2-pricing-addon-desc">Serious about getting recruited? Unlock the AI Rep and see which coaches match you.</p>
-                        <p class="v2-pricing-addon-trial">Start your 7 day free trial today!</p>
+                        <!-- AI-REP-FREE 2026-09: was "Start your 7 day free trial today!" -->
+                        <p class="v2-pricing-addon-trial">No charge for a limited time.</p>
                     </div>
                 </div>
                 <div class="v2-pricing-card v2-pricing-card-coach">
                     <div class="v2-pricing-card-header">
                         <h3>Coach Plans</h3>
-                        <div class="v2-price"><span class="v2-price-note">3 tiers available</span></div>
+                        <!-- AI-REP-FREE 2026-09: was "3 tiers available". Same single line,
+                             so the card height is unchanged (lessons.md #120). -->
+                        <div class="v2-price"><span class="v2-price-note">Free for a limited time</span></div>
                     </div>
                     <p class="v2-pricing-desc">AI-powered recruiting tools for college coaching staffs.</p>
                     <ul class="v2-pricing-features">

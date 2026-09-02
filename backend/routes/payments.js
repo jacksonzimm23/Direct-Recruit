@@ -123,6 +123,14 @@ router.post('/create-checkout-session', authMiddleware, async (req, res) => {
     // apply trial_period_days to every new subscription, letting someone trial,
     // cancel on day 6, resubscribe, and repeat forever without ever paying. A
     // returning subscriber is billed immediately instead.
+    // AI-REP-FREE 2026-09: AI Rep is free, so refuse to open a NEW player checkout.
+    // No UI reaches this any more, but SUBSCRIBABLE_TYPES still lists players and iOS
+    // bundles predating the promo still show an "Unlock AI Rep" button in Settings.
+    // Existing subscriptions are untouched: this only blocks new purchases, and the
+    // /iap-reconcile path is deliberately NOT guarded because Restore Purchases uses it.
+    if (User.AI_REP_FREE && User.ADDON_TYPES.includes(profileType)) {
+      return res.status(400).json({ error: 'AI Rep is currently free. No subscription needed.' });
+    }
     const isAddon = User.ADDON_TYPES.includes(profileType);
     const alreadyTrialed = isAddon ? await User.hasUsedTrial(req.userId) : false;
     const isPlayerTrial = isAddon && !alreadyTrialed;
